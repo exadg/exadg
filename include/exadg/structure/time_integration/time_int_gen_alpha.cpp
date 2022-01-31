@@ -142,10 +142,10 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
   timer.restart();
 
   // initial guess
-  // if(use_extrapolation)
-  //   displacement_np = displacement_n;
-  // else
-  //   displacement_np = displacement_last_iter;
+  if(use_extrapolation)
+    displacement_np = displacement_n;
+  else
+    displacement_np = displacement_last_iter;
 
   if(param.large_deformation) // nonlinear case
   {

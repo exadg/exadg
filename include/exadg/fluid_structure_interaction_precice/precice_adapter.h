@@ -55,12 +55,8 @@ public:
    *             solver (using quadrature points for reading)
    */
   template<typename ParameterClass>
-  Adapter(const ParameterClass & parameters,
-          const unsigned int     dealii_boundary_interface_id,
-          std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
-          const unsigned int                                                  dof_index       = 0,
-          const unsigned int                                                  read_quad_index = 0,
-          const bool                                                          is_dirichlet = false);
+  Adapter(const ParameterClass & parameters);
+
 
   /**
    * @brief      Initializes preCICE and passes all relevant data to preCICE
@@ -73,7 +69,23 @@ public:
    *             your initial condition.
    */
   void
-  initialize(const VectorType & dealii_to_precice, const std::vector<Point<dim>> & points);
+  initialize_precice(const VectorType & dealii_to_precice);
+
+  void
+  add_write_interface(const types::boundary_id interface_id,
+                      const std::string &      mesh_name,
+                      const std::string &      write_data_name,
+                      const std::string &      write_data_specification,
+                      std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
+                      const unsigned int                                                  dof_index,
+                      const unsigned int write_quad_index);
+
+
+  void
+  add_read_interface(const std::vector<Point<dim>> &                                     points,
+                     std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
+                     const std::string &                                                 mesh_name,
+                     const std::string & read_data_name);
 
   /**
    * @brief      Advances preCICE after every timestep, converts data formats
@@ -130,18 +142,13 @@ public:
 
 
   void
-  write_data(const VectorType & write_data, const double computed_timestep_length);
+  write_data(const std::string & write_mesh_name,
+             const std::string & write_data_name,
+             const VectorType &  write_data,
+             const double        computed_timestep_length);
 
   std::vector<Tensor<1, dim>>
-  read_block_data() const;
-
-  /**
-   * @brief Public API adapter method, which calls the respective implementation
-   *        in derived classes of the CouplingInterface. Have a look at the
-   *        documentation there.
-   */
-  void
-  apply_dirichlet_bcs(AffineConstraints<double> & constraints) const;
+  read_block_data(const std::string & mesh_name) const;
 
   /**
    * @brief is_coupling_ongoing Calls the preCICE API function isCouplingOnGoing
@@ -161,21 +168,16 @@ public:
   is_time_window_complete() const;
 
 
-  /// Boundary ID of the deal.II mesh, associated with the coupling
-  /// interface. The variable is public and should be used during grid
-  /// generation, but is also involved during system assembly. The only thing,
-  /// one needs to make sure is, that this ID is not given to another part of
-  /// the boundary e.g. clamped one.
-  const unsigned int dealii_boundary_interface_id;
-
 
 private:
   // public precice solverinterface, needed in order to steer the time loop
   // inside the solver.
   std::shared_ptr<precice::SolverInterface> precice;
   /// The objects handling reading and writing data
-  std::shared_ptr<CouplingInterface<dim, data_dim, VectorizedArrayType>> writer;
-  std::shared_ptr<CouplingInterface<dim, data_dim, VectorizedArrayType>> reader;
+  std::map<std::string, std::shared_ptr<CouplingInterface<dim, data_dim, VectorizedArrayType>>>
+    writer;
+  std::map<std::string, std::shared_ptr<CouplingInterface<dim, data_dim, VectorizedArrayType>>>
+    reader;
 
   // Container to store time dependent data in case of an implicit coupling
   std::vector<VectorType> old_state_data;
@@ -186,14 +188,8 @@ private:
 
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 template<typename ParameterClass>
-Adapter<dim, data_dim, VectorType, VectorizedArrayType>::Adapter(
-  const ParameterClass &                                              parameters,
-  const unsigned int                                                  dealii_boundary_interface_id,
-  std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
-  const unsigned int                                                  dof_index,
-  const unsigned int /* read_quad_index*/,
-  const bool /*is_dirichlet*/)
-  : dealii_boundary_interface_id(dealii_boundary_interface_id)
+Adapter<dim, data_dim, VectorType, VectorizedArrayType>::Adapter(const ParameterClass & parameters)
+
 {
   precice =
     std::make_shared<precice::SolverInterface>(parameters.participant_name,
@@ -203,62 +199,97 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::Adapter(
 
   AssertThrow(dim == precice->getDimensions(), ExcInternalError());
   AssertThrow(dim > 1, ExcNotImplemented());
-
-  reader = std::make_shared<ExaDGInterface<dim, data_dim, VectorizedArrayType>>(
-    data, precice, parameters.read_mesh_name, dealii_boundary_interface_id);
-
-  // 2. Set the writer, which is defined in the parameter file
-  if(parameters.write_mesh_name == parameters.read_mesh_name)
-    writer = reader;
-  else if(parameters.write_data_specification == "values_on_dofs")
-    writer = std::make_shared<DoFInterface<dim, data_dim, VectorizedArrayType>>(
-      data, precice, parameters.write_mesh_name, dealii_boundary_interface_id, dof_index);
-  else
-  {
-    Assert(parameters.write_data_specification == "values_on_quads" ||
-             parameters.write_data_specification == "normal_gradients_on_quads",
-           ExcNotImplemented());
-    writer = std::make_shared<QuadInterface<dim, data_dim, VectorizedArrayType>>(
-      data,
-      precice,
-      parameters.write_mesh_name,
-      dealii_boundary_interface_id,
-      dof_index,
-      parameters.write_quad_index);
-  }
-
-  reader->add_read_data(parameters.read_data_name);
-  writer->add_write_data(parameters.write_data_name, parameters.write_data_specification);
-
-  Assert(reader.get() != nullptr, ExcInternalError());
-  Assert(writer.get() != nullptr, ExcInternalError());
 }
 
 
 
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 void
-Adapter<dim, data_dim, VectorType, VectorizedArrayType>::initialize(
-  const VectorType &              dealii_to_precice,
-  const std::vector<Point<dim>> & points)
+Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_interface(
+  const types::boundary_id                                            dealii_boundary_interface_id,
+  const std::string &                                                 mesh_name,
+  const std::string &                                                 write_data_name,
+  const std::string &                                                 write_data_specification,
+  std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
+  const unsigned int                                                  dof_index,
+  const unsigned int                                                  quad_index)
+{
+  // Check, if we already have such an interface
+  const auto found_writer = writer.find(mesh_name);
+  const auto found_reader = reader.find(mesh_name);
+
+  if(found_reader != reader.end())
+  {
+    // Duplicate the shared pointer
+    writer.insert({mesh_name, found_reader->second});
+  }
+  else if(found_writer != writer.end())
+  {
+    // TODO: Is this required?
+    // Do nothing as we have registered the mesh already
+  }
+  else if(write_data_specification == "values_on_dofs")
+  {
+    writer.insert({mesh_name,
+                   std::make_shared<DoFInterface<dim, data_dim, VectorizedArrayType>>(
+                     data, precice, mesh_name, dealii_boundary_interface_id, dof_index)});
+  }
+  else
+  {
+    Assert(write_data_specification == "values_on_quads" ||
+             write_data_specification == "normal_gradients_on_quads",
+           ExcNotImplemented());
+    writer.insert(
+      {mesh_name,
+       std::make_shared<QuadInterface<dim, data_dim, VectorizedArrayType>>(
+         data, precice, mesh_name, dealii_boundary_interface_id, dof_index, quad_index)});
+  }
+
+  // Register the write data
+  const std::vector<Point<dim>> points;
+  writer.at(mesh_name)->add_write_data(write_data_name, write_data_specification);
+  writer.at(mesh_name)->define_coupling_mesh(points);
+}
+
+
+
+template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
+void
+Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_read_interface(
+  const std::vector<Point<dim>> &                                     points,
+  std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
+  const std::string &                                                 mesh_name,
+  const std::string &                                                 read_data_name)
+{
+  reader.insert({mesh_name,
+                 std::make_shared<ExaDGInterface<dim, data_dim, VectorizedArrayType>>(data,
+                                                                                      precice,
+                                                                                      mesh_name)});
+  reader.at(mesh_name)->add_read_data(read_data_name);
+  reader.at(mesh_name)->define_coupling_mesh(points);
+}
+
+
+
+template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
+void
+Adapter<dim, data_dim, VectorType, VectorizedArrayType>::initialize_precice(
+  const VectorType & dealii_to_precice)
 {
   // if(!dealii_to_precice.has_ghost_elements())
   //   dealii_to_precice.update_ghost_values();
-
-  reader->define_coupling_mesh(points);
-  writer->define_coupling_mesh(points);
 
   // Initialize preCICE internally
   precice->initialize();
 
   // Only the writer needs potentially to process the coupling mesh, if the
   // mapping is carried out in the solver
-  writer->process_coupling_mesh();
+  // writer->process_coupling_mesh();
 
   // write initial writeData to preCICE if required
   if(precice->isActionRequired(precice::constants::actionWriteInitialData()))
   {
-    writer->write_data(dealii_to_precice);
+    writer[0]->write_data(dealii_to_precice);
 
     precice->markActionFulfilled(precice::constants::actionWriteInitialData());
   }
@@ -276,11 +307,13 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::initialize(
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::write_data(
-  const VectorType & dealii_to_precice,
-  const double       computed_timestep_length)
+  const std::string & write_mesh_name,
+  const std::string & write_data_name,
+  const VectorType &  dealii_to_precice,
+  const double        computed_timestep_length)
 {
   if(precice->isWriteDataRequired(computed_timestep_length))
-    writer->write_data(dealii_to_precice);
+    writer.at(write_mesh_name)->write_data(dealii_to_precice);
 }
 
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
@@ -306,26 +339,18 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::read_on_quadrature_poin
   const unsigned int id_number,
   const unsigned int active_faces) const
 {
-  return reader->read_on_quadrature_point(id_number, active_faces);
+  Assert(false, ExcNotImplemented());
+  return reader[0]->read_on_quadrature_point(id_number, active_faces);
 }
 
 
 
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 std::vector<Tensor<1, dim>>
-Adapter<dim, data_dim, VectorType, VectorizedArrayType>::read_block_data() const
+Adapter<dim, data_dim, VectorType, VectorizedArrayType>::read_block_data(
+  const std::string & mesh_name) const
 {
-  return reader->read_block_data();
-}
-
-
-
-template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
-void
-Adapter<dim, data_dim, VectorType, VectorizedArrayType>::apply_dirichlet_bcs(
-  AffineConstraints<double> & constraints) const
-{
-  reader->apply_Dirichlet_bcs(constraints);
+  return reader.at(mesh_name)->read_block_data();
 }
 
 

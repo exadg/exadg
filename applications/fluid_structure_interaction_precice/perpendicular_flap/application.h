@@ -267,7 +267,8 @@ public:
       SchurComplementPreconditioner::PressureConvectionDiffusion;
   }
 
-  void create_triangulation_fluid(Triangulation<2> & tria)
+  void
+  create_triangulation_fluid(Triangulation<2> & tria)
   {
     std::vector<Triangulation<2>> tria_vec;
     tria_vec.resize(5);

@@ -72,11 +72,12 @@ public:
   }
 
   void
-  setup(std::shared_ptr<MatrixFree<dim, Number>> matrix_free_dst,
-        unsigned int const                       dof_index_dst,
-        std::vector<quad_index> const &          quad_indices_dst_in,
-        MapBoundaryCondition const &             map_bc_in,
-        const VectorType &                       initial_data)
+  setup(std::shared_ptr<const MatrixFree<dim, Number>> matrix_free_dst,
+        unsigned int const                             dof_index_dst,
+        std::vector<quad_index> const &                quad_indices_dst_in,
+        MapBoundaryCondition const &                   map_bc_in,
+        const std::string &                            mesh_name,
+        const std::string &                            data_name)
   {
     quad_rules_dst = quad_indices_dst_in;
     map_bc         = map_bc_in;
