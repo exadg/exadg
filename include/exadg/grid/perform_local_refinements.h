@@ -38,8 +38,9 @@ namespace ExaDG
  * TODO: change the design of this function from a vector towards a map from material IDs to
  * the number of local refinements.
  */
-void refine_local(dealii::Triangulation<3> & tria,
-                  std::vector<int> const &   vector_local_refinements)
+template<int dim>
+void
+refine_local(dealii::Triangulation<dim> & tria, std::vector<int> const & vector_local_refinements)
 {
   std::vector<int> refine_local = vector_local_refinements;
 
