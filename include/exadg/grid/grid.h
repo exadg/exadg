@@ -75,7 +75,7 @@ public:
   }
 
   void
-  create_triangulation(
+  create_and_refine_triangulation(
     GridData const &                                          data,
     std::vector<int> const &                                  vector_local_refinements,
     std::function<void(dealii::Triangulation<dim> &)> const & create_coarse_triangulation)

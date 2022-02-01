@@ -477,9 +477,9 @@ public:
         create_coarse_grid<dim>(tria, this->grid->periodic_faces, cylinder_type_string);
       };
 
-    this->grid->create_triangulation(this->param.grid,
-                                     std::vector<int>(),
-                                     lambda_create_coarse_triangulation);
+    this->grid->create_and_refine_triangulation(this->param.grid,
+                                                std::vector<int>(),
+                                                lambda_create_coarse_triangulation);
   }
 
   void
