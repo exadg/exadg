@@ -1,0 +1,24 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
+        "DegreeFluid": "3",
+        "DegreeStructure": "3",
+        "RefineFluid": "0",
+        "RefineStructure": "3"
+    },
+    "preciceConfiguration": {
+        "preciceConfigFile": "../precice-config.xml",
+        "Physics": "Structure",
+        "ParticipantName": "Solid",
+        "ReadMeshName": "Solid-Mesh-read",
+        "WriteMeshName": "Solid-Mesh-write",
+        "WriteQuadratureIndex": "0",
+        "WriteDataSpecification": "values_on_dofs",
+        "ReadDataName": "Stress",
+        "WriteDataName": "Displacement"
+    }
+}

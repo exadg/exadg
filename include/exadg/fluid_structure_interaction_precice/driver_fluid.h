@@ -369,6 +369,8 @@ public:
            ExcNotImplemented());
 
     bool is_new_time_window = true;
+
+    dealii::Timer precice_timer;
     // preCICE dictates when the time loop is finished
     while(this->precice->is_coupling_ongoing())
     {
@@ -393,8 +395,10 @@ public:
         // compute and send stress to solid
         coupling_fluid_to_structure();
 
+        precice_timer.restart();
         this->precice->advance(fluid_time_integrator->get_time_step_size());
         is_new_time_window = this->precice->is_time_window_complete();
+        this->timer_tree.insert({"FSI", "preCICE"}, precice_timer.wall_time());
       }
 
       // Needs to be called before the swaps in post_solve
@@ -435,7 +439,7 @@ public:
 
     // TODO: This assumes that we have at least two levels, otherwise failure
     this->pcout << std::endl << "Timings for level 2:" << std::endl;
-    this->timer_tree.print_level(this->pcout, 2);
+    // this->timer_tree.print_level(this->pcout, 2);
 
     // Throughput in DoFs/s per time step per core
     types::global_dof_index DoFs = fluid_operator->get_number_of_dofs();
@@ -506,17 +510,32 @@ private:
   void
   solve_ale() const
   {
+    dealii::Timer timer;
+    timer.restart();
+
+    dealii::Timer sub_timer;
+
+    sub_timer.restart();
     bool const print_solver_info = fluid_time_integrator->print_solver_info();
     fluid_grid_motion->update(fluid_time_integrator->get_next_time(),
                               print_solver_info and not(this->is_test));
+    this->timer_tree.insert({"FSI", "ALE", "Solve and reinit mapping"}, sub_timer.wall_time());
 
+    sub_timer.restart();
     std::shared_ptr<dealii::Mapping<dim> const> mapping =
       get_dynamic_mapping<dim, Number>(this->application->get_grid_fluid(), fluid_grid_motion);
     fluid_matrix_free->update_mapping(*mapping);
+    this->timer_tree.insert({"FSI", "ALE", "Update matrix-free"}, sub_timer.wall_time());
 
+    sub_timer.restart();
     fluid_operator->update_after_grid_motion();
+    this->timer_tree.insert({"FSI", "ALE", "Update operator"}, sub_timer.wall_time());
 
+    sub_timer.restart();
     fluid_time_integrator->ale_update();
+    this->timer_tree.insert({"FSI", "ALE", "Update time integrator"}, sub_timer.wall_time());
+
+    this->timer_tree.insert({"FSI", "ALE"}, timer.wall_time());
   }
 
   /****************************************** FLUID *******************************************/

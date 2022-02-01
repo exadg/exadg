@@ -190,6 +190,7 @@ public:
 
     bool is_new_time_window = true;
 
+    dealii::Timer precice_timer;
     // preCICE dictates when the time loop is finished
     while(this->precice->is_coupling_ongoing())
     {
@@ -211,8 +212,10 @@ public:
       coupling_structure_to_fluid(structure_time_integrator->get_velocity_np(),
                                   structure_time_integrator->get_time_step_size());
 
+      precice_timer.restart();
       this->precice->advance(structure_time_integrator->get_time_step_size());
       is_new_time_window = this->precice->is_time_window_complete();
+      this->timer_tree.insert({"FSI", "preCICE"}, precice_timer.wall_time());
 
       // Needs to be called before the swaps in post_solve
       this->precice->reload_old_state_if_required([&]() {});
@@ -247,7 +250,7 @@ public:
     this->timer_tree.print_level(this->pcout, 1);
 
     this->pcout << std::endl << "Timings for level 2:" << std::endl;
-    this->timer_tree.print_level(this->pcout, 2);
+    // this->timer_tree.print_level(this->pcout, 2);
 
     // Throughput in DoFs/s per time step per core
     types::global_dof_index DoFs = structure_operator->get_number_of_dofs();

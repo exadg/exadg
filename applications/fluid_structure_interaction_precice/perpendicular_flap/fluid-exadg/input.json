@@ -1,0 +1,23 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
+        "DegreeFluid": "2",
+        "DegreeStructure": "3",
+        "RefineFluid": "1",
+        "RefineStructure": "3"
+    },
+    "preciceConfiguration": {
+        "preciceConfigFile": "../precice-config.xml",
+        "Physics": "Fluid",
+        "ParticipantName": "Fluid",
+        "ReadMeshName": "Fluid-Mesh-read",
+        "WriteMeshName": "Fluid-Mesh-write",
+        "WriteDataSpecification": "values_on_quads",
+        "ReadDataName": "Displacement",
+        "WriteDataName": "Stress"
+    }
+}
