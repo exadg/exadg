@@ -31,6 +31,7 @@ struct GridData
 {
   GridData()
     : triangulation_type(TriangulationType::Distributed),
+      partitioning_type(PartitioningType::Metis),
       n_refine_global(0),
       n_subdivisions_1d_hypercube(1),
       mapping_degree(1)
@@ -47,6 +48,11 @@ struct GridData
   {
     print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
 
+    if(triangulation_type == TriangulationType::FullyDistributed)
+      print_parameter(pcout,
+                      "Partitioning type (fully-distributed)",
+                      enum_to_string(partitioning_type));
+
     print_parameter(pcout, "Global refinements", n_refine_global);
 
     print_parameter(pcout, "Subdivisions hypercube", n_subdivisions_1d_hypercube);
@@ -55,6 +61,8 @@ struct GridData
   }
 
   TriangulationType triangulation_type;
+
+  PartitioningType partitioning_type;
 
   unsigned int n_refine_global;
 

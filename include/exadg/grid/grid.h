@@ -101,12 +101,24 @@ public:
         tria_serial.refine_global(data.n_refine_global);
       };
 
-      auto const serial_grid_partitioner = [](dealii::Triangulation<dim, dim> & tria_serial,
+      auto const serial_grid_partitioner = [&](dealii::Triangulation<dim, dim> & tria_serial,
                                               MPI_Comm const                    comm,
                                               unsigned int const                group_size) {
         (void)group_size;
-        dealii::GridTools::partition_triangulation_zorder(
-          dealii::Utilities::MPI::n_mpi_processes(comm), tria_serial);
+        if(data.partitioning_type == PartitioningType::Metis)
+        {
+          dealii::GridTools::partition_triangulation(dealii::Utilities::MPI::n_mpi_processes(comm),
+                                                     tria_serial);
+        }
+        else if(data.partitioning_type == PartitioningType::p4est)
+        {
+          dealii::GridTools::partition_triangulation_zorder(
+            dealii::Utilities::MPI::n_mpi_processes(comm), tria_serial);
+        }
+        else
+        {
+          AssertThrow(false, dealii::ExcNotImplemented());
+        }
       };
 
       unsigned int const group_size = 1;

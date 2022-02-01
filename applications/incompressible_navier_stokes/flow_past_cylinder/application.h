@@ -472,44 +472,14 @@ public:
   {
     this->refine_level = this->param.grid.n_refine_global;
 
-    if(auto tria_fully_dist =
-         dynamic_cast<dealii::parallel::fullydistributed::Triangulation<dim> *>(
-           this->grid->triangulation.get()))
-    {
-      auto const construction_data = dealii::TriangulationDescription::Utilities::
-        create_description_from_triangulation_in_groups<dim, dim>(
-          [&](dealii::Triangulation<dim, dim> & tria) mutable {
-            create_cylinder_grid<dim>(tria,
-                                      this->param.grid.n_refine_global,
-                                      this->grid->periodic_faces,
-                                      cylinder_type_string);
-          },
-          [](dealii::Triangulation<dim, dim> & tria,
-             const MPI_Comm                    comm,
-             unsigned int const /* group_size */) {
-            // metis partitioning
-            dealii::GridTools::partition_triangulation(
-              dealii::Utilities::MPI::n_mpi_processes(comm), tria);
-            // p4est partitioning
-            //            dealii::GridTools::partition_triangulation_zorder(dealii::Utilities::MPI::n_mpi_processes(comm),
-            //            tria);
-          },
-          tria_fully_dist->get_communicator(),
-          1 /* group size */);
-      tria_fully_dist->create_triangulation(construction_data);
-    }
-    else if(auto tria = dynamic_cast<dealii::parallel::distributed::Triangulation<dim> *>(
-              this->grid->triangulation.get()))
-    {
-      create_cylinder_grid<dim>(*tria,
-                                this->param.grid.n_refine_global,
-                                this->grid->periodic_faces,
-                                cylinder_type_string);
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Unknown triangulation!"));
-    }
+    auto const lambda_create_coarse_triangulation =
+      [&](dealii::Triangulation<dim, dim> & tria) mutable {
+        create_coarse_grid<dim>(tria, this->grid->periodic_faces, cylinder_type_string);
+      };
+
+    this->grid->create_triangulation(this->param.grid,
+                                     std::vector<int>(),
+                                     lambda_create_coarse_triangulation);
   }
 
   void
