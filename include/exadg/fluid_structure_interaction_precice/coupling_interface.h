@@ -71,36 +71,9 @@ public:
   virtual void
   write_data(const LinearAlgebra::distributed::Vector<double> & data_vector) = 0;
 
-  /**
-   * @brief read_on_quadrature_point Read and return data from preCICE related
-   *        to a specific quadrature point. This function is not implemented
-   *        in the base class and an exception is thrown if it is used but
-   *        not re-implemeted.
-   *
-   * @param[in]  id_number Number of the quadrature point with respect to
-   *             the total number of interface quadrature points this rank
-   *             works on.
-   * @param[in]  active_faces Number of active faces the matrix-free object
-   *             works on
-   *
-   * @return dim dimensional data associated to the interface node
-   */
-  virtual value_type
-  read_on_quadrature_point(const unsigned int id_number, const unsigned int active_faces) const;
-
 
   virtual std::vector<Tensor<1, dim>>
   read_block_data() const;
-
-  /**
-   * @brief apply_Dirichlet_bcs Read data from preCICE and fill a constraint
-   *        object. This function is not implemented in the base class and an
-   *        exception is thrown if it is used but not re-implemeted.
-   *
-   * @param constraint associated constraint object
-   */
-  virtual void
-  apply_Dirichlet_bcs(AffineConstraints<double> & constraints) const;
 
   /**
    * @brief Queries data IDs from preCICE for the given read data name
@@ -216,25 +189,6 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::process_coupling_mesh()
 }
 
 
-
-template<int dim, int data_dim, typename VectorizedArrayType>
-typename CouplingInterface<dim, data_dim, VectorizedArrayType>::value_type
-CouplingInterface<dim, data_dim, VectorizedArrayType>::read_on_quadrature_point(
-  const unsigned int /*id_number*/,
-  const unsigned int /*active_faces*/) const
-{
-  AssertThrow(false, ExcNotImplemented());
-}
-
-
-
-template<int dim, int data_dim, typename VectorizedArrayType>
-void
-CouplingInterface<dim, data_dim, VectorizedArrayType>::apply_Dirichlet_bcs(
-  AffineConstraints<double> &) const
-{
-  AssertThrow(false, ExcNotImplemented());
-}
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 std::vector<Tensor<1, dim>>

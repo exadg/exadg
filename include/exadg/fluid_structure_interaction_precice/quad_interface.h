@@ -55,27 +55,6 @@ public:
   virtual void
   write_data(const LinearAlgebra::distributed::Vector<double> & data_vector) override;
 
-  /**
-   * @brief read_on_quadrature_point Returns the data_dim dimensional read data
-   *        given the ID of the interface node we want to access.
-   *
-   * @param[in]  id_number Number of the quadrature point (counting from zero
-   *             to the total number of quadrature point this process works
-   *             on) we want to access. Here, we explicitly rely on the order
-   *             we used when the coupling mesh was defined (see
-   *             @ref define_coupling_mesh()). Note that the MatrixFree::loop
-   *             functions may process cells in a different order than the
-   *             manual loop during the mesh definition. Using an incremental
-   *             iterator for the id_number would consequently fail.
-   * @param[in]  active_faces Number of active faces the matrix-free object
-   *             works on
-   *
-   * @return dim dimensional data associated to the interface node
-   */
-  virtual value_type
-  read_on_quadrature_point(const unsigned int id_number,
-                           const unsigned int active_faces) const override;
-
 private:
   /**
    * @brief write_data_factory Factory function in order to write different
@@ -269,44 +248,6 @@ QuadInterface<dim, data_dim, VectorizedArrayType>::write_data_factory(
   }
 }
 
-
-
-template<int dim, int data_dim, typename VectorizedArrayType>
-inline typename QuadInterface<dim, data_dim, VectorizedArrayType>::value_type
-QuadInterface<dim, data_dim, VectorizedArrayType>::read_on_quadrature_point(
-  const unsigned int id_number,
-  const unsigned int active_faces) const
-{
-  // Assert input
-  Assert(active_faces <= VectorizedArrayType::size(), ExcInternalError());
-  AssertIndexRange(id_number, interface_nodes_ids.size());
-  Assert(this->read_data_id != -1, ExcNotInitialized());
-
-  value_type dealii_data;
-  const auto vertex_ids = &interface_nodes_ids[id_number];
-  // Vector valued case
-  if constexpr(data_dim > 1)
-  {
-    std::array<double, data_dim * VectorizedArrayType::size()> precice_data;
-    this->precice->readBlockVectorData(this->read_data_id,
-                                       active_faces,
-                                       vertex_ids->data(),
-                                       precice_data.data());
-    // Transform back to Tensor format
-    for(int d = 0; d < data_dim; ++d)
-      for(unsigned int v = 0; v < VectorizedArrayType::size(); ++v)
-        dealii_data[d][v] = precice_data[d + data_dim * v];
-  }
-  else
-  {
-    // Scalar case
-    this->precice->readBlockScalarData(this->read_data_id,
-                                       active_faces,
-                                       vertex_ids->data(),
-                                       &dealii_data[0]);
-  }
-  return dealii_data;
-}
 
 
 template<int dim, int data_dim, typename VectorizedArrayType>

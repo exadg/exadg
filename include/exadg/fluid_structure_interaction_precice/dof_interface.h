@@ -48,16 +48,6 @@ public:
   virtual void
   write_data(const LinearAlgebra::distributed::Vector<double> & data_vector) override;
 
-  /**
-   * @brief apply_Dirichlet_bcs Receive data from preCICE and apply them as
-   *        Dirichlet boundary conditions by filling an AffineConstraint
-   *        object with the respective data
-   *
-   * @param constraints The relevant constraint object. Note that only dofs
-   *        which have not yet been constrained are filled.
-   */
-  virtual void
-  apply_Dirichlet_bcs(AffineConstraints<double> & constraints) const override;
 
 private:
   /// The preCICE IDs
@@ -191,39 +181,6 @@ DoFInterface<dim, data_dim, VectorizedArrayType>::write_data(
     else
     {
       this->precice->writeScalarData(this->write_data_id, interface_nodes_ids[i], write_data[0]);
-    }
-  }
-}
-
-
-
-template<int dim, int data_dim, typename VectorizedArrayType>
-void
-DoFInterface<dim, data_dim, VectorizedArrayType>::apply_Dirichlet_bcs(
-  AffineConstraints<double> & constraints) const
-{
-  std::array<double, data_dim> values;
-  for(std::size_t i = 0; i < global_indices.size(); ++i)
-  {
-    if constexpr(data_dim > 1)
-    {
-      this->precice->readVectorData(this->read_data_id, interface_nodes_ids[i], values.data());
-    }
-    else
-    {
-      this->precice->readScalarData(this->read_data_id, interface_nodes_ids[i], values[0]);
-    }
-
-    // Get the global dof indices
-    const auto dof = global_indices[i];
-    for(int d = 0; d < data_dim; ++d)
-    {
-      // and write them into the constraint object
-      if(constraints.can_store_line(dof[d]) && !constraints.is_constrained(dof[d]))
-      {
-        constraints.add_line(dof[d]);
-        constraints.set_inhomogeneity(dof[d], values[d]);
-      }
     }
   }
 }

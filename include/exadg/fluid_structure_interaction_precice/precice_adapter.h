@@ -88,14 +88,7 @@ public:
                      const std::string & read_data_name);
 
   /**
-   * @brief      Advances preCICE after every timestep, converts data formats
-   *             between preCICE and dealii
-   *
-   * @param[in]  dealii_to_precice Same data as in @p initialize_precice() i.e.
-   *             data, which should be given to preCICE after each time step
-   *             and exchanged with other participants.
-   * @param[in]  computed_timestep_length Length of the timestep used by
-   *             the solver.
+   * @brief      Advances preCICE after every timestep
    */
   void
   advance(const double computed_timestep_length);
@@ -131,14 +124,6 @@ public:
    */
   void
   reload_old_state_if_required(const std::function<void()> & reload_old_state);
-
-  /**
-   * @brief Public API adapter method, which calls the respective implementation
-   *        in derived classes of the CouplingInterface. Have a look at the
-   *        documentation there.
-   */
-  value_type
-  read_on_quadrature_point(const unsigned int id_number, const unsigned int active_faces) const;
 
 
   void
@@ -181,7 +166,6 @@ private:
 
   // Container to store time dependent data in case of an implicit coupling
   std::vector<VectorType> old_state_data;
-  double                  old_time_value = 0;
 };
 
 
@@ -323,24 +307,8 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::advance(
 {
   // Here, we need to specify the computed time step length and pass it to
   // preCICE
+  // TODO: The function returns the available time-step size which is required for time-step sync
   precice->advance(computed_timestep_length);
-
-  //    if (shared_memory_parallel && precice->isReadDataAvailable())
-  //      precice->readBlockVectorData(read_data_id,
-  //                                   read_nodes_ids.size(),
-  //                                   read_nodes_ids.data(),
-  //                                   read_data.data());
-}
-
-
-template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
-inline typename Adapter<dim, data_dim, VectorType, VectorizedArrayType>::value_type
-Adapter<dim, data_dim, VectorType, VectorizedArrayType>::read_on_quadrature_point(
-  const unsigned int id_number,
-  const unsigned int active_faces) const
-{
-  Assert(false, ExcNotImplemented());
-  return reader[0]->read_on_quadrature_point(id_number, active_faces);
 }
 
 
