@@ -140,6 +140,58 @@ public:
     }
   }
 
+  void
+  create_triangulation(
+    GridData const &                                          data,
+    std::function<void(dealii::Triangulation<dim> &)> const & create_fine_triangulation)
+  {
+    if(data.triangulation_type == TriangulationType::Serial or
+       data.triangulation_type == TriangulationType::Distributed)
+    {
+      create_fine_triangulation(*triangulation);
+    }
+    else if(data.triangulation_type == TriangulationType::FullyDistributed)
+    {
+      auto const serial_grid_partitioner = [&](dealii::Triangulation<dim, dim> & tria_serial,
+                                               MPI_Comm const                    comm,
+                                               unsigned int const                group_size) {
+        (void)group_size;
+        if(data.partitioning_type == PartitioningType::Metis)
+        {
+          dealii::GridTools::partition_triangulation(dealii::Utilities::MPI::n_mpi_processes(comm),
+                                                     tria_serial);
+        }
+        else if(data.partitioning_type == PartitioningType::p4est)
+        {
+          dealii::GridTools::partition_triangulation_zorder(
+            dealii::Utilities::MPI::n_mpi_processes(comm), tria_serial);
+        }
+        else
+        {
+          AssertThrow(false, dealii::ExcNotImplemented());
+        }
+      };
+
+      unsigned int const group_size = 1;
+
+      auto const description = dealii::TriangulationDescription::Utilities::
+        create_description_from_triangulation_in_groups<dim, dim>(
+          create_fine_triangulation,
+          serial_grid_partitioner,
+          triangulation->get_communicator(),
+          group_size,
+          dealii::Triangulation<dim>::none,
+          dealii::TriangulationDescription::construct_multigrid_hierarchy);
+
+      triangulation->create_triangulation(description);
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Invalid parameter triangulation_type."));
+    }
+  }
+
+
   /**
    * dealii::Triangulation.
    */
