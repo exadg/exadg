@@ -30,6 +30,7 @@
 // ExaDG
 #include <exadg/grid/enum_types.h>
 #include <exadg/grid/grid_data.h>
+#include <exadg/grid/perform_local_refinements.h>
 
 namespace ExaDG
 {
@@ -74,19 +75,53 @@ public:
   }
 
   void
-  create_triangulation(GridData const & data)
+  create_triangulation(
+    GridData const &                                          data,
+    std::function<void(dealii::Triangulation<dim> &)> const & do_create_triangulation)
   {
     if(data.triangulation_type == TriangulationType::Serial)
     {
+      do_create_triangulation(*triangulation);
 
+      refine_local(*triangulation, vector_local_refinements);
+      triangulation->refine_global(data.n_refine_global);
     }
     else if(data.triangulation_type == TriangulationType::Distributed)
     {
+      do_create_triangulation(*triangulation);
 
+      refine_local(*triangulation, vector_local_refinements);
+      triangulation->refine_global(data.n_refine_global);
     }
     else if(data.triangulation_type == TriangulationType::FullyDistributed)
     {
+      auto const serial_grid_generator = [&](dealii::Triangulation<dim, dim> & tria_serial) {
+        do_create_triangulation(tria_serial);
 
+        refine_local(tria_serial, vector_local_refinements);
+        tria_serial.refine_global(data.n_refine_global);
+      };
+
+      auto const serial_grid_partitioner = [](dealii::Triangulation<dim, dim> & tria_serial,
+                                              MPI_Comm const                    comm,
+                                              unsigned int const                group_size) {
+        (void)group_size;
+        dealii::GridTools::partition_triangulation_zorder(
+          dealii::Utilities::MPI::n_mpi_processes(comm), tria_serial);
+      };
+
+      unsigned int const group_size = 1;
+
+      auto const description = dealii::TriangulationDescription::Utilities::
+        create_description_from_triangulation_in_groups<dim, dim>(
+          serial_grid_generator,
+          serial_grid_partitioner,
+          triangulation->get_communicator(),
+          group_size,
+          dealii::Triangulation<dim>::none,
+          dealii::TriangulationDescription::construct_multigrid_hierarchy);
+
+      triangulation->create_triangulation(description);
     }
     else
     {
@@ -110,7 +145,7 @@ public:
   std::shared_ptr<dealii::Mapping<dim>> mapping;
 
   /**
-   * vector containing number of local refinements for material IDs = {0, ..., length -1}
+   * vector containing number of local refinements for material IDs = {0, ..., length - 1}
    */
   std::vector<unsigned int> vector_local_refinements;
 };
