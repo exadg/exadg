@@ -102,8 +102,8 @@ public:
       };
 
       auto const serial_grid_partitioner = [&](dealii::Triangulation<dim, dim> & tria_serial,
-                                              MPI_Comm const                    comm,
-                                              unsigned int const                group_size) {
+                                               MPI_Comm const                    comm,
+                                               unsigned int const                group_size) {
         (void)group_size;
         if(data.partitioning_type == PartitioningType::Metis)
         {
