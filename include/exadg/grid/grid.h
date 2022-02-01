@@ -77,28 +77,27 @@ public:
   void
   create_triangulation(
     GridData const &                                          data,
-    std::function<void(dealii::Triangulation<dim> &)> const & do_create_triangulation)
+    std::vector<int> const &                                  vector_local_refinements,
+    std::function<void(dealii::Triangulation<dim> &)> const & create_coarse_triangulation)
   {
-    if(data.triangulation_type == TriangulationType::Serial)
+    if(data.triangulation_type == TriangulationType::Serial or
+       data.triangulation_type == TriangulationType::Distributed)
     {
-      do_create_triangulation(*triangulation);
+      create_coarse_triangulation(*triangulation);
 
-      refine_local(*triangulation, vector_local_refinements);
-      triangulation->refine_global(data.n_refine_global);
-    }
-    else if(data.triangulation_type == TriangulationType::Distributed)
-    {
-      do_create_triangulation(*triangulation);
+      if(vector_local_refinements.size() > 0)
+        refine_local(*triangulation, vector_local_refinements);
 
-      refine_local(*triangulation, vector_local_refinements);
       triangulation->refine_global(data.n_refine_global);
     }
     else if(data.triangulation_type == TriangulationType::FullyDistributed)
     {
       auto const serial_grid_generator = [&](dealii::Triangulation<dim, dim> & tria_serial) {
-        do_create_triangulation(tria_serial);
+        create_coarse_triangulation(tria_serial);
 
-        refine_local(tria_serial, vector_local_refinements);
+        if(vector_local_refinements.size() > 0)
+          refine_local(tria_serial, vector_local_refinements);
+
         tria_serial.refine_global(data.n_refine_global);
       };
 
@@ -143,11 +142,6 @@ public:
    * dealii::Mapping.
    */
   std::shared_ptr<dealii::Mapping<dim>> mapping;
-
-  /**
-   * vector containing number of local refinements for material IDs = {0, ..., length - 1}
-   */
-  std::vector<unsigned int> vector_local_refinements;
 };
 
 } // namespace ExaDG
