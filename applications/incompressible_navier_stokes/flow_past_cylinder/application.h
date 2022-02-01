@@ -472,10 +472,9 @@ public:
   {
     this->refine_level = this->param.grid.n_refine_global;
 
-    auto const lambda_create_coarse_triangulation =
-      [&](dealii::Triangulation<dim, dim> & tria) mutable {
-        create_coarse_grid<dim>(tria, this->grid->periodic_faces, cylinder_type_string);
-      };
+    auto const lambda_create_coarse_triangulation = [&](dealii::Triangulation<dim, dim> & tria) {
+      create_coarse_grid<dim>(tria, this->grid->periodic_faces, cylinder_type_string);
+    };
 
     this->grid->create_and_refine_triangulation(this->param.grid,
                                                 std::vector<int>(),
