@@ -73,6 +73,27 @@ public:
     mapping = std::make_shared<dealii::MappingQGeneric<dim>>(data.mapping_degree);
   }
 
+  void
+  create_triangulation(GridData const & data)
+  {
+    if(data.triangulation_type == TriangulationType::Serial)
+    {
+
+    }
+    else if(data.triangulation_type == TriangulationType::Distributed)
+    {
+
+    }
+    else if(data.triangulation_type == TriangulationType::FullyDistributed)
+    {
+
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Invalid parameter triangulation_type."));
+    }
+  }
+
   /**
    * dealii::Triangulation.
    */
@@ -87,6 +108,11 @@ public:
    * dealii::Mapping.
    */
   std::shared_ptr<dealii::Mapping<dim>> mapping;
+
+  /**
+   * vector containing number of local refinements for material IDs = {0, ..., length -1}
+   */
+  std::vector<unsigned int> vector_local_refinements;
 };
 
 } // namespace ExaDG
