@@ -72,10 +72,10 @@ public:
   initialize_precice(const VectorType & dealii_to_precice);
 
   void
-  add_write_interface(const types::boundary_id interface_id,
-                      const std::string &      mesh_name,
-                      const std::string &      write_data_name,
-                      const std::string &      write_data_specification,
+  add_write_interface(const types::boundary_id         interface_id,
+                      const std::string &              mesh_name,
+                      const std::vector<std::string> & write_data_names,
+                      const std::string &              write_data_specification,
                       std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
                       const unsigned int                                                  dof_index,
                       const unsigned int write_quad_index);
@@ -85,7 +85,7 @@ public:
   add_read_interface(const std::vector<Point<dim>> &                                     points,
                      std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
                      const std::string &                                                 mesh_name,
-                     const std::string & read_data_name);
+                     const std::vector<std::string> & read_data_name);
 
   /**
    * @brief      Advances preCICE after every timestep
@@ -133,7 +133,7 @@ public:
              const double        computed_timestep_length);
 
   std::vector<Tensor<1, dim>>
-  read_block_data(const std::string & mesh_name) const;
+  read_block_data(const std::string & mesh_name, const std::string & data_name) const;
 
   /**
    * @brief is_coupling_ongoing Calls the preCICE API function isCouplingOnGoing
@@ -192,25 +192,19 @@ void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_interface(
   const types::boundary_id                                            dealii_boundary_interface_id,
   const std::string &                                                 mesh_name,
-  const std::string &                                                 write_data_name,
+  const std::vector<std::string> &                                    write_data_names,
   const std::string &                                                 write_data_specification,
   std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
   const unsigned int                                                  dof_index,
   const unsigned int                                                  quad_index)
 {
   // Check, if we already have such an interface
-  const auto found_writer = writer.find(mesh_name);
   const auto found_reader = reader.find(mesh_name);
 
   if(found_reader != reader.end())
   {
     // Duplicate the shared pointer
     writer.insert({mesh_name, found_reader->second});
-  }
-  else if(found_writer != writer.end())
-  {
-    // TODO: Is this required?
-    // Do nothing as we have registered the mesh already
   }
   else if(write_data_specification == "values_on_dofs")
   {
@@ -231,7 +225,9 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_interface(
 
   // Register the write data
   const std::vector<Point<dim>> points;
-  writer.at(mesh_name)->add_write_data(write_data_name, write_data_specification);
+  for(const auto & data_name : write_data_names)
+    writer.at(mesh_name)->add_write_data(data_name, write_data_specification);
+  // Finally initialize the interface
   writer.at(mesh_name)->define_coupling_mesh(points);
 }
 
@@ -243,13 +239,14 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_read_interface(
   const std::vector<Point<dim>> &                                     points,
   std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
   const std::string &                                                 mesh_name,
-  const std::string &                                                 read_data_name)
+  const std::vector<std::string> &                                    read_data_names)
 {
   reader.insert({mesh_name,
                  std::make_shared<ExaDGInterface<dim, data_dim, VectorizedArrayType>>(data,
                                                                                       precice,
                                                                                       mesh_name)});
-  reader.at(mesh_name)->add_read_data(read_data_name);
+  for(const auto & data_name : read_data_names)
+    reader.at(mesh_name)->add_read_data(data_name);
   reader.at(mesh_name)->define_coupling_mesh(points);
 }
 
@@ -273,7 +270,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::initialize_precice(
   // write initial writeData to preCICE if required
   if(precice->isActionRequired(precice::constants::actionWriteInitialData()))
   {
-    writer[0]->write_data(dealii_to_precice);
+    writer[0]->write_data(dealii_to_precice, "");
 
     precice->markActionFulfilled(precice::constants::actionWriteInitialData());
   }
@@ -297,7 +294,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::write_data(
   const double        computed_timestep_length)
 {
   if(precice->isWriteDataRequired(computed_timestep_length))
-    writer.at(write_mesh_name)->write_data(dealii_to_precice);
+    writer.at(write_mesh_name)->write_data(dealii_to_precice, write_data_name);
 }
 
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
@@ -316,9 +313,10 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::advance(
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 std::vector<Tensor<1, dim>>
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::read_block_data(
-  const std::string & mesh_name) const
+  const std::string & mesh_name,
+  const std::string & data_name) const
 {
-  return reader.at(mesh_name)->read_block_data();
+  return reader.at(mesh_name)->read_block_data(data_name);
 }
 
 

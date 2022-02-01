@@ -249,7 +249,7 @@ public:
                                          ->velocity->dirichlet_mortar_bc.begin()
                                          ->first,
                                        this->precice_parameters.write_mesh_name,
-                                       this->precice_parameters.write_data_name,
+                                       {this->precice_parameters.write_data_name},
                                        "values_on_quads",
                                        fluid_matrix_free,
                                        fluid_operator->get_dof_index_velocity(),

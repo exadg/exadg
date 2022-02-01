@@ -129,7 +129,7 @@ public:
     this->precice->add_write_interface(
       this->application->get_boundary_descriptor_structure()->neumann_mortar_bc.begin()->first,
       this->precice_parameters.write_mesh_name,
-      this->precice_parameters.write_data_name,
+      {this->precice_parameters.write_data_name, "Velocity"},
       "values_on_dofs",
       structure_matrix_free,
       structure_operator->get_dof_index(),
@@ -208,8 +208,8 @@ public:
                                 structure_time_integrator->get_time_step_size());
 
       // send velocity boundary condition for fluid
-      // coupling_structure_to_fluid(structure_time_integrator->get_velocity_np(),
-      //                             structure_time_integrator->get_time_step_size());
+      coupling_structure_to_fluid(structure_time_integrator->get_velocity_np(),
+                                  structure_time_integrator->get_time_step_size());
 
       this->precice->advance(structure_time_integrator->get_time_step_size());
       is_new_time_window = this->precice->is_time_window_complete();
@@ -283,8 +283,10 @@ private:
   }
 
   void
-  coupling_structure_to_fluid(bool const) const
+  coupling_structure_to_fluid(VectorType const & velocity_structure,
+                              const double       time_step_size) const
   {
+    this->precice->write_data(write_mesh_name, "Velocity", velocity_structure, time_step_size);
   }
 
   void

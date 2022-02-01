@@ -145,7 +145,8 @@ public:
       boundary.second->set_data_pointer(map_index_dst, map_solution_dst);
 
     precice_mesh_name = mesh_name;
-    precice->add_read_interface(map_q_points_dst_precice, matrix_free_dst, mesh_name, data_name);
+    precice_data_name = data_name;
+    precice->add_read_interface(map_q_points_dst_precice, matrix_free_dst, mesh_name, {data_name});
   }
 
   void
@@ -153,7 +154,7 @@ public:
   {
     // communicate with preCICE
     std::vector<Tensor<rank, dim, double>> array_solution_dst_precice =
-      precice->read_block_data(precice_mesh_name);
+      precice->read_block_data(precice_mesh_name, precice_data_name);
     Assert(array_solution_dst_precice.size() > 0, ExcInternalError());
     Assert(precice_mesh_name != "", ExcInternalError());
     // extract values of each quadrature rule
@@ -176,6 +177,7 @@ private:
   mutable std::map<quad_index, ArrayTensor>           map_solution_dst;
   mutable std::map<types::boundary_id, std::shared_ptr<FunctionCached<rank, dim, double>>> map_bc;
   std::string precice_mesh_name{};
+  std::string precice_data_name{};
 };
 
 } // namespace ExaDG

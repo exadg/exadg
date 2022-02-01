@@ -69,11 +69,12 @@ public:
    *        preCICE.
    */
   virtual void
-  write_data(const LinearAlgebra::distributed::Vector<double> & data_vector) = 0;
+  write_data(const LinearAlgebra::distributed::Vector<double> & data_vector,
+             const std::string &                                data_name) = 0;
 
 
   virtual std::vector<Tensor<1, dim>>
-  read_block_data() const;
+  read_block_data(const std::string & data_name) const;
 
   /**
    * @brief Queries data IDs from preCICE for the given read data name
@@ -108,11 +109,10 @@ protected:
 
   /// Configuration parameters
   const std::string mesh_name;
-  std::string       read_data_name  = "";
-  std::string       write_data_name = "";
-  int               mesh_id         = -1;
-  int               read_data_id    = -1;
-  int               write_data_id   = -1;
+  int               mesh_id = -1;
+  // Map between data ID (preCICE) and the data name
+  std::map<std::string, int> read_data_map;
+  std::map<std::string, int> write_data_map;
 
   const types::boundary_id dealii_boundary_interface_id;
 
@@ -149,8 +149,8 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::add_read_data(
   const std::string & read_data_name_)
 {
   Assert(mesh_id != -1, ExcNotInitialized());
-  read_data_name = read_data_name_;
-  read_data_id   = precice->getDataID(read_data_name, mesh_id);
+  const int read_data_id = precice->getDataID(read_data_name_, mesh_id);
+  read_data_map.insert({read_data_name_, read_data_id});
 }
 
 
@@ -162,8 +162,8 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::add_write_data(
   const std::string & write_data_specification)
 {
   Assert(mesh_id != -1, ExcNotInitialized());
-  write_data_name = write_data_name_;
-  write_data_id   = precice->getDataID(write_data_name, mesh_id);
+  const int write_data_id = precice->getDataID(write_data_name_, mesh_id);
+  write_data_map.insert({write_data_name_, write_data_id});
 
   if(write_data_specification == "values_on_dofs")
     write_data_type = WriteDataType::values_on_dofs;
@@ -192,7 +192,7 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::process_coupling_mesh()
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 std::vector<Tensor<1, dim>>
-CouplingInterface<dim, data_dim, VectorizedArrayType>::read_block_data() const
+CouplingInterface<dim, data_dim, VectorizedArrayType>::read_block_data(const std::string &) const
 {
   AssertThrow(false, ExcNotImplemented());
 }
@@ -205,9 +205,16 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::print_info(
   const unsigned int local_size) const
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  const auto         map = (reader ? read_data_map : write_data_map);
+
+  auto        names      = map.begin();
+  std::string data_names = names->first;
+  ++names;
+  for(; names != map.end(); ++names)
+    data_names += std::string(", ") + names->first;
 
   pcout << "--     Data " << (reader ? "reading" : "writing") << ":\n"
-        << "--     . data name: " << (reader ? read_data_name : write_data_name) << "\n"
+        << "--     . data name(s): " << data_names << "\n"
         << "--     . associated mesh: " << mesh_name << "\n"
         << "--     . Number of interface nodes: " << Utilities::MPI::sum(local_size, MPI_COMM_WORLD)
         << "\n"

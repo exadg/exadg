@@ -53,7 +53,8 @@ public:
    *            update_ghost_values must be calles before
    */
   virtual void
-  write_data(const LinearAlgebra::distributed::Vector<double> & data_vector) override;
+  write_data(const LinearAlgebra::distributed::Vector<double> & data_vector,
+             const std::string &                                data_name) override;
 
 private:
   /**
@@ -68,6 +69,7 @@ private:
   void
   write_data_factory(
     const LinearAlgebra::distributed::Vector<double> &                  data_vector,
+    const int                                                           write_data_id,
     const EvaluationFlags::EvaluationFlags                              flags,
     const std::function<value_type(FEFaceIntegrator &, unsigned int)> & get_write_value);
 
@@ -150,9 +152,9 @@ QuadInterface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
            static_cast<unsigned int>(this->precice->getMeshVertexSize(this->mesh_id)),
          ExcInternalError());
 
-  if(this->read_data_id != -1)
+  if(this->read_data_map.size() > 0)
     this->print_info(true, this->precice->getMeshVertexSize(this->mesh_id));
-  if(this->write_data_id != -1)
+  if(this->write_data_map.size() > 0)
     this->print_info(false, this->precice->getMeshVertexSize(this->mesh_id));
 }
 
@@ -160,19 +162,26 @@ QuadInterface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 QuadInterface<dim, data_dim, VectorizedArrayType>::write_data(
-  const LinearAlgebra::distributed::Vector<double> & data_vector)
+  const LinearAlgebra::distributed::Vector<double> & data_vector,
+  const std::string &                                data_name)
 {
+  const int write_data_id = this->write_data_map.at(data_name);
+
   switch(this->write_data_type)
   {
     case WriteDataType::values_on_quads:
-      write_data_factory(data_vector, EvaluationFlags::values, [](auto & phi, auto q_point) {
-        return phi.get_value(q_point);
-      });
+      write_data_factory(data_vector,
+                         write_data_id,
+                         EvaluationFlags::values,
+                         [](auto & phi, auto q_point) { return phi.get_value(q_point); });
       break;
     case WriteDataType::normal_gradients_on_quads:
-      write_data_factory(data_vector, EvaluationFlags::gradients, [](auto & phi, auto q_point) {
-        return phi.get_normal_derivative(q_point);
-      });
+      write_data_factory(data_vector,
+                         write_data_id,
+                         EvaluationFlags::gradients,
+                         [](auto & phi, auto q_point) {
+                           return phi.get_normal_derivative(q_point);
+                         });
       break;
     default:
       AssertThrow(false, ExcNotImplemented());
@@ -185,10 +194,11 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 void
 QuadInterface<dim, data_dim, VectorizedArrayType>::write_data_factory(
   const LinearAlgebra::distributed::Vector<double> &                  data_vector,
+  const int                                                           write_data_id,
   const EvaluationFlags::EvaluationFlags                              flags,
   const std::function<value_type(FEFaceIntegrator &, unsigned int)> & get_write_value)
 {
-  Assert(this->write_data_id != -1, ExcNotInitialized());
+  Assert(write_data_id != -1, ExcNotInitialized());
   Assert(interface_is_defined, ExcNotInitialized());
   // Similar as in define_coupling_mesh
   FEFaceIntegrator phi(*this->mf_data, true, mf_dof_index, mf_quad_index);
@@ -231,14 +241,14 @@ QuadInterface<dim, data_dim, VectorizedArrayType>::write_data_factory(
           for(unsigned int v = 0; v < VectorizedArrayType::size(); ++v)
             unrolled_local_data[d + data_dim * v] = local_data[d][v];
 
-        this->precice->writeBlockVectorData(this->write_data_id,
+        this->precice->writeBlockVectorData(write_data_id,
                                             active_faces,
                                             index->data(),
                                             unrolled_local_data.data());
       }
       else
       {
-        this->precice->writeBlockScalarData(this->write_data_id,
+        this->precice->writeBlockScalarData(write_data_id,
                                             active_faces,
                                             index->data(),
                                             &local_data[0]);

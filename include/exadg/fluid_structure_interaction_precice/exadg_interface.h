@@ -45,10 +45,11 @@ public:
    *            update_ghost_values must be calles before
    */
   virtual void
-  write_data(const LinearAlgebra::distributed::Vector<double> & data_vector) override;
+  write_data(const LinearAlgebra::distributed::Vector<double> & data_vector,
+             const std::string &                                data_name) override;
 
   virtual std::vector<Tensor<1, dim>>
-  read_block_data() const override;
+  read_block_data(const std::string & data_name) const override;
 
 private:
   /// The preCICE IDs
@@ -81,22 +82,24 @@ ExaDGInterface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
 
   interface_is_defined = true;
 
-  if(this->read_data_id != -1)
+  if(this->read_data_map.size() > 0)
     this->print_info(true, this->precice->getMeshVertexSize(this->mesh_id));
-  if(this->write_data_id != -1)
+  if(this->write_data_map.size() > 0)
     this->print_info(false, this->precice->getMeshVertexSize(this->mesh_id));
 }
 
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 std::vector<Tensor<1, dim>>
-ExaDGInterface<dim, data_dim, VectorizedArrayType>::read_block_data() const
+ExaDGInterface<dim, data_dim, VectorizedArrayType>::read_block_data(
+  const std::string & data_name) const
 {
-  std::vector<Tensor<1, dim>> values(interface_nodes_ids.size());
+  const int read_data_id = this->read_data_map.at(data_name);
 
+  std::vector<Tensor<1, dim>> values(interface_nodes_ids.size());
   if constexpr(data_dim > 1)
   {
-    this->precice->readBlockVectorData(this->read_data_id,
+    this->precice->readBlockVectorData(read_data_id,
                                        interface_nodes_ids.size(),
                                        interface_nodes_ids.data(),
                                        &values[0][0]);
@@ -112,7 +115,8 @@ ExaDGInterface<dim, data_dim, VectorizedArrayType>::read_block_data() const
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 ExaDGInterface<dim, data_dim, VectorizedArrayType>::write_data(
-  const LinearAlgebra::distributed::Vector<double> &)
+  const LinearAlgebra::distributed::Vector<double> &,
+  const std::string &)
 {
   AssertThrow(false, ExcNotImplemented());
 }

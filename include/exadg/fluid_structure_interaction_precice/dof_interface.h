@@ -46,7 +46,8 @@ public:
    *            displacement for FSI)
    */
   virtual void
-  write_data(const LinearAlgebra::distributed::Vector<double> & data_vector) override;
+  write_data(const LinearAlgebra::distributed::Vector<double> & data_vector,
+             const std::string &                                data_name) override;
 
 
 private:
@@ -145,9 +146,9 @@ DoFInterface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
 
   interface_is_defined = true;
 
-  if(this->read_data_id != -1)
+  if(this->read_data_map.size() > 0)
     this->print_info(true, this->precice->getMeshVertexSize(this->mesh_id));
-  if(this->write_data_id != -1)
+  if(this->write_data_map.size() > 0)
     this->print_info(false, this->precice->getMeshVertexSize(this->mesh_id));
 }
 
@@ -156,9 +157,11 @@ DoFInterface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 DoFInterface<dim, data_dim, VectorizedArrayType>::write_data(
-  const LinearAlgebra::distributed::Vector<double> & data_vector)
+  const LinearAlgebra::distributed::Vector<double> & data_vector,
+  const std::string &                                data_name)
 {
-  Assert(this->write_data_id != -1, ExcNotInitialized());
+  const int write_data_id = this->write_data_map.at(data_name);
+  Assert(write_data_id != -1, ExcNotInitialized());
   Assert(interface_is_defined, ExcNotInitialized());
 
   std::array<double, data_dim> write_data;
@@ -174,13 +177,11 @@ DoFInterface<dim, data_dim, VectorizedArrayType>::write_data(
     // and pass them to preCICE
     if constexpr(data_dim > 1)
     {
-      this->precice->writeVectorData(this->write_data_id,
-                                     interface_nodes_ids[i],
-                                     write_data.data());
+      this->precice->writeVectorData(write_data_id, interface_nodes_ids[i], write_data.data());
     }
     else
     {
-      this->precice->writeScalarData(this->write_data_id, interface_nodes_ids[i], write_data[0]);
+      this->precice->writeScalarData(write_data_id, interface_nodes_ids[i], write_data[0]);
     }
   }
 }

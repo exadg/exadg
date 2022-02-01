@@ -135,7 +135,7 @@ public:
     param.solver_type                     = SolverType::Unsteady;
     param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
     param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
-    param.order_time_integrator           = 2;
+    param.order_time_integrator           = 1;
     param.start_with_low_order            = true;
     param.adaptive_time_stepping          = false;
     param.calculation_of_time_step_size   = TimeStepCalculation::UserSpecified;
@@ -162,7 +162,7 @@ public:
     param.degree_p                = DegreePressure::MixedOrder;
 
     // convective term
-    param.upwind_factor = 1.0;
+    param.upwind_factor = 0.5;
 
     // viscous term
     param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
@@ -217,7 +217,7 @@ public:
     // viscous step
     param.solver_viscous         = SolverViscous::CG;
     param.solver_data_viscous    = SolverData(1000, ABS_TOL, REL_TOL);
-    param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
+    param.preconditioner_viscous = PreconditionerViscous::PointJacobi;
 
 
     // PRESSURE-CORRECTION SCHEME
