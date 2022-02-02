@@ -343,7 +343,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
     velocity.reinit(face);
     velocity.gather_evaluate(src, true, true);
 
-    if(this->param.ale_formulation && this->param.store_previous_boundary_values)
+    if(this->param.ale_formulation)
     {
       grid_velocity.reinit(face);
       grid_velocity.gather_evaluate(this->convective_kernel->get_grid_velocity(), true, false);
@@ -381,7 +381,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
           AssertThrow(false, dealii::ExcMessage("Not implemented."));
         }
 
-        if(this->param.ale_formulation && this->param.store_previous_boundary_values)
+        if(this->param.ale_formulation)
         {
           flux -= grad_u * grid_velocity.get_value(q);
         }
@@ -654,7 +654,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_boundary_fa
     velocity.reinit(face);
     velocity.gather_evaluate(src, true, true);
 
-    if(this->param.ale_formulation && this->param.store_previous_boundary_values)
+    if(this->param.ale_formulation)
     {
       grid_velocity.reinit(face);
       grid_velocity.gather_evaluate(this->convective_kernel->get_grid_velocity(), true, false);
@@ -691,7 +691,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_boundary_fa
           AssertThrow(false, dealii::ExcMessage("Not implemented."));
         }
 
-        if(this->param.ale_formulation && this->param.store_previous_boundary_values)
+        if(this->param.ale_formulation)
         {
           flux -= grad_u * grid_velocity.get_value(q);
         }

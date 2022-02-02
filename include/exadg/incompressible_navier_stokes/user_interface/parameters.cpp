@@ -431,6 +431,11 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
     AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::Implicit,
                 dealii::ExcMessage("An implicit treatment of the convective term is not possible "
                                    "in combination with the dual splitting scheme."));
+
+    if(ale_formulation == true)
+    {
+      AssertThrow(store_previous_boundary_values == true, dealii::ExcMessage("invalid parameter."));
+    }
   }
 
   // PRESSURE-CORRECTION SCHEME
@@ -438,6 +443,11 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
   {
     AssertThrow(order_pressure_extrapolation <= order_time_integrator,
                 dealii::ExcMessage("Invalid parameter order_pressure_extrapolation!"));
+
+    if(ale_formulation == true)
+    {
+      AssertThrow(store_previous_boundary_values == true, dealii::ExcMessage("invalid parameter."));
+    }
 
     if(preconditioner_momentum == MomentumPreconditioner::Multigrid)
     {
