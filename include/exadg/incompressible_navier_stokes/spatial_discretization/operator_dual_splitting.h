@@ -84,29 +84,33 @@ public:
   rhs_velocity_divergence_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
                                                             VectorType const & velocity) const;
 
+  // rhs pressure Poisson equation: velocity divergence term: body force term
   void
   rhs_ppe_div_term_body_forces_add(VectorType & dst, double const & time);
 
+  // rhs pressure Poisson equation: velocity divergence term: convective term
   void
   rhs_ppe_div_term_convective_term_add(VectorType & dst, VectorType const & src) const;
 
-  // rhs pressure
+  // rhs pressure Poisson equation: Neumann BC body force term
   void
   rhs_ppe_nbc_body_force_term_add(VectorType & dst, double const & time);
 
+  // rhs pressure Poisson equation: Neumann BC analytical time derivative term
   void
   rhs_ppe_nbc_analytical_time_derivative_add(VectorType & dst, double const & time);
 
+  // rhs pressure Poisson equation: Neumann BC numerical time derivative term
   void
   rhs_ppe_nbc_numerical_time_derivative_add(VectorType & dst, VectorType const & src);
 
-  // rhs pressure: Neumann BC convective term
+  // rhs pressure Poisson equation: Neumann BC convective term
   void
-  rhs_ppe_convective_add(VectorType & dst, VectorType const & src) const;
+  rhs_ppe_nbc_convective_add(VectorType & dst, VectorType const & src) const;
 
-  // rhs pressure: Neumann BC viscous term
+  // rhs pressure Poisson equation: Neumann BC viscous term
   void
-  rhs_ppe_viscous_add(VectorType & dst, VectorType const & src) const;
+  rhs_ppe_nbc_viscous_add(VectorType & dst, VectorType const & src) const;
 
   void
   rhs_ppe_laplace_add(VectorType & dst, double const & time) const;

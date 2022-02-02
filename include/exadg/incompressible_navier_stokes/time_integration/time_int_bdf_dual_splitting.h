@@ -85,9 +85,6 @@ private:
   prepare_vectors_for_next_timestep() final;
 
   void
-  update_velocity_dbc();
-
-  void
   convective_step();
 
   void
@@ -103,7 +100,7 @@ private:
   initialize_former_solutions() final;
 
   void
-  initialize_acceleration_and_velocity_on_boundary();
+  initialize_velocity_dbc();
 
   void
   pressure_step();
