@@ -61,8 +61,8 @@ enum_to_string(PartitioningType const enum_type)
     case PartitioningType::Metis:
       string_type = "Metis";
       break;
-    case PartitioningType::p4est:
-      string_type = "p4est";
+    case PartitioningType::z_order:
+      string_type = "z_order";
       break;
     default:
       AssertThrow(false, dealii::ExcMessage("Not implemented."));

@@ -51,7 +51,7 @@ enum_to_string(TriangulationType const enum_type);
 enum class PartitioningType
 {
   Metis,
-  p4est
+  z_order
 };
 
 std::string

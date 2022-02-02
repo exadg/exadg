@@ -110,7 +110,7 @@ public:
           dealii::GridTools::partition_triangulation(dealii::Utilities::MPI::n_mpi_processes(comm),
                                                      tria_serial);
         }
-        else if(data.partitioning_type == PartitioningType::p4est)
+        else if(data.partitioning_type == PartitioningType::z_order)
         {
           dealii::GridTools::partition_triangulation_zorder(
             dealii::Utilities::MPI::n_mpi_processes(comm), tria_serial);
@@ -161,7 +161,7 @@ public:
           dealii::GridTools::partition_triangulation(dealii::Utilities::MPI::n_mpi_processes(comm),
                                                      tria_serial);
         }
-        else if(data.partitioning_type == PartitioningType::p4est)
+        else if(data.partitioning_type == PartitioningType::z_order)
         {
           dealii::GridTools::partition_triangulation_zorder(
             dealii::Utilities::MPI::n_mpi_processes(comm), tria_serial);
