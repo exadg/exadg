@@ -52,6 +52,27 @@ enum_to_string(TriangulationType const enum_type)
 }
 
 std::string
+enum_to_string(PartitioningType const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    case PartitioningType::Metis:
+      string_type = "Metis";
+      break;
+    case PartitioningType::z_order:
+      string_type = "z_order";
+      break;
+    default:
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      break;
+  }
+
+  return string_type;
+}
+
+std::string
 enum_to_string(MappingType const enum_type)
 {
   std::string string_type;

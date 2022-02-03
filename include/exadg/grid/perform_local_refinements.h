@@ -40,9 +40,10 @@ namespace ExaDG
  */
 template<int dim>
 void
-refine_local(dealii::Triangulation<dim> & tria, std::vector<int> const & vector_local_refinements)
+refine_local(dealii::Triangulation<dim> &      tria,
+             std::vector<unsigned int> const & vector_local_refinements)
 {
-  std::vector<int> refine_local = vector_local_refinements;
+  std::vector<unsigned int> refine_local = vector_local_refinements;
 
   // execute refinement until every refinement counter has been decreased to 0
   while(*max_element(refine_local.begin(), refine_local.end()) > 0)

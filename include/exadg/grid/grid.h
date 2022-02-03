@@ -30,6 +30,7 @@
 // ExaDG
 #include <exadg/grid/enum_types.h>
 #include <exadg/grid/grid_data.h>
+#include <exadg/grid/perform_local_refinements.h>
 
 namespace ExaDG
 {
@@ -70,7 +71,28 @@ public:
     }
 
     // mapping
+    // TODO SIMPLEX: this will not work in case of simplex meshes (-> use MappingFE)
     mapping = std::make_shared<dealii::MappingQGeneric<dim>>(data.mapping_degree);
+  }
+
+  void
+  create_triangulation(
+    GridData const &                                          data,
+    std::function<void(dealii::Triangulation<dim> &)> const & create_coarse_triangulation,
+    std::vector<unsigned int> const & vector_local_refinements = std::vector<unsigned int>())
+  {
+    do_create_triangulation(data,
+                            create_coarse_triangulation,
+                            true /* do refine */,
+                            vector_local_refinements);
+  }
+
+  void
+  create_but_do_not_refine_triangulation(
+    GridData const &                                          data,
+    std::function<void(dealii::Triangulation<dim> &)> const & create_fine_triangulation)
+  {
+    do_create_triangulation(data, create_fine_triangulation, false /* do not refine */);
   }
 
   /**
@@ -87,6 +109,81 @@ public:
    * dealii::Mapping.
    */
   std::shared_ptr<dealii::Mapping<dim>> mapping;
+
+private:
+  void
+  do_create_triangulation(
+    GridData const &                                          data,
+    std::function<void(dealii::Triangulation<dim> &)> const & create_triangulation,
+    bool const                                                perform_refinements,
+    std::vector<unsigned int> const &                         vector_local_refinements)
+  {
+    if(data.triangulation_type == TriangulationType::Serial or
+       data.triangulation_type == TriangulationType::Distributed)
+    {
+      create_triangulation(*triangulation);
+
+      if(perform_refinements)
+      {
+        if(vector_local_refinements.size() > 0)
+          refine_local(*triangulation, vector_local_refinements);
+
+        triangulation->refine_global(data.n_refine_global);
+      }
+    }
+    else if(data.triangulation_type == TriangulationType::FullyDistributed)
+    {
+      auto const serial_grid_generator = [&](dealii::Triangulation<dim, dim> & tria_serial) {
+        create_triangulation(tria_serial);
+
+        if(perform_refinements)
+        {
+          if(vector_local_refinements.size() > 0)
+            refine_local(tria_serial, vector_local_refinements);
+
+          tria_serial.refine_global(data.n_refine_global);
+        }
+      };
+
+      auto const serial_grid_partitioner = [&](dealii::Triangulation<dim, dim> & tria_serial,
+                                               MPI_Comm const                    comm,
+                                               unsigned int const                group_size) {
+        (void)group_size;
+        if(data.partitioning_type == PartitioningType::Metis)
+        {
+          dealii::GridTools::partition_triangulation(dealii::Utilities::MPI::n_mpi_processes(comm),
+                                                     tria_serial);
+        }
+        else if(data.partitioning_type == PartitioningType::z_order)
+        {
+          dealii::GridTools::partition_triangulation_zorder(
+            dealii::Utilities::MPI::n_mpi_processes(comm), tria_serial);
+        }
+        else
+        {
+          AssertThrow(false, dealii::ExcNotImplemented());
+        }
+      };
+
+      unsigned int const group_size = 1;
+
+      // TODO SIMPLEX: this will not work in case of simplex meshes
+      auto const description = dealii::TriangulationDescription::Utilities::
+        create_description_from_triangulation_in_groups<dim, dim>(
+          serial_grid_generator,
+          serial_grid_partitioner,
+          triangulation->get_communicator(),
+          group_size,
+          dealii::Triangulation<dim>::none,
+          dealii::TriangulationDescription::construct_multigrid_hierarchy);
+
+      triangulation->create_triangulation(description);
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Invalid parameter triangulation_type."));
+    }
+  }
 };
 
 } // namespace ExaDG

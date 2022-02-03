@@ -124,7 +124,8 @@ set_boundary_ids(dealii::Triangulation<dim> & tria, bool compute_in_2d)
   }
 }
 
-void create_triangulation(dealii::Triangulation<2> & tria, bool const compute_in_2d = true)
+void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
+                                    bool const                 compute_in_2d = true)
 {
   AssertThrow(std::abs((X_2 - X_1) - 2.0 * (X_C - X_1)) < 1.0e-12,
               dealii::ExcMessage("Geometry parameters X_1, X_2, X_C invalid!"));
@@ -645,10 +646,10 @@ void create_triangulation(dealii::Triangulation<2> & tria, bool const compute_in
 }
 
 
-void create_triangulation(dealii::Triangulation<3> & tria)
+void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
 {
   dealii::Triangulation<2> tria_2d;
-  create_triangulation(tria_2d, false);
+  do_create_coarse_triangulation(tria_2d, false);
 
   if(MESH_TYPE == MeshType::Type1)
   {
@@ -851,10 +852,9 @@ void create_triangulation(dealii::Triangulation<3> & tria)
 
 template<int dim>
 void
-do_create_grid(dealii::Triangulation<dim> &                             triangulation,
-               unsigned int const                                       n_refine_space,
-               std::vector<dealii::GridTools::PeriodicFacePair<
-                 typename dealii::Triangulation<dim>::cell_iterator>> & periodic_faces)
+create_coarse_triangulation(dealii::Triangulation<dim> &                             triangulation,
+                            std::vector<dealii::GridTools::PeriodicFacePair<
+                              typename dealii::Triangulation<dim>::cell_iterator>> & periodic_faces)
 {
   (void)periodic_faces;
 
@@ -891,7 +891,7 @@ do_create_grid(dealii::Triangulation<dim> &                             triangul
                 dealii::ExcMessage("Specified manifold type not implemented"));
   }
 
-  create_triangulation(triangulation);
+  do_create_coarse_triangulation(triangulation);
   triangulation.set_manifold(MANIFOLD_ID, *cylinder_manifold);
 
   // generate vector of manifolds and apply manifold to all cells that have been marked
@@ -913,9 +913,7 @@ do_create_grid(dealii::Triangulation<dim> &                             triangul
       }
     }
   }
-
-  triangulation.refine_global(n_refine_space);
-} // function do_create_grid
+}
 
 } // namespace CircularCylinder
 
@@ -1035,7 +1033,7 @@ set_boundary_ids(dealii::Triangulation<dim> & tria)
 }
 
 template<unsigned int dim>
-void create_triangulation(dealii::Triangulation<2> & triangulation, bool is_2d = true)
+void do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation, bool is_2d = true)
 {
   dealii::Triangulation<2> left, left_bottom, left_middle, left_top, middle, middle_top,
     middle_bottom, middle_left, middle_right, middle_left_top, middle_left_bottom, middle_right_top,
@@ -1291,24 +1289,22 @@ void create_triangulation(dealii::Triangulation<2> & triangulation, bool is_2d =
 }
 
 template<unsigned int dim>
-void create_triangulation(dealii::Triangulation<3> & triangulation)
+void do_create_coarse_triangulation(dealii::Triangulation<3> & triangulation)
 {
   dealii::Triangulation<2> tria_2D;
-  create_triangulation<2>(tria_2D, false);
+  do_create_coarse_triangulation<2>(tria_2D, false);
 
   dealii::GridGenerator::extrude_triangulation(tria_2D, nele_z, H, triangulation);
 }
 
 template<unsigned int dim>
 void
-do_create_grid(dealii::Triangulation<dim> & triangulation, unsigned int n_global_refinements)
+create_coarse_triangulation(dealii::Triangulation<dim> & triangulation)
 {
-  create_triangulation<dim>(triangulation);
+  do_create_coarse_triangulation<dim>(triangulation);
 
   // set boundary ids
   set_boundary_ids<dim>(triangulation);
-
-  triangulation.refine_global(n_global_refinements);
 }
 
 } // namespace SquareCylinder
@@ -1332,21 +1328,20 @@ select_cylinder_type(std::string cylinder_type_string)
 
 template<unsigned int dim>
 void
-create_cylinder_grid(dealii::Triangulation<dim> &                             triangulation,
-                     unsigned int const                                       n_refine_space,
-                     std::vector<dealii::GridTools::PeriodicFacePair<
-                       typename dealii::Triangulation<dim>::cell_iterator>> & periodic_faces,
-                     std::string                                              cylinder_type_string)
+create_coarse_grid(dealii::Triangulation<dim> &                             triangulation,
+                   std::vector<dealii::GridTools::PeriodicFacePair<
+                     typename dealii::Triangulation<dim>::cell_iterator>> & periodic_faces,
+                   std::string                                              cylinder_type_string)
 {
   select_cylinder_type(cylinder_type_string);
 
   switch(cylinder_type)
   {
     case circular:
-      CircularCylinder::do_create_grid<dim>(triangulation, n_refine_space, periodic_faces);
+      CircularCylinder::create_coarse_triangulation<dim>(triangulation, periodic_faces);
       break;
     case square:
-      SquareCylinder::do_create_grid<dim>(triangulation, n_refine_space);
+      SquareCylinder::create_coarse_triangulation<dim>(triangulation);
       break;
     default:
       AssertThrow(false, dealii::ExcNotImplemented());

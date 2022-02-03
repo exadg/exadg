@@ -46,6 +46,18 @@ std::string
 enum_to_string(TriangulationType const enum_type);
 
 /*
+ * Partitioning type (relevant for fully-distributed triangulation)
+ */
+enum class PartitioningType
+{
+  Metis,
+  z_order
+};
+
+std::string
+enum_to_string(PartitioningType const enum_type);
+
+/*
  *  Mapping type (polynomial degree)
  */
 enum class MappingType
