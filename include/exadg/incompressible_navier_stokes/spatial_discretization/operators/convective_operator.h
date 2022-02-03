@@ -874,7 +874,7 @@ public:
     // element e⁺
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> delta_uP;
 
-    if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletMortar)
+    if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)
     {
       if(data.type_dirichlet_bc == TypeDirichletBCs::Mirror)
       {

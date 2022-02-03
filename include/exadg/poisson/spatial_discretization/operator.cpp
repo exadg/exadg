@@ -115,8 +115,8 @@ Operator<dim, Number, n_components>::distribute_dofs()
                                                        mask);
     }
 
-    // mortar type Dirichlet boundaries
-    for(auto it : this->boundary_descriptor->dirichlet_mortar_bc)
+    // DirichletCached boundaries
+    for(auto it : this->boundary_descriptor->dirichlet_cached_bc)
     {
       dealii::ComponentMask mask = dealii::ComponentMask();
       dealii::DoFTools::make_zero_boundary_constraints(dof_handler,
@@ -172,13 +172,16 @@ Operator<dim, Number, n_components>::fill_matrix_free_data(
   matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
   matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1), get_quad_name());
 
-  // In order to set constrained degrees of freedom for continuous Galerkin
-  // discretizations with Dirichlet mortar boundary conditions, a Gauss-Lobatto
-  // quadrature rule has to be constructed for the mortar type boundary conditions
-  // (so that the values stored in the mortar boundary condition can be directly
-  // injected into the DoF vector)
+  // Create a Gauss-Lobatto quadrature rule for DirichletCached boundary conditions.
+  // These quadrature points coincide with the nodes of the discretization, so that
+  // the values stored in the DirichletCached boundary condition can be directly
+  // injected into the DoF vector. This allows to set constrained degrees of freedom
+  // in case of continuous Galerkin discretizations with DirichletCached boundary
+  // conditions. This is not needed in case of discontinuous Galerkin discretizations
+  // where boundary conditions are imposed weakly via integrals over the domain
+  // boundaries.
   if(param.spatial_discretization == SpatialDiscretization::CG &&
-     not(boundary_descriptor->dirichlet_mortar_bc.empty()))
+     not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
     matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree + 1),
                                        get_quad_gauss_lobatto_name());
@@ -194,7 +197,7 @@ Operator<dim, Number, n_components>::setup_operators()
   laplace_operator_data.dof_index  = get_dof_index();
   laplace_operator_data.quad_index = get_quad_index();
   if(param.spatial_discretization == SpatialDiscretization::CG &&
-     not(boundary_descriptor->dirichlet_mortar_bc.empty()))
+     not(boundary_descriptor->dirichlet_cached_bc.empty()))
     laplace_operator_data.quad_index_gauss_lobatto = get_quad_index_gauss_lobatto();
   laplace_operator_data.bc                    = boundary_descriptor;
   laplace_operator_data.use_cell_based_loops  = param.enable_cell_based_face_loops;

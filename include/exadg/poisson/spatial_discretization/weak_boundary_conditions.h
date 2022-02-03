@@ -83,7 +83,7 @@ inline DEAL_II_ALWAYS_INLINE //
 {
   dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>> value_p;
 
-  if(boundary_type == BoundaryType::Dirichlet || boundary_type == BoundaryType::DirichletMortar)
+  if(boundary_type == BoundaryType::Dirichlet || boundary_type == BoundaryType::DirichletCached)
   {
     if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
     {
@@ -96,9 +96,9 @@ inline DEAL_II_ALWAYS_INLINE //
 
         g = FunctionEvaluator<rank, dim, Number>::value(bc, q_points, time);
       }
-      else if(boundary_type == BoundaryType::DirichletMortar)
+      else if(boundary_type == BoundaryType::DirichletCached)
       {
-        auto bc = boundary_descriptor->dirichlet_mortar_bc.find(boundary_id)->second;
+        auto bc = boundary_descriptor->dirichlet_cached_bc.find(boundary_id)->second;
         g       = FunctionEvaluator<rank, dim, Number>::value(bc,
                                                         integrator.get_current_cell_index(),
                                                         q,
@@ -199,7 +199,7 @@ inline DEAL_II_ALWAYS_INLINE //
 {
   dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>> normal_gradient_p;
 
-  if(boundary_type == BoundaryType::Dirichlet || boundary_type == BoundaryType::DirichletMortar)
+  if(boundary_type == BoundaryType::Dirichlet || boundary_type == BoundaryType::DirichletCached)
   {
     normal_gradient_p = normal_gradient_m;
   }
@@ -260,7 +260,7 @@ inline DEAL_II_ALWAYS_INLINE //
     // do nothing
 
     Assert(boundary_type == BoundaryType::Dirichlet ||
-             boundary_type == BoundaryType::DirichletMortar,
+             boundary_type == BoundaryType::DirichletCached,
            dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
   }
 

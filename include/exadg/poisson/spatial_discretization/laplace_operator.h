@@ -197,7 +197,7 @@ struct LaplaceOperatorData : public OperatorBaseData
   Operators::LaplaceKernelData kernel_data;
 
   // continuous FE:
-  // for Dirichlet mortar boundary conditions, another quadrature rule
+  // for DirichletCached boundary conditions, another quadrature rule
   // is needed to set the constrained DoFs.
   unsigned int quad_index_gauss_lobatto;
 

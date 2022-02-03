@@ -127,8 +127,8 @@ ElasticityOperatorBase<dim, Number>::set_constrained_values(VectorType & dst,
 
   dst.update_ghost_values();
 
-  // Dirichlet mortar type boundary conditions
-  if(not(operator_data.bc->dirichlet_mortar_bc.empty()))
+  // DirichletCached boundary conditions
+  if(not(operator_data.bc->dirichlet_cached_bc.empty()))
   {
     unsigned int const dof_index  = operator_data.dof_index;
     unsigned int const quad_index = operator_data.quad_index_gauss_lobatto;
@@ -144,7 +144,7 @@ ElasticityOperatorBase<dim, Number>::set_constrained_values(VectorType & dst,
 
       BoundaryType const boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
-      if(boundary_type == BoundaryType::DirichletMortar)
+      if(boundary_type == BoundaryType::DirichletCached)
       {
         integrator.reinit(face);
         integrator.read_dof_values(dst);
@@ -159,9 +159,9 @@ ElasticityOperatorBase<dim, Number>::set_constrained_values(VectorType & dst,
 
           dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> g;
 
-          if(boundary_type == BoundaryType::DirichletMortar)
+          if(boundary_type == BoundaryType::DirichletCached)
           {
-            auto bc = operator_data.bc->dirichlet_mortar_bc.find(boundary_id)->second;
+            auto bc = operator_data.bc->dirichlet_cached_bc.find(boundary_id)->second;
 
             g = FunctionEvaluator<1, dim, Number>::value(bc, face, q, quad_index);
           }
@@ -179,7 +179,7 @@ ElasticityOperatorBase<dim, Number>::set_constrained_values(VectorType & dst,
       {
         AssertThrow(boundary_type == BoundaryType::Dirichlet ||
                       boundary_type == BoundaryType::Neumann ||
-                      boundary_type == BoundaryType::NeumannMortar,
+                      boundary_type == BoundaryType::NeumannCached,
                     dealii::ExcMessage("BoundaryType not implemented."));
       }
     }
