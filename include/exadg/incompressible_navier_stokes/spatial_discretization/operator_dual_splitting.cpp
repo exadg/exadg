@@ -622,8 +622,8 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_bounda
 
 template<int dim, typename Number>
 void
-OperatorDualSplitting<dim, Number>::rhs_ppe_convective_add(VectorType &       dst,
-                                                           VectorType const & src) const
+OperatorDualSplitting<dim, Number>::rhs_ppe_nbc_convective_add(VectorType &       dst,
+                                                               VectorType const & src) const
 {
   this->get_matrix_free().loop(&This::cell_loop_empty,
                                &This::face_loop_empty,
@@ -715,8 +715,8 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_boundary_fa
 
 template<int dim, typename Number>
 void
-OperatorDualSplitting<dim, Number>::rhs_ppe_viscous_add(VectorType &       dst,
-                                                        VectorType const & src) const
+OperatorDualSplitting<dim, Number>::rhs_ppe_nbc_viscous_add(VectorType &       dst,
+                                                            VectorType const & src) const
 {
   this->get_matrix_free().loop(&This::cell_loop_empty,
                                &This::face_loop_empty,

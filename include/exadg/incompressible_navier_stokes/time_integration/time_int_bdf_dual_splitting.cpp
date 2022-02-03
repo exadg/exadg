@@ -79,11 +79,11 @@ TimeIntBDFDualSplitting<dim, Number>::setup_derived()
 {
   Base::setup_derived();
 
-  // accelaration, velocity_dbc do not have to be initialized in case of a restart, where
-  // the vectors are read from memory.
+  // velocity_dbc vectors do not have to be initialized in case of a restart, where
+  // the vectors are read from restart files.
   if(this->param.store_previous_boundary_values && this->param.restarted_simulation == false)
   {
-    initialize_acceleration_and_velocity_on_boundary();
+    initialize_velocity_dbc();
   }
 }
 
@@ -136,7 +136,7 @@ TimeIntBDFDualSplitting<dim, Number>::allocate_vectors()
     pde_operator->initialize_vector_pressure(pressure[i]);
   pde_operator->initialize_vector_pressure(pressure_np);
 
-  // acceleration
+  // velocity_dbc
   if(this->param.store_previous_boundary_values)
   {
     for(unsigned int i = 0; i < velocity_dbc.size(); ++i)
@@ -175,7 +175,7 @@ TimeIntBDFDualSplitting<dim, Number>::initialize_former_solutions()
 
 template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::initialize_acceleration_and_velocity_on_boundary()
+TimeIntBDFDualSplitting<dim, Number>::initialize_velocity_dbc()
 {
   // fill vector velocity_dbc: The first entry [0] is already needed if start_with_low_order == true
   if(this->param.ale_formulation)
@@ -314,7 +314,7 @@ TimeIntBDFDualSplitting<dim, Number>::do_timestep_solve()
 {
   // pre-computations
   if(this->param.store_previous_boundary_values)
-    update_velocity_dbc();
+    pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
 
   // perform the sub-steps of the dual-splitting method
   convective_step();
@@ -331,13 +331,6 @@ TimeIntBDFDualSplitting<dim, Number>::do_timestep_solve()
   // evaluate convective term once the final solution at time
   // t_{n+1} is known
   evaluate_convective_term();
-}
-
-template<int dim, typename Number>
-void
-TimeIntBDFDualSplitting<dim, Number>::update_velocity_dbc()
-{
-  pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
 }
 
 template<int dim, typename Number>
@@ -574,7 +567,7 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
       VectorType vorticity(velocity_extra);
       pde_operator->compute_vorticity(vorticity, velocity_extra);
 
-      pde_operator->rhs_ppe_viscous_add(rhs, vorticity);
+      pde_operator->rhs_ppe_nbc_viscous_add(rhs, vorticity);
     }
   }
 
@@ -589,7 +582,7 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
       for(unsigned int i = 0; i < extra_pressure_nbc.get_order(); ++i)
       {
         temp = 0.0;
-        pde_operator->rhs_ppe_convective_add(temp, velocity[i]);
+        pde_operator->rhs_ppe_nbc_convective_add(temp, velocity[i]);
         rhs.add(this->extra_pressure_nbc.get_beta(i), temp);
       }
     }
