@@ -379,7 +379,7 @@ public:
       pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // fluid-structure interface
-    boundary_descriptor->velocity->dirichlet_mortar_bc.insert(
+    boundary_descriptor->velocity->dirichlet_cached_bc.insert(
       pair_fsi(BOUNDARY_ID_FSI, new FunctionCached<1, dim>()));
 
     // fill boundary descriptor pressure
@@ -489,7 +489,7 @@ public:
     boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(BOUNDARY_ID_OUTFLOW, mask));
 
     // fluid-structure interface
-    boundary_descriptor->dirichlet_mortar_bc.insert(
+    boundary_descriptor->dirichlet_cached_bc.insert(
       pair_fsi(BOUNDARY_ID_FSI, new FunctionCached<1, dim>()));
   }
 
@@ -560,7 +560,7 @@ public:
     boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(BOUNDARY_ID_OUTFLOW, mask));
 
     // fluid-structure interface
-    boundary_descriptor->dirichlet_mortar_bc.insert(
+    boundary_descriptor->dirichlet_cached_bc.insert(
       pair_fsi(BOUNDARY_ID_FSI, new FunctionCached<1, dim>()));
   }
 
@@ -728,7 +728,7 @@ public:
       pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // fluid-structure interface
-    boundary_descriptor->neumann_mortar_bc.insert(
+    boundary_descriptor->neumann_cached_bc.insert(
       pair_fsi(BOUNDARY_ID_FSI, new FunctionCached<1, dim>()));
   }
 

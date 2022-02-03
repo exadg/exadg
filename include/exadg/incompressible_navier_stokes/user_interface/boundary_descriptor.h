@@ -45,7 +45,7 @@ namespace IncNS
  *   +----------------------+---------------------------+------------------------------------------------+
  *   |     example          |          velocity         |               pressure                         |
  *   +----------------------+---------------------------+------------------------------------------------+
- *   |     inflow, no-slip  |   Dirichlet(Mortar):      |  Neumann:                                      |
+ *   |     inflow, no-slip  |   Dirichlet(Cached):      |  Neumann:                                      |
  *   |                      | prescribe g_u             | prescribe dg_u/dt in case of dual-splitting    |
  *   +----------------------+---------------------------+------------------------------------------------+
  *   |     symmetry         |   Symmetry:               |  Neumann:                                      |
@@ -64,7 +64,7 @@ enum class BoundaryTypeU
 {
   Undefined,
   Dirichlet,
-  DirichletMortar,
+  DirichletCached,
   Neumann,
   Symmetry
 };
@@ -86,7 +86,7 @@ struct BoundaryDescriptorU
   // from the solution on another domain that is in contact with the actual domain
   // of interest at the given boundary (this type of Dirichlet boundary condition
   // is required for fluid-structure interaction problems)
-  std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>> dirichlet_mortar_bc;
+  std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>> dirichlet_cached_bc;
 
   // Neumann: prescribe all components of the velocity gradient in normal direction
   std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> neumann_bc;
@@ -108,8 +108,8 @@ struct BoundaryDescriptorU
   {
     if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
       return BoundaryTypeU::Dirichlet;
-    else if(this->dirichlet_mortar_bc.find(boundary_id) != this->dirichlet_mortar_bc.end())
-      return BoundaryTypeU::DirichletMortar;
+    else if(this->dirichlet_cached_bc.find(boundary_id) != this->dirichlet_cached_bc.end())
+      return BoundaryTypeU::DirichletCached;
     else if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
       return BoundaryTypeU::Neumann;
     else if(this->symmetry_bc.find(boundary_id) != this->symmetry_bc.end())
@@ -130,7 +130,7 @@ struct BoundaryDescriptorU
     if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
       counter++;
 
-    if(this->dirichlet_mortar_bc.find(boundary_id) != this->dirichlet_mortar_bc.end())
+    if(this->dirichlet_cached_bc.find(boundary_id) != this->dirichlet_cached_bc.end())
       counter++;
 
     if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())

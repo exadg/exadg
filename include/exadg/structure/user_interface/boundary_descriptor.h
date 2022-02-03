@@ -38,9 +38,9 @@ enum class BoundaryType
 {
   Undefined,
   Dirichlet,
-  DirichletMortar,
+  DirichletCached,
   Neumann,
-  NeumannMortar
+  NeumannCached
 };
 
 template<int dim>
@@ -53,7 +53,7 @@ struct BoundaryDescriptor
   // from the solution on another domain that is in contact with the actual domain
   // of interest at the given boundary (this type of Dirichlet boundary condition
   // is required for fluid-structure interaction problems)
-  std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>> dirichlet_mortar_bc;
+  std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>> dirichlet_cached_bc;
 
   std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> neumann_bc;
 
@@ -61,7 +61,7 @@ struct BoundaryDescriptor
   // from the solution on another domain that is in contact with the actual domain
   // of interest at the given boundary (this type of Neumann boundary condition
   // is required for fluid-structure interaction problems)
-  std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>> neumann_mortar_bc;
+  std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>> neumann_cached_bc;
 
   inline DEAL_II_ALWAYS_INLINE //
     BoundaryType
@@ -69,12 +69,12 @@ struct BoundaryDescriptor
   {
     if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
       return BoundaryType::Dirichlet;
-    else if(this->dirichlet_mortar_bc.find(boundary_id) != this->dirichlet_mortar_bc.end())
-      return BoundaryType::DirichletMortar;
+    else if(this->dirichlet_cached_bc.find(boundary_id) != this->dirichlet_cached_bc.end())
+      return BoundaryType::DirichletCached;
     else if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
       return BoundaryType::Neumann;
-    else if(this->neumann_mortar_bc.find(boundary_id) != this->neumann_mortar_bc.end())
-      return BoundaryType::NeumannMortar;
+    else if(this->neumann_cached_bc.find(boundary_id) != this->neumann_cached_bc.end())
+      return BoundaryType::NeumannCached;
 
     AssertThrow(false,
                 dealii::ExcMessage(
@@ -105,13 +105,13 @@ struct BoundaryDescriptor
           "dirichlet_bc_component_mask must contain the same boundary IDs as dirichlet_bc."));
     }
 
-    if(dirichlet_mortar_bc.find(boundary_id) != dirichlet_mortar_bc.end())
+    if(dirichlet_cached_bc.find(boundary_id) != dirichlet_cached_bc.end())
       counter++;
 
     if(neumann_bc.find(boundary_id) != neumann_bc.end())
       counter++;
 
-    if(neumann_mortar_bc.find(boundary_id) != neumann_mortar_bc.end())
+    if(neumann_cached_bc.find(boundary_id) != neumann_cached_bc.end())
       counter++;
 
     if(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())

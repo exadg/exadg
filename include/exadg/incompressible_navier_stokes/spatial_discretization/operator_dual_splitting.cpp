@@ -263,7 +263,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_boundary_
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
       if(boundary_type == BoundaryTypeU::Dirichlet ||
-         boundary_type == BoundaryTypeU::DirichletMortar)
+         boundary_type == BoundaryTypeU::DirichletCached)
       {
         dealii::Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
@@ -357,7 +357,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
     for(unsigned int q = 0; q < pressure.n_q_points; ++q)
     {
       if(boundary_type == BoundaryTypeU::Dirichlet ||
-         boundary_type == BoundaryTypeU::DirichletMortar)
+         boundary_type == BoundaryTypeU::DirichletCached)
       {
         vector normal = pressure.get_normal_vector(q);
 

@@ -420,8 +420,8 @@ LaplaceOperator<dim, Number, n_components>::set_constrained_values(VectorType & 
 
   dst.update_ghost_values();
 
-  // Dirichlet mortar type boundary conditions
-  if(not(operator_data.bc->dirichlet_mortar_bc.empty()))
+  // DirichletCached type boundary conditions
+  if(not(operator_data.bc->dirichlet_cached_bc.empty()))
   {
     unsigned int const dof_index  = operator_data.dof_index;
     unsigned int const quad_index = operator_data.quad_index_gauss_lobatto;
@@ -437,7 +437,7 @@ LaplaceOperator<dim, Number, n_components>::set_constrained_values(VectorType & 
 
       BoundaryType const boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
-      if(boundary_type == BoundaryType::DirichletMortar)
+      if(boundary_type == BoundaryType::DirichletCached)
       {
         integrator.reinit(face);
         integrator.read_dof_values(dst);
@@ -452,9 +452,9 @@ LaplaceOperator<dim, Number, n_components>::set_constrained_values(VectorType & 
 
           dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>> g;
 
-          if(boundary_type == BoundaryType::DirichletMortar)
+          if(boundary_type == BoundaryType::DirichletCached)
           {
-            auto bc = operator_data.bc->dirichlet_mortar_bc.find(boundary_id)->second;
+            auto bc = operator_data.bc->dirichlet_cached_bc.find(boundary_id)->second;
 
             g = FunctionEvaluator<rank, dim, Number>::value(bc, face, q, quad_index);
           }

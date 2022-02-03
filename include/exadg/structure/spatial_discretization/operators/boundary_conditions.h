@@ -51,9 +51,9 @@ inline DEAL_II_ALWAYS_INLINE //
 
     traction = FunctionEvaluator<1, dim, Number>::value(bc, q_points, time);
   }
-  else if(boundary_type == BoundaryType::NeumannMortar)
+  else if(boundary_type == BoundaryType::NeumannCached)
   {
-    auto bc = boundary_descriptor->neumann_mortar_bc.find(boundary_id)->second;
+    auto bc = boundary_descriptor->neumann_cached_bc.find(boundary_id)->second;
 
     traction = FunctionEvaluator<1, dim, Number>::value(bc,
                                                         integrator.get_current_cell_index(),
@@ -65,7 +65,7 @@ inline DEAL_II_ALWAYS_INLINE //
     // do nothing
 
     AssertThrow(boundary_type == BoundaryType::Dirichlet ||
-                  boundary_type == BoundaryType::DirichletMortar,
+                  boundary_type == BoundaryType::DirichletCached,
                 dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
   }
 

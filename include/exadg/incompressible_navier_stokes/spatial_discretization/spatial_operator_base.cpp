@@ -1621,7 +1621,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_bounda
     BoundaryTypeU const boundary_type =
       this->boundary_descriptor->velocity->get_boundary_type(boundary_id);
 
-    if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletMortar)
+    if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)
     {
       integrator.reinit(face);
       integrator.read_dof_values(dst);
@@ -1642,10 +1642,10 @@ SpatialOperatorBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_bounda
 
           g = FunctionEvaluator<1, dim, Number>::value(bc, q_points, this->evaluation_time);
         }
-        else if(boundary_type == BoundaryTypeU::DirichletMortar)
+        else if(boundary_type == BoundaryTypeU::DirichletCached)
         {
           auto bc =
-            this->boundary_descriptor->velocity->dirichlet_mortar_bc.find(boundary_id)->second;
+            this->boundary_descriptor->velocity->dirichlet_cached_bc.find(boundary_id)->second;
 
           g = FunctionEvaluator<1, dim, Number>::value(bc, face, q, quad_index);
         }
@@ -1740,7 +1740,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
       this->boundary_descriptor->velocity->get_boundary_type(boundary_id);
 
     // a Dirichlet boundary for the fluid is a stress boundary for the structure
-    if(boundary_type == BoundaryTypeU::DirichletMortar)
+    if(boundary_type == BoundaryTypeU::DirichletCached)
     {
       integrator_u.reinit(face);
       integrator_u.gather_evaluate(*velocity_ptr, false, true);

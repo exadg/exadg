@@ -100,8 +100,8 @@ Operator<dim, Number>::distribute_dofs()
                                                      mask);
   }
 
-  // mortar type Dirichlet boundaries
-  for(auto it : this->boundary_descriptor->dirichlet_mortar_bc)
+  // DirichletCached boundaries
+  for(auto it : this->boundary_descriptor->dirichlet_cached_bc)
   {
     dealii::ComponentMask mask = dealii::ComponentMask();
     dealii::DoFTools::make_zero_boundary_constraints(dof_handler,
@@ -206,12 +206,13 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   // dealii::Quadrature
   matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1), get_quad_name());
 
-  // In order to set constrained degrees of freedom for continuous Galerkin
-  // discretizations with Dirichlet mortar boundary conditions, a Gauss-Lobatto
-  // quadrature rule has to be constructed for the mortar type boundary conditions
-  // (so that the values stored in the mortar boundary condition can be directly
-  // injected into the DoF vector)
-  if(not(boundary_descriptor->dirichlet_mortar_bc.empty()))
+  // Create a Gauss-Lobatto quadrature rule for DirichletCached boundary conditions.
+  // These quadrature points coincide with the nodes of the discretization, so that
+  // the values stored in the DirichletCached boundary condition can be directly
+  // injected into the DoF vector. This allows to set constrained degrees of freedom
+  // in case of continuous Galerkin discretizations with DirichletCached boundary
+  // conditions.
+  if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
     matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree + 1),
                                        get_quad_gauss_lobatto_name());
@@ -225,7 +226,7 @@ Operator<dim, Number>::setup_operators()
   // elasticity operator
   operator_data.dof_index  = get_dof_index();
   operator_data.quad_index = get_quad_index();
-  if(not(boundary_descriptor->dirichlet_mortar_bc.empty()))
+  if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
     operator_data.quad_index_gauss_lobatto = get_quad_index_gauss_lobatto();
   operator_data.bc                  = boundary_descriptor;
   operator_data.material_descriptor = material_descriptor;

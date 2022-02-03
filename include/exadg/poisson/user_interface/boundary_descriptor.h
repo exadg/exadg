@@ -37,7 +37,7 @@ enum class BoundaryType
 {
   Undefined,
   Dirichlet,
-  DirichletMortar,
+  DirichletCached,
   Neumann
 };
 
@@ -50,7 +50,7 @@ struct BoundaryDescriptor
   std::map<dealii::types::boundary_id, dealii::ComponentMask> dirichlet_bc_component_mask;
 
   std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<rank, dim>>>
-    dirichlet_mortar_bc;
+    dirichlet_cached_bc;
 
   std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> neumann_bc;
 
@@ -61,8 +61,8 @@ struct BoundaryDescriptor
   {
     if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
       return BoundaryType::Dirichlet;
-    else if(this->dirichlet_mortar_bc.find(boundary_id) != this->dirichlet_mortar_bc.end())
-      return BoundaryType::DirichletMortar;
+    else if(this->dirichlet_cached_bc.find(boundary_id) != this->dirichlet_cached_bc.end())
+      return BoundaryType::DirichletCached;
     else if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
       return BoundaryType::Neumann;
 
@@ -81,7 +81,7 @@ struct BoundaryDescriptor
     if(dirichlet_bc.find(boundary_id) != dirichlet_bc.end())
       counter++;
 
-    if(dirichlet_mortar_bc.find(boundary_id) != dirichlet_mortar_bc.end())
+    if(dirichlet_cached_bc.find(boundary_id) != dirichlet_cached_bc.end())
       counter++;
 
     if(neumann_bc.find(boundary_id) != neumann_bc.end())

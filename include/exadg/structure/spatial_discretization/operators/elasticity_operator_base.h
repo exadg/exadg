@@ -62,7 +62,7 @@ struct OperatorData : public OperatorBaseData
   // quadrature points is needed
   unsigned int n_q_points_1d;
 
-  // for Dirichlet mortar boundary conditions, another quadrature rule
+  // for DirichletCached boundary conditions, another quadrature rule
   // is needed to set the constrained DoFs.
   unsigned int quad_index_gauss_lobatto;
 };
