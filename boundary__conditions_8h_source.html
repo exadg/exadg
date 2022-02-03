@@ -122,9 +122,9 @@ $(function() {
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    traction = FunctionEvaluator&lt;1, dim, Number&gt;::value(bc, q_points, time);</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  }</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keywordflow">else</span> <span class="keywordflow">if</span>(boundary_type == BoundaryType::NeumannMortar)</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keywordflow">else</span> <span class="keywordflow">if</span>(boundary_type == BoundaryType::NeumannCached)</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  {</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    <span class="keyword">auto</span> bc = boundary_descriptor-&gt;neumann_mortar_bc.find(boundary_id)-&gt;second;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    <span class="keyword">auto</span> bc = boundary_descriptor-&gt;neumann_cached_bc.find(boundary_id)-&gt;second;</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    traction = FunctionEvaluator&lt;1, dim, Number&gt;::value(bc,</div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>                                                        integrator.get_current_cell_index(),</div>
@@ -136,7 +136,7 @@ $(function() {
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    <span class="comment">// do nothing</span></div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    AssertThrow(boundary_type == BoundaryType::Dirichlet ||</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>                  boundary_type == BoundaryType::DirichletMortar,</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>                  boundary_type == BoundaryType::DirichletCached,</div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>                dealii::ExcMessage(<span class="stringliteral">&quot;Boundary type of face is invalid or not implemented.&quot;</span>));</div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  }</div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>

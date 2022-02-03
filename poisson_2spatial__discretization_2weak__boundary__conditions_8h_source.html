@@ -154,7 +154,7 @@ $(function() {
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>{</div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  dealii::Tensor&lt;rank, dim, dealii::VectorizedArray&lt;Number&gt;&gt; value_p;</div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  <span class="keywordflow">if</span>(boundary_type == BoundaryType::Dirichlet || boundary_type == BoundaryType::DirichletMortar)</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  <span class="keywordflow">if</span>(boundary_type == BoundaryType::Dirichlet || boundary_type == BoundaryType::DirichletCached)</div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  {</div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    <span class="keywordflow">if</span>(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)</div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    {</div>
@@ -167,9 +167,9 @@ $(function() {
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span> </div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>        g = FunctionEvaluator&lt;rank, dim, Number&gt;::value(bc, q_points, time);</div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>      }</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>      <span class="keywordflow">else</span> <span class="keywordflow">if</span>(boundary_type == BoundaryType::DirichletMortar)</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>      <span class="keywordflow">else</span> <span class="keywordflow">if</span>(boundary_type == BoundaryType::DirichletCached)</div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>      {</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>        <span class="keyword">auto</span> bc = boundary_descriptor-&gt;dirichlet_mortar_bc.find(boundary_id)-&gt;second;</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>        <span class="keyword">auto</span> bc = boundary_descriptor-&gt;dirichlet_cached_bc.find(boundary_id)-&gt;second;</div>
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>        g       = FunctionEvaluator&lt;rank, dim, Number&gt;::value(bc,</div>
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>                                                        integrator.get_current_cell_index(),</div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>                                                        q,</div>
@@ -270,7 +270,7 @@ $(function() {
 <div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>{</div>
 <div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>  dealii::Tensor&lt;rank, dim, dealii::VectorizedArray&lt;Number&gt;&gt; normal_gradient_p;</div>
 <div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span> </div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  <span class="keywordflow">if</span>(boundary_type == BoundaryType::Dirichlet || boundary_type == BoundaryType::DirichletMortar)</div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  <span class="keywordflow">if</span>(boundary_type == BoundaryType::Dirichlet || boundary_type == BoundaryType::DirichletCached)</div>
 <div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>  {</div>
 <div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>    normal_gradient_p = normal_gradient_m;</div>
 <div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>  }</div>
@@ -331,7 +331,7 @@ $(function() {
 <div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>    <span class="comment">// do nothing</span></div>
 <div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span> </div>
 <div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>    Assert(boundary_type == BoundaryType::Dirichlet ||</div>
-<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>             boundary_type == BoundaryType::DirichletMortar,</div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>             boundary_type == BoundaryType::DirichletCached,</div>
 <div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>           dealii::ExcMessage(<span class="stringliteral">&quot;Boundary type of face is invalid or not implemented.&quot;</span>));</div>
 <div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>  }</div>
 <div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span> </div>

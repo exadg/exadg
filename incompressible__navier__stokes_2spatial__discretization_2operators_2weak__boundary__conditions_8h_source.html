@@ -150,7 +150,7 @@ $(function() {
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <span class="comment">// element e⁺</span></div>
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  dealii::Tensor&lt;1, dim, dealii::VectorizedArray&lt;Number&gt;&gt; value_p;</div>
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span> </div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletMortar)</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)</div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  {</div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    <span class="keywordflow">if</span>(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)</div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    {</div>
@@ -163,9 +163,9 @@ $(function() {
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>        g = FunctionEvaluator&lt;1, dim, Number&gt;::value(bc, q_points, time);</div>
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>      }</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>      <span class="keywordflow">else</span> <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::DirichletMortar)</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>      <span class="keywordflow">else</span> <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::DirichletCached)</div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>      {</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>        <span class="keyword">auto</span> bc = boundary_descriptor-&gt;dirichlet_mortar_bc.find(boundary_id)-&gt;second;</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>        <span class="keyword">auto</span> bc = boundary_descriptor-&gt;dirichlet_cached_bc.find(boundary_id)-&gt;second;</div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>        g       = FunctionEvaluator&lt;1, dim, Number&gt;::value(bc,</div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>                                                     integrator.get_current_cell_index(),</div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>                                                     q,</div>
@@ -232,7 +232,7 @@ $(function() {
 <div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>{</div>
 <div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>  dealii::Tensor&lt;1, dim, dealii::VectorizedArray&lt;Number&gt;&gt; u_p;</div>
 <div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span> </div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>  <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletMortar)</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>  <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)</div>
 <div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>  {</div>
 <div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>    dealii::Tensor&lt;1, dim, dealii::VectorizedArray&lt;Number&gt;&gt; g;</div>
 <div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span> </div>
@@ -243,9 +243,9 @@ $(function() {
 <div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span> </div>
 <div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>      g = FunctionEvaluator&lt;1, dim, Number&gt;::value(bc, q_points, time);</div>
 <div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>    }</div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::DirichletMortar)</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::DirichletCached)</div>
 <div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>    {</div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>      <span class="keyword">auto</span> bc = boundary_descriptor-&gt;dirichlet_mortar_bc.find(boundary_id)-&gt;second;</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>      <span class="keyword">auto</span> bc = boundary_descriptor-&gt;dirichlet_cached_bc.find(boundary_id)-&gt;second;</div>
 <div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>      g       = FunctionEvaluator&lt;1, dim, Number&gt;::value(bc,</div>
 <div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>                                                   integrator.get_current_cell_index(),</div>
 <div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>                                                   q,</div>
@@ -301,7 +301,7 @@ $(function() {
 <div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>  <span class="comment">// element e⁺</span></div>
 <div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>  dealii::Tensor&lt;1, dim, dealii::VectorizedArray&lt;Number&gt;&gt; value_p;</div>
 <div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span> </div>
-<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>  <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletMortar)</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>  <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)</div>
 <div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>  {</div>
 <div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>    <span class="keywordflow">if</span>(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)</div>
 <div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>    {</div>
@@ -517,7 +517,7 @@ $(function() {
 <div class="line"><a id="l00446" name="l00446"></a><span class="lineno">  446</span>{</div>
 <div class="line"><a id="l00447" name="l00447"></a><span class="lineno">  447</span>  dealii::Tensor&lt;1, dim, dealii::VectorizedArray&lt;Number&gt;&gt; normal_gradient_p;</div>
 <div class="line"><a id="l00448" name="l00448"></a><span class="lineno">  448</span> </div>
-<div class="line"><a id="l00449" name="l00449"></a><span class="lineno">  449</span>  <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletMortar)</div>
+<div class="line"><a id="l00449" name="l00449"></a><span class="lineno">  449</span>  <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)</div>
 <div class="line"><a id="l00450" name="l00450"></a><span class="lineno">  450</span>  {</div>
 <div class="line"><a id="l00451" name="l00451"></a><span class="lineno">  451</span>    normal_gradient_p = normal_gradient_m;</div>
 <div class="line"><a id="l00452" name="l00452"></a><span class="lineno">  452</span>  }</div>

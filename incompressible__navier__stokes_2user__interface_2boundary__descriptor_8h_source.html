@@ -116,7 +116,7 @@ $(function() {
 <div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span><span class="comment"> *   +----------------------+---------------------------+------------------------------------------------+</span></div>
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="comment"> *   |     example          |          velocity         |               pressure                         |</span></div>
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="comment"> *   +----------------------+---------------------------+------------------------------------------------+</span></div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="comment"> *   |     inflow, no-slip  |   Dirichlet(Mortar):      |  Neumann:                                      |</span></div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="comment"> *   |     inflow, no-slip  |   Dirichlet(Cached):      |  Neumann:                                      |</span></div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="comment"> *   |                      | prescribe g_u             | prescribe dg_u/dt in case of dual-splitting    |</span></div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="comment"> *   +----------------------+---------------------------+------------------------------------------------+</span></div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="comment"> *   |     symmetry         |   Symmetry:               |  Neumann:                                      |</span></div>
@@ -135,7 +135,7 @@ $(function() {
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>{</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  Undefined,</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  Dirichlet,</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  DirichletMortar,</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  DirichletCached,</div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  Neumann,</div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  Symmetry</div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>};</div>
@@ -157,7 +157,7 @@ $(function() {
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  <span class="comment">// from the solution on another domain that is in contact with the actual domain</span></div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  <span class="comment">// of interest at the given boundary (this type of Dirichlet boundary condition</span></div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <span class="comment">// is required for fluid-structure interaction problems)</span></div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  std::map&lt;dealii::types::boundary_id, std::shared_ptr&lt;FunctionCached&lt;1, dim&gt;&gt;&gt; dirichlet_mortar_bc;</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  std::map&lt;dealii::types::boundary_id, std::shared_ptr&lt;FunctionCached&lt;1, dim&gt;&gt;&gt; dirichlet_cached_bc;</div>
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  <span class="comment">// Neumann: prescribe all components of the velocity gradient in normal direction</span></div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  std::map&lt;dealii::types::boundary_id, std::shared_ptr&lt;dealii::Function&lt;dim&gt;&gt;&gt; neumann_bc;</div>
@@ -179,8 +179,8 @@ $(function() {
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span><span class="keyword">  </span>{</div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    <span class="keywordflow">if</span>(this-&gt;dirichlet_bc.find(boundary_id) != this-&gt;dirichlet_bc.end())</div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>      <span class="keywordflow">return</span> BoundaryTypeU::Dirichlet;</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(this-&gt;dirichlet_mortar_bc.find(boundary_id) != this-&gt;dirichlet_mortar_bc.end())</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>      <span class="keywordflow">return</span> BoundaryTypeU::DirichletMortar;</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(this-&gt;dirichlet_cached_bc.find(boundary_id) != this-&gt;dirichlet_cached_bc.end())</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>      <span class="keywordflow">return</span> BoundaryTypeU::DirichletCached;</div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(this-&gt;neumann_bc.find(boundary_id) != this-&gt;neumann_bc.end())</div>
 <div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>      <span class="keywordflow">return</span> BoundaryTypeU::Neumann;</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(this-&gt;symmetry_bc.find(boundary_id) != this-&gt;symmetry_bc.end())</div>
@@ -201,7 +201,7 @@ $(function() {
 <div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>    <span class="keywordflow">if</span>(this-&gt;dirichlet_bc.find(boundary_id) != this-&gt;dirichlet_bc.end())</div>
 <div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>      counter++;</div>
 <div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span> </div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>    <span class="keywordflow">if</span>(this-&gt;dirichlet_mortar_bc.find(boundary_id) != this-&gt;dirichlet_mortar_bc.end())</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>    <span class="keywordflow">if</span>(this-&gt;dirichlet_cached_bc.find(boundary_id) != this-&gt;dirichlet_cached_bc.end())</div>
 <div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>      counter++;</div>
 <div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span> </div>
 <div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>    <span class="keywordflow">if</span>(this-&gt;neumann_bc.find(boundary_id) != this-&gt;neumann_bc.end())</div>
