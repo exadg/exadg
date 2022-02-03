@@ -117,22 +117,34 @@ $(function() {
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>enum_to_string(TriangulationType <span class="keyword">const</span> enum_type);</div>
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="comment">/*</span></div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="comment"> *  Mapping type (polynomial degree)</span></div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="comment"> * Partitioning type (relevant for fully-distributed triangulation)</span></div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="comment"> */</span></div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="keyword">enum class</span> MappingType</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="keyword">enum class</span> PartitioningType</div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>{</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  Affine,</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  Quadratic,</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  Cubic,</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  Isoparametric</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>};</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>std::string</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>enum_to_string(MappingType <span class="keyword">const</span> enum_type);</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_FUNCTIONALITIES_ENUM_TYPES_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  Metis,</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  z_order</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>};</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>std::string</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>enum_to_string(PartitioningType <span class="keyword">const</span> enum_type);</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span><span class="comment">/*</span></div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span><span class="comment"> *  Mapping type (polynomial degree)</span></div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span><span class="comment"> */</span></div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span><span class="keyword">enum class</span> MappingType</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>{</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  Affine,</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  Quadratic,</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  Cubic,</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  Isoparametric</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>};</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>std::string</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>enum_to_string(MappingType <span class="keyword">const</span> enum_type);</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_FUNCTIONALITIES_ENUM_TYPES_H_ */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

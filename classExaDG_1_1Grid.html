@@ -85,6 +85,12 @@ typedef std::vector&lt; dealii::GridTools::PeriodicFacePair&lt; typename dealii:
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ab5cc5b9f96815723cc3605265ee069cb"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#ab5cc5b9f96815723cc3605265ee069cb">Grid</a> (<a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;data, MPI_Comm const &amp;mpi_comm)</td></tr>
 <tr class="separator:ab5cc5b9f96815723cc3605265ee069cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a79e18f8a26438fd9ccee0b8be6c8d927"><td class="memItemLeft" align="right" valign="top"><a id="a79e18f8a26438fd9ccee0b8be6c8d927" name="a79e18f8a26438fd9ccee0b8be6c8d927"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>create_triangulation</b> (<a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;data, std::function&lt; void(dealii::Triangulation&lt; dim &gt; &amp;)&gt; const &amp;create_coarse_triangulation, std::vector&lt; unsigned int &gt; const &amp;vector_local_refinements=std::vector&lt; unsigned int &gt;())</td></tr>
+<tr class="separator:a79e18f8a26438fd9ccee0b8be6c8d927"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a394c8c82f9b479b303f7b24e5f89fd15"><td class="memItemLeft" align="right" valign="top"><a id="a394c8c82f9b479b303f7b24e5f89fd15" name="a394c8c82f9b479b303f7b24e5f89fd15"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>create_but_do_not_refine_triangulation</b> (<a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;data, std::function&lt; void(dealii::Triangulation&lt; dim &gt; &amp;)&gt; const &amp;create_fine_triangulation)</td></tr>
+<tr class="separator:a394c8c82f9b479b303f7b24e5f89fd15"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
