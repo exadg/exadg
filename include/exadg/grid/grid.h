@@ -25,6 +25,7 @@
 // deal.II
 #include <deal.II/distributed/fully_distributed_tria.h>
 #include <deal.II/distributed/tria.h>
+#include <deal.II/fe/mapping_q.h>
 #include <deal.II/grid/grid_tools.h>
 
 // ExaDG
@@ -72,7 +73,7 @@ public:
 
     // mapping
     // TODO SIMPLEX: this will not work in case of simplex meshes (-> use MappingFE)
-    mapping = std::make_shared<dealii::MappingQGeneric<dim>>(data.mapping_degree);
+    mapping = std::make_shared<dealii::MappingQ<dim>>(data.mapping_degree);
   }
 
   void

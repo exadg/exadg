@@ -465,7 +465,7 @@ StatisticsManager<dim, Number>::do_evaluate(const std::vector<VectorType const *
   std::vector<std::shared_ptr<dealii::FEValues<dim, dim>>> fe_values(n_points_y_per_cell);
 
   // TODO
-  //  dealii::MappingQGeneric<dim> mapping(fe_degree);
+  //  dealii::MappingQ<dim> mapping(fe_degree);
   for(unsigned int i = 0; i < n_points_y_per_cell; ++i)
   {
     std::vector<dealii::Point<dim>> points(gauss_2d.size());

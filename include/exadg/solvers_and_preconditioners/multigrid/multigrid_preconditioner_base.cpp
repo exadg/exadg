@@ -27,6 +27,7 @@
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_system.h>
+#include <deal.II/fe/mapping_q.h>
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
@@ -640,7 +641,7 @@ void
 MultigridPreconditionerBase<dim, Number>::initialize_mapping()
 {
   // We only need to initialize the mapping for all multigrid h-levels if it is of type
-  // dealii::MappingQCache (including MappingDoFVector as a derived class), while MappingQGeneric is
+  // dealii::MappingQCache (including MappingDoFVector as a derived class), while MappingQ is
   // unproblematic.
   std::shared_ptr<dealii::MappingQCache<dim> const> mapping_q_cache =
     std::dynamic_pointer_cast<dealii::MappingQCache<dim> const>(mapping);
@@ -965,7 +966,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_affine_constraints(
     boundary_functions[it.first] = &zero_function;
   }
 
-  dealii::MappingQGeneric<dim> mapping_dummy(1);
+  dealii::MappingQ<dim> mapping_dummy(1);
   dealii::VectorTools::interpolate_boundary_values(mapping_dummy,
                                                    dof_handler,
                                                    boundary_functions,

@@ -8,7 +8,7 @@
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_fe_field.h>
-#include <deal.II/fe/mapping_q_generic.h>
+#include <deal.II/fe/mapping_q.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/lac/la_parallel_vector.h>
@@ -38,7 +38,7 @@ do_test()
   displacement.reinit(dof_handler.locally_owned_dofs(), relevant_dofs, MPI_COMM_SELF);
   vector.reinit(dof_handler.locally_owned_dofs(), relevant_dofs, MPI_COMM_SELF);
 
-  dealii::MappingQGeneric<dim> mapping_original(fe.degree);
+  dealii::MappingQ<dim> mapping_original(fe.degree);
   {
     dealii::FEValues<dim>                        fe_values(mapping_original,
                                     fe,
