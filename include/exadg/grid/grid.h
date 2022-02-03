@@ -71,6 +71,7 @@ public:
     }
 
     // mapping
+    // TODO SIMPLEX: this will not work in case of simplex meshes (-> use MappingFE)
     mapping = std::make_shared<dealii::MappingQGeneric<dim>>(data.mapping_degree);
   }
 
@@ -166,6 +167,7 @@ private:
 
       unsigned int const group_size = 1;
 
+      // TODO SIMPLEX: this will not work in case of simplex meshes
       auto const description = dealii::TriangulationDescription::Utilities::
         create_description_from_triangulation_in_groups<dim, dim>(
           serial_grid_generator,
