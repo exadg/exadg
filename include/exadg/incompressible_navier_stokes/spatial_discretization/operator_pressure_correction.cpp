@@ -356,15 +356,6 @@ OperatorPressureCorrection<dim, Number>::apply_momentum_operator(VectorType &   
   this->momentum_operator.apply(dst, src);
 }
 
-
-template<int dim, typename Number>
-void
-OperatorPressureCorrection<dim, Number>::rhs_pressure_gradient_term(VectorType & dst,
-                                                                    double const time) const
-{
-  this->gradient_operator.rhs(dst, time);
-}
-
 template<int dim, typename Number>
 void
 OperatorPressureCorrection<dim, Number>::rhs_pressure_gradient_term_dirichlet_bc_from_dof_vector(

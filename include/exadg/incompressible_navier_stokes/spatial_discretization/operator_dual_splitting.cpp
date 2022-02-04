@@ -217,15 +217,6 @@ OperatorDualSplitting<dim, Number>::apply_velocity_divergence_term(VectorType & 
 
 template<int dim, typename Number>
 void
-OperatorDualSplitting<dim, Number>::rhs_velocity_divergence_term(
-  VectorType &   dst,
-  double const & evaluation_time) const
-{
-  this->divergence_operator.rhs(dst, evaluation_time);
-}
-
-template<int dim, typename Number>
-void
 OperatorDualSplitting<dim, Number>::rhs_ppe_div_term_body_forces_add(VectorType &   dst,
                                                                      double const & time)
 {
@@ -406,79 +397,6 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
       }
     }
     pressure.integrate_scatter(true, false, dst);
-  }
-}
-
-template<int dim, typename Number>
-void
-OperatorDualSplitting<dim, Number>::rhs_ppe_nbc_analytical_time_derivative_add(VectorType &   dst,
-                                                                               double const & time)
-{
-  this->evaluation_time = time;
-
-  VectorType src_dummy;
-  this->get_matrix_free().loop(
-    &This::cell_loop_empty,
-    &This::face_loop_empty,
-    &This::local_rhs_ppe_nbc_analytical_time_derivative_add_boundary_face,
-    this,
-    dst,
-    src_dummy);
-}
-
-template<int dim, typename Number>
-void
-OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_analytical_time_derivative_add_boundary_face(
-  dealii::MatrixFree<dim, Number> const & data,
-  VectorType &                            dst,
-  VectorType const &,
-  Range const & face_range) const
-{
-  unsigned int dof_index_pressure  = this->get_dof_index_pressure();
-  unsigned int quad_index_pressure = this->get_quad_index_pressure();
-
-  FaceIntegratorP integrator(data, true, dof_index_pressure, quad_index_pressure);
-
-  for(unsigned int face = face_range.first; face < face_range.second; face++)
-  {
-    integrator.reinit(face);
-
-    dealii::types::boundary_id boundary_id = data.get_boundary_id(face);
-    BoundaryTypeP              boundary_type =
-      this->boundary_descriptor->pressure->get_boundary_type(boundary_id);
-
-    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-    {
-      if(boundary_type == BoundaryTypeP::Neumann)
-      {
-        dealii::Point<dim, scalar> q_points = integrator.quadrature_point(q);
-
-        // evaluate boundary condition
-        typename std::map<dealii::types::boundary_id,
-                          std::shared_ptr<dealii::Function<dim>>>::iterator it =
-          this->boundary_descriptor->pressure->neumann_bc.find(boundary_id);
-        vector dudt =
-          FunctionEvaluator<1, dim, Number>::value(it->second, q_points, this->evaluation_time);
-
-        vector normal = integrator.get_normal_vector(q);
-
-        scalar h = -normal * dudt;
-
-        integrator.submit_value(h, q);
-      }
-      else if(boundary_type == BoundaryTypeP::Dirichlet)
-      {
-        scalar zero = dealii::make_vectorized_array<Number>(0.0);
-        integrator.submit_value(zero, q);
-      }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
-    }
-    integrator.integrate(true, false);
-    integrator.distribute_local_to_global(dst);
   }
 }
 

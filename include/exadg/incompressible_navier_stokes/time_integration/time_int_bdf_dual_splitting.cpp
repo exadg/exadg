@@ -496,11 +496,8 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
     // sum alpha_i * u_i term
     for(unsigned int i = 0; i < velocity.size(); ++i)
     {
-      if(this->param.store_previous_boundary_values)
-        pde_operator->rhs_velocity_divergence_term_dirichlet_bc_from_dof_vector(temp,
-                                                                                velocity_dbc[i]);
-      else
-        pde_operator->rhs_velocity_divergence_term(temp, this->get_previous_time(i));
+      pde_operator->rhs_velocity_divergence_term_dirichlet_bc_from_dof_vector(temp,
+                                                                              velocity_dbc[i]);
 
       // note that the minus sign related to this term is already taken into account
       // in the function rhs() of the divergence operator
@@ -538,17 +535,10 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
   }
 
   // II.3. pressure Neumann boundary condition: temporal derivative of velocity
-  if(this->param.store_previous_boundary_values)
-  {
-    VectorType acceleration(velocity_dbc_np);
-    compute_bdf_time_derivative(
-      acceleration, velocity_dbc_np, velocity_dbc, this->bdf, this->get_time_step_size());
-    pde_operator->rhs_ppe_nbc_numerical_time_derivative_add(rhs, acceleration);
-  }
-  else
-  {
-    pde_operator->rhs_ppe_nbc_analytical_time_derivative_add(rhs, this->get_next_time());
-  }
+  VectorType acceleration(velocity_dbc_np);
+  compute_bdf_time_derivative(
+    acceleration, velocity_dbc_np, velocity_dbc, this->bdf, this->get_time_step_size());
+  pde_operator->rhs_ppe_nbc_numerical_time_derivative_add(rhs, acceleration);
 
   // II.4. viscous term of pressure Neumann boundary condition on Gamma_D:
   //       extrapolate velocity, evaluate vorticity, and subsequently evaluate boundary

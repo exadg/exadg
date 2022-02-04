@@ -471,18 +471,9 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_momentum(VectorType & rhs)
       VectorType temp(velocity[0]);
       temp = 0.0;
 
-      if(this->param.store_previous_boundary_values)
-      {
-        pde_operator->evaluate_pressure_gradient_term_dirichlet_bc_from_dof_vector(temp,
-                                                                                   pressure[i],
-                                                                                   pressure_dbc[i]);
-      }
-      else
-      {
-        pde_operator->evaluate_pressure_gradient_term(temp,
-                                                      pressure[i],
-                                                      this->get_previous_time(i));
-      }
+      pde_operator->evaluate_pressure_gradient_term_dirichlet_bc_from_dof_vector(temp,
+                                                                                 pressure[i],
+                                                                                 pressure_dbc[i]);
 
       rhs.add(-extra_pressure_gradient.get_beta(i), temp);
     }
@@ -678,14 +669,7 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_pressure(VectorType & rhs) const
   {
     // set temp to zero since rhs_ppe_laplace_add() adds into the vector
     temp = 0.0;
-    if(this->param.store_previous_boundary_values)
-    {
-      pde_operator->rhs_ppe_laplace_add_dirichlet_bc_from_dof_vector(temp, pressure_dbc[i]);
-    }
-    else
-    {
-      pde_operator->rhs_ppe_laplace_add(temp, this->get_previous_time(i));
-    }
+    pde_operator->rhs_ppe_laplace_add_dirichlet_bc_from_dof_vector(temp, pressure_dbc[i]);
 
     rhs.add(-extra_pressure_gradient.get_beta(i), temp);
   }
@@ -772,15 +756,7 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_projection(
     {
       // evaluate inhomogeneous parts of boundary face integrals
       // note that the function rhs_...() already includes a factor of -1.0
-      if(this->param.store_previous_boundary_values)
-      {
-        pde_operator->rhs_pressure_gradient_term_dirichlet_bc_from_dof_vector(temp,
-                                                                              pressure_dbc[i]);
-      }
-      else
-      {
-        pde_operator->rhs_pressure_gradient_term(temp, this->get_previous_time(i));
-      }
+      pde_operator->rhs_pressure_gradient_term_dirichlet_bc_from_dof_vector(temp, pressure_dbc[i]);
 
       rhs.add(-extra_pressure_gradient.get_beta(i) * this->get_time_step_size() /
                 this->bdf.get_gamma0(),
