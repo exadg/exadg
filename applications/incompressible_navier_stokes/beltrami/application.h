@@ -89,38 +89,6 @@ private:
   double const nu;
 };
 
-template<int dim>
-class PressureBC_dudt : public dealii::Function<dim>
-{
-public:
-  PressureBC_dudt(double const viscosity) : dealii::Function<dim>(dim, 0.0), nu(viscosity)
-  {
-  }
-
-  double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
-  {
-    double const t = this->get_time();
-    double const a = 0.25 * dealii::numbers::PI;
-    double const d = 2 * a;
-
-    double result = 0.0;
-    // clang-format off
-    if (component == 0)
-      result = a*nu*d*d*(std::exp(a*p[0])*std::sin(a*p[1]+d*p[2]) + std::exp(a*p[2])*std::cos(a*p[0]+d*p[1]))*std::exp(-nu*d*d*t);
-    else if (component == 1)
-      result = a*nu*d*d*(std::exp(a*p[1])*std::sin(a*p[2]+d*p[0]) + std::exp(a*p[0])*std::cos(a*p[1]+d*p[2]))*std::exp(-nu*d*d*t);
-    else if (component == 2)
-      result = a*nu*d*d*(std::exp(a*p[2])*std::sin(a*p[0]+d*p[1]) + std::exp(a*p[1])*std::cos(a*p[2]+d*p[0]))*std::exp(-nu*d*d*t);
-    // clang-format on
-
-    return result;
-  }
-
-private:
-  double const nu;
-};
-
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
@@ -266,8 +234,7 @@ public:
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(0, new AnalyticalSolutionVelocity<dim>(viscosity)));
 
-    this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new PressureBC_dudt<dim>(viscosity)));
+    this->boundary_descriptor->pressure->neumann_bc.insert(0);
   }
 
   void

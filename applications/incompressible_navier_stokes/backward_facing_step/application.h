@@ -413,14 +413,12 @@ public:
 
     // fill boundary descriptor pressure
     // no slip boundaries at the upper and lower wall with ID=0
-    this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->pressure->neumann_bc.insert(0);
 
     // inflow boundary condition at left boundary with ID=2
     // the inflow boundary condition is time dependent (du/dt != 0) but, for simplicity,
     // we assume that this is negligible when using the dual splitting scheme
-    this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(2, new dealii::Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->pressure->neumann_bc.insert(2);
 
     // outflow boundary condition at right boundary with ID=1: set pressure to zero
     this->boundary_descriptor->pressure->dirichlet_bc.insert(
@@ -440,8 +438,7 @@ public:
 
     // fill boundary descriptor pressure
     // no slip boundaries at lower and upper wall with ID=0
-    this->boundary_descriptor_pre->pressure->neumann_bc.insert(
-      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor_pre->pressure->neumann_bc.insert(0);
   }
 
   void

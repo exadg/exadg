@@ -250,10 +250,8 @@ public:
       pair(1, new dealii::Functions::ConstantFunction<dim>(velocity)));
 
     // fill boundary descriptor pressure
-    this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
-    this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->pressure->neumann_bc.insert(0);
+    this->boundary_descriptor->pressure->neumann_bc.insert(1);
   }
 
   void

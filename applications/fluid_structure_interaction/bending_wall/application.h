@@ -498,20 +498,17 @@ public:
     // fill boundary descriptor pressure
 
     // channel walls
-    boundary_descriptor->pressure->neumann_bc.insert(
-      pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->pressure->neumann_bc.insert(BOUNDARY_ID_WALLS);
 
     // inflow
-    boundary_descriptor->pressure->neumann_bc.insert(
-      pair(BOUNDARY_ID_INFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->pressure->neumann_bc.insert(BOUNDARY_ID_INFLOW);
 
     // outflow
     boundary_descriptor->pressure->dirichlet_bc.insert(
       pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(1)));
 
     // fluid-structure interface
-    boundary_descriptor->pressure->neumann_bc.insert(
-      pair(BOUNDARY_ID_FSI, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->pressure->neumann_bc.insert(BOUNDARY_ID_FSI);
   }
 
   void

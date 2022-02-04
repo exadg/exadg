@@ -291,8 +291,7 @@ public:
       pair(0, new AnalyticalSolutionVelocity<dim>()));
 
     // fill boundary descriptor pressure
-    this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->pressure->neumann_bc.insert(0);
   }
 
   void

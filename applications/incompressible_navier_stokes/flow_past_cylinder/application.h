@@ -121,50 +121,6 @@ private:
   std::vector<dealii::Tensor<1, dim, double>> u_vector;
 };
 
-template<int dim>
-class PressureBC_dudt : public dealii::Function<dim>
-{
-public:
-  PressureBC_dudt(double const       Um,
-                  double const       H,
-                  double const       end_time,
-                  unsigned int const test_case)
-    : dealii::Function<dim>(dim, 0.0), Um(Um), H(H), end_time(end_time), test_case(test_case)
-  {
-  }
-
-  double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
-  {
-    double t      = this->get_time();
-    double result = 0.0;
-
-    if(component == 0 && std::abs(p[0] - (dim == 2 ? L1 : 0.0)) < 1.e-12)
-    {
-      double const pi = dealii::numbers::PI;
-
-      double const T           = 1.0;
-      double       coefficient = dealii::Utilities::fixed_power<dim - 1>(4.) * Um /
-                           dealii::Utilities::fixed_power<2 * dim - 2>(H);
-
-      if(test_case == 2)
-        result = coefficient * p[1] * (H - p[1]) *
-                 ((t / T) < 1.0 ? (pi / 2. / T) * std::cos(pi / 2. * t / T) : 0.0);
-      if(test_case == 3)
-        result = coefficient * p[1] * (H - p[1]) * std::cos(pi * t / end_time) * pi / end_time;
-
-      if(dim == 3)
-        result *= p[2] * (H - p[2]);
-    }
-
-    return result;
-  }
-
-private:
-  double const       Um, H, end_time;
-  unsigned int const test_case;
-};
-
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
@@ -493,10 +449,8 @@ public:
       pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // fill boundary descriptor pressure
-    this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new PressureBC_dudt<dim>(Um, H, end_time, test_case)));
-    this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(2, new PressureBC_dudt<dim>(Um, H, end_time, test_case)));
+    this->boundary_descriptor->pressure->neumann_bc.insert(0);
+    this->boundary_descriptor->pressure->neumann_bc.insert(2);
     this->boundary_descriptor->pressure->dirichlet_bc.insert(
       pair(1, new dealii::Functions::ZeroFunction<dim>(1)));
   }

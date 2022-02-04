@@ -444,8 +444,7 @@ public:
 
       this->boundary_descriptor->velocity->symmetry_bc.insert(
         pair(0, new dealii::Functions::ZeroFunction<dim>(dim))); // function will not be used
-      this->boundary_descriptor->pressure->neumann_bc.insert(
-        pair(0, new dealii::Functions::ZeroFunction<dim>(dim))); // dg_u/dt=0 for dual splitting
+      this->boundary_descriptor->pressure->neumann_bc.insert(0);
     }
     else
     {

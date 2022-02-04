@@ -46,10 +46,10 @@ namespace IncNS
  *   |     example          |          velocity         |               pressure                         |
  *   +----------------------+---------------------------+------------------------------------------------+
  *   |     inflow, no-slip  |   Dirichlet(Cached):      |  Neumann:                                      |
- *   |                      | prescribe g_u             | prescribe dg_u/dt in case of dual-splitting    |
+ *   |                      | prescribe g_u             | no BCs to be prescribed                        |
  *   +----------------------+---------------------------+------------------------------------------------+
  *   |     symmetry         |   Symmetry:               |  Neumann:                                      |
- *   |                      | no BCs to be prescribed   | prescribe dg_u/dt = 0 in case of dual-splitting|
+ *   |                      | no BCs to be prescribed   | no BCs to be prescribed                        |
  *   +----------------------+---------------------------+------------------------------------------------+
  *   |     outflow          |   Neumann:                |  Dirichlet:                                    |
  *   |                      | prescribe F(u)*n          | prescribe g_p                                  |
@@ -153,21 +153,9 @@ struct BoundaryDescriptorP
   // Dirichlet: prescribe pressure value
   std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> dirichlet_bc;
 
-  // Neumann: It depends on the chosen Navier-Stokes solver how this map has to be filled
-  //
-  //  - coupled solver: do nothing (one only has to discretize the pressure gradient for
-  //                    this solution approach)
-  //
-  //  - pressure-correction: this solver always prescribes homogeneous Neumann BCs in the
-  //                         pressure Poisson equation. Hence, no function has to be specified.
-  //
-  //  - dual splitting: Specify a dealii::Function<dim> with dim components for the boundary
-  //  condition
-  //                    dg_u/dt that has to be evaluated for the dual splitting scheme. But this
-  //                    is only necessary if the parameter store_previous_boundary_values == false.
-  //                    Otherwise, the code automatically determines the time derivative dg_u/dt
-  //                    numerically and no boundary condition has to be set by the user.
-  std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> neumann_bc;
+  // Neumann: only the boundary IDs are stored but no inhomogeneous boundary conditions are
+  // prescribed
+  std::set<dealii::types::boundary_id> neumann_bc;
 
   // add more types of boundary conditions
 

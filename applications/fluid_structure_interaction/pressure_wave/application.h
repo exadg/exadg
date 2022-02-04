@@ -386,12 +386,10 @@ public:
       pair(BOUNDARY_ID_INFLOW, new PressureInflowBC<dim>()));
 
     // outflow
-    boundary_descriptor->pressure->neumann_bc.insert(
-      pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(1)));
+    boundary_descriptor->pressure->neumann_bc.insert(BOUNDARY_ID_OUTFLOW);
 
     // fluid-structure interface
-    boundary_descriptor->pressure->neumann_bc.insert(
-      pair(BOUNDARY_ID_FSI, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->pressure->neumann_bc.insert(BOUNDARY_ID_FSI);
   }
 
   void

@@ -227,37 +227,6 @@ private:
   FormulationViscousTerm const formulation_viscous;
 };
 
-
-template<int dim>
-class PressureBC_dudt : public dealii::Function<dim>
-{
-public:
-  PressureBC_dudt(double const u_x_max, double const viscosity)
-    : dealii::Function<dim>(dim, 0.0), u_x_max(u_x_max), viscosity(viscosity)
-  {
-  }
-
-  double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
-  {
-    double const t  = this->get_time();
-    double const pi = dealii::numbers::PI;
-
-    double result = 0.0;
-    if(component == 0)
-      result = u_x_max * 4.0 * pi * pi * viscosity * std::sin(2.0 * pi * p[1]) *
-               std::exp(-4.0 * pi * pi * viscosity * t);
-    else if(component == 1)
-      result = -u_x_max * 4.0 * pi * pi * viscosity * std::sin(2.0 * pi * p[0]) *
-               std::exp(-4.0 * pi * pi * viscosity * t);
-
-    return result;
-  }
-
-private:
-  double const u_x_max, viscosity;
-};
-
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
@@ -644,8 +613,7 @@ public:
         pair(1, new NeumannBoundaryVelocity<dim>(u_x_max, viscosity, formulation_viscous)));
 
     // fill boundary descriptor pressure
-    this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new PressureBC_dudt<dim>(u_x_max, viscosity)));
+    this->boundary_descriptor->pressure->neumann_bc.insert(0);
     this->boundary_descriptor->pressure->dirichlet_bc.insert(
       pair(1, new AnalyticalSolutionPressure<dim>(u_x_max, viscosity)));
   }
