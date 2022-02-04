@@ -196,10 +196,10 @@ $(function() {
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  print_parameter(pcout, <span class="stringliteral">&quot;Max. number of refinements&quot;</span>, grid.triangulation-&gt;n_global_levels() - 1);</div>
 <div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  print_parameter(pcout, <span class="stringliteral">&quot;Number of cells&quot;</span>, grid.triangulation-&gt;n_global_active_cells());</div>
 <div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span> </div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  std::shared_ptr&lt;dealii::MappingQGeneric&lt;dim&gt;&gt; mapping_q_generic =</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>    std::dynamic_pointer_cast&lt;dealii::MappingQGeneric&lt;dim&gt;&gt;(grid.mapping);</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  <span class="keywordflow">if</span>(mapping_q_generic.get() != 0)</div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>    print_parameter(pcout, <span class="stringliteral">&quot;Mapping degree&quot;</span>, mapping_q_generic-&gt;get_degree());</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  std::shared_ptr&lt;dealii::MappingQ&lt;dim&gt;&gt; mapping_q =</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>    std::dynamic_pointer_cast&lt;dealii::MappingQ&lt;dim&gt;&gt;(grid.mapping);</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  <span class="keywordflow">if</span>(mapping_q.get() != 0)</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>    print_parameter(pcout, <span class="stringliteral">&quot;Mapping degree&quot;</span>, mapping_q-&gt;get_degree());</div>
 <div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>}</div>
 <div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span> </div>
 <div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> Number&gt;</div>
