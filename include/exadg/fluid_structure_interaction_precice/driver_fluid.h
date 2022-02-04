@@ -257,6 +257,7 @@ public:
 
     // structure to ALE
     {
+      std::vector<Point<dim>> quadrature_point_locations;
       if(this->application->get_parameters_fluid().mesh_movement_type ==
          IncNS::MeshMovementType::Poisson)
       {
@@ -271,16 +272,14 @@ public:
           AssertThrow(false, ExcNotImplemented());
 
         // VectorType stress_fluid;
-        communicator_ale = std::make_shared<InterfaceCoupling<dim, dim, Number>>(this->precice);
+        communicator_ale = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
         VectorType displacement_structure;
         ale_poisson_operator->initialize_dof_vector(displacement_structure);
-        communicator_ale->setup(
+        quadrature_point_locations = communicator_ale->setup(
           ale_matrix_free,
           ale_poisson_operator->get_dof_index(),
           quad_indices,
-          this->application->get_boundary_descriptor_ale_poisson()->dirichlet_mortar_bc,
-          "ALE-Mesh",
-          "Displacement");
+          this->application->get_boundary_descriptor_ale_poisson()->dirichlet_mortar_bc);
       }
       else if(this->application->get_parameters_fluid().mesh_movement_type ==
               IncNS::MeshMovementType::Elasticity)
@@ -290,19 +289,21 @@ public:
 
         VectorType displacement_structure;
         ale_elasticity_operator->initialize_dof_vector(displacement_structure);
-        communicator_ale = std::make_shared<InterfaceCoupling<dim, dim, Number>>(this->precice);
-        communicator_ale->setup(
+        communicator_ale           = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
+        quadrature_point_locations = communicator_ale->setup(
           ale_matrix_free,
           ale_elasticity_operator->get_dof_index(),
           quad_indices,
-          this->application->get_boundary_descriptor_ale_elasticity()->dirichlet_mortar_bc,
-          "ALE-Mesh",
-          "Displacement");
+          this->application->get_boundary_descriptor_ale_elasticity()->dirichlet_mortar_bc);
       }
       else
       {
         AssertThrow(false, ExcNotImplemented());
       }
+      this->precice->add_read_interface(quadrature_point_locations,
+                                        ale_matrix_free,
+                                        "ALE-Mesh",
+                                        {"Displacement"});
     }
 
     // structure to fluid
@@ -314,16 +315,18 @@ public:
 
       VectorType velocity_structure;
       fluid_operator->initialize_vector_velocity(velocity_structure);
-      communicator_fluid = std::make_shared<InterfaceCoupling<dim, dim, Number>>(this->precice);
-      communicator_fluid->setup(
+      communicator_fluid = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
+      auto quadrature_point_locations = communicator_fluid->setup(
         fluid_matrix_free,
         fluid_operator->get_dof_index_velocity(),
         quad_indices,
-        this->application->get_boundary_descriptor_fluid()->velocity->dirichlet_mortar_bc,
-        "Fluid-Mesh-read",
-        "Velocity");
-      // TODO: Change to Velocity
+        this->application->get_boundary_descriptor_fluid()->velocity->dirichlet_mortar_bc);
 
+      // TODO: Parametrize
+      this->precice->add_read_interface(quadrature_point_locations,
+                                        fluid_matrix_free,
+                                        "Fluid-Mesh-read",
+                                        {"Velocity"});
       VectorType initial_stress;
       fluid_operator->initialize_vector_velocity(initial_stress);
       initial_stress = 0;
@@ -482,13 +485,17 @@ private:
   void
   coupling_structure_to_ale() const
   {
-    communicator_ale->read();
+    // TODO: parametrize names
+    auto received_data = this->precice->read_block_data("ALE-Mesh", "Displacement");
+    communicator_ale->update_function_cache(received_data);
   }
 
   void
   coupling_structure_to_fluid() const
   {
-    communicator_fluid->read();
+    // TODO: parametrize names
+    auto received_data = this->precice->read_block_data("Fluid-Mesh-read", "Velocity");
+    communicator_fluid->update_function_cache(received_data);
   }
 
   void

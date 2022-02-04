@@ -144,15 +144,20 @@ public:
       quad_indices.emplace_back(structure_operator->get_quad_index());
 
       // VectorType stress_fluid;
-      communicator = std::make_shared<InterfaceCoupling<dim, dim, Number>>(this->precice);
+      communicator = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
       VectorType displacement_structure;
       structure_operator->initialize_dof_vector(displacement_structure);
-      communicator->setup(structure_matrix_free,
-                          structure_operator->get_dof_index(),
-                          quad_indices,
-                          this->application->get_boundary_descriptor_structure()->neumann_mortar_bc,
-                          this->precice_parameters.read_mesh_name,
-                          "Stress");
+
+      auto quadrature_point_locations = communicator->setup(
+        structure_matrix_free,
+        structure_operator->get_dof_index(),
+        quad_indices,
+        this->application->get_boundary_descriptor_structure()->neumann_mortar_bc);
+
+      this->precice->add_read_interface(quadrature_point_locations,
+                                        structure_matrix_free,
+                                        this->precice_parameters.read_mesh_name,
+                                        {"Stress"});
 
       displacement_structure = 0;
       this->precice->initialize_precice(displacement_structure);
@@ -295,7 +300,8 @@ private:
   void
   coupling_fluid_to_structure() const
   {
-    communicator->read();
+    auto received_data = this->precice->read_block_data("Solid-Mesh-read", "Stress");
+    communicator->update_function_cache(received_data);
   }
 
   // grid

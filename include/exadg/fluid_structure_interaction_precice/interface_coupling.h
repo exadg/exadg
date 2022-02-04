@@ -66,18 +66,15 @@ private:
   using ArrayTensor = std::vector<dealii::Tensor<rank, dim, double>>;
 
 public:
-  InterfaceCoupling(std::shared_ptr<Adapter::Adapter<dim, dim, VectorType>> precice)
-    : precice(precice)
-  {
-  }
+  InterfaceCoupling() = default;
 
-  void
+
+
+  std::vector<Point<dim>>
   setup(std::shared_ptr<const MatrixFree<dim, Number>> matrix_free_dst,
         unsigned int const                             dof_index_dst,
         std::vector<quad_index> const &                quad_indices_dst_in,
-        MapBoundaryCondition const &                   map_bc_in,
-        const std::string &                            mesh_name,
-        const std::string &                            data_name)
+        MapBoundaryCondition const &                   map_bc_in)
   {
     quad_rules_dst = quad_indices_dst_in;
     map_bc         = map_bc_in;
@@ -144,19 +141,20 @@ public:
     for(auto boundary : map_bc)
       boundary.second->set_data_pointer(map_index_dst, map_solution_dst);
 
-    precice_mesh_name = mesh_name;
-    precice_data_name = data_name;
-    precice->add_read_interface(map_q_points_dst_precice, matrix_free_dst, mesh_name, {data_name});
+    return map_q_points_dst_precice;
   }
 
+
+
+  /**
+   * @brief Updates the array_solution_dst of the FunctionCache given the new boundary data
+   *
+   * @param[in] new_data The new coupling data reveiced from other participants
+   */
   void
-  read()
+  update_function_cache(std::vector<Tensor<rank, dim, double>> & new_data)
   {
-    // communicate with preCICE
-    std::vector<Tensor<rank, dim, double>> array_solution_dst_precice =
-      precice->read_block_data(precice_mesh_name, precice_data_name);
-    Assert(array_solution_dst_precice.size() > 0, ExcInternalError());
-    Assert(precice_mesh_name != "", ExcInternalError());
+    Assert(new_data.size() > 0, ExcInternalError());
     // extract values of each quadrature rule
     unsigned int c = 0;
     for(auto quadrature : quad_rules_dst)
@@ -164,20 +162,19 @@ public:
       ArrayTensor & array_solution_dst = map_solution_dst.find(quadrature)->second;
 
       for(unsigned int i = 0; i < array_solution_dst.size(); ++i, ++c)
-        array_solution_dst[i] = array_solution_dst_precice[c];
+      {
+        AssertIndexRange(new_data.size(), c);
+        array_solution_dst[i] = new_data[c];
+      }
     }
   }
 
 private:
-  std::shared_ptr<Adapter::Adapter<dim, dim, VectorType>> precice;
-
   std::vector<quad_index>                             quad_rules_dst;
   mutable std::map<quad_index, MapIndex>              map_index_dst;
   mutable std::map<quad_index, ArrayQuadraturePoints> map_q_points_dst;
   mutable std::map<quad_index, ArrayTensor>           map_solution_dst;
   mutable std::map<types::boundary_id, std::shared_ptr<FunctionCached<rank, dim, double>>> map_bc;
-  std::string precice_mesh_name{};
-  std::string precice_data_name{};
 };
 
 } // namespace ExaDG
