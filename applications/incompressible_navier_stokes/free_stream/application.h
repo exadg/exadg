@@ -158,7 +158,6 @@ public:
     this->param.quad_rule_linearization = QuadratureRuleLinearization::Overintegration32k;
 
     // PROJECTION METHODS
-    this->param.store_previous_boundary_values = true;
 
     // pressure Poisson equation
     this->param.solver_pressure_poisson              = SolverPressurePoisson::CG;

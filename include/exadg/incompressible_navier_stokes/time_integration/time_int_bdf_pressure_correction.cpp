@@ -92,7 +92,7 @@ TimeIntBDFPressureCorrection<dim, Number>::setup_derived()
 
   // pressure_dbc does not have to be initialized in case of a restart, where
   // the vectors are read from memory.
-  if(this->param.store_previous_boundary_values && this->param.restarted_simulation == false)
+  if(this->param.restarted_simulation == false)
   {
     initialize_pressure_on_boundary();
   }
@@ -105,12 +105,9 @@ TimeIntBDFPressureCorrection<dim, Number>::read_restart_vectors(
 {
   Base::read_restart_vectors(ia);
 
-  if(this->param.store_previous_boundary_values)
+  for(unsigned int i = 0; i < pressure_dbc.size(); i++)
   {
-    for(unsigned int i = 0; i < pressure_dbc.size(); i++)
-    {
-      ia >> pressure_dbc[i];
-    }
+    ia >> pressure_dbc[i];
   }
 }
 
@@ -121,12 +118,9 @@ TimeIntBDFPressureCorrection<dim, Number>::write_restart_vectors(
 {
   Base::write_restart_vectors(oa);
 
-  if(this->param.store_previous_boundary_values)
+  for(unsigned int i = 0; i < pressure_dbc.size(); i++)
   {
-    for(unsigned int i = 0; i < pressure_dbc.size(); i++)
-    {
-      oa << pressure_dbc[i];
-    }
+    oa << pressure_dbc[i];
   }
 }
 
@@ -146,11 +140,8 @@ TimeIntBDFPressureCorrection<dim, Number>::allocate_vectors()
     pde_operator->initialize_vector_pressure(pressure[i]);
   pde_operator->initialize_vector_pressure(pressure_np);
 
-  if(this->param.store_previous_boundary_values)
-  {
-    for(unsigned int i = 0; i < pressure_dbc.size(); ++i)
-      pde_operator->initialize_vector_pressure(pressure_dbc[i]);
-  }
+  for(unsigned int i = 0; i < pressure_dbc.size(); ++i)
+    pde_operator->initialize_vector_pressure(pressure_dbc[i]);
 }
 
 
@@ -875,15 +866,13 @@ TimeIntBDFPressureCorrection<dim, Number>::prepare_vectors_for_next_timestep()
   push_back(pressure);
   pressure[0].swap(pressure_np);
 
+  // We also have to care about the history of pressure Dirichlet boundary conditions.
   if(extra_pressure_gradient.get_order() > 0)
   {
-    if(this->param.store_previous_boundary_values)
-    {
-      push_back(pressure_dbc);
+    push_back(pressure_dbc);
 
-      // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
-      pde_operator->interpolate_pressure_dirichlet_bc(pressure_dbc[0], this->get_next_time());
-    }
+    // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
+    pde_operator->interpolate_pressure_dirichlet_bc(pressure_dbc[0], this->get_next_time());
   }
 }
 

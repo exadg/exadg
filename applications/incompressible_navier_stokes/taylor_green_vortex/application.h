@@ -274,11 +274,6 @@ public:
 
     // PROJECTION METHODS
 
-    // formulation
-    // this test case one only has periodic or symmetry boundaries so that this parameter is not
-    // used. Deactivate in order to reduce memory requirements
-    this->param.store_previous_boundary_values = false;
-
     // pressure Poisson equation
     this->param.solver_data_pressure_poisson         = SolverData(1000, ABS_TOL, REL_TOL, 100);
     this->param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;

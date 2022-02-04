@@ -142,9 +142,6 @@ Parameters::Parameters()
 
     // PROJECTION METHODS
 
-    // formulations
-    store_previous_boundary_values(true),
-
     // pressure Poisson equation
     IP_factor_pressure(1.),
     solver_pressure_poisson(SolverPressurePoisson::CG),
@@ -431,11 +428,6 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
     AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::Implicit,
                 dealii::ExcMessage("An implicit treatment of the convective term is not possible "
                                    "in combination with the dual splitting scheme."));
-
-    if(ale_formulation == true)
-    {
-      AssertThrow(store_previous_boundary_values == true, dealii::ExcMessage("invalid parameter."));
-    }
   }
 
   // PRESSURE-CORRECTION SCHEME
@@ -443,11 +435,6 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
   {
     AssertThrow(order_pressure_extrapolation <= order_time_integrator,
                 dealii::ExcMessage("Invalid parameter order_pressure_extrapolation!"));
-
-    if(ale_formulation == true)
-    {
-      AssertThrow(store_previous_boundary_values == true, dealii::ExcMessage("invalid parameter."));
-    }
 
     if(preconditioner_momentum == MomentumPreconditioner::Multigrid)
     {
@@ -953,8 +940,6 @@ Parameters::print_parameters_dual_splitting(dealii::ConditionalOStream const & p
                     enum_to_string(formulation_convective_term_bc));
   }
 
-  print_parameter(pcout, "Store previous boundary values", store_previous_boundary_values);
-
   // projection method
   print_parameters_pressure_poisson(pcout);
 
@@ -998,8 +983,6 @@ Parameters::print_parameters_pressure_correction(dealii::ConditionalOStream cons
   pcout << std::endl << "  Formulation of pressure-correction scheme:" << std::endl;
   print_parameter(pcout, "Order of pressure extrapolation", order_pressure_extrapolation);
   print_parameter(pcout, "Rotational formulation", rotational_formulation);
-
-  print_parameter(pcout, "Store previous boundary values", store_previous_boundary_values);
 
   // Momentum step
   pcout << std::endl << "  Momentum step:" << std::endl;

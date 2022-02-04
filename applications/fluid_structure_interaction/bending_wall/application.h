@@ -211,9 +211,6 @@ public:
 
     // PROJECTION METHODS
 
-    // formulation
-    param.store_previous_boundary_values = true;
-
     // pressure Poisson equation
     param.solver_pressure_poisson              = SolverPressurePoisson::CG;
     param.solver_data_pressure_poisson         = SolverData(1000, ABS_TOL, REL_TOL, 100);

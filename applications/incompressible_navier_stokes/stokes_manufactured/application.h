@@ -225,9 +225,6 @@ public:
 
     // PROJECTION METHODS
 
-    // formulation
-    this->param.store_previous_boundary_values = true;
-
     // pressure Poisson equation
     this->param.solver_pressure_poisson         = SolverPressurePoisson::CG;
     this->param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;

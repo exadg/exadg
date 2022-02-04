@@ -81,7 +81,7 @@ TimeIntBDFDualSplitting<dim, Number>::setup_derived()
 
   // velocity_dbc vectors do not have to be initialized in case of a restart, where
   // the vectors are read from restart files.
-  if(this->param.store_previous_boundary_values && this->param.restarted_simulation == false)
+  if(this->param.restarted_simulation == false)
   {
     initialize_velocity_dbc();
   }
@@ -93,12 +93,9 @@ TimeIntBDFDualSplitting<dim, Number>::read_restart_vectors(boost::archive::binar
 {
   Base::read_restart_vectors(ia);
 
-  if(this->param.store_previous_boundary_values)
+  for(unsigned int i = 0; i < velocity_dbc.size(); i++)
   {
-    for(unsigned int i = 0; i < velocity_dbc.size(); i++)
-    {
-      ia >> velocity_dbc[i];
-    }
+    ia >> velocity_dbc[i];
   }
 }
 
@@ -109,12 +106,9 @@ TimeIntBDFDualSplitting<dim, Number>::write_restart_vectors(
 {
   Base::write_restart_vectors(oa);
 
-  if(this->param.store_previous_boundary_values)
+  for(unsigned int i = 0; i < velocity_dbc.size(); i++)
   {
-    for(unsigned int i = 0; i < velocity_dbc.size(); i++)
-    {
-      oa << velocity_dbc[i];
-    }
+    oa << velocity_dbc[i];
   }
 }
 
@@ -126,9 +120,7 @@ TimeIntBDFDualSplitting<dim, Number>::allocate_vectors()
 
   // velocity
   for(unsigned int i = 0; i < velocity.size(); ++i)
-  {
     pde_operator->initialize_vector_velocity(velocity[i]);
-  }
   pde_operator->initialize_vector_velocity(velocity_np);
 
   // pressure
@@ -137,13 +129,9 @@ TimeIntBDFDualSplitting<dim, Number>::allocate_vectors()
   pde_operator->initialize_vector_pressure(pressure_np);
 
   // velocity_dbc
-  if(this->param.store_previous_boundary_values)
-  {
-    for(unsigned int i = 0; i < velocity_dbc.size(); ++i)
-      pde_operator->initialize_vector_velocity(velocity_dbc[i]);
-
-    pde_operator->initialize_vector_velocity(velocity_dbc_np);
-  }
+  for(unsigned int i = 0; i < velocity_dbc.size(); ++i)
+    pde_operator->initialize_vector_velocity(velocity_dbc[i]);
+  pde_operator->initialize_vector_velocity(velocity_dbc_np);
 }
 
 
@@ -313,8 +301,7 @@ void
 TimeIntBDFDualSplitting<dim, Number>::do_timestep_solve()
 {
   // pre-computations
-  if(this->param.store_previous_boundary_values)
-    pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
+  pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
 
   // perform the sub-steps of the dual-splitting method
   convective_step();
@@ -833,19 +820,16 @@ TimeIntBDFDualSplitting<dim, Number>::prepare_vectors_for_next_timestep()
 {
   Base::prepare_vectors_for_next_timestep();
 
-  if(this->param.store_previous_boundary_values)
-  {
-    // We have to care about the history of velocity Dirichlet boundary conditions,
-    // where velocity_dbc_np has already been updated.
-    push_back(velocity_dbc);
-    velocity_dbc[0].swap(velocity_dbc_np);
-  }
-
   push_back(velocity);
   velocity[0].swap(velocity_np);
 
   push_back(pressure);
   pressure[0].swap(pressure_np);
+
+  // We also have to care about the history of velocity Dirichlet boundary conditions.
+  // Note that velocity_dbc_np has already been updated.
+  push_back(velocity_dbc);
+  velocity_dbc[0].swap(velocity_dbc_np);
 }
 
 template<int dim, typename Number>

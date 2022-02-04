@@ -153,15 +153,13 @@ SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
                                      field + quad_index_p);
   matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree_u + (param.degree_u + 2) / 2),
                                      field + quad_index_u_nonlinear);
-  if(param.store_previous_boundary_values)
-  {
-    // TODO create those quadrature rules only when needed
-    matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree_u + 1),
-                                       field + quad_index_u_gauss_lobatto);
-    matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.get_degree_p(param.degree_u) +
-                                                                1),
-                                       field + quad_index_p_gauss_lobatto);
-  }
+
+  // TODO create those quadrature rules only when needed
+  matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree_u + 1),
+                                     field + quad_index_u_gauss_lobatto);
+  matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.get_degree_p(param.degree_u) +
+                                                              1),
+                                     field + quad_index_p_gauss_lobatto);
 }
 
 template<int dim, typename Number>

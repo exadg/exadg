@@ -275,9 +275,6 @@ public:
 
     // PROJECTION METHODS
 
-    // formulation
-    param.store_previous_boundary_values = true;
-
     // pressure Poisson equation
     param.solver_pressure_poisson              = SolverPressurePoisson::CG;
     param.solver_data_pressure_poisson         = SolverData(1e4, 1.e-12, 1.e-6, 100);
