@@ -93,7 +93,10 @@ public:
     GridData const &                                          data,
     std::function<void(dealii::Triangulation<dim> &)> const & create_fine_triangulation)
   {
-    do_create_triangulation(data, create_fine_triangulation, false /* do not refine */);
+    do_create_triangulation(data,
+                            create_fine_triangulation,
+                            false /* do not refine */,
+                            std::vector<unsigned int>() /* no local refinements */);
   }
 
   /**
