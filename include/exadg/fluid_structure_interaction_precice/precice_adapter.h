@@ -84,8 +84,9 @@ public:
   void
   add_read_interface(const std::vector<Point<dim>> &                                     points,
                      std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
-                     const std::string &                                                 mesh_name,
-                     const std::vector<std::string> & read_data_name);
+                     std::shared_ptr<ExaDG::InterfaceCoupling<dim, dim, double>> exadg_terminal,
+                     const std::string &                                         mesh_name,
+                     const std::vector<std::string> &                            read_data_name);
 
   /**
    * @brief      Advances preCICE after every timestep
@@ -132,7 +133,7 @@ public:
              const VectorType &  write_data,
              const double        computed_timestep_length);
 
-  std::vector<Tensor<1, dim>>
+  void
   read_block_data(const std::string & mesh_name, const std::string & data_name) const;
 
   /**
@@ -161,8 +162,9 @@ private:
   /// The objects handling reading and writing data
   std::map<std::string, std::shared_ptr<CouplingInterface<dim, data_dim, VectorizedArrayType>>>
     writer;
-  std::map<std::string, std::shared_ptr<CouplingInterface<dim, data_dim, VectorizedArrayType>>>
-    reader;
+  // We restrict the reader to be of type ExaDGInterface for the moment, as all other choices don't
+  // make sense
+  std::map<std::string, std::shared_ptr<ExaDGInterface<dim, data_dim, VectorizedArrayType>>> reader;
 
   // Container to store time dependent data in case of an implicit coupling
   std::vector<VectorType> old_state_data;
@@ -238,6 +240,7 @@ void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_read_interface(
   const std::vector<Point<dim>> &                                     points,
   std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
+  std::shared_ptr<ExaDG::InterfaceCoupling<dim, dim, double>>         exadg_terminal,
   const std::string &                                                 mesh_name,
   const std::vector<std::string> &                                    read_data_names)
 {
@@ -245,6 +248,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_read_interface(
                  std::make_shared<ExaDGInterface<dim, data_dim, VectorizedArrayType>>(data,
                                                                                       precice,
                                                                                       mesh_name)});
+  reader.at(mesh_name)->set_data_pointer(exadg_terminal);
   for(const auto & data_name : read_data_names)
     reader.at(mesh_name)->add_read_data(data_name);
   reader.at(mesh_name)->define_coupling_mesh(points);
@@ -311,12 +315,12 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::advance(
 
 
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
-std::vector<Tensor<1, dim>>
+void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::read_block_data(
   const std::string & mesh_name,
   const std::string & data_name) const
 {
-  return reader.at(mesh_name)->read_block_data(data_name);
+  reader.at(mesh_name)->read_block_data(data_name);
 }
 
 

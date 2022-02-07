@@ -144,11 +144,11 @@ public:
       quad_indices.emplace_back(structure_operator->get_quad_index());
 
       // VectorType stress_fluid;
-      communicator = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
+      auto       exadg_terminal = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
       VectorType displacement_structure;
       structure_operator->initialize_dof_vector(displacement_structure);
 
-      auto quadrature_point_locations = communicator->setup(
+      auto quadrature_point_locations = exadg_terminal->setup(
         structure_matrix_free,
         structure_operator->get_dof_index(),
         quad_indices,
@@ -156,6 +156,7 @@ public:
 
       this->precice->add_read_interface(quadrature_point_locations,
                                         structure_matrix_free,
+                                        exadg_terminal,
                                         this->precice_parameters.read_mesh_name,
                                         {"Stress"});
 
@@ -300,8 +301,7 @@ private:
   void
   coupling_fluid_to_structure() const
   {
-    auto received_data = this->precice->read_block_data("Solid-Mesh-read", "Stress");
-    communicator->update_function_cache(received_data);
+    this->precice->read_block_data("Solid-Mesh-read", "Stress");
   }
 
   // grid
@@ -324,8 +324,6 @@ private:
 
 
   /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
-
-  std::shared_ptr<InterfaceCoupling<dim, dim, Number>> communicator;
 
   std::string write_mesh_name{};
 

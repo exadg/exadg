@@ -73,7 +73,7 @@ public:
              const std::string &                                data_name) = 0;
 
 
-  virtual std::vector<Tensor<1, dim>>
+  virtual void
   read_block_data(const std::string & data_name) const;
 
   /**
@@ -191,7 +191,7 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::process_coupling_mesh()
 
 
 template<int dim, int data_dim, typename VectorizedArrayType>
-std::vector<Tensor<1, dim>>
+void
 CouplingInterface<dim, data_dim, VectorizedArrayType>::read_block_data(const std::string &) const
 {
   AssertThrow(false, ExcNotImplemented());

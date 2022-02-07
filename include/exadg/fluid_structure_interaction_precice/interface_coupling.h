@@ -152,18 +152,19 @@ public:
    * @param[in] new_data The new coupling data reveiced from other participants
    */
   void
-  update_function_cache(std::vector<Tensor<rank, dim, double>> & new_data)
+  update_data(std::vector<Tensor<rank, dim, double>> & new_data) const
   {
     Assert(new_data.size() > 0, ExcInternalError());
     // extract values of each quadrature rule
     unsigned int c = 0;
     for(auto quadrature : quad_rules_dst)
     {
+      // The individual data arrays for each quadrature formula
       ArrayTensor & array_solution_dst = map_solution_dst.find(quadrature)->second;
 
       for(unsigned int i = 0; i < array_solution_dst.size(); ++i, ++c)
       {
-        AssertIndexRange(new_data.size(), c);
+        AssertIndexRange(c, new_data.size());
         array_solution_dst[i] = new_data[c];
       }
     }

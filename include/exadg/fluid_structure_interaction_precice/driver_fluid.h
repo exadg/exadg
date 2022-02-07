@@ -257,7 +257,10 @@ public:
 
     // structure to ALE
     {
+      // Declare some data structures
       std::vector<Point<dim>> quadrature_point_locations;
+      auto exadg_terminal = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
+
       if(this->application->get_parameters_fluid().mesh_movement_type ==
          IncNS::MeshMovementType::Poisson)
       {
@@ -272,10 +275,9 @@ public:
           AssertThrow(false, ExcNotImplemented());
 
         // VectorType stress_fluid;
-        communicator_ale = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
         VectorType displacement_structure;
         ale_poisson_operator->initialize_dof_vector(displacement_structure);
-        quadrature_point_locations = communicator_ale->setup(
+        quadrature_point_locations = exadg_terminal->setup(
           ale_matrix_free,
           ale_poisson_operator->get_dof_index(),
           quad_indices,
@@ -289,8 +291,7 @@ public:
 
         VectorType displacement_structure;
         ale_elasticity_operator->initialize_dof_vector(displacement_structure);
-        communicator_ale           = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
-        quadrature_point_locations = communicator_ale->setup(
+        quadrature_point_locations = exadg_terminal->setup(
           ale_matrix_free,
           ale_elasticity_operator->get_dof_index(),
           quad_indices,
@@ -300,10 +301,8 @@ public:
       {
         AssertThrow(false, ExcNotImplemented());
       }
-      this->precice->add_read_interface(quadrature_point_locations,
-                                        ale_matrix_free,
-                                        "ALE-Mesh",
-                                        {"Displacement"});
+      this->precice->add_read_interface(
+        quadrature_point_locations, ale_matrix_free, exadg_terminal, "ALE-Mesh", {"Displacement"});
     }
 
     // structure to fluid
@@ -315,8 +314,8 @@ public:
 
       VectorType velocity_structure;
       fluid_operator->initialize_vector_velocity(velocity_structure);
-      communicator_fluid = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
-      auto quadrature_point_locations = communicator_fluid->setup(
+      auto exadg_terminal             = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
+      auto quadrature_point_locations = exadg_terminal->setup(
         fluid_matrix_free,
         fluid_operator->get_dof_index_velocity(),
         quad_indices,
@@ -325,6 +324,7 @@ public:
       // TODO: Parametrize
       this->precice->add_read_interface(quadrature_point_locations,
                                         fluid_matrix_free,
+                                        exadg_terminal,
                                         "Fluid-Mesh-read",
                                         {"Velocity"});
       VectorType initial_stress;
@@ -486,16 +486,14 @@ private:
   coupling_structure_to_ale() const
   {
     // TODO: parametrize names
-    auto received_data = this->precice->read_block_data("ALE-Mesh", "Displacement");
-    communicator_ale->update_function_cache(received_data);
+    this->precice->read_block_data("ALE-Mesh", "Displacement");
   }
 
   void
   coupling_structure_to_fluid() const
   {
     // TODO: parametrize names
-    auto received_data = this->precice->read_block_data("Fluid-Mesh-read", "Velocity");
-    communicator_fluid->update_function_cache(received_data);
+    this->precice->read_block_data("Fluid-Mesh-read", "Velocity");
   }
 
   void
@@ -586,10 +584,8 @@ private:
 
   /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
 
-  std::shared_ptr<InterfaceCoupling<dim, dim, Number>> communicator_fluid;
-  std::shared_ptr<InterfaceCoupling<dim, dim, Number>> communicator_ale;
-  std::string                                          write_mesh_name{};
-  std::string                                          write_data_name{};
+  std::string write_mesh_name{};
+  std::string write_data_name{};
   /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
 };
 

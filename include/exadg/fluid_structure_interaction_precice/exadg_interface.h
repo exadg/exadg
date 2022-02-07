@@ -3,6 +3,8 @@
 #include <deal.II/matrix_free/fe_evaluation.h>
 
 #include <exadg/fluid_structure_interaction_precice/coupling_interface.h>
+// TODO: Rename this file to exadg-terminal?
+#include <exadg/fluid_structure_interaction_precice/interface_coupling.h>
 
 namespace Adapter
 {
@@ -25,10 +27,6 @@ public:
   {
   }
 
-  /// Alias as defined in the base class
-  using FEFaceIntegrator =
-    typename CouplingInterface<dim, data_dim, VectorizedArrayType>::FEFaceIntegrator;
-  using value_type = typename CouplingInterface<dim, data_dim, VectorizedArrayType>::value_type;
   /**
    * @brief define_mesh_vertices Define a vertex coupling mesh for preCICE
    *        coupling the classical preCICE way
@@ -48,10 +46,15 @@ public:
   write_data(const LinearAlgebra::distributed::Vector<double> & data_vector,
              const std::string &                                data_name) override;
 
-  virtual std::vector<Tensor<1, dim>>
+  virtual void
   read_block_data(const std::string & data_name) const override;
 
+  void
+  set_data_pointer(std::shared_ptr<ExaDG::InterfaceCoupling<dim, dim, double>> exadg_terminal_);
+
 private:
+  /// Interface for ExaDG data structures
+  std::shared_ptr<ExaDG::InterfaceCoupling<dim, dim, double>> exadg_terminal;
   /// The preCICE IDs
   std::vector<int> interface_nodes_ids;
 
@@ -90,7 +93,7 @@ ExaDGInterface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
 
 
 template<int dim, int data_dim, typename VectorizedArrayType>
-std::vector<Tensor<1, dim>>
+void
 ExaDGInterface<dim, data_dim, VectorizedArrayType>::read_block_data(
   const std::string & data_name) const
 {
@@ -108,9 +111,21 @@ ExaDGInterface<dim, data_dim, VectorizedArrayType>::read_block_data(
   {
     AssertThrow(false, ExcNotImplemented());
   }
-
-  return values;
+  Assert(exadg_terminal.get() != nullptr, ExcNotInitialized());
+  exadg_terminal->update_data(values);
 }
+
+
+
+template<int dim, int data_dim, typename VectorizedArrayType>
+void
+ExaDGInterface<dim, data_dim, VectorizedArrayType>::set_data_pointer(
+  std::shared_ptr<ExaDG::InterfaceCoupling<dim, dim, double>> exadg_terminal_)
+{
+  exadg_terminal = exadg_terminal_;
+}
+
+
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
@@ -129,6 +144,4 @@ ExaDGInterface<dim, data_dim, VectorizedArrayType>::get_interface_type() const
   return "exadg shallow wrapper ";
 }
 
-// TODO
-//  get_mesh_stats()
 } // namespace Adapter
