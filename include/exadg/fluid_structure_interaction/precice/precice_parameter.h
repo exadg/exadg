@@ -23,7 +23,7 @@ struct PreciceAdapterConfiguration
   std::string read_mesh_name           = "default";
   std::string write_mesh_name          = "default";
   int         write_quad_index         = 0;
-  std::string write_data_specification = "values_on_quads";
+  std::string write_data_specification = "values_on_q_points";
   std::string read_data_name           = "received-data";
   std::string write_data_name          = "calculated-data";
 
@@ -65,8 +65,8 @@ PreciceAdapterConfiguration::add_parameters(ParameterHandler & prm)
       "WriteDataSpecification",
       write_data_specification,
       "Specification of the write data location and the data type"
-      "Available options are: values_on_dofs, values_on_quads, normal_gradients_on_quads",
-      Patterns::Selection("values_on_dofs|values_on_quads|normal_gradients_on_quads|"
+      "Available options are: values_on_dofs, values_on_q_points, normal_gradients_on_q_points",
+      Patterns::Selection("values_on_dofs|values_on_q_points|normal_gradients_on_q_points|"
                           "values_on_other_mesh|gradients_on_other_mesh"));
     prm.add_parameter("ReadDataName",
                       read_data_name,

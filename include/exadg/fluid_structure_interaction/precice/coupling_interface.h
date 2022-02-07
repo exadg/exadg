@@ -21,8 +21,8 @@ enum class WriteDataType
   values_on_dofs,
   values_on_other_mesh,
   gradients_on_other_mesh,
-  values_on_quads,
-  normal_gradients_on_quads
+  values_on_q_points,
+  normal_gradients_on_q_points
 };
 
 /**
@@ -171,10 +171,10 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::add_write_data(
     write_data_type = WriteDataType::values_on_other_mesh;
   else if(write_data_specification == "gradients_on_other_mesh")
     write_data_type = WriteDataType::gradients_on_other_mesh;
-  else if(write_data_specification == "values_on_quads")
-    write_data_type = WriteDataType::values_on_quads;
-  else if(write_data_specification == "normal_gradients_on_quads")
-    write_data_type = WriteDataType::normal_gradients_on_quads;
+  else if(write_data_specification == "values_on_q_points")
+    write_data_type = WriteDataType::values_on_q_points;
+  else if(write_data_specification == "normal_gradients_on_q_points")
+    write_data_type = WriteDataType::normal_gradients_on_q_points;
   else
     AssertThrow(false, ExcMessage("Unknwon write data type."));
 }
@@ -204,7 +204,10 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::print_info(
   const bool         reader,
   const unsigned int local_size) const
 {
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  Assert(mf_data.get() != 0, ExcNotInitialized());
+  ConditionalOStream pcout(std::cout,
+                           Utilities::MPI::this_mpi_process(
+                             mf_data->get_dof_handler().get_communicator()) == 0);
   const auto         map = (reader ? read_data_map : write_data_map);
 
   auto        names      = map.begin();
@@ -216,8 +219,8 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::print_info(
   pcout << "--     Data " << (reader ? "reading" : "writing") << ":\n"
         << "--     . data name(s): " << data_names << "\n"
         << "--     . associated mesh: " << mesh_name << "\n"
-        << "--     . Number of interface nodes: " << Utilities::MPI::sum(local_size, MPI_COMM_WORLD)
-        << "\n"
+        << "--     . Number of interface nodes: "
+        << Utilities::MPI::sum(local_size, mf_data->get_dof_handler().get_communicator()) << "\n"
         << "--     . Node location: " << get_interface_type() << "\n"
         << std::endl;
 }

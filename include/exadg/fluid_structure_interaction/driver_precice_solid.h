@@ -115,7 +115,6 @@ public:
 
       this->timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
     }
-    /**************************************** STRUCTURE *****************************************/
 
     /**************************************** STRUCTURE *****************************************/
 
@@ -135,19 +134,12 @@ public:
       structure_operator->get_dof_index(),
       numbers::invalid_unsigned_int);
 
-    // structure to ALE
-    // structure to fluid
-
-    // fluid to structure
     {
       std::vector<unsigned int> quad_indices;
       quad_indices.emplace_back(structure_operator->get_quad_index());
 
       // VectorType stress_fluid;
-      auto       exadg_terminal = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
-      VectorType displacement_structure;
-      structure_operator->initialize_dof_vector(displacement_structure);
-
+      auto exadg_terminal             = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
       auto quadrature_point_locations = exadg_terminal->setup(
         structure_matrix_free,
         structure_operator->get_dof_index(),
@@ -160,6 +152,8 @@ public:
                                         this->precice_parameters.read_mesh_name,
                                         {"Stress"});
 
+      VectorType displacement_structure;
+      structure_operator->initialize_dof_vector(displacement_structure);
       displacement_structure = 0;
       this->precice->initialize_precice(displacement_structure);
     }
@@ -191,12 +185,7 @@ public:
   void
   solve() const final
   {
-    Assert(this->application->get_parameters_fluid().adaptive_time_stepping == false,
-           ExcNotImplemented());
-
     bool is_new_time_window = true;
-
-    dealii::Timer precice_timer;
     // preCICE dictates when the time loop is finished
     while(this->precice->is_coupling_ongoing())
     {
@@ -218,7 +207,7 @@ public:
       coupling_structure_to_fluid(structure_time_integrator->get_velocity_np(),
                                   structure_time_integrator->get_time_step_size());
 
-      precice_timer.restart();
+      dealii::Timer precice_timer;
       this->precice->advance(structure_time_integrator->get_time_step_size());
       is_new_time_window = this->precice->is_time_window_complete();
       this->timer_tree.insert({"FSI", "preCICE"}, precice_timer.wall_time());

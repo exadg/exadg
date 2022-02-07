@@ -56,7 +56,6 @@ private:
   /// The deal.II associated IDs
   std::vector<std::array<types::global_dof_index, data_dim>> global_indices;
 
-  bool interface_is_defined = false;
   /// Indices related to the FEEvaluation (have a look at the initialization
   /// of the MatrixFree)
   const int mf_dof_index;
@@ -76,7 +75,7 @@ DoFInterface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
 
   // In order to avoid that we define the interface multiple times when reader
   // and writer refer to the same object
-  if(interface_is_defined)
+  if(interface_nodes_ids.size() > 0)
     return;
 
   // Get and sort the global dof indices
@@ -144,8 +143,6 @@ DoFInterface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
     interface_nodes_ids.emplace_back(precice_id);
   }
 
-  interface_is_defined = true;
-
   if(this->read_data_map.size() > 0)
     this->print_info(true, this->precice->getMeshVertexSize(this->mesh_id));
   if(this->write_data_map.size() > 0)
@@ -162,7 +159,7 @@ DoFInterface<dim, data_dim, VectorizedArrayType>::write_data(
 {
   const int write_data_id = this->write_data_map.at(data_name);
   Assert(write_data_id != -1, ExcNotInitialized());
-  Assert(interface_is_defined, ExcNotInitialized());
+  Assert(interface_nodes_ids.size() > 0, ExcNotInitialized());
 
   std::array<double, data_dim> write_data;
   for(std::size_t i = 0; i < global_indices.size(); ++i)

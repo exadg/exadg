@@ -57,8 +57,6 @@ private:
   /// The preCICE IDs
   std::vector<int> interface_nodes_ids;
 
-  bool interface_is_defined = false;
-
   virtual std::string
   get_interface_type() const override;
 };
@@ -74,15 +72,13 @@ ExaDGInterface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
 
   // In order to avoid that we define the interface multiple times when reader
   // and writer refer to the same object
-  if(interface_is_defined)
+  if(interface_nodes_ids.size() > 0)
     return;
 
   // Initial guess: half of the boundary is part of the coupling interface
   interface_nodes_ids.resize(vec.size());
 
   this->precice->setMeshVertices(this->mesh_id, vec.size(), &vec[0][0], interface_nodes_ids.data());
-
-  interface_is_defined = true;
 
   if(this->read_data_map.size() > 0)
     this->print_info(true, this->precice->getMeshVertexSize(this->mesh_id));

@@ -216,8 +216,8 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_interface(
   }
   else
   {
-    Assert(write_data_specification == "values_on_quads" ||
-             write_data_specification == "normal_gradients_on_quads",
+    Assert(write_data_specification == "values_on_q_points" ||
+             write_data_specification == "normal_gradients_on_q_points",
            ExcNotImplemented());
     writer.insert(
       {mesh_name,

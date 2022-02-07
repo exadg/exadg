@@ -76,7 +76,6 @@ private:
   /// The preCICE IDs
   std::vector<std::array<int, VectorizedArrayType::size()>> interface_nodes_ids;
 
-  bool interface_is_defined = false;
   /// Indices related to the FEEvaluation (have a look at the initialization
   /// of the MatrixFree)
   const int mf_dof_index;
@@ -97,7 +96,7 @@ QuadInterface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
 
   // In order to avoid that we define the interface multiple times when reader
   // and writer refer to the same object
-  if(interface_is_defined)
+  if(interface_nodes_ids.size() > 0)
     return;
 
   // Initial guess: half of the boundary is part of the coupling interface
@@ -145,7 +144,6 @@ QuadInterface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
   }
   // resize the IDs in case the initial guess was too large
   interface_nodes_ids.resize(size);
-  interface_is_defined = true;
   // Consistency check: the number of IDs we stored is equal or greater than
   // the IDs preCICE knows
   Assert(size * VectorizedArrayType::size() >=
@@ -169,13 +167,13 @@ QuadInterface<dim, data_dim, VectorizedArrayType>::write_data(
 
   switch(this->write_data_type)
   {
-    case WriteDataType::values_on_quads:
+    case WriteDataType::values_on_q_points:
       write_data_factory(data_vector,
                          write_data_id,
                          EvaluationFlags::values,
                          [](auto & phi, auto q_point) { return phi.get_value(q_point); });
       break;
-    case WriteDataType::normal_gradients_on_quads:
+    case WriteDataType::normal_gradients_on_q_points:
       write_data_factory(data_vector,
                          write_data_id,
                          EvaluationFlags::gradients,
@@ -199,7 +197,7 @@ QuadInterface<dim, data_dim, VectorizedArrayType>::write_data_factory(
   const std::function<value_type(FEFaceIntegrator &, unsigned int)> & get_write_value)
 {
   Assert(write_data_id != -1, ExcNotInitialized());
-  Assert(interface_is_defined, ExcNotInitialized());
+  Assert(interface_nodes_ids.size() > 0, ExcNotInitialized());
   // Similar as in define_coupling_mesh
   FEFaceIntegrator phi(*this->mf_data, true, mf_dof_index, mf_quad_index);
 

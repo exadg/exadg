@@ -250,7 +250,7 @@ public:
                                          ->first,
                                        this->precice_parameters.write_mesh_name,
                                        {this->precice_parameters.write_data_name},
-                                       "values_on_quads",
+                                       "values_on_q_points",
                                        fluid_matrix_free,
                                        fluid_operator->get_dof_index_velocity(),
                                        fluid_operator->get_quad_index_velocity_linear());
@@ -375,8 +375,6 @@ public:
            ExcNotImplemented());
 
     bool is_new_time_window = true;
-
-    dealii::Timer precice_timer;
     // preCICE dictates when the time loop is finished
     while(this->precice->is_coupling_ongoing())
     {
@@ -401,7 +399,7 @@ public:
         // compute and send stress to solid
         coupling_fluid_to_structure();
 
-        precice_timer.restart();
+        dealii::Timer precice_timer;
         this->precice->advance(fluid_time_integrator->get_time_step_size());
         is_new_time_window = this->precice->is_time_window_complete();
         this->timer_tree.insert({"FSI", "preCICE"}, precice_timer.wall_time());
