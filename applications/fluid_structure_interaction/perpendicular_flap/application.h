@@ -187,9 +187,6 @@ public:
 
     // PROJECTION METHODS
 
-    // formulation
-    param.store_previous_boundary_values = true;
-
     // pressure Poisson equation
     param.solver_pressure_poisson              = SolverPressurePoisson::CG;
     param.solver_data_pressure_poisson         = SolverData(1000, ABS_TOL, REL_TOL, 100);
@@ -372,24 +369,20 @@ public:
     boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(BOUNDARY_ID_INFLOW, new InflowBC<dim>()));
     boundary_descriptor->velocity->neumann_bc.insert(
-      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(BOUNDARY_ID_BOTTOM_WALL, new Functions::ZeroFunction<dim>(dim)));
     // fluid-structure interface
-    boundary_descriptor->velocity->dirichlet_mortar_bc.insert(
+    boundary_descriptor->velocity->dirichlet_cached_bc.insert(
       pair_fsi(BOUNDARY_ID_FLAG, new FunctionCached<1, dim>()));
 
     // fill boundary descriptor pressure
-    boundary_descriptor->pressure->neumann_bc.insert(
-      pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->pressure->neumann_bc.insert(
-      pair(BOUNDARY_ID_INFLOW, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->pressure->neumann_bc.insert(BOUNDARY_ID_WALLS);
+    boundary_descriptor->pressure->neumann_bc.insert(BOUNDARY_ID_INFLOW);
     boundary_descriptor->pressure->dirichlet_bc.insert(
       pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(1)));
-    boundary_descriptor->pressure->neumann_bc.insert(
-      pair(BOUNDARY_ID_BOTTOM_WALL, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->pressure->neumann_bc.insert(
-      pair(BOUNDARY_ID_FLAG, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->pressure->neumann_bc.insert(BOUNDARY_ID_BOTTOM_WALL);
+    boundary_descriptor->pressure->neumann_bc.insert(BOUNDARY_ID_FLAG);
   }
 
   void
@@ -471,7 +464,7 @@ public:
       pair(BOUNDARY_ID_BOTTOM_WALL, new Functions::ZeroFunction<dim>(dim)));
 
     // fluid-structure interface
-    boundary_descriptor->dirichlet_mortar_bc.insert(
+    boundary_descriptor->dirichlet_cached_bc.insert(
       pair_fsi(BOUNDARY_ID_FLAG, new FunctionCached<1, dim>()));
   }
 
@@ -546,7 +539,7 @@ public:
       pair_mask(BOUNDARY_ID_BOTTOM_WALL, ComponentMask()));
 
     // fluid-structure interface
-    boundary_descriptor->dirichlet_mortar_bc.insert(
+    boundary_descriptor->dirichlet_cached_bc.insert(
       pair_fsi(BOUNDARY_ID_FLAG, new FunctionCached<1, dim>()));
   }
 
@@ -701,7 +694,7 @@ public:
       pair_mask(BOUNDARY_ID_BOTTOM_WALL, ComponentMask()));
 
     // fluid-structure interface
-    boundary_descriptor->neumann_mortar_bc.insert(
+    boundary_descriptor->neumann_cached_bc.insert(
       pair_fsi(BOUNDARY_ID_FLAG, new FunctionCached<1, dim>()));
   }
 

@@ -23,8 +23,8 @@
 #define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_FLUID_H_
 
 // application
-#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 #include <exadg/fluid_structure_interaction/precice/interface_coupling.h>
+#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 
 // utilities
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
@@ -246,7 +246,7 @@ public:
     write_mesh_name = this->precice_parameters.write_mesh_name;
     write_data_name = this->precice_parameters.write_data_name;
     this->precice->add_write_interface(this->application->get_boundary_descriptor_fluid()
-                                         ->velocity->dirichlet_mortar_bc.begin()
+                                         ->velocity->dirichlet_cached_bc.begin()
                                          ->first,
                                        this->precice_parameters.write_mesh_name,
                                        {this->precice_parameters.write_data_name},
@@ -281,7 +281,7 @@ public:
           ale_matrix_free,
           ale_poisson_operator->get_dof_index(),
           quad_indices,
-          this->application->get_boundary_descriptor_ale_poisson()->dirichlet_mortar_bc);
+          this->application->get_boundary_descriptor_ale_poisson()->dirichlet_cached_bc);
       }
       else if(this->application->get_parameters_fluid().mesh_movement_type ==
               IncNS::MeshMovementType::Elasticity)
@@ -295,7 +295,7 @@ public:
           ale_matrix_free,
           ale_elasticity_operator->get_dof_index(),
           quad_indices,
-          this->application->get_boundary_descriptor_ale_elasticity()->dirichlet_mortar_bc);
+          this->application->get_boundary_descriptor_ale_elasticity()->dirichlet_cached_bc);
       }
       else
       {
@@ -322,7 +322,7 @@ public:
         fluid_matrix_free,
         fluid_operator->get_dof_index_velocity(),
         quad_indices,
-        this->application->get_boundary_descriptor_fluid()->velocity->dirichlet_mortar_bc);
+        this->application->get_boundary_descriptor_fluid()->velocity->dirichlet_cached_bc);
 
       // TODO: Parametrize
       this->precice->add_read_interface(quadrature_point_locations,

@@ -23,8 +23,8 @@
 #define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_SOLID_H_
 
 // application
-#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 #include <exadg/fluid_structure_interaction/precice/interface_coupling.h>
+#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 
 // utilities
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
@@ -127,7 +127,7 @@ public:
 
     write_mesh_name = this->precice_parameters.write_mesh_name;
     this->precice->add_write_interface(
-      this->application->get_boundary_descriptor_structure()->neumann_mortar_bc.begin()->first,
+      this->application->get_boundary_descriptor_structure()->neumann_cached_bc.begin()->first,
       this->precice_parameters.write_mesh_name,
       {this->precice_parameters.write_data_name, "Velocity"},
       "values_on_dofs",
@@ -152,7 +152,7 @@ public:
         structure_matrix_free,
         structure_operator->get_dof_index(),
         quad_indices,
-        this->application->get_boundary_descriptor_structure()->neumann_mortar_bc);
+        this->application->get_boundary_descriptor_structure()->neumann_cached_bc);
 
       this->precice->add_read_interface(quadrature_point_locations,
                                         structure_matrix_free,
