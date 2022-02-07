@@ -259,7 +259,7 @@ public:
     {
       // Declare some data structures
       std::vector<Point<dim>> quadrature_point_locations;
-      auto exadg_terminal = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
+      auto exadg_terminal_ale = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
 
       if(this->application->get_parameters_fluid().mesh_movement_type ==
          IncNS::MeshMovementType::Poisson)
@@ -277,7 +277,7 @@ public:
         // VectorType stress_fluid;
         VectorType displacement_structure;
         ale_poisson_operator->initialize_dof_vector(displacement_structure);
-        quadrature_point_locations = exadg_terminal->setup(
+        quadrature_point_locations = exadg_terminal_ale->setup(
           ale_matrix_free,
           ale_poisson_operator->get_dof_index(),
           quad_indices,
@@ -291,7 +291,7 @@ public:
 
         VectorType displacement_structure;
         ale_elasticity_operator->initialize_dof_vector(displacement_structure);
-        quadrature_point_locations = exadg_terminal->setup(
+        quadrature_point_locations = exadg_terminal_ale->setup(
           ale_matrix_free,
           ale_elasticity_operator->get_dof_index(),
           quad_indices,
@@ -301,8 +301,11 @@ public:
       {
         AssertThrow(false, ExcNotImplemented());
       }
-      this->precice->add_read_interface(
-        quadrature_point_locations, ale_matrix_free, exadg_terminal, "ALE-Mesh", {"Displacement"});
+      this->precice->add_read_interface(quadrature_point_locations,
+                                        ale_matrix_free,
+                                        exadg_terminal_ale,
+                                        "ALE-Mesh",
+                                        {"Displacement"});
     }
 
     // structure to fluid
@@ -314,8 +317,8 @@ public:
 
       VectorType velocity_structure;
       fluid_operator->initialize_vector_velocity(velocity_structure);
-      auto exadg_terminal             = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
-      auto quadrature_point_locations = exadg_terminal->setup(
+      auto exadg_terminal_fluid       = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
+      auto quadrature_point_locations = exadg_terminal_fluid->setup(
         fluid_matrix_free,
         fluid_operator->get_dof_index_velocity(),
         quad_indices,
@@ -324,7 +327,7 @@ public:
       // TODO: Parametrize
       this->precice->add_read_interface(quadrature_point_locations,
                                         fluid_matrix_free,
-                                        exadg_terminal,
+                                        exadg_terminal_fluid,
                                         "Fluid-Mesh-read",
                                         {"Velocity"});
       VectorType initial_stress;

@@ -53,7 +53,7 @@ public:
   set_data_pointer(std::shared_ptr<ExaDG::InterfaceCoupling<dim, dim, double>> exadg_terminal_);
 
 private:
-  /// Interface for ExaDG data structures
+  /// Accessor for ExaDG data structures
   std::shared_ptr<ExaDG::InterfaceCoupling<dim, dim, double>> exadg_terminal;
   /// The preCICE IDs
   std::vector<int> interface_nodes_ids;
