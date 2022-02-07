@@ -23,6 +23,6 @@
     "Output": {
         "OutputDirectory": "output/cylinder_with_flag/",
         "OutputName": "test",
-        "WriteOutput": "true"
+        "WriteOutput": "false"
   }
 }
