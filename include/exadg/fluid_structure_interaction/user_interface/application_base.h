@@ -101,6 +101,14 @@ public:
   void
   setup()
   {
+    setup_structure();
+
+    setup_fluid_and_ale();
+  }
+
+  void
+  setup_structure()
+  {
     /*
      * Structure
      */
@@ -129,8 +137,11 @@ public:
     // field functions
     structure_field_functions = std::make_shared<Structure::FieldFunctions<dim>>();
     set_field_functions_structure();
+  }
 
-
+  void
+  setup_fluid_and_ale()
+  {
     /*
      * Fluid
      */
