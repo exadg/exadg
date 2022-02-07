@@ -117,10 +117,10 @@ $(function() {
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="comment"> *   |     example          |          velocity         |               pressure                         |</span></div>
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="comment"> *   +----------------------+---------------------------+------------------------------------------------+</span></div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="comment"> *   |     inflow, no-slip  |   Dirichlet(Cached):      |  Neumann:                                      |</span></div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="comment"> *   |                      | prescribe g_u             | prescribe dg_u/dt in case of dual-splitting    |</span></div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="comment"> *   |                      | prescribe g_u             | no BCs to be prescribed                        |</span></div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="comment"> *   +----------------------+---------------------------+------------------------------------------------+</span></div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="comment"> *   |     symmetry         |   Symmetry:               |  Neumann:                                      |</span></div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span><span class="comment"> *   |                      | no BCs to be prescribed   | prescribe dg_u/dt = 0 in case of dual-splitting|</span></div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span><span class="comment"> *   |                      | no BCs to be prescribed   | no BCs to be prescribed                        |</span></div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span><span class="comment"> *   +----------------------+---------------------------+------------------------------------------------+</span></div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><span class="comment"> *   |     outflow          |   Neumann:                |  Dirichlet:                                    |</span></div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span><span class="comment"> *   |                      | prescribe F(u)*n          | prescribe g_p                                  |</span></div>
@@ -224,91 +224,79 @@ $(function() {
 <div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  <span class="comment">// Dirichlet: prescribe pressure value</span></div>
 <div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  std::map&lt;dealii::types::boundary_id, std::shared_ptr&lt;dealii::Function&lt;dim&gt;&gt;&gt; dirichlet_bc;</div>
 <div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span> </div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  <span class="comment">// Neumann: It depends on the chosen Navier-Stokes solver how this map has to be filled</span></div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>  <span class="comment">//</span></div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  <span class="comment">//  - coupled solver: do nothing (one only has to discretize the pressure gradient for</span></div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>  <span class="comment">//                    this solution approach)</span></div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>  <span class="comment">//</span></div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>  <span class="comment">//  - pressure-correction: this solver always prescribes homogeneous Neumann BCs in the</span></div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>  <span class="comment">//                         pressure Poisson equation. Hence, no function has to be specified.</span></div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>  <span class="comment">//</span></div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>  <span class="comment">//  - dual splitting: Specify a dealii::Function&lt;dim&gt; with dim components for the boundary</span></div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>  <span class="comment">//  condition</span></div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>  <span class="comment">//                    dg_u/dt that has to be evaluated for the dual splitting scheme. But this</span></div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>  <span class="comment">//                    is only necessary if the parameter store_previous_boundary_values == false.</span></div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  <span class="comment">//                    Otherwise, the code automatically determines the time derivative dg_u/dt</span></div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  <span class="comment">//                    numerically and no boundary condition has to be set by the user.</span></div>
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>  std::map&lt;dealii::types::boundary_id, std::shared_ptr&lt;dealii::Function&lt;dim&gt;&gt;&gt; neumann_bc;</div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span> </div>
-<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>  <span class="comment">// add more types of boundary conditions</span></div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span> </div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  <span class="comment">// Neumann: only the boundary IDs are stored but no inhomogeneous boundary conditions are</span></div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>  <span class="comment">// prescribed</span></div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  std::set&lt;dealii::types::boundary_id&gt; neumann_bc;</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span> </div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>  <span class="comment">// add more types of boundary conditions</span></div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span> </div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span> </div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>  <span class="comment">// return the boundary type</span></div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>  <span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>    BoundaryTypeP</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>    get_boundary_type(dealii::types::boundary_id <span class="keyword">const</span> &amp; boundary_id)<span class="keyword"> const</span></div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>    <span class="keywordflow">if</span>(this-&gt;dirichlet_bc.find(boundary_id) != this-&gt;dirichlet_bc.end())</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>      <span class="keywordflow">return</span> BoundaryTypeP::Dirichlet;</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(this-&gt;neumann_bc.find(boundary_id) != this-&gt;neumann_bc.end())</div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>      <span class="keywordflow">return</span> BoundaryTypeP::Neumann;</div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span> </div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>    AssertThrow(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;Boundary type of face is invalid or not implemented.&quot;</span>));</div>
 <div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span> </div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>  <span class="comment">// return the boundary type</span></div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  <span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>    BoundaryTypeP</div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>    get_boundary_type(dealii::types::boundary_id <span class="keyword">const</span> &amp; boundary_id)<span class="keyword"> const</span></div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>    <span class="keywordflow">if</span>(this-&gt;dirichlet_bc.find(boundary_id) != this-&gt;dirichlet_bc.end())</div>
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>      <span class="keywordflow">return</span> BoundaryTypeP::Dirichlet;</div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(this-&gt;neumann_bc.find(boundary_id) != this-&gt;neumann_bc.end())</div>
-<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>      <span class="keywordflow">return</span> BoundaryTypeP::Neumann;</div>
-<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span> </div>
-<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>    AssertThrow(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;Boundary type of face is invalid or not implemented.&quot;</span>));</div>
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span> </div>
-<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>    <span class="keywordflow">return</span> BoundaryTypeP::Undefined;</div>
-<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>  }</div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span> </div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  <span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>    <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>    verify_boundary_conditions(</div>
-<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>      dealii::types::boundary_id <span class="keyword">const</span>             boundary_id,</div>
-<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>      std::set&lt;dealii::types::boundary_id&gt; <span class="keyword">const</span> &amp; periodic_boundary_ids)<span class="keyword"> const</span></div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> counter = 0;</div>
-<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>    <span class="keywordflow">if</span>(this-&gt;dirichlet_bc.find(boundary_id) != this-&gt;dirichlet_bc.end())</div>
-<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>      counter++;</div>
-<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span> </div>
-<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>    <span class="keywordflow">if</span>(this-&gt;neumann_bc.find(boundary_id) != this-&gt;neumann_bc.end())</div>
-<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>      counter++;</div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span> </div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>    <span class="keywordflow">if</span>(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())</div>
-<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>      counter++;</div>
-<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span> </div>
-<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>    AssertThrow(counter == 1,</div>
-<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>                dealii::ExcMessage(<span class="stringliteral">&quot;Boundary face with non-unique boundary type found.&quot;</span>));</div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>  }</div>
-<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>};</div>
-<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span> </div>
-<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim&gt;</div>
-<div class="line"><a id="l00212" name="l00212"></a><span class="lineno"><a class="line" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">  212</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">BoundaryDescriptor</a></div>
-<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>{</div>
-<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>  <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>()</div>
-<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>  {</div>
-<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>    velocity = std::make_shared&lt;BoundaryDescriptorU&lt;dim&gt;&gt;();</div>
-<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>    pressure = std::make_shared&lt;BoundaryDescriptorP&lt;dim&gt;&gt;();</div>
-<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>  }</div>
-<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span> </div>
-<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>  std::shared_ptr&lt;BoundaryDescriptorU&lt;dim&gt;&gt; velocity;</div>
-<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>  std::shared_ptr&lt;BoundaryDescriptorP&lt;dim&gt;&gt; pressure;</div>
-<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>};</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>    <span class="keywordflow">return</span> BoundaryTypeP::Undefined;</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  }</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span> </div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>  <span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>    <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>    verify_boundary_conditions(</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>      dealii::types::boundary_id <span class="keyword">const</span>             boundary_id,</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>      std::set&lt;dealii::types::boundary_id&gt; <span class="keyword">const</span> &amp; periodic_boundary_ids)<span class="keyword"> const</span></div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> counter = 0;</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>    <span class="keywordflow">if</span>(this-&gt;dirichlet_bc.find(boundary_id) != this-&gt;dirichlet_bc.end())</div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>      counter++;</div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span> </div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>    <span class="keywordflow">if</span>(this-&gt;neumann_bc.find(boundary_id) != this-&gt;neumann_bc.end())</div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>      counter++;</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span> </div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>    <span class="keywordflow">if</span>(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>      counter++;</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span> </div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>    AssertThrow(counter == 1,</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>                dealii::ExcMessage(<span class="stringliteral">&quot;Boundary face with non-unique boundary type found.&quot;</span>));</div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>  }</div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>};</div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span> </div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim&gt;</div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno"><a class="line" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">  200</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">BoundaryDescriptor</a></div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>{</div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>()</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>  {</div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>    velocity = std::make_shared&lt;BoundaryDescriptorU&lt;dim&gt;&gt;();</div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>    pressure = std::make_shared&lt;BoundaryDescriptorP&lt;dim&gt;&gt;();</div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>  }</div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span> </div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>  std::shared_ptr&lt;BoundaryDescriptorU&lt;dim&gt;&gt; velocity;</div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>  std::shared_ptr&lt;BoundaryDescriptorP&lt;dim&gt;&gt; pressure;</div>
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>};</div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span> </div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span><span class="keyword">inline</span> <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>verify_boundary_conditions(<a class="code hl_struct" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">BoundaryDescriptor&lt;dim&gt;</a> <span class="keyword">const</span> &amp; boundary_descriptor,</div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>                           <a class="code hl_class" href="classExaDG_1_1Grid.html">Grid&lt;dim&gt;</a> <span class="keyword">const</span> &amp;               grid)</div>
+<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>{</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>  ExaDG::verify_boundary_conditions(*boundary_descriptor.velocity, grid);</div>
+<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>  ExaDG::verify_boundary_conditions(*boundary_descriptor.pressure, grid);</div>
+<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>}</div>
+<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span> </div>
+<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>} <span class="comment">// namespace IncNS</span></div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span> </div>
-<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span><span class="keyword">inline</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>verify_boundary_conditions(<a class="code hl_struct" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">BoundaryDescriptor&lt;dim&gt;</a> <span class="keyword">const</span> &amp; boundary_descriptor,</div>
-<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>                           <a class="code hl_class" href="classExaDG_1_1Grid.html">Grid&lt;dim&gt;</a> <span class="keyword">const</span> &amp;               grid)</div>
-<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>{</div>
-<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>  ExaDG::verify_boundary_conditions(*boundary_descriptor.velocity, grid);</div>
-<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>  ExaDG::verify_boundary_conditions(*boundary_descriptor.pressure, grid);</div>
-<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>}</div>
-<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span> </div>
-<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>} <span class="comment">// namespace IncNS</span></div>
-<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span> </div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1Grid_html"><div class="ttname"><a href="classExaDG_1_1Grid.html">ExaDG::Grid</a></div><div class="ttdef"><b>Definition:</b> grid.h:40</div></div>
 <div class="ttc" id="astructExaDG_1_1IncNS_1_1BoundaryDescriptorP_html"><div class="ttname"><a href="structExaDG_1_1IncNS_1_1BoundaryDescriptorP.html">ExaDG::IncNS::BoundaryDescriptorP</a></div><div class="ttdef"><b>Definition:</b> boundary_descriptor.h:152</div></div>
 <div class="ttc" id="astructExaDG_1_1IncNS_1_1BoundaryDescriptorU_html"><div class="ttname"><a href="structExaDG_1_1IncNS_1_1BoundaryDescriptorU.html">ExaDG::IncNS::BoundaryDescriptorU</a></div><div class="ttdef"><b>Definition:</b> boundary_descriptor.h:81</div></div>
-<div class="ttc" id="astructExaDG_1_1IncNS_1_1BoundaryDescriptor_html"><div class="ttname"><a href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">ExaDG::IncNS::BoundaryDescriptor</a></div><div class="ttdef"><b>Definition:</b> boundary_descriptor.h:213</div></div>
+<div class="ttc" id="astructExaDG_1_1IncNS_1_1BoundaryDescriptor_html"><div class="ttname"><a href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">ExaDG::IncNS::BoundaryDescriptor</a></div><div class="ttdef"><b>Definition:</b> boundary_descriptor.h:201</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
