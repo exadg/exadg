@@ -26,8 +26,8 @@
 
 // application
 #include <exadg/fluid_structure_interaction/user_interface/application_base.h>
-#include <exadg/fluid_structure_interaction_precice/precice_adapter.h>
-#include <exadg/fluid_structure_interaction_precice/precice_parameter.h>
+#include <exadg/fluid_structure_interaction/precice/precice_adapter.h>
+#include <exadg/fluid_structure_interaction/precice/precice_parameter.h>
 
 // grid
 #include <exadg/grid/get_dynamic_mapping.h>

@@ -24,7 +24,7 @@
 
 // application
 #include <exadg/fluid_structure_interaction/user_interface/application_base.h>
-#include <exadg/fluid_structure_interaction_precice/interface_coupling.h>
+#include <exadg/fluid_structure_interaction/precice/interface_coupling.h>
 
 // utilities
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>

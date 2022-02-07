@@ -2,8 +2,8 @@
 
 #include <deal.II/dofs/dof_tools.h>
 
-#include <exadg/fluid_structure_interaction_precice/coupling_interface.h>
-#include <exadg/fluid_structure_interaction_precice/dof_tools_extension.h>
+#include <exadg/fluid_structure_interaction/precice/coupling_interface.h>
+#include <exadg/fluid_structure_interaction/precice/dof_tools_extension.h>
 
 namespace Adapter
 {

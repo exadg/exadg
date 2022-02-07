@@ -9,9 +9,9 @@
 
 #include <deal.II/matrix_free/matrix_free.h>
 
-#include <exadg/fluid_structure_interaction_precice/dof_interface.h>
-#include <exadg/fluid_structure_interaction_precice/exadg_interface.h>
-#include <exadg/fluid_structure_interaction_precice/quad_interface.h>
+#include <exadg/fluid_structure_interaction/precice/dof_interface.h>
+#include <exadg/fluid_structure_interaction/precice/exadg_interface.h>
+#include <exadg/fluid_structure_interaction/precice/quad_interface.h>
 #include <precice/SolverInterface.hpp>
 
 #include <ostream>

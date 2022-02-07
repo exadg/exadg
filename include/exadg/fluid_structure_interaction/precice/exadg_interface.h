@@ -2,9 +2,8 @@
 
 #include <deal.II/matrix_free/fe_evaluation.h>
 
-#include <exadg/fluid_structure_interaction_precice/coupling_interface.h>
-// TODO: Rename this file to exadg-terminal?
-#include <exadg/fluid_structure_interaction_precice/interface_coupling.h>
+#include <exadg/fluid_structure_interaction/precice/coupling_interface.h>
+#include <exadg/fluid_structure_interaction/precice/interface_coupling.h>
 
 namespace Adapter
 {

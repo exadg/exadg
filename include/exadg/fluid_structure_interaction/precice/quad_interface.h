@@ -2,7 +2,7 @@
 
 #include <deal.II/matrix_free/fe_evaluation.h>
 
-#include <exadg/fluid_structure_interaction_precice/coupling_interface.h>
+#include <exadg/fluid_structure_interaction/precice/coupling_interface.h>
 
 namespace Adapter
 {
