@@ -96,7 +96,6 @@ Numerical parameters:
 High-order dual splitting scheme:
   Order of extrapolation pressure NBC:       2
   Formulation convective term in BC:         ConvectiveFormulation
-  Store previous boundary values:            true
 
   Pressure Poisson equation (PPE):
   interior penalty factor:                   1.0000e+00
@@ -198,7 +197,7 @@ Calculate error for velocity at time t = 1.0037e+01:
   Absolute error (L2-norm): 1.69035e-01
 
 Calculate error for pressure at time t = 1.0037e+01:
-  Absolute error (L2-norm): 1.33265e-09
+  Absolute error (L2-norm): 1.49400e-09
 
 ________________________________________________________________________________
 
@@ -209,7 +208,7 @@ Calculate error for velocity at time t = 2.0043e+01:
   Absolute error (L2-norm): 1.39526e-02
 
 Calculate error for pressure at time t = 2.0043e+01:
-  Absolute error (L2-norm): 7.91558e-11
+  Absolute error (L2-norm): 8.57129e-11
 
 ________________________________________________________________________________
 
@@ -220,7 +219,7 @@ Calculate error for velocity at time t = 3.0067e+01:
   Absolute error (L2-norm): 1.14622e-03
 
 Calculate error for pressure at time t = 3.0067e+01:
-  Absolute error (L2-norm): 7.33415e-12
+  Absolute error (L2-norm): 7.29264e-12
 
 ________________________________________________________________________________
 
@@ -231,7 +230,7 @@ Calculate error for velocity at time t = 4.0068e+01:
   Absolute error (L2-norm): 9.47099e-05
 
 Calculate error for pressure at time t = 4.0068e+01:
-  Absolute error (L2-norm): 4.41954e-13
+  Absolute error (L2-norm): 4.56487e-13
 
 ________________________________________________________________________________
 
@@ -242,7 +241,7 @@ Calculate error for velocity at time t = 5.0068e+01:
   Absolute error (L2-norm): 7.82785e-06
 
 Calculate error for pressure at time t = 5.0068e+01:
-  Absolute error (L2-norm): 4.69067e-14
+  Absolute error (L2-norm): 3.27305e-14
 
 ________________________________________________________________________________
 
@@ -253,7 +252,7 @@ Calculate error for velocity at time t = 6.0068e+01:
   Absolute error (L2-norm): 6.46979e-07
 
 Calculate error for pressure at time t = 6.0068e+01:
-  Absolute error (L2-norm): 8.84021e-15
+  Absolute error (L2-norm): 5.47484e-15
 
 ________________________________________________________________________________
 
@@ -264,7 +263,7 @@ Calculate error for velocity at time t = 7.0068e+01:
   Absolute error (L2-norm): 5.34733e-08
 
 Calculate error for pressure at time t = 7.0068e+01:
-  Absolute error (L2-norm): 5.45910e-15
+  Absolute error (L2-norm): 7.08225e-15
 
 ________________________________________________________________________________
 
@@ -275,7 +274,7 @@ Calculate error for velocity at time t = 8.0068e+01:
   Absolute error (L2-norm): 4.41961e-09
 
 Calculate error for pressure at time t = 8.0068e+01:
-  Absolute error (L2-norm): 2.15940e-15
+  Absolute error (L2-norm): 9.13526e-15
 
 ________________________________________________________________________________
 
@@ -283,10 +282,10 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for velocity at time t = 9.0068e+01:
-  Absolute error (L2-norm): 3.65275e-10
+  Absolute error (L2-norm): 3.65277e-10
 
 Calculate error for pressure at time t = 9.0068e+01:
-  Absolute error (L2-norm): 6.71155e-15
+  Absolute error (L2-norm): 2.57512e-15
 
 ________________________________________________________________________________
 
@@ -294,7 +293,7 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for velocity at time t = 1.0007e+02:
-  Absolute error (L2-norm): 3.01813e-11
+  Absolute error (L2-norm): 3.01836e-11
 
 Calculate error for pressure at time t = 1.0007e+02:
-  Absolute error (L2-norm): 4.36829e-15
+  Absolute error (L2-norm): 7.85129e-15

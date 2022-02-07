@@ -262,9 +262,6 @@ public:
 
     // PROJECTION METHODS
 
-    // formulation
-    this->param.store_previous_boundary_values = true;
-
     // pressure Poisson equation
     this->param.solver_pressure_poisson              = SolverPressurePoisson::CG;
     this->param.solver_data_pressure_poisson         = SolverData(1000, 1.e-14, 1.e-14, 100);
@@ -361,8 +358,7 @@ public:
     this->boundary_descriptor->velocity->dirichlet_bc.insert(pair(
       0, new AnalyticalSolutionVelocity<dim>(H, MAX_VELOCITY, ALPHA, EPSILON, FE, OMEGA, EIG_VEC)));
 
-    this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->pressure->neumann_bc.insert(0);
   }
 
   void

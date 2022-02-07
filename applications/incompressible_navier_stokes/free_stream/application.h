@@ -158,7 +158,6 @@ public:
     this->param.quad_rule_linearization = QuadratureRuleLinearization::Overintegration32k;
 
     // PROJECTION METHODS
-    this->param.store_previous_boundary_values = true;
 
     // pressure Poisson equation
     this->param.solver_pressure_poisson              = SolverPressurePoisson::CG;
@@ -292,8 +291,7 @@ public:
       pair(0, new AnalyticalSolutionVelocity<dim>()));
 
     // fill boundary descriptor pressure
-    this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->pressure->neumann_bc.insert(0);
   }
 
   void

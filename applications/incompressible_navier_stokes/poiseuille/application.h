@@ -277,9 +277,6 @@ public:
 
     // PROJECTION METHODS
 
-    // formulation
-    this->param.store_previous_boundary_values = true;
-
     // pressure Poisson equation
     this->param.solver_pressure_poisson         = SolverPressurePoisson::CG;
     this->param.solver_data_pressure_poisson    = SolverData(1000, 1.e-20, 1.e-6, 100);
@@ -434,16 +431,14 @@ public:
     // fill boundary descriptor pressure
 
     // no-slip walls
-    this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->pressure->neumann_bc.insert(0);
 
     if(boundary_condition != BoundaryCondition::Periodic)
     {
       // inflow
       if(boundary_condition == BoundaryCondition::ParabolicInflow)
       {
-        this->boundary_descriptor->pressure->neumann_bc.insert(
-          pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
+        this->boundary_descriptor->pressure->neumann_bc.insert(1);
       }
       else if(boundary_condition == BoundaryCondition::PressureInflow)
       {
@@ -466,8 +461,7 @@ public:
       // -> prescribe dudt for dual-splitting scheme, which is equal to zero since
       // (du/dt)*n = d(u*n)/dt = d(0)/dt = 0, i.e., the time derivative term is multiplied by the
       // normal vector and the normal velocity is zero (= symmetry boundary condition).
-      this->boundary_descriptor->pressure->neumann_bc.insert(
-        pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
+      this->boundary_descriptor->pressure->neumann_bc.insert(3);
     }
   }
 

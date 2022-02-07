@@ -241,9 +241,6 @@ public:
 
     // PROJECTION METHODS
 
-    // formulation
-    param.store_previous_boundary_values = true;
-
     // pressure Poisson equation
     param.solver_pressure_poisson              = SolverPressurePoisson::CG;
     param.solver_data_pressure_poisson         = SolverData(1000, ABS_TOL, REL_TOL, 100);
@@ -525,16 +522,12 @@ public:
       pair_fsi(BOUNDARY_ID_FLAG, new FunctionCached<1, dim>()));
 
     // fill boundary descriptor pressure
-    boundary_descriptor->pressure->neumann_bc.insert(
-      pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->pressure->neumann_bc.insert(
-      pair(BOUNDARY_ID_INFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->pressure->neumann_bc.insert(BOUNDARY_ID_WALLS);
+    boundary_descriptor->pressure->neumann_bc.insert(BOUNDARY_ID_INFLOW);
     boundary_descriptor->pressure->dirichlet_bc.insert(
       pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(1)));
-    boundary_descriptor->pressure->neumann_bc.insert(
-      pair(BOUNDARY_ID_CYLINDER, new dealii::Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->pressure->neumann_bc.insert(
-      pair(BOUNDARY_ID_FLAG, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->pressure->neumann_bc.insert(BOUNDARY_ID_CYLINDER);
+    boundary_descriptor->pressure->neumann_bc.insert(BOUNDARY_ID_FLAG);
   }
 
   void

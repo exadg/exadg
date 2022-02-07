@@ -96,8 +96,7 @@ public:
       pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // pressure
-    boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->pressure->neumann_bc.insert(0);
     boundary_descriptor->pressure->dirichlet_bc.insert(
       pair(1, new dealii::Functions::ZeroFunction<dim>(1)));
   }

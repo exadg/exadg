@@ -193,9 +193,6 @@ public:
 
   // rhs pressure gradient
   void
-  rhs_pressure_gradient_term(VectorType & dst, double const time) const;
-
-  void
   rhs_pressure_gradient_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
                                                           VectorType const & pressure) const;
 

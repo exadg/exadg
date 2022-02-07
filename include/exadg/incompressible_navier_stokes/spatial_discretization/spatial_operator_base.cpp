@@ -153,14 +153,13 @@ SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
                                      field + quad_index_p);
   matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree_u + (param.degree_u + 2) / 2),
                                      field + quad_index_u_nonlinear);
-  if(param.store_previous_boundary_values)
-  {
-    matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree_u + 1),
-                                       field + quad_index_u_gauss_lobatto);
-    matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.get_degree_p(param.degree_u) +
-                                                                1),
-                                       field + quad_index_p_gauss_lobatto);
-  }
+
+  // TODO create those quadrature rules only when needed
+  matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree_u + 1),
+                                     field + quad_index_u_gauss_lobatto);
+  matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.get_degree_p(param.degree_u) +
+                                                              1),
+                                     field + quad_index_p_gauss_lobatto);
 }
 
 template<int dim, typename Number>
@@ -212,15 +211,14 @@ SpatialOperatorBase<dim, Number>::initialize_boundary_descriptor_laplace()
   // Dirichlet BCs for pressure
   boundary_descriptor_laplace->dirichlet_bc = boundary_descriptor->pressure->dirichlet_bc;
 
-  // Neumann BCs for pressure
-  // Note: for the dual splitting scheme, neumann_bc contains functions corresponding
-  //       to dudt term required in pressure Neumann boundary condition.
-  // Here: set this functions explicitly to ZeroFunction when filling the boundary
-  //       descriptor for the Laplace operator because these inhomogeneous
-  //       boundary conditions have to be implemented separately
-  //       and can not be applied by the Laplace operator.
-  for(typename std::map<dealii::types::boundary_id,
-                        std::shared_ptr<dealii::Function<dim>>>::const_iterator it =
+  // Neumann BCs for pressure: These boundary conditions are empty.
+  // However, when using projection methods with the solution of a pressure Poisson
+  // equation, the interface of the Laplace operator requires to set functions on
+  // Neumann boundaries, which we simply fill by ZeroFunction. In case that a
+  // projection method prescribes inhomogeneous Neumann boundary conditions for the
+  // pressure (e.g. dual splitting projection scheme), this is done by separate
+  // routines.
+  for(typename std::set<dealii::types::boundary_id>::const_iterator it =
         boundary_descriptor->pressure->neumann_bc.begin();
       it != boundary_descriptor->pressure->neumann_bc.end();
       ++it)
@@ -228,7 +226,7 @@ SpatialOperatorBase<dim, Number>::initialize_boundary_descriptor_laplace()
     std::shared_ptr<dealii::Function<dim>> zero_function;
     zero_function = std::make_shared<dealii::Functions::ZeroFunction<dim>>(1);
     boundary_descriptor_laplace->neumann_bc.insert(
-      std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>(it->first,
+      std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>(*it,
                                                                                     zero_function));
   }
 }

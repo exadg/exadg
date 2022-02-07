@@ -78,9 +78,6 @@ public:
   apply_velocity_divergence_term(VectorType & dst, VectorType const & src) const;
 
   void
-  rhs_velocity_divergence_term(VectorType & dst, double const & time) const;
-
-  void
   rhs_velocity_divergence_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
                                                             VectorType const & velocity) const;
 
@@ -95,10 +92,6 @@ public:
   // rhs pressure Poisson equation: Neumann BC body force term
   void
   rhs_ppe_nbc_body_force_term_add(VectorType & dst, double const & time);
-
-  // rhs pressure Poisson equation: Neumann BC analytical time derivative term
-  void
-  rhs_ppe_nbc_analytical_time_derivative_add(VectorType & dst, double const & time);
 
   // rhs pressure Poisson equation: Neumann BC numerical time derivative term
   void
@@ -186,14 +179,6 @@ private:
     Range const &                           face_range) const;
 
   // Neumann boundary condition term
-
-  // dg_u/dt term with analytical derivative
-  void
-  local_rhs_ppe_nbc_analytical_time_derivative_add_boundary_face(
-    dealii::MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                            dst,
-    VectorType const &                      src,
-    Range const &                           face_range) const;
 
   // dg_u/dt with numerical time derivative
   void

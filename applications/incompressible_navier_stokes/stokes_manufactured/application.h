@@ -104,46 +104,6 @@ private:
   double const viscosity;
 };
 
-template<int dim>
-class PressureBC_dudt : public dealii::Function<dim>
-{
-public:
-  PressureBC_dudt(double const nu) : dealii::Function<dim>(dim, 0.0), viscosity(nu)
-  {
-  }
-
-  double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
-  {
-    double t      = this->get_time();
-    double result = 0.0;
-
-    double const a      = 2.883356;
-    double const lambda = viscosity * (1. + a * a);
-
-    double exp_t  = std::exp(-lambda * t);
-    double sin_x  = std::sin(p[0]);
-    double cos_x  = std::cos(p[0]);
-    double cos_a  = std::cos(a);
-    double sin_ay = std::sin(a * p[1]);
-    double cos_ay = std::cos(a * p[1]);
-    double sinh_y = std::sinh(p[1]);
-    double cosh_y = std::cosh(p[1]);
-    if(component == 0)
-      result = -lambda * exp_t * sin_x * (a * sin_ay - cos_a * sinh_y);
-    else if(component == 1)
-      result = -lambda * exp_t * cos_x * (cos_ay + cos_a * cosh_y);
-
-    if(STABILITY_ANALYSIS == true)
-      result = 0;
-
-    return result;
-  }
-
-private:
-  double const viscosity;
-};
-
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
@@ -225,9 +185,6 @@ public:
 
     // PROJECTION METHODS
 
-    // formulation
-    this->param.store_previous_boundary_values = true;
-
     // pressure Poisson equation
     this->param.solver_pressure_poisson         = SolverPressurePoisson::CG;
     this->param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
@@ -308,8 +265,7 @@ public:
       pair(0, new AnalyticalSolutionVelocity<dim>(viscosity)));
 
     // fill boundary descriptor pressure
-    this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new PressureBC_dudt<dim>(viscosity)));
+    this->boundary_descriptor->pressure->neumann_bc.insert(0);
   }
 
   void

@@ -248,8 +248,7 @@ public:
     this->boundary_descriptor->velocity->symmetry_bc.insert(
       pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
 
-    this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->pressure->neumann_bc.insert(0);
   }
 
 

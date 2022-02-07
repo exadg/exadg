@@ -656,15 +656,13 @@ OperatorCoupled<dim, Number>::setup_pressure_convection_diffusion_operator()
                                                                                     dummy));
   }
   // Neumann BC for pressure
-  for(typename std::map<dealii::types::boundary_id,
-                        std::shared_ptr<dealii::Function<dim>>>::const_iterator it =
+  for(typename std::set<dealii::types::boundary_id>::const_iterator it =
         this->boundary_descriptor->pressure->neumann_bc.begin();
       it != this->boundary_descriptor->pressure->neumann_bc.end();
       ++it)
   {
     boundary_descriptor->neumann_bc.insert(
-      std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>(it->first,
-                                                                                    dummy));
+      std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>(*it, dummy));
   }
 
   // convective operator:
