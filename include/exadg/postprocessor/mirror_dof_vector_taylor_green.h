@@ -121,8 +121,13 @@ apply_taylor_green_symmetry(dealii::DoFHandler<dim> const & dof_handler_symm,
     dealii::Utilities::MPI::ConsensusAlgorithms::Selector<
       std::pair<dealii::types::global_dof_index, dealii::types::global_dof_index>,
       unsigned int>
+#if DEAL_II_VERSION_GTE(10, 0, 0)
+      consensus_algorithm;
+    consensus_algorithm.run(process, comm);
+#else
       consensus_algorithm(process, comm);
     consensus_algorithm.run();
+#endif
 
     for(auto const & owner : owning_ranks_of_ghosts)
       recv_map_proc_to_lex_offset[owner] = std::vector<unsigned int>();
