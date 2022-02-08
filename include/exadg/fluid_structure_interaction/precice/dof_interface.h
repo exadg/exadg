@@ -5,7 +5,9 @@
 #include <exadg/fluid_structure_interaction/precice/coupling_interface.h>
 #include <exadg/fluid_structure_interaction/precice/dof_tools_extension.h>
 
-namespace Adapter
+namespace ExaDG
+{
+namespace preCICE
 {
 using namespace dealii;
 
@@ -192,6 +194,6 @@ DoFInterface<dim, data_dim, VectorizedArrayType>::get_interface_type() const
   return "DoF support points using matrix-free dof index " + Utilities::to_string(mf_dof_index);
 }
 
-// TODO
-//  get_mesh_stats()
-} // namespace Adapter
+
+} // namespace preCICE
+} // namespace ExaDG

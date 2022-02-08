@@ -1,7 +1,12 @@
 #pragma once
 
 #include <deal.II/base/parameter_handler.h>
+#include <exadg/fluid_structure_interaction/precice/coupling_interface.h>
 
+namespace ExaDG
+{
+namespace preCICE
+{
 using namespace dealii;
 
 /**
@@ -11,12 +16,16 @@ using namespace dealii;
  */
 
 /**
- * @brief PreciceParameters: Specifies preCICE related information.
+ * @brief ConfigurationParameters: Specifies preCICE related information.
  *        A lot of these information need to be consistent with the
  *        precice-config.xml file.
  */
-struct PreciceParameters
+struct ConfigurationParameters
 {
+  ConfigurationParameters() = default;
+
+  ConfigurationParameters(const std::string & input_file);
+
   std::string config_file              = "precice config-file";
   std::string physics                  = "undefined";
   std::string participant_name         = "exadg";
@@ -27,13 +36,30 @@ struct PreciceParameters
   std::string read_data_name           = "received-data";
   std::string write_data_name          = "calculated-data";
 
+  WriteDataType write_data_type = WriteDataType::undefined;
+
   void
   add_parameters(ParameterHandler & prm);
+
+  void
+  string_to_enum(WriteDataType & enum_out, const std::string & string_in);
 };
 
 
+
+ConfigurationParameters::ConfigurationParameters(const std::string & input_file)
+{
+  dealii::ParameterHandler prm;
+  add_parameters(prm);
+  prm.parse_input(input_file, "", true, true);
+
+  string_to_enum(write_data_type, write_data_specification);
+}
+
+
+
 void
-PreciceParameters::add_parameters(ParameterHandler & prm)
+ConfigurationParameters::add_parameters(ParameterHandler & prm)
 {
   prm.enter_subsection("preciceConfiguration");
   {
@@ -79,3 +105,23 @@ PreciceParameters::add_parameters(ParameterHandler & prm)
   }
   prm.leave_subsection();
 }
+
+void
+ConfigurationParameters::string_to_enum(WriteDataType & enum_out, const std::string & string_in)
+{
+  if(string_in == "values_on_dofs")
+    enum_out = WriteDataType::values_on_dofs;
+  else if(string_in == "values_on_other_mesh")
+    enum_out = WriteDataType::values_on_other_mesh;
+  else if(string_in == "gradients_on_other_mesh")
+    enum_out = WriteDataType::gradients_on_other_mesh;
+  else if(string_in == "values_on_q_points")
+    enum_out = WriteDataType::values_on_q_points;
+  else if(string_in == "normal_gradients_on_q_points")
+    enum_out = WriteDataType::normal_gradients_on_q_points;
+  else
+    AssertThrow(false, ExcMessage("Unknwon write data type."));
+}
+
+} // namespace preCICE
+} // namespace ExaDG

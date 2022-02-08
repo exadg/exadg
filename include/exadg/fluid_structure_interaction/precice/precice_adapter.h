@@ -13,10 +13,11 @@
 #include <exadg/fluid_structure_interaction/precice/exadg_interface.h>
 #include <exadg/fluid_structure_interaction/precice/quad_interface.h>
 #include <precice/SolverInterface.hpp>
-
 #include <ostream>
 
-namespace Adapter
+namespace ExaDG
+{
+namespace preCICE
 {
 using namespace dealii;
 
@@ -75,18 +76,19 @@ public:
   add_write_interface(const types::boundary_id         interface_id,
                       const std::string &              mesh_name,
                       const std::vector<std::string> & write_data_names,
-                      const std::string &              write_data_specification,
+                      const WriteDataType              write_data_type,
                       std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
                       const unsigned int                                                  dof_index,
                       const unsigned int write_quad_index);
 
 
   void
-  add_read_interface(const std::vector<Point<dim>> &                                     points,
-                     std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
-                     std::shared_ptr<ExaDG::InterfaceCoupling<dim, dim, double>> exadg_terminal,
-                     const std::string &                                         mesh_name,
-                     const std::vector<std::string> &                            read_data_name);
+  add_read_interface(
+    const std::vector<Point<dim>> &                                      points,
+    std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>>  data,
+    std::shared_ptr<ExaDG::preCICE::InterfaceCoupling<dim, dim, double>> exadg_terminal,
+    const std::string &                                                  mesh_name,
+    const std::vector<std::string> &                                     read_data_name);
 
   /**
    * @brief      Advances preCICE after every timestep
@@ -195,7 +197,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_interface(
   const types::boundary_id                                            dealii_boundary_interface_id,
   const std::string &                                                 mesh_name,
   const std::vector<std::string> &                                    write_data_names,
-  const std::string &                                                 write_data_specification,
+  const WriteDataType                                                 write_data_type,
   std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
   const unsigned int                                                  dof_index,
   const unsigned int                                                  quad_index)
@@ -208,7 +210,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_interface(
     // Duplicate the shared pointer
     writer.insert({mesh_name, found_reader->second});
   }
-  else if(write_data_specification == "values_on_dofs")
+  else if(write_data_type == WriteDataType::values_on_dofs)
   {
     writer.insert({mesh_name,
                    std::make_shared<DoFInterface<dim, data_dim, VectorizedArrayType>>(
@@ -216,8 +218,8 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_interface(
   }
   else
   {
-    Assert(write_data_specification == "values_on_q_points" ||
-             write_data_specification == "normal_gradients_on_q_points",
+    Assert(write_data_type == WriteDataType::values_on_q_points ||
+             write_data_type == WriteDataType::normal_gradients_on_q_points,
            ExcNotImplemented());
     writer.insert(
       {mesh_name,
@@ -228,7 +230,9 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_interface(
   // Register the write data
   const std::vector<Point<dim>> points;
   for(const auto & data_name : write_data_names)
-    writer.at(mesh_name)->add_write_data(data_name, write_data_specification);
+    writer.at(mesh_name)->add_write_data(data_name);
+
+  writer.at(mesh_name)->set_write_data_type(write_data_type);
   // Finally initialize the interface
   writer.at(mesh_name)->define_coupling_mesh(points);
 }
@@ -238,11 +242,11 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_interface(
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_read_interface(
-  const std::vector<Point<dim>> &                                     points,
-  std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
-  std::shared_ptr<ExaDG::InterfaceCoupling<dim, dim, double>>         exadg_terminal,
-  const std::string &                                                 mesh_name,
-  const std::vector<std::string> &                                    read_data_names)
+  const std::vector<Point<dim>> &                                      points,
+  std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>>  data,
+  std::shared_ptr<ExaDG::preCICE::InterfaceCoupling<dim, dim, double>> exadg_terminal,
+  const std::string &                                                  mesh_name,
+  const std::vector<std::string> &                                     read_data_names)
 {
   reader.insert({mesh_name,
                  std::make_shared<ExaDGInterface<dim, data_dim, VectorizedArrayType>>(data,
@@ -372,4 +376,6 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::is_time_window_complete
 {
   return precice->isTimeWindowComplete();
 }
-} // namespace Adapter
+
+} // namespace preCICE
+} // namespace ExaDG

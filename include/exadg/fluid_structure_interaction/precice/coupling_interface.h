@@ -8,7 +8,9 @@
 #include <exadg/matrix_free/integrators.h>
 #include <precice/SolverInterface.hpp>
 
-namespace Adapter
+namespace ExaDG
+{
+namespace preCICE
 {
 using namespace dealii;
 
@@ -90,7 +92,14 @@ public:
    * @param write_data_name
    */
   void
-  add_write_data(const std::string & write_data_name, const std::string & write_data_specification);
+  add_write_data(const std::string & write_data_name);
+
+  /**
+   * @brief
+   *
+   */
+  void
+  set_write_data_type(WriteDataType write_data_specification);
 
 protected:
   /**
@@ -161,25 +170,20 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::add_read_data(
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 CouplingInterface<dim, data_dim, VectorizedArrayType>::add_write_data(
-  const std::string & write_data_name,
-  const std::string & write_data_specification)
+  const std::string & write_data_name)
 {
   Assert(mesh_id != -1, ExcNotInitialized());
   const int write_data_id = precice->getDataID(write_data_name, mesh_id);
   write_data_map.insert({write_data_name, write_data_id});
+}
 
-  if(write_data_specification == "values_on_dofs")
-    write_data_type = WriteDataType::values_on_dofs;
-  else if(write_data_specification == "values_on_other_mesh")
-    write_data_type = WriteDataType::values_on_other_mesh;
-  else if(write_data_specification == "gradients_on_other_mesh")
-    write_data_type = WriteDataType::gradients_on_other_mesh;
-  else if(write_data_specification == "values_on_q_points")
-    write_data_type = WriteDataType::values_on_q_points;
-  else if(write_data_specification == "normal_gradients_on_q_points")
-    write_data_type = WriteDataType::normal_gradients_on_q_points;
-  else
-    AssertThrow(false, ExcMessage("Unknwon write data type."));
+
+template<int dim, int data_dim, typename VectorizedArrayType>
+void
+CouplingInterface<dim, data_dim, VectorizedArrayType>::set_write_data_type(
+  WriteDataType write_data_specification)
+{
+  write_data_type = write_data_specification;
 }
 
 
@@ -227,4 +231,6 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::print_info(
         << "--     . Node location: " << get_interface_type() << "\n"
         << std::endl;
 }
-} // namespace Adapter
+
+} // namespace preCICE
+} // namespace ExaDG

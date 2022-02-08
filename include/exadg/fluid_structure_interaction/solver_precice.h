@@ -56,22 +56,22 @@ struct ResolutionParameters
       prm.add_parameter("DegreeFluid",
                         degree_fluid,
                         "Polynomial degree of fluid (velocity).",
-                        Patterns::Integer(1,EXADG_DEGREE_MAX),
+                        dealii::Patterns::Integer(1,EXADG_DEGREE_MAX),
                         true);
       prm.add_parameter("DegreeStructure",
                         degree_structure,
                         "Polynomial degree of structural problem.",
-                        Patterns::Integer(1,EXADG_DEGREE_MAX),
+                        dealii::Patterns::Integer(1,EXADG_DEGREE_MAX),
                         true);
       prm.add_parameter("RefineFluid",
                         refine_fluid,
                         "Number of mesh refinements (fluid).",
-                        Patterns::Integer(0,20),
+                        dealii::Patterns::Integer(0,20),
                         true);
       prm.add_parameter("RefineStructure",
                         refine_structure,
                         "Number of mesh refinements (structure).",
-                        Patterns::Integer(0,20),
+                        dealii::Patterns::Integer(0,20),
                         true);
     prm.leave_subsection();
     // clang-format on
@@ -94,7 +94,7 @@ create_input_file(std::string const & input_file)
   ResolutionParameters resolution;
   resolution.add_parameters(prm);
 
-  PreciceParameters precice_parameters;
+  ExaDG::preCICE::ConfigurationParameters precice_parameters;
   precice_parameters.add_parameters(prm);
 
   // we have to assume a default dimension and default Number type
@@ -120,7 +120,7 @@ template<int dim, typename Number>
 void
 run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_test)
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   std::shared_ptr<FSI::ApplicationBase<dim, Number>> application =
@@ -133,26 +133,31 @@ run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_tes
                                                 resolution.refine_fluid,
                                                 resolution.refine_structure);
 
-  PreciceParameters        precice_param;
-  dealii::ParameterHandler prm;
-  precice_param.add_parameters(prm);
-  prm.parse_input(input_file, "", true, true);
+  ExaDG::preCICE::ConfigurationParameters            precice_param(input_file);
+  std::shared_ptr<FSI::preCICE::Driver<dim, Number>> driver;
 
-  std::shared_ptr<FSI::Driver<dim, Number>> driver;
-
+  // We have different drivers for Fluid and Solid since the data exchange and underlying
+  // configuration are different. However, both solver share a common base class. One could also
+  // compile different executables for both solvers or try to create a common Driver class for both
+  // parts.
   if(precice_param.physics == "Structure")
   {
-    driver =
-      std::make_shared<FSI::DriverSolid<dim, Number>>(input_file, mpi_comm, application, is_test);
+    driver = std::make_shared<FSI::preCICE::DriverSolid<dim, Number>>(input_file,
+                                                                      mpi_comm,
+                                                                      application,
+                                                                      is_test);
   }
   else if(precice_param.physics == "Fluid")
   {
-    driver =
-      std::make_shared<FSI::DriverFluid<dim, Number>>(input_file, mpi_comm, application, is_test);
+    driver = std::make_shared<FSI::preCICE::DriverFluid<dim, Number>>(input_file,
+                                                                      mpi_comm,
+                                                                      application,
+                                                                      is_test);
   }
   else
   {
-    AssertThrow(false, ExcMessage("precice_param.physics has to be \"Structure\" or \"Fluid\""));
+    AssertThrow(false,
+                dealii::ExcMessage("precice_param.physics has to be \"Structure\" or \"Fluid\""));
   }
 
   driver->setup();
@@ -164,7 +169,7 @@ run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_tes
 } // namespace ExaDG
 
 
-// The preCICE coupled executable is called precice_solver and we compile the Solid and the Fluid
+// The preCICE coupled executable is called solver_precice and we compile the Solid and the Fluid
 // Driver into the same executable. Configuration can be done via individual parameter files.
 int
 main(int argc, char ** argv)

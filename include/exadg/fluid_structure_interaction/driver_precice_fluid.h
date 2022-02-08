@@ -52,6 +52,8 @@ namespace ExaDG
 {
 namespace FSI
 {
+namespace preCICE
+{
 using namespace dealii;
 
 template<int dim, typename Number>
@@ -241,14 +243,14 @@ public:
 
     // writing
     this->precice =
-      std::make_shared<Adapter::Adapter<dim, dim, VectorType>>(this->precice_parameters);
+      std::make_shared<ExaDG::preCICE::Adapter<dim, dim, VectorType>>(this->precice_parameters);
 
     this->precice->add_write_interface(this->application->get_boundary_descriptor_fluid()
                                          ->velocity->dirichlet_cached_bc.begin()
                                          ->first,
                                        this->precice_parameters.write_mesh_name,
                                        {this->precice_parameters.write_data_name},
-                                       "values_on_q_points",
+                                       this->precice_parameters.write_data_type,
                                        fluid_matrix_free,
                                        fluid_operator->get_dof_index_velocity(),
                                        fluid_operator->get_quad_index_velocity_linear());
@@ -257,7 +259,8 @@ public:
     {
       // Declare some data structures
       std::vector<Point<dim>> quadrature_point_locations;
-      auto exadg_terminal_ale = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
+      auto                    exadg_terminal_ale =
+        std::make_shared<ExaDG::preCICE::InterfaceCoupling<dim, dim, Number>>();
 
       // Poisson mesh movement
       if(this->application->get_parameters_fluid().mesh_movement_type ==
@@ -312,7 +315,8 @@ public:
 
       VectorType velocity_structure;
       fluid_operator->initialize_vector_velocity(velocity_structure);
-      auto exadg_terminal_fluid       = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
+      auto exadg_terminal_fluid =
+        std::make_shared<ExaDG::preCICE::InterfaceCoupling<dim, dim, Number>>();
       auto quadrature_point_locations = exadg_terminal_fluid->setup(
         fluid_matrix_free,
         fluid_operator->get_dof_index_velocity(),
@@ -579,6 +583,7 @@ private:
   /************************************ ALE - MOVING MESH *************************************/
 };
 
+} // namespace preCICE
 } // namespace FSI
 } // namespace ExaDG
 

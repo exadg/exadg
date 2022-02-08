@@ -44,6 +44,8 @@ namespace ExaDG
 {
 namespace FSI
 {
+namespace preCICE
+{
 using namespace dealii;
 
 template<int dim, typename Number>
@@ -122,13 +124,13 @@ public:
     /*********************************** INTERFACE COUPLING *************************************/
 
     this->precice =
-      std::make_shared<Adapter::Adapter<dim, dim, VectorType>>(this->precice_parameters);
+      std::make_shared<ExaDG::preCICE::Adapter<dim, dim, VectorType>>(this->precice_parameters);
 
     this->precice->add_write_interface(
       this->application->get_boundary_descriptor_structure()->neumann_cached_bc.begin()->first,
       this->precice_parameters.write_mesh_name,
       {this->precice_parameters.write_data_name, "Velocity"},
-      "values_on_dofs",
+      this->precice_parameters.write_data_type,
       structure_matrix_free,
       structure_operator->get_dof_index(),
       numbers::invalid_unsigned_int);
@@ -138,7 +140,7 @@ public:
       quad_indices.emplace_back(structure_operator->get_quad_index());
 
       // VectorType stress_fluid;
-      auto exadg_terminal             = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
+      auto exadg_terminal = std::make_shared<ExaDG::preCICE::InterfaceCoupling<dim, dim, Number>>();
       auto quadrature_point_locations = exadg_terminal->setup(
         structure_matrix_free,
         structure_operator->get_dof_index(),
@@ -316,6 +318,7 @@ private:
   /**************************************** STRUCTURE *****************************************/
 };
 
+} // namespace preCICE
 } // namespace FSI
 } // namespace ExaDG
 

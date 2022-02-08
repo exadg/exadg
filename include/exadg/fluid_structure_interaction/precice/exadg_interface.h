@@ -5,7 +5,9 @@
 #include <exadg/fluid_structure_interaction/precice/coupling_interface.h>
 #include <exadg/fluid_structure_interaction/precice/interface_coupling.h>
 
-namespace Adapter
+namespace ExaDG
+{
+namespace preCICE
 {
 using namespace dealii;
 
@@ -49,11 +51,12 @@ public:
   read_block_data(const std::string & data_name) const override;
 
   void
-  set_data_pointer(std::shared_ptr<ExaDG::InterfaceCoupling<dim, dim, double>> exadg_terminal_);
+  set_data_pointer(
+    std::shared_ptr<ExaDG::preCICE::InterfaceCoupling<dim, dim, double>> exadg_terminal_);
 
 private:
   /// Accessor for ExaDG data structures
-  std::shared_ptr<ExaDG::InterfaceCoupling<dim, dim, double>> exadg_terminal;
+  std::shared_ptr<ExaDG::preCICE::InterfaceCoupling<dim, dim, double>> exadg_terminal;
   /// The preCICE IDs
   std::vector<int> interface_nodes_ids;
 
@@ -115,7 +118,7 @@ ExaDGInterface<dim, data_dim, VectorizedArrayType>::read_block_data(
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 ExaDGInterface<dim, data_dim, VectorizedArrayType>::set_data_pointer(
-  std::shared_ptr<ExaDG::InterfaceCoupling<dim, dim, double>> exadg_terminal_)
+  std::shared_ptr<ExaDG::preCICE::InterfaceCoupling<dim, dim, double>> exadg_terminal_)
 {
   exadg_terminal = exadg_terminal_;
 }
@@ -139,4 +142,5 @@ ExaDGInterface<dim, data_dim, VectorizedArrayType>::get_interface_type() const
   return "exadg shallow wrapper ";
 }
 
-} // namespace Adapter
+} // namespace preCICE
+} // namespace ExaDG

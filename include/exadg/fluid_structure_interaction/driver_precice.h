@@ -36,6 +36,8 @@ namespace ExaDG
 {
 namespace FSI
 {
+namespace preCICE
+{
 using namespace dealii;
 
 template<int dim, typename Number>
@@ -52,14 +54,9 @@ public:
     : mpi_comm(comm),
       pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0),
       application(app),
+      precice_parameters(ExaDG::preCICE::ConfigurationParameters(input_file)),
       is_test(is_test)
   {
-    dealii::ParameterHandler prm;
-
-    add_parameters(prm);
-
-    precice_parameters.add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
   }
 
   static void
@@ -87,9 +84,9 @@ protected:
   ConditionalOStream pcout;
 
   // application
-  std::shared_ptr<ApplicationBase<dim, Number>>           application;
-  std::shared_ptr<Adapter::Adapter<dim, dim, VectorType>> precice;
-  PreciceParameters                                       precice_parameters;
+  std::shared_ptr<ApplicationBase<dim, Number>>                  application;
+  std::shared_ptr<ExaDG::preCICE::Adapter<dim, dim, VectorType>> precice;
+  ExaDG::preCICE::ConfigurationParameters                        precice_parameters;
 
   // do not print wall times if is_test
   bool const is_test;
@@ -99,6 +96,8 @@ protected:
    */
   mutable TimerTree timer_tree;
 };
+
+} // namespace preCICE
 } // namespace FSI
 } // namespace ExaDG
 

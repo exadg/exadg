@@ -28,13 +28,12 @@
 
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/function_cached.h>
-#include <exadg/grid/find_all_active_cells_around_point.h>
-#include <exadg/vector_tools/interpolate_solution.h>
 
 namespace ExaDG
 {
+namespace preCICE
+{
 using namespace dealii;
-
 
 template<int dim, int n_components, typename Number>
 class InterfaceCoupling
@@ -178,6 +177,7 @@ private:
   mutable std::map<types::boundary_id, std::shared_ptr<FunctionCached<rank, dim, double>>> map_bc;
 };
 
+} // namespace preCICE
 } // namespace ExaDG
 
 #endif /* INCLUDE_FUNCTIONALITIES_INTERFACE_COUPLING_H_ */

@@ -4,7 +4,9 @@
 
 #include <exadg/fluid_structure_interaction/precice/coupling_interface.h>
 
-namespace Adapter
+namespace ExaDG
+{
+namespace preCICE
 {
 using namespace dealii;
 
@@ -265,6 +267,5 @@ QuadInterface<dim, data_dim, VectorizedArrayType>::get_interface_type() const
   return "quadrature points using matrix-free quad index " + Utilities::to_string(mf_quad_index);
 }
 
-// TODO
-//  get_mesh_stats()
-} // namespace Adapter
+} // namespace preCICE
+} // namespace ExaDG
