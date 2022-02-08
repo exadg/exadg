@@ -243,8 +243,6 @@ public:
     this->precice =
       std::make_shared<Adapter::Adapter<dim, dim, VectorType>>(this->precice_parameters);
 
-    write_mesh_name = this->precice_parameters.write_mesh_name;
-    write_data_name = this->precice_parameters.write_data_name;
     this->precice->add_write_interface(this->application->get_boundary_descriptor_fluid()
                                          ->velocity->dirichlet_cached_bc.begin()
                                          ->first,
@@ -261,6 +259,7 @@ public:
       std::vector<Point<dim>> quadrature_point_locations;
       auto exadg_terminal_ale = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
 
+      // Poisson mesh movement
       if(this->application->get_parameters_fluid().mesh_movement_type ==
          IncNS::MeshMovementType::Poisson)
       {
@@ -274,23 +273,19 @@ public:
         else
           AssertThrow(false, ExcNotImplemented());
 
-        // VectorType stress_fluid;
-        VectorType displacement_structure;
-        ale_poisson_operator->initialize_dof_vector(displacement_structure);
         quadrature_point_locations = exadg_terminal_ale->setup(
           ale_matrix_free,
           ale_poisson_operator->get_dof_index(),
           quad_indices,
           this->application->get_boundary_descriptor_ale_poisson()->dirichlet_cached_bc);
       }
+      // Elasticity mesh movement
       else if(this->application->get_parameters_fluid().mesh_movement_type ==
               IncNS::MeshMovementType::Elasticity)
       {
         std::vector<unsigned int> quad_indices;
         quad_indices.emplace_back(ale_elasticity_operator->get_quad_index_gauss_lobatto());
 
-        VectorType displacement_structure;
-        ale_elasticity_operator->initialize_dof_vector(displacement_structure);
         quadrature_point_locations = exadg_terminal_ale->setup(
           ale_matrix_free,
           ale_elasticity_operator->get_dof_index(),
@@ -383,7 +378,6 @@ public:
 
       this->precice->save_current_state_if_required([&]() { /*TODO*/ });
 
-      // solve (using strongly-coupled partitioned scheme)
       {
         coupling_structure_to_ale();
 
@@ -399,6 +393,8 @@ public:
         // compute and send stress to solid
         coupling_fluid_to_structure();
 
+        // TODO: Add synchronization for the time-step size here. For now, we only allow a constant
+        // time-step size
         dealii::Timer precice_timer;
         this->precice->advance(fluid_time_integrator->get_time_step_size());
         is_new_time_window = this->precice->is_time_window_complete();
@@ -507,8 +503,8 @@ private:
                                           fluid_time_integrator->get_velocity_np(),
                                           fluid_time_integrator->get_pressure_np());
     stress_fluid *= -1.0;
-    this->precice->write_data(write_mesh_name,
-                              write_data_name,
+    this->precice->write_data(this->precice_parameters.write_mesh_name,
+                              this->precice_parameters.write_data_name,
                               stress_fluid,
                               fluid_time_integrator->get_time_step_size());
   }
@@ -581,13 +577,6 @@ private:
   std::shared_ptr<Structure::Operator<dim, Number>> ale_elasticity_operator;
 
   /************************************ ALE - MOVING MESH *************************************/
-
-
-  /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
-
-  std::string write_mesh_name{};
-  std::string write_data_name{};
-  /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
 };
 
 } // namespace FSI

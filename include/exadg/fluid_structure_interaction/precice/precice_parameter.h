@@ -9,16 +9,16 @@ using namespace dealii;
  * parameter file. The subsection abut preCICE configurations is directly
  * interlinked to the Adapter class.
  */
-namespace Parameters
-{ /**
-   * @brief PreciceAdapterConfiguration: Specifies preCICE related information.
-   *        A lot of these information need to be consistent with the
-   *        precice-config.xml file.
-   */
-struct PreciceAdapterConfiguration
+
+/**
+ * @brief PreciceParameters: Specifies preCICE related information.
+ *        A lot of these information need to be consistent with the
+ *        precice-config.xml file.
+ */
+struct PreciceParameters
 {
   std::string config_file              = "precice config-file";
-  std::string physics                  = "Structure";
+  std::string physics                  = "default";
   std::string participant_name         = "exadg";
   std::string read_mesh_name           = "default";
   std::string write_mesh_name          = "default";
@@ -33,7 +33,7 @@ struct PreciceAdapterConfiguration
 
 
 void
-PreciceAdapterConfiguration::add_parameters(ParameterHandler & prm)
+PreciceParameters::add_parameters(ParameterHandler & prm)
 {
   prm.enter_subsection("preciceConfiguration");
   {
@@ -79,4 +79,3 @@ PreciceAdapterConfiguration::add_parameters(ParameterHandler & prm)
   }
   prm.leave_subsection();
 }
-} // namespace Parameters

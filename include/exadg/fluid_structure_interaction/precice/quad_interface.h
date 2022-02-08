@@ -21,10 +21,10 @@ class QuadInterface : public CouplingInterface<dim, data_dim, VectorizedArrayTyp
 public:
   QuadInterface(std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
                 std::shared_ptr<precice::SolverInterface>                           precice,
-                std::string                                                         mesh_name,
-                types::boundary_id                                                  interface_id,
-                int                                                                 mf_dof_index,
-                int                                                                 mf_quad_index)
+                const std::string                                                   mesh_name,
+                const types::boundary_id                                            interface_id,
+                const int                                                           mf_dof_index,
+                const int                                                           mf_quad_index)
     : CouplingInterface<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, interface_id),
       mf_dof_index(mf_dof_index),
       mf_quad_index(mf_quad_index)

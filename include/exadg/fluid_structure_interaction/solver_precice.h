@@ -27,10 +27,10 @@
 
 // ExaDG
 #include <exadg/configuration/config.h>
-#include <exadg/fluid_structure_interaction/user_interface/declare_get_application.h>
 #include <exadg/fluid_structure_interaction/driver_precice.h>
 #include <exadg/fluid_structure_interaction/driver_precice_fluid.h>
 #include <exadg/fluid_structure_interaction/driver_precice_solid.h>
+#include <exadg/fluid_structure_interaction/user_interface/declare_get_application.h>
 #include <exadg/utilities/general_parameters.h>
 
 namespace ExaDG
@@ -94,7 +94,7 @@ create_input_file(std::string const & input_file)
   ResolutionParameters resolution;
   resolution.add_parameters(prm);
 
-  Parameters::PreciceAdapterConfiguration precice_parameters;
+  PreciceParameters precice_parameters;
   precice_parameters.add_parameters(prm);
 
   // we have to assume a default dimension and default Number type
@@ -133,24 +133,29 @@ run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_tes
                                                 resolution.refine_fluid,
                                                 resolution.refine_structure);
 
-  Parameters::PreciceAdapterConfiguration precice_param;
-  dealii::ParameterHandler                prm;
+  PreciceParameters        precice_param;
+  dealii::ParameterHandler prm;
   precice_param.add_parameters(prm);
   prm.parse_input(input_file, "", true, true);
 
-  bool const is_solid = precice_param.physics == "Structure";
-
   std::shared_ptr<FSI::Driver<dim, Number>> driver;
 
-  if(is_solid)
+  if(precice_param.physics == "Structure")
+  {
     driver =
       std::make_shared<FSI::DriverSolid<dim, Number>>(input_file, mpi_comm, application, is_test);
-  else
+  }
+  else if(precice_param.physics == "Fluid")
+  {
     driver =
       std::make_shared<FSI::DriverFluid<dim, Number>>(input_file, mpi_comm, application, is_test);
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("precice_param.physics has to be \"Structure\" or \"Fluid\""));
+  }
 
   driver->setup();
-
   driver->solve();
 
   if(!is_test)
@@ -158,6 +163,9 @@ run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_tes
 }
 } // namespace ExaDG
 
+
+// The preCICE coupled executable is called precice_solver and we compile the Solid and the Fluid
+// Driver into the same executable. Configuration can be done via individual parameter files.
 int
 main(int argc, char ** argv)
 {

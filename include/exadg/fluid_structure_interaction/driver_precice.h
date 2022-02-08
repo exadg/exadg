@@ -25,9 +25,9 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 // application
-#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 #include <exadg/fluid_structure_interaction/precice/precice_adapter.h>
 #include <exadg/fluid_structure_interaction/precice/precice_parameter.h>
+#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 
 // grid
 #include <exadg/grid/get_dynamic_mapping.h>
@@ -89,7 +89,7 @@ protected:
   // application
   std::shared_ptr<ApplicationBase<dim, Number>>           application;
   std::shared_ptr<Adapter::Adapter<dim, dim, VectorType>> precice;
-  Parameters::PreciceAdapterConfiguration                 precice_parameters;
+  PreciceParameters                                       precice_parameters;
 
   // do not print wall times if is_test
   bool const is_test;

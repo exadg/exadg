@@ -124,7 +124,6 @@ public:
     this->precice =
       std::make_shared<Adapter::Adapter<dim, dim, VectorType>>(this->precice_parameters);
 
-    write_mesh_name = this->precice_parameters.write_mesh_name;
     this->precice->add_write_interface(
       this->application->get_boundary_descriptor_structure()->neumann_cached_bc.begin()->first,
       this->precice_parameters.write_mesh_name,
@@ -207,6 +206,8 @@ public:
       coupling_structure_to_fluid(structure_time_integrator->get_velocity_np(),
                                   structure_time_integrator->get_time_step_size());
 
+      // TODO: Add synchronization for the time-step size here. For now, we only allow a constant
+      // time-step size
       dealii::Timer precice_timer;
       this->precice->advance(structure_time_integrator->get_time_step_size());
       is_new_time_window = this->precice->is_time_window_complete();
@@ -274,7 +275,7 @@ private:
   coupling_structure_to_ale(VectorType const & displacement_structure,
                             const double       time_step_size) const
   {
-    this->precice->write_data(write_mesh_name,
+    this->precice->write_data(this->precice_parameters.write_mesh_name,
                               "Displacement",
                               displacement_structure,
                               time_step_size);
@@ -284,7 +285,10 @@ private:
   coupling_structure_to_fluid(VectorType const & velocity_structure,
                               const double       time_step_size) const
   {
-    this->precice->write_data(write_mesh_name, "Velocity", velocity_structure, time_step_size);
+    this->precice->write_data(this->precice_parameters.write_mesh_name,
+                              "Velocity",
+                              velocity_structure,
+                              time_step_size);
   }
 
   void
@@ -310,13 +314,6 @@ private:
   std::shared_ptr<Structure::PostProcessor<dim, Number>> structure_postprocessor;
 
   /**************************************** STRUCTURE *****************************************/
-
-
-  /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
-
-  std::string write_mesh_name{};
-
-  /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
 };
 
 } // namespace FSI

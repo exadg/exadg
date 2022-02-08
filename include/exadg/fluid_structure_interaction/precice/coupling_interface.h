@@ -26,10 +26,12 @@ enum class WriteDataType
 };
 
 /**
- * A pure abstract base class, which defines the interface for the functions
+ * A pure abstract base class, which defines the methods for the functions
  * used in the main Adapter class. Each instance of all derived classes are
- * always dedicated to a specific coupling mesh and may provide functions on
- * how to read and write data on this mesh and how to define the mesh.
+ * always dedicated to a specific coupling mesh, i.e., the vertices used for
+ * the coupling. The instantiated objects provide functions on how to read
+ * and write data on this mesh and how to define the mesh by means of its
+ * spatial coordinates.
  */
 template<int dim, int data_dim, typename VectorizedArrayType>
 class CouplingInterface
@@ -37,8 +39,8 @@ class CouplingInterface
 public:
   CouplingInterface(std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
                     std::shared_ptr<precice::SolverInterface>                           precice,
-                    std::string                                                         mesh_name,
-                    types::boundary_id interface_id);
+                    const std::string                                                   mesh_name,
+                    const types::boundary_id interface_id);
 
   virtual ~CouplingInterface() = default;
 
@@ -54,7 +56,7 @@ public:
 
   /**
    * @brief process_coupling_mesh (optional) Handle post-preCICE-initialization
-   *        steps, e.g. do computations on recieved partitions or create
+   *        steps, e.g. do computations on received partitions or create
    *        communication patterns. This function just returns in the base
    *        class implementation.
    */
@@ -62,7 +64,7 @@ public:
   process_coupling_mesh();
 
   /**
-   * @brief write_data Write the data associated to the defined vertice
+   * @brief write_data Write the data associated to the defined vertices
    *        to preCICE
    *
    * @param data_vector Vector holding the global solution to be passed to
@@ -109,14 +111,14 @@ protected:
 
   /// Configuration parameters
   const std::string mesh_name;
-  int               mesh_id = -1;
+  int               mesh_id;
   // Map between data ID (preCICE) and the data name
   std::map<std::string, int> read_data_map;
   std::map<std::string, int> write_data_map;
 
   const types::boundary_id dealii_boundary_interface_id;
 
-  WriteDataType write_data_type = WriteDataType::undefined;
+  WriteDataType write_data_type;
 
   virtual std::string
   get_interface_type() const = 0;
@@ -128,12 +130,13 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 CouplingInterface<dim, data_dim, VectorizedArrayType>::CouplingInterface(
   std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
   std::shared_ptr<precice::SolverInterface>                           precice,
-  std::string                                                         mesh_name,
+  const std::string                                                   mesh_name,
   const types::boundary_id                                            interface_id)
   : mf_data(data),
     precice(precice),
     mesh_name(mesh_name),
-    dealii_boundary_interface_id(interface_id)
+    dealii_boundary_interface_id(interface_id),
+    write_data_type(WriteDataType::undefined)
 {
   Assert(data.get() != nullptr, ExcNotInitialized());
   Assert(precice.get() != nullptr, ExcNotInitialized());
@@ -146,11 +149,11 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::CouplingInterface(
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 CouplingInterface<dim, data_dim, VectorizedArrayType>::add_read_data(
-  const std::string & read_data_name_)
+  const std::string & read_data_name)
 {
   Assert(mesh_id != -1, ExcNotInitialized());
-  const int read_data_id = precice->getDataID(read_data_name_, mesh_id);
-  read_data_map.insert({read_data_name_, read_data_id});
+  const int read_data_id = precice->getDataID(read_data_name, mesh_id);
+  read_data_map.insert({read_data_name, read_data_id});
 }
 
 
@@ -158,12 +161,12 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::add_read_data(
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 CouplingInterface<dim, data_dim, VectorizedArrayType>::add_write_data(
-  const std::string & write_data_name_,
+  const std::string & write_data_name,
   const std::string & write_data_specification)
 {
   Assert(mesh_id != -1, ExcNotInitialized());
-  const int write_data_id = precice->getDataID(write_data_name_, mesh_id);
-  write_data_map.insert({write_data_name_, write_data_id});
+  const int write_data_id = precice->getDataID(write_data_name, mesh_id);
+  write_data_map.insert({write_data_name, write_data_id});
 
   if(write_data_specification == "values_on_dofs")
     write_data_type = WriteDataType::values_on_dofs;
