@@ -18,7 +18,7 @@ using namespace dealii;
 struct PreciceParameters
 {
   std::string config_file              = "precice config-file";
-  std::string physics                  = "default";
+  std::string physics                  = "undefined";
   std::string participant_name         = "exadg";
   std::string read_mesh_name           = "default";
   std::string write_mesh_name          = "default";
@@ -44,7 +44,7 @@ PreciceParameters::add_parameters(ParameterHandler & prm)
     prm.add_parameter("Physics",
                       physics,
                       "Specify the side you want to compute (Fluid vs Structure)",
-                      Patterns::Selection("Structure|Fluid"));
+                      Patterns::Selection("Structure|Fluid|undefined"));
     prm.add_parameter("ParticipantName",
                       participant_name,
                       "Name of the participant in the precice-config.xml file",

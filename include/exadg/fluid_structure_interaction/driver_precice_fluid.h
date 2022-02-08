@@ -82,7 +82,7 @@ public:
       dealii::Timer timer_local;
       timer_local.restart();
 
-      this->application->setup();
+      this->application->setup_fluid_and_ale();
 
       this->timer_tree.insert({"FSI", "Setup", "Application"}, timer_local.wall_time());
     }

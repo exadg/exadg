@@ -16,7 +16,7 @@
         "ParticipantName": "Fluid",
         "ReadMeshName": "Fluid-Mesh-read",
         "WriteMeshName": "Fluid-Mesh-write",
-        "WriteDataSpecification": "values_on_quads",
+        "WriteDataSpecification": "values_on_q_points",
         "ReadDataName": "Displacement",
         "WriteDataName": "Stress"
     }
