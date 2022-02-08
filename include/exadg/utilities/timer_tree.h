@@ -22,6 +22,10 @@
 #ifndef INCLUDE_EXADG_UTILITIES_TIMER_TREE_H_
 #define INCLUDE_EXADG_UTILITIES_TIMER_TREE_H_
 
+// C++
+#include <iomanip>
+
+// deal.II
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/exceptions.h>
 
