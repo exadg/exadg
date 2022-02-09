@@ -742,6 +742,97 @@ OperatorDualSplitting<dim, Number>::solve_viscous(VectorType &       dst,
 
 template<int dim, typename Number>
 void
+OperatorDualSplitting<dim, Number>::interpolate_velocity_dirichlet_bc(
+  VectorType &   dst,
+  double const & time,
+  bool const     use_dirichlet_cached_bc_data)
+{
+  this->evaluation_time              = time;
+  this->use_dirichlet_cached_bc_data = use_dirichlet_cached_bc_data;
+
+  dst = 0.0;
+
+  VectorType src_dummy;
+  this->get_matrix_free().loop(&This::cell_loop_empty,
+                               &This::face_loop_empty,
+                               &This::local_interpolate_velocity_dirichlet_bc_boundary_face,
+                               this,
+                               dst,
+                               src_dummy);
+}
+
+template<int dim, typename Number>
+void
+OperatorDualSplitting<dim, Number>::local_interpolate_velocity_dirichlet_bc_boundary_face(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &,
+  Range const & face_range) const
+{
+  unsigned int const dof_index  = this->get_dof_index_velocity();
+  unsigned int const quad_index = this->get_quad_index_velocity_gauss_lobatto();
+
+  FaceIntegratorU integrator(matrix_free, true, dof_index, quad_index);
+
+  for(unsigned int face = face_range.first; face < face_range.second; face++)
+  {
+    dealii::types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
+
+    BoundaryTypeU const boundary_type =
+      this->boundary_descriptor->velocity->get_boundary_type(boundary_id);
+
+    if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)
+    {
+      integrator.reinit(face);
+      integrator.read_dof_values(dst);
+
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        unsigned int const local_face_number = matrix_free.get_face_info(face).interior_face_no;
+
+        unsigned int const index = matrix_free.get_shape_info(dof_index, quad_index)
+                                     .face_to_cell_index_nodal[local_face_number][q];
+
+        vector g = vector();
+
+        if(boundary_type == BoundaryTypeU::Dirichlet)
+        {
+          auto bc = this->boundary_descriptor->velocity->dirichlet_bc.find(boundary_id)->second;
+          auto q_points = integrator.quadrature_point(q);
+
+          g = FunctionEvaluator<1, dim, Number>::value(bc, q_points, this->evaluation_time);
+        }
+        else if(boundary_type == BoundaryTypeU::DirichletCached)
+        {
+          auto bc =
+            this->boundary_descriptor->velocity->dirichlet_cached_bc.find(boundary_id)->second;
+
+          if(this->use_dirichlet_cached_bc_data)
+            g = FunctionEvaluator<1, dim, Number>::value(bc, face, q, quad_index);
+          else
+            g = vector();
+        }
+        else
+        {
+          AssertThrow(false, dealii::ExcMessage("Not implemented."));
+        }
+
+        integrator.submit_dof_value(g, index);
+      }
+
+      integrator.set_dof_values(dst);
+    }
+    else
+    {
+      AssertThrow(boundary_type == BoundaryTypeU::Neumann ||
+                    boundary_type == BoundaryTypeU::Symmetry,
+                  dealii::ExcMessage("BoundaryTypeU not implemented."));
+    }
+  }
+}
+
+template<int dim, typename Number>
+void
 OperatorDualSplitting<dim, Number>::apply_helmholtz_operator(VectorType &       dst,
                                                              VectorType const & src) const
 {

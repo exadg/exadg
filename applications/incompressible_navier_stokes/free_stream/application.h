@@ -83,7 +83,9 @@ private:
     this->param.right_hand_side             = false;
 
     // ALE
-    this->param.ale_formulation = ALE;
+    this->param.ale_formulation                   = ALE;
+    this->param.grid_motion_is_known_analytically = this->param.ale_formulation;
+    this->param.mesh_movement_type                = MeshMovementType::Analytical;
     this->param.neumann_with_variable_normal_vector =
       false; // no Neumann boundaries for this test case
 

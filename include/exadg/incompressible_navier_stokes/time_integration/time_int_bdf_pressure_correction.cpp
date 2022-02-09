@@ -149,7 +149,7 @@ template<int dim, typename Number>
 void
 TimeIntBDFPressureCorrection<dim, Number>::initialize_current_solution()
 {
-  if(this->param.ale_formulation)
+  if(this->param.ale_formulation and this->param.grid_motion_is_known_analytically)
     pde_operator->move_grid(this->get_time());
 
   pde_operator->prescribe_initial_conditions(velocity[0], pressure[0], this->get_time());
@@ -162,7 +162,7 @@ TimeIntBDFPressureCorrection<dim, Number>::initialize_former_solutions()
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < velocity.size(); ++i)
   {
-    if(this->param.ale_formulation)
+    if(this->param.ale_formulation and this->param.grid_motion_is_known_analytically)
       pde_operator->move_grid(this->get_previous_time(i));
 
     pde_operator->prescribe_initial_conditions(velocity[i],
@@ -184,7 +184,7 @@ TimeIntBDFPressureCorrection<dim, Number>::initialize_pressure_on_boundary()
     for(unsigned int i = 0; i < pressure_dbc.size(); ++i)
     {
       double const time = this->get_time() - double(i) * this->get_time_step_size();
-      if(this->param.ale_formulation)
+      if(this->param.ale_formulation and this->param.grid_motion_is_known_analytically)
         pde_operator->move_grid_and_update_dependent_data_structures(time);
 
       pde_operator->interpolate_pressure_dirichlet_bc(pressure_dbc[i], time);

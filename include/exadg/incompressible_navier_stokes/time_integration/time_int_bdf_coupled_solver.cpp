@@ -63,7 +63,7 @@ template<int dim, typename Number>
 void
 TimeIntBDFCoupled<dim, Number>::initialize_current_solution()
 {
-  if(this->param.ale_formulation)
+  if(this->param.ale_formulation and this->param.grid_motion_is_known_analytically)
     pde_operator->move_grid(this->get_time());
 
   pde_operator->prescribe_initial_conditions(solution[0].block(0),
@@ -78,7 +78,7 @@ TimeIntBDFCoupled<dim, Number>::initialize_former_solutions()
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < solution.size(); ++i)
   {
-    if(this->param.ale_formulation)
+    if(this->param.ale_formulation and this->param.grid_motion_is_known_analytically)
       pde_operator->move_grid(this->get_previous_time(i));
 
     pde_operator->prescribe_initial_conditions(solution[i].block(0),

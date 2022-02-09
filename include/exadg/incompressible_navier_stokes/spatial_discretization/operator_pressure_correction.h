@@ -221,6 +221,9 @@ public:
   void
   rhs_ppe_laplace_add_dirichlet_bc_from_dof_vector(VectorType & dst, VectorType const & src) const;
 
+  void
+  interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time);
+
 private:
   /*
    * Setup of momentum solver (operator, preconditioner, solver).
@@ -239,6 +242,29 @@ private:
    */
   void
   setup_inverse_mass_operator_pressure();
+
+  void
+  cell_loop_empty(dealii::MatrixFree<dim, Number> const &,
+                  VectorType &,
+                  VectorType const &,
+                  Range const &) const
+  {
+  }
+
+  void
+  face_loop_empty(dealii::MatrixFree<dim, Number> const &,
+                  VectorType &,
+                  VectorType const &,
+                  Range const &) const
+  {
+  }
+
+  void
+  local_interpolate_pressure_dirichlet_bc_boundary_face(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           face_range) const;
 
   InverseMassOperator<dim, 1, Number> inverse_mass_pressure;
 
