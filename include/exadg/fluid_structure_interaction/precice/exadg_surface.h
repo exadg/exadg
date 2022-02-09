@@ -2,7 +2,7 @@
 
 #include <deal.II/matrix_free/fe_evaluation.h>
 
-#include <exadg/fluid_structure_interaction/precice/coupling_interface.h>
+#include <exadg/fluid_structure_interaction/precice/coupling_surface.h>
 #include <exadg/fluid_structure_interaction/precice/interface_coupling.h>
 
 namespace ExaDG
@@ -12,19 +12,19 @@ namespace preCICE
 using namespace dealii;
 
 /**
- * Derived class of the CouplingInterface: shallow wrapper,
+ * Derived class of the CouplingSurface: shallow wrapper,
  * where the participant defines a vector of points and
  * the interface handles only the exchange with preCICE.
  */
 template<int dim, int data_dim, typename VectorizedArrayType>
-class ExaDGInterface : public CouplingInterface<dim, data_dim, VectorizedArrayType>
+class ExaDGSurface : public CouplingSurface<dim, data_dim, VectorizedArrayType>
 {
 public:
-  ExaDGInterface(std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
-                 std::shared_ptr<precice::SolverInterface>                           precice,
-                 const std::string                                                   mesh_name,
-                 const types::boundary_id interface_id = numbers::invalid_unsigned_int)
-    : CouplingInterface<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, interface_id)
+  ExaDGSurface(std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
+               std::shared_ptr<precice::SolverInterface>                           precice,
+               const std::string                                                   mesh_name,
+               const types::boundary_id surface_id = numbers::invalid_unsigned_int)
+    : CouplingSurface<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id)
   {
   }
 
@@ -58,30 +58,30 @@ private:
   /// Accessor for ExaDG data structures
   std::shared_ptr<ExaDG::preCICE::InterfaceCoupling<dim, dim, double>> exadg_terminal;
   /// The preCICE IDs
-  std::vector<int> interface_nodes_ids;
+  std::vector<int> coupling_nodes_ids;
 
   virtual std::string
-  get_interface_type() const override;
+  get_surface_type() const override;
 };
 
 
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-ExaDGInterface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
+ExaDGSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
   const std::vector<Point<dim>> & vec)
 {
   Assert(this->mesh_id != -1, ExcNotInitialized());
 
-  // In order to avoid that we define the interface multiple times when reader
+  // In order to avoid that we define the surface multiple times when reader
   // and writer refer to the same object
-  if(interface_nodes_ids.size() > 0)
+  if(coupling_nodes_ids.size() > 0)
     return;
 
-  // Initial guess: half of the boundary is part of the coupling interface
-  interface_nodes_ids.resize(vec.size());
+  // Initial guess: half of the boundary is part of the coupling surface
+  coupling_nodes_ids.resize(vec.size());
 
-  this->precice->setMeshVertices(this->mesh_id, vec.size(), &vec[0][0], interface_nodes_ids.data());
+  this->precice->setMeshVertices(this->mesh_id, vec.size(), &vec[0][0], coupling_nodes_ids.data());
 
   if(this->read_data_map.size() > 0)
     this->print_info(true, this->precice->getMeshVertexSize(this->mesh_id));
@@ -92,17 +92,17 @@ ExaDGInterface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-ExaDGInterface<dim, data_dim, VectorizedArrayType>::read_block_data(
+ExaDGSurface<dim, data_dim, VectorizedArrayType>::read_block_data(
   const std::string & data_name) const
 {
   const int read_data_id = this->read_data_map.at(data_name);
 
-  std::vector<Tensor<1, dim>> values(interface_nodes_ids.size());
+  std::vector<Tensor<1, dim>> values(coupling_nodes_ids.size());
   if constexpr(data_dim > 1)
   {
     this->precice->readBlockVectorData(read_data_id,
-                                       interface_nodes_ids.size(),
-                                       interface_nodes_ids.data(),
+                                       coupling_nodes_ids.size(),
+                                       coupling_nodes_ids.data(),
                                        &values[0][0]);
   }
   else
@@ -117,7 +117,7 @@ ExaDGInterface<dim, data_dim, VectorizedArrayType>::read_block_data(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-ExaDGInterface<dim, data_dim, VectorizedArrayType>::set_data_pointer(
+ExaDGSurface<dim, data_dim, VectorizedArrayType>::set_data_pointer(
   std::shared_ptr<ExaDG::preCICE::InterfaceCoupling<dim, dim, double>> exadg_terminal_)
 {
   exadg_terminal = exadg_terminal_;
@@ -127,7 +127,7 @@ ExaDGInterface<dim, data_dim, VectorizedArrayType>::set_data_pointer(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-ExaDGInterface<dim, data_dim, VectorizedArrayType>::write_data(
+ExaDGSurface<dim, data_dim, VectorizedArrayType>::write_data(
   const LinearAlgebra::distributed::Vector<double> &,
   const std::string &)
 {
@@ -137,7 +137,7 @@ ExaDGInterface<dim, data_dim, VectorizedArrayType>::write_data(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 std::string
-ExaDGInterface<dim, data_dim, VectorizedArrayType>::get_interface_type() const
+ExaDGSurface<dim, data_dim, VectorizedArrayType>::get_surface_type() const
 {
   return "exadg shallow wrapper ";
 }

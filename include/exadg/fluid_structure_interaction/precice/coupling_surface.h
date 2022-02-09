@@ -36,15 +36,15 @@ enum class WriteDataType
  * spatial coordinates.
  */
 template<int dim, int data_dim, typename VectorizedArrayType>
-class CouplingInterface
+class CouplingSurface
 {
 public:
-  CouplingInterface(std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
-                    std::shared_ptr<precice::SolverInterface>                           precice,
-                    const std::string                                                   mesh_name,
-                    const types::boundary_id interface_id);
+  CouplingSurface(std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
+                  std::shared_ptr<precice::SolverInterface>                           precice,
+                  const std::string                                                   mesh_name,
+                  const types::boundary_id                                            surface_id);
 
-  virtual ~CouplingInterface() = default;
+  virtual ~CouplingSurface() = default;
 
   /// Alias for the face integrator
   using FEFaceIntegrator = FaceIntegrator<dim, data_dim, double, VectorizedArrayType>;
@@ -125,26 +125,26 @@ protected:
   std::map<std::string, int> read_data_map;
   std::map<std::string, int> write_data_map;
 
-  const types::boundary_id dealii_boundary_interface_id;
+  const types::boundary_id dealii_boundary_surface_id;
 
   WriteDataType write_data_type;
 
   virtual std::string
-  get_interface_type() const = 0;
+  get_surface_type() const = 0;
 };
 
 
 
 template<int dim, int data_dim, typename VectorizedArrayType>
-CouplingInterface<dim, data_dim, VectorizedArrayType>::CouplingInterface(
+CouplingSurface<dim, data_dim, VectorizedArrayType>::CouplingSurface(
   std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
   std::shared_ptr<precice::SolverInterface>                           precice,
   const std::string                                                   mesh_name,
-  const types::boundary_id                                            interface_id)
+  const types::boundary_id                                            surface_id)
   : mf_data(data),
     precice(precice),
     mesh_name(mesh_name),
-    dealii_boundary_interface_id(interface_id),
+    dealii_boundary_surface_id(surface_id),
     write_data_type(WriteDataType::undefined)
 {
   Assert(data.get() != nullptr, ExcNotInitialized());
@@ -157,7 +157,7 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::CouplingInterface(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-CouplingInterface<dim, data_dim, VectorizedArrayType>::add_read_data(
+CouplingSurface<dim, data_dim, VectorizedArrayType>::add_read_data(
   const std::string & read_data_name)
 {
   Assert(mesh_id != -1, ExcNotInitialized());
@@ -169,7 +169,7 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::add_read_data(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-CouplingInterface<dim, data_dim, VectorizedArrayType>::add_write_data(
+CouplingSurface<dim, data_dim, VectorizedArrayType>::add_write_data(
   const std::string & write_data_name)
 {
   Assert(mesh_id != -1, ExcNotInitialized());
@@ -180,7 +180,7 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::add_write_data(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-CouplingInterface<dim, data_dim, VectorizedArrayType>::set_write_data_type(
+CouplingSurface<dim, data_dim, VectorizedArrayType>::set_write_data_type(
   WriteDataType write_data_specification)
 {
   write_data_type = write_data_specification;
@@ -190,7 +190,7 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::set_write_data_type(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-CouplingInterface<dim, data_dim, VectorizedArrayType>::process_coupling_mesh()
+CouplingSurface<dim, data_dim, VectorizedArrayType>::process_coupling_mesh()
 {
   return;
 }
@@ -199,7 +199,7 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::process_coupling_mesh()
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-CouplingInterface<dim, data_dim, VectorizedArrayType>::read_block_data(const std::string &) const
+CouplingSurface<dim, data_dim, VectorizedArrayType>::read_block_data(const std::string &) const
 {
   AssertThrow(false, ExcNotImplemented());
 }
@@ -207,9 +207,8 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::read_block_data(const std
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-CouplingInterface<dim, data_dim, VectorizedArrayType>::print_info(
-  const bool         reader,
-  const unsigned int local_size) const
+CouplingSurface<dim, data_dim, VectorizedArrayType>::print_info(const bool         reader,
+                                                                const unsigned int local_size) const
 {
   Assert(mf_data.get() != 0, ExcNotInitialized());
   ConditionalOStream pcout(std::cout,
@@ -226,9 +225,9 @@ CouplingInterface<dim, data_dim, VectorizedArrayType>::print_info(
   pcout << "--     Data " << (reader ? "reading" : "writing") << ":\n"
         << "--     . data name(s): " << data_names << "\n"
         << "--     . associated mesh: " << mesh_name << "\n"
-        << "--     . Number of interface nodes: "
+        << "--     . Number of coupling nodes: "
         << Utilities::MPI::sum(local_size, mf_data->get_dof_handler().get_communicator()) << "\n"
-        << "--     . Node location: " << get_interface_type() << "\n"
+        << "--     . Node location: " << get_surface_type() << "\n"
         << std::endl;
 }
 

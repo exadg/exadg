@@ -245,15 +245,15 @@ public:
     this->precice =
       std::make_shared<ExaDG::preCICE::Adapter<dim, dim, VectorType>>(this->precice_parameters);
 
-    this->precice->add_write_interface(this->application->get_boundary_descriptor_fluid()
-                                         ->velocity->dirichlet_cached_bc.begin()
-                                         ->first,
-                                       this->precice_parameters.write_mesh_name,
-                                       {this->precice_parameters.stress_data_name},
-                                       this->precice_parameters.write_data_type,
-                                       fluid_matrix_free,
-                                       fluid_operator->get_dof_index_velocity(),
-                                       fluid_operator->get_quad_index_velocity_linear());
+    this->precice->add_write_surface(this->application->get_boundary_descriptor_fluid()
+                                       ->velocity->dirichlet_cached_bc.begin()
+                                       ->first,
+                                     this->precice_parameters.write_mesh_name,
+                                     {this->precice_parameters.stress_data_name},
+                                     this->precice_parameters.write_data_type,
+                                     fluid_matrix_free,
+                                     fluid_operator->get_dof_index_velocity(),
+                                     fluid_operator->get_quad_index_velocity_linear());
 
     // structure to ALE
     {
@@ -299,11 +299,11 @@ public:
       {
         AssertThrow(false, ExcNotImplemented());
       }
-      this->precice->add_read_interface(quadrature_point_locations,
-                                        ale_matrix_free,
-                                        exadg_terminal_ale,
-                                        this->precice_parameters.ale_mesh_name,
-                                        {this->precice_parameters.displacement_data_name});
+      this->precice->add_read_surface(quadrature_point_locations,
+                                      ale_matrix_free,
+                                      exadg_terminal_ale,
+                                      this->precice_parameters.ale_mesh_name,
+                                      {this->precice_parameters.displacement_data_name});
     }
 
     // structure to fluid
@@ -324,11 +324,11 @@ public:
         this->application->get_boundary_descriptor_fluid()->velocity->dirichlet_cached_bc);
 
       // TODO: Parametrize
-      this->precice->add_read_interface(quadrature_point_locations,
-                                        fluid_matrix_free,
-                                        exadg_terminal_fluid,
-                                        this->precice_parameters.read_mesh_name,
-                                        {this->precice_parameters.velocity_data_name});
+      this->precice->add_read_surface(quadrature_point_locations,
+                                      fluid_matrix_free,
+                                      exadg_terminal_fluid,
+                                      this->precice_parameters.read_mesh_name,
+                                      {this->precice_parameters.velocity_data_name});
       VectorType initial_stress;
       fluid_operator->initialize_vector_velocity(initial_stress);
       initial_stress = 0;

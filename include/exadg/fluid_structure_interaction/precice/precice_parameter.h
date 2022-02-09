@@ -1,7 +1,7 @@
 #pragma once
 
 #include <deal.II/base/parameter_handler.h>
-#include <exadg/fluid_structure_interaction/precice/coupling_interface.h>
+#include <exadg/fluid_structure_interaction/precice/coupling_surface.h>
 
 namespace ExaDG
 {

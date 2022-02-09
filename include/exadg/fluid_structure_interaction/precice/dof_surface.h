@@ -2,7 +2,7 @@
 
 #include <deal.II/dofs/dof_tools.h>
 
-#include <exadg/fluid_structure_interaction/precice/coupling_interface.h>
+#include <exadg/fluid_structure_interaction/precice/coupling_surface.h>
 #include <exadg/fluid_structure_interaction/precice/dof_tools_extension.h>
 
 namespace ExaDG
@@ -12,22 +12,22 @@ namespace preCICE
 using namespace dealii;
 
 /**
- * Derived class of the CouplingInterface: the classical coupling approach,
+ * Derived class of the CouplingSurface: the classical coupling approach,
  * where each participant defines an interface based on the locally owned
  * triangulation. Here, dof support points are used for reading and writing.
  * data_dim is equivalent to n_components, indicating the type of your data in
  * the preCICE sense (Vector vs Scalar)
  */
 template<int dim, int data_dim, typename VectorizedArrayType>
-class DoFInterface : public CouplingInterface<dim, data_dim, VectorizedArrayType>
+class DoFSurface : public CouplingSurface<dim, data_dim, VectorizedArrayType>
 {
 public:
-  DoFInterface(std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
-               std::shared_ptr<precice::SolverInterface>                           precice,
-               const std::string                                                   mesh_name,
-               const types::boundary_id                                            interface_id,
-               const int                                                           mf_dof_index)
-    : CouplingInterface<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, interface_id),
+  DoFSurface(std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
+             std::shared_ptr<precice::SolverInterface>                           precice,
+             const std::string                                                   mesh_name,
+             const types::boundary_id                                            surface_id,
+             const int                                                           mf_dof_index)
+    : CouplingSurface<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
       mf_dof_index(mf_dof_index)
   {
   }
@@ -54,7 +54,7 @@ public:
 
 private:
   /// The preCICE IDs
-  std::vector<int> interface_nodes_ids;
+  std::vector<int> coupling_nodes_ids;
   /// The deal.II associated IDs
   std::vector<std::array<types::global_dof_index, data_dim>> global_indices;
 
@@ -63,21 +63,21 @@ private:
   const int mf_dof_index;
 
   virtual std::string
-  get_interface_type() const override;
+  get_surface_type() const override;
 };
 
 
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-DoFInterface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
+DoFSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
   const std::vector<Point<dim>> &)
 {
   Assert(this->mesh_id != -1, ExcNotInitialized());
 
-  // In order to avoid that we define the interface multiple times when reader
+  // In order to avoid that we define the surface multiple times when reader
   // and writer refer to the same object
-  if(interface_nodes_ids.size() > 0)
+  if(coupling_nodes_ids.size() > 0)
     return;
 
   // Get and sort the global dof indices
@@ -94,12 +94,12 @@ DoFInterface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
       (DoFTools::extract_boundary_dofs(this->mf_data->get_dof_handler(mf_dof_index),
                                        component_mask,
                                        std::set<types::boundary_id>{
-                                         this->dealii_boundary_interface_id}) &
+                                         this->dealii_boundary_surface_id}) &
        this->mf_data->get_dof_handler(mf_dof_index).locally_owned_dofs());
 
     Assert(indices.n_elements() * data_dim ==
              this->mf_data->get_dof_handler(mf_dof_index)
-               .n_boundary_dofs(std::set<types::boundary_id>{this->dealii_boundary_interface_id}),
+               .n_boundary_dofs(std::set<types::boundary_id>{this->dealii_boundary_surface_id}),
            ExcInternalError());
     // Resize the global dof index conatiner in case we call this lambda for
     // the first time
@@ -127,11 +127,11 @@ DoFInterface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
                                                 this->mf_data->get_dof_handler(mf_dof_index),
                                                 support_points,
                                                 component_mask,
-                                                this->dealii_boundary_interface_id);
+                                                this->dealii_boundary_surface_id);
 
 
   // Set size of the preCICE ID vector
-  interface_nodes_ids.reserve(global_indices.size());
+  coupling_nodes_ids.reserve(global_indices.size());
   std::array<double, dim> nodes_position;
   for(std::size_t i = 0; i < global_indices.size(); ++i)
   {
@@ -142,7 +142,7 @@ DoFInterface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
 
     // pass node coordinates to precice
     const int precice_id = this->precice->setMeshVertex(this->mesh_id, nodes_position.data());
-    interface_nodes_ids.emplace_back(precice_id);
+    coupling_nodes_ids.emplace_back(precice_id);
   }
 
   if(this->read_data_map.size() > 0)
@@ -155,13 +155,13 @@ DoFInterface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-DoFInterface<dim, data_dim, VectorizedArrayType>::write_data(
+DoFSurface<dim, data_dim, VectorizedArrayType>::write_data(
   const LinearAlgebra::distributed::Vector<double> & data_vector,
   const std::string &                                data_name)
 {
   const int write_data_id = this->write_data_map.at(data_name);
   Assert(write_data_id != -1, ExcNotInitialized());
-  Assert(interface_nodes_ids.size() > 0, ExcNotInitialized());
+  Assert(coupling_nodes_ids.size() > 0, ExcNotInitialized());
 
   std::array<double, data_dim> write_data;
   for(std::size_t i = 0; i < global_indices.size(); ++i)
@@ -176,11 +176,11 @@ DoFInterface<dim, data_dim, VectorizedArrayType>::write_data(
     // and pass them to preCICE
     if constexpr(data_dim > 1)
     {
-      this->precice->writeVectorData(write_data_id, interface_nodes_ids[i], write_data.data());
+      this->precice->writeVectorData(write_data_id, coupling_nodes_ids[i], write_data.data());
     }
     else
     {
-      this->precice->writeScalarData(write_data_id, interface_nodes_ids[i], write_data[0]);
+      this->precice->writeScalarData(write_data_id, coupling_nodes_ids[i], write_data[0]);
     }
   }
 }
@@ -189,7 +189,7 @@ DoFInterface<dim, data_dim, VectorizedArrayType>::write_data(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 std::string
-DoFInterface<dim, data_dim, VectorizedArrayType>::get_interface_type() const
+DoFSurface<dim, data_dim, VectorizedArrayType>::get_surface_type() const
 {
   return "DoF support points using matrix-free dof index " + Utilities::to_string(mf_dof_index);
 }

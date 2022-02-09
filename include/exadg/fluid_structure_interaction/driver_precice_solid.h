@@ -126,7 +126,7 @@ public:
     this->precice =
       std::make_shared<ExaDG::preCICE::Adapter<dim, dim, VectorType>>(this->precice_parameters);
 
-    this->precice->add_write_interface(
+    this->precice->add_write_surface(
       this->application->get_boundary_descriptor_structure()->neumann_cached_bc.begin()->first,
       this->precice_parameters.write_mesh_name,
       {this->precice_parameters.displacement_data_name,
@@ -148,11 +148,11 @@ public:
         quad_indices,
         this->application->get_boundary_descriptor_structure()->neumann_cached_bc);
 
-      this->precice->add_read_interface(quadrature_point_locations,
-                                        structure_matrix_free,
-                                        exadg_terminal,
-                                        this->precice_parameters.read_mesh_name,
-                                        {this->precice_parameters.stress_data_name});
+      this->precice->add_read_surface(quadrature_point_locations,
+                                      structure_matrix_free,
+                                      exadg_terminal,
+                                      this->precice_parameters.read_mesh_name,
+                                      {this->precice_parameters.stress_data_name});
 
       VectorType displacement_structure;
       structure_operator->initialize_dof_vector(displacement_structure);
