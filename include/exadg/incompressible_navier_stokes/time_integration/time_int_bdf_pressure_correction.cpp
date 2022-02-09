@@ -208,6 +208,13 @@ TimeIntBDFPressureCorrection<dim, Number>::get_velocity_np() const
 
 template<int dim, typename Number>
 typename TimeIntBDFPressureCorrection<dim, Number>::VectorType const &
+TimeIntBDFPressureCorrection<dim, Number>::get_pressure() const
+{
+  return pressure[0];
+}
+
+template<int dim, typename Number>
+typename TimeIntBDFPressureCorrection<dim, Number>::VectorType const &
 TimeIntBDFPressureCorrection<dim, Number>::get_pressure_np() const
 {
   return pressure_np;

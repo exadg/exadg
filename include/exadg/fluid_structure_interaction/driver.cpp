@@ -555,7 +555,7 @@ Driver<dim, Number>::coupling_structure_to_fluid(bool const extrapolate) const
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::coupling_fluid_to_structure() const
+Driver<dim, Number>::coupling_fluid_to_structure(bool const end_of_time_step) const
 {
   dealii::Timer sub_timer;
   sub_timer.restart();
@@ -563,9 +563,19 @@ Driver<dim, Number>::coupling_fluid_to_structure() const
   VectorType stress_fluid;
   fluid_operator->initialize_vector_velocity(stress_fluid);
   // calculate fluid stress at fluid-structure interface
-  fluid_operator->interpolate_stress_bc(stress_fluid,
-                                        fluid_time_integrator->get_velocity_np(),
-                                        fluid_time_integrator->get_pressure_np());
+  if(end_of_time_step)
+  {
+    fluid_operator->interpolate_stress_bc(stress_fluid,
+                                          fluid_time_integrator->get_velocity_np(),
+                                          fluid_time_integrator->get_pressure_np());
+  }
+  else
+  {
+    fluid_operator->interpolate_stress_bc(stress_fluid,
+                                          fluid_time_integrator->get_velocity(),
+                                          fluid_time_integrator->get_pressure());
+  }
+
   stress_fluid *= -1.0;
   fluid_to_structure->update_data(stress_fluid);
 
@@ -590,7 +600,7 @@ Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType &       d_tilde,
   fluid_time_integrator->advance_one_timestep_partitioned_solve(iteration == 0);
 
   // update stress boundary condition for solid
-  coupling_fluid_to_structure();
+  coupling_fluid_to_structure(/* end_of_time_step = */ true);
 
   // solve structural problem
   structure_time_integrator->advance_one_timestep_partitioned_solve(iteration == 0);
@@ -963,6 +973,14 @@ Driver<dim, Number>::solve() const
   set_start_time();
 
   synchronize_time_step_size();
+
+  // compute initial acceleration for structural problem
+  {
+    // update stress boundary condition for solid at time t_n (not t_{n+1})
+    coupling_fluid_to_structure(/* end_of_time_step = */ false);
+    structure_time_integrator->compute_initial_acceleration(
+      application->get_parameters_structure().restarted_simulation);
+  }
 
   // The fluid domain is the master that dictates when the time loop is finished
   while(!fluid_time_integrator->finished())

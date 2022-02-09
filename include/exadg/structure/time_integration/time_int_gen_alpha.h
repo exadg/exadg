@@ -84,8 +84,27 @@ public:
   void
   set_displacement(VectorType const & displacement);
 
+  /**
+   * This function is for coupled multi-physics problems applying partitioned solution algorithms.
+   * Set use_extrapolation = true in the first iteration of the partitioned scheme within each time
+   * step. It is generally recommended to use store_solution = true.
+   */
   void
   advance_one_timestep_partitioned_solve(bool const use_extrapolation);
+
+  /*
+   * This function needs to be called before the first time step is performed. In case of a restart,
+   * the vector acceleration_n is read from restart files and nothing has to be done here.
+   */
+  void
+  compute_initial_acceleration(bool const do_restart)
+  {
+    if(not(do_restart))
+    {
+      // solve momentum equation to obtain initial acceleration
+      pde_operator->compute_initial_acceleration(acceleration_n, displacement_n, this->get_time());
+    }
+  }
 
 private:
   void
@@ -131,7 +150,7 @@ private:
   VectorType displacement_last_iter;
 
   std::pair<
-    unsigned int /* calls */,
+    unsigned int /* number of calls */,
     std::tuple<unsigned long long, unsigned long long> /* iteration counts {Newton, linear}*/>
     iterations;
 };
