@@ -31,10 +31,11 @@ struct ConfigurationParameters
   std::string participant_name         = "exadg";
   std::string read_mesh_name           = "default";
   std::string write_mesh_name          = "default";
-  int         write_quad_index         = 0;
+  std::string ale_mesh_name            = "default";
   std::string write_data_specification = "values_on_q_points";
-  std::string read_data_name           = "received-data";
-  std::string write_data_name          = "calculated-data";
+  std::string velocity_data_name       = "default";
+  std::string displacement_data_name   = "default";
+  std::string stress_data_name         = "default";
 
   WriteDataType write_data_type = WriteDataType::undefined;
 
@@ -83,24 +84,27 @@ ConfigurationParameters::add_parameters(ParameterHandler & prm)
                       write_mesh_name,
                       "Name of the write coupling mesh in the precice-config.xml file",
                       Patterns::Anything());
-    prm.add_parameter("WriteQuadratureIndex",
-                      write_quad_index,
-                      "Index of the quadrature formula in MatrixFree used for initialization",
-                      Patterns::Integer(0));
-    prm.add_parameter(
-      "WriteDataSpecification",
-      write_data_specification,
-      "Specification of the write data location and the data type"
-      "Available options are: values_on_dofs, values_on_q_points, normal_gradients_on_q_points",
-      Patterns::Selection("values_on_dofs|values_on_q_points|normal_gradients_on_q_points|"
-                          "values_on_other_mesh|gradients_on_other_mesh"));
-    prm.add_parameter("ReadDataName",
-                      read_data_name,
-                      "Name of the read data in the precice-config.xml file",
+    prm.add_parameter("ALEMeshName",
+                      ale_mesh_name,
+                      "Name of the ale-mesh in the precice-config.xml file",
                       Patterns::Anything());
-    prm.add_parameter("WriteDataName",
-                      write_data_name,
-                      "Name of the write data in the precice-config.xml file",
+    prm.add_parameter("WriteDataSpecification",
+                      write_data_specification,
+                      "Specification of the write data location and the data type",
+                      Patterns::Selection(
+                        "values_on_dofs|values_on_q_points|normal_gradients_on_q_points|"
+                        "values_on_other_mesh|gradients_on_other_mesh"));
+    prm.add_parameter("VelocityDataName",
+                      velocity_data_name,
+                      "Name of the Velocity data in the precice-config.xml file",
+                      Patterns::Anything());
+    prm.add_parameter("DisplacementDataName",
+                      displacement_data_name,
+                      "Name of the Displacement data in the precice-config.xml file",
+                      Patterns::Anything());
+    prm.add_parameter("StressDataName",
+                      stress_data_name,
+                      "Name of the Stress data in the precice-config.xml file",
                       Patterns::Anything());
   }
   prm.leave_subsection();

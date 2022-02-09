@@ -16,9 +16,9 @@
         "ParticipantName": "Solid",
         "ReadMeshName": "Solid-Mesh-read",
         "WriteMeshName": "Solid-Mesh-write",
-        "WriteQuadratureIndex": "0",
         "WriteDataSpecification": "values_on_dofs",
-        "ReadDataName": "Stress",
-        "WriteDataName": "Displacement"
+        "StressDataName": "Stress",
+        "DisplacementDataName": "Displacement",
+        "VelocityDataName": "Velocity"
     }
 }

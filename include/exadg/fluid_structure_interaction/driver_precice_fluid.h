@@ -249,7 +249,7 @@ public:
                                          ->velocity->dirichlet_cached_bc.begin()
                                          ->first,
                                        this->precice_parameters.write_mesh_name,
-                                       {this->precice_parameters.write_data_name},
+                                       {this->precice_parameters.stress_data_name},
                                        this->precice_parameters.write_data_type,
                                        fluid_matrix_free,
                                        fluid_operator->get_dof_index_velocity(),
@@ -302,8 +302,8 @@ public:
       this->precice->add_read_interface(quadrature_point_locations,
                                         ale_matrix_free,
                                         exadg_terminal_ale,
-                                        "ALE-Mesh",
-                                        {"Displacement"});
+                                        this->precice_parameters.ale_mesh_name,
+                                        {this->precice_parameters.displacement_data_name});
     }
 
     // structure to fluid
@@ -327,8 +327,8 @@ public:
       this->precice->add_read_interface(quadrature_point_locations,
                                         fluid_matrix_free,
                                         exadg_terminal_fluid,
-                                        "Fluid-Mesh-read",
-                                        {"Velocity"});
+                                        this->precice_parameters.read_mesh_name,
+                                        {this->precice_parameters.velocity_data_name});
       VectorType initial_stress;
       fluid_operator->initialize_vector_velocity(initial_stress);
       initial_stress = 0;
@@ -487,14 +487,16 @@ private:
   coupling_structure_to_ale() const
   {
     // TODO: parametrize names
-    this->precice->read_block_data("ALE-Mesh", "Displacement");
+    this->precice->read_block_data(this->precice_parameters.ale_mesh_name,
+                                   this->precice_parameters.displacement_data_name);
   }
 
   void
   coupling_structure_to_fluid() const
   {
     // TODO: parametrize names
-    this->precice->read_block_data("Fluid-Mesh-read", "Velocity");
+    this->precice->read_block_data(this->precice_parameters.read_mesh_name,
+                                   this->precice_parameters.velocity_data_name);
   }
 
   void
@@ -508,7 +510,7 @@ private:
                                           fluid_time_integrator->get_pressure_np());
     stress_fluid *= -1.0;
     this->precice->write_data(this->precice_parameters.write_mesh_name,
-                              this->precice_parameters.write_data_name,
+                              this->precice_parameters.stress_data_name,
                               stress_fluid,
                               fluid_time_integrator->get_time_step_size());
   }

@@ -129,7 +129,8 @@ public:
     this->precice->add_write_interface(
       this->application->get_boundary_descriptor_structure()->neumann_cached_bc.begin()->first,
       this->precice_parameters.write_mesh_name,
-      {this->precice_parameters.write_data_name, "Velocity"},
+      {this->precice_parameters.displacement_data_name,
+       this->precice_parameters.velocity_data_name},
       this->precice_parameters.write_data_type,
       structure_matrix_free,
       structure_operator->get_dof_index(),
@@ -151,7 +152,7 @@ public:
                                         structure_matrix_free,
                                         exadg_terminal,
                                         this->precice_parameters.read_mesh_name,
-                                        {"Stress"});
+                                        {this->precice_parameters.stress_data_name});
 
       VectorType displacement_structure;
       structure_operator->initialize_dof_vector(displacement_structure);
@@ -278,7 +279,7 @@ private:
                             const double       time_step_size) const
   {
     this->precice->write_data(this->precice_parameters.write_mesh_name,
-                              "Displacement",
+                              this->precice_parameters.displacement_data_name,
                               displacement_structure,
                               time_step_size);
   }
@@ -288,7 +289,7 @@ private:
                               const double       time_step_size) const
   {
     this->precice->write_data(this->precice_parameters.write_mesh_name,
-                              "Velocity",
+                              this->precice_parameters.velocity_data_name,
                               velocity_structure,
                               time_step_size);
   }
@@ -296,7 +297,8 @@ private:
   void
   coupling_fluid_to_structure() const
   {
-    this->precice->read_block_data("Solid-Mesh-read", "Stress");
+    this->precice->read_block_data(this->precice_parameters.read_mesh_name,
+                                   this->precice_parameters.stress_data_name);
   }
 
   // grid
