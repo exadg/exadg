@@ -57,7 +57,7 @@ public:
    *             solver (using quadrature points for reading)
    */
   template<typename ParameterClass>
-  Adapter(const ParameterClass & parameters);
+  Adapter(const ParameterClass & parameters, MPI_Comm mpi_comm);
 
 
   /**
@@ -177,14 +177,14 @@ private:
 
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 template<typename ParameterClass>
-Adapter<dim, data_dim, VectorType, VectorizedArrayType>::Adapter(const ParameterClass & parameters)
+Adapter<dim, data_dim, VectorType, VectorizedArrayType>::Adapter(const ParameterClass & parameters,
+                                                                 MPI_Comm               mpi_comm)
 
 {
-  precice =
-    std::make_shared<precice::SolverInterface>(parameters.participant_name,
-                                               parameters.config_file,
-                                               Utilities::MPI::this_mpi_process(MPI_COMM_WORLD),
-                                               Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD));
+  precice = std::make_shared<precice::SolverInterface>(parameters.participant_name,
+                                                       parameters.config_file,
+                                                       Utilities::MPI::this_mpi_process(mpi_comm),
+                                                       Utilities::MPI::n_mpi_processes(mpi_comm));
 
   AssertThrow(dim == precice->getDimensions(), ExcInternalError());
   AssertThrow(dim > 1, ExcNotImplemented());

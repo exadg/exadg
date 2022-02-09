@@ -124,7 +124,8 @@ public:
     /*********************************** INTERFACE COUPLING *************************************/
 
     this->precice =
-      std::make_shared<ExaDG::preCICE::Adapter<dim, dim, VectorType>>(this->precice_parameters);
+      std::make_shared<ExaDG::preCICE::Adapter<dim, dim, VectorType>>(this->precice_parameters,
+                                                                      this->mpi_comm);
 
     this->precice->add_write_surface(
       this->application->get_boundary_descriptor_structure()->neumann_cached_bc.begin()->first,
