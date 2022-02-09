@@ -259,6 +259,18 @@ public:
 
 private:
   void
+  setup_application();
+
+  void
+  setup_structure();
+
+  void
+  setup_fluid_and_ale();
+
+  void
+  setup_interface_coupling();
+
+  void
   set_start_time() const;
 
   void
