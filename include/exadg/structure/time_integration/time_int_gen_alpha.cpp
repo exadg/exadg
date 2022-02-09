@@ -92,6 +92,17 @@ TimeIntGenAlpha<dim, Number>::setup(bool const do_restart)
 
 template<int dim, typename Number>
 void
+TimeIntGenAlpha<dim, Number>::compute_initial_acceleration(bool const do_restart)
+{
+  if(not(do_restart))
+  {
+    // solve momentum equation to obtain initial acceleration
+    pde_operator->compute_initial_acceleration(acceleration_n, displacement_n, this->get_time());
+  }
+}
+
+template<int dim, typename Number>
+void
 TimeIntGenAlpha<dim, Number>::advance_one_timestep_partitioned_solve(bool const use_extrapolation)
 {
   this->use_extrapolation = use_extrapolation;
