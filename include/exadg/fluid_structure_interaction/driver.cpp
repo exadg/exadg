@@ -149,6 +149,18 @@ Driver<dim, Number>::setup()
     structure_postprocessor->setup(structure_operator->get_dof_handler(),
                                    *application->get_grid_structure()->mapping);
 
+    // initialize time integrator
+    structure_time_integrator = std::make_shared<Structure::TimeIntGenAlpha<dim, Number>>(
+      structure_operator,
+      structure_postprocessor,
+      application->get_parameters_structure(),
+      mpi_comm,
+      is_test);
+
+    structure_time_integrator->setup(application->get_parameters_structure().restarted_simulation);
+
+    structure_operator->setup_solver();
+
     timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
   }
   /**************************************** STRUCTURE *****************************************/
@@ -294,6 +306,20 @@ Driver<dim, Number>::setup()
     fluid_postprocessor = application->create_postprocessor_fluid();
     fluid_postprocessor->setup(*fluid_operator);
 
+    // setup time integrator before calling setup_solvers (this is necessary since the setup
+    // of the solvers depends on quantities such as the time_step_size or gamma0!!!)
+    AssertThrow(application->get_parameters_fluid().solver_type == IncNS::SolverType::Unsteady,
+                dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
+
+    // initialize fluid_time_integrator
+    fluid_time_integrator = IncNS::create_time_integrator<dim, Number>(
+      fluid_operator, application->get_parameters_fluid(), mpi_comm, is_test, fluid_postprocessor);
+
+    fluid_time_integrator->setup(application->get_parameters_fluid().restarted_simulation);
+
+    fluid_operator->setup_solvers(fluid_time_integrator->get_scaling_factor_time_derivative_term(),
+                                  fluid_time_integrator->get_velocity());
+
     timer_tree.insert({"FSI", "Setup", "Fluid"}, timer_local.wall_time());
   }
   /****************************************** FLUID *******************************************/
@@ -422,53 +448,6 @@ Driver<dim, Number>::setup()
   }
 
   /*********************************** INTERFACE COUPLING *************************************/
-
-
-  /**************************** SETUP TIME INTEGRATORS AND SOLVERS ****************************/
-
-  // fluid
-  {
-    dealii::Timer timer_local;
-    timer_local.restart();
-
-    // setup time integrator before calling setup_solvers (this is necessary since the setup
-    // of the solvers depends on quantities such as the time_step_size or gamma0!!!)
-    AssertThrow(application->get_parameters_fluid().solver_type == IncNS::SolverType::Unsteady,
-                dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
-
-    // initialize fluid_time_integrator
-    fluid_time_integrator = IncNS::create_time_integrator<dim, Number>(
-      fluid_operator, application->get_parameters_fluid(), mpi_comm, is_test, fluid_postprocessor);
-
-    fluid_time_integrator->setup(application->get_parameters_fluid().restarted_simulation);
-
-    fluid_operator->setup_solvers(fluid_time_integrator->get_scaling_factor_time_derivative_term(),
-                                  fluid_time_integrator->get_velocity());
-
-    timer_tree.insert({"FSI", "Setup", "Fluid"}, timer_local.wall_time());
-  }
-
-  // Structure
-  {
-    dealii::Timer timer_local;
-    timer_local.restart();
-
-    // initialize time integrator
-    structure_time_integrator = std::make_shared<Structure::TimeIntGenAlpha<dim, Number>>(
-      structure_operator,
-      structure_postprocessor,
-      application->get_parameters_structure(),
-      mpi_comm,
-      is_test);
-
-    structure_time_integrator->setup(application->get_parameters_structure().restarted_simulation);
-
-    structure_operator->setup_solver();
-
-    timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
-  }
-
-  /**************************** SETUP TIME INTEGRATORS AND SOLVERS ****************************/
 
 
   timer_tree.insert({"FSI", "Setup"}, timer.wall_time());
