@@ -50,7 +50,7 @@ private:
     this->param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
     this->param.ale_formulation             = ALE;
     this->param.grid_motion_is_known_analytically = this->param.ale_formulation;
-    this->param.mesh_movement_type                = MeshMovementType::Analytical;
+    this->param.mesh_movement_type                = MeshMovementType::Function;
     this->param.right_hand_side                   = true;
     this->param.boussinesq_term                   = true;
 

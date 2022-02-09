@@ -43,7 +43,7 @@
 #include <exadg/convection_diffusion/user_interface/field_functions.h>
 #include <exadg/convection_diffusion/user_interface/parameters.h>
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
-#include <exadg/grid/grid_motion_analytical.h>
+#include <exadg/grid/grid_motion_function.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/utilities/print_functions.h>
 #include <exadg/utilities/print_general_infos.h>

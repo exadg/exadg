@@ -141,8 +141,8 @@ enum_to_string(MeshMovementType const enum_type)
 
   switch(enum_type)
   {
-    case MeshMovementType::Analytical:
-      string_type = "Analytical";
+    case MeshMovementType::Function:
+      string_type = "Function";
       break;
     case MeshMovementType::Poisson:
       string_type = "Poisson";

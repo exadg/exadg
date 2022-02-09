@@ -64,12 +64,12 @@ Driver<dim, Number>::setup()
   // moving mesh (ALE formulation)
   if(application->get_parameters().ale_formulation)
   {
-    if(application->get_parameters().mesh_movement_type == MeshMovementType::Analytical)
+    if(application->get_parameters().mesh_movement_type == MeshMovementType::Function)
     {
       std::shared_ptr<dealii::Function<dim>> mesh_motion =
         application->create_mesh_movement_function();
 
-      grid_motion = std::make_shared<GridMotionAnalytical<dim, Number>>(
+      grid_motion = std::make_shared<GridMotionFunction<dim, Number>>(
         application->get_grid()->mapping,
         application->get_parameters().grid.mapping_degree,
         *application->get_grid()->triangulation,

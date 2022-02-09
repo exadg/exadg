@@ -45,7 +45,7 @@ Parameters::Parameters()
     // ALE
     ale_formulation(false),
     grid_motion_is_known_analytically(false),
-    mesh_movement_type(MeshMovementType::Analytical),
+    mesh_movement_type(MeshMovementType::Function),
     neumann_with_variable_normal_vector(false),
 
     // PHYSICAL QUANTITIES
