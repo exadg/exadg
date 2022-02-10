@@ -94,8 +94,7 @@ public:
   /**
    * This function is for coupled multi-physics problems applying partitioned solution algorithms.
    * Set use_extrapolation = true in the first iteration of the partitioned scheme within each time
-   * step. It is generally recommended to use store_solution = true.
-   * TODO: remove parameter store_solution since it is currently not used
+   * step.
    */
   void
   advance_one_timestep_partitioned_solve(bool const use_extrapolation);
