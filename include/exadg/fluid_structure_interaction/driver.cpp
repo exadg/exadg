@@ -587,13 +587,13 @@ Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType &       d_tilde,
   coupling_structure_to_fluid(iteration == 0);
 
   // solve fluid problem
-  fluid_time_integrator->advance_one_timestep_partitioned_solve(iteration == 0, true);
+  fluid_time_integrator->advance_one_timestep_partitioned_solve(iteration == 0);
 
   // update stress boundary condition for solid
   coupling_fluid_to_structure();
 
   // solve structural problem
-  structure_time_integrator->advance_one_timestep_partitioned_solve(iteration == 0, true);
+  structure_time_integrator->advance_one_timestep_partitioned_solve(iteration == 0);
 
   d_tilde = structure_time_integrator->get_displacement_np();
 }

@@ -85,7 +85,7 @@ public:
   set_displacement(VectorType const & displacement);
 
   void
-  advance_one_timestep_partitioned_solve(bool const use_extrapolation, bool const store_solution);
+  advance_one_timestep_partitioned_solve(bool const use_extrapolation);
 
 private:
   void
