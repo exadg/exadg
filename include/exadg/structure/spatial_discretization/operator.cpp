@@ -73,6 +73,29 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> ma
   matrix_free      = matrix_free_in;
   matrix_free_data = matrix_free_data_in;
 
+  if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
+  {
+    interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<dim, dim, Number>>();
+    std::vector<unsigned int> quad_indices;
+    // Gauss-Lobatto quadrature rule for DirichletCached boundary conditions!
+    quad_indices.emplace_back(get_quad_index_gauss_lobatto());
+    interface_data_dirichlet_cached->setup(matrix_free,
+                                           get_dof_index(),
+                                           quad_indices,
+                                           boundary_descriptor->dirichlet_cached_bc);
+  }
+
+  if(not(boundary_descriptor->neumann_cached_bc.empty()))
+  {
+    interface_data_neumann_cached = std::make_shared<ContainerInterfaceData<dim, dim, Number>>();
+    std::vector<unsigned int> quad_indices;
+    quad_indices.emplace_back(get_quad_index());
+    interface_data_neumann_cached->setup(matrix_free,
+                                           get_dof_index(),
+                                           quad_indices,
+                                           boundary_descriptor->neumann_cached_bc);
+  }
+
   setup_operators();
 
   pcout << std::endl << "... done!" << std::endl;
@@ -179,6 +202,20 @@ unsigned int
 Operator<dim, Number>::get_quad_index_gauss_lobatto() const
 {
   return matrix_free_data->get_quad_index(get_quad_gauss_lobatto_name());
+}
+
+template<int dim, typename Number>
+std::shared_ptr<ContainerInterfaceData<dim, dim, Number>>
+Operator<dim, Number>::get_container_interface_data_neumann()
+{
+  return interface_data_neumann_cached;
+}
+
+template<int dim, typename Number>
+std::shared_ptr<ContainerInterfaceData<dim, dim, Number>>
+Operator<dim, Number>::get_container_interface_data_dirichlet()
+{
+  return interface_data_dirichlet_cached;
 }
 
 template<int dim, typename Number>

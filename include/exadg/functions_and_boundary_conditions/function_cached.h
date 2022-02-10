@@ -34,12 +34,13 @@ template<int rank, int dim, typename Number = double>
 class FunctionCached
 {
 private:
-  typedef std::tuple<unsigned int /*face*/, unsigned int /*q*/, unsigned int /*v*/> Id;
-  typedef std::map<Id, dealii::types::global_dof_index>                             MapVectorIndex;
-  typedef std::vector<dealii::Tensor<rank, dim, Number>>                            ArrayTensor;
+  using Id = std::tuple<unsigned int /*face*/, unsigned int /*q*/, unsigned int /*v*/>;
+
+  using MapVectorIndex      = std::map<Id, dealii::types::global_dof_index>;
+  using ArraySolutionValues = std::vector<dealii::Tensor<rank, dim, double>>;
 
 public:
-  FunctionCached() : global_map_vector_index(nullptr), map_solution(nullptr)
+  FunctionCached() : map_map_vector_index(nullptr), map_array_solution(nullptr)
   {
   }
 
@@ -49,17 +50,18 @@ public:
                unsigned int const v,
                unsigned int const quad_index) const
   {
-    Assert(global_map_vector_index != nullptr,
+    Assert(map_map_vector_index != nullptr,
            dealii::ExcMessage("Pointer global_map_vector_index is not initialized."));
-    Assert(global_map_vector_index->find(quad_index) != global_map_vector_index->end(),
+    Assert(map_map_vector_index->find(quad_index) != map_map_vector_index->end(),
            dealii::ExcMessage("Specified quad_index does not exist in global_map_vector_index."));
 
-    Assert(map_solution != nullptr, dealii::ExcMessage("Pointer map_solution is not initialized."));
-    Assert(map_solution->find(quad_index) != map_solution->end(),
-           dealii::ExcMessage("Specified quad_index does not exist in map_solution."));
+    Assert(map_array_solution != nullptr,
+           dealii::ExcMessage("Pointer map_array_solution is not initialized."));
+    Assert(map_array_solution->find(quad_index) != map_array_solution->end(),
+           dealii::ExcMessage("Specified quad_index does not exist in map_array_solution."));
 
-    MapVectorIndex const & map_vector_index = global_map_vector_index->find(quad_index)->second;
-    ArrayTensor const &    array_solution   = map_solution->find(quad_index)->second;
+    MapVectorIndex const &      map_vector_index = map_map_vector_index->find(quad_index)->second;
+    ArraySolutionValues const & array_solution   = map_array_solution->find(quad_index)->second;
 
     Id                              id    = std::make_tuple(face, q, v);
     dealii::types::global_dof_index index = map_vector_index.find(id)->second;
@@ -71,16 +73,16 @@ public:
   }
 
   void
-  set_data_pointer(std::map<unsigned int, MapVectorIndex> const & global_map_vector_index_in,
-                   std::map<unsigned int, ArrayTensor> const &    map_solution_in)
+  set_data_pointer(std::map<unsigned int, MapVectorIndex> const &      map_map_vector_index_,
+                   std::map<unsigned int, ArraySolutionValues> const & map_array_solution_)
   {
-    global_map_vector_index = &global_map_vector_index_in;
-    map_solution            = &map_solution_in;
+    map_map_vector_index = &map_map_vector_index_;
+    map_array_solution   = &map_array_solution_;
   }
 
 private:
-  std::map<unsigned int, MapVectorIndex> const * global_map_vector_index;
-  std::map<unsigned int, ArrayTensor> const *    map_solution;
+  std::map<unsigned int, MapVectorIndex> const *      map_map_vector_index;
+  std::map<unsigned int, ArraySolutionValues> const * map_array_solution;
 };
 
 } // namespace ExaDG

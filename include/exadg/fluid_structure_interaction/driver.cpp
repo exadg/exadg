@@ -353,47 +353,22 @@ Driver<dim, Number>::setup_interface_coupling()
 
     if(application->get_parameters_fluid().mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
-      std::vector<unsigned int> quad_indices;
-      if(application->get_parameters_ale_poisson().spatial_discretization ==
-         Poisson::SpatialDiscretization::DG)
-        quad_indices.emplace_back(ale_poisson_operator->get_quad_index());
-      else if(application->get_parameters_ale_poisson().spatial_discretization ==
-              Poisson::SpatialDiscretization::CG)
-        quad_indices.emplace_back(ale_poisson_operator->get_quad_index_gauss_lobatto());
-      else
-        AssertThrow(false, dealii::ExcMessage("not implemented."));
-
-      VectorType displacement_structure;
-      structure_operator->initialize_dof_vector(displacement_structure);
       structure_to_ale = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
-      structure_to_ale->setup(
-        ale_matrix_free,
-        ale_poisson_operator->get_dof_index(),
-        quad_indices,
-        application->get_boundary_descriptor_ale_poisson()->dirichlet_cached_bc,
-        structure_operator->get_dof_handler(),
-        *application->get_grid_structure()->mapping,
-        displacement_structure,
-        fsi_data.geometric_tolerance);
+      structure_to_ale->setup(ale_poisson_operator->get_container_interface_data(),
+                              application->get_boundary_descriptor_structure()->neumann_cached_bc,
+                              structure_operator->get_dof_handler(),
+                              *application->get_grid_structure()->mapping,
+                              fsi_data.geometric_tolerance);
     }
     else if(application->get_parameters_fluid().mesh_movement_type ==
             IncNS::MeshMovementType::Elasticity)
     {
-      std::vector<unsigned int> quad_indices;
-      quad_indices.emplace_back(ale_elasticity_operator->get_quad_index_gauss_lobatto());
-
-      VectorType displacement_structure;
-      structure_operator->initialize_dof_vector(displacement_structure);
       structure_to_ale = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
-      structure_to_ale->setup(
-        ale_matrix_free,
-        ale_elasticity_operator->get_dof_index(),
-        quad_indices,
-        application->get_boundary_descriptor_ale_elasticity()->dirichlet_cached_bc,
-        structure_operator->get_dof_handler(),
-        *application->get_grid_structure()->mapping,
-        displacement_structure,
-        fsi_data.geometric_tolerance);
+      structure_to_ale->setup(ale_elasticity_operator->get_container_interface_data_dirichlet(),
+                              application->get_boundary_descriptor_structure()->neumann_cached_bc,
+                              structure_operator->get_dof_handler(),
+                              *application->get_grid_structure()->mapping,
+                              fsi_data.geometric_tolerance);
     }
     else
     {
@@ -412,23 +387,12 @@ Driver<dim, Number>::setup_interface_coupling()
 
     pcout << std::endl << "Setup interface coupling structure -> fluid ..." << std::endl;
 
-    std::vector<unsigned int> quad_indices;
-    quad_indices.emplace_back(fluid_operator->get_quad_index_velocity_linear());
-    quad_indices.emplace_back(fluid_operator->get_quad_index_velocity_nonlinear());
-    quad_indices.emplace_back(fluid_operator->get_quad_index_velocity_gauss_lobatto());
-
-    VectorType velocity_structure;
-    structure_operator->initialize_dof_vector(velocity_structure);
     structure_to_fluid = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
-    structure_to_fluid->setup(
-      fluid_matrix_free,
-      fluid_operator->get_dof_index_velocity(),
-      quad_indices,
-      application->get_boundary_descriptor_fluid()->velocity->dirichlet_cached_bc,
-      structure_operator->get_dof_handler(),
-      *application->get_grid_structure()->mapping,
-      velocity_structure,
-      fsi_data.geometric_tolerance);
+    structure_to_fluid->setup(fluid_operator->get_container_interface_data(),
+                              application->get_boundary_descriptor_structure()->neumann_cached_bc,
+                              structure_operator->get_dof_handler(),
+                              *application->get_grid_structure()->mapping,
+                              fsi_data.geometric_tolerance);
 
     pcout << std::endl << "... done!" << std::endl;
 
@@ -442,22 +406,15 @@ Driver<dim, Number>::setup_interface_coupling()
 
     pcout << std::endl << "Setup interface coupling fluid -> structure ..." << std::endl;
 
-    std::vector<unsigned int> quad_indices;
-    quad_indices.emplace_back(structure_operator->get_quad_index());
-
-    VectorType stress_fluid;
-    fluid_operator->initialize_vector_velocity(stress_fluid);
     fluid_to_structure = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
-    std::shared_ptr<dealii::Mapping<dim> const> mapping =
+    std::shared_ptr<dealii::Mapping<dim> const> mapping_fluid =
       get_dynamic_mapping<dim, Number>(application->get_grid_fluid(), fluid_grid_motion);
-    fluid_to_structure->setup(structure_matrix_free,
-                              structure_operator->get_dof_index(),
-                              quad_indices,
-                              application->get_boundary_descriptor_structure()->neumann_cached_bc,
-                              fluid_operator->get_dof_handler_u(),
-                              *mapping,
-                              stress_fluid,
-                              fsi_data.geometric_tolerance);
+    fluid_to_structure->setup(
+      structure_operator->get_container_interface_data_neumann(),
+      application->get_boundary_descriptor_fluid()->velocity->dirichlet_cached_bc,
+      fluid_operator->get_dof_handler_u(),
+      *mapping_fluid,
+      fsi_data.geometric_tolerance);
 
     pcout << std::endl << "... done!" << std::endl;
 

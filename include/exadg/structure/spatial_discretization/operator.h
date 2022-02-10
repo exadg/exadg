@@ -26,6 +26,7 @@
 #include <deal.II/fe/fe_system.h>
 
 // ExaDG
+#include <exadg/functions_and_boundary_conditions/interface_coupling.h>
 #include <exadg/grid/grid.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
@@ -302,6 +303,13 @@ public:
   unsigned int
   get_quad_index_gauss_lobatto() const;
 
+  // Multiphysics coupling via "Cached" boundary conditions
+  std::shared_ptr<ContainerInterfaceData<dim, dim, Number>>
+  get_container_interface_data_neumann();
+
+  std::shared_ptr<ContainerInterfaceData<dim, dim, Number>>
+  get_container_interface_data_dirichlet();
+
 private:
   /*
    * Initializes dealii::DoFHandler.
@@ -380,6 +388,12 @@ private:
    */
   std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
   std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
+
+  /*
+   * Interface coupling
+   */
+  std::shared_ptr<ContainerInterfaceData<dim, dim, Number>> interface_data_dirichlet_cached;
+  std::shared_ptr<ContainerInterfaceData<dim, dim, Number>> interface_data_neumann_cached;
 
   /*
    * Basic operators.

@@ -177,6 +177,20 @@ SpatialOperatorBase<dim, Number>::setup(
   matrix_free      = matrix_free_in;
   matrix_free_data = matrix_free_data_in;
 
+  // initialize data container for DirichletCached boundary conditions
+  if(not(boundary_descriptor->velocity->dirichlet_cached_bc.empty()))
+  {
+    interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<dim, dim, Number>>();
+    std::vector<unsigned int> quad_indices;
+    quad_indices.emplace_back(get_quad_index_velocity_linear());
+    quad_indices.emplace_back(get_quad_index_velocity_nonlinear());
+    quad_indices.emplace_back(get_quad_index_velocity_gauss_lobatto());
+    interface_data_dirichlet_cached->setup(matrix_free,
+                                           get_dof_index_velocity(),
+                                           quad_indices,
+                                           boundary_descriptor->velocity->dirichlet_cached_bc);
+  }
+
   // initialize data structures depending on MatrixFree
   initialize_operators(dof_index_temperature);
 
@@ -740,6 +754,13 @@ SpatialOperatorBase<dim, Number>::get_viscosity_boundary_face(unsigned int const
     viscous_kernel->get_coefficient_face(face, q);
 
   return viscosity;
+}
+
+template<int dim, typename Number>
+std::shared_ptr<ContainerInterfaceData<dim, dim, Number>>
+SpatialOperatorBase<dim, Number>::get_container_interface_data()
+{
+  return interface_data_dirichlet_cached;
 }
 
 template<int dim, typename Number>
