@@ -147,15 +147,6 @@ public:
   // with fixed mesh will be used
   bool ale_formulation;
 
-  // in case of ALE formulation:
-  // this parameter tells the code whether the grid motion is known analytically, i.e.
-  // whether the grid can be moved during the initialization of the time integrator to
-  // initialize the current and previous solutions. In case of coupled multi-physics
-  // problems where the grid motion is not known prior to the simulation, the grid is
-  // simply not moved in the setup phase. This parameter needs to be activated in order to
-  // achieve optimal rates of convergence in time for problems with analytical solution.
-  bool grid_motion_is_known_analytically;
-
   MeshMovementType mesh_movement_type;
 
   bool neumann_with_variable_normal_vector;

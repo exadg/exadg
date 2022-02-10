@@ -154,7 +154,6 @@ private:
 
     // ALE
     this->param.ale_formulation                     = ALE;
-    this->param.grid_motion_is_known_analytically   = this->param.ale_formulation;
     this->param.mesh_movement_type                  = MeshMovementType::Function;
     this->param.neumann_with_variable_normal_vector = false;
 

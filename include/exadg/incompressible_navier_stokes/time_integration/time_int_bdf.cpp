@@ -92,8 +92,7 @@ void
 TimeIntBDF<dim, Number>::setup_derived()
 {
   // In the case of an arbitrary Lagrangian-Eulerian formulation:
-  if(param.ale_formulation && param.grid_motion_is_known_analytically &&
-     param.restarted_simulation == false)
+  if(param.ale_formulation && param.restarted_simulation == false)
   {
     // compute the grid coordinates at start time (and at previous times in case of
     // start_with_low_order == false)

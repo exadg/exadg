@@ -44,7 +44,6 @@ Parameters::Parameters()
 
     // ALE
     ale_formulation(false),
-    grid_motion_is_known_analytically(false),
     mesh_movement_type(MeshMovementType::Function),
     neumann_with_variable_normal_vector(false),
 
@@ -636,7 +635,6 @@ Parameters::print_parameters_mathematical_model(dealii::ConditionalOStream const
   print_parameter(pcout, "Use ALE formulation", ale_formulation);
   if(ale_formulation)
   {
-    print_parameter(pcout, "Grid motion is known analytically", grid_motion_is_known_analytically);
     print_parameter(pcout, "Mesh movement type", enum_to_string(mesh_movement_type));
     print_parameter(pcout, "NBC with variable normal vector", neumann_with_variable_normal_vector);
   }

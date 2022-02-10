@@ -139,7 +139,7 @@ template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::initialize_current_solution()
 {
-  if(this->param.ale_formulation and this->param.grid_motion_is_known_analytically)
+  if(this->param.ale_formulation)
     pde_operator->move_grid(this->get_time());
 
   pde_operator->prescribe_initial_conditions(velocity[0], pressure[0], this->get_time());
@@ -152,7 +152,7 @@ TimeIntBDFDualSplitting<dim, Number>::initialize_former_solutions()
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < velocity.size(); ++i)
   {
-    if(this->param.ale_formulation and this->param.grid_motion_is_known_analytically)
+    if(this->param.ale_formulation)
       pde_operator->move_grid(this->get_previous_time(i));
 
     pde_operator->prescribe_initial_conditions(velocity[i],
@@ -166,7 +166,7 @@ void
 TimeIntBDFDualSplitting<dim, Number>::initialize_velocity_dbc()
 {
   // fill vector velocity_dbc: The first entry [0] is already needed if start_with_low_order == true
-  if(this->param.ale_formulation and this->param.grid_motion_is_known_analytically)
+  if(this->param.ale_formulation)
     pde_operator->move_grid_and_update_dependent_data_structures(this->get_time());
   pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[0], this->get_time());
   // ... and previous times if start_with_low_order == false
@@ -175,7 +175,7 @@ TimeIntBDFDualSplitting<dim, Number>::initialize_velocity_dbc()
     for(unsigned int i = 1; i < velocity_dbc.size(); ++i)
     {
       double const time = this->get_time() - double(i) * this->get_time_step_size();
-      if(this->param.ale_formulation and this->param.grid_motion_is_known_analytically)
+      if(this->param.ale_formulation)
         pde_operator->move_grid_and_update_dependent_data_structures(time);
       pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[i], time);
     }
