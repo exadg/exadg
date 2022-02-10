@@ -134,13 +134,9 @@ public:
    * Gauss-Lobatto points. Otherwise, the quadrature formula used in this function does not match
    * the nodes of the element, and the values injected by this function into the DoF vector are not
    * the degrees of freedom of the underlying finite element space.
-   *
-   * TODO: remove the last parameter
    */
   void
-  interpolate_velocity_dirichlet_bc(VectorType &   dst,
-                                    double const & time,
-                                    bool const     use_dirichlet_cached_bc_data);
+  interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time);
 
 private:
   /*
@@ -240,9 +236,6 @@ private:
   std::shared_ptr<PreconditionerBase<Number>> helmholtz_preconditioner;
 
   std::shared_ptr<Krylov::SolverBase<VectorType>> helmholtz_solver;
-
-  // TODO: remove this parameter: currently needed for FSI
-  bool use_dirichlet_cached_bc_data;
 };
 
 } // namespace IncNS

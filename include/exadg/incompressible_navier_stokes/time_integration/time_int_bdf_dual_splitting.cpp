@@ -168,7 +168,7 @@ TimeIntBDFDualSplitting<dim, Number>::initialize_velocity_dbc()
   // fill vector velocity_dbc: The first entry [0] is already needed if start_with_low_order == true
   if(this->param.ale_formulation and this->param.grid_motion_is_known_analytically)
     pde_operator->move_grid_and_update_dependent_data_structures(this->get_time());
-  pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[0], this->get_time(), false);
+  pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[0], this->get_time());
   // ... and previous times if start_with_low_order == false
   if(this->start_with_low_order == false)
   {
@@ -177,7 +177,7 @@ TimeIntBDFDualSplitting<dim, Number>::initialize_velocity_dbc()
       double const time = this->get_time() - double(i) * this->get_time_step_size();
       if(this->param.ale_formulation and this->param.grid_motion_is_known_analytically)
         pde_operator->move_grid_and_update_dependent_data_structures(time);
-      pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[i], time, false);
+      pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[i], time);
     }
   }
 }
@@ -308,7 +308,7 @@ void
 TimeIntBDFDualSplitting<dim, Number>::do_timestep_solve()
 {
   // pre-computations
-  pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time(), true);
+  pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
 
   // perform the sub-steps of the dual-splitting method
   convective_step();

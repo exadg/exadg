@@ -742,13 +742,10 @@ OperatorDualSplitting<dim, Number>::solve_viscous(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-OperatorDualSplitting<dim, Number>::interpolate_velocity_dirichlet_bc(
-  VectorType &   dst,
-  double const & time,
-  bool const     use_dirichlet_cached_bc_data)
+OperatorDualSplitting<dim, Number>::interpolate_velocity_dirichlet_bc(VectorType &   dst,
+                                                                      double const & time)
 {
-  this->evaluation_time              = time;
-  this->use_dirichlet_cached_bc_data = use_dirichlet_cached_bc_data;
+  this->evaluation_time = time;
 
   dst = 0.0;
 
@@ -807,10 +804,7 @@ OperatorDualSplitting<dim, Number>::local_interpolate_velocity_dirichlet_bc_boun
           auto bc =
             this->boundary_descriptor->velocity->dirichlet_cached_bc.find(boundary_id)->second;
 
-          if(this->use_dirichlet_cached_bc_data)
-            g = FunctionEvaluator<1, dim, Number>::value(bc, face, q, quad_index);
-          else
-            g = vector();
+          g = FunctionEvaluator<1, dim, Number>::value(bc, face, q, quad_index);
         }
         else
         {
