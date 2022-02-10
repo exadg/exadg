@@ -198,10 +198,11 @@ public:
   get_dof_index_pressure() const;
 
   unsigned int
-  get_dof_index_velocity_scalar() const;
-
-  unsigned int
   get_quad_index_velocity_linear() const;
+
+protected:
+  unsigned int
+  get_dof_index_velocity_scalar() const;
 
   unsigned int
   get_quad_index_pressure() const;
@@ -218,6 +219,7 @@ public:
   unsigned int
   get_quad_index_velocity_linearized() const;
 
+public:
   std::shared_ptr<dealii::Mapping<dim> const>
   get_mapping() const;
 
@@ -511,7 +513,9 @@ protected:
    */
   Parameters const & param;
 
-protected:
+  /*
+   * A name describing the field being solved.
+   */
   std::string const field;
 
   /*

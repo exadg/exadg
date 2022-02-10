@@ -294,15 +294,6 @@ public:
   dealii::types::global_dof_index
   get_number_of_dofs() const;
 
-  unsigned int
-  get_dof_index() const;
-
-  unsigned int
-  get_quad_index() const;
-
-  unsigned int
-  get_quad_index_gauss_lobatto() const;
-
   // Multiphysics coupling via "Cached" boundary conditions
   std::shared_ptr<ContainerInterfaceData<dim, dim, Number>>
   get_container_interface_data_neumann();
@@ -331,6 +322,15 @@ private:
 
   unsigned int
   get_dof_index_mass() const;
+
+  unsigned int
+  get_dof_index() const;
+
+  unsigned int
+  get_quad_index() const;
+
+  unsigned int
+  get_quad_index_gauss_lobatto() const;
 
   /*
    * Initializes operators.

@@ -98,15 +98,6 @@ public:
   double
   get_average_convergence_rate() const;
 
-  unsigned int
-  get_dof_index() const;
-
-  unsigned int
-  get_quad_index() const;
-
-  unsigned int
-  get_quad_index_gauss_lobatto() const;
-
   // Multiphysics coupling via "Cached" boundary conditions
   std::shared_ptr<ContainerInterfaceData<dim, n_components, Number>>
   get_container_interface_data();
@@ -151,6 +142,15 @@ private:
 
   std::string
   get_quad_gauss_lobatto_name() const;
+
+  unsigned int
+  get_dof_index() const;
+
+  unsigned int
+  get_quad_index() const;
+
+  unsigned int
+  get_quad_index_gauss_lobatto() const;
 
   void
   distribute_dofs();
