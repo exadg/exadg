@@ -195,7 +195,8 @@ private:
   /*
    * Interface coupling
    */
-  std::shared_ptr<ContainerInterfaceData<dim, n_components, Number>> interface_data_dirichlet_cached;
+  std::shared_ptr<ContainerInterfaceData<dim, n_components, Number>>
+    interface_data_dirichlet_cached;
 
   RHSOperator<dim, Number, n_components> rhs_operator;
 

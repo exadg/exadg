@@ -91,9 +91,9 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> ma
     std::vector<unsigned int> quad_indices;
     quad_indices.emplace_back(get_quad_index());
     interface_data_neumann_cached->setup(matrix_free,
-                                           get_dof_index(),
-                                           quad_indices,
-                                           boundary_descriptor->neumann_cached_bc);
+                                         get_dof_index(),
+                                         quad_indices,
+                                         boundary_descriptor->neumann_cached_bc);
   }
 
   setup_operators();

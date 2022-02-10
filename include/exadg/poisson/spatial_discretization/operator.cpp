@@ -228,7 +228,8 @@ Operator<dim, Number, n_components>::setup(
 
   if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
-    interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<dim, n_components, Number>>();
+    interface_data_dirichlet_cached =
+      std::make_shared<ContainerInterfaceData<dim, n_components, Number>>();
     std::vector<unsigned int> quad_indices;
     if(param.spatial_discretization == SpatialDiscretization::DG)
       quad_indices.emplace_back(get_quad_index());
