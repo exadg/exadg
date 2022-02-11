@@ -90,11 +90,7 @@ public:
   {
   }
 
-  double const left = 0.0, right = 1.0;
-
-  double const start_time = 0.0;
-  double const end_time   = 1.0; // increase end_time for larger deformations of the hill
-
+private:
   void
   set_parameters() final
   {
@@ -193,6 +189,11 @@ public:
 
     return pp;
   }
+
+  double const left = 0.0, right = 1.0;
+
+  double const start_time = 0.0;
+  double const end_time   = 1.0; // increase end_time for larger deformations of the hill
 };
 
 } // namespace ConvDiff

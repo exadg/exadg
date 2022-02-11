@@ -82,12 +82,7 @@ public:
   {
   }
 
-  double const start_time = 0.0;
-  double const end_time   = 1.0;
-
-  double const left  = -1.0;
-  double const right = +1.0;
-
+private:
   void
   set_parameters() final
   {
@@ -221,6 +216,12 @@ public:
 
     return pp;
   }
+
+  double const start_time = 0.0;
+  double const end_time   = 1.0;
+
+  double const left  = -1.0;
+  double const right = +1.0;
 };
 
 } // namespace ConvDiff

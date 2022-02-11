@@ -60,14 +60,7 @@ public:
   {
   }
 
-  double const start_time = 0.0;
-  double const end_time   = 8.0;
-
-  double const left  = -1.0;
-  double const right = +1.0;
-
-  bool const ale = false;
-
+private:
   void
   set_parameters() final
   {
@@ -205,6 +198,14 @@ public:
 
     return pp;
   }
+
+  double const start_time = 0.0;
+  double const end_time   = 8.0;
+
+  double const left  = -1.0;
+  double const right = +1.0;
+
+  bool const ale = false;
 };
 
 } // namespace ConvDiff
