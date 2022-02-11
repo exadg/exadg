@@ -175,16 +175,19 @@ private:
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
+private:
+  void
+  parse_parameters() final
+  {
+    ApplicationBase<dim, Number>::parse_parameters();
+
+    string_to_enum(boundary_condition, boundary_condition_string);
+  }
+
 public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
-
-    string_to_enum(boundary_condition, boundary_condition_string);
   }
 
   void

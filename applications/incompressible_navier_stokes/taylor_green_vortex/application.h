@@ -99,20 +99,23 @@ private:
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
-public:
-  Application(std::string input_file, MPI_Comm const & comm)
-    : ApplicationBase<dim, Number>(input_file, comm)
+private:
+  void
+  parse_parameters() final
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
+    ApplicationBase<dim, Number>::parse_parameters();
 
     string_to_enum(mesh_type, mesh_type_string);
 
     // viscosity needs to be recomputed since the parameters inviscid, Re are
     // read from the input file
     viscosity = inviscid ? 0.0 : V_0 * L / Re;
+  }
+
+public:
+  Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, Number>(input_file, comm)
+  {
   }
 
   void

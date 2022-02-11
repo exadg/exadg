@@ -31,6 +31,7 @@
 
 // ExaDG
 #include <exadg/grid/grid.h>
+#include <exadg/utilities/resolution_parameters.h>
 
 // Fluid
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
@@ -38,7 +39,7 @@
 #include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
 
-// Structure
+// Structure (and ALE elasticity)
 #include <exadg/structure/material/library/st_venant_kirchhoff.h>
 #include <exadg/structure/postprocessor/postprocessor.h>
 #include <exadg/structure/user_interface/boundary_descriptor.h>
@@ -46,9 +47,9 @@
 #include <exadg/structure/user_interface/material_descriptor.h>
 #include <exadg/structure/user_interface/parameters.h>
 
-// moving mesh
-#include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
+// ALE Poisson
 #include <exadg/poisson/user_interface/analytical_solution.h>
+#include <exadg/poisson/user_interface/boundary_descriptor.h>
 #include <exadg/poisson/user_interface/field_functions.h>
 #include <exadg/poisson/user_interface/parameters.h>
 
@@ -70,6 +71,9 @@ public:
       prm.add_parameter("WriteOutput",      write_output,     "Decides whether vtu output is written.");
     prm.leave_subsection();
     // clang-format on
+
+    resolution_fluid.add_parameters(prm, "SpatialResolutionFluid");
+    resolution_structure.add_parameters(prm, "SpatialResolutionStructure");
   }
 
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
@@ -84,23 +88,10 @@ public:
   }
 
   void
-  set_parameters_convergence_study(unsigned int const degree_fluid,
-                                   unsigned int const degree_structure,
-                                   unsigned int const refine_space_fluid,
-                                   unsigned int const refine_space_structure)
-  {
-    // fluid
-    this->fluid_param.degree_u             = degree_fluid;
-    this->fluid_param.grid.n_refine_global = refine_space_fluid;
-
-    // structure
-    this->structure_param.degree               = degree_structure;
-    this->structure_param.grid.n_refine_global = refine_space_structure;
-  }
-
-  void
   setup()
   {
+    parse_parameters();
+
     setup_structure();
 
     setup_fluid_and_ale();
@@ -112,6 +103,8 @@ public:
     /*
      * Structure
      */
+    set_resolution_parameters_structure();
+
     // parameters
     set_parameters_structure();
     structure_param.check();
@@ -145,6 +138,8 @@ public:
     /*
      * Fluid
      */
+    set_resolution_parameters_fluid();
+
     // parameters
     set_parameters_fluid();
     fluid_param.check(pcout);
@@ -358,6 +353,30 @@ protected:
   bool        write_output = false;
 
 private:
+  void
+  parse_parameters()
+  {
+    dealii::ParameterHandler prm;
+    this->add_parameters(prm);
+    prm.parse_input(parameter_file, "", true, true);
+  }
+
+  void
+  set_resolution_parameters_fluid()
+  {
+    // fluid
+    this->fluid_param.degree_u             = resolution_fluid.degree;
+    this->fluid_param.grid.n_refine_global = resolution_fluid.refine_space;
+  }
+
+  void
+  set_resolution_parameters_structure()
+  {
+    // structure
+    this->structure_param.degree               = resolution_structure.degree;
+    this->structure_param.grid.n_refine_global = resolution_structure.refine_space;
+  }
+
   // fluid
   virtual void
   set_parameters_fluid() = 0;
@@ -411,6 +430,9 @@ private:
 
   virtual void
   set_field_functions_structure() = 0;
+
+  ResolutionParameters resolution_fluid;
+  ResolutionParameters resolution_structure;
 };
 
 } // namespace FSI

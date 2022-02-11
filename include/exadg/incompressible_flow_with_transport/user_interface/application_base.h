@@ -44,13 +44,9 @@ public:
   virtual void
   add_parameters(dealii::ParameterHandler & prm)
   {
-    // clang-format off
-    prm.enter_subsection("Output");
-      prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
-      prm.add_parameter("OutputName",       output_name,      "Name of output files.");
-      prm.add_parameter("WriteOutput",      write_output,     "Decides whether vtu output is written.");
-    prm.leave_subsection();
-    // clang-format on
+    IncNS::ApplicationBase<dim, Number>::add_parameters(prm);
+
+    resolution.add_parameters(prm);
   }
 
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm, unsigned int n_scalar_fields)
@@ -64,20 +60,12 @@ public:
   }
 
   void
-  set_parameters_convergence_study(unsigned int const degree, unsigned int const refine_space)
-  {
-    // fluid
-    this->param.degree_u             = degree;
-    this->param.grid.n_refine_global = refine_space;
-
-    // scalar transport
-    for(unsigned int i = 0; i < scalar_param.size(); ++i)
-      this->scalar_param[i].degree = degree;
-  }
-
-  void
   setup() final
   {
+    this->parse_parameters();
+
+    set_resolution_parameters();
+
     IncNS::ApplicationBase<dim, Number>::setup();
 
     scalar_param.resize(n_scalars);
@@ -152,6 +140,18 @@ protected:
   unsigned int n_scalars    = 1;
 
 private:
+  void
+  set_resolution_parameters()
+  {
+    // fluid
+    this->param.degree_u             = resolution.degree;
+    this->param.grid.n_refine_global = resolution.refine_space;
+
+    // scalar transport
+    for(unsigned int i = 0; i < scalar_param.size(); ++i)
+      this->scalar_param[i].degree = resolution.degree;
+  }
+
   virtual void
   set_parameters_scalar(unsigned int const scalar_index = 0) = 0;
 
@@ -160,6 +160,8 @@ private:
 
   virtual void
   set_field_functions_scalar(unsigned int const scalar_index = 0) = 0;
+
+  ResolutionParameters resolution;
 };
 
 } // namespace FTI

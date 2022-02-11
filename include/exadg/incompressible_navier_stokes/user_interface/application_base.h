@@ -39,6 +39,7 @@
 #include <exadg/poisson/user_interface/analytical_solution.h>
 #include <exadg/poisson/user_interface/field_functions.h>
 #include <exadg/poisson/user_interface/parameters.h>
+#include <exadg/utilities/resolution_parameters.h>
 
 namespace ExaDG
 {
@@ -97,6 +98,8 @@ public:
   virtual void
   setup()
   {
+    parse_parameters();
+
     set_parameters();
     param.check(pcout);
     param.print(pcout, "List of parameters:");
@@ -194,6 +197,14 @@ public:
   }
 
 protected:
+  virtual void
+  parse_parameters()
+  {
+    dealii::ParameterHandler prm;
+    this->add_parameters(prm);
+    prm.parse_input(parameter_file, "", true, true);
+  }
+
   MPI_Comm const & mpi_comm;
 
   dealii::ConditionalOStream pcout;
@@ -267,20 +278,26 @@ public:
   {
   }
 
-  void
-  set_parameters_precursor_study(unsigned int const degree, unsigned int const refine_space)
+  virtual void
+  add_parameters(dealii::ParameterHandler & prm)
   {
-    this->param.degree_u             = degree;
-    this->param.grid.n_refine_global = refine_space;
+    ApplicationBase<dim, Number>::add_parameters(prm);
 
-    this->param_pre.degree_u             = degree;
-    this->param_pre.grid.n_refine_global = refine_space;
+    resolution.add_parameters(prm);
   }
 
   void
   setup() final
   {
+    this->parse_parameters();
+
+    // resolution parameters
+    set_resolution_parameters();
+
+    // actual domain
     ApplicationBase<dim, Number>::setup();
+
+    // precursor domain
 
     // parameters
     set_parameters_precursor();
@@ -364,6 +381,16 @@ protected:
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_pre;
 
 private:
+  void
+  set_resolution_parameters()
+  {
+    this->param.degree_u             = resolution.degree;
+    this->param.grid.n_refine_global = resolution.refine_space;
+
+    this->param_pre.degree_u             = resolution.degree;
+    this->param_pre.grid.n_refine_global = resolution.refine_space;
+  }
+
   virtual void
   set_parameters_precursor() = 0;
 
@@ -375,6 +402,8 @@ private:
 
   virtual void
   set_field_functions_precursor() = 0;
+
+  ResolutionParameters resolution;
 };
 
 

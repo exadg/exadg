@@ -163,11 +163,6 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBasePrecursor<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
-
     flow_rate_controller.reset(new FlowRateController(target_flow_rate,
                                                       viscosity,
                                                       max_velocity,

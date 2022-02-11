@@ -4,11 +4,13 @@
         "Dim": "3",
         "IsTest": "false"
     },
-    "SpatialResolution": {
-        "DegreeFluid": "2",
-        "DegreeStructure": "1",
-        "RefineFluid": "0",
-        "RefineStructure": "0"
+    "SpatialResolutionFluid": {
+        "Degree": "2",
+        "RefineSpace": "0"
+    },
+    "SpatialResolutionStructure": {
+        "Degree": "1",
+        "RefineSpace": "0"
     },
     "FSI" : {
         "Method": "IQN-ILS",

@@ -68,7 +68,7 @@ private:
 template<int dim, typename Number>
 class Application : public FTI::ApplicationBase<dim, Number>
 {
-public:
+private:
   double const L = 1000.0;
 
   double const g       = 9.81;
@@ -97,13 +97,10 @@ public:
   double const ABS_TOL_LINEAR = 1.e-12;
   double const REL_TOL_LINEAR = 1.e-2;
 
+public:
   Application(std::string input_file, MPI_Comm const & comm)
     : FTI::ApplicationBase<dim, Number>(input_file, comm, 1)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
   }
 
   void

@@ -50,20 +50,11 @@ create_input_file(std::string const & input_file)
   GeneralParameters general;
   general.add_parameters(prm);
 
-  ResolutionParameters resolution;
-  resolution.add_parameters(prm);
-
-  try
-  {
-    // we have to assume a default dimension and default Number type
-    // for the automatic generation of a default input file
-    unsigned int const Dim = 2;
-    typedef double     Number;
-    IncNS::get_application<Dim, Number>(input_file, MPI_COMM_WORLD)->add_parameters(prm);
-  }
-  catch(...)
-  {
-  }
+  // we have to assume a default dimension and default Number type
+  // for the automatic generation of a default input file
+  unsigned int const Dim = 2;
+  typedef double     Number;
+  IncNS::get_application<Dim, Number>(input_file, MPI_COMM_WORLD)->add_parameters(prm);
 
   prm.print_parameters(input_file,
                        dealii::ParameterHandler::Short |
@@ -79,9 +70,6 @@ run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_tes
 
   std::shared_ptr<IncNS::ApplicationBasePrecursor<dim, Number>> application =
     IncNS::get_application<dim, Number>(input_file, mpi_comm);
-
-  ExaDG::ResolutionParameters resolution(input_file);
-  application->set_parameters_precursor_study(resolution.degree, resolution.refine_space);
 
   std::shared_ptr<IncNS::DriverPrecursor<dim, Number>> driver =
     std::make_shared<IncNS::DriverPrecursor<dim, Number>>(mpi_comm, application, is_test);
