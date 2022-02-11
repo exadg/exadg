@@ -79,30 +79,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ac024006990487f28516e533e0a7a6da3"><td class="memItemLeft" align="right" valign="top"><a id="ac024006990487f28516e533e0a7a6da3" name="ac024006990487f28516e533e0a7a6da3"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>ResolutionParameters</b> (const std::string &amp;input_file)</td></tr>
 <tr class="separator:ac024006990487f28516e533e0a7a6da3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a977c6796ac5d84993ad5fc973e0cb6cd"><td class="memItemLeft" align="right" valign="top"><a id="a977c6796ac5d84993ad5fc973e0cb6cd" name="a977c6796ac5d84993ad5fc973e0cb6cd"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameters</b> (dealii::ParameterHandler &amp;prm)</td></tr>
-<tr class="separator:a977c6796ac5d84993ad5fc973e0cb6cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac024006990487f28516e533e0a7a6da3"><td class="memItemLeft" align="right" valign="top"><a id="ac024006990487f28516e533e0a7a6da3" name="ac024006990487f28516e533e0a7a6da3"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>ResolutionParameters</b> (const std::string &amp;input_file)</td></tr>
-<tr class="separator:ac024006990487f28516e533e0a7a6da3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a977c6796ac5d84993ad5fc973e0cb6cd"><td class="memItemLeft" align="right" valign="top"><a id="a977c6796ac5d84993ad5fc973e0cb6cd" name="a977c6796ac5d84993ad5fc973e0cb6cd"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameters</b> (dealii::ParameterHandler &amp;prm)</td></tr>
-<tr class="separator:a977c6796ac5d84993ad5fc973e0cb6cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf67b36328e49f3ba97814eada92a368"><td class="memItemLeft" align="right" valign="top"><a id="adf67b36328e49f3ba97814eada92a368" name="adf67b36328e49f3ba97814eada92a368"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameters</b> (dealii::ParameterHandler &amp;prm, std::string const &amp;subsection_name=&quot;SpatialResolution&quot;)</td></tr>
+<tr class="separator:adf67b36328e49f3ba97814eada92a368"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a2d0eba22c10f52b24e14163d1f313647"><td class="memItemLeft" align="right" valign="top"><a id="a2d0eba22c10f52b24e14163d1f313647" name="a2d0eba22c10f52b24e14163d1f313647"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>degree_fluid</b> = 3</td></tr>
-<tr class="separator:a2d0eba22c10f52b24e14163d1f313647"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa62bc4ce2df9029fc30afdbcb3a99620"><td class="memItemLeft" align="right" valign="top"><a id="aa62bc4ce2df9029fc30afdbcb3a99620" name="aa62bc4ce2df9029fc30afdbcb3a99620"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>degree_structure</b> = 3</td></tr>
-<tr class="separator:aa62bc4ce2df9029fc30afdbcb3a99620"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9f1062cb61bafd6c7bf2fa7075ffd01f"><td class="memItemLeft" align="right" valign="top"><a id="a9f1062cb61bafd6c7bf2fa7075ffd01f" name="a9f1062cb61bafd6c7bf2fa7075ffd01f"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>refine_fluid</b> = 0</td></tr>
-<tr class="separator:a9f1062cb61bafd6c7bf2fa7075ffd01f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abd61233909442ae12a3500b4ff13cd05"><td class="memItemLeft" align="right" valign="top"><a id="abd61233909442ae12a3500b4ff13cd05" name="abd61233909442ae12a3500b4ff13cd05"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>refine_structure</b> = 0</td></tr>
-<tr class="separator:abd61233909442ae12a3500b4ff13cd05"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad04625f3d12689af9cf0ae7f87311b1b"><td class="memItemLeft" align="right" valign="top"><a id="ad04625f3d12689af9cf0ae7f87311b1b" name="ad04625f3d12689af9cf0ae7f87311b1b"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>degree</b> = 3</td></tr>
 <tr class="separator:ad04625f3d12689af9cf0ae7f87311b1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -110,8 +92,7 @@ unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>degree</b> = 
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>refine_space</b> = 0</td></tr>
 <tr class="separator:a34b65c7da1429d59ef33d92abfde333d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<hr/>The documentation for this struct was generated from the following files:<ul>
-<li>include/exadg/fluid_structure_interaction/<a class="el" href="fluid__structure__interaction_2solver_8h_source.html">solver.h</a></li>
+<hr/>The documentation for this struct was generated from the following file:<ul>
 <li>include/exadg/utilities/<a class="el" href="resolution__parameters_8h_source.html">resolution_parameters.h</a></li>
 </ul>
 </div><!-- contents -->

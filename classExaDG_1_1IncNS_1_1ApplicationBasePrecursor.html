@@ -88,9 +88,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a0eee9694a44db167c082b84d2c6291b2"><td class="memItemLeft" align="right" valign="top"><a id="a0eee9694a44db167c082b84d2c6291b2" name="a0eee9694a44db167c082b84d2c6291b2"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>ApplicationBasePrecursor</b> (std::string parameter_file, MPI_Comm const &amp;comm)</td></tr>
 <tr class="separator:a0eee9694a44db167c082b84d2c6291b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a756131382274c5fe92e077bcc4ea75b1"><td class="memItemLeft" align="right" valign="top"><a id="a756131382274c5fe92e077bcc4ea75b1" name="a756131382274c5fe92e077bcc4ea75b1"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_parameters_precursor_study</b> (unsigned int const degree, unsigned int const refine_space)</td></tr>
-<tr class="separator:a756131382274c5fe92e077bcc4ea75b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a468e0b05ae7dfb4f59e13cb04ddcdf6e"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBasePrecursor.html#a468e0b05ae7dfb4f59e13cb04ddcdf6e">add_parameters</a> (dealii::ParameterHandler &amp;prm)</td></tr>
+<tr class="separator:a468e0b05ae7dfb4f59e13cb04ddcdf6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac952ea042583d0c05c40b09fec2dcf2b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBasePrecursor.html#ac952ea042583d0c05c40b09fec2dcf2b">setup</a> () final</td></tr>
 <tr class="separator:ac952ea042583d0c05c40b09fec2dcf2b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a138e6a1c30b36e331c21d0b54766fa03"><td class="memItemLeft" align="right" valign="top"><a id="a138e6a1c30b36e331c21d0b54766fa03" name="a138e6a1c30b36e331c21d0b54766fa03"></a>
@@ -209,8 +208,45 @@ std::string&#160;</td><td class="memItemRight" valign="bottom"><b>output_name</b
 <tr class="memitem:a7d64e3b0aab30ebc70c27fdedce8d8c1 inherit pro_attribs_classExaDG_1_1IncNS_1_1ApplicationBase"><td class="memItemLeft" align="right" valign="top"><a id="a7d64e3b0aab30ebc70c27fdedce8d8c1" name="a7d64e3b0aab30ebc70c27fdedce8d8c1"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>write_output</b> = false</td></tr>
 <tr class="separator:a7d64e3b0aab30ebc70c27fdedce8d8c1 inherit pro_attribs_classExaDG_1_1IncNS_1_1ApplicationBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
+Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pro_methods_classExaDG_1_1IncNS_1_1ApplicationBase"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classExaDG_1_1IncNS_1_1ApplicationBase')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">ExaDG::IncNS::ApplicationBase&lt; dim, Number &gt;</a></td></tr>
+<tr class="memitem:aec3e7dd01b34447dd01852f2c2991b6c inherit pro_methods_classExaDG_1_1IncNS_1_1ApplicationBase"><td class="memItemLeft" align="right" valign="top"><a id="aec3e7dd01b34447dd01852f2c2991b6c" name="aec3e7dd01b34447dd01852f2c2991b6c"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>parse_parameters</b> ()</td></tr>
+<tr class="separator:aec3e7dd01b34447dd01852f2c2991b6c inherit pro_methods_classExaDG_1_1IncNS_1_1ApplicationBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a468e0b05ae7dfb4f59e13cb04ddcdf6e" name="a468e0b05ae7dfb4f59e13cb04ddcdf6e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a468e0b05ae7dfb4f59e13cb04ddcdf6e">&#9670;&nbsp;</a></span>add_parameters()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBasePrecursor.html">ExaDG::IncNS::ApplicationBasePrecursor</a>&lt; dim, Number &gt;::add_parameters </td>
+          <td>(</td>
+          <td class="paramtype">dealii::ParameterHandler &amp;&#160;</td>
+          <td class="paramname"><em>prm</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reimplemented from <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">ExaDG::IncNS::ApplicationBase&lt; dim, Number &gt;</a>.</p>
+
+</div>
+</div>
 <a id="ac952ea042583d0c05c40b09fec2dcf2b" name="ac952ea042583d0c05c40b09fec2dcf2b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac952ea042583d0c05c40b09fec2dcf2b">&#9670;&nbsp;</a></span>setup()</h2>
 
