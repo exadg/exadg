@@ -153,40 +153,7 @@ public:
     inflow_data_storage.reset(new InflowDataStorage<dim>(n_points_inflow));
   }
 
-  // consider a friction Reynolds number of Re_tau = u_tau * H / nu = 290
-  // and body force f = tau_w/H with tau_w = u_tau^2.
-  double const viscosity = 1.5268e-5;
-
-  // precursor simulation: data structures for storage of inflow data
-  std::shared_ptr<InflowDataStorage<dim>> inflow_data_storage;
-
-  // number of points for inflow boundary condition
-  unsigned int const n_points_inflow = 101;
-
-  unsigned int const additional_refinements_precursor = 0;
-
-  // start and end time
-  double const Re_H                 = 5540.0;
-  double const centerline_velocity  = Re_H * viscosity / Geometry::H;
-  double const characteristic_time  = Geometry::H / centerline_velocity;
-  double const start_time           = 0.0;
-  double const precursor_start_time = -300.0 * characteristic_time;
-  double const end_time             = 300.0 * characteristic_time;
-
-  // postprocessing
-
-  // sampling of statistical results
-  double const       sample_start_time      = 100.0 * characteristic_time;
-  unsigned int const sample_every_timesteps = 10;
-  unsigned int const n_points_per_line      = 101;
-
-  // solver tolerances
-  double const ABS_TOL = 1.e-12;
-  double const REL_TOL = 1.e-3;
-
-  double const ABS_TOL_LINEAR = 1.e-12;
-  double const REL_TOL_LINEAR = 1.e-2;
-
+private:
   /*
    *  Most of the parameters are the same for both domains, so we write
    *  this function for the actual domain and only "correct" the parameters
@@ -763,6 +730,40 @@ public:
 
     return pp;
   }
+
+  // consider a friction Reynolds number of Re_tau = u_tau * H / nu = 290
+  // and body force f = tau_w/H with tau_w = u_tau^2.
+  double const viscosity = 1.5268e-5;
+
+  // precursor simulation: data structures for storage of inflow data
+  std::shared_ptr<InflowDataStorage<dim>> inflow_data_storage;
+
+  // number of points for inflow boundary condition
+  unsigned int const n_points_inflow = 101;
+
+  unsigned int const additional_refinements_precursor = 0;
+
+  // start and end time
+  double const Re_H                 = 5540.0;
+  double const centerline_velocity  = Re_H * viscosity / Geometry::H;
+  double const characteristic_time  = Geometry::H / centerline_velocity;
+  double const start_time           = 0.0;
+  double const precursor_start_time = -300.0 * characteristic_time;
+  double const end_time             = 300.0 * characteristic_time;
+
+  // postprocessing
+
+  // sampling of statistical results
+  double const       sample_start_time      = 100.0 * characteristic_time;
+  unsigned int const sample_every_timesteps = 10;
+  unsigned int const n_points_per_line      = 101;
+
+  // solver tolerances
+  double const ABS_TOL = 1.e-12;
+  double const REL_TOL = 1.e-3;
+
+  double const ABS_TOL_LINEAR = 1.e-12;
+  double const REL_TOL_LINEAR = 1.e-2;
 };
 
 } // namespace IncNS

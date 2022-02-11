@@ -170,35 +170,7 @@ public:
     end_time = 2.0 * t0;
   }
 
-  double const Re = 7500.0;
-
-  double const H  = 1.0;
-  double const PI = dealii::numbers::PI;
-  double const L  = 2.0 * PI * H;
-
-  double const MAX_VELOCITY = 1.0;
-  double const VISCOSITY    = MAX_VELOCITY * H / Re;
-  double const ALPHA        = 1.0;
-  double const EPSILON      = 1.0e-5; // perturbations are small (<< 1, linearization)
-
-  // Orr-Sommerfeld solver: calculates unstable eigenvalue (OMEGA) of
-  // Orr-Sommerfeld equation for Poiseuille flow and corresponding eigenvector (EIG_VEC).
-  // do not use more than 300 due to conditioning of polynomials
-  unsigned int const DEGREE_OS_SOLVER = 200;
-
-  dealii::FE_DGQ<1> FE = dealii::FE_DGQ<1>(DEGREE_OS_SOLVER);
-
-  std::complex<double> OMEGA;
-
-  std::vector<std::complex<double>> EIG_VEC =
-    std::vector<std::complex<double>>(DEGREE_OS_SOLVER + 1);
-
-  // the time the Tollmien-Schlichting-waves need to travel through the domain
-  // (depends on solution of Orr-Sommerfeld equation)
-  double       t0         = 0.0;
-  double const start_time = 0.0;
-  double       end_time   = 2.0 * t0;
-
+private:
   void
   set_parameters() final
   {
@@ -401,6 +373,35 @@ public:
 
     return pp;
   }
+
+  double const Re = 7500.0;
+
+  double const H  = 1.0;
+  double const PI = dealii::numbers::PI;
+  double const L  = 2.0 * PI * H;
+
+  double const MAX_VELOCITY = 1.0;
+  double const VISCOSITY    = MAX_VELOCITY * H / Re;
+  double const ALPHA        = 1.0;
+  double const EPSILON      = 1.0e-5; // perturbations are small (<< 1, linearization)
+
+  // Orr-Sommerfeld solver: calculates unstable eigenvalue (OMEGA) of
+  // Orr-Sommerfeld equation for Poiseuille flow and corresponding eigenvector (EIG_VEC).
+  // do not use more than 300 due to conditioning of polynomials
+  unsigned int const DEGREE_OS_SOLVER = 200;
+
+  dealii::FE_DGQ<1> FE = dealii::FE_DGQ<1>(DEGREE_OS_SOLVER);
+
+  std::complex<double> OMEGA;
+
+  std::vector<std::complex<double>> EIG_VEC =
+    std::vector<std::complex<double>>(DEGREE_OS_SOLVER + 1);
+
+  // the time the Tollmien-Schlichting-waves need to travel through the domain
+  // (depends on solution of Orr-Sommerfeld equation)
+  double       t0         = 0.0;
+  double const start_time = 0.0;
+  double       end_time   = 2.0 * t0;
 };
 
 } // namespace IncNS

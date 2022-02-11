@@ -99,19 +99,6 @@ private:
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
-private:
-  void
-  parse_parameters() final
-  {
-    ApplicationBase<dim, Number>::parse_parameters();
-
-    string_to_enum(mesh_type, mesh_type_string);
-
-    // viscosity needs to be recomputed since the parameters inviscid, Re are
-    // read from the input file
-    viscosity = inviscid ? 0.0 : V_0 * L / Re;
-  }
-
 public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
@@ -137,46 +124,18 @@ public:
     // clang-format on
   }
 
-  // mesh type
-  std::string mesh_type_string = "Cartesian";
-  MeshType    mesh_type        = MeshType::Cartesian;
+private:
+  void
+  parse_parameters() final
+  {
+    ApplicationBase<dim, Number>::parse_parameters();
 
-  unsigned int n_subdivisions_1d_hypercube = 1;
+    string_to_enum(mesh_type, mesh_type_string);
 
-  // inviscid limit
-  bool inviscid = false;
-
-  // Reynolds number
-  double Re = 1600.0;
-
-  // reduce dofs by exploiting symmetry
-  bool exploit_symmetry = false;
-
-  // moving mesh
-  bool ALE = false;
-
-  // restart
-  bool write_restart = false;
-  bool read_restart  = false;
-
-  double const V_0                 = 1.0;
-  double const L                   = 1.0;
-  double const p_0                 = 0.0;
-  double const max_velocity        = V_0;
-  double const characteristic_time = L / V_0;
-  double const start_time          = 0.0;
-  double const end_time            = 20.0 * characteristic_time;
-  double const left = -dealii::numbers::PI * L, right = dealii::numbers::PI * L;
-
-  // viscosity
-  double viscosity = inviscid ? 0.0 : V_0 * L / Re;
-
-  // solver tolerances
-  double const ABS_TOL = 1.e-12;
-  double const REL_TOL = 1.e-6;
-
-  double const ABS_TOL_LINEAR = 1.e-12;
-  double const REL_TOL_LINEAR = 1.e-2;
+    // viscosity needs to be recomputed since the parameters inviscid, Re are
+    // read from the input file
+    viscosity = inviscid ? 0.0 : V_0 * L / Re;
+  }
 
   void
   set_parameters() final
@@ -530,6 +489,47 @@ public:
 
     return pp;
   }
+
+  // mesh type
+  std::string mesh_type_string = "Cartesian";
+  MeshType    mesh_type        = MeshType::Cartesian;
+
+  unsigned int n_subdivisions_1d_hypercube = 1;
+
+  // inviscid limit
+  bool inviscid = false;
+
+  // Reynolds number
+  double Re = 1600.0;
+
+  // reduce dofs by exploiting symmetry
+  bool exploit_symmetry = false;
+
+  // moving mesh
+  bool ALE = false;
+
+  // restart
+  bool write_restart = false;
+  bool read_restart  = false;
+
+  double const V_0                 = 1.0;
+  double const L                   = 1.0;
+  double const p_0                 = 0.0;
+  double const max_velocity        = V_0;
+  double const characteristic_time = L / V_0;
+  double const start_time          = 0.0;
+  double const end_time            = 20.0 * characteristic_time;
+  double const left = -dealii::numbers::PI * L, right = dealii::numbers::PI * L;
+
+  // viscosity
+  double viscosity = inviscid ? 0.0 : V_0 * L / Re;
+
+  // solver tolerances
+  double const ABS_TOL = 1.e-12;
+  double const REL_TOL = 1.e-6;
+
+  double const ABS_TOL_LINEAR = 1.e-12;
+  double const REL_TOL_LINEAR = 1.e-2;
 };
 
 } // namespace IncNS

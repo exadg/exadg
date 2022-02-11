@@ -66,14 +66,7 @@ public:
   {
   }
 
-  bool const   inviscid  = true;
-  double const viscosity = inviscid ? 0.0 : 1.0e-4; // Re = 10^4
-  double const rho       = 30.0;
-  double const delta     = 0.05;
-
-  double const start_time = 0.0;
-  double const end_time   = 4.0;
-
+private:
   void
   set_parameters() final
   {
@@ -235,6 +228,14 @@ public:
 
     return pp;
   }
+
+  bool const   inviscid  = true;
+  double const viscosity = inviscid ? 0.0 : 1.0e-4; // Re = 10^4
+  double const rho       = 30.0;
+  double const delta     = 0.05;
+
+  double const start_time = 0.0;
+  double const end_time   = 4.0;
 };
 
 } // namespace IncNS

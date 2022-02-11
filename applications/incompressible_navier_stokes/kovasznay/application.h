@@ -133,19 +133,7 @@ public:
   {
   }
 
-  InitializeSolutionWith const initialize_solution_with =
-    InitializeSolutionWith::AnalyticalSolution;
-
-  FormulationViscousTerm const formulation_viscous = FormulationViscousTerm::LaplaceFormulation;
-
-  double const viscosity = 2.5e-2;
-  double const lambda =
-    0.5 / viscosity -
-    std::pow(0.25 / std::pow(viscosity, 2.0) + 4.0 * std::pow(dealii::numbers::PI, 2.0), 0.5);
-
-  double const start_time = 0.0;
-  double const end_time   = 1.0;
-
+private:
   void
   set_parameters() final
   {
@@ -353,6 +341,19 @@ public:
 
     return pp;
   }
+
+  InitializeSolutionWith const initialize_solution_with =
+    InitializeSolutionWith::AnalyticalSolution;
+
+  FormulationViscousTerm const formulation_viscous = FormulationViscousTerm::LaplaceFormulation;
+
+  double const viscosity = 2.5e-2;
+  double const lambda =
+    0.5 / viscosity -
+    std::pow(0.25 / std::pow(viscosity, 2.0) + 4.0 * std::pow(dealii::numbers::PI, 2.0), 0.5);
+
+  double const start_time = 0.0;
+  double const end_time   = 1.0;
 };
 
 } // namespace IncNS

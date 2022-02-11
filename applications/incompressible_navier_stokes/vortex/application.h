@@ -236,22 +236,7 @@ public:
   {
   }
 
-  // set problem specific parameters like physical dimensions, etc.
-  double const u_x_max   = 1.0;
-  double const viscosity = 2.5e-2; // 1.e-2; //2.5e-2;
-
-  double const left  = -0.5;
-  double const right = 0.5;
-
-  double const start_time = 0.0;
-  double const end_time   = 1.0;
-
-  FormulationViscousTerm const formulation_viscous = FormulationViscousTerm::LaplaceFormulation;
-
-  MeshType const mesh_type = MeshType::UniformCartesian;
-
-  bool const ALE = true;
-
+private:
   void
   set_parameters() final
   {
@@ -745,6 +730,22 @@ public:
 
     return pp;
   }
+
+  // set problem specific parameters like physical dimensions, etc.
+  double const u_x_max   = 1.0;
+  double const viscosity = 2.5e-2; // 1.e-2; //2.5e-2;
+
+  double const left  = -0.5;
+  double const right = 0.5;
+
+  double const start_time = 0.0;
+  double const end_time   = 1.0;
+
+  FormulationViscousTerm const formulation_viscous = FormulationViscousTerm::LaplaceFormulation;
+
+  MeshType const mesh_type = MeshType::UniformCartesian;
+
+  bool const ALE = true;
 };
 
 } // namespace IncNS

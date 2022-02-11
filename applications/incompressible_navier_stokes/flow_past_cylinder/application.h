@@ -136,57 +136,6 @@ public:
   }
 
   void
-  initialize_y_and_z_values()
-  {
-    AssertThrow(n_points_y >= 2, dealii::ExcMessage("Variable n_points_y is invalid"));
-    if(dim == 3)
-      AssertThrow(n_points_z >= 2, dealii::ExcMessage("Variable n_points_z is invalid"));
-
-    // 0 <= y <= H
-    for(unsigned int i = 0; i < n_points_y; ++i)
-      y_values[i] = double(i) / double(n_points_y - 1) * H;
-
-    // 0 <= z <= H
-    if(dim == 3)
-      for(unsigned int i = 0; i < n_points_z; ++i)
-        z_values[i] = double(i) / double(n_points_z - 1) * H;
-  }
-
-  void
-  initialize_velocity_values()
-  {
-    AssertThrow(n_points_y >= 2, dealii::ExcMessage("Variable n_points_y is invalid"));
-    if(dim == 3)
-      AssertThrow(n_points_z >= 2, dealii::ExcMessage("Variable n_points_z is invalid"));
-
-    for(unsigned int iy = 0; iy < n_points_y; ++iy)
-    {
-      for(unsigned int iz = 0; iz < n_points_z; ++iz)
-      {
-        dealii::Tensor<1, dim, double> velocity;
-
-        if(use_perturbation == true)
-        {
-          // Add random perturbation
-          double const y           = y_values[iy];
-          double const z           = z_values[iz];
-          double       coefficient = dealii::Utilities::fixed_power<dim - 1>(4.) * Um /
-                               dealii::Utilities::fixed_power<2 * dim - 2>(H);
-          double perturbation =
-            amplitude_perturbation * coefficient * ((double)rand() / RAND_MAX - 0.5) / 0.5;
-          perturbation *= y * (H - y);
-          if(dim == 3)
-            perturbation *= z * (H - z);
-
-          velocity[0] += perturbation;
-        }
-
-        velocity_values[iy * n_points_z + iz] = velocity;
-      }
-    }
-  }
-
-  void
   add_parameters(dealii::ParameterHandler & prm) final
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
@@ -200,48 +149,7 @@ public:
     // clang-format on
   }
 
-  // string to read parameter
-  std::string cylinder_type_string = "circular";
-
-  // select test case according to Schaefer and Turek benchmark definition: 2D-1/2/3, 3D-1/2/3
-  unsigned int test_case = 3; // 1, 2 or 3
-
-  ProblemType  problem_type = ProblemType::Unsteady;
-  double const Um = (dim == 2 ? (test_case == 1 ? 0.3 : 1.5) : (test_case == 1 ? 0.45 : 2.25));
-
-  double const viscosity = 1.e-3;
-
-  double cfl_number = 1.0;
-
-  // start and end time
-  // use a large value for test_case = 1 (steady problem)
-  // in order to not stop pseudo-timestepping approach before having converged
-  double const start_time = 0.0;
-  double const end_time   = (test_case == 1) ? 1000.0 : 8.0;
-
-  unsigned int refine_level = 0;
-
-  // superimpose random perturbations at inflow
-  bool const use_perturbation = false;
-  // amplitude of perturbations relative to maximum velocity on centerline
-  double const amplitude_perturbation = 0.25;
-
-  unsigned int const n_points_y = 10;
-  unsigned int const n_points_z = dim == 3 ? n_points_y : 1;
-
-  std::vector<double> y_values = std::vector<double>(n_points_y);
-  std::vector<double> z_values = std::vector<double>(n_points_z);
-
-  std::vector<dealii::Tensor<1, dim, double>> velocity_values =
-    std::vector<dealii::Tensor<1, dim, double>>(n_points_y * n_points_z);
-
-  // solver tolerances
-  double const ABS_TOL = 1.e-12;
-  double const REL_TOL = 1.e-6;
-
-  double const ABS_TOL_LINEAR = 1.e-12;
-  double const REL_TOL_LINEAR = 1.e-2;
-
+private:
   void
   set_parameters() final
   {
@@ -525,6 +433,99 @@ public:
 
     return pp;
   }
+
+  void
+  initialize_y_and_z_values()
+  {
+    AssertThrow(n_points_y >= 2, dealii::ExcMessage("Variable n_points_y is invalid"));
+    if(dim == 3)
+      AssertThrow(n_points_z >= 2, dealii::ExcMessage("Variable n_points_z is invalid"));
+
+    // 0 <= y <= H
+    for(unsigned int i = 0; i < n_points_y; ++i)
+      y_values[i] = double(i) / double(n_points_y - 1) * H;
+
+    // 0 <= z <= H
+    if(dim == 3)
+      for(unsigned int i = 0; i < n_points_z; ++i)
+        z_values[i] = double(i) / double(n_points_z - 1) * H;
+  }
+
+  void
+  initialize_velocity_values()
+  {
+    AssertThrow(n_points_y >= 2, dealii::ExcMessage("Variable n_points_y is invalid"));
+    if(dim == 3)
+      AssertThrow(n_points_z >= 2, dealii::ExcMessage("Variable n_points_z is invalid"));
+
+    for(unsigned int iy = 0; iy < n_points_y; ++iy)
+    {
+      for(unsigned int iz = 0; iz < n_points_z; ++iz)
+      {
+        dealii::Tensor<1, dim, double> velocity;
+
+        if(use_perturbation == true)
+        {
+          // Add random perturbation
+          double const y           = y_values[iy];
+          double const z           = z_values[iz];
+          double       coefficient = dealii::Utilities::fixed_power<dim - 1>(4.) * Um /
+                               dealii::Utilities::fixed_power<2 * dim - 2>(H);
+          double perturbation =
+            amplitude_perturbation * coefficient * ((double)rand() / RAND_MAX - 0.5) / 0.5;
+          perturbation *= y * (H - y);
+          if(dim == 3)
+            perturbation *= z * (H - z);
+
+          velocity[0] += perturbation;
+        }
+
+        velocity_values[iy * n_points_z + iz] = velocity;
+      }
+    }
+  }
+
+  // string to read parameter
+  std::string cylinder_type_string = "circular";
+
+  // select test case according to Schaefer and Turek benchmark definition: 2D-1/2/3, 3D-1/2/3
+  unsigned int test_case = 3; // 1, 2 or 3
+
+  ProblemType  problem_type = ProblemType::Unsteady;
+  double const Um = (dim == 2 ? (test_case == 1 ? 0.3 : 1.5) : (test_case == 1 ? 0.45 : 2.25));
+
+  double const viscosity = 1.e-3;
+
+  double cfl_number = 1.0;
+
+  // start and end time
+  // use a large value for test_case = 1 (steady problem)
+  // in order to not stop pseudo-timestepping approach before having converged
+  double const start_time = 0.0;
+  double const end_time   = (test_case == 1) ? 1000.0 : 8.0;
+
+  unsigned int refine_level = 0;
+
+  // superimpose random perturbations at inflow
+  bool const use_perturbation = false;
+  // amplitude of perturbations relative to maximum velocity on centerline
+  double const amplitude_perturbation = 0.25;
+
+  unsigned int const n_points_y = 10;
+  unsigned int const n_points_z = dim == 3 ? n_points_y : 1;
+
+  std::vector<double> y_values = std::vector<double>(n_points_y);
+  std::vector<double> z_values = std::vector<double>(n_points_z);
+
+  std::vector<dealii::Tensor<1, dim, double>> velocity_values =
+    std::vector<dealii::Tensor<1, dim, double>>(n_points_y * n_points_z);
+
+  // solver tolerances
+  double const ABS_TOL = 1.e-12;
+  double const REL_TOL = 1.e-6;
+
+  double const ABS_TOL_LINEAR = 1.e-12;
+  double const REL_TOL_LINEAR = 1.e-2;
 };
 
 } // namespace IncNS
