@@ -92,10 +92,12 @@ private:
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
-public:
-  Application(std::string input_file, MPI_Comm const & comm)
-    : ApplicationBase<dim, Number>(input_file, comm)
+private:
+  void
+  parse_parameters() final
   {
+    ApplicationBase<dim, Number>::parse_parameters();
+
     // viscosity needs to be recomputed since the parameters inviscid, Re are
     // read from the input file
     viscosity = inviscid ? 0.0 : bulk_velocity * H / Re;
@@ -106,7 +108,12 @@ public:
 
     // sample end time is equal to end time, which is read from the input file
     sample_end_time = end_time;
+  }
 
+public:
+  Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, Number>(input_file, comm)
+  {
     flow_rate_controller.reset(
       new FlowRateController(bulk_velocity, target_flow_rate, H, start_time));
   }
