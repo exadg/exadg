@@ -98,6 +98,8 @@ public:
   virtual void
   setup()
   {
+    parse_parameters();
+
     set_parameters();
     param.check(pcout);
     param.print(pcout, "List of parameters:");
@@ -195,6 +197,14 @@ public:
   }
 
 protected:
+  virtual void
+  parse_parameters()
+  {
+    dealii::ParameterHandler prm;
+    this->add_parameters(prm);
+    prm.parse_input(parameter_file, "", true, true);
+  }
+
   MPI_Comm const & mpi_comm;
 
   dealii::ConditionalOStream pcout;
@@ -279,8 +289,10 @@ public:
   void
   setup() final
   {
+    this->parse_parameters();
+
     // resolution parameters
-    set_resolution_parameters_precursor_study();
+    set_resolution_parameters();
 
     // actual domain
     ApplicationBase<dim, Number>::setup();
@@ -370,7 +382,7 @@ protected:
 
 private:
   void
-  set_resolution_parameters_precursor_study()
+  set_resolution_parameters()
   {
     this->param.degree_u             = resolution.degree;
     this->param.grid.n_refine_global = resolution.refine_space;

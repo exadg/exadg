@@ -64,7 +64,7 @@ private:
 template<int dim, typename Number>
 class Application : public FTI::ApplicationBase<dim, Number>
 {
-public:
+private:
   // physical quantities
   double const L = 8.0;
   double const H = 1.0;
@@ -95,13 +95,10 @@ public:
   // vtu output
   double const output_interval_time = (end_time - start_time) / 100.0;
 
+public:
   Application(std::string input_file, MPI_Comm const & comm)
     : FTI::ApplicationBase<dim, Number>(input_file, comm, 1)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
   }
 
   void

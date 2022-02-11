@@ -62,6 +62,8 @@ public:
   void
   setup() final
   {
+    this->parse_parameters();
+
     set_resolution_parameters();
 
     IncNS::ApplicationBase<dim, Number>::setup();

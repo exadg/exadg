@@ -96,11 +96,6 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
-
     // viscosity needs to be recomputed since the parameters inviscid, Re are
     // read from the input file
     viscosity = inviscid ? 0.0 : bulk_velocity * H / Re;
