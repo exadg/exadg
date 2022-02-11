@@ -129,10 +129,11 @@ struct ResolutionParameters
   }
 
   void
-  add_parameters(dealii::ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm,
+                 std::string const &        subsection_name = "SpatialResolution")
   {
     // clang-format off
-    prm.enter_subsection("SpatialResolution");
+    prm.enter_subsection(subsection_name);
       prm.add_parameter("Degree",
                         degree,
                         "Polynomial degree of shape functions.",

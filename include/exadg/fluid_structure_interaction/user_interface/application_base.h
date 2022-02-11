@@ -30,8 +30,8 @@
 #include <deal.II/grid/manifold_lib.h>
 
 // ExaDG
-#include <exadg/configuration/config.h>
 #include <exadg/grid/grid.h>
+#include <exadg/utilities/resolution_parameters.h>
 
 // Fluid
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
@@ -57,53 +57,6 @@ namespace ExaDG
 {
 namespace FSI
 {
-struct ResolutionParameters
-{
-  ResolutionParameters()
-  {
-  }
-
-  ResolutionParameters(const std::string & input_file)
-  {
-    dealii::ParameterHandler prm;
-    add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
-  }
-
-  void
-  add_parameters(dealii::ParameterHandler & prm)
-  {
-    // clang-format off
-    prm.enter_subsection("SpatialResolution");
-      prm.add_parameter("DegreeFluid",
-                        degree_fluid,
-                        "Polynomial degree of fluid (velocity).",
-                        dealii::Patterns::Integer(1,EXADG_DEGREE_MAX),
-                        true);
-      prm.add_parameter("DegreeStructure",
-                        degree_structure,
-                        "Polynomial degree of structural problem.",
-                        dealii::Patterns::Integer(1,EXADG_DEGREE_MAX),
-                        true);
-      prm.add_parameter("RefineFluid",
-                        refine_fluid,
-                        "Number of mesh refinements (fluid).",
-                        dealii::Patterns::Integer(0,20),
-                        true);
-      prm.add_parameter("RefineStructure",
-                        refine_structure,
-                        "Number of mesh refinements (structure).",
-                        dealii::Patterns::Integer(0,20),
-                        true);
-    prm.leave_subsection();
-    // clang-format on
-  }
-
-  unsigned int degree_fluid = 3, degree_structure = 3;
-
-  unsigned int refine_fluid = 0, refine_structure = 0;
-};
-
 template<int dim, typename Number>
 class ApplicationBase
 {
@@ -119,7 +72,8 @@ public:
     prm.leave_subsection();
     // clang-format on
 
-    resolution.add_parameters(prm);
+    resolution_fluid.add_parameters(prm, "SpatialResolutionFluid");
+    resolution_structure.add_parameters(prm, "SpatialResolutionStructure");
   }
 
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
@@ -138,8 +92,6 @@ public:
   {
     parse_parameters();
 
-    set_resolution_parameters();
-
     setup_structure();
 
     setup_fluid_and_ale();
@@ -151,6 +103,8 @@ public:
     /*
      * Structure
      */
+    set_resolution_parameters_structure();
+
     // parameters
     set_parameters_structure();
     structure_param.check();
@@ -184,6 +138,8 @@ public:
     /*
      * Fluid
      */
+    set_resolution_parameters_fluid();
+
     // parameters
     set_parameters_fluid();
     fluid_param.check(pcout);
@@ -406,15 +362,19 @@ private:
   }
 
   void
-  set_resolution_parameters()
+  set_resolution_parameters_fluid()
   {
     // fluid
-    this->fluid_param.degree_u             = resolution.degree_fluid;
-    this->fluid_param.grid.n_refine_global = resolution.refine_fluid;
+    this->fluid_param.degree_u             = resolution_fluid.degree;
+    this->fluid_param.grid.n_refine_global = resolution_fluid.refine_space;
+  }
 
+  void
+  set_resolution_parameters_structure()
+  {
     // structure
-    this->structure_param.degree               = resolution.degree_structure;
-    this->structure_param.grid.n_refine_global = resolution.refine_structure;
+    this->structure_param.degree               = resolution_structure.degree;
+    this->structure_param.grid.n_refine_global = resolution_structure.refine_space;
   }
 
   // fluid
@@ -471,7 +431,8 @@ private:
   virtual void
   set_field_functions_structure() = 0;
 
-  ResolutionParameters resolution;
+  ResolutionParameters resolution_fluid;
+  ResolutionParameters resolution_structure;
 };
 
 } // namespace FSI
