@@ -112,15 +112,6 @@ string_to_enum(MeshType & enum_type, std::string const & string_type)
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
-private:
-  void
-  parse_parameters() final
-  {
-    ApplicationBase<dim, Number>::parse_parameters();
-
-    string_to_enum(mesh_type, mesh_type_string);
-  }
-
 public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
@@ -139,11 +130,14 @@ public:
     // clang-format on
   }
 
-  std::string mesh_type_string = "Cartesian";
-  MeshType    mesh_type        = MeshType::Cartesian;
+private:
+  void
+  parse_parameters() final
+  {
+    ApplicationBase<dim, Number>::parse_parameters();
 
-  double const start_time = 0.0;
-  double const end_time   = 20.0 * CHARACTERISTIC_TIME;
+    string_to_enum(mesh_type, mesh_type_string);
+  }
 
   void
   set_parameters() final
@@ -310,6 +304,12 @@ public:
 
     return pp;
   }
+
+  std::string mesh_type_string = "Cartesian";
+  MeshType    mesh_type        = MeshType::Cartesian;
+
+  double const start_time = 0.0;
+  double const end_time   = 20.0 * CHARACTERISTIC_TIME;
 };
 
 } // namespace CompNS

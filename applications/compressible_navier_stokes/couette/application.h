@@ -127,9 +127,7 @@ public:
   {
   }
 
-  double const start_time = 0.0;
-  double const end_time   = 10.0;
-
+private:
   void
   set_parameters() final
   {
@@ -303,6 +301,9 @@ public:
 
     return pp;
   }
+
+  double const start_time = 0.0;
+  double const end_time   = 10.0;
 };
 
 } // namespace CompNS
