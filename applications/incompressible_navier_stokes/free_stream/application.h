@@ -71,14 +71,7 @@ public:
     // clang-format on
   }
 
-  double const left  = -0.5;
-  double const right = 0.5;
-
-  double const start_time = 0.0;
-  double const end_time   = 10.0;
-
-  bool ALE = true;
-
+private:
   void
   set_parameters() final
   {
@@ -335,6 +328,14 @@ public:
 
     return pp;
   }
+
+  double const left  = -0.5;
+  double const right = 0.5;
+
+  double const start_time = 0.0;
+  double const end_time   = 10.0;
+
+  bool ALE = true;
 };
 
 } // namespace IncNS

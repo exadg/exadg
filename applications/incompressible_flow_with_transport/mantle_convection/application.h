@@ -94,41 +94,13 @@ private:
 template<int dim, typename Number>
 class Application : public FTI::ApplicationBase<dim, Number>
 {
-private:
-  // physical quantities
-  double const R0 = 0.55;
-  double const R1 = 1.0;
-
-  double const Ra                  = 1.0e8;
-  double const beta                = Ra;
-  double const kinematic_viscosity = 1.0;
-  double const thermal_diffusivity = 1.0;
-
-  double const T0 = 1.0;
-  double const T1 = 0.0;
-
-  double const H = R1 - R0;
-  double const U = std::sqrt(Ra * kinematic_viscosity * thermal_diffusivity / (H * H));
-  double const characteristic_time = H / U;
-  double const start_time          = 0.0;
-  double const end_time            = 200.0 * characteristic_time;
-
-  // CFL > 4 did not show further speed-up for 2d example
-  double const CFL                    = 2.0; // 0.4;
-  bool const   adaptive_time_stepping = true;
-
-  // solver tolerance
-  double const reltol = 1.e-3;
-
-  // vtu output
-  double const output_interval_time = (end_time - start_time) / 200.0;
-
 public:
   Application(std::string input_file, MPI_Comm const & comm)
     : FTI::ApplicationBase<dim, Number>(input_file, comm, 1)
   {
   }
 
+private:
   void
   set_parameters() final
   {
@@ -448,6 +420,34 @@ public:
 
     return pp;
   }
+
+  // physical quantities
+  double const R0 = 0.55;
+  double const R1 = 1.0;
+
+  double const Ra                  = 1.0e8;
+  double const beta                = Ra;
+  double const kinematic_viscosity = 1.0;
+  double const thermal_diffusivity = 1.0;
+
+  double const T0 = 1.0;
+  double const T1 = 0.0;
+
+  double const H = R1 - R0;
+  double const U = std::sqrt(Ra * kinematic_viscosity * thermal_diffusivity / (H * H));
+  double const characteristic_time = H / U;
+  double const start_time          = 0.0;
+  double const end_time            = 200.0 * characteristic_time;
+
+  // CFL > 4 did not show further speed-up for 2d example
+  double const CFL                    = 2.0; // 0.4;
+  bool const   adaptive_time_stepping = true;
+
+  // solver tolerance
+  double const reltol = 1.e-3;
+
+  // vtu output
+  double const output_interval_time = (end_time - start_time) / 200.0;
 };
 
 } // namespace FTI

@@ -240,13 +240,7 @@ public:
   {
   }
 
-  // solver tolerances
-  double const ABS_TOL = 1.e-12;
-  double const REL_TOL = 1.e-3;
-
-  double const ABS_TOL_LINEAR = 1.e-12;
-  double const REL_TOL_LINEAR = 1.e-2;
-
+private:
   void
   set_parameters() final
   {
@@ -496,6 +490,13 @@ public:
 
     return pp;
   }
+
+  // solver tolerances
+  double const ABS_TOL = 1.e-12;
+  double const REL_TOL = 1.e-3;
+
+  double const ABS_TOL_LINEAR = 1.e-12;
+  double const REL_TOL_LINEAR = 1.e-2;
 };
 
 } // namespace IncNS

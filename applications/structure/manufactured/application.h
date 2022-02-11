@@ -303,20 +303,7 @@ public:
   {
   }
 
-  double length = 1.0, height = 1.0, width = 1.0;
-
-  double const E  = 1.0;
-  double const nu = 0.3;
-  double const f0 = E * (1.0 - nu) / (1 + nu) / (1.0 - 2.0 * nu); // plane strain
-
-  double const density = 1.0;
-
-  bool const   unsteady         = true;
-  double const max_displacement = 0.1 * length;
-  double const start_time       = 0.0;
-  double const end_time         = 1.0;
-  double const frequency        = 3.0 / 2.0 * dealii::numbers::PI / end_time;
-
+private:
   void
   set_parameters() final
   {
@@ -437,6 +424,20 @@ public:
 
     return post;
   }
+
+  double length = 1.0, height = 1.0, width = 1.0;
+
+  double const E  = 1.0;
+  double const nu = 0.3;
+  double const f0 = E * (1.0 - nu) / (1 + nu) / (1.0 - 2.0 * nu); // plane strain
+
+  double const density = 1.0;
+
+  bool const   unsteady         = true;
+  double const max_displacement = 0.1 * length;
+  double const start_time       = 0.0;
+  double const end_time         = 1.0;
+  double const frequency        = 3.0 / 2.0 * dealii::numbers::PI / end_time;
 };
 
 } // namespace Structure

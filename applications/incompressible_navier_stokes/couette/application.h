@@ -59,13 +59,7 @@ public:
   {
   }
 
-  double const H            = 1.0;
-  double const L            = 4.0;
-  double const max_velocity = 1.0;
-
-  double const start_time = 0.0;
-  double const end_time   = 10.0;
-
+private:
   void
   set_parameters() final
   {
@@ -281,6 +275,13 @@ public:
 
     return pp;
   }
+
+  double const H            = 1.0;
+  double const L            = 4.0;
+  double const max_velocity = 1.0;
+
+  double const start_time = 0.0;
+  double const end_time   = 10.0;
 };
 
 } // namespace IncNS

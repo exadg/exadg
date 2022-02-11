@@ -182,27 +182,7 @@ public:
     // clang-format on
   }
 
-  double length = 1.0, height = 1.0, width = 1.0;
-
-  bool use_volume_force = true;
-
-  double volume_force = 1.0;
-
-  std::string boundary_type = "Dirichlet";
-
-  double displacement = 1.0; // "Dirichlet"
-  double area_force   = 1.0; // "Neumann"
-
-  // mesh parameters
-  unsigned int const repetitions0 = 4, repetitions1 = 1, repetitions2 = 1;
-
-  double const E_modul = 200.0;
-
-  double const start_time = 0.0;
-  double const end_time   = 100.0;
-
-  double const density = 0.001;
-
+private:
   void
   set_parameters() final
   {
@@ -389,6 +369,27 @@ public:
 
     return post;
   }
+
+  double length = 1.0, height = 1.0, width = 1.0;
+
+  bool use_volume_force = true;
+
+  double volume_force = 1.0;
+
+  std::string boundary_type = "Dirichlet";
+
+  double displacement = 1.0; // "Dirichlet"
+  double area_force   = 1.0; // "Neumann"
+
+  // mesh parameters
+  unsigned int const repetitions0 = 4, repetitions1 = 1, repetitions2 = 1;
+
+  double const E_modul = 200.0;
+
+  double const start_time = 0.0;
+  double const end_time   = 100.0;
+
+  double const density = 0.001;
 };
 
 } // namespace Structure

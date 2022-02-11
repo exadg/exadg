@@ -129,13 +129,7 @@ public:
   {
   }
 
-  double const left = -1.0, right = 1.0;
-
-  double const diffusivity = 1.0e-1;
-
-  double const start_time = 0.0;
-  double const end_time   = 1.0;
-
+private:
   void
   set_parameters() final
   {
@@ -254,6 +248,13 @@ public:
 
     return pp;
   }
+
+  double const left = -1.0, right = 1.0;
+
+  double const diffusivity = 1.0e-1;
+
+  double const start_time = 0.0;
+  double const end_time   = 1.0;
 };
 
 } // namespace ConvDiff

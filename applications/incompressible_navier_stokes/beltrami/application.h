@@ -98,11 +98,7 @@ public:
   {
   }
 
-  double const viscosity = 0.1;
-
-  double const start_time = 0.0;
-  double const end_time   = 1.0;
-
+private:
   void
   set_parameters() final
   {
@@ -278,6 +274,11 @@ public:
 
     return pp;
   }
+
+  double const viscosity = 0.1;
+
+  double const start_time = 0.0;
+  double const end_time   = 1.0;
 };
 
 } // namespace IncNS

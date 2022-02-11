@@ -137,17 +137,7 @@ public:
     // clang-format on
   }
 
-  double inner_radius = 0.8, outer_radius = 1.0, height = 1.0;
-
-  bool use_volume_force = true;
-
-  double volume_force = 1.0;
-
-  std::string boundary_type = "Dirichlet";
-
-  double displacement = 0.2; // "Dirichlet"
-  double area_force   = 1.0; // "Neumann"
-
+private:
   void
   set_parameters() final
   {
@@ -299,6 +289,17 @@ public:
 
     return post;
   }
+
+  double inner_radius = 0.8, outer_radius = 1.0, height = 1.0;
+
+  bool use_volume_force = true;
+
+  double volume_force = 1.0;
+
+  std::string boundary_type = "Dirichlet";
+
+  double displacement = 0.2; // "Dirichlet"
+  double area_force   = 1.0; // "Neumann"
 };
 
 } // namespace Structure

@@ -175,15 +175,6 @@ private:
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
-private:
-  void
-  parse_parameters() final
-  {
-    ApplicationBase<dim, Number>::parse_parameters();
-
-    string_to_enum(boundary_condition, boundary_condition_string);
-  }
-
 public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
@@ -209,23 +200,14 @@ public:
     // clang-format on
   }
 
-  std::string       boundary_condition_string = "ParabolicInflow";
-  BoundaryCondition boundary_condition        = BoundaryCondition::ParabolicInflow;
+private:
+  void
+  parse_parameters() final
+  {
+    ApplicationBase<dim, Number>::parse_parameters();
 
-  bool apply_symmetry_bc = false;
-
-  FormulationViscousTerm const formulation_viscous_term =
-    FormulationViscousTerm::LaplaceFormulation;
-
-  double const max_velocity = 1.0;
-  double const viscosity    = 1.0e-1;
-
-  double const H = 2.0;
-  double const L = 4.0;
-
-  double const start_time = 0.0;
-  double const end_time   = 100.0;
-
+    string_to_enum(boundary_condition, boundary_condition_string);
+  }
   void
   set_parameters() final
   {
@@ -532,6 +514,23 @@ public:
 
     return pp;
   }
+
+  std::string       boundary_condition_string = "ParabolicInflow";
+  BoundaryCondition boundary_condition        = BoundaryCondition::ParabolicInflow;
+
+  bool apply_symmetry_bc = false;
+
+  FormulationViscousTerm const formulation_viscous_term =
+    FormulationViscousTerm::LaplaceFormulation;
+
+  double const max_velocity = 1.0;
+  double const viscosity    = 1.0e-1;
+
+  double const H = 2.0;
+  double const L = 4.0;
+
+  double const start_time = 0.0;
+  double const end_time   = 100.0;
 };
 
 } // namespace IncNS

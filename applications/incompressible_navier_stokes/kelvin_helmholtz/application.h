@@ -76,18 +76,7 @@ public:
   {
   }
 
-  double const Re           = 1.0e4;
-  double const L            = 1.0;
-  double const DELTA_0      = 1. / 28.;
-  double const U_INF        = 1.0;
-  double const C_N          = 1.0e-3;
-  double const max_velocity = U_INF;
-  double const viscosity    = U_INF * DELTA_0 / Re;
-  double const T            = DELTA_0 / U_INF;
-
-  double const start_time = 0.0;
-  double const end_time   = 400.0 * T;
-
+private:
   void
   set_parameters() final
   {
@@ -288,6 +277,18 @@ public:
 
     return pp;
   }
+
+  double const Re           = 1.0e4;
+  double const L            = 1.0;
+  double const DELTA_0      = 1. / 28.;
+  double const U_INF        = 1.0;
+  double const C_N          = 1.0e-3;
+  double const max_velocity = U_INF;
+  double const viscosity    = U_INF * DELTA_0 / Re;
+  double const T            = DELTA_0 / U_INF;
+
+  double const start_time = 0.0;
+  double const end_time   = 400.0 * T;
 };
 
 } // namespace IncNS

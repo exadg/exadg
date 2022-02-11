@@ -47,6 +47,7 @@ public:
     // clang-format on
   }
 
+private:
   void
   set_parameters() final
   {
