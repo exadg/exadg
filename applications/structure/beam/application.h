@@ -148,19 +148,7 @@ public:
     // clang-format on
   }
 
-  // size of geometry
-  double length = 1.0, height = 1.0, width = 1.0;
-
-  // single force or bending moment
-  std::string boundary_type = "SingleForce";
-
-  double force = 2500;
-
-  double element_length = 1.0;
-
-  // number of subdivisions in each direction
-  unsigned int const repetitions0 = 20, repetitions1 = 4, repetitions2 = 1;
-
+private:
   void
   set_parameters() final
   {
@@ -337,6 +325,19 @@ public:
 
     return post;
   }
+
+  // size of geometry
+  double length = 1.0, height = 1.0, width = 1.0;
+
+  // single force or bending moment
+  std::string boundary_type = "SingleForce";
+
+  double force = 2500;
+
+  double element_length = 1.0;
+
+  // number of subdivisions in each direction
+  unsigned int const repetitions0 = 20, repetitions1 = 4, repetitions2 = 1;
 };
 
 } // namespace Structure
