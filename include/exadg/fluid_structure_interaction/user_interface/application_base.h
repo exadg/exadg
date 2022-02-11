@@ -118,6 +118,8 @@ public:
       prm.add_parameter("WriteOutput",      write_output,     "Decides whether vtu output is written.");
     prm.leave_subsection();
     // clang-format on
+
+    resolution.add_parameters(prm);
   }
 
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
