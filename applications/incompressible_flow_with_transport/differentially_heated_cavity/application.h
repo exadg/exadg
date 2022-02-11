@@ -31,56 +31,13 @@ namespace FTI
 template<int dim, typename Number>
 class Application : public FTI::ApplicationBase<dim, Number>
 {
-private:
-  // Problem specific parameters
-  double const L        = 1.0;
-  double const T_ref    = 300.0;
-  double const delta_T  = 1.0;
-  double const g        = 10.0;
-  double const beta     = 1.0 / 300.0;
-  double const Prandtl  = 1.0;
-  double const Rayleigh = 1.0e8;
-
-  // dependent parameters
-  double const kinematic_viscosity =
-    std::sqrt(g * beta * delta_T * std::pow(L, 3.0) * Prandtl / Rayleigh);
-  double const thermal_diffusivity = kinematic_viscosity / Prandtl;
-
-  double const left  = -L / 2.0;
-  double const right = L / 2.0;
-
-  double const U                   = std::sqrt(g * beta * delta_T * L);
-  double const characteristic_time = L / U;
-  double const start_time          = 0.0;
-  double const end_time            = 10.0 * characteristic_time;
-
-  double const CFL                    = 0.3;
-  double const max_velocity           = 1.0;
-  bool const   adaptive_time_stepping = true;
-
-  // vtu output
-  double const output_interval_time = (end_time - start_time) / 100.0;
-
-  // restart
-  bool const   write_restart         = false;
-  double const restart_interval_time = 10.0;
-
-  // moving mesh (ALE)
-  bool const ALE = false;
-
-  // solver tolerances
-  double const ABS_TOL = 1.e-12;
-  double const REL_TOL = 1.e-6;
-
-  double const ABS_TOL_LINEAR = 1.e-12;
-  double const REL_TOL_LINEAR = 1.e-2;
-
 public:
   Application(std::string input_file, MPI_Comm const & comm)
     : FTI::ApplicationBase<dim, Number>(input_file, comm, 1)
   {
   }
 
+private:
   void
   set_parameters() final
   {
@@ -453,6 +410,49 @@ public:
 
     return pp;
   }
+
+  // Problem specific parameters
+  double const L        = 1.0;
+  double const T_ref    = 300.0;
+  double const delta_T  = 1.0;
+  double const g        = 10.0;
+  double const beta     = 1.0 / 300.0;
+  double const Prandtl  = 1.0;
+  double const Rayleigh = 1.0e8;
+
+  // dependent parameters
+  double const kinematic_viscosity =
+    std::sqrt(g * beta * delta_T * std::pow(L, 3.0) * Prandtl / Rayleigh);
+  double const thermal_diffusivity = kinematic_viscosity / Prandtl;
+
+  double const left  = -L / 2.0;
+  double const right = L / 2.0;
+
+  double const U                   = std::sqrt(g * beta * delta_T * L);
+  double const characteristic_time = L / U;
+  double const start_time          = 0.0;
+  double const end_time            = 10.0 * characteristic_time;
+
+  double const CFL                    = 0.3;
+  double const max_velocity           = 1.0;
+  bool const   adaptive_time_stepping = true;
+
+  // vtu output
+  double const output_interval_time = (end_time - start_time) / 100.0;
+
+  // restart
+  bool const   write_restart         = false;
+  double const restart_interval_time = 10.0;
+
+  // moving mesh (ALE)
+  bool const ALE = false;
+
+  // solver tolerances
+  double const ABS_TOL = 1.e-12;
+  double const REL_TOL = 1.e-6;
+
+  double const ABS_TOL_LINEAR = 1.e-12;
+  double const REL_TOL_LINEAR = 1.e-2;
 };
 
 } // namespace FTI

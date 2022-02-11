@@ -64,43 +64,13 @@ private:
 template<int dim, typename Number>
 class Application : public FTI::ApplicationBase<dim, Number>
 {
-private:
-  // physical quantities
-  double const L = 8.0;
-  double const H = 1.0;
-
-  double const Prandtl = 1.0;
-  double const Re      = std::sqrt(1.0e8);
-  double const Ra      = Re * Re * Prandtl;
-  double const g       = 10.0;
-  double const T_ref   = 0.0;
-  double const beta    = 1.0 / 300.0;
-  double const U       = 1.0;
-
-  double const kinematic_viscosity = U * H / Re;
-  double const thermal_diffusivity = kinematic_viscosity / Prandtl;
-
-  // u^2 = g * beta * Delta_T * h
-  double const delta_T = std::pow(U, 2.0) / beta / g / H;
-
-  double const start_time          = 0.0;
-  double const characteristic_time = H / U;
-  double const end_time            = 200.0 * characteristic_time;
-
-  // time stepping
-  double const CFL                    = 0.4;
-  double const max_velocity           = 1.0;
-  bool const   adaptive_time_stepping = true;
-
-  // vtu output
-  double const output_interval_time = (end_time - start_time) / 100.0;
-
 public:
   Application(std::string input_file, MPI_Comm const & comm)
     : FTI::ApplicationBase<dim, Number>(input_file, comm, 1)
   {
   }
 
+private:
   void
   set_parameters() final
   {
@@ -460,6 +430,36 @@ public:
 
     return pp;
   }
+
+  // physical quantities
+  double const L = 8.0;
+  double const H = 1.0;
+
+  double const Prandtl = 1.0;
+  double const Re      = std::sqrt(1.0e8);
+  double const Ra      = Re * Re * Prandtl;
+  double const g       = 10.0;
+  double const T_ref   = 0.0;
+  double const beta    = 1.0 / 300.0;
+  double const U       = 1.0;
+
+  double const kinematic_viscosity = U * H / Re;
+  double const thermal_diffusivity = kinematic_viscosity / Prandtl;
+
+  // u^2 = g * beta * Delta_T * h
+  double const delta_T = std::pow(U, 2.0) / beta / g / H;
+
+  double const start_time          = 0.0;
+  double const characteristic_time = H / U;
+  double const end_time            = 200.0 * characteristic_time;
+
+  // time stepping
+  double const CFL                    = 0.4;
+  double const max_velocity           = 1.0;
+  bool const   adaptive_time_stepping = true;
+
+  // vtu output
+  double const output_interval_time = (end_time - start_time) / 100.0;
 };
 
 } // namespace FTI

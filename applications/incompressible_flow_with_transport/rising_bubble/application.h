@@ -68,41 +68,13 @@ private:
 template<int dim, typename Number>
 class Application : public FTI::ApplicationBase<dim, Number>
 {
-private:
-  double const L = 1000.0;
-
-  double const g       = 9.81;
-  double const T_ref   = 303.15;
-  double const beta    = 1.0 / T_ref;
-  double const delta_T = 0.5;
-
-  double const kinematic_viscosity = 0.0;
-  double const thermal_diffusivity = kinematic_viscosity;
-
-  double const start_time = 0.0;
-  double const end_time   = 1000.0;
-
-  double const CFL                    = 0.3;
-  double const max_velocity           = 1.0;
-  bool const   adaptive_time_stepping = true;
-
-  // output
-  double const output_interval_time = (end_time - start_time) / 100.0;
-
-  // solver tolerances
-  double const ABS_TOL =
-    1.e-12; // 1.e-10 was necessary for dual splitting scheme and refine level 8
-  double const REL_TOL = 1.e-6;
-
-  double const ABS_TOL_LINEAR = 1.e-12;
-  double const REL_TOL_LINEAR = 1.e-2;
-
 public:
   Application(std::string input_file, MPI_Comm const & comm)
     : FTI::ApplicationBase<dim, Number>(input_file, comm, 1)
   {
   }
 
+private:
   void
   set_parameters() final
   {
@@ -426,6 +398,34 @@ public:
 
     return pp;
   }
+
+  double const L = 1000.0;
+
+  double const g       = 9.81;
+  double const T_ref   = 303.15;
+  double const beta    = 1.0 / T_ref;
+  double const delta_T = 0.5;
+
+  double const kinematic_viscosity = 0.0;
+  double const thermal_diffusivity = kinematic_viscosity;
+
+  double const start_time = 0.0;
+  double const end_time   = 1000.0;
+
+  double const CFL                    = 0.3;
+  double const max_velocity           = 1.0;
+  bool const   adaptive_time_stepping = true;
+
+  // output
+  double const output_interval_time = (end_time - start_time) / 100.0;
+
+  // solver tolerances
+  double const ABS_TOL =
+    1.e-12; // 1.e-10 was necessary for dual splitting scheme and refine level 8
+  double const REL_TOL = 1.e-6;
+
+  double const ABS_TOL_LINEAR = 1.e-12;
+  double const REL_TOL_LINEAR = 1.e-2;
 };
 
 } // namespace FTI
