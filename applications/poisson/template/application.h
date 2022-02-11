@@ -54,12 +54,12 @@ public:
   {
   }
 
+private:
   void
   set_parameters() final
   {
     // Set parameters here
   }
-
 
   void
   create_grid() final
@@ -68,7 +68,6 @@ public:
 
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
-
 
   void
   set_boundary_descriptor() final
@@ -82,7 +81,6 @@ public:
     this->boundary_descriptor->neumann_bc.insert(
       pair(1, new dealii::Functions::ZeroFunction<dim>(1)));
   }
-
 
   void
   set_field_functions() final

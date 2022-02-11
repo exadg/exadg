@@ -38,6 +38,7 @@ public:
   {
   }
 
+private:
   void
   set_parameters() final
   {
