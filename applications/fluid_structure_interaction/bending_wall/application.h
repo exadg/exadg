@@ -124,6 +124,7 @@ public:
   {
   }
 
+private:
   void
   set_parameters_fluid() final
   {
