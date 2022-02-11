@@ -50,9 +50,6 @@ create_input_file(std::string const & input_file)
   GeneralParameters general;
   general.add_parameters(prm);
 
-  ResolutionParameters resolution;
-  resolution.add_parameters(prm);
-
   try
   {
     // we have to assume a default dimension and default Number type
@@ -79,9 +76,6 @@ run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_tes
 
   std::shared_ptr<FTI::ApplicationBase<dim, Number>> application =
     FTI::get_application<dim, Number>(input_file, mpi_comm);
-
-  ExaDG::ResolutionParameters resolution(input_file);
-  application->set_parameters_convergence_study(resolution.degree, resolution.refine_space);
 
   std::shared_ptr<FTI::Driver<dim, Number>> driver =
     std::make_shared<FTI::Driver<dim, Number>>(mpi_comm, application, is_test);
