@@ -91,6 +91,8 @@ public:
   void
   setup()
   {
+    parse_parameters();
+
     // parameters
     set_parameters();
     param.check();
@@ -139,6 +141,14 @@ public:
   }
 
 protected:
+  virtual void
+  parse_parameters()
+  {
+    dealii::ParameterHandler prm;
+    this->add_parameters(prm);
+    prm.parse_input(parameter_file, "", true, true);
+  }
+
   MPI_Comm const & mpi_comm;
 
   dealii::ConditionalOStream pcout;
