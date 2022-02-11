@@ -49,13 +49,7 @@ create_input_file(std::string const & input_file)
   FSI::PartitionedData fsi_data;
   FSI::Driver<Dim, Number>::add_parameters(prm, fsi_data);
 
-  try
-  {
-    FSI::get_application<Dim, Number>(input_file, MPI_COMM_WORLD)->add_parameters(prm);
-  }
-  catch(...)
-  {
-  }
+  FSI::get_application<Dim, Number>(input_file, MPI_COMM_WORLD)->add_parameters(prm);
 
   prm.print_parameters(input_file,
                        dealii::ParameterHandler::Short |

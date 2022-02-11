@@ -136,6 +136,8 @@ public:
   void
   setup()
   {
+    parse_parameters();
+
     set_resolution_parameters();
 
     setup_structure();
@@ -395,6 +397,14 @@ protected:
   bool        write_output = false;
 
 private:
+  void
+  parse_parameters()
+  {
+    dealii::ParameterHandler prm;
+    this->add_parameters(prm);
+    prm.parse_input(parameter_file, "", true, true);
+  }
+
   void
   set_resolution_parameters()
   {
