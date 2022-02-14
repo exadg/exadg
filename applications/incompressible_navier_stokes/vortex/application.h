@@ -249,7 +249,7 @@ private:
 
     // ALE
     this->param.ale_formulation                     = ALE;
-    this->param.mesh_movement_type                  = MeshMovementType::Analytical;
+    this->param.mesh_movement_type                  = MeshMovementType::Function;
     this->param.neumann_with_variable_normal_vector = ALE;
 
     // PHYSICAL QUANTITIES

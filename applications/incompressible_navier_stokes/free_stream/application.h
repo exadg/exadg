@@ -83,7 +83,8 @@ private:
     this->param.right_hand_side             = false;
 
     // ALE
-    this->param.ale_formulation = ALE;
+    this->param.ale_formulation    = ALE;
+    this->param.mesh_movement_type = MeshMovementType::Function;
     this->param.neumann_with_variable_normal_vector =
       false; // no Neumann boundaries for this test case
 

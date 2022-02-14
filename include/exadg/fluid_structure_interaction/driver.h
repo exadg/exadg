@@ -259,6 +259,18 @@ public:
 
 private:
   void
+  setup_application();
+
+  void
+  setup_structure();
+
+  void
+  setup_fluid_and_ale();
+
+  void
+  setup_interface_coupling();
+
+  void
   set_start_time() const;
 
   void
@@ -277,7 +289,7 @@ private:
   coupling_structure_to_fluid(bool const extrapolate) const;
 
   void
-  coupling_fluid_to_structure() const;
+  coupling_fluid_to_structure(bool const end_of_time_step) const;
 
   void
   apply_dirichlet_neumann_scheme(VectorType &       d_tilde,
@@ -371,7 +383,7 @@ private:
   /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
 
   /*
-   *  Fixed-point iteration.
+   * Fixed-point iteration.
    */
   PartitionedData fsi_data;
 
@@ -383,6 +395,10 @@ private:
    */
   mutable TimerTree timer_tree;
 
+  /*
+   * The first number counts the number of time steps, the second number the total number
+   * (accumulated over all time steps) of iterations of the partitioned FSI scheme.
+   */
   mutable std::pair<unsigned int, unsigned long long> partitioned_iterations;
 };
 

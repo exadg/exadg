@@ -23,6 +23,7 @@
 #define INCLUDE_LAPLACE_DG_LAPLACE_OPERATION_H_
 
 // ExaDG
+#include <exadg/functions_and_boundary_conditions/interface_coupling.h>
 #include <exadg/grid/grid.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/rhs_operator.h>
@@ -97,14 +98,9 @@ public:
   double
   get_average_convergence_rate() const;
 
-  unsigned int
-  get_dof_index() const;
-
-  unsigned int
-  get_quad_index() const;
-
-  unsigned int
-  get_quad_index_gauss_lobatto() const;
+  // Multiphysics coupling via "Cached" boundary conditions
+  std::shared_ptr<ContainerInterfaceData<dim, n_components, Number>>
+  get_container_interface_data();
 
   std::shared_ptr<TimerTree>
   get_timings() const;
@@ -147,6 +143,15 @@ private:
   std::string
   get_quad_gauss_lobatto_name() const;
 
+  unsigned int
+  get_dof_index() const;
+
+  unsigned int
+  get_quad_index() const;
+
+  unsigned int
+  get_quad_index_gauss_lobatto() const;
+
   void
   distribute_dofs();
 
@@ -186,6 +191,12 @@ private:
 
   std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
   std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
+
+  /*
+   * Interface coupling
+   */
+  std::shared_ptr<ContainerInterfaceData<dim, n_components, Number>>
+    interface_data_dirichlet_cached;
 
   RHSOperator<dim, Number, n_components> rhs_operator;
 

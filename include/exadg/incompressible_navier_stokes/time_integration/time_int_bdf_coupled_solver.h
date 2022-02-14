@@ -62,7 +62,13 @@ public:
   print_iterations() const final;
 
   VectorType const &
+  get_velocity() const final;
+
+  VectorType const &
   get_velocity_np() const final;
+
+  VectorType const &
+  get_pressure() const final;
 
   VectorType const &
   get_pressure_np() const final;
@@ -94,9 +100,6 @@ private:
 
   void
   prepare_vectors_for_next_timestep() final;
-
-  VectorType const &
-  get_velocity() const final;
 
   VectorType const &
   get_velocity(unsigned int i /* t_{n-i} */) const final;

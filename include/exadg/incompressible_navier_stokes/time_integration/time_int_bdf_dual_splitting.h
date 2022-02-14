@@ -60,7 +60,13 @@ public:
   print_iterations() const final;
 
   VectorType const &
+  get_velocity() const final;
+
+  VectorType const &
   get_velocity_np() const final;
+
+  VectorType const &
+  get_pressure() const final;
 
   VectorType const &
   get_pressure_np() const final;
@@ -128,9 +134,6 @@ private:
 
   double
   evaluate_residual();
-
-  VectorType const &
-  get_velocity() const final;
 
   VectorType const &
   get_velocity(unsigned int i /* t_{n-i} */) const final;

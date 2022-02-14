@@ -71,6 +71,9 @@ public:
   get_velocity_np() const = 0;
 
   virtual VectorType const &
+  get_pressure() const = 0;
+
+  virtual VectorType const &
   get_pressure_np() const = 0;
 
   void

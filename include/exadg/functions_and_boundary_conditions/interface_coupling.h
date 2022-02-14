@@ -25,21 +25,18 @@
 // deal.II
 #include <deal.II/numerics/vector_tools.h>
 
+// ExaDG
+#include <exadg/functions_and_boundary_conditions/function_cached.h>
+#include <exadg/matrix_free/integrators.h>
+
 namespace ExaDG
 {
 template<int dim, int n_components, typename Number>
-class InterfaceCoupling
+class ContainerInterfaceData
 {
 private:
   static unsigned int const rank =
     (n_components == 1) ? 0 : ((n_components == dim) ? 1 : dealii::numbers::invalid_unsigned_int);
-
-  using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
-#if DEAL_II_VERSION_GTE(10, 0, 0)
-#else
-  using VectorTypeDouble = dealii::LinearAlgebra::distributed::Vector<double>;
-#endif
-  using Integrator = FaceIntegrator<dim, n_components, Number>;
 
   using MapBoundaryCondition =
     std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<rank, dim, double>>>;
@@ -48,80 +45,47 @@ private:
 
   using Id = std::tuple<unsigned int /*face*/, unsigned int /*q*/, unsigned int /*v*/>;
 
-  using MapIndex = std::map<Id, dealii::types::global_dof_index>;
+  using MapVectorIndex = std::map<Id, dealii::types::global_dof_index>;
 
   using ArrayQuadraturePoints = std::vector<dealii::Point<dim>>;
-  using ArrayTensor           = std::vector<dealii::Tensor<rank, dim, double>>;
+  using ArraySolutionValues   = std::vector<dealii::Tensor<rank, dim, double>>;
 
 public:
-  InterfaceCoupling() : dof_handler_src(nullptr)
+  ContainerInterfaceData()
   {
   }
 
   void
-  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_dst_in,
-        unsigned int const                               dof_index_dst_in,
-        std::vector<quad_index> const &                  quad_indices_dst_in,
-        MapBoundaryCondition const &                     map_bc_in,
-        dealii::DoFHandler<dim> const &                  dof_handler_src_in,
-        dealii::Mapping<dim> const &                     mapping_src_in,
-        VectorType const &                               dof_vector_src_in,
-        double const                                     tolerance_in)
+  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_,
+        unsigned int const                               dof_index_,
+        std::vector<quad_index> const &                  quad_indices_,
+        MapBoundaryCondition const &                     map_bc_)
   {
-    quad_rules_dst  = quad_indices_dst_in;
-    map_bc          = map_bc_in;
-    dof_handler_src = &dof_handler_src_in;
+    quad_indices = quad_indices_;
 
-#if DEAL_II_VERSION_GTE(10, 0, 0)
-    // mark vertices at interface in order to make search of active cells around point more
-    // efficient
-    std::vector<bool> marked_vertices(dof_handler_src_in.get_triangulation().n_vertices(), false);
-    for(auto const & cell : dof_handler_src_in.get_triangulation().active_cell_iterators())
-    {
-      if(!cell->is_artificial() && cell->at_boundary())
-      {
-        for(unsigned int const f : cell->face_indices())
-        {
-          if(cell->face(f)->at_boundary())
-          {
-            if(map_bc.find(cell->face(f)->boundary_id()) != map_bc.end())
-            {
-              for(unsigned int const v : cell->face(f)->vertex_indices())
-              {
-                marked_vertices[cell->face(f)->vertex_index(v)] = true;
-              }
-            }
-          }
-        }
-      }
-    }
-#endif
-
-    for(auto quadrature : quad_rules_dst)
+    for(auto q_index : quad_indices)
     {
       // initialize maps
-      map_index_dst.emplace(quadrature, MapIndex());
-      map_q_points_dst.emplace(quadrature, ArrayQuadraturePoints());
-      map_solution_dst.emplace(quadrature, ArrayTensor());
+      map_vector_index.emplace(q_index, MapVectorIndex());
+      map_q_points.emplace(q_index, ArrayQuadraturePoints());
+      map_solution.emplace(q_index, ArraySolutionValues());
 
-      MapIndex &              map_index          = map_index_dst.find(quadrature)->second;
-      ArrayQuadraturePoints & array_q_points_dst = map_q_points_dst.find(quadrature)->second;
-      ArrayTensor &           array_solution_dst = map_solution_dst.find(quadrature)->second;
+      MapVectorIndex &        map_index          = map_vector_index.find(q_index)->second;
+      ArrayQuadraturePoints & array_q_points_dst = map_q_points.find(q_index)->second;
+      ArraySolutionValues &   array_solution_dst = map_solution.find(q_index)->second;
 
-
-      /*
-       * 1. Setup: create map "ID = {face, q, v} <-> vector_index" and fill array of quadrature
-       * points
-       */
-      for(unsigned int face = matrix_free_dst_in->n_inner_face_batches();
-          face < matrix_free_dst_in->n_inner_face_batches() +
-                   matrix_free_dst_in->n_boundary_face_batches();
+      // create map "ID = {face, q, v} <-> vector_index" and fill array of quadrature points
+      for(unsigned int face = matrix_free_->n_inner_face_batches();
+          face < matrix_free_->n_inner_face_batches() + matrix_free_->n_boundary_face_batches();
           ++face)
       {
         // only consider relevant boundary IDs
-        if(map_bc.find(matrix_free_dst_in->get_boundary_id(face)) != map_bc.end())
+        if(map_bc_.find(matrix_free_->get_boundary_id(face)) != map_bc_.end())
         {
-          Integrator integrator(*matrix_free_dst_in, true, dof_index_dst_in, quadrature);
+          FaceIntegrator<dim, n_components, Number> integrator(*matrix_free_,
+                                                               true,
+                                                               dof_index_,
+                                                               q_index);
           integrator.reinit(face);
 
           for(unsigned int q = 0; q < integrator.n_q_points; ++q)
@@ -145,13 +109,101 @@ public:
       }
 
       array_solution_dst.resize(array_q_points_dst.size(), dealii::Tensor<rank, dim, double>());
+    }
 
-      /*
-       * 2. Communication: exchange quadarature points with their owners
-       */
-      map_evaluator.emplace(quadrature,
+    // finally, give boundary condition access to the data
+    for(auto boundary : map_bc_)
+    {
+      boundary.second->set_data_pointer(map_vector_index, map_solution);
+    }
+  }
+
+  std::vector<quad_index> const &
+  get_quad_indices()
+  {
+    return quad_indices;
+  }
+
+  ArrayQuadraturePoints &
+  get_array_q_points(quad_index const & q_index)
+  {
+    return map_q_points[q_index];
+  }
+
+  ArraySolutionValues &
+  get_array_solution(quad_index const & q_index)
+  {
+    return map_solution[q_index];
+  }
+
+private:
+  std::vector<quad_index> quad_indices;
+
+  mutable std::map<quad_index, MapVectorIndex>        map_vector_index;
+  mutable std::map<quad_index, ArrayQuadraturePoints> map_q_points;
+  mutable std::map<quad_index, ArraySolutionValues>   map_solution;
+};
+
+template<int dim, int n_components, typename Number>
+class InterfaceCoupling
+{
+private:
+  static unsigned int const rank =
+    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : dealii::numbers::invalid_unsigned_int);
+
+  using MapBoundaryCondition =
+    std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<rank, dim, double>>>;
+
+  using quad_index = unsigned int;
+
+  using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
+
+public:
+  InterfaceCoupling() : dof_handler_src(nullptr)
+  {
+  }
+
+  void
+  setup(std::shared_ptr<ContainerInterfaceData<dim, n_components, Number>> interface_data_dst_,
+        MapBoundaryCondition const &                                       map_bc_src_,
+        dealii::DoFHandler<dim> const &                                    dof_handler_src_,
+        dealii::Mapping<dim> const &                                       mapping_src_,
+        double const                                                       tolerance_)
+  {
+    interface_data_dst = interface_data_dst_;
+    dof_handler_src    = &dof_handler_src_;
+
+#if DEAL_II_VERSION_GTE(10, 0, 0)
+    // mark vertices at interface in order to make search of active cells around point more
+    // efficient
+    std::vector<bool> marked_vertices(dof_handler_src_.get_triangulation().n_vertices(), false);
+    for(auto const & cell : dof_handler_src_.get_triangulation().active_cell_iterators())
+    {
+      if(!cell->is_artificial() && cell->at_boundary())
+      {
+        for(unsigned int const f : cell->face_indices())
+        {
+          if(cell->face(f)->at_boundary())
+          {
+            if(map_bc_src_.find(cell->face(f)->boundary_id()) != map_bc_src_.end())
+            {
+              for(unsigned int const v : cell->face(f)->vertex_indices())
+              {
+                marked_vertices[cell->face(f)->vertex_index(v)] = true;
+              }
+            }
+          }
+        }
+      }
+    }
+#endif
+
+    for(auto quad_index : interface_data_dst->get_quad_indices())
+    {
+      // exchange quadrature points with their owners
+      map_evaluator.emplace(quad_index,
                             dealii::Utilities::MPI::RemotePointEvaluation<dim>(
-                              tolerance_in,
+                              tolerance_,
                               false
 #if DEAL_II_VERSION_GTE(10, 0, 0)
                               ,
@@ -160,18 +212,10 @@ public:
 #endif
                               ));
 
-      map_evaluator[quadrature].reinit(array_q_points_dst,
-                                       dof_handler_src_in.get_triangulation(),
-                                       mapping_src_in);
+      map_evaluator[quad_index].reinit(interface_data_dst->get_array_q_points(quad_index),
+                                       dof_handler_src_.get_triangulation(),
+                                       mapping_src_);
     }
-
-    // finally, give boundary condition access to the data
-    for(auto boundary : map_bc)
-    {
-      boundary.second->set_data_pointer(map_index_dst, map_solution_dst);
-    }
-
-    update_data(dof_vector_src_in); // TODO: needed?
   }
 
   void
@@ -180,12 +224,12 @@ public:
 #if DEAL_II_VERSION_GTE(10, 0, 0)
     dof_vector_src.update_ghost_values();
 #else
-    VectorTypeDouble dof_vector_src_double;
+    dealii::LinearAlgebra::distributed::Vector<double> dof_vector_src_double;
     dof_vector_src_double = dof_vector_src;
     dof_vector_src_double.update_ghost_values();
 #endif
 
-    for(auto quadrature : quad_rules_dst)
+    for(auto quadrature : interface_data_dst->get_quad_indices())
     {
 #if DEAL_II_VERSION_GTE(10, 0, 0)
       std::vector<dealii::Tensor<rank, dim, Number>> const result =
@@ -201,8 +245,9 @@ public:
                                                         dealii::VectorTools::EvaluationFlags::avg);
 #endif
 
+      auto & array_solution = interface_data_dst->get_array_solution(quadrature);
       for(unsigned int i = 0; i < result.size(); ++i)
-        map_solution_dst[quadrature][i] = result[i];
+        array_solution[i] = result[i];
     }
   }
 
@@ -210,16 +255,12 @@ private:
   /*
    * dst-side
    */
-  std::vector<quad_index> quad_rules_dst;
+  std::shared_ptr<ContainerInterfaceData<dim, n_components, Number>> interface_data_dst;
 
-  mutable std::map<quad_index, MapIndex>              map_index_dst;
-  mutable std::map<quad_index, ArrayQuadraturePoints> map_q_points_dst;
-  mutable std::map<quad_index, ArrayTensor>           map_solution_dst;
-
+  /*
+   *  Evaluates solution on src-side in those points specified by dst-side
+   */
   std::map<quad_index, dealii::Utilities::MPI::RemotePointEvaluation<dim>> map_evaluator;
-
-  mutable std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<rank, dim, double>>>
-    map_bc;
 
   /*
    * src-side

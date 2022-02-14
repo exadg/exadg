@@ -98,62 +98,90 @@ Driver<dim, Number>::add_parameters(dealii::ParameterHandler & prm, PartitionedD
 template<int dim, typename Number>
 void
 Driver<dim, Number>::setup()
-
 {
   dealii::Timer timer;
   timer.restart();
 
   pcout << std::endl << "Setting up fluid-structure interaction solver:" << std::endl;
 
-  /************************************** APPLICATION *****************************************/
-  {
-    dealii::Timer timer_local;
-    timer_local.restart();
+  setup_application();
 
-    application->setup();
+  setup_structure();
 
-    timer_tree.insert({"FSI", "Setup", "Application"}, timer_local.wall_time());
-  }
-  /************************************** APPLICATION *****************************************/
+  setup_fluid_and_ale();
 
-  /**************************************** STRUCTURE *****************************************/
-  {
-    dealii::Timer timer_local;
-    timer_local.restart();
+  setup_interface_coupling();
 
-    // setup spatial operator
-    structure_operator = std::make_shared<Structure::Operator<dim, Number>>(
-      application->get_grid_structure(),
-      application->get_boundary_descriptor_structure(),
-      application->get_field_functions_structure(),
-      application->get_material_descriptor_structure(),
-      application->get_parameters_structure(),
-      "elasticity",
-      mpi_comm);
+  timer_tree.insert({"FSI", "Setup"}, timer.wall_time());
+}
 
-    // initialize matrix_free
-    structure_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-    structure_matrix_free_data->append(structure_operator);
+template<int dim, typename Number>
+void
+Driver<dim, Number>::setup_application()
+{
+  dealii::Timer timer_local;
+  timer_local.restart();
 
-    structure_matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-    structure_matrix_free->reinit(*application->get_grid_structure()->mapping,
-                                  structure_matrix_free_data->get_dof_handler_vector(),
-                                  structure_matrix_free_data->get_constraint_vector(),
-                                  structure_matrix_free_data->get_quadrature_vector(),
-                                  structure_matrix_free_data->data);
+  application->setup();
 
-    structure_operator->setup(structure_matrix_free, structure_matrix_free_data);
+  timer_tree.insert({"FSI", "Setup", "Application"}, timer_local.wall_time());
+}
 
-    // initialize postprocessor
-    structure_postprocessor = application->create_postprocessor_structure();
-    structure_postprocessor->setup(structure_operator->get_dof_handler(),
-                                   *application->get_grid_structure()->mapping);
+template<int dim, typename Number>
+void
+Driver<dim, Number>::setup_structure()
+{
+  dealii::Timer timer_local;
+  timer_local.restart();
 
-    timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
-  }
-  /**************************************** STRUCTURE *****************************************/
+  // setup spatial operator
+  structure_operator = std::make_shared<Structure::Operator<dim, Number>>(
+    application->get_grid_structure(),
+    application->get_boundary_descriptor_structure(),
+    application->get_field_functions_structure(),
+    application->get_material_descriptor_structure(),
+    application->get_parameters_structure(),
+    "elasticity",
+    mpi_comm);
 
-  /******************************************* ALE ********************************************/
+  // initialize matrix_free
+  structure_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
+  structure_matrix_free_data->append(structure_operator);
+
+  structure_matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
+  structure_matrix_free->reinit(*application->get_grid_structure()->mapping,
+                                structure_matrix_free_data->get_dof_handler_vector(),
+                                structure_matrix_free_data->get_constraint_vector(),
+                                structure_matrix_free_data->get_quadrature_vector(),
+                                structure_matrix_free_data->data);
+
+  structure_operator->setup(structure_matrix_free, structure_matrix_free_data);
+
+  // initialize postprocessor
+  structure_postprocessor = application->create_postprocessor_structure();
+  structure_postprocessor->setup(structure_operator->get_dof_handler(),
+                                 *application->get_grid_structure()->mapping);
+
+  // initialize time integrator
+  structure_time_integrator = std::make_shared<Structure::TimeIntGenAlpha<dim, Number>>(
+    structure_operator,
+    structure_postprocessor,
+    application->get_parameters_structure(),
+    mpi_comm,
+    is_test);
+
+  structure_time_integrator->setup(application->get_parameters_structure().restarted_simulation);
+
+  structure_operator->setup_solver();
+
+  timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
+}
+
+template<int dim, typename Number>
+void
+Driver<dim, Number>::setup_fluid_and_ale()
+{
+  // ALE
   {
     dealii::Timer timer_local;
     timer_local.restart();
@@ -254,9 +282,8 @@ Driver<dim, Number>::setup()
 
     timer_tree.insert({"FSI", "Setup", "ALE"}, timer_local.wall_time());
   }
-  /******************************************* ALE ********************************************/
 
-  /****************************************** FLUID *******************************************/
+  // fluid
   {
     dealii::Timer timer_local;
     timer_local.restart();
@@ -294,13 +321,29 @@ Driver<dim, Number>::setup()
     fluid_postprocessor = application->create_postprocessor_fluid();
     fluid_postprocessor->setup(*fluid_operator);
 
+    // setup time integrator before calling setup_solvers (this is necessary since the setup
+    // of the solvers depends on quantities such as the time_step_size or gamma0!!!)
+    AssertThrow(application->get_parameters_fluid().solver_type == IncNS::SolverType::Unsteady,
+                dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
+
+    // initialize fluid_time_integrator
+    fluid_time_integrator = IncNS::create_time_integrator<dim, Number>(
+      fluid_operator, application->get_parameters_fluid(), mpi_comm, is_test, fluid_postprocessor);
+
+    fluid_time_integrator->setup(application->get_parameters_fluid().restarted_simulation);
+
+    fluid_operator->setup_solvers(fluid_time_integrator->get_scaling_factor_time_derivative_term(),
+                                  fluid_time_integrator->get_velocity());
+
     timer_tree.insert({"FSI", "Setup", "Fluid"}, timer_local.wall_time());
   }
-  /****************************************** FLUID *******************************************/
+}
 
 
-  /*********************************** INTERFACE COUPLING *************************************/
-
+template<int dim, typename Number>
+void
+Driver<dim, Number>::setup_interface_coupling()
+{
   // structure to ALE
   {
     dealii::Timer timer_local;
@@ -310,47 +353,22 @@ Driver<dim, Number>::setup()
 
     if(application->get_parameters_fluid().mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
-      std::vector<unsigned int> quad_indices;
-      if(application->get_parameters_ale_poisson().spatial_discretization ==
-         Poisson::SpatialDiscretization::DG)
-        quad_indices.emplace_back(ale_poisson_operator->get_quad_index());
-      else if(application->get_parameters_ale_poisson().spatial_discretization ==
-              Poisson::SpatialDiscretization::CG)
-        quad_indices.emplace_back(ale_poisson_operator->get_quad_index_gauss_lobatto());
-      else
-        AssertThrow(false, dealii::ExcMessage("not implemented."));
-
-      VectorType displacement_structure;
-      structure_operator->initialize_dof_vector(displacement_structure);
       structure_to_ale = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
-      structure_to_ale->setup(
-        ale_matrix_free,
-        ale_poisson_operator->get_dof_index(),
-        quad_indices,
-        application->get_boundary_descriptor_ale_poisson()->dirichlet_cached_bc,
-        structure_operator->get_dof_handler(),
-        *application->get_grid_structure()->mapping,
-        displacement_structure,
-        fsi_data.geometric_tolerance);
+      structure_to_ale->setup(ale_poisson_operator->get_container_interface_data(),
+                              application->get_boundary_descriptor_structure()->neumann_cached_bc,
+                              structure_operator->get_dof_handler(),
+                              *application->get_grid_structure()->mapping,
+                              fsi_data.geometric_tolerance);
     }
     else if(application->get_parameters_fluid().mesh_movement_type ==
             IncNS::MeshMovementType::Elasticity)
     {
-      std::vector<unsigned int> quad_indices;
-      quad_indices.emplace_back(ale_elasticity_operator->get_quad_index_gauss_lobatto());
-
-      VectorType displacement_structure;
-      structure_operator->initialize_dof_vector(displacement_structure);
       structure_to_ale = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
-      structure_to_ale->setup(
-        ale_matrix_free,
-        ale_elasticity_operator->get_dof_index(),
-        quad_indices,
-        application->get_boundary_descriptor_ale_elasticity()->dirichlet_cached_bc,
-        structure_operator->get_dof_handler(),
-        *application->get_grid_structure()->mapping,
-        displacement_structure,
-        fsi_data.geometric_tolerance);
+      structure_to_ale->setup(ale_elasticity_operator->get_container_interface_data_dirichlet(),
+                              application->get_boundary_descriptor_structure()->neumann_cached_bc,
+                              structure_operator->get_dof_handler(),
+                              *application->get_grid_structure()->mapping,
+                              fsi_data.geometric_tolerance);
     }
     else
     {
@@ -369,23 +387,12 @@ Driver<dim, Number>::setup()
 
     pcout << std::endl << "Setup interface coupling structure -> fluid ..." << std::endl;
 
-    std::vector<unsigned int> quad_indices;
-    quad_indices.emplace_back(fluid_operator->get_quad_index_velocity_linear());
-    quad_indices.emplace_back(fluid_operator->get_quad_index_velocity_nonlinear());
-    quad_indices.emplace_back(fluid_operator->get_quad_index_velocity_gauss_lobatto());
-
-    VectorType velocity_structure;
-    structure_operator->initialize_dof_vector(velocity_structure);
     structure_to_fluid = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
-    structure_to_fluid->setup(
-      fluid_matrix_free,
-      fluid_operator->get_dof_index_velocity(),
-      quad_indices,
-      application->get_boundary_descriptor_fluid()->velocity->dirichlet_cached_bc,
-      structure_operator->get_dof_handler(),
-      *application->get_grid_structure()->mapping,
-      velocity_structure,
-      fsi_data.geometric_tolerance);
+    structure_to_fluid->setup(fluid_operator->get_container_interface_data(),
+                              application->get_boundary_descriptor_structure()->neumann_cached_bc,
+                              structure_operator->get_dof_handler(),
+                              *application->get_grid_structure()->mapping,
+                              fsi_data.geometric_tolerance);
 
     pcout << std::endl << "... done!" << std::endl;
 
@@ -399,79 +406,20 @@ Driver<dim, Number>::setup()
 
     pcout << std::endl << "Setup interface coupling fluid -> structure ..." << std::endl;
 
-    std::vector<unsigned int> quad_indices;
-    quad_indices.emplace_back(structure_operator->get_quad_index());
-
-    VectorType stress_fluid;
-    fluid_operator->initialize_vector_velocity(stress_fluid);
     fluid_to_structure = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
-    std::shared_ptr<dealii::Mapping<dim> const> mapping =
+    std::shared_ptr<dealii::Mapping<dim> const> mapping_fluid =
       get_dynamic_mapping<dim, Number>(application->get_grid_fluid(), fluid_grid_motion);
-    fluid_to_structure->setup(structure_matrix_free,
-                              structure_operator->get_dof_index(),
-                              quad_indices,
-                              application->get_boundary_descriptor_structure()->neumann_cached_bc,
-                              fluid_operator->get_dof_handler_u(),
-                              *mapping,
-                              stress_fluid,
-                              fsi_data.geometric_tolerance);
+    fluid_to_structure->setup(
+      structure_operator->get_container_interface_data_neumann(),
+      application->get_boundary_descriptor_fluid()->velocity->dirichlet_cached_bc,
+      fluid_operator->get_dof_handler_u(),
+      *mapping_fluid,
+      fsi_data.geometric_tolerance);
 
     pcout << std::endl << "... done!" << std::endl;
 
     timer_tree.insert({"FSI", "Setup", "Coupling fluid -> structure"}, timer_local.wall_time());
   }
-
-  /*********************************** INTERFACE COUPLING *************************************/
-
-
-  /**************************** SETUP TIME INTEGRATORS AND SOLVERS ****************************/
-
-  // fluid
-  {
-    dealii::Timer timer_local;
-    timer_local.restart();
-
-    // setup time integrator before calling setup_solvers (this is necessary since the setup
-    // of the solvers depends on quantities such as the time_step_size or gamma0!!!)
-    AssertThrow(application->get_parameters_fluid().solver_type == IncNS::SolverType::Unsteady,
-                dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
-
-    // initialize fluid_time_integrator
-    fluid_time_integrator = IncNS::create_time_integrator<dim, Number>(
-      fluid_operator, application->get_parameters_fluid(), mpi_comm, is_test, fluid_postprocessor);
-
-    fluid_time_integrator->setup(application->get_parameters_fluid().restarted_simulation);
-
-    fluid_operator->setup_solvers(fluid_time_integrator->get_scaling_factor_time_derivative_term(),
-                                  fluid_time_integrator->get_velocity());
-
-    timer_tree.insert({"FSI", "Setup", "Fluid"}, timer_local.wall_time());
-  }
-
-  // Structure
-  {
-    dealii::Timer timer_local;
-    timer_local.restart();
-
-    // initialize time integrator
-    structure_time_integrator = std::make_shared<Structure::TimeIntGenAlpha<dim, Number>>(
-      structure_operator,
-      structure_postprocessor,
-      application->get_parameters_structure(),
-      mpi_comm,
-      is_test);
-
-    structure_time_integrator->setup(application->get_parameters_structure().restarted_simulation);
-
-    structure_operator->setup_solver();
-
-    timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
-  }
-
-  /**************************** SETUP TIME INTEGRATORS AND SOLVERS ****************************/
-
-
-  timer_tree.insert({"FSI", "Setup"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -555,7 +503,7 @@ Driver<dim, Number>::coupling_structure_to_fluid(bool const extrapolate) const
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::coupling_fluid_to_structure() const
+Driver<dim, Number>::coupling_fluid_to_structure(bool const end_of_time_step) const
 {
   dealii::Timer sub_timer;
   sub_timer.restart();
@@ -563,9 +511,19 @@ Driver<dim, Number>::coupling_fluid_to_structure() const
   VectorType stress_fluid;
   fluid_operator->initialize_vector_velocity(stress_fluid);
   // calculate fluid stress at fluid-structure interface
-  fluid_operator->interpolate_stress_bc(stress_fluid,
-                                        fluid_time_integrator->get_velocity_np(),
-                                        fluid_time_integrator->get_pressure_np());
+  if(end_of_time_step)
+  {
+    fluid_operator->interpolate_stress_bc(stress_fluid,
+                                          fluid_time_integrator->get_velocity_np(),
+                                          fluid_time_integrator->get_pressure_np());
+  }
+  else
+  {
+    fluid_operator->interpolate_stress_bc(stress_fluid,
+                                          fluid_time_integrator->get_velocity(),
+                                          fluid_time_integrator->get_pressure());
+  }
+
   stress_fluid *= -1.0;
   fluid_to_structure->update_data(stress_fluid);
 
@@ -590,7 +548,7 @@ Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType &       d_tilde,
   fluid_time_integrator->advance_one_timestep_partitioned_solve(iteration == 0);
 
   // update stress boundary condition for solid
-  coupling_fluid_to_structure();
+  coupling_fluid_to_structure(/* end_of_time_step = */ true);
 
   // solve structural problem
   structure_time_integrator->advance_one_timestep_partitioned_solve(iteration == 0);
@@ -963,6 +921,14 @@ Driver<dim, Number>::solve() const
   set_start_time();
 
   synchronize_time_step_size();
+
+  // compute initial acceleration for structural problem
+  {
+    // update stress boundary condition for solid at time t_n (not t_{n+1})
+    coupling_fluid_to_structure(/* end_of_time_step = */ false);
+    structure_time_integrator->compute_initial_acceleration(
+      application->get_parameters_structure().restarted_simulation);
+  }
 
   // The fluid domain is the master that dictates when the time loop is finished
   while(!fluid_time_integrator->finished())

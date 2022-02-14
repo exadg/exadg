@@ -85,11 +85,20 @@ TimeIntGenAlpha<dim, Number>::setup(bool const do_restart)
 
     pde_operator->prescribe_initial_displacement(displacement_n, this->get_time());
     pde_operator->prescribe_initial_velocity(velocity_n, this->get_time());
-    // solve momentum equation to obtain initial acceleration
-    pde_operator->compute_initial_acceleration(acceleration_n, displacement_n, this->get_time());
   }
 
   this->pcout << std::endl << "... done!" << std::endl;
+}
+
+template<int dim, typename Number>
+void
+TimeIntGenAlpha<dim, Number>::compute_initial_acceleration(bool const do_restart)
+{
+  if(not(do_restart))
+  {
+    // solve momentum equation to obtain initial acceleration
+    pde_operator->compute_initial_acceleration(acceleration_n, displacement_n, this->get_time());
+  }
 }
 
 template<int dim, typename Number>
