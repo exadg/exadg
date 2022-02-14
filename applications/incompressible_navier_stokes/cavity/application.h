@@ -264,9 +264,9 @@ private:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output         = this->write_output;
-    pp_data.output_data.directory            = this->output_directory + "vtu/";
-    pp_data.output_data.filename             = this->output_name;
+    pp_data.output_data.write_output         = this->output_parameters.write;
+    pp_data.output_data.directory            = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename             = this->output_parameters.filename;
     pp_data.output_data.start_time           = start_time;
     pp_data.output_data.interval_time        = (end_time - start_time) / 100;
     pp_data.output_data.write_divergence     = true;
@@ -280,7 +280,7 @@ private:
     {
       // line plot data
       pp_data.line_plot_data.calculate           = false;
-      pp_data.line_plot_data.line_data.directory = this->output_directory;
+      pp_data.line_plot_data.line_data.directory = this->output_parameters.directory;
 
       // which quantities
       std::shared_ptr<Quantity> quantity_u;
@@ -297,7 +297,7 @@ private:
       vert_line.reset(new Line<dim>());
       vert_line->begin    = dealii::Point<dim>(0.5, 0.0);
       vert_line->end      = dealii::Point<dim>(0.5, 1.0);
-      vert_line->name     = this->output_name + "_vert_line";
+      vert_line->name     = this->output_parameters.filename + "_vert_line";
       vert_line->n_points = 100001; // 2001;
       vert_line->quantities.push_back(quantity_u);
       vert_line->quantities.push_back(quantity_p);
@@ -307,7 +307,7 @@ private:
       hor_line.reset(new Line<dim>());
       hor_line->begin    = dealii::Point<dim>(0.0, 0.5);
       hor_line->end      = dealii::Point<dim>(1.0, 0.5);
-      hor_line->name     = this->output_name + "_hor_line";
+      hor_line->name     = this->output_parameters.filename + "_hor_line";
       hor_line->n_points = 10001; // 2001;
       hor_line->quantities.push_back(quantity_u);
       hor_line->quantities.push_back(quantity_p);

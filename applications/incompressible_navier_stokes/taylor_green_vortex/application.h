@@ -182,7 +182,8 @@ private:
     this->param.restart_data.interval_time       = 1.0;
     this->param.restart_data.interval_wall_time  = 1.e6;
     this->param.restart_data.interval_time_steps = 1e8;
-    this->param.restart_data.filename = this->output_directory + this->output_name + "restart";
+    this->param.restart_data.filename =
+      this->output_parameters.directory + this->output_parameters.filename + "restart";
 
     // output of solver information
     this->param.solver_info_data.interval_time = characteristic_time;
@@ -433,12 +434,13 @@ private:
   {
     PostProcessorData<dim> pp_data;
 
-    std::string name = this->output_name + "_l" + std::to_string(this->param.grid.n_refine_global) +
-                       "_k" + std::to_string(this->param.degree_u);
+    std::string name = this->output_parameters.filename + "_l" +
+                       std::to_string(this->param.grid.n_refine_global) + "_k" +
+                       std::to_string(this->param.degree_u);
 
     // write output for visualization of results
-    pp_data.output_data.write_output              = this->write_output;
-    pp_data.output_data.directory                 = this->output_directory + "vtu/";
+    pp_data.output_data.write_output              = this->output_parameters.write;
+    pp_data.output_data.directory                 = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename                  = name;
     pp_data.output_data.start_time                = start_time;
     pp_data.output_data.interval_time             = (end_time - start_time) / 20;
@@ -455,7 +457,7 @@ private:
     pp_data.mass_data.calculate               = false;
     pp_data.mass_data.start_time              = 0.0;
     pp_data.mass_data.sample_every_time_steps = 1e2;
-    pp_data.mass_data.directory               = this->output_directory;
+    pp_data.mass_data.directory               = this->output_parameters.directory;
     pp_data.mass_data.filename                = name;
     pp_data.mass_data.reference_length_scale  = 1.0;
 
@@ -464,7 +466,7 @@ private:
     pp_data.kinetic_energy_data.evaluate_individual_terms  = false;
     pp_data.kinetic_energy_data.calculate_every_time_steps = 1;
     pp_data.kinetic_energy_data.viscosity                  = viscosity;
-    pp_data.kinetic_energy_data.directory                  = this->output_directory;
+    pp_data.kinetic_energy_data.directory                  = this->output_parameters.directory;
     pp_data.kinetic_energy_data.filename                   = name;
     pp_data.kinetic_energy_data.clear_file                 = !read_restart;
 
@@ -474,12 +476,12 @@ private:
     pp_data.kinetic_energy_spectrum_data.do_fftw                       = do_fftw_during_simulation;
     pp_data.kinetic_energy_spectrum_data.write_raw_data_to_files       = !do_fftw_during_simulation;
     pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
-    pp_data.kinetic_energy_spectrum_data.directory                     = this->output_directory;
-    pp_data.kinetic_energy_spectrum_data.filename                      = name + "_energy_spectrum";
-    pp_data.kinetic_energy_spectrum_data.degree                        = this->param.degree_u;
-    pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell    = (this->param.degree_u + 1);
-    pp_data.kinetic_energy_spectrum_data.exploit_symmetry              = exploit_symmetry;
-    pp_data.kinetic_energy_spectrum_data.n_cells_1d_coarse_grid  = n_subdivisions_1d_hypercube;
+    pp_data.kinetic_energy_spectrum_data.directory = this->output_parameters.directory;
+    pp_data.kinetic_energy_spectrum_data.filename  = name + "_energy_spectrum";
+    pp_data.kinetic_energy_spectrum_data.degree    = this->param.degree_u;
+    pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (this->param.degree_u + 1);
+    pp_data.kinetic_energy_spectrum_data.exploit_symmetry           = exploit_symmetry;
+    pp_data.kinetic_energy_spectrum_data.n_cells_1d_coarse_grid     = n_subdivisions_1d_hypercube;
     pp_data.kinetic_energy_spectrum_data.refine_level            = this->param.grid.n_refine_global;
     pp_data.kinetic_energy_spectrum_data.length_symmetric_domain = right;
     pp_data.kinetic_energy_spectrum_data.clear_file              = !read_restart;

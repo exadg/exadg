@@ -395,9 +395,9 @@ private:
   create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output = this->write_output;
-    pp_data.output_data.directory    = this->output_directory + "vtu/";
-    pp_data.output_data.filename     = this->output_name;
+    pp_data.output_data.write_output = this->output_parameters.write;
+    pp_data.output_data.directory    = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename     = this->output_parameters.filename;
     pp_data.calculate_velocity = true; // activate this for kinetic energy calculations (see below)
     pp_data.output_data.write_pressure     = true;
     pp_data.output_data.write_velocity     = true;
@@ -420,8 +420,8 @@ private:
     pp_data_turb_ch.turb_ch_data.sample_every_timesteps = 10;
     pp_data_turb_ch.turb_ch_data.viscosity              = DYN_VISCOSITY;
     pp_data_turb_ch.turb_ch_data.density                = RHO_0;
-    pp_data_turb_ch.turb_ch_data.directory              = this->output_directory;
-    pp_data_turb_ch.turb_ch_data.filename               = this->output_name;
+    pp_data_turb_ch.turb_ch_data.directory              = this->output_parameters.directory;
+    pp_data_turb_ch.turb_ch_data.filename               = this->output_parameters.filename;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new MyPostProcessor<dim, Number>(pp_data_turb_ch, this->mpi_comm));

@@ -364,9 +364,9 @@ private:
     IncNS::PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output       = this->write_output;
-    pp_data.output_data.directory          = this->output_directory + "vtu/";
-    pp_data.output_data.filename           = this->output_name + "_fluid";
+    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename + "_fluid";
     pp_data.output_data.start_time         = start_time;
     pp_data.output_data.interval_time      = output_interval_time;
     pp_data.output_data.write_processor_id = true;
@@ -406,10 +406,11 @@ private:
   create_postprocessor_scalar(unsigned int const scalar_index) final
   {
     ConvDiff::PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output = this->write_output;
-    pp_data.output_data.directory    = this->output_directory + "vtu/";
-    pp_data.output_data.filename   = this->output_name + "_scalar_" + std::to_string(scalar_index);
-    pp_data.output_data.start_time = start_time;
+    pp_data.output_data.write_output = this->output_parameters.write;
+    pp_data.output_data.directory    = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename =
+      this->output_parameters.filename + "_scalar_" + std::to_string(scalar_index);
+    pp_data.output_data.start_time         = start_time;
     pp_data.output_data.interval_time      = output_interval_time;
     pp_data.output_data.degree             = this->scalar_param[scalar_index].degree;
     pp_data.output_data.write_higher_order = (dim == 2);

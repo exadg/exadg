@@ -135,9 +135,7 @@ protected:
   std::vector<std::shared_ptr<ConvDiff::FieldFunctions<dim>>>     scalar_field_functions;
   std::vector<std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>>> scalar_boundary_descriptor;
 
-  std::string  output_directory = "output/", output_name = "output";
-  bool         write_output = false;
-  unsigned int n_scalars    = 1;
+  unsigned int n_scalars = 1;
 
 private:
   void
