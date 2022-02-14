@@ -24,8 +24,6 @@
 
 namespace ExaDG
 {
-namespace FSI
-{
 //  Example of a user defined function
 template<int dim>
 class MyFunction : public dealii::Function<dim>
@@ -46,40 +44,94 @@ public:
   }
 };
 
+namespace StructureFSI
+{
 template<int dim, typename Number>
-class Application : public ApplicationBase<dim, Number>
+class Application : public StructureFSI::ApplicationBase<dim, Number>
 {
 public:
   Application(std::string input_file, MPI_Comm const & comm)
-    : ApplicationBase<dim, Number>(input_file, comm)
+    : StructureFSI::ApplicationBase<dim, Number>(input_file, comm)
   {
   }
 
 private:
   void
-  set_parameters_fluid() final
+  set_parameters() final
+  {
+  }
+
+  void
+  create_grid() final
+  {
+    // create triangulation
+
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+  }
+
+  void
+  set_boundary_descriptor() final
+  {
+  }
+
+  void
+  set_material_descriptor() final
+  {
+  }
+
+  void
+  set_field_functions() final
+  {
+  }
+
+  std::shared_ptr<Structure::PostProcessor<dim, Number>>
+  create_postprocessor() final
+  {
+    Structure::PostProcessorData<dim>                      pp_data;
+    std::shared_ptr<Structure::PostProcessor<dim, Number>> pp;
+
+    pp.reset(new Structure::PostProcessor<dim, Number>(pp_data, this->mpi_comm));
+
+    return pp;
+  }
+};
+} // namespace StructureFSI
+
+namespace FluidFSI
+{
+template<int dim, typename Number>
+class Application : public FluidFSI::ApplicationBase<dim, Number>
+{
+public:
+  Application(std::string input_file, MPI_Comm const & comm)
+    : FluidFSI::ApplicationBase<dim, Number>(input_file, comm)
+  {
+  }
+
+private:
+  void
+  set_parameters() final
   {
     using namespace IncNS;
 
-    Parameters & param = this->fluid_param;
+    Parameters & param = this->param;
 
     // Set parameters here
     (void)param;
   }
 
   void
-  create_grid_fluid() final
+  create_grid() final
   {
     // create triangulation
 
-    this->fluid_grid->triangulation->refine_global(this->fluid_param.grid.n_refine_global);
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void
-  set_boundary_descriptor_fluid() final
+  set_boundary_descriptor() final
   {
-    std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor =
-      this->fluid_boundary_descriptor;
+    std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor = this->boundary_descriptor;
 
     typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
       pair;
@@ -99,9 +151,9 @@ private:
   }
 
   void
-  set_field_functions_fluid() final
+  set_field_functions() final
   {
-    std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions = this->fluid_field_functions;
+    std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions = this->field_functions;
 
     // these lines show exemplarily how the field functions are filled
     field_functions->initial_solution_velocity.reset(new dealii::Functions::ZeroFunction<dim>(dim));
@@ -112,7 +164,7 @@ private:
   }
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  create_postprocessor_fluid() final
+  create_postprocessor() final
   {
     // these lines show exemplarily how the postprocessor is constructued
     IncNS::PostProcessorData<dim> pp_data;
@@ -184,54 +236,21 @@ private:
   set_field_functions_ale_elasticity() final
   {
   }
+};
+} // namespace FluidFSI
 
-  // Structure
-  void
-  set_parameters_structure() final
+namespace FSI
+{
+template<int dim, typename Number>
+class Application : public ApplicationBase<dim, Number>
+{
+public:
+  Application(std::string input_file, MPI_Comm const & comm)
   {
-    using namespace Structure;
-
-    Parameters & param = this->structure_param;
-
-    // Set parameters here
-    (void)param;
-  }
-
-  void
-  create_grid_structure() final
-  {
-    // create triangulation
-
-    this->structure_grid->triangulation->refine_global(this->structure_param.grid.n_refine_global);
-  }
-
-  void
-  set_boundary_descriptor_structure() final
-  {
-  }
-
-  void
-  set_material_descriptor_structure() final
-  {
-  }
-
-  void
-  set_field_functions_structure() final
-  {
-  }
-
-  std::shared_ptr<Structure::PostProcessor<dim, Number>>
-  create_postprocessor_structure() final
-  {
-    Structure::PostProcessorData<dim>                      pp_data;
-    std::shared_ptr<Structure::PostProcessor<dim, Number>> pp;
-
-    pp.reset(new Structure::PostProcessor<dim, Number>(pp_data, this->mpi_comm));
-
-    return pp;
+    this->structure = std::make_shared<StructureFSI::Application<dim, Number>>(input_file, comm);
+    this->fluid     = std::make_shared<FluidFSI::Application<dim, Number>>(input_file, comm);
   }
 };
-
 } // namespace FSI
 
 } // namespace ExaDG

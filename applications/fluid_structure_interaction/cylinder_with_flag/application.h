@@ -26,8 +26,6 @@
 
 namespace ExaDG
 {
-namespace FSI
-{
 // set problem specific parameters
 #define TESTCASE 2
 
@@ -146,22 +144,24 @@ public:
   }
 };
 
+namespace FluidFSI
+{
 template<int dim, typename Number>
-class Application : public ApplicationBase<dim, Number>
+class Application : public FluidFSI::ApplicationBase<dim, Number>
 {
 public:
   Application(std::string input_file, MPI_Comm const & comm)
-    : ApplicationBase<dim, Number>(input_file, comm)
+    : FluidFSI::ApplicationBase<dim, Number>(input_file, comm)
   {
   }
 
 private:
   void
-  set_parameters_fluid() final
+  set_parameters() final
   {
     using namespace IncNS;
 
-    Parameters & param = this->fluid_param;
+    Parameters & param = this->param;
 
     // MATHEMATICAL MODEL
     param.problem_type                   = ProblemType::Unsteady;
@@ -315,7 +315,7 @@ private:
       SchurComplementPreconditioner::PressureConvectionDiffusion;
   }
 
-  void create_triangulation_fluid(dealii::Triangulation<2> & tria)
+  void create_triangulation(dealii::Triangulation<2> & tria)
   {
     std::vector<dealii::Triangulation<2>> tria_vec;
     tria_vec.resize(11);
@@ -396,7 +396,7 @@ private:
     dealii::GridGenerator::merge_triangulations(tria_vec_ptr, tria);
   }
 
-  void create_triangulation_fluid(dealii::Triangulation<3> & tria)
+  void create_triangulation(dealii::Triangulation<3> & tria)
   {
     (void)tria;
 
@@ -404,11 +404,11 @@ private:
   }
 
   void
-  create_grid_fluid() final
+  create_grid() final
   {
-    create_triangulation_fluid(*this->fluid_grid->triangulation);
+    create_triangulation(*this->grid->triangulation);
 
-    this->fluid_grid->triangulation->set_all_manifold_ids(0);
+    this->grid->triangulation->set_all_manifold_ids(0);
 
     // vectors of manifold_ids and face_ids
     unsigned int const        manifold_id_start = 10;
@@ -419,7 +419,7 @@ private:
     center[0] = X_C;
     center[1] = Y_C;
 
-    for(auto cell : this->fluid_grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -479,26 +479,25 @@ private:
 
     for(unsigned int i = 0; i < manifold_ids.size(); ++i)
     {
-      for(auto cell : this->fluid_grid->triangulation->active_cell_iterators())
+      for(auto cell : this->grid->triangulation->active_cell_iterators())
       {
         if(cell->manifold_id() == manifold_ids[i])
         {
           manifold_vec[i] =
             std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
               new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
-          this->fluid_grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
+          this->grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
         }
       }
     }
 
-    this->fluid_grid->triangulation->refine_global(this->fluid_param.grid.n_refine_global);
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void
-  set_boundary_descriptor_fluid() final
+  set_boundary_descriptor() final
   {
-    std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor =
-      this->fluid_boundary_descriptor;
+    std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor = this->boundary_descriptor;
 
     typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
       pair;
@@ -528,9 +527,9 @@ private:
   }
 
   void
-  set_field_functions_fluid() final
+  set_field_functions() final
   {
-    std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions = this->fluid_field_functions;
+    std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions = this->field_functions;
 
     field_functions->initial_solution_velocity.reset(new dealii::Functions::ZeroFunction<dim>(dim));
     field_functions->initial_solution_pressure.reset(new dealii::Functions::ZeroFunction<dim>(1));
@@ -540,7 +539,7 @@ private:
   }
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  create_postprocessor_fluid() final
+  create_postprocessor() final
   {
     IncNS::PostProcessorData<dim> pp_data;
 
@@ -553,7 +552,7 @@ private:
     pp_data.output_data.start_time         = 0.0;
     pp_data.output_data.interval_time      = OUTPUT_INTERVAL_TIME;
     pp_data.output_data.write_higher_order = true;
-    pp_data.output_data.degree             = this->fluid_param.degree_u;
+    pp_data.output_data.degree             = this->param.degree_u;
 
     std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> pp;
     pp.reset(new IncNS::PostProcessor<dim, Number>(pp_data, this->mpi_comm));
@@ -573,7 +572,7 @@ private:
 
     // SPATIAL DISCRETIZATION
     param.spatial_discretization = SpatialDiscretization::CG;
-    param.degree                 = this->fluid_param.grid.mapping_degree;
+    param.degree                 = this->param.grid.mapping_degree;
 
     // SOLVER
     param.solver         = Poisson::Solver::FGMRES;
@@ -636,7 +635,7 @@ private:
     param.large_deformation    = false;
     param.pull_back_traction   = false;
 
-    param.degree = this->fluid_param.grid.mapping_degree;
+    param.degree = this->param.grid.mapping_degree;
 
     param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
     param.solver             = Structure::Solver::FGMRES;
@@ -719,14 +718,28 @@ private:
     field_functions->initial_displacement.reset(new dealii::Functions::ZeroFunction<dim>(dim));
     field_functions->initial_velocity.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
+};
+} // namespace FluidFSI
 
+namespace StructureFSI
+{
+template<int dim, typename Number>
+class Application : public StructureFSI::ApplicationBase<dim, Number>
+{
+public:
+  Application(std::string input_file, MPI_Comm const & comm)
+    : StructureFSI::ApplicationBase<dim, Number>(input_file, comm)
+  {
+  }
+
+private:
   // Structure
   void
-  set_parameters_structure() final
+  set_parameters() final
   {
     using namespace Structure;
 
-    Parameters & param = this->structure_param;
+    Parameters & param = this->param;
 
     param.problem_type         = ProblemType::Unsteady;
     param.body_force           = false;
@@ -900,11 +913,11 @@ private:
   }
 
   void
-  create_grid_structure() final
+  create_grid() final
   {
-    create_triangulation_structure(*this->structure_grid->triangulation);
+    create_triangulation_structure(*this->grid->triangulation);
 
-    this->structure_grid->triangulation->set_all_manifold_ids(0);
+    this->grid->triangulation->set_all_manifold_ids(0);
 
     // vectors of manifold_ids and face_ids
     unsigned int const        manifold_id_start = 10;
@@ -915,7 +928,7 @@ private:
     center[0] = X_C;
     center[1] = Y_C;
 
-    for(auto cell : this->structure_grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -969,26 +982,26 @@ private:
 
     for(unsigned int i = 0; i < manifold_ids.size(); ++i)
     {
-      for(auto cell : this->structure_grid->triangulation->active_cell_iterators())
+      for(auto cell : this->grid->triangulation->active_cell_iterators())
       {
         if(cell->manifold_id() == manifold_ids[i])
         {
           manifold_vec[i] =
             std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
               new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
-          this->structure_grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
+          this->grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
         }
       }
     }
 
-    this->structure_grid->triangulation->refine_global(this->structure_param.grid.n_refine_global);
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void
-  set_boundary_descriptor_structure() final
+  set_boundary_descriptor() final
   {
     std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor =
-      this->structure_boundary_descriptor;
+      this->boundary_descriptor;
 
     typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
                                                                                   pair;
@@ -1008,10 +1021,9 @@ private:
   }
 
   void
-  set_field_functions_structure() final
+  set_field_functions() final
   {
-    std::shared_ptr<Structure::FieldFunctions<dim>> field_functions =
-      this->structure_field_functions;
+    std::shared_ptr<Structure::FieldFunctions<dim>> field_functions = this->field_functions;
 
     field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
     field_functions->initial_displacement.reset(new dealii::Functions::ZeroFunction<dim>(dim));
@@ -1019,10 +1031,9 @@ private:
   }
 
   void
-  set_material_descriptor_structure() final
+  set_material_descriptor() final
   {
-    std::shared_ptr<Structure::MaterialDescriptor> material_descriptor =
-      this->structure_material_descriptor;
+    std::shared_ptr<Structure::MaterialDescriptor> material_descriptor = this->material_descriptor;
 
     using namespace Structure;
 
@@ -1036,7 +1047,7 @@ private:
   }
 
   std::shared_ptr<Structure::PostProcessor<dim, Number>>
-  create_postprocessor_structure() final
+  create_postprocessor() final
   {
     using namespace Structure;
 
@@ -1049,7 +1060,7 @@ private:
     pp_data.output_data.start_time         = 0.0;
     pp_data.output_data.interval_time      = OUTPUT_INTERVAL_TIME;
     pp_data.output_data.write_higher_order = true;
-    pp_data.output_data.degree             = this->structure_param.degree;
+    pp_data.output_data.degree             = this->param.degree;
 
     std::shared_ptr<PostProcessor<dim, Number>> post(
       new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
@@ -1058,6 +1069,20 @@ private:
   }
 };
 
+} // namespace StructureFSI
+
+namespace FSI
+{
+template<int dim, typename Number>
+class Application : public ApplicationBase<dim, Number>
+{
+public:
+  Application(std::string input_file, MPI_Comm const & comm)
+  {
+    this->structure = std::make_shared<StructureFSI::Application<dim, Number>>(input_file, comm);
+    this->fluid     = std::make_shared<FluidFSI::Application<dim, Number>>(input_file, comm);
+  }
+};
 } // namespace FSI
 
 } // namespace ExaDG
