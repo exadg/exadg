@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.3"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::InterfaceCoupling&lt; dim, n_components, Number &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::ContainerInterfaceData&lt; dim, n_components, Number &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -62,25 +62,31 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>ExaDG</b></li><li class="navelem"><a class="el" href="classExaDG_1_1InterfaceCoupling.html">InterfaceCoupling</a></li>  </ul>
+<li class="navelem"><b>ExaDG</b></li><li class="navelem"><a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="classExaDG_1_1InterfaceCoupling-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::InterfaceCoupling&lt; dim, n_components, Number &gt; Class Template Reference</div></div>
+<a href="classExaDG_1_1ContainerInterfaceData-members.html">List of all members</a>  </div>
+  <div class="headertitle"><div class="title">ExaDG::ContainerInterfaceData&lt; dim, n_components, Number &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a56a1527c3c5de8e9c3c96b3761c35a45"><td class="memItemLeft" align="right" valign="top"><a id="a56a1527c3c5de8e9c3c96b3761c35a45" name="a56a1527c3c5de8e9c3c96b3761c35a45"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; dim, n_components, Number &gt; &gt; interface_data_dst_, MapBoundaryCondition const &amp;map_bc_src_, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler_src_, dealii::Mapping&lt; dim &gt; const &amp;mapping_src_, double const tolerance_)</td></tr>
-<tr class="separator:a56a1527c3c5de8e9c3c96b3761c35a45"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa7993c755df85bb31a00373dd0295a91"><td class="memItemLeft" align="right" valign="top"><a id="aa7993c755df85bb31a00373dd0295a91" name="aa7993c755df85bb31a00373dd0295a91"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>update_data</b> (VectorType const &amp;dof_vector_src)</td></tr>
-<tr class="separator:aa7993c755df85bb31a00373dd0295a91"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f4f9a524f6763638b0562b131ec911d"><td class="memItemLeft" align="right" valign="top"><a id="a3f4f9a524f6763638b0562b131ec911d" name="a3f4f9a524f6763638b0562b131ec911d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; &gt; matrix_free_, unsigned int const dof_index_, std::vector&lt; quad_index &gt; const &amp;quad_indices_, MapBoundaryCondition const &amp;map_bc_)</td></tr>
+<tr class="separator:a3f4f9a524f6763638b0562b131ec911d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f6c0087e74b2797440b5308ec5eb318"><td class="memItemLeft" align="right" valign="top"><a id="a0f6c0087e74b2797440b5308ec5eb318" name="a0f6c0087e74b2797440b5308ec5eb318"></a>
+std::vector&lt; quad_index &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_indices</b> ()</td></tr>
+<tr class="separator:a0f6c0087e74b2797440b5308ec5eb318"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aea6cd457a84c48239934072c1564c559"><td class="memItemLeft" align="right" valign="top"><a id="aea6cd457a84c48239934072c1564c559" name="aea6cd457a84c48239934072c1564c559"></a>
+ArrayQuadraturePoints &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_array_q_points</b> (quad_index const &amp;q_index)</td></tr>
+<tr class="separator:aea6cd457a84c48239934072c1564c559"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac1c99e8bbba86d9022dc75f3dc2d33a6"><td class="memItemLeft" align="right" valign="top"><a id="ac1c99e8bbba86d9022dc75f3dc2d33a6" name="ac1c99e8bbba86d9022dc75f3dc2d33a6"></a>
+ArraySolutionValues &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_array_solution</b> (quad_index const &amp;q_index)</td></tr>
+<tr class="separator:ac1c99e8bbba86d9022dc75f3dc2d33a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/functions_and_boundary_conditions/<a class="el" href="interface__coupling_8h_source.html">interface_coupling.h</a></li>

@@ -9,9 +9,9 @@ var searchData=
   ['gradientoperatordata_6',['GradientOperatorData',['../structExaDG_1_1IncNS_1_1GradientOperatorData.html',1,'ExaDG::IncNS']]],
   ['grid_7',['Grid',['../classExaDG_1_1Grid.html',1,'ExaDG']]],
   ['griddata_8',['GridData',['../structExaDG_1_1GridData.html',1,'ExaDG']]],
-  ['gridmotionanalytical_9',['GridMotionAnalytical',['../classExaDG_1_1GridMotionAnalytical.html',1,'ExaDG']]],
-  ['gridmotionbase_10',['GridMotionBase',['../classExaDG_1_1GridMotionBase.html',1,'ExaDG']]],
-  ['gridmotionelasticity_11',['GridMotionElasticity',['../classExaDG_1_1GridMotionElasticity.html',1,'ExaDG']]],
+  ['gridmotionbase_9',['GridMotionBase',['../classExaDG_1_1GridMotionBase.html',1,'ExaDG']]],
+  ['gridmotionelasticity_10',['GridMotionElasticity',['../classExaDG_1_1GridMotionElasticity.html',1,'ExaDG']]],
+  ['gridmotionfunction_11',['GridMotionFunction',['../classExaDG_1_1GridMotionFunction.html',1,'ExaDG']]],
   ['gridmotioninterface_12',['GridMotionInterface',['../classExaDG_1_1GridMotionInterface.html',1,'ExaDG']]],
   ['gridmotionpoisson_13',['GridMotionPoisson',['../classExaDG_1_1GridMotionPoisson.html',1,'ExaDG']]]
 ];

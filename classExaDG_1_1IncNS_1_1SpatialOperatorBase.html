@@ -111,27 +111,9 @@ unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index
 <tr class="memitem:a16847396fa0c21bc3de62264f7e6700f"><td class="memItemLeft" align="right" valign="top"><a id="a16847396fa0c21bc3de62264f7e6700f" name="a16847396fa0c21bc3de62264f7e6700f"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index_pressure</b> () const</td></tr>
 <tr class="separator:a16847396fa0c21bc3de62264f7e6700f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab402f6bca1de3a5e075550ccf50c5472"><td class="memItemLeft" align="right" valign="top"><a id="ab402f6bca1de3a5e075550ccf50c5472" name="ab402f6bca1de3a5e075550ccf50c5472"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index_velocity_scalar</b> () const</td></tr>
-<tr class="separator:ab402f6bca1de3a5e075550ccf50c5472"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aefdd66122bc9f99788ce3656278e3e6d"><td class="memItemLeft" align="right" valign="top"><a id="aefdd66122bc9f99788ce3656278e3e6d" name="aefdd66122bc9f99788ce3656278e3e6d"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index_velocity_linear</b> () const</td></tr>
 <tr class="separator:aefdd66122bc9f99788ce3656278e3e6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afaf58c067b0ac32b2b640752188de74e"><td class="memItemLeft" align="right" valign="top"><a id="afaf58c067b0ac32b2b640752188de74e" name="afaf58c067b0ac32b2b640752188de74e"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index_pressure</b> () const</td></tr>
-<tr class="separator:afaf58c067b0ac32b2b640752188de74e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8740de4ef92f5f8f9dadc134ccb7c9b9"><td class="memItemLeft" align="right" valign="top"><a id="a8740de4ef92f5f8f9dadc134ccb7c9b9" name="a8740de4ef92f5f8f9dadc134ccb7c9b9"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index_velocity_nonlinear</b> () const</td></tr>
-<tr class="separator:a8740de4ef92f5f8f9dadc134ccb7c9b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a69e69ef24734933639e6042741b6d068"><td class="memItemLeft" align="right" valign="top"><a id="a69e69ef24734933639e6042741b6d068" name="a69e69ef24734933639e6042741b6d068"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index_velocity_gauss_lobatto</b> () const</td></tr>
-<tr class="separator:a69e69ef24734933639e6042741b6d068"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a912d85050515e5dfd32d42d1b04859df"><td class="memItemLeft" align="right" valign="top"><a id="a912d85050515e5dfd32d42d1b04859df" name="a912d85050515e5dfd32d42d1b04859df"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index_pressure_gauss_lobatto</b> () const</td></tr>
-<tr class="separator:a912d85050515e5dfd32d42d1b04859df"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab3922a0ae5ed0041c75e08973a78ef0e"><td class="memItemLeft" align="right" valign="top"><a id="ab3922a0ae5ed0041c75e08973a78ef0e" name="ab3922a0ae5ed0041c75e08973a78ef0e"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index_velocity_linearized</b> () const</td></tr>
-<tr class="separator:ab3922a0ae5ed0041c75e08973a78ef0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5747176a032f109c35ef037f2060871a"><td class="memItemLeft" align="right" valign="top"><a id="a5747176a032f109c35ef037f2060871a" name="a5747176a032f109c35ef037f2060871a"></a>
 std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_mapping</b> () const</td></tr>
 <tr class="separator:a5747176a032f109c35ef037f2060871a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -162,6 +144,9 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>get_viscosity</b> (
 <tr class="memitem:a33a1dc8a862e8aa6c68e18a9578b2e7b"><td class="memItemLeft" align="right" valign="top"><a id="a33a1dc8a862e8aa6c68e18a9578b2e7b" name="a33a1dc8a862e8aa6c68e18a9578b2e7b"></a>
 dealii::VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_viscosity_boundary_face</b> (unsigned int const face, unsigned int const q) const</td></tr>
 <tr class="separator:a33a1dc8a862e8aa6c68e18a9578b2e7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a99f2a2b44c87d6e85f6aa50142123672"><td class="memItemLeft" align="right" valign="top"><a id="a99f2a2b44c87d6e85f6aa50142123672" name="a99f2a2b44c87d6e85f6aa50142123672"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; dim, dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_container_interface_data</b> ()</td></tr>
+<tr class="separator:a99f2a2b44c87d6e85f6aa50142123672"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a98d70633d644c79832b2b9c80417b2dd"><td class="memItemLeft" align="right" valign="top"><a id="a98d70633d644c79832b2b9c80417b2dd" name="a98d70633d644c79832b2b9c80417b2dd"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_velocity_ptr</b> (VectorType const &amp;velocity) const</td></tr>
 <tr class="separator:a98d70633d644c79832b2b9c80417b2dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -180,12 +165,6 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_block_vect
 <tr class="memitem:abeb44b6113053d81749c1b7000836d6f"><td class="memItemLeft" align="right" valign="top"><a id="abeb44b6113053d81749c1b7000836d6f" name="abeb44b6113053d81749c1b7000836d6f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>prescribe_initial_conditions</b> (VectorType &amp;velocity, VectorType &amp;pressure, double const time) const</td></tr>
 <tr class="separator:abeb44b6113053d81749c1b7000836d6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a853b5e71ac35c9971ab046d77dcf5f97"><td class="memItemLeft" align="right" valign="top"><a id="a853b5e71ac35c9971ab046d77dcf5f97" name="a853b5e71ac35c9971ab046d77dcf5f97"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>interpolate_velocity_dirichlet_bc</b> (VectorType &amp;dst, double const &amp;time)</td></tr>
-<tr class="separator:a853b5e71ac35c9971ab046d77dcf5f97"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae958e81356b7d2332e05843b90c5d06f"><td class="memItemLeft" align="right" valign="top"><a id="ae958e81356b7d2332e05843b90c5d06f" name="ae958e81356b7d2332e05843b90c5d06f"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>interpolate_pressure_dirichlet_bc</b> (VectorType &amp;dst, double const &amp;time)</td></tr>
-<tr class="separator:ae958e81356b7d2332e05843b90c5d06f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a447141ab86fa9cdeef77c6b6aaddcb32"><td class="memItemLeft" align="right" valign="top"><a id="a447141ab86fa9cdeef77c6b6aaddcb32" name="a447141ab86fa9cdeef77c6b6aaddcb32"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>interpolate_stress_bc</b> (VectorType &amp;stress, VectorType const &amp;velocity, VectorType const &amp;pressure) const</td></tr>
 <tr class="separator:a447141ab86fa9cdeef77c6b6aaddcb32"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -342,6 +321,24 @@ typedef <a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerBase.html
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
+<tr class="memitem:ab402f6bca1de3a5e075550ccf50c5472"><td class="memItemLeft" align="right" valign="top"><a id="ab402f6bca1de3a5e075550ccf50c5472" name="ab402f6bca1de3a5e075550ccf50c5472"></a>
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index_velocity_scalar</b> () const</td></tr>
+<tr class="separator:ab402f6bca1de3a5e075550ccf50c5472"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afaf58c067b0ac32b2b640752188de74e"><td class="memItemLeft" align="right" valign="top"><a id="afaf58c067b0ac32b2b640752188de74e" name="afaf58c067b0ac32b2b640752188de74e"></a>
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index_pressure</b> () const</td></tr>
+<tr class="separator:afaf58c067b0ac32b2b640752188de74e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8740de4ef92f5f8f9dadc134ccb7c9b9"><td class="memItemLeft" align="right" valign="top"><a id="a8740de4ef92f5f8f9dadc134ccb7c9b9" name="a8740de4ef92f5f8f9dadc134ccb7c9b9"></a>
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index_velocity_nonlinear</b> () const</td></tr>
+<tr class="separator:a8740de4ef92f5f8f9dadc134ccb7c9b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a69e69ef24734933639e6042741b6d068"><td class="memItemLeft" align="right" valign="top"><a id="a69e69ef24734933639e6042741b6d068" name="a69e69ef24734933639e6042741b6d068"></a>
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index_velocity_gauss_lobatto</b> () const</td></tr>
+<tr class="separator:a69e69ef24734933639e6042741b6d068"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a912d85050515e5dfd32d42d1b04859df"><td class="memItemLeft" align="right" valign="top"><a id="a912d85050515e5dfd32d42d1b04859df" name="a912d85050515e5dfd32d42d1b04859df"></a>
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index_pressure_gauss_lobatto</b> () const</td></tr>
+<tr class="separator:a912d85050515e5dfd32d42d1b04859df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab3922a0ae5ed0041c75e08973a78ef0e"><td class="memItemLeft" align="right" valign="top"><a id="ab3922a0ae5ed0041c75e08973a78ef0e" name="ab3922a0ae5ed0041c75e08973a78ef0e"></a>
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index_velocity_linearized</b> () const</td></tr>
+<tr class="separator:ab3922a0ae5ed0041c75e08973a78ef0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a361cfbaf1ad5d495d899351a8a171690"><td class="memItemLeft" align="right" valign="top"><a id="a361cfbaf1ad5d495d899351a8a171690" name="a361cfbaf1ad5d495d899351a8a171690"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_projection_solver</b> ()</td></tr>
 <tr class="separator:a361cfbaf1ad5d495d899351a8a171690"><td class="memSeparator" colspan="2">&#160;</td></tr>

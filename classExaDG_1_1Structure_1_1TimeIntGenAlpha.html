@@ -90,6 +90,9 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a08e0c7d7a860206f7ae89a7b6ed0332f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a115b18c8b5f5551780642a72eb0a4e31"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1TimeIntGenAlpha.html#a115b18c8b5f5551780642a72eb0a4e31">setup</a> (bool const do_restart) final</td></tr>
 <tr class="separator:a115b18c8b5f5551780642a72eb0a4e31"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8d8e4e92457086a829b78fc8c27d0b5a"><td class="memItemLeft" align="right" valign="top"><a id="a8d8e4e92457086a829b78fc8c27d0b5a" name="a8d8e4e92457086a829b78fc8c27d0b5a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>compute_initial_acceleration</b> (bool const do_restart)</td></tr>
+<tr class="separator:a8d8e4e92457086a829b78fc8c27d0b5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af9e53105fca07e5c83d4ec94180cfe54"><td class="memItemLeft" align="right" valign="top"><a id="af9e53105fca07e5c83d4ec94180cfe54" name="af9e53105fca07e5c83d4ec94180cfe54"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>print_iterations</b> () const</td></tr>
 <tr class="separator:af9e53105fca07e5c83d4ec94180cfe54"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -111,8 +114,7 @@ VectorType const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get
 <tr class="memitem:a4fd372524994b5f1120f935a49014b2a"><td class="memItemLeft" align="right" valign="top"><a id="a4fd372524994b5f1120f935a49014b2a" name="a4fd372524994b5f1120f935a49014b2a"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_displacement</b> (VectorType const &amp;displacement)</td></tr>
 <tr class="separator:a4fd372524994b5f1120f935a49014b2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a540b73171298f537781cd59d1679170a"><td class="memItemLeft" align="right" valign="top"><a id="a540b73171298f537781cd59d1679170a" name="a540b73171298f537781cd59d1679170a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>advance_one_timestep_partitioned_solve</b> (bool const use_extrapolation)</td></tr>
+<tr class="memitem:a540b73171298f537781cd59d1679170a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1TimeIntGenAlpha.html#a540b73171298f537781cd59d1679170a">advance_one_timestep_partitioned_solve</a> (bool const use_extrapolation)</td></tr>
 <tr class="separator:a540b73171298f537781cd59d1679170a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1TimeIntGenAlphaBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1TimeIntGenAlphaBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1TimeIntGenAlphaBase.html">ExaDG::TimeIntGenAlphaBase&lt; Number &gt;</a></td></tr>
 <tr class="memitem:adee4f8d493d1885f8a9a9dc0e4a374a7 inherit pub_methods_classExaDG_1_1TimeIntGenAlphaBase"><td class="memItemLeft" align="right" valign="top"><a id="adee4f8d493d1885f8a9a9dc0e4a374a7" name="adee4f8d493d1885f8a9a9dc0e4a374a7"></a>
@@ -267,6 +269,27 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>is_test</b></td></tr>
 <tr class="separator:a4012b87f0586755e2e43fda10c1fb4c6 inherit pro_attribs_classExaDG_1_1TimeIntBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a540b73171298f537781cd59d1679170a" name="a540b73171298f537781cd59d1679170a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a540b73171298f537781cd59d1679170a">&#9670;&nbsp;</a></span>advance_one_timestep_partitioned_solve()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1Structure_1_1TimeIntGenAlpha.html">ExaDG::Structure::TimeIntGenAlpha</a>&lt; dim, Number &gt;::advance_one_timestep_partitioned_solve </td>
+          <td>(</td>
+          <td class="paramtype">bool const&#160;</td>
+          <td class="paramname"><em>use_extrapolation</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >This function is for coupled multi-physics problems applying partitioned solution algorithms. Set use_extrapolation = true in the first iteration of the partitioned scheme within each time step. </p>
+
+</div>
+</div>
 <a id="a115b18c8b5f5551780642a72eb0a4e31" name="a115b18c8b5f5551780642a72eb0a4e31"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a115b18c8b5f5551780642a72eb0a4e31">&#9670;&nbsp;</a></span>setup()</h2>
 

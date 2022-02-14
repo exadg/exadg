@@ -5,8 +5,8 @@ var searchData=
   ['get_5fresults_2',['get_results',['../classdealspectrum_1_1SpectralAnalysis.html#a83c895003af56a97b5004e8a429527d3',1,'dealspectrum::SpectralAnalysis']]],
   ['getlocalrange_3',['getLocalRange',['../classdealspectrum_1_1SpectralAnalysis.html#ad521541cf55622d07d58e83ddb360ed7',1,'dealspectrum::SpectralAnalysis']]],
   ['grid_4',['Grid',['../classExaDG_1_1Grid.html#ab5cc5b9f96815723cc3605265ee069cb',1,'ExaDG::Grid']]],
-  ['gridmotionanalytical_5',['GridMotionAnalytical',['../classExaDG_1_1GridMotionAnalytical.html#a0bf3b27eedb74a9548de0bf21d82db54',1,'ExaDG::GridMotionAnalytical']]],
-  ['gridmotionbase_6',['GridMotionBase',['../classExaDG_1_1GridMotionBase.html#acda8e7ed786a239bd0ccd3df1c41e649',1,'ExaDG::GridMotionBase']]],
-  ['gridmotionelasticity_7',['GridMotionElasticity',['../classExaDG_1_1GridMotionElasticity.html#a3046ce1c701713328fd7d08ccce7d4df',1,'ExaDG::GridMotionElasticity']]],
+  ['gridmotionbase_5',['GridMotionBase',['../classExaDG_1_1GridMotionBase.html#acda8e7ed786a239bd0ccd3df1c41e649',1,'ExaDG::GridMotionBase']]],
+  ['gridmotionelasticity_6',['GridMotionElasticity',['../classExaDG_1_1GridMotionElasticity.html#a3046ce1c701713328fd7d08ccce7d4df',1,'ExaDG::GridMotionElasticity']]],
+  ['gridmotionfunction_7',['GridMotionFunction',['../classExaDG_1_1GridMotionFunction.html#ae792ee6f20e878e261d1a92337c7da1c',1,'ExaDG::GridMotionFunction']]],
   ['gridmotionpoisson_8',['GridMotionPoisson',['../classExaDG_1_1GridMotionPoisson.html#a72143947a07879039807e809c2e552f4',1,'ExaDG::GridMotionPoisson']]]
 ];
