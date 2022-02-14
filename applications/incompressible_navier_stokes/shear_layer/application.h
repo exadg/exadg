@@ -206,9 +206,9 @@ private:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output     = this->write_output;
-    pp_data.output_data.directory        = this->output_directory + "vtu/";
-    pp_data.output_data.filename         = this->output_name;
+    pp_data.output_data.write_output     = this->output_parameters.write;
+    pp_data.output_data.directory        = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename         = this->output_parameters.filename;
     pp_data.output_data.start_time       = start_time;
     pp_data.output_data.interval_time    = (end_time - start_time) / 40;
     pp_data.output_data.write_divergence = true;
@@ -220,8 +220,8 @@ private:
     pp_data.kinetic_energy_data.evaluate_individual_terms  = false;
     pp_data.kinetic_energy_data.calculate_every_time_steps = 1;
     pp_data.kinetic_energy_data.viscosity                  = viscosity;
-    pp_data.kinetic_energy_data.directory                  = this->output_directory;
-    pp_data.kinetic_energy_data.filename                   = this->output_name;
+    pp_data.kinetic_energy_data.directory                  = this->output_parameters.directory;
+    pp_data.kinetic_energy_data.filename                   = this->output_parameters.filename;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));

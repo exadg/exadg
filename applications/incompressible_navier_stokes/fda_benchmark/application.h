@@ -557,14 +557,14 @@ private:
 
     // write output for visualization of results
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output                         = this->write_output;
-    pp_data.output_data.directory                            = this->output_directory + "vtu/";
-    pp_data.output_data.filename                             = this->output_name + "_nozzle";
-    pp_data.output_data.start_time                           = output_start_time_nozzle;
-    pp_data.output_data.interval_time                        = output_interval_time;
-    pp_data.output_data.write_divergence                     = true;
-    pp_data.output_data.write_processor_id                   = true;
-    pp_data.output_data.mean_velocity.calculate              = true;
+    pp_data.output_data.write_output            = this->output_parameters.write;
+    pp_data.output_data.directory               = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename                = this->output_parameters.filename + "_nozzle";
+    pp_data.output_data.start_time              = output_start_time_nozzle;
+    pp_data.output_data.interval_time           = output_interval_time;
+    pp_data.output_data.write_divergence        = true;
+    pp_data.output_data.write_processor_id      = true;
+    pp_data.output_data.mean_velocity.calculate = true;
     pp_data.output_data.mean_velocity.sample_start_time      = sample_start_time;
     pp_data.output_data.mean_velocity.sample_end_time        = sample_end_time;
     pp_data.output_data.mean_velocity.sample_every_timesteps = 1;
@@ -574,8 +574,8 @@ private:
     pp_data_fda.pp_data = pp_data;
 
     // evaluation of quantities along lines
-    pp_data_fda.line_plot_data.line_data.directory                    = this->output_directory;
-    pp_data_fda.line_plot_data.statistics_data.calculate              = true;
+    pp_data_fda.line_plot_data.line_data.directory       = this->output_parameters.directory;
+    pp_data_fda.line_plot_data.statistics_data.calculate = true;
     pp_data_fda.line_plot_data.statistics_data.sample_start_time      = sample_start_time;
     pp_data_fda.line_plot_data.statistics_data.sample_end_time        = end_time;
     pp_data_fda.line_plot_data.statistics_data.sample_every_timesteps = sample_every_timesteps;
@@ -759,14 +759,14 @@ private:
 
     PostProcessorData<dim> pp_data;
     // write output for visualization of results
-    pp_data.output_data.write_output                         = this->write_output;
-    pp_data.output_data.directory                            = this->output_directory + "vtu/";
-    pp_data.output_data.filename                             = this->output_name + "_precursor";
-    pp_data.output_data.start_time                           = output_start_time_precursor;
-    pp_data.output_data.interval_time                        = output_interval_time;
-    pp_data.output_data.write_divergence                     = true;
-    pp_data.output_data.write_processor_id                   = true;
-    pp_data.output_data.mean_velocity.calculate              = true;
+    pp_data.output_data.write_output            = this->output_parameters.write;
+    pp_data.output_data.directory               = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename                = this->output_parameters.filename + "_precursor";
+    pp_data.output_data.start_time              = output_start_time_precursor;
+    pp_data.output_data.interval_time           = output_interval_time;
+    pp_data.output_data.write_divergence        = true;
+    pp_data.output_data.write_processor_id      = true;
+    pp_data.output_data.mean_velocity.calculate = true;
     pp_data.output_data.mean_velocity.sample_start_time      = sample_start_time;
     pp_data.output_data.mean_velocity.sample_end_time        = sample_end_time;
     pp_data.output_data.mean_velocity.sample_every_timesteps = 1;
@@ -790,7 +790,7 @@ private:
 
     // calculation of flow rate (use volume-based computation)
     pp_data_fda.mean_velocity_data.calculate = true;
-    pp_data_fda.mean_velocity_data.directory = this->output_directory;
+    pp_data_fda.mean_velocity_data.directory = this->output_parameters.directory;
     pp_data_fda.mean_velocity_data.filename  = filename_flowrate;
     dealii::Tensor<1, dim, double> direction;
     direction[2]                                 = 1.0;

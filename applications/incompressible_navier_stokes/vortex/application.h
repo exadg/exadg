@@ -284,7 +284,8 @@ private:
     this->param.restart_data.interval_time       = 0.25;
     this->param.restart_data.interval_wall_time  = 1.e6;
     this->param.restart_data.interval_time_steps = 1e8;
-    this->param.restart_data.filename            = this->output_directory + this->output_name;
+    this->param.restart_data.filename =
+      this->output_parameters.directory + this->output_parameters.filename;
 
 
     // SPATIAL DISCRETIZATION
@@ -690,17 +691,17 @@ private:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output                         = this->write_output;
-    pp_data.output_data.directory                            = this->output_directory + "vtu/";
-    pp_data.output_data.filename                             = this->output_name;
-    pp_data.output_data.start_time                           = start_time;
-    pp_data.output_data.interval_time                        = (end_time - start_time) / 20;
-    pp_data.output_data.write_vorticity                      = true;
-    pp_data.output_data.write_divergence                     = true;
-    pp_data.output_data.write_velocity_magnitude             = true;
-    pp_data.output_data.write_vorticity_magnitude            = true;
-    pp_data.output_data.write_processor_id                   = true;
-    pp_data.output_data.mean_velocity.calculate              = true;
+    pp_data.output_data.write_output              = this->output_parameters.write;
+    pp_data.output_data.directory                 = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename                  = this->output_parameters.filename;
+    pp_data.output_data.start_time                = start_time;
+    pp_data.output_data.interval_time             = (end_time - start_time) / 20;
+    pp_data.output_data.write_vorticity           = true;
+    pp_data.output_data.write_divergence          = true;
+    pp_data.output_data.write_velocity_magnitude  = true;
+    pp_data.output_data.write_vorticity_magnitude = true;
+    pp_data.output_data.write_processor_id        = true;
+    pp_data.output_data.mean_velocity.calculate   = true;
     pp_data.output_data.mean_velocity.sample_start_time      = start_time;
     pp_data.output_data.mean_velocity.sample_end_time        = end_time;
     pp_data.output_data.mean_velocity.sample_every_timesteps = 1;

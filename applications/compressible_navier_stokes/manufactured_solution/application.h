@@ -394,7 +394,8 @@ private:
     this->param.restarted_simulation       = false;
     this->param.restart_data.write_restart = false;
     this->param.restart_data.interval_time = 0.5;
-    this->param.restart_data.filename = this->output_directory + this->output_name + "_restart";
+    this->param.restart_data.filename =
+      this->output_parameters.directory + this->output_parameters.filename + "_restart";
 
     // output of solver information
     this->param.solver_info_data.interval_time = (end_time - start_time) / 10;
@@ -473,9 +474,9 @@ private:
   create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output      = this->write_output;
-    pp_data.output_data.directory         = this->output_directory + "vtu/";
-    pp_data.output_data.filename          = this->output_name;
+    pp_data.output_data.write_output      = this->output_parameters.write;
+    pp_data.output_data.directory         = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename          = this->output_parameters.filename;
     pp_data.output_data.write_pressure    = true;
     pp_data.output_data.write_velocity    = true;
     pp_data.output_data.write_temperature = true;

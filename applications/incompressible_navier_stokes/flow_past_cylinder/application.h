@@ -375,12 +375,13 @@ private:
   {
     PostProcessorData<dim> pp_data;
 
-    std::string name = this->output_name + "_l" + std::to_string(this->refine_level) + "_k" +
+    std::string name = this->output_parameters.filename + "_l" +
+                       std::to_string(this->refine_level) + "_k" +
                        std::to_string(this->param.degree_u);
 
     // write output for visualization of results
-    pp_data.output_data.write_output       = this->write_output;
-    pp_data.output_data.directory          = this->output_directory + "vtu/";
+    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = name;
     pp_data.output_data.start_time         = start_time;
     pp_data.output_data.interval_time      = (end_time - start_time) / 20;
@@ -405,7 +406,7 @@ private:
     // surface for calculation of lift and drag coefficients has boundary_ID = 2
     pp_data.lift_and_drag_data.boundary_IDs.insert(2);
 
-    pp_data.lift_and_drag_data.directory     = this->output_directory;
+    pp_data.lift_and_drag_data.directory     = this->output_parameters.directory;
     pp_data.lift_and_drag_data.filename_lift = name + "_lift";
     pp_data.lift_and_drag_data.filename_drag = name + "_drag";
 
@@ -425,7 +426,7 @@ private:
       pp_data.pressure_difference_data.point_2 = point_2_3D;
     }
 
-    pp_data.pressure_difference_data.directory = this->output_directory;
+    pp_data.pressure_difference_data.directory = this->output_parameters.directory;
     pp_data.pressure_difference_data.filename  = name + "_pressure_difference";
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;

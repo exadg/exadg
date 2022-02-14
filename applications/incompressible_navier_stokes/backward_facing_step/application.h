@@ -442,9 +442,9 @@ private:
 
     PostProcessorData<dim> pp_data;
     // write output for visualization of results
-    pp_data.output_data.write_output       = this->write_output;
-    pp_data.output_data.directory          = this->output_directory + "vtu/";
-    pp_data.output_data.filename           = this->output_name;
+    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename;
     pp_data.output_data.start_time         = start_time;
     pp_data.output_data.interval_time      = (end_time - start_time) / 60;
     pp_data.output_data.write_divergence   = true;
@@ -458,8 +458,8 @@ private:
     pp_data_bfs.pp_data = pp_data;
 
     // line plot data: calculate statistics along lines
-    pp_data_bfs.line_plot_data.line_data.directory                    = this->output_directory;
-    pp_data_bfs.line_plot_data.statistics_data.calculate              = true;
+    pp_data_bfs.line_plot_data.line_data.directory       = this->output_parameters.directory;
+    pp_data_bfs.line_plot_data.statistics_data.calculate = true;
     pp_data_bfs.line_plot_data.statistics_data.sample_start_time      = sample_start_time;
     pp_data_bfs.line_plot_data.statistics_data.sample_end_time        = end_time;
     pp_data_bfs.line_plot_data.statistics_data.sample_every_timesteps = sample_every_timesteps;
@@ -691,9 +691,9 @@ private:
 
     PostProcessorData<dim> pp_data;
     // write output for visualization of results
-    pp_data.output_data.write_output       = this->write_output;
-    pp_data.output_data.directory          = this->output_directory + "vtu/";
-    pp_data.output_data.filename           = this->output_name + "_precursor";
+    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename + "_precursor";
     pp_data.output_data.start_time         = start_time;
     pp_data.output_data.interval_time      = (end_time - start_time) / 60;
     pp_data.output_data.write_divergence   = true;
@@ -713,8 +713,8 @@ private:
     pp_data_bfs.turb_ch_data.sample_end_time        = end_time;
     pp_data_bfs.turb_ch_data.sample_every_timesteps = sample_every_timesteps;
     pp_data_bfs.turb_ch_data.viscosity              = viscosity;
-    pp_data_bfs.turb_ch_data.directory              = this->output_directory;
-    pp_data_bfs.turb_ch_data.filename               = this->output_name + "_precursor";
+    pp_data_bfs.turb_ch_data.directory              = this->output_parameters.directory;
+    pp_data_bfs.turb_ch_data.filename = this->output_parameters.filename + "_precursor";
 
     // use turbulent channel data to prescribe inflow velocity for BFS
     pp_data_bfs.inflow_data.write_inflow_data = true;
