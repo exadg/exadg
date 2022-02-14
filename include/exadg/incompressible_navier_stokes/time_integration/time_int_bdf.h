@@ -87,7 +87,6 @@ public:
   void
   ale_update();
 
-  // TODO remove parameter store_solution
   void
   advance_one_timestep_partitioned_solve(bool const use_extrapolation);
 
