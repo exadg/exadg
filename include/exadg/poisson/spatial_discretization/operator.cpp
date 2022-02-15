@@ -37,6 +37,7 @@
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
 #include <exadg/solvers_and_preconditioners/utilities/check_multigrid.h>
 #include <exadg/solvers_and_preconditioners/utilities/petsc_operation.h>
+#include <exadg/utilities/exceptions.h>
 
 namespace ExaDG
 {
@@ -78,7 +79,7 @@ Operator<dim, Number, n_components>::distribute_dofs()
     else if(param.spatial_discretization == SpatialDiscretization::CG)
       fe = std::make_shared<dealii::FE_Q<dim>>(param.degree);
     else
-      AssertThrow(false, dealii::ExcMessage("not implemented."));
+      AssertThrow(false, ExcNotImplemented());
   }
   else if(n_components == dim)
   {
