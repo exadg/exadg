@@ -124,8 +124,8 @@ set_boundary_ids(dealii::Triangulation<dim> & tria, bool compute_in_2d)
   }
 }
 
-void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
-                                    bool const                 compute_in_2d = true)
+void
+do_create_coarse_triangulation(dealii::Triangulation<2> & tria, bool const compute_in_2d = true)
 {
   AssertThrow(std::abs((X_2 - X_1) - 2.0 * (X_C - X_1)) < 1.0e-12,
               dealii::ExcMessage("Geometry parameters X_1, X_2, X_C invalid!"));
@@ -646,7 +646,8 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
 }
 
 
-void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
+void
+do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
 {
   dealii::Triangulation<2> tria_2d;
   do_create_coarse_triangulation(tria_2d, false);
@@ -963,13 +964,14 @@ double const h_x_2 = (L - X_2) / nele_x_right;
 double const h_x_1 = D / nele_x_middle_middle;
 double const h_x_0 = (X_1 - X_0) / nele_x_left;
 
-void create_trapezoid(dealii::Triangulation<2> & tria,
-                      std::vector<unsigned int>  ref,
-                      dealii::Point<2> const     x_0,
-                      double const               length,
-                      double const               height,
-                      double const               max_shift,
-                      double const               min_shift)
+void
+create_trapezoid(dealii::Triangulation<2> & tria,
+                 std::vector<unsigned int>  ref,
+                 dealii::Point<2> const     x_0,
+                 double const               length,
+                 double const               height,
+                 double const               max_shift,
+                 double const               min_shift)
 {
   dealii::Triangulation<2> tmp;
 
@@ -1033,7 +1035,8 @@ set_boundary_ids(dealii::Triangulation<dim> & tria)
 }
 
 template<unsigned int dim>
-void do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation, bool is_2d = true)
+void
+do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation, bool is_2d = true)
 {
   dealii::Triangulation<2> left, left_bottom, left_middle, left_top, middle, middle_top,
     middle_bottom, middle_left, middle_right, middle_left_top, middle_left_bottom, middle_right_top,
@@ -1289,7 +1292,8 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation, bo
 }
 
 template<unsigned int dim>
-void do_create_coarse_triangulation(dealii::Triangulation<3> & triangulation)
+void
+do_create_coarse_triangulation(dealii::Triangulation<3> & triangulation)
 {
   dealii::Triangulation<2> tria_2D;
   do_create_coarse_triangulation<2>(tria_2D, false);

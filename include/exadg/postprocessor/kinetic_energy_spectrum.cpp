@@ -110,7 +110,7 @@ public:
     MPI_Exscan(&n_local_cells,
                &global_offset,
                1,
-               dealii::Utilities::MPI::internal::mpi_type_id(&global_offset),
+               dealii::Utilities::MPI::mpi_type_id(&global_offset),
                MPI_SUM,
                comm);
 

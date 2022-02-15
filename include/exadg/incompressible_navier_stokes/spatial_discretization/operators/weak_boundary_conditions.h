@@ -65,16 +65,15 @@ inline DEAL_II_ALWAYS_INLINE //
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
-    calculate_exterior_value(
-      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & value_m,
-      unsigned int const                                              q,
-      FaceIntegrator<dim, dim, Number> const &                        integrator,
-      OperatorType const &                                            operator_type,
-      BoundaryTypeU const &                                           boundary_type,
-      dealii::types::boundary_id const                                boundary_id,
-      std::shared_ptr<BoundaryDescriptorU<dim> const>                 boundary_descriptor,
-      double const &                                                  time)
+  dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
+  calculate_exterior_value(dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & value_m,
+                           unsigned int const                                              q,
+                           FaceIntegrator<dim, dim, Number> const &        integrator,
+                           OperatorType const &                            operator_type,
+                           BoundaryTypeU const &                           boundary_type,
+                           dealii::types::boundary_id const                boundary_id,
+                           std::shared_ptr<BoundaryDescriptorU<dim> const> boundary_descriptor,
+                           double const &                                  time)
 {
   // element e⁺
   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> value_p;
@@ -148,16 +147,16 @@ inline DEAL_II_ALWAYS_INLINE //
  */
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
-    calculate_exterior_value_nonlinear(
-      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & u_m,
-      unsigned int const                                              q,
-      FaceIntegrator<dim, dim, Number> &                              integrator,
-      BoundaryTypeU const &                                           boundary_type,
-      TypeDirichletBCs const &                                        type_dirichlet_bc,
-      dealii::types::boundary_id const                                boundary_id,
-      std::shared_ptr<BoundaryDescriptorU<dim> const>                 boundary_descriptor,
-      double const &                                                  time)
+  dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
+  calculate_exterior_value_nonlinear(
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & u_m,
+    unsigned int const                                              q,
+    FaceIntegrator<dim, dim, Number> &                              integrator,
+    BoundaryTypeU const &                                           boundary_type,
+    TypeDirichletBCs const &                                        type_dirichlet_bc,
+    dealii::types::boundary_id const                                boundary_id,
+    std::shared_ptr<BoundaryDescriptorU<dim> const>                 boundary_descriptor,
+    double const &                                                  time)
 {
   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> u_p;
 
@@ -219,13 +218,13 @@ inline DEAL_II_ALWAYS_INLINE //
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
-    calculate_exterior_value_from_dof_vector(
-      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & value_m,
-      unsigned int const                                              q,
-      FaceIntegrator<dim, dim, Number> const &                        integrator_bc,
-      OperatorType const &                                            operator_type,
-      BoundaryTypeU const &                                           boundary_type)
+  dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
+  calculate_exterior_value_from_dof_vector(
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & value_m,
+    unsigned int const                                              q,
+    FaceIntegrator<dim, dim, Number> const &                        integrator_bc,
+    OperatorType const &                                            operator_type,
+    BoundaryTypeU const &                                           boundary_type)
 {
   // element e⁺
   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> value_p;
@@ -432,17 +431,17 @@ inline DEAL_II_ALWAYS_INLINE //
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
-    calculate_exterior_normal_gradient(
-      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & normal_gradient_m,
-      unsigned int const                                              q,
-      FaceIntegrator<dim, dim, Number> const &                        integrator,
-      OperatorType const &                                            operator_type,
-      BoundaryTypeU const &                                           boundary_type,
-      dealii::types::boundary_id const                                boundary_id,
-      std::shared_ptr<BoundaryDescriptorU<dim> const>                 boundary_descriptor,
-      double const &                                                  time,
-      bool const                                                      variable_normal_vector)
+  dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
+  calculate_exterior_normal_gradient(
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & normal_gradient_m,
+    unsigned int const                                              q,
+    FaceIntegrator<dim, dim, Number> const &                        integrator,
+    OperatorType const &                                            operator_type,
+    BoundaryTypeU const &                                           boundary_type,
+    dealii::types::boundary_id const                                boundary_id,
+    std::shared_ptr<BoundaryDescriptorU<dim> const>                 boundary_descriptor,
+    double const &                                                  time,
+    bool const                                                      variable_normal_vector)
 {
   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normal_gradient_p;
 
