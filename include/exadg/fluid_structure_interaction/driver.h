@@ -234,6 +234,85 @@ struct PartitionedData
 };
 
 template<int dim, typename Number>
+class WrapperStructure
+{
+public:
+  void
+  setup(std::shared_ptr<StructureFSI::ApplicationBase<dim, Number>> application,
+        MPI_Comm const                                              mpi_comm,
+        bool const                                                  is_test);
+
+  // matrix-free
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
+
+  // spatial discretization
+  std::shared_ptr<Structure::Operator<dim, Number>> pde_operator;
+
+  // temporal discretization
+  std::shared_ptr<Structure::TimeIntGenAlpha<dim, Number>> time_integrator;
+
+  // postprocessor
+  std::shared_ptr<Structure::PostProcessor<dim, Number>> postprocessor;
+};
+
+template<int dim, typename Number>
+class WrapperFluid
+{
+public:
+  WrapperFluid()
+  {
+    timer_tree = std::make_shared<TimerTree>();
+  }
+
+  void
+  setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, Number>> application,
+        MPI_Comm const                                          mpi_comm,
+        bool const                                              is_test);
+
+  void
+  solve_ale(std::shared_ptr<FluidFSI::ApplicationBase<dim, Number>> application,
+            bool const                                              is_test) const;
+
+  std::shared_ptr<TimerTree>
+  get_timings_ale() const
+  {
+    return timer_tree;
+  }
+
+  // matrix-free
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
+
+  // spatial discretization
+  std::shared_ptr<IncNS::SpatialOperatorBase<dim, Number>> pde_operator;
+
+  // temporal discretization
+  std::shared_ptr<IncNS::TimeIntBDF<dim, Number>> time_integrator;
+
+  // Postprocessor
+  std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> postprocessor;
+
+  // moving mapping (ALE)
+  std::shared_ptr<GridMotionBase<dim, Number>> ale_grid_motion;
+
+  // use a PDE solver for grid motion
+  std::shared_ptr<MatrixFreeData<dim, Number>>     ale_matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> ale_matrix_free;
+
+  // Poisson-type grid motion
+  std::shared_ptr<Poisson::Operator<dim, Number, dim>> ale_poisson_operator;
+
+  // elasticity-type grid motion
+  std::shared_ptr<Structure::Operator<dim, Number>> ale_elasticity_operator;
+
+  /*
+   * Computation time (wall clock time).
+   */
+  std::shared_ptr<TimerTree> timer_tree;
+};
+
+template<int dim, typename Number>
 class Driver
 {
 private:
@@ -259,15 +338,6 @@ public:
 
 private:
   void
-  setup_application();
-
-  void
-  setup_structure();
-
-  void
-  setup_fluid_and_ale();
-
-  void
   setup_interface_coupling();
 
   void
@@ -281,9 +351,6 @@ private:
 
   void
   coupling_structure_to_ale(VectorType const & displacement_structure) const;
-
-  void
-  solve_ale() const;
 
   void
   coupling_structure_to_fluid(bool const extrapolate) const;
@@ -320,67 +387,14 @@ private:
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
-  /**************************************** STRUCTURE *****************************************/
+  std::shared_ptr<WrapperStructure<dim, Number>> structure;
 
-  // matrix-free
-  std::shared_ptr<MatrixFreeData<dim, Number>>     structure_matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> structure_matrix_free;
+  std::shared_ptr<WrapperFluid<dim, Number>> fluid;
 
-  // spatial discretization
-  std::shared_ptr<Structure::Operator<dim, Number>> structure_operator;
-
-  // temporal discretization
-  std::shared_ptr<Structure::TimeIntGenAlpha<dim, Number>> structure_time_integrator;
-
-  // postprocessor
-  std::shared_ptr<Structure::PostProcessor<dim, Number>> structure_postprocessor;
-
-  /**************************************** STRUCTURE *****************************************/
-
-
-  /****************************************** FLUID *******************************************/
-
-  // moving mapping (ALE)
-  std::shared_ptr<GridMotionBase<dim, Number>> fluid_grid_motion;
-
-  // matrix-free
-  std::shared_ptr<MatrixFreeData<dim, Number>>     fluid_matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> fluid_matrix_free;
-
-  // spatial discretization
-  std::shared_ptr<IncNS::SpatialOperatorBase<dim, Number>> fluid_operator;
-
-  // temporal discretization
-  std::shared_ptr<IncNS::TimeIntBDF<dim, Number>> fluid_time_integrator;
-
-  // Postprocessor
-  std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> fluid_postprocessor;
-
-  /****************************************** FLUID *******************************************/
-
-
-  /************************************ ALE - MOVING MESH *************************************/
-
-  // use a PDE solver for moving mesh problem
-  std::shared_ptr<MatrixFreeData<dim, Number>>     ale_matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> ale_matrix_free;
-
-  // Poisson-type mesh motion
-  std::shared_ptr<Poisson::Operator<dim, Number, dim>> ale_poisson_operator;
-
-  // elasticity-type mesh motion
-  std::shared_ptr<Structure::Operator<dim, Number>> ale_elasticity_operator;
-
-  /************************************ ALE - MOVING MESH *************************************/
-
-
-  /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
-
+  // interface coupling
   std::shared_ptr<InterfaceCoupling<dim, dim, Number>> structure_to_fluid;
   std::shared_ptr<InterfaceCoupling<dim, dim, Number>> structure_to_ale;
   std::shared_ptr<InterfaceCoupling<dim, dim, Number>> fluid_to_structure;
-
-  /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
 
   /*
    * Fixed-point iteration.
