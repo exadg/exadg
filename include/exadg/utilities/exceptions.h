@@ -26,6 +26,9 @@
 
 namespace ExaDG
 {
+/**
+ * The following exception is based on and motivated by dealii::ExcNotImplemented.
+ */
 DeclExceptionMsg(ExcNotImplemented,
                  "You are trying to use functionality in ExaDG that is "
                  "currently not implemented. In many cases, this indicates "
