@@ -146,33 +146,33 @@ linear_interpolation_2d_cartesian(
   return result;
 }
 
-template float
-linear_interpolation_2d_cartesian(dealii::Point<2> const &                         point,
-                                  std::vector<float> const &                       y_values,
-                                  std::vector<float> const &                       z_values,
-                                  std::vector<dealii::Tensor<1, 2, float>> const & solution_values,
-                                  unsigned int const &                             component);
+template float linear_interpolation_2d_cartesian(
+  dealii::Point<2> const &                         point,
+  std::vector<float> const &                       y_values,
+  std::vector<float> const &                       z_values,
+  std::vector<dealii::Tensor<1, 2, float>> const & solution_values,
+  unsigned int const &                             component);
 
-template double
-linear_interpolation_2d_cartesian(dealii::Point<2> const &                          point,
-                                  std::vector<double> const &                       y_values,
-                                  std::vector<double> const &                       z_values,
-                                  std::vector<dealii::Tensor<1, 2, double>> const & solution_values,
-                                  unsigned int const &                              component);
+template double linear_interpolation_2d_cartesian(
+  dealii::Point<2> const &                          point,
+  std::vector<double> const &                       y_values,
+  std::vector<double> const &                       z_values,
+  std::vector<dealii::Tensor<1, 2, double>> const & solution_values,
+  unsigned int const &                              component);
 
-template float
-linear_interpolation_2d_cartesian(dealii::Point<3> const &                         point,
-                                  std::vector<float> const &                       y_values,
-                                  std::vector<float> const &                       z_values,
-                                  std::vector<dealii::Tensor<1, 3, float>> const & solution_values,
-                                  unsigned int const &                             component);
+template float linear_interpolation_2d_cartesian(
+  dealii::Point<3> const &                         point,
+  std::vector<float> const &                       y_values,
+  std::vector<float> const &                       z_values,
+  std::vector<dealii::Tensor<1, 3, float>> const & solution_values,
+  unsigned int const &                             component);
 
-template double
-linear_interpolation_2d_cartesian(dealii::Point<3> const &                          point,
-                                  std::vector<double> const &                       y_values,
-                                  std::vector<double> const &                       z_values,
-                                  std::vector<dealii::Tensor<1, 3, double>> const & solution_values,
-                                  unsigned int const &                              component);
+template double linear_interpolation_2d_cartesian(
+  dealii::Point<3> const &                          point,
+  std::vector<double> const &                       y_values,
+  std::vector<double> const &                       z_values,
+  std::vector<dealii::Tensor<1, 3, double>> const & solution_values,
+  unsigned int const &                              component);
 
 /*
  *  2D interpolation for cylindrical cross-sections

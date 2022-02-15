@@ -864,12 +864,12 @@ public:
    *  symmetry boundary:  delta_u⁺ = delta_u⁻ - 2 (delta_u⁻*n)n
    */
   inline DEAL_II_ALWAYS_INLINE //
-    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
-    calculate_exterior_value_linearized(
-      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> & delta_uM,
-      unsigned int const                                        q,
-      FaceIntegrator<dim, dim, Number> &                        integrator,
-      BoundaryTypeU const &                                     boundary_type) const
+      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
+      calculate_exterior_value_linearized(
+        dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> & delta_uM,
+        unsigned int const                                        q,
+        FaceIntegrator<dim, dim, Number> &                        integrator,
+        BoundaryTypeU const &                                     boundary_type) const
   {
     // element e⁺
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> delta_uP;

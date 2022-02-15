@@ -41,8 +41,7 @@ public:
   {
   }
 
-  void
-  set_normal_vector(dealii::Tensor<1, dim> normal_vector_in)
+  void set_normal_vector(dealii::Tensor<1, dim> normal_vector_in)
   {
     normal_vector = normal_vector_in;
   }
