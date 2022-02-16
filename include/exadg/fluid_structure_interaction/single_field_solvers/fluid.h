@@ -66,10 +66,7 @@ public:
             bool const                                              is_test) const;
 
   std::shared_ptr<TimerTree>
-  get_timings_ale() const
-  {
-    return timer_tree;
-  }
+  get_timings_ale() const;
 
   // matrix-free
   std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
@@ -278,6 +275,13 @@ WrapperFluid<dim, Number>::solve_ale(
   timer_tree->insert({"ALE", "Update time integrator"}, sub_timer.wall_time());
 
   timer_tree->insert({"ALE"}, timer.wall_time());
+}
+
+template<int dim, typename Number>
+std::shared_ptr<TimerTree>
+WrapperFluid<dim, Number>::get_timings_ale() const
+{
+  return timer_tree;
 }
 
 } // namespace FSI

@@ -27,6 +27,7 @@
 
 // FSI
 #include <exadg/fluid_structure_interaction/acceleration_schemes/parameters.h>
+#include <exadg/fluid_structure_interaction/acceleration_schemes/partitioned_solver.h>
 #include <exadg/fluid_structure_interaction/single_field_solvers/fluid.h>
 #include <exadg/fluid_structure_interaction/single_field_solvers/structure.h>
 
@@ -69,9 +70,6 @@ private:
   void
   synchronize_time_step_size() const;
 
-  unsigned int
-  solve_partitioned_problem() const;
-
   void
   coupling_structure_to_ale(VectorType const & displacement_structure) const;
 
@@ -85,18 +83,6 @@ private:
   apply_dirichlet_neumann_scheme(VectorType &       d_tilde,
                                  VectorType const & d,
                                  unsigned int       iteration) const;
-
-  bool
-  check_convergence(VectorType const & residual) const;
-
-  void
-  print_solver_info_header(unsigned int const i) const;
-
-  void
-  print_solver_info_converged(unsigned int const i) const;
-
-  void
-  print_partitioned_iterations() const;
 
   // MPI communicator
   MPI_Comm const mpi_comm;
@@ -119,24 +105,14 @@ private:
   std::shared_ptr<InterfaceCoupling<dim, dim, Number>> structure_to_ale;
   std::shared_ptr<InterfaceCoupling<dim, dim, Number>> fluid_to_structure;
 
-  /*
-   * Fixed-point iteration.
-   */
+  // Parameters for partitioned FSI schemes
   Parameters parameters;
 
-  // required for quasi-Newton methods
-  mutable std::vector<std::shared_ptr<std::vector<VectorType>>> D_history, R_history, Z_history;
-
-  /*
-   * Computation time (wall clock time).
-   */
+  // Computation time
   mutable TimerTree timer_tree;
 
-  /*
-   * The first number counts the number of time steps, the second number the total number
-   * (accumulated over all time steps) of iterations of the partitioned FSI scheme.
-   */
-  mutable std::pair<unsigned int, unsigned long long> partitioned_iterations;
+  // Partitioned FSI solver
+  std::shared_ptr<PartitionedSolver<dim, Number>> partitioned_solver;
 };
 
 } // namespace FSI
