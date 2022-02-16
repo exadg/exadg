@@ -47,8 +47,8 @@ public:
   PartitionedSolver(Parameters const & parameters, MPI_Comm const & comm);
 
   void
-  setup(std::shared_ptr<WrapperFluid<dim, Number>>     fluid_,
-        std::shared_ptr<WrapperStructure<dim, Number>> structure_);
+  setup(std::shared_ptr<SolverFluid<dim, Number>>     fluid_,
+        std::shared_ptr<SolverStructure<dim, Number>> structure_);
 
   void
   solve(std::function<void(VectorType &, VectorType const &, unsigned int)> const &
@@ -75,8 +75,8 @@ private:
   // output to std::cout
   dealii::ConditionalOStream pcout;
 
-  std::shared_ptr<WrapperFluid<dim, Number>>     fluid;
-  std::shared_ptr<WrapperStructure<dim, Number>> structure;
+  std::shared_ptr<SolverFluid<dim, Number>>     fluid;
+  std::shared_ptr<SolverStructure<dim, Number>> structure;
 
   // required for quasi-Newton methods
   std::vector<std::shared_ptr<std::vector<VectorType>>> D_history, R_history, Z_history;
@@ -103,8 +103,8 @@ PartitionedSolver<dim, Number>::PartitionedSolver(Parameters const & parameters,
 
 template<int dim, typename Number>
 void
-PartitionedSolver<dim, Number>::setup(std::shared_ptr<WrapperFluid<dim, Number>>     fluid_,
-                                      std::shared_ptr<WrapperStructure<dim, Number>> structure_)
+PartitionedSolver<dim, Number>::setup(std::shared_ptr<SolverFluid<dim, Number>>     fluid_,
+                                      std::shared_ptr<SolverStructure<dim, Number>> structure_)
 {
   fluid     = fluid_;
   structure = structure_;

@@ -31,7 +31,7 @@ namespace ExaDG
 namespace FSI
 {
 template<int dim, typename Number>
-class WrapperStructure
+class SolverStructure
 {
 public:
   void
@@ -55,7 +55,7 @@ public:
 
 template<int dim, typename Number>
 void
-WrapperStructure<dim, Number>::setup(
+SolverStructure<dim, Number>::setup(
   std::shared_ptr<StructureFSI::ApplicationBase<dim, Number>> application,
   MPI_Comm const                                              mpi_comm,
   bool const                                                  is_test)

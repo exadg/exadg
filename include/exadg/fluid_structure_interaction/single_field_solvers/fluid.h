@@ -48,10 +48,10 @@ namespace ExaDG
 namespace FSI
 {
 template<int dim, typename Number>
-class WrapperFluid
+class SolverFluid
 {
 public:
-  WrapperFluid()
+  SolverFluid()
   {
     timer_tree = std::make_shared<TimerTree>();
   }
@@ -102,10 +102,9 @@ public:
 
 template<int dim, typename Number>
 void
-WrapperFluid<dim, Number>::setup(
-  std::shared_ptr<FluidFSI::ApplicationBase<dim, Number>> application,
-  MPI_Comm const                                          mpi_comm,
-  bool const                                              is_test)
+SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, Number>> application,
+                                MPI_Comm const                                          mpi_comm,
+                                bool const                                              is_test)
 {
   // ALE: initialize PDE operator
   if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)
@@ -246,7 +245,7 @@ WrapperFluid<dim, Number>::setup(
 
 template<int dim, typename Number>
 void
-WrapperFluid<dim, Number>::solve_ale(
+SolverFluid<dim, Number>::solve_ale(
   std::shared_ptr<FluidFSI::ApplicationBase<dim, Number>> application,
   bool const                                              is_test) const
 {
@@ -279,7 +278,7 @@ WrapperFluid<dim, Number>::solve_ale(
 
 template<int dim, typename Number>
 std::shared_ptr<TimerTree>
-WrapperFluid<dim, Number>::get_timings_ale() const
+SolverFluid<dim, Number>::get_timings_ale() const
 {
   return timer_tree;
 }

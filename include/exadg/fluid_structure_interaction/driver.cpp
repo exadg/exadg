@@ -43,8 +43,8 @@ Driver<dim, Number>::Driver(std::string const &                           input_
   parameters.add_parameters(prm);
   prm.parse_input(input_file, "", true, true);
 
-  structure = std::make_shared<WrapperStructure<dim, Number>>();
-  fluid     = std::make_shared<WrapperFluid<dim, Number>>();
+  structure = std::make_shared<SolverStructure<dim, Number>>();
+  fluid     = std::make_shared<SolverFluid<dim, Number>>();
 
   partitioned_solver = std::make_shared<PartitionedSolver<dim, Number>>(parameters, mpi_comm);
 }
@@ -85,7 +85,6 @@ Driver<dim, Number>::setup()
     timer_tree.insert({"FSI", "Setup", "Fluid"}, timer_local.wall_time());
   }
 
-  // setup interface coupling
   setup_interface_coupling();
 
   partitioned_solver->setup(fluid, structure);

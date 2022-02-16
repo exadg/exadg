@@ -96,9 +96,9 @@ private:
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
-  std::shared_ptr<WrapperStructure<dim, Number>> structure;
+  std::shared_ptr<SolverStructure<dim, Number>> structure;
 
-  std::shared_ptr<WrapperFluid<dim, Number>> fluid;
+  std::shared_ptr<SolverFluid<dim, Number>> fluid;
 
   // interface coupling
   std::shared_ptr<InterfaceCoupling<dim, dim, Number>> structure_to_fluid;
