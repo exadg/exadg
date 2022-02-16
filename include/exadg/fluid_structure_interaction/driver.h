@@ -50,6 +50,9 @@
 #include <exadg/structure/spatial_discretization/operator.h>
 #include <exadg/structure/time_integration/time_int_gen_alpha.h>
 
+// FSI
+#include <exadg/fluid_structure_interaction/acceleration_schemes/parameters.h>
+
 namespace ExaDG
 {
 namespace FSI
@@ -209,30 +212,6 @@ inv_jacobian_times_residual(VectorType &                                        
   }
 }
 
-struct PartitionedData
-{
-  PartitionedData()
-    : method("Aitken"),
-      abs_tol(1.e-12),
-      rel_tol(1.e-3),
-      omega_init(0.1),
-      reused_time_steps(0),
-      partitioned_iter_max(100),
-      geometric_tolerance(1.e-10)
-  {
-  }
-
-  std::string  method;
-  double       abs_tol;
-  double       rel_tol;
-  double       omega_init;
-  unsigned int reused_time_steps;
-  unsigned int partitioned_iter_max;
-
-  // tolerance used to locate points at the fluid-structure interface
-  double geometric_tolerance;
-};
-
 template<int dim, typename Number>
 class WrapperStructure
 {
@@ -324,9 +303,6 @@ public:
          std::shared_ptr<ApplicationBase<dim, Number>> application,
          bool const                                    is_test);
 
-  static void
-  add_parameters(dealii::ParameterHandler & prm, PartitionedData & fsi_data);
-
   void
   setup();
 
@@ -399,7 +375,7 @@ private:
   /*
    * Fixed-point iteration.
    */
-  PartitionedData fsi_data;
+  Parameters parameters;
 
   // required for quasi-Newton methods
   mutable std::vector<std::shared_ptr<std::vector<VectorType>>> D_history, R_history, Z_history;

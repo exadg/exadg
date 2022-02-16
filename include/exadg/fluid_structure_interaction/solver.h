@@ -41,13 +41,13 @@ create_input_file(std::string const & input_file)
   GeneralParameters general;
   general.add_parameters(prm);
 
+  FSI::Parameters fsi_data;
+  fsi_data.add_parameters(prm);
+
   // we have to assume a default dimension and default Number type
   // for the automatic generation of a default input file
   unsigned int const Dim = 2;
   typedef double     Number;
-
-  FSI::PartitionedData fsi_data;
-  FSI::Driver<Dim, Number>::add_parameters(prm, fsi_data);
 
   FSI::get_application<Dim, Number>(input_file, MPI_COMM_WORLD)->add_parameters(prm);
 

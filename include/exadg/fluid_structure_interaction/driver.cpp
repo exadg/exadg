@@ -44,58 +44,11 @@ Driver<dim, Number>::Driver(std::string const &                           input_
   print_general_info<Number>(pcout, mpi_comm, is_test);
 
   dealii::ParameterHandler prm;
-
-  add_parameters(prm, fsi_data);
-
+  parameters.add_parameters(prm);
   prm.parse_input(input_file, "", true, true);
 
   structure = std::make_shared<WrapperStructure<dim, Number>>();
   fluid     = std::make_shared<WrapperFluid<dim, Number>>();
-}
-
-template<int dim, typename Number>
-void
-Driver<dim, Number>::add_parameters(dealii::ParameterHandler & prm, PartitionedData & fsi_data)
-{
-  // clang-format off
-  prm.enter_subsection("FSI");
-    prm.add_parameter("Method",
-                      fsi_data.method,
-                      "Acceleration method.",
-                      dealii::Patterns::Selection("Aitken|IQN-ILS|IQN-IMVLS"),
-                      true);
-    prm.add_parameter("AbsTol",
-                      fsi_data.abs_tol,
-                      "Absolute solver tolerance.",
-                      dealii::Patterns::Double(0.0,1.0),
-                      true);
-    prm.add_parameter("RelTol",
-                      fsi_data.rel_tol,
-                      "Relative solver tolerance.",
-                      dealii::Patterns::Double(0.0,1.0),
-                      true);
-    prm.add_parameter("OmegaInit",
-                      fsi_data.omega_init,
-                      "Initial relaxation parameter.",
-                      dealii::Patterns::Double(0.0,1.0),
-                      true);
-    prm.add_parameter("ReusedTimeSteps",
-                      fsi_data.reused_time_steps,
-                      "Number of time steps reused for acceleration.",
-                      dealii::Patterns::Integer(0, 100),
-                      false);
-    prm.add_parameter("PartitionedIterMax",
-                      fsi_data.partitioned_iter_max,
-                      "Maximum number of fixed-point iterations.",
-                      dealii::Patterns::Integer(1,1000),
-                      true);
-    prm.add_parameter("GeometricTolerance",
-                      fsi_data.geometric_tolerance,
-                      "Tolerance used to locate points at FSI interface.",
-                      dealii::Patterns::Double(0.0, 1.0),
-                      false);
-  prm.leave_subsection();
-  // clang-format on
 }
 
 template<int dim, typename Number>
@@ -345,7 +298,7 @@ Driver<dim, Number>::setup_interface_coupling()
                               application->structure->get_boundary_descriptor()->neumann_cached_bc,
                               structure->pde_operator->get_dof_handler(),
                               *application->structure->get_grid()->mapping,
-                              fsi_data.geometric_tolerance);
+                              parameters.geometric_tolerance);
     }
     else if(application->fluid->get_parameters().mesh_movement_type ==
             IncNS::MeshMovementType::Elasticity)
@@ -356,7 +309,7 @@ Driver<dim, Number>::setup_interface_coupling()
         application->structure->get_boundary_descriptor()->neumann_cached_bc,
         structure->pde_operator->get_dof_handler(),
         *application->structure->get_grid()->mapping,
-        fsi_data.geometric_tolerance);
+        parameters.geometric_tolerance);
     }
     else
     {
@@ -380,7 +333,7 @@ Driver<dim, Number>::setup_interface_coupling()
                               application->structure->get_boundary_descriptor()->neumann_cached_bc,
                               structure->pde_operator->get_dof_handler(),
                               *application->structure->get_grid()->mapping,
-                              fsi_data.geometric_tolerance);
+                              parameters.geometric_tolerance);
 
     pcout << std::endl << "... done!" << std::endl;
 
@@ -402,7 +355,7 @@ Driver<dim, Number>::setup_interface_coupling()
       application->fluid->get_boundary_descriptor()->velocity->dirichlet_cached_bc,
       fluid->pde_operator->get_dof_handler_u(),
       *mapping_fluid,
-      fsi_data.geometric_tolerance);
+      parameters.geometric_tolerance);
 
     pcout << std::endl << "... done!" << std::endl;
 
@@ -554,8 +507,8 @@ Driver<dim, Number>::check_convergence(VectorType const & residual) const
   double const ref_norm_rel  = structure->time_integrator->get_velocity_np().l2_norm() *
                               structure->time_integrator->get_time_step_size();
 
-  bool const converged = (residual_norm < fsi_data.abs_tol * ref_norm_abs) ||
-                         (residual_norm < fsi_data.rel_tol * ref_norm_rel);
+  bool const converged = (residual_norm < parameters.abs_tol * ref_norm_abs) ||
+                         (residual_norm < parameters.rel_tol * ref_norm_rel);
 
   return converged;
 }
@@ -593,7 +546,7 @@ Driver<dim, Number>::solve_partitioned_problem() const
   unsigned int k = 0;
 
   // fixed-point iteration with dynamic relaxation (Aitken relaxation)
-  if(fsi_data.method == "Aitken")
+  if(parameters.method == "Aitken")
   {
     VectorType r_old, d;
     structure->pde_operator->initialize_dof_vector(r_old);
@@ -601,7 +554,7 @@ Driver<dim, Number>::solve_partitioned_problem() const
 
     bool   converged = false;
     double omega     = 1.0;
-    while(not converged and k < fsi_data.partitioned_iter_max)
+    while(not converged and k < parameters.partitioned_iter_max)
     {
       print_solver_info_header(k);
 
@@ -626,7 +579,7 @@ Driver<dim, Number>::solve_partitioned_problem() const
 
         if(k == 0)
         {
-          omega = fsi_data.omega_init;
+          omega = parameters.omega_init;
         }
         else
         {
@@ -647,7 +600,7 @@ Driver<dim, Number>::solve_partitioned_problem() const
       ++k;
     }
   }
-  else if(fsi_data.method == "IQN-ILS")
+  else if(parameters.method == "IQN-ILS")
   {
     std::shared_ptr<std::vector<VectorType>> D, R;
     D = std::make_shared<std::vector<VectorType>>();
@@ -660,11 +613,11 @@ Driver<dim, Number>::solve_partitioned_problem() const
     structure->pde_operator->initialize_dof_vector(r);
     structure->pde_operator->initialize_dof_vector(r_old);
 
-    unsigned int const q = fsi_data.reused_time_steps;
+    unsigned int const q = parameters.reused_time_steps;
     unsigned int const n = fluid->time_integrator->get_number_of_time_steps();
 
     bool converged = false;
-    while(not(converged) and k < fsi_data.partitioned_iter_max)
+    while(not(converged) and k < parameters.partitioned_iter_max)
     {
       print_solver_info_header(k);
 
@@ -688,7 +641,7 @@ Driver<dim, Number>::solve_partitioned_problem() const
 
         if(k == 0 and (q == 0 or n == 0))
         {
-          d.add(fsi_data.omega_init, r);
+          d.add(parameters.omega_init, r);
         }
         else
         {
@@ -739,7 +692,7 @@ Driver<dim, Number>::solve_partitioned_problem() const
           }
           else // despite reuse, the vectors might be empty
           {
-            d.add(fsi_data.omega_init, r);
+            d.add(parameters.omega_init, r);
           }
         }
 
@@ -768,7 +721,7 @@ Driver<dim, Number>::solve_partitioned_problem() const
 
     timer_tree.insert({"FSI", "IQN-ILS"}, timer.wall_time());
   }
-  else if(fsi_data.method == "IQN-IMVLS")
+  else if(parameters.method == "IQN-IMVLS")
   {
     std::shared_ptr<std::vector<VectorType>> D, R;
     D = std::make_shared<std::vector<VectorType>>();
@@ -788,11 +741,11 @@ Driver<dim, Number>::solve_partitioned_problem() const
     std::shared_ptr<Matrix<Number>> U;
     std::vector<VectorType>         Q;
 
-    unsigned int const q = fsi_data.reused_time_steps;
+    unsigned int const q = parameters.reused_time_steps;
     unsigned int const n = fluid->time_integrator->get_number_of_time_steps();
 
     bool converged = false;
-    while(not converged and k < fsi_data.partitioned_iter_max)
+    while(not converged and k < parameters.partitioned_iter_max)
     {
       print_solver_info_header(k);
 
@@ -819,7 +772,7 @@ Driver<dim, Number>::solve_partitioned_problem() const
 
         if(k == 0 and (q == 0 or n == 0))
         {
-          d.add(fsi_data.omega_init, r);
+          d.add(parameters.omega_init, r);
         }
         else
         {
