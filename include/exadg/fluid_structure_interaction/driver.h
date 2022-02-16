@@ -25,117 +25,19 @@
 // application
 #include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 
-// utilities
-#include <exadg/functions_and_boundary_conditions/interface_coupling.h>
-#include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
-#include <exadg/matrix_free/matrix_free_data.h>
-#include <exadg/utilities/print_general_infos.h>
-#include <exadg/utilities/timer_tree.h>
-
-// grid
-#include <exadg/grid/grid_motion_elasticity.h>
-#include <exadg/grid/grid_motion_poisson.h>
-#include <exadg/poisson/spatial_discretization/operator.h>
-
-// IncNS
-#include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.h>
-#include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h>
-#include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
-#include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
-
-// Structure
-#include <exadg/structure/spatial_discretization/operator.h>
-#include <exadg/structure/time_integration/time_int_gen_alpha.h>
-
 // FSI
 #include <exadg/fluid_structure_interaction/acceleration_schemes/parameters.h>
+#include <exadg/fluid_structure_interaction/single_field_solvers/fluid.h>
+#include <exadg/fluid_structure_interaction/single_field_solvers/structure.h>
+
+// utilities
+#include <exadg/functions_and_boundary_conditions/interface_coupling.h>
+#include <exadg/utilities/timer_tree.h>
 
 namespace ExaDG
 {
 namespace FSI
 {
-template<int dim, typename Number>
-class WrapperStructure
-{
-public:
-  void
-  setup(std::shared_ptr<StructureFSI::ApplicationBase<dim, Number>> application,
-        MPI_Comm const                                              mpi_comm,
-        bool const                                                  is_test);
-
-  // matrix-free
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
-
-  // spatial discretization
-  std::shared_ptr<Structure::Operator<dim, Number>> pde_operator;
-
-  // temporal discretization
-  std::shared_ptr<Structure::TimeIntGenAlpha<dim, Number>> time_integrator;
-
-  // postprocessor
-  std::shared_ptr<Structure::PostProcessor<dim, Number>> postprocessor;
-};
-
-template<int dim, typename Number>
-class WrapperFluid
-{
-public:
-  WrapperFluid()
-  {
-    timer_tree = std::make_shared<TimerTree>();
-  }
-
-  void
-  setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, Number>> application,
-        MPI_Comm const                                          mpi_comm,
-        bool const                                              is_test);
-
-  void
-  solve_ale(std::shared_ptr<FluidFSI::ApplicationBase<dim, Number>> application,
-            bool const                                              is_test) const;
-
-  std::shared_ptr<TimerTree>
-  get_timings_ale() const
-  {
-    return timer_tree;
-  }
-
-  // matrix-free
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
-
-  // spatial discretization
-  std::shared_ptr<IncNS::SpatialOperatorBase<dim, Number>> pde_operator;
-
-  // temporal discretization
-  std::shared_ptr<IncNS::TimeIntBDF<dim, Number>> time_integrator;
-
-  // Postprocessor
-  std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> postprocessor;
-
-  // moving mapping (ALE)
-  std::shared_ptr<GridMotionBase<dim, Number>> ale_grid_motion;
-
-  // use a PDE solver for grid motion
-  std::shared_ptr<MatrixFreeData<dim, Number>>     ale_matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> ale_matrix_free;
-
-  // Poisson-type grid motion
-  std::shared_ptr<Poisson::Operator<dim, Number, dim>> ale_poisson_operator;
-
-  // elasticity-type grid motion
-  std::shared_ptr<Structure::Operator<dim, Number>> ale_elasticity_operator;
-
-  /*
-   * Computation time (wall clock time).
-   */
-  std::shared_ptr<TimerTree> timer_tree;
-};
-
 template<int dim, typename Number>
 class Driver
 {

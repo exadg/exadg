@@ -22,6 +22,12 @@
 #ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_LINEAR_ALGEBRA_H_
 #define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_LINEAR_ALGEBRA_H_
 
+// C/C++
+#include <vector>
+
+// deal.II
+#include <deal.II/base/exceptions.h>
+
 namespace ExaDG
 {
 namespace FSI
