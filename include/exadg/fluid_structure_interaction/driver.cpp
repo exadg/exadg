@@ -20,6 +20,7 @@
  */
 
 // ExaDG
+#include <exadg/fluid_structure_interaction/acceleration_schemes/linear_algebra.h>
 #include <exadg/fluid_structure_interaction/driver.h>
 #include <exadg/grid/get_dynamic_mapping.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
