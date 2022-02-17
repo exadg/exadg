@@ -112,13 +112,13 @@ $(function() {
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  GeneralParameters general;</div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  general.add_parameters(prm);</div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="comment">// we have to assume a default dimension and default Number type</span></div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="comment">// for the automatic generation of a default input file</span></div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> Dim = 2;</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="keyword">typedef</span> <span class="keywordtype">double</span>     Number;</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  FSI::PartitionedData fsi_data;</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  FSI::Driver&lt;Dim, Number&gt;::add_parameters(prm, fsi_data);</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  FSI::Parameters fsi_data;</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  fsi_data.add_parameters(prm);</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="comment">// we have to assume a default dimension and default Number type</span></div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="comment">// for the automatic generation of a default input file</span></div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> Dim = 2;</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="keyword">typedef</span> <span class="keywordtype">double</span>     Number;</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  FSI::get_application&lt;Dim, Number&gt;(input_file, MPI_COMM_WORLD)-&gt;add_parameters(prm);</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
