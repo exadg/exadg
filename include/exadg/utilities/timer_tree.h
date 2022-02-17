@@ -317,23 +317,28 @@ private:
 
     if(level == 0)
     {
-      if(data.get())
-        print_own(pcout, offset, length);
+      print_own(pcout, offset, length);
     }
     else if(level == 1)
     {
       if(sub_trees.size() > 0)
       {
-        print_own(pcout, offset, length, true, data->wall_time);
-
-        bool const relative = (data.get() != nullptr);
-        print_direct_children(pcout, offset + offset_per_level, length, relative, data->wall_time);
+        if(data.get())
+        {
+          print_own(pcout, offset, length, true, data->wall_time);
+          print_direct_children(pcout, offset + offset_per_level, length, true, data->wall_time);
+        }
+        else
+        {
+          print_name(pcout, offset, length, true);
+          print_direct_children(pcout, offset + offset_per_level, length);
+        }
       }
     }
     else
     {
       // only print name
-      print_name(pcout, offset, length);
+      print_name(pcout, offset, length, true);
 
       // recursively print sub trees (decreasing the level and incrementing
       // the offset)
@@ -347,11 +352,13 @@ private:
   void
   print_name(dealii::ConditionalOStream const & pcout,
              unsigned int const                 offset,
-             unsigned int const                 length) const
+             unsigned int const                 length,
+             bool const                         new_line) const
   {
     pcout << std::setw(offset) << "" << std::setw(length - offset) << std::left << id;
 
-    pcout << std::endl;
+    if(new_line)
+      pcout << std::endl;
   }
 
   void
@@ -361,11 +368,7 @@ private:
             bool const                         relative = false,
             double const                       ref_time = -1.0) const
   {
-    pcout << std::setw(offset) << "" << std::setw(length - offset) << std::left << id;
-
-    dealii::Utilities::MPI::MinMaxAvg ref_time_data =
-      dealii::Utilities::MPI::min_max_avg(ref_time, MPI_COMM_WORLD);
-    double const ref_time_avg = ref_time_data.avg;
+    print_name(pcout, offset, length, false);
 
     if(data.get())
     {
@@ -375,8 +378,14 @@ private:
             << time_avg << " s";
 
       if(relative)
+      {
+        dealii::Utilities::MPI::MinMaxAvg ref_time_data =
+          dealii::Utilities::MPI::min_max_avg(ref_time, MPI_COMM_WORLD);
+        double const ref_time_avg = ref_time_data.avg;
+
         pcout << std::setprecision(precision) << std::fixed << std::setw(10) << std::right
               << time_avg / ref_time_avg * 100.0 << " %";
+      }
     }
 
     pcout << std::endl;
@@ -389,27 +398,44 @@ private:
                         bool const                         relative = false,
                         double const                       ref_time = -1.0) const
   {
-    TimerTree other;
-    if(relative && sub_trees.size() > 0)
+    bool at_least_one_subtree_with_data = false;
+    for(auto it = sub_trees.begin(); it != sub_trees.end(); ++it)
+      if((*it)->data.get())
+        at_least_one_subtree_with_data = true;
+
+    // Compute item "Other" if relative computation is activated.
+    // Print "Other" only if there is at least one sub-tree with data.
+    if(relative && at_least_one_subtree_with_data)
     {
+      TimerTree other;
       other.id              = "Other";
       other.data            = std::make_shared<Data>();
       other.data->wall_time = ref_time;
-    }
 
-    for(auto it = sub_trees.begin(); it != sub_trees.end(); ++it)
-    {
-      if((*it)->data.get())
+      // Print only those sub-trees that contain data.
+      // Note that if we would also print sub-trees without data,
+      // an interpretation of the meaning of "Other" would not be
+      // possible.
+      for(auto it = sub_trees.begin(); it != sub_trees.end(); ++it)
       {
-        (*it)->print_own(pcout, offset, length, relative, ref_time);
-
-        if(relative)
+        if((*it)->data.get())
+        {
+          (*it)->print_own(pcout, offset, length, relative, ref_time);
           other.data->wall_time -= (*it)->data->wall_time;
+        }
       }
-    }
 
-    if(relative && sub_trees.size() > 0)
       other.print_own(pcout, offset, length, relative, ref_time);
+    }
+    else
+    {
+      // In this branch we print all sub-trees. If a sub-tree does not
+      // contain data, only the name will be printed. Compared to the
+      // if-branch above, this is unproblematic since the item "Other"
+      // will not be printed.
+      for(auto it = sub_trees.begin(); it != sub_trees.end(); ++it)
+        (*it)->print_own(pcout, offset, length, relative, ref_time);
+    }
   }
 
   std::string id;
