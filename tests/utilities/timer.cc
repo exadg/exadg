@@ -99,6 +99,28 @@ test1()
   tree.print_level(pcout, 4);
   pcout << std::endl << "timings all:" << std::endl;
   tree.print_plain(pcout);
+
+  tree.clear();
+
+  tree.insert({"General", "Part 2", "Sub a"}, 1.234);
+  tree.insert({"General", "Part 3", "Sub a"}, 0.123);
+  tree.insert({"General", "Part 4"}, 5.678);
+
+  pcout << std::endl << "timings for level = 0:" << std::endl;
+  tree.print_level(pcout, 0);
+  // relative timings for level 1 are not possible
+  pcout << std::endl << "timings for level = 1:" << std::endl;
+  tree.print_level(pcout, 1);
+  pcout << std::endl << "timings for level = 2:" << std::endl;
+  tree.print_level(pcout, 2);
+  pcout << std::endl << "timings all:" << std::endl;
+  tree.print_plain(pcout);
+
+  // now, enable relative timings for level 1
+  tree.insert({"General"}, 10.0);
+
+  pcout << std::endl << "timings for level = 1:" << std::endl;
+  tree.print_level(pcout, 1);
 }
 
 void

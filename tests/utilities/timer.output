@@ -58,6 +58,40 @@ General          2.20e+04 s
       sub-sub a  4.00e+01 s
     Sub b        9.88e+02 s
 
+timings for level = 0:
+
+General  
+
+timings for level = 1:
+
+General  
+  Part 2 
+  Part 3 
+  Part 4   5.68e+00 s
+
+timings for level = 2:
+
+General  
+  Part 2 
+    Sub a  1.23e+00 s
+  Part 3 
+    Sub a  1.23e-01 s
+
+timings all:
+
+General  
+  Part 2 
+    Sub a  1.23e+00 s
+  Part 3 
+    Sub a  1.23e-01 s
+  Part 4   5.68e+00 s
+
+timings for level = 1:
+
+General    1.00e+01 s    100.00 %
+  Part 4   5.68e+00 s     56.78 %
+  Other    4.32e+00 s     43.22 %
+
 
 
 _____________________________________________________________
