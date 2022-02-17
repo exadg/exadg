@@ -31,6 +31,21 @@ General
     Sub b        9.88e+02 s     24.69 %
     Other        2.51e+03 s     62.81 %
 
+timings for level = 3:
+
+General        
+  Part 1       
+  Part 2       
+  Part 3       
+    Sub a        5.00e+02 s    100.00 %
+      sub-sub a  4.00e+01 s      8.00 %
+      Other      4.60e+02 s     92.00 %
+
+timings for level = 4:
+
+Timings can not be printed for level = 4,
+since the maximum level of the timer tree is max_level = 3.
+
 timings all:
 
 General          2.20e+04 s
@@ -93,9 +108,13 @@ timings for level = 0:
 
 timings for level = 1:
 
+Timings can not be printed for level = 1,
+since the maximum level of the timer tree is max_level = 0.
 
 timings for level = 2:
 
+Timings can not be printed for level = 2,
+since the maximum level of the timer tree is max_level = 0.
 
 timings all:
 
@@ -114,7 +133,8 @@ Structure          2.50e+01 s    100.00 %
 
 timings for level = 2:
 
-Structure        
+Timings can not be printed for level = 2,
+since the maximum level of the timer tree is max_level = 1.
 
 timings all:
 

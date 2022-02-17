@@ -93,6 +93,10 @@ test1()
   tree.print_level(pcout, 1);
   pcout << std::endl << "timings for level = 2:" << std::endl;
   tree.print_level(pcout, 2);
+  pcout << std::endl << "timings for level = 3:" << std::endl;
+  tree.print_level(pcout, 3);
+  pcout << std::endl << "timings for level = 4:" << std::endl;
+  tree.print_level(pcout, 4);
   pcout << std::endl << "timings all:" << std::endl;
   tree.print_plain(pcout);
 }

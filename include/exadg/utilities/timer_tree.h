@@ -210,9 +210,39 @@ public:
   {
     unsigned int const length = get_length();
 
-    pcout << std::endl;
+    unsigned int const max_level = get_max_level();
 
-    do_print_level(pcout, level, 0, length);
+    if(level <= max_level)
+    {
+      pcout << std::endl;
+
+      do_print_level(pcout, level, 0, length);
+    }
+    else
+    {
+      pcout << std::endl
+            << "Timings can not be printed for level = " << level << "," << std::endl
+            << "since the maximum level of the timer tree is max_level = " << max_level << "."
+            << std::endl;
+    }
+  }
+
+  /**
+   * Returns the maximum number of levels of the timer tree.
+   */
+  unsigned int
+  get_max_level() const
+  {
+    unsigned int max_level = 0;
+
+    for(auto it = sub_trees.begin(); it != sub_trees.end(); ++it)
+    {
+      // add + 1 since we only arrive here if a sub-tree exists, i.e.
+      // if there is at least one more level
+      max_level = std::max(max_level, (*it)->get_max_level() + 1);
+    }
+
+    return max_level;
   }
 
 private:
