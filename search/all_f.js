@@ -20,7 +20,9 @@ var searchData=
   ['pressuredifferencecalculator_17',['PressureDifferenceCalculator',['../classExaDG_1_1PressureDifferenceCalculator.html',1,'ExaDG']]],
   ['pressuredifferencedata_18',['PressureDifferenceData',['../structExaDG_1_1PressureDifferenceData.html',1,'ExaDG']]],
   ['print_5fiterations_19',['print_iterations',['../classExaDG_1_1GridMotionElasticity.html#afacd3193eece5fd85d68ddc3853eb602',1,'ExaDG::GridMotionElasticity::print_iterations()'],['../classExaDG_1_1GridMotionInterface.html#a7bbc3a866cee232808762fced6f967ca',1,'ExaDG::GridMotionInterface::print_iterations()'],['../classExaDG_1_1GridMotionPoisson.html#ad2f9ee28df7619af9d82160f52b4edad',1,'ExaDG::GridMotionPoisson::print_iterations()']]],
-  ['printtimings_20',['printTimings',['../classdealspectrum_1_1DealSpectrumTimer.html#a679b686b7478ac7f65c3bafe70e64a52',1,'dealspectrum::DealSpectrumTimer']]],
-  ['projectionoperator_21',['ProjectionOperator',['../classExaDG_1_1IncNS_1_1ProjectionOperator.html',1,'ExaDG::IncNS']]],
-  ['projectionoperatordata_22',['ProjectionOperatorData',['../structExaDG_1_1IncNS_1_1ProjectionOperatorData.html',1,'ExaDG::IncNS']]]
+  ['print_5flevel_20',['print_level',['../classExaDG_1_1TimerTree.html#a9e3eba0d276e00bebf11fdccaad05307',1,'ExaDG::TimerTree']]],
+  ['print_5fplain_21',['print_plain',['../classExaDG_1_1TimerTree.html#a9c9e38cbf3d9e15226648be11dc6c9c9',1,'ExaDG::TimerTree']]],
+  ['printtimings_22',['printTimings',['../classdealspectrum_1_1DealSpectrumTimer.html#a679b686b7478ac7f65c3bafe70e64a52',1,'dealspectrum::DealSpectrumTimer']]],
+  ['projectionoperator_23',['ProjectionOperator',['../classExaDG_1_1IncNS_1_1ProjectionOperator.html',1,'ExaDG::IncNS']]],
+  ['projectionoperatordata_24',['ProjectionOperatorData',['../structExaDG_1_1IncNS_1_1ProjectionOperatorData.html',1,'ExaDG::IncNS']]]
 ];
