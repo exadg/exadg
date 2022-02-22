@@ -5,51 +5,41 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  schedule:
+  - cron:  '0 0 * * *'
+
+concurrency:
+  group: ${ {github.event_name }}-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{github.event_name == 'pull_request'}}    
+
+env:
+  COMPILE_JOBS: 2
 
 jobs:
   build:
-
+    name: Build ${{ matrix.build_type }}-dealii:${{ matrix.dealii_version }}
     runs-on: ubuntu-latest
 
-    steps:
-    - uses: actions/checkout@v2
-    - name: setup
-      run: |
-         command="git clone https://github.com/${{ github.repository }} && \ 
-                  cd exadg                                              && \
-                  git fetch origin ${{ github.ref }}                    && \ 
-                  git checkout FETCH_HEAD                               && \
-                  mkdir build                                           && \ 
-                  cd build                                              && \ 
-                  cmake .. -D DEGREE_MAX=3                              && \ 
-                  make -j2"
-
-         # TODO: currently we are not running any tests, we need to identify/
-         #   create some quick tests
-
-         echo $command
-         docker run -t dealii/dealii:master-focal /bin/sh -c "$command";
-         
-  build-dealii-9-3:
-
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: ["Release", "Debug"]
+        dealii_version: ["master", "v9.3.0"]
+    
+    container:
+      image: dealii/dealii:${{ matrix.dealii_version }}-focal
 
     steps:
-    - uses: actions/checkout@v2
-    - name: setup
-      run: |
-         command="git clone https://github.com/${{ github.repository }} && \ 
-                  cd exadg                                              && \
-                  git fetch origin ${{ github.ref }}                    && \ 
-                  git checkout FETCH_HEAD                               && \
-                  mkdir build                                           && \ 
-                  cd build                                              && \ 
-                  cmake .. -D DEGREE_MAX=3                              && \ 
-                  make -j2"
+      - name: Setup
+        run: |
+          sudo chown -R $USER:$USER $GITHUB_WORKSPACE
+          
+      - uses: actions/checkout@v2
 
-         # TODO: currently we are not running any tests, we need to identify/
-         #   create some quick tests
-
-         echo $command
-         docker run -t dealii/dealii:v9.3.0-focal /bin/sh -c "$command";
-
+      - name: Compile
+        run: |
+          mkdir build
+          cd build
+          cmake ../ -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          make -j${{ env.COMPILE_JOBS }}
+          
