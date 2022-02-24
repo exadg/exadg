@@ -33,17 +33,9 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
   }
 
-  double const L = 1.0;
-
-  double const start_time = 0.0;
-  double const end_time   = 10.0;
-
+private:
   void
   set_parameters() final
   {
@@ -272,9 +264,9 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output         = this->write_output;
-    pp_data.output_data.directory            = this->output_directory + "vtu/";
-    pp_data.output_data.filename             = this->output_name;
+    pp_data.output_data.write_output         = this->output_parameters.write;
+    pp_data.output_data.directory            = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename             = this->output_parameters.filename;
     pp_data.output_data.start_time           = start_time;
     pp_data.output_data.interval_time        = (end_time - start_time) / 100;
     pp_data.output_data.write_divergence     = true;
@@ -288,7 +280,7 @@ public:
     {
       // line plot data
       pp_data.line_plot_data.calculate           = false;
-      pp_data.line_plot_data.line_data.directory = this->output_directory;
+      pp_data.line_plot_data.line_data.directory = this->output_parameters.directory;
 
       // which quantities
       std::shared_ptr<Quantity> quantity_u;
@@ -305,7 +297,7 @@ public:
       vert_line.reset(new Line<dim>());
       vert_line->begin    = dealii::Point<dim>(0.5, 0.0);
       vert_line->end      = dealii::Point<dim>(0.5, 1.0);
-      vert_line->name     = this->output_name + "_vert_line";
+      vert_line->name     = this->output_parameters.filename + "_vert_line";
       vert_line->n_points = 100001; // 2001;
       vert_line->quantities.push_back(quantity_u);
       vert_line->quantities.push_back(quantity_p);
@@ -315,7 +307,7 @@ public:
       hor_line.reset(new Line<dim>());
       hor_line->begin    = dealii::Point<dim>(0.0, 0.5);
       hor_line->end      = dealii::Point<dim>(1.0, 0.5);
-      hor_line->name     = this->output_name + "_hor_line";
+      hor_line->name     = this->output_parameters.filename + "_hor_line";
       hor_line->n_points = 10001; // 2001;
       hor_line->quantities.push_back(quantity_u);
       hor_line->quantities.push_back(quantity_p);
@@ -327,6 +319,11 @@ public:
 
     return pp;
   }
+
+  double const L = 1.0;
+
+  double const start_time = 0.0;
+  double const end_time   = 10.0;
 };
 
 } // namespace IncNS

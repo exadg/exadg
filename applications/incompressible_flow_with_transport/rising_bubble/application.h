@@ -69,43 +69,12 @@ template<int dim, typename Number>
 class Application : public FTI::ApplicationBase<dim, Number>
 {
 public:
-  double const L = 1000.0;
-
-  double const g       = 9.81;
-  double const T_ref   = 303.15;
-  double const beta    = 1.0 / T_ref;
-  double const delta_T = 0.5;
-
-  double const kinematic_viscosity = 0.0;
-  double const thermal_diffusivity = kinematic_viscosity;
-
-  double const start_time = 0.0;
-  double const end_time   = 1000.0;
-
-  double const CFL                    = 0.3;
-  double const max_velocity           = 1.0;
-  bool const   adaptive_time_stepping = true;
-
-  // output
-  double const output_interval_time = (end_time - start_time) / 100.0;
-
-  // solver tolerances
-  double const ABS_TOL =
-    1.e-12; // 1.e-10 was necessary for dual splitting scheme and refine level 8
-  double const REL_TOL = 1.e-6;
-
-  double const ABS_TOL_LINEAR = 1.e-12;
-  double const REL_TOL_LINEAR = 1.e-2;
-
   Application(std::string input_file, MPI_Comm const & comm)
     : FTI::ApplicationBase<dim, Number>(input_file, comm, 1)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
   }
 
+private:
   void
   set_parameters() final
   {
@@ -377,9 +346,9 @@ public:
     IncNS::PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output       = this->write_output;
-    pp_data.output_data.directory          = this->output_directory + "vtu/";
-    pp_data.output_data.filename           = this->output_name + "_fluid";
+    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename + "_fluid";
     pp_data.output_data.start_time         = start_time;
     pp_data.output_data.interval_time      = output_interval_time;
     pp_data.output_data.degree             = this->param.degree_u;
@@ -416,10 +385,11 @@ public:
   create_postprocessor_scalar(unsigned int const scalar_index) final
   {
     ConvDiff::PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output = this->write_output;
-    pp_data.output_data.directory    = this->output_directory + "vtu/";
-    pp_data.output_data.filename   = this->output_name + "_scalar_" + std::to_string(scalar_index);
-    pp_data.output_data.start_time = start_time;
+    pp_data.output_data.write_output = this->output_parameters.write;
+    pp_data.output_data.directory    = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename =
+      this->output_parameters.filename + "_scalar_" + std::to_string(scalar_index);
+    pp_data.output_data.start_time         = start_time;
     pp_data.output_data.interval_time      = output_interval_time;
     pp_data.output_data.degree             = this->scalar_param[scalar_index].degree;
     pp_data.output_data.write_higher_order = true;
@@ -429,6 +399,34 @@ public:
 
     return pp;
   }
+
+  double const L = 1000.0;
+
+  double const g       = 9.81;
+  double const T_ref   = 303.15;
+  double const beta    = 1.0 / T_ref;
+  double const delta_T = 0.5;
+
+  double const kinematic_viscosity = 0.0;
+  double const thermal_diffusivity = kinematic_viscosity;
+
+  double const start_time = 0.0;
+  double const end_time   = 1000.0;
+
+  double const CFL                    = 0.3;
+  double const max_velocity           = 1.0;
+  bool const   adaptive_time_stepping = true;
+
+  // output
+  double const output_interval_time = (end_time - start_time) / 100.0;
+
+  // solver tolerances
+  double const ABS_TOL =
+    1.e-12; // 1.e-10 was necessary for dual splitting scheme and refine level 8
+  double const REL_TOL = 1.e-6;
+
+  double const ABS_TOL_LINEAR = 1.e-12;
+  double const REL_TOL_LINEAR = 1.e-2;
 };
 
 } // namespace FTI

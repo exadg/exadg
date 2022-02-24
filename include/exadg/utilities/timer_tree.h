@@ -23,110 +23,40 @@
 #define INCLUDE_EXADG_UTILITIES_TIMER_TREE_H_
 
 // C++
-#include <iomanip>
+#include <memory>
+#include <string>
+#include <vector>
 
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
-#include <deal.II/base/exceptions.h>
 
 namespace ExaDG
 {
 class TimerTree
 {
 public:
-  TimerTree() : id("")
-  {
-  }
+  /**
+   * Constructor. Initializes ID with an empty string.
+   */
+  TimerTree();
 
-  /*
+  /**
    * This function clears the content of this tree. Sub trees inserted
    * into this tree via pointers to external trees are not touched.
    */
   void
-  clear()
-  {
-    this->id = "";
-    data     = nullptr;
-    sub_trees.clear();
-  }
+  clear();
 
-  /*
+  /**
    * This function inserts a measured wall_time into the tree, by
    * either creating a new entry in the tree if this function is called
    * the first time with this ID, or by adding the wall_time to an
    * entry already existing in the tree.
    */
   void
-  insert(std::vector<std::string> const ids, double const wall_time)
-  {
-    AssertThrow(ids.size() > 0, dealii::ExcMessage("empty name."));
+  insert(std::vector<std::string> const ids, double const wall_time);
 
-    if(this->id == "") // the tree is currently empty
-    {
-      AssertThrow(sub_trees.empty(), dealii::ExcMessage("invalid state found. aborting."));
-
-      this->id = ids[0];
-
-      if(ids.size() == 1) // leaves of tree reached, insert the data
-      {
-        data = std::make_shared<Data>();
-        data->wall_time += wall_time;
-
-        return;
-      }
-      else // go deeper
-      {
-        std::vector<std::string> remaining_id = erase_first(ids);
-
-        std::shared_ptr<TimerTree> new_tree = std::make_shared<TimerTree>();
-        new_tree->insert(remaining_id, wall_time);
-        sub_trees.push_back(new_tree);
-      }
-    }
-    else if(this->id == ids[0]) // the tree already has some entries
-    {
-      if(ids.size() == 1) // leaves of tree reached, insert the data
-      {
-        if(data.get() == nullptr)
-          data = std::make_shared<Data>();
-
-        data->wall_time += wall_time;
-
-        return;
-      }
-      else // find correct sub-tree or insert new sub-tree
-      {
-        std::vector<std::string> remaining_id = erase_first(ids);
-
-        bool found = false;
-        for(auto it = sub_trees.begin(); it != sub_trees.end(); ++it)
-        {
-          // find out where to insert item
-          if((*it)->id == remaining_id[0])
-          {
-            found = true;
-
-            (*it)->insert(remaining_id, wall_time);
-          }
-        }
-
-        if(found == false)
-        {
-          std::shared_ptr<TimerTree> new_tree = std::make_shared<TimerTree>();
-          new_tree->insert(remaining_id, wall_time);
-          sub_trees.push_back(new_tree);
-        }
-      }
-    }
-    else // the provided name does not fit to this tree
-    {
-      AssertThrow(false,
-                  dealii::ExcMessage("The name provided is " + ids[0] + ", but must be " + id +
-                                     " instead."));
-    }
-  }
-
-  /*
+  /**
    * This function inserts a whole sub_tree into an existing tree, where
    * the parameter names specifies the place at which to insert the sub_tree.
    * This function allows to combine different timer trees in a modular way.
@@ -136,66 +66,16 @@ public:
   void
   insert(std::vector<std::string>   ids,
          std::shared_ptr<TimerTree> sub_tree,
-         std::string const          new_name = "")
-  {
-    AssertThrow(ids.size() > 0, dealii::ExcMessage("Empty ID specified."));
-    AssertThrow(id == ids[0], dealii::ExcMessage("Invalid ID specified."));
+         std::string const          new_name = "");
 
-    std::vector<std::string> remaining_id = erase_first(ids);
-
-    bool found = false;
-    if(remaining_id.size() > 0)
-    {
-      for(auto it = sub_trees.begin(); it != sub_trees.end(); ++it)
-      {
-        if((*it)->id == remaining_id[0])
-        {
-          (*it)->insert(remaining_id, sub_tree, new_name);
-          found = true;
-        }
-      }
-    }
-
-    if(found == false)
-    {
-      AssertThrow(
-        remaining_id.size() == 0,
-        dealii::ExcMessage(
-          "Subtree can not be inserted since the specified ID does not exist in this tree."));
-
-      std::shared_ptr<TimerTree> new_tree(new TimerTree());
-      new_tree->copy_from(sub_tree);
-      if(!new_name.empty())
-        new_tree->id = new_name;
-
-      // Make sure that the new tree does not already exist
-      for(auto it = sub_trees.begin(); it != sub_trees.end(); ++it)
-      {
-        AssertThrow(
-          new_tree->id != (*it)->id,
-          dealii::ExcMessage(
-            "Subtree can not be inserted since the tree already contains a subtree with the same ID."));
-      }
-
-      sub_trees.push_back(new_tree);
-    }
-  }
-
-  /*
+  /**
    * Prints wall time of all items of a tree without an analysis of
    * the relative share of the children.
    */
   void
-  print_plain(dealii::ConditionalOStream const & pcout) const
-  {
-    unsigned int const length = get_length();
+  print_plain(dealii::ConditionalOStream const & pcout) const;
 
-    pcout << std::endl;
-
-    do_print_plain(pcout, 0, length);
-  }
-
-  /*
+  /**
    * This is the actual function of interest of this class, i.e., an
    * analysis of wall times with a hierarchical formatting of results.
    * Relative wall times are printed for all children of a sub-tree if
@@ -206,181 +86,97 @@ public:
    * covered by timers.
    */
   void
-  print_level(dealii::ConditionalOStream const & pcout, unsigned int const level) const
-  {
-    unsigned int const length = get_length();
+  print_level(dealii::ConditionalOStream const & pcout, unsigned int const level) const;
 
-    pcout << std::endl;
-
-    do_print_level(pcout, level, 0, length);
-  }
-
-private:
-  void
-  copy_from(std::shared_ptr<TimerTree> other)
-  {
-    *this = *other;
-  }
-
-  /*
-   * This function erases the first entry of the vector.
-   */
-  std::vector<std::string>
-  erase_first(std::vector<std::string> const & in) const
-  {
-    AssertThrow(in.size() > 0, dealii::ExcMessage("empty name."));
-
-    std::vector<std::string> out(in);
-    out.erase(out.begin());
-
-    return out;
-  }
-
-  double
-  get_average_wall_time() const
-  {
-    dealii::Utilities::MPI::MinMaxAvg time_data =
-      dealii::Utilities::MPI::min_max_avg(data->wall_time, MPI_COMM_WORLD);
-    return time_data.avg;
-  }
-
-  /*
-   * print functions
+  /**
+   * Returns the maximum number of levels of the timer tree.
    */
   unsigned int
-  get_length() const
-  {
-    unsigned int length = id.length();
+  get_max_level() const;
 
-    for(auto it = sub_trees.begin(); it != sub_trees.end(); ++it)
-    {
-      length = std::max(length, (*it)->get_length() + offset_per_level);
-    }
+private:
+  /**
+   * This function "copies" a tree, meaning that only the ID is copied, while
+   * pointers to data and to sub-trees still point to the original tree "other".
+   */
+  void
+  copy_from(std::shared_ptr<TimerTree> other);
 
-    return length;
-  }
+  /**
+   * This function erases the first entry of a vector of strings.
+   */
+  std::vector<std::string>
+  erase_first(std::vector<std::string> const & in) const;
 
+  /**
+   * This function computes and returns the MPI-average wall time for the
+   * underlying data object.
+   */
+  double
+  get_average_wall_time() const;
+
+  /**
+   * This function returns the number of characters needed by the "longest"
+   * item of the tree, in order to ensure a nice formatting when printing the tree.
+   */
+  unsigned int
+  get_length() const;
+
+  /**
+   * This function prints the whole tree by recursively going through all sub-trees.
+   * An offset acting as an indentation is applied from one level to the next in order
+   * to obtain a nice formatting when printing the tree.
+   */
   void
   do_print_plain(dealii::ConditionalOStream const & pcout,
                  unsigned int const                 offset,
-                 unsigned int const                 length) const
-  {
-    if(id.empty())
-      return;
+                 unsigned int const                 length) const;
 
-    print_own(pcout, offset, length);
-
-    for(auto it = sub_trees.begin(); it != sub_trees.end(); ++it)
-    {
-      (*it)->do_print_plain(pcout, offset + offset_per_level, length);
-    }
-  }
-
+  /**
+   * This function prints the whole tree up to a specified level.
+   */
   void
   do_print_level(dealii::ConditionalOStream const & pcout,
                  unsigned int const                 level,
                  unsigned int const                 offset,
-                 unsigned int const                 length) const
-  {
-    if(id.empty())
-      return;
+                 unsigned int const                 length) const;
 
-    if(level == 0)
-    {
-      if(data.get())
-        print_own(pcout, offset, length);
-    }
-    else if(level == 1)
-    {
-      if(sub_trees.size() > 0)
-      {
-        print_own(pcout, offset, length, true, data->wall_time);
-
-        bool const relative = (data.get() != nullptr);
-        print_direct_children(pcout, offset + offset_per_level, length, relative, data->wall_time);
-      }
-    }
-    else
-    {
-      // only print name
-      print_name(pcout, offset, length);
-
-      // recursively print sub trees (decreasing the level and incrementing
-      // the offset)
-      for(auto it = sub_trees.begin(); it != sub_trees.end(); ++it)
-      {
-        (*it)->do_print_level(pcout, level - 1, offset + offset_per_level, length);
-      }
-    }
-  }
-
+  /**
+   * This function print the name ID of the root element of the present tree. The
+   * boolean parameter new_line describes whether a line-break is applied after
+   * printing the name.
+   */
   void
   print_name(dealii::ConditionalOStream const & pcout,
              unsigned int const                 offset,
-             unsigned int const                 length) const
-  {
-    pcout << std::setw(offset) << "" << std::setw(length - offset) << std::left << id;
+             unsigned int const                 length,
+             bool const                         new_line) const;
 
-    pcout << std::endl;
-  }
-
+  /**
+   * This function prints the root element of the current tree. The name ID is
+   * printed always, while data is only printed if it is available. The boolean
+   * parameter relative allows to also print the relative percentage in wall-time
+   * compared to a refernce wall-time ref_time.
+   */
   void
   print_own(dealii::ConditionalOStream const & pcout,
             unsigned int const                 offset,
             unsigned int const                 length,
             bool const                         relative = false,
-            double const                       ref_time = -1.0) const
-  {
-    pcout << std::setw(offset) << "" << std::setw(length - offset) << std::left << id;
+            double const                       ref_time = -1.0) const;
 
-    dealii::Utilities::MPI::MinMaxAvg ref_time_data =
-      dealii::Utilities::MPI::min_max_avg(ref_time, MPI_COMM_WORLD);
-    double const ref_time_avg = ref_time_data.avg;
-
-    if(data.get())
-    {
-      double const time_avg = get_average_wall_time();
-
-      pcout << std::setprecision(precision) << std::scientific << std::setw(10) << std::right
-            << time_avg << " s";
-
-      if(relative)
-        pcout << std::setprecision(precision) << std::fixed << std::setw(10) << std::right
-              << time_avg / ref_time_avg * 100.0 << " %";
-    }
-
-    pcout << std::endl;
-  }
-
+  /**
+   * This function prints the direct children of the root element of the current
+   * tree. Depending on the sub-trees and the data available for the sub-trees,
+   * the implementation decides whether relative timings can be printed and which
+   * sub-trees are printed in this case.
+   */
   void
   print_direct_children(dealii::ConditionalOStream const & pcout,
                         unsigned int const                 offset,
                         unsigned int const                 length,
                         bool const                         relative = false,
-                        double const                       ref_time = -1.0) const
-  {
-    TimerTree other;
-    if(relative && sub_trees.size() > 0)
-    {
-      other.id              = "Other";
-      other.data            = std::make_shared<Data>();
-      other.data->wall_time = ref_time;
-    }
-
-    for(auto it = sub_trees.begin(); it != sub_trees.end(); ++it)
-    {
-      if((*it)->data.get())
-      {
-        (*it)->print_own(pcout, offset, length, relative, ref_time);
-
-        if(relative)
-          other.data->wall_time -= (*it)->data->wall_time;
-      }
-    }
-
-    if(relative && sub_trees.size() > 0)
-      other.print_own(pcout, offset, length, relative, ref_time);
-  }
+                        double const                       ref_time = -1.0) const;
 
   std::string id;
 

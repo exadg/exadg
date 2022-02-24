@@ -33,12 +33,9 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBasePrecursor<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
   }
 
+private:
   void
   set_parameters() final
   {

@@ -21,6 +21,7 @@
 
 // deal.II
 #include <deal.II/dofs/dof_tools.h>
+#include <deal.II/lac/sparsity_tools.h>
 #include <deal.II/matrix_free/tools.h>
 
 // ExaDG

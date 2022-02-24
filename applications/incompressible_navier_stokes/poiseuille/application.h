@@ -179,12 +179,6 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
-
-    string_to_enum(boundary_condition, boundary_condition_string);
   }
 
   void
@@ -206,23 +200,14 @@ public:
     // clang-format on
   }
 
-  std::string       boundary_condition_string = "ParabolicInflow";
-  BoundaryCondition boundary_condition        = BoundaryCondition::ParabolicInflow;
+private:
+  void
+  parse_parameters() final
+  {
+    ApplicationBase<dim, Number>::parse_parameters();
 
-  bool apply_symmetry_bc = false;
-
-  FormulationViscousTerm const formulation_viscous_term =
-    FormulationViscousTerm::LaplaceFormulation;
-
-  double const max_velocity = 1.0;
-  double const viscosity    = 1.0e-1;
-
-  double const H = 2.0;
-  double const L = 4.0;
-
-  double const start_time = 0.0;
-  double const end_time   = 100.0;
-
+    string_to_enum(boundary_condition, boundary_condition_string);
+  }
   void
   set_parameters() final
   {
@@ -488,9 +473,9 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output              = this->write_output;
-    pp_data.output_data.directory                 = this->output_directory + "vtu/";
-    pp_data.output_data.filename                  = this->output_name;
+    pp_data.output_data.write_output              = this->output_parameters.write;
+    pp_data.output_data.directory                 = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename                  = this->output_parameters.filename;
     pp_data.output_data.start_time                = start_time;
     pp_data.output_data.interval_time             = (end_time - start_time) / 10;
     pp_data.output_data.write_vorticity           = true;
@@ -529,6 +514,23 @@ public:
 
     return pp;
   }
+
+  std::string       boundary_condition_string = "ParabolicInflow";
+  BoundaryCondition boundary_condition        = BoundaryCondition::ParabolicInflow;
+
+  bool apply_symmetry_bc = false;
+
+  FormulationViscousTerm const formulation_viscous_term =
+    FormulationViscousTerm::LaplaceFormulation;
+
+  double const max_velocity = 1.0;
+  double const viscosity    = 1.0e-1;
+
+  double const H = 2.0;
+  double const L = 4.0;
+
+  double const start_time = 0.0;
+  double const end_time   = 100.0;
 };
 
 } // namespace IncNS

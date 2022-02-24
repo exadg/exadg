@@ -31,7 +31,7 @@ namespace ExaDG
  * dealii::Function<dim> object.
  */
 template<int dim, typename Number>
-class GridMotionAnalytical : public GridMotionBase<dim, Number>
+class GridMotionFunction : public GridMotionBase<dim, Number>
 {
 public:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -39,11 +39,11 @@ public:
   /**
    * Constructor.
    */
-  GridMotionAnalytical(std::shared_ptr<dealii::Mapping<dim> const>  mapping_undeformed,
-                       unsigned int const                           mapping_degree_q_cache,
-                       dealii::Triangulation<dim> const &           triangulation,
-                       std::shared_ptr<dealii::Function<dim>> const mesh_movement_function,
-                       double const                                 start_time)
+  GridMotionFunction(std::shared_ptr<dealii::Mapping<dim> const>  mapping_undeformed,
+                     unsigned int const                           mapping_degree_q_cache,
+                     dealii::Triangulation<dim> const &           triangulation,
+                     std::shared_ptr<dealii::Function<dim>> const mesh_movement_function,
+                     double const                                 start_time)
     : GridMotionBase<dim, Number>(mapping_undeformed, mapping_degree_q_cache, triangulation),
       mesh_movement_function(mesh_movement_function),
       triangulation(triangulation)

@@ -238,19 +238,9 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
   }
 
-  // solver tolerances
-  double const ABS_TOL = 1.e-12;
-  double const REL_TOL = 1.e-3;
-
-  double const ABS_TOL_LINEAR = 1.e-12;
-  double const REL_TOL_LINEAR = 1.e-2;
-
+private:
   void
   set_parameters() final
   {
@@ -466,9 +456,9 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output       = this->write_output;
-    pp_data.output_data.directory          = this->output_directory + "vtu/";
-    pp_data.output_data.filename           = this->output_name;
+    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename;
     pp_data.output_data.start_time         = START_TIME;
     pp_data.output_data.interval_time      = 1.0 * CHARACTERISTIC_TIME;
     pp_data.output_data.degree             = this->param.degree_u;
@@ -478,8 +468,8 @@ public:
     pp_data.mass_data.calculate               = false; // true;
     pp_data.mass_data.start_time              = START_TIME;
     pp_data.mass_data.sample_every_time_steps = 1e0;
-    pp_data.mass_data.directory               = this->output_directory;
-    pp_data.mass_data.filename                = this->output_name;
+    pp_data.mass_data.directory               = this->output_parameters.directory;
+    pp_data.mass_data.filename                = this->output_parameters.filename;
     pp_data.mass_data.reference_length_scale  = 1.0;
 
     MyPostProcessorData<dim> pp_data_turb_ch;
@@ -492,14 +482,21 @@ public:
     pp_data_turb_ch.turb_ch_data.sample_end_time        = SAMPLE_END_TIME;
     pp_data_turb_ch.turb_ch_data.sample_every_timesteps = SAMPLE_EVERY_TIME_STEPS;
     pp_data_turb_ch.turb_ch_data.viscosity              = VISCOSITY;
-    pp_data_turb_ch.turb_ch_data.directory              = this->output_directory;
-    pp_data_turb_ch.turb_ch_data.filename               = this->output_name;
+    pp_data_turb_ch.turb_ch_data.directory              = this->output_parameters.directory;
+    pp_data_turb_ch.turb_ch_data.filename               = this->output_parameters.filename;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new MyPostProcessor<dim, Number>(pp_data_turb_ch, this->mpi_comm));
 
     return pp;
   }
+
+  // solver tolerances
+  double const ABS_TOL = 1.e-12;
+  double const REL_TOL = 1.e-3;
+
+  double const ABS_TOL_LINEAR = 1.e-12;
+  double const REL_TOL_LINEAR = 1.e-2;
 };
 
 } // namespace IncNS

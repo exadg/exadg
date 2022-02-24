@@ -31,6 +31,8 @@
 
 // ExaDG
 #include <exadg/grid/grid.h>
+#include <exadg/utilities/output_parameters.h>
+#include <exadg/utilities/resolution_parameters.h>
 
 // Fluid
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
@@ -38,7 +40,7 @@
 #include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
 
-// Structure
+// Structure (and ALE elasticity)
 #include <exadg/structure/material/library/st_venant_kirchhoff.h>
 #include <exadg/structure/postprocessor/postprocessor.h>
 #include <exadg/structure/user_interface/boundary_descriptor.h>
@@ -46,32 +48,20 @@
 #include <exadg/structure/user_interface/material_descriptor.h>
 #include <exadg/structure/user_interface/parameters.h>
 
-// moving mesh
-#include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
+// ALE Poisson
 #include <exadg/poisson/user_interface/analytical_solution.h>
+#include <exadg/poisson/user_interface/boundary_descriptor.h>
 #include <exadg/poisson/user_interface/field_functions.h>
 #include <exadg/poisson/user_interface/parameters.h>
 
 namespace ExaDG
 {
-namespace FSI
+namespace StructureFSI
 {
 template<int dim, typename Number>
 class ApplicationBase
 {
 public:
-  virtual void
-  add_parameters(dealii::ParameterHandler & prm)
-  {
-    // clang-format off
-    prm.enter_subsection("Output");
-      prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
-      prm.add_parameter("OutputName",       output_name,      "Name of output files.");
-      prm.add_parameter("WriteOutput",      write_output,     "Decides whether vtu output is written.");
-    prm.leave_subsection();
-    // clang-format on
-  }
-
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
     : mpi_comm(comm),
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
@@ -83,97 +73,199 @@ public:
   {
   }
 
-  void
-  set_parameters_convergence_study(unsigned int const degree_fluid,
-                                   unsigned int const degree_structure,
-                                   unsigned int const refine_space_fluid,
-                                   unsigned int const refine_space_structure)
+  virtual void
+  add_parameters(dealii::ParameterHandler & prm)
   {
-    // fluid
-    this->fluid_param.degree_u             = degree_fluid;
-    this->fluid_param.grid.n_refine_global = refine_space_fluid;
+    resolution.add_parameters(prm, "SpatialResolutionStructure");
+    output_parameters.add_parameters(prm, "Output");
+  }
 
-    // structure
-    this->structure_param.degree               = degree_structure;
-    this->structure_param.grid.n_refine_global = refine_space_structure;
+  void
+  parse_parameters()
+  {
+    dealii::ParameterHandler prm;
+    this->add_parameters(prm);
+    prm.parse_input(parameter_file, "", true, true);
   }
 
   void
   setup()
   {
-    setup_structure();
+    parse_parameters();
 
-    setup_fluid_and_ale();
-  }
+    set_resolution_parameters();
 
-  void
-  setup_structure()
-  {
-    /*
-     * Structure
-     */
     // parameters
-    set_parameters_structure();
-    structure_param.check();
+    set_parameters();
+    param.check();
     // Some FSI specific Asserts
-    AssertThrow(structure_param.pull_back_traction == true,
+    AssertThrow(param.pull_back_traction == true,
                 dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
-    structure_param.print(pcout, "List of parameters for structure:");
+    param.print(pcout, "List of parameters for structure:");
 
     // grid
-    structure_grid = std::make_shared<Grid<dim>>(structure_param.grid, mpi_comm);
-    create_grid_structure();
-    print_grid_info(pcout, *structure_grid);
+    grid = std::make_shared<Grid<dim>>(param.grid, mpi_comm);
+    create_grid();
+    print_grid_info(pcout, *grid);
 
     // boundary conditions
-    structure_boundary_descriptor = std::make_shared<Structure::BoundaryDescriptor<dim>>();
-    set_boundary_descriptor_structure();
-    verify_boundary_conditions(*structure_boundary_descriptor, *structure_grid);
+    boundary_descriptor = std::make_shared<Structure::BoundaryDescriptor<dim>>();
+    set_boundary_descriptor();
+    verify_boundary_conditions(*boundary_descriptor, *grid);
 
     // material_descriptor
-    structure_material_descriptor = std::make_shared<Structure::MaterialDescriptor>();
-    set_material_descriptor_structure();
+    material_descriptor = std::make_shared<Structure::MaterialDescriptor>();
+    set_material_descriptor();
 
     // field functions
-    structure_field_functions = std::make_shared<Structure::FieldFunctions<dim>>();
-    set_field_functions_structure();
+    field_functions = std::make_shared<Structure::FieldFunctions<dim>>();
+    set_field_functions();
+  }
+
+  Structure::Parameters const &
+  get_parameters() const
+  {
+    return param;
+  }
+
+  std::shared_ptr<Grid<dim> const>
+  get_grid() const
+  {
+    return grid;
+  }
+
+  std::shared_ptr<Structure::BoundaryDescriptor<dim> const>
+  get_boundary_descriptor() const
+  {
+    return boundary_descriptor;
+  }
+
+  std::shared_ptr<Structure::MaterialDescriptor const>
+  get_material_descriptor() const
+  {
+    return material_descriptor;
+  }
+
+  std::shared_ptr<Structure::FieldFunctions<dim> const>
+  get_field_functions() const
+  {
+    return field_functions;
+  }
+
+  virtual std::shared_ptr<Structure::PostProcessor<dim, Number>>
+  create_postprocessor() = 0;
+
+protected:
+  MPI_Comm const & mpi_comm;
+
+  dealii::ConditionalOStream pcout;
+
+  Structure::Parameters                               param;
+  std::shared_ptr<Grid<dim>>                          grid;
+  std::shared_ptr<Structure::MaterialDescriptor>      material_descriptor;
+  std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor;
+  std::shared_ptr<Structure::FieldFunctions<dim>>     field_functions;
+
+  std::string parameter_file;
+
+  OutputParameters output_parameters;
+
+private:
+  void
+  set_resolution_parameters()
+  {
+    param.degree               = resolution.degree;
+    param.grid.n_refine_global = resolution.refine_space;
+  }
+
+  virtual void
+  set_parameters() = 0;
+
+  virtual void
+  create_grid() = 0;
+
+  virtual void
+  set_boundary_descriptor() = 0;
+
+  virtual void
+  set_material_descriptor() = 0;
+
+  virtual void
+  set_field_functions() = 0;
+
+  ResolutionParameters resolution;
+};
+
+} // namespace StructureFSI
+
+namespace FluidFSI
+{
+template<int dim, typename Number>
+class ApplicationBase
+{
+public:
+  ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
+    : mpi_comm(comm),
+      pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
+      parameter_file(parameter_file)
+  {
+  }
+
+  virtual ~ApplicationBase()
+  {
+  }
+
+  virtual void
+  add_parameters(dealii::ParameterHandler & prm)
+  {
+    resolution.add_parameters(prm, "SpatialResolutionFluid");
+    output_parameters.add_parameters(prm, "Output");
   }
 
   void
-  setup_fluid_and_ale()
+  parse_parameters()
   {
-    /*
-     * Fluid
-     */
+    dealii::ParameterHandler prm;
+    this->add_parameters(prm);
+    prm.parse_input(parameter_file, "", true, true);
+  }
+
+  void
+  setup()
+  {
+    parse_parameters();
+
+    set_resolution_parameters();
+
     // parameters
-    set_parameters_fluid();
-    fluid_param.check(pcout);
-    fluid_param.print(pcout, "List of parameters for incompressible flow solver:");
+    set_parameters();
+    param.check(pcout);
+    param.print(pcout, "List of parameters for incompressible flow solver:");
 
     // Some FSI specific Asserts
-    AssertThrow(fluid_param.problem_type == IncNS::ProblemType::Unsteady,
+    AssertThrow(param.problem_type == IncNS::ProblemType::Unsteady,
                 dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
-    AssertThrow(fluid_param.ale_formulation == true,
+    AssertThrow(param.ale_formulation == true,
                 dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
     // grid
-    fluid_grid = std::make_shared<Grid<dim>>(fluid_param.grid, mpi_comm);
-    create_grid_fluid();
-    print_grid_info(pcout, *fluid_grid);
+    grid = std::make_shared<Grid<dim>>(param.grid, mpi_comm);
+    create_grid();
+    print_grid_info(pcout, *grid);
 
     // boundary conditions
-    fluid_boundary_descriptor = std::make_shared<IncNS::BoundaryDescriptor<dim>>();
-    set_boundary_descriptor_fluid();
-    IncNS::verify_boundary_conditions<dim, Number>(*fluid_boundary_descriptor, *fluid_grid);
+    boundary_descriptor = std::make_shared<IncNS::BoundaryDescriptor<dim>>();
+    set_boundary_descriptor();
+    IncNS::verify_boundary_conditions<dim, Number>(*boundary_descriptor, *grid);
 
     // field functions
-    fluid_field_functions = std::make_shared<IncNS::FieldFunctions<dim>>();
-    set_field_functions_fluid();
+    field_functions = std::make_shared<IncNS::FieldFunctions<dim>>();
+    set_field_functions();
 
     /*
      * ALE
      */
-    if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
+    if(param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
       // parameters
       set_parameters_ale_poisson();
@@ -185,13 +277,13 @@ public:
       // boundary conditions
       ale_poisson_boundary_descriptor = std::make_shared<Poisson::BoundaryDescriptor<1, dim>>();
       set_boundary_descriptor_ale_poisson();
-      verify_boundary_conditions(*ale_poisson_boundary_descriptor, *fluid_grid);
+      verify_boundary_conditions(*ale_poisson_boundary_descriptor, *grid);
 
       // field functions
       ale_poisson_field_functions = std::make_shared<Poisson::FieldFunctions<dim>>();
       set_field_functions_ale_poisson();
     }
-    else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
+    else if(param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
     {
       // parameters
       set_parameters_ale_elasticity();
@@ -203,7 +295,7 @@ public:
       // boundary conditions
       ale_elasticity_boundary_descriptor = std::make_shared<Structure::BoundaryDescriptor<dim>>();
       set_boundary_descriptor_ale_elasticity();
-      verify_boundary_conditions(*ale_elasticity_boundary_descriptor, *fluid_grid);
+      verify_boundary_conditions(*ale_elasticity_boundary_descriptor, *grid);
 
       // material_descriptor
       ale_elasticity_material_descriptor = std::make_shared<Structure::MaterialDescriptor>();
@@ -219,65 +311,32 @@ public:
     }
   }
 
-  virtual std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  create_postprocessor_fluid() = 0;
-
-  virtual std::shared_ptr<Structure::PostProcessor<dim, Number>>
-  create_postprocessor_structure() = 0;
-
   IncNS::Parameters const &
-  get_parameters_fluid() const
+  get_parameters() const
   {
-    return fluid_param;
+    return param;
   }
 
   std::shared_ptr<Grid<dim> const>
-  get_grid_fluid() const
+  get_grid() const
   {
-    return fluid_grid;
+    return grid;
   }
 
   std::shared_ptr<IncNS::BoundaryDescriptor<dim> const>
-  get_boundary_descriptor_fluid() const
+  get_boundary_descriptor() const
   {
-    return fluid_boundary_descriptor;
+    return boundary_descriptor;
   }
 
   std::shared_ptr<IncNS::FieldFunctions<dim> const>
-  get_field_functions_fluid() const
+  get_field_functions() const
   {
-    return fluid_field_functions;
+    return field_functions;
   }
 
-  Structure::Parameters const &
-  get_parameters_structure() const
-  {
-    return structure_param;
-  }
-
-  std::shared_ptr<Grid<dim> const>
-  get_grid_structure() const
-  {
-    return structure_grid;
-  }
-
-  std::shared_ptr<Structure::BoundaryDescriptor<dim> const>
-  get_boundary_descriptor_structure() const
-  {
-    return structure_boundary_descriptor;
-  }
-
-  std::shared_ptr<Structure::MaterialDescriptor const>
-  get_material_descriptor_structure() const
-  {
-    return structure_material_descriptor;
-  }
-
-  std::shared_ptr<Structure::FieldFunctions<dim> const>
-  get_field_functions_structure() const
-  {
-    return structure_field_functions;
-  }
+  virtual std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
+  create_postprocessor() = 0;
 
   Poisson::Parameters const &
   get_parameters_ale_poisson() const
@@ -327,10 +386,10 @@ protected:
   dealii::ConditionalOStream pcout;
 
   // fluid
-  IncNS::Parameters                               fluid_param;
-  std::shared_ptr<Grid<dim>>                      fluid_grid;
-  std::shared_ptr<IncNS::FieldFunctions<dim>>     fluid_field_functions;
-  std::shared_ptr<IncNS::BoundaryDescriptor<dim>> fluid_boundary_descriptor;
+  IncNS::Parameters                               param;
+  std::shared_ptr<Grid<dim>>                      grid;
+  std::shared_ptr<IncNS::FieldFunctions<dim>>     field_functions;
+  std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor;
 
   // ALE mesh motion
 
@@ -345,31 +404,30 @@ protected:
   std::shared_ptr<Structure::BoundaryDescriptor<dim>> ale_elasticity_boundary_descriptor;
   std::shared_ptr<Structure::MaterialDescriptor>      ale_elasticity_material_descriptor;
 
-  // structure
-  Structure::Parameters                               structure_param;
-  std::shared_ptr<Grid<dim>>                          structure_grid;
-  std::shared_ptr<Structure::MaterialDescriptor>      structure_material_descriptor;
-  std::shared_ptr<Structure::BoundaryDescriptor<dim>> structure_boundary_descriptor;
-  std::shared_ptr<Structure::FieldFunctions<dim>>     structure_field_functions;
-
   std::string parameter_file;
 
-  std::string output_directory = "output/", output_name = "output";
-  bool        write_output = false;
+  OutputParameters output_parameters;
 
 private:
+  void
+  set_resolution_parameters()
+  {
+    param.degree_u             = resolution.degree;
+    param.grid.n_refine_global = resolution.refine_space;
+  }
+
   // fluid
   virtual void
-  set_parameters_fluid() = 0;
+  set_parameters() = 0;
 
   virtual void
-  create_grid_fluid() = 0;
+  create_grid() = 0;
 
   virtual void
-  set_boundary_descriptor_fluid() = 0;
+  set_boundary_descriptor() = 0;
 
   virtual void
-  set_field_functions_fluid() = 0;
+  set_field_functions() = 0;
 
   // ALE
 
@@ -396,21 +454,37 @@ private:
   virtual void
   set_field_functions_ale_elasticity() = 0;
 
-  // Structure
-  virtual void
-  set_parameters_structure() = 0;
+  ResolutionParameters resolution;
+};
+} // namespace FluidFSI
 
+namespace FSI
+{
+template<int dim, typename Number>
+class ApplicationBase
+{
+public:
   virtual void
-  create_grid_structure() = 0;
+  add_parameters(dealii::ParameterHandler & prm)
+  {
+    structure->add_parameters(prm);
+    fluid->add_parameters(prm);
+  }
 
-  virtual void
-  set_boundary_descriptor_structure() = 0;
+  virtual ~ApplicationBase()
+  {
+  }
 
-  virtual void
-  set_material_descriptor_structure() = 0;
+  void
+  setup()
+  {
+    structure->setup();
 
-  virtual void
-  set_field_functions_structure() = 0;
+    fluid->setup();
+  }
+
+  std::shared_ptr<StructureFSI::ApplicationBase<dim, Number>> structure;
+  std::shared_ptr<FluidFSI::ApplicationBase<dim, Number>>     fluid;
 };
 
 } // namespace FSI

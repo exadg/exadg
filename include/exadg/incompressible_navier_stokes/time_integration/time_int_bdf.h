@@ -71,6 +71,9 @@ public:
   get_velocity_np() const = 0;
 
   virtual VectorType const &
+  get_pressure() const = 0;
+
+  virtual VectorType const &
   get_pressure_np() const = 0;
 
   void
@@ -85,7 +88,7 @@ public:
   ale_update();
 
   void
-  advance_one_timestep_partitioned_solve(bool const use_extrapolation, bool const store_solution);
+  advance_one_timestep_partitioned_solve(bool const use_extrapolation);
 
   virtual void
   print_iterations() const = 0;

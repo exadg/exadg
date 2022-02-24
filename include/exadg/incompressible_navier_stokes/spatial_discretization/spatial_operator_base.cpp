@@ -177,6 +177,20 @@ SpatialOperatorBase<dim, Number>::setup(
   matrix_free      = matrix_free_in;
   matrix_free_data = matrix_free_data_in;
 
+  // initialize data container for DirichletCached boundary conditions
+  if(not(boundary_descriptor->velocity->dirichlet_cached_bc.empty()))
+  {
+    interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<dim, dim, Number>>();
+    std::vector<unsigned int> quad_indices;
+    quad_indices.emplace_back(get_quad_index_velocity_linear());
+    quad_indices.emplace_back(get_quad_index_velocity_nonlinear());
+    quad_indices.emplace_back(get_quad_index_velocity_gauss_lobatto());
+    interface_data_dirichlet_cached->setup(matrix_free,
+                                           get_dof_index_velocity(),
+                                           quad_indices,
+                                           boundary_descriptor->velocity->dirichlet_cached_bc);
+  }
+
   // initialize data structures depending on MatrixFree
   initialize_operators(dof_index_temperature);
 
@@ -743,6 +757,13 @@ SpatialOperatorBase<dim, Number>::get_viscosity_boundary_face(unsigned int const
 }
 
 template<int dim, typename Number>
+std::shared_ptr<ContainerInterfaceData<dim, dim, Number>>
+SpatialOperatorBase<dim, Number>::get_container_interface_data()
+{
+  return interface_data_dirichlet_cached;
+}
+
+template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::set_velocity_ptr(VectorType const & velocity) const
 {
@@ -813,42 +834,6 @@ SpatialOperatorBase<dim, Number>::prescribe_initial_conditions(VectorType & velo
 
   velocity = velocity_double;
   pressure = pressure_double;
-}
-
-template<int dim, typename Number>
-void
-SpatialOperatorBase<dim, Number>::interpolate_velocity_dirichlet_bc(VectorType &   dst,
-                                                                    double const & time)
-{
-  this->evaluation_time = time;
-
-  dst = 0.0;
-
-  VectorType src_dummy;
-  matrix_free->loop(&This::cell_loop_empty,
-                    &This::face_loop_empty,
-                    &This::local_interpolate_velocity_dirichlet_bc_boundary_face,
-                    this,
-                    dst,
-                    src_dummy);
-}
-
-template<int dim, typename Number>
-void
-SpatialOperatorBase<dim, Number>::interpolate_pressure_dirichlet_bc(VectorType &   dst,
-                                                                    double const & time)
-{
-  this->evaluation_time = time;
-
-  dst = 0.0;
-
-  VectorType src_dummy;
-  matrix_free->loop(&This::cell_loop_empty,
-                    &This::face_loop_empty,
-                    &This::local_interpolate_pressure_dirichlet_bc_boundary_face,
-                    this,
-                    dst,
-                    src_dummy);
 }
 
 template<int dim, typename Number>
@@ -1597,122 +1582,6 @@ SpatialOperatorBase<dim, Number>::solve_projection(VectorType &       dst,
   unsigned int n_iter = projection_solver->solve(dst, src, update_preconditioner);
 
   return n_iter;
-}
-
-template<int dim, typename Number>
-void
-SpatialOperatorBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_boundary_face(
-  dealii::MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                            dst,
-  VectorType const &,
-  Range const & face_range) const
-{
-  unsigned int const dof_index  = this->get_dof_index_velocity();
-  unsigned int const quad_index = this->get_quad_index_velocity_gauss_lobatto();
-
-  FaceIntegratorU integrator(matrix_free, true, dof_index, quad_index);
-
-  for(unsigned int face = face_range.first; face < face_range.second; face++)
-  {
-    dealii::types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
-
-    BoundaryTypeU const boundary_type =
-      this->boundary_descriptor->velocity->get_boundary_type(boundary_id);
-
-    if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)
-    {
-      integrator.reinit(face);
-      integrator.read_dof_values(dst);
-
-      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-      {
-        unsigned int const local_face_number = matrix_free.get_face_info(face).interior_face_no;
-
-        unsigned int const index = matrix_free.get_shape_info(dof_index, quad_index)
-                                     .face_to_cell_index_nodal[local_face_number][q];
-
-        vector g = vector();
-
-        if(boundary_type == BoundaryTypeU::Dirichlet)
-        {
-          auto bc = this->boundary_descriptor->velocity->dirichlet_bc.find(boundary_id)->second;
-          auto q_points = integrator.quadrature_point(q);
-
-          g = FunctionEvaluator<1, dim, Number>::value(bc, q_points, this->evaluation_time);
-        }
-        else if(boundary_type == BoundaryTypeU::DirichletCached)
-        {
-          auto bc =
-            this->boundary_descriptor->velocity->dirichlet_cached_bc.find(boundary_id)->second;
-
-          g = FunctionEvaluator<1, dim, Number>::value(bc, face, q, quad_index);
-        }
-        else
-        {
-          AssertThrow(false, dealii::ExcMessage("Not implemented."));
-        }
-
-        integrator.submit_dof_value(g, index);
-      }
-
-      integrator.set_dof_values(dst);
-    }
-    else
-    {
-      AssertThrow(boundary_type == BoundaryTypeU::Neumann ||
-                    boundary_type == BoundaryTypeU::Symmetry,
-                  dealii::ExcMessage("BoundaryTypeU not implemented."));
-    }
-  }
-}
-
-template<int dim, typename Number>
-void
-SpatialOperatorBase<dim, Number>::local_interpolate_pressure_dirichlet_bc_boundary_face(
-  dealii::MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                            dst,
-  VectorType const &,
-  Range const & face_range) const
-{
-  unsigned int const dof_index  = this->get_dof_index_pressure();
-  unsigned int const quad_index = this->get_quad_index_pressure_gauss_lobatto();
-
-  FaceIntegratorP integrator(matrix_free, true, dof_index, quad_index);
-
-  for(unsigned int face = face_range.first; face < face_range.second; face++)
-  {
-    dealii::types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
-
-    BoundaryTypeP const boundary_type =
-      this->boundary_descriptor->pressure->get_boundary_type(boundary_id);
-
-    if(boundary_type == BoundaryTypeP::Dirichlet)
-    {
-      integrator.reinit(face);
-      integrator.read_dof_values(dst);
-
-      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-      {
-        unsigned int const local_face_number = matrix_free.get_face_info(face).interior_face_no;
-
-        unsigned int const index = matrix_free.get_shape_info(dof_index, quad_index)
-                                     .face_to_cell_index_nodal[local_face_number][q];
-
-        auto bc       = this->boundary_descriptor->pressure->dirichlet_bc.find(boundary_id)->second;
-        auto q_points = integrator.quadrature_point(q);
-
-        scalar g = FunctionEvaluator<0, dim, Number>::value(bc, q_points, this->evaluation_time);
-        integrator.submit_dof_value(g, index);
-      }
-
-      integrator.set_dof_values(dst);
-    }
-    else
-    {
-      AssertThrow(boundary_type == BoundaryTypeP::Neumann,
-                  dealii::ExcMessage("BoundaryTypeP not implemented."));
-    }
-  }
 }
 
 template<int dim, typename Number>

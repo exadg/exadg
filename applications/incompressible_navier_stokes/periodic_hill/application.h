@@ -96,22 +96,6 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
-
-    // viscosity needs to be recomputed since the parameters inviscid, Re are
-    // read from the input file
-    viscosity = inviscid ? 0.0 : bulk_velocity * H / Re;
-
-    // depend on values defined in input file
-    end_time          = double(end_time_multiples) * flow_through_time;
-    sample_start_time = double(sample_start_time_multiples) * flow_through_time;
-
-    // sample end time is equal to end time, which is read from the input file
-    sample_end_time = end_time;
-
     flow_rate_controller.reset(
       new FlowRateController(bulk_velocity, target_flow_rate, H, start_time));
   }
@@ -135,43 +119,23 @@ public:
     // clang-format on
   }
 
-  // Reynolds number, viscosity, bulk velocity
+private:
+  void
+  parse_parameters() final
+  {
+    ApplicationBase<dim, Number>::parse_parameters();
 
-  bool   inviscid = false;
-  double Re       = 5600.0; // 700, 1400, 5600, 10595, 19000
+    // viscosity needs to be recomputed since the parameters inviscid, Re are
+    // read from the input file
+    viscosity = inviscid ? 0.0 : bulk_velocity * H / Re;
 
-  double const H      = 0.028;
-  double const width  = 4.5 * H;
-  double const length = 9.0 * H;
-  double const height = 2.036 * H;
+    // depend on values defined in input file
+    end_time          = double(end_time_multiples) * flow_through_time;
+    sample_start_time = double(sample_start_time_multiples) * flow_through_time;
 
-  double const bulk_velocity     = 5.6218;
-  double const target_flow_rate  = bulk_velocity * width * height;
-  double const flow_through_time = length / bulk_velocity;
-
-  // RE_H = u_b * H / nu
-  double viscosity = bulk_velocity * H / Re;
-
-  // flow rate controller
-  std::shared_ptr<FlowRateController> flow_rate_controller;
-
-  // start and end time
-  double const start_time         = 0.0;
-  unsigned int end_time_multiples = 1;
-  double       end_time           = double(end_time_multiples) * flow_through_time;
-
-  // grid
-  double grid_stretch_factor = 1.6;
-
-  // postprocessing
-
-  // sampling
-  bool         calculate_statistics        = true;
-  unsigned int sample_start_time_multiples = 0.0;
-  double       sample_start_time      = double(sample_start_time_multiples) * flow_through_time;
-  double       sample_end_time        = end_time;
-  unsigned int sample_every_timesteps = 1;
-  unsigned int points_per_line        = 20;
+    // sample end time is equal to end time, which is read from the input file
+    sample_end_time = end_time;
+  }
 
   void
   set_parameters() final
@@ -363,9 +327,9 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output              = this->write_output;
-    pp_data.output_data.directory                 = this->output_directory + "vtu/";
-    pp_data.output_data.filename                  = this->output_name;
+    pp_data.output_data.write_output              = this->output_parameters.write;
+    pp_data.output_data.directory                 = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename                  = this->output_parameters.filename;
     pp_data.output_data.start_time                = start_time;
     pp_data.output_data.interval_time             = flow_through_time / 10.0;
     pp_data.output_data.write_velocity_magnitude  = true;
@@ -379,7 +343,7 @@ public:
     my_pp_data.pp_data = pp_data;
 
     // line plot data: calculate statistics along lines
-    my_pp_data.line_plot_data.line_data.directory = this->output_directory;
+    my_pp_data.line_plot_data.line_data.directory = this->output_parameters.directory;
 
     // mean velocity
     std::shared_ptr<Quantity> quantity_velocity;
@@ -507,7 +471,7 @@ public:
 
     // calculation of flow rate (use volume-based computation)
     my_pp_data.mean_velocity_data.calculate = true;
-    my_pp_data.mean_velocity_data.directory = this->output_directory;
+    my_pp_data.mean_velocity_data.directory = this->output_parameters.directory;
     my_pp_data.mean_velocity_data.filename  = "flow_rate";
     dealii::Tensor<1, dim, double> direction;
     direction[0]                                = 1.0;
@@ -520,6 +484,44 @@ public:
 
     return pp;
   }
+
+  // Reynolds number, viscosity, bulk velocity
+
+  bool   inviscid = false;
+  double Re       = 5600.0; // 700, 1400, 5600, 10595, 19000
+
+  double const H      = 0.028;
+  double const width  = 4.5 * H;
+  double const length = 9.0 * H;
+  double const height = 2.036 * H;
+
+  double const bulk_velocity     = 5.6218;
+  double const target_flow_rate  = bulk_velocity * width * height;
+  double const flow_through_time = length / bulk_velocity;
+
+  // RE_H = u_b * H / nu
+  double viscosity = bulk_velocity * H / Re;
+
+  // flow rate controller
+  std::shared_ptr<FlowRateController> flow_rate_controller;
+
+  // start and end time
+  double const start_time         = 0.0;
+  unsigned int end_time_multiples = 1;
+  double       end_time           = double(end_time_multiples) * flow_through_time;
+
+  // grid
+  double grid_stretch_factor = 1.6;
+
+  // postprocessing
+
+  // sampling
+  bool         calculate_statistics        = true;
+  unsigned int sample_start_time_multiples = 0.0;
+  double       sample_start_time      = double(sample_start_time_multiples) * flow_through_time;
+  double       sample_end_time        = end_time;
+  unsigned int sample_every_timesteps = 1;
+  unsigned int points_per_line        = 20;
 };
 
 } // namespace IncNS

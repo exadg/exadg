@@ -31,7 +31,7 @@ Mathematical model:
   Boussinesq term:                           false
   Boussinesq - dynamic part only:            false
   Use ALE formulation:                       true
-  Mesh movement type:                        Analytical
+  Mesh movement type:                        Function
   NBC with variable normal vector:           false
 
 Physical quantities:

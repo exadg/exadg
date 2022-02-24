@@ -163,11 +163,6 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
-
     // solve Orr-Sommerfeld equation
     compute_eigenvector(EIG_VEC, OMEGA, Re, ALPHA, FE);
     // calculate characteristic time interval
@@ -175,35 +170,7 @@ public:
     end_time = 2.0 * t0;
   }
 
-  double const Re = 7500.0;
-
-  double const H  = 1.0;
-  double const PI = dealii::numbers::PI;
-  double const L  = 2.0 * PI * H;
-
-  double const MAX_VELOCITY = 1.0;
-  double const VISCOSITY    = MAX_VELOCITY * H / Re;
-  double const ALPHA        = 1.0;
-  double const EPSILON      = 1.0e-5; // perturbations are small (<< 1, linearization)
-
-  // Orr-Sommerfeld solver: calculates unstable eigenvalue (OMEGA) of
-  // Orr-Sommerfeld equation for Poiseuille flow and corresponding eigenvector (EIG_VEC).
-  // do not use more than 300 due to conditioning of polynomials
-  unsigned int const DEGREE_OS_SOLVER = 200;
-
-  dealii::FE_DGQ<1> FE = dealii::FE_DGQ<1>(DEGREE_OS_SOLVER);
-
-  std::complex<double> OMEGA;
-
-  std::vector<std::complex<double>> EIG_VEC =
-    std::vector<std::complex<double>>(DEGREE_OS_SOLVER + 1);
-
-  // the time the Tollmien-Schlichting-waves need to travel through the domain
-  // (depends on solution of Orr-Sommerfeld equation)
-  double       t0         = 0.0;
-  double const start_time = 0.0;
-  double       end_time   = 2.0 * t0;
-
+private:
   void
   set_parameters() final
   {
@@ -380,9 +347,10 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output = this->write_output;
-    pp_data.output_data.directory    = this->output_directory + "vtu/";
-    pp_data.output_data.filename = this->output_name + "_k" + std::to_string(this->param.degree_u);
+    pp_data.output_data.write_output = this->output_parameters.write;
+    pp_data.output_data.directory    = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename =
+      this->output_parameters.filename + "_k" + std::to_string(this->param.degree_u);
     pp_data.output_data.start_time       = start_time;
     pp_data.output_data.interval_time    = (end_time - start_time) / 20;
     pp_data.output_data.write_divergence = true;
@@ -394,9 +362,9 @@ public:
     // perturbation energy
     pp_data_os.energy_data.calculate                  = true;
     pp_data_os.energy_data.calculate_every_time_steps = 1;
-    pp_data_os.energy_data.directory                  = this->output_directory;
-    pp_data_os.energy_data.filename =
-      this->output_name + "_perturbation_energy" + "_k" + std::to_string(this->param.degree_u);
+    pp_data_os.energy_data.directory                  = this->output_parameters.directory;
+    pp_data_os.energy_data.filename = this->output_parameters.filename + "_perturbation_energy" +
+                                      "_k" + std::to_string(this->param.degree_u);
     pp_data_os.energy_data.U_max   = MAX_VELOCITY;
     pp_data_os.energy_data.h       = H;
     pp_data_os.energy_data.omega_i = OMEGA.imag();
@@ -406,6 +374,35 @@ public:
 
     return pp;
   }
+
+  double const Re = 7500.0;
+
+  double const H  = 1.0;
+  double const PI = dealii::numbers::PI;
+  double const L  = 2.0 * PI * H;
+
+  double const MAX_VELOCITY = 1.0;
+  double const VISCOSITY    = MAX_VELOCITY * H / Re;
+  double const ALPHA        = 1.0;
+  double const EPSILON      = 1.0e-5; // perturbations are small (<< 1, linearization)
+
+  // Orr-Sommerfeld solver: calculates unstable eigenvalue (OMEGA) of
+  // Orr-Sommerfeld equation for Poiseuille flow and corresponding eigenvector (EIG_VEC).
+  // do not use more than 300 due to conditioning of polynomials
+  unsigned int const DEGREE_OS_SOLVER = 200;
+
+  dealii::FE_DGQ<1> FE = dealii::FE_DGQ<1>(DEGREE_OS_SOLVER);
+
+  std::complex<double> OMEGA;
+
+  std::vector<std::complex<double>> EIG_VEC =
+    std::vector<std::complex<double>>(DEGREE_OS_SOLVER + 1);
+
+  // the time the Tollmien-Schlichting-waves need to travel through the domain
+  // (depends on solution of Orr-Sommerfeld equation)
+  double       t0         = 0.0;
+  double const start_time = 0.0;
+  double       end_time   = 2.0 * t0;
 };
 
 } // namespace IncNS

@@ -74,24 +74,9 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
   }
 
-  double const Re           = 1.0e4;
-  double const L            = 1.0;
-  double const DELTA_0      = 1. / 28.;
-  double const U_INF        = 1.0;
-  double const C_N          = 1.0e-3;
-  double const max_velocity = U_INF;
-  double const viscosity    = U_INF * DELTA_0 / Re;
-  double const T            = DELTA_0 / U_INF;
-
-  double const start_time = 0.0;
-  double const end_time   = 400.0 * T;
-
+private:
   void
   set_parameters() final
   {
@@ -270,9 +255,9 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output              = this->write_output;
-    pp_data.output_data.directory                 = this->output_directory + "vtu/";
-    pp_data.output_data.filename                  = this->output_name;
+    pp_data.output_data.write_output              = this->output_parameters.write;
+    pp_data.output_data.directory                 = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename                  = this->output_parameters.filename;
     pp_data.output_data.start_time                = start_time;
     pp_data.output_data.interval_time             = (end_time - start_time) / 200;
     pp_data.output_data.write_divergence          = true;
@@ -284,14 +269,26 @@ public:
     pp_data.kinetic_energy_data.calculate                  = true;
     pp_data.kinetic_energy_data.calculate_every_time_steps = 1;
     pp_data.kinetic_energy_data.viscosity                  = viscosity;
-    pp_data.kinetic_energy_data.directory                  = this->output_directory;
-    pp_data.kinetic_energy_data.filename                   = this->output_name;
+    pp_data.kinetic_energy_data.directory                  = this->output_parameters.directory;
+    pp_data.kinetic_energy_data.filename                   = this->output_parameters.filename;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return pp;
   }
+
+  double const Re           = 1.0e4;
+  double const L            = 1.0;
+  double const DELTA_0      = 1. / 28.;
+  double const U_INF        = 1.0;
+  double const C_N          = 1.0e-3;
+  double const max_velocity = U_INF;
+  double const viscosity    = U_INF * DELTA_0 / Re;
+  double const T            = DELTA_0 / U_INF;
+
+  double const start_time = 0.0;
+  double const end_time   = 400.0 * T;
 };
 
 } // namespace IncNS

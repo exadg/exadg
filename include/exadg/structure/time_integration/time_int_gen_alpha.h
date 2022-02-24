@@ -63,6 +63,13 @@ public:
   void
   setup(bool const do_restart) final;
 
+  /*
+   * This function needs to be called before the first time step is performed. In case of a restart,
+   * the vector acceleration_n is read from restart files and nothing has to be done here.
+   */
+  void
+  compute_initial_acceleration(bool const do_restart);
+
   void
   print_iterations() const;
 
@@ -84,8 +91,13 @@ public:
   void
   set_displacement(VectorType const & displacement);
 
+  /**
+   * This function is for coupled multi-physics problems applying partitioned solution algorithms.
+   * Set use_extrapolation = true in the first iteration of the partitioned scheme within each time
+   * step.
+   */
   void
-  advance_one_timestep_partitioned_solve(bool const use_extrapolation, bool const store_solution);
+  advance_one_timestep_partitioned_solve(bool const use_extrapolation);
 
 private:
   void
@@ -131,7 +143,7 @@ private:
   VectorType displacement_last_iter;
 
   std::pair<
-    unsigned int /* calls */,
+    unsigned int /* number of calls */,
     std::tuple<unsigned long long, unsigned long long> /* iteration counts {Newton, linear}*/>
     iterations;
 };

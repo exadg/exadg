@@ -65,11 +65,11 @@ Driver<dim, Number>::setup()
     std::shared_ptr<dealii::Function<dim>> mesh_motion =
       application->create_mesh_movement_function();
     grid_motion =
-      std::make_shared<GridMotionAnalytical<dim, Number>>(application->get_grid()->mapping,
-                                                          application->get_parameters().degree,
-                                                          *application->get_grid()->triangulation,
-                                                          mesh_motion,
-                                                          application->get_parameters().start_time);
+      std::make_shared<GridMotionFunction<dim, Number>>(application->get_grid()->mapping,
+                                                        application->get_parameters().degree,
+                                                        *application->get_grid()->triangulation,
+                                                        mesh_motion,
+                                                        application->get_parameters().start_time);
   }
 
   // initialize convection-diffusion operator

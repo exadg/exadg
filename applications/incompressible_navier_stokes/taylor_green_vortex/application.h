@@ -103,16 +103,6 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
-
-    string_to_enum(mesh_type, mesh_type_string);
-
-    // viscosity needs to be recomputed since the parameters inviscid, Re are
-    // read from the input file
-    viscosity = inviscid ? 0.0 : V_0 * L / Re;
   }
 
   void
@@ -134,46 +124,18 @@ public:
     // clang-format on
   }
 
-  // mesh type
-  std::string mesh_type_string = "Cartesian";
-  MeshType    mesh_type        = MeshType::Cartesian;
+private:
+  void
+  parse_parameters() final
+  {
+    ApplicationBase<dim, Number>::parse_parameters();
 
-  unsigned int n_subdivisions_1d_hypercube = 1;
+    string_to_enum(mesh_type, mesh_type_string);
 
-  // inviscid limit
-  bool inviscid = false;
-
-  // Reynolds number
-  double Re = 1600.0;
-
-  // reduce dofs by exploiting symmetry
-  bool exploit_symmetry = false;
-
-  // moving mesh
-  bool ALE = false;
-
-  // restart
-  bool write_restart = false;
-  bool read_restart  = false;
-
-  double const V_0                 = 1.0;
-  double const L                   = 1.0;
-  double const p_0                 = 0.0;
-  double const max_velocity        = V_0;
-  double const characteristic_time = L / V_0;
-  double const start_time          = 0.0;
-  double const end_time            = 20.0 * characteristic_time;
-  double const left = -dealii::numbers::PI * L, right = dealii::numbers::PI * L;
-
-  // viscosity
-  double viscosity = inviscid ? 0.0 : V_0 * L / Re;
-
-  // solver tolerances
-  double const ABS_TOL = 1.e-12;
-  double const REL_TOL = 1.e-6;
-
-  double const ABS_TOL_LINEAR = 1.e-12;
-  double const REL_TOL_LINEAR = 1.e-2;
+    // viscosity needs to be recomputed since the parameters inviscid, Re are
+    // read from the input file
+    viscosity = inviscid ? 0.0 : V_0 * L / Re;
+  }
 
   void
   set_parameters() final
@@ -192,6 +154,7 @@ public:
 
     // ALE
     this->param.ale_formulation                     = ALE;
+    this->param.mesh_movement_type                  = MeshMovementType::Function;
     this->param.neumann_with_variable_normal_vector = false;
 
     // PHYSICAL QUANTITIES
@@ -220,7 +183,8 @@ public:
     this->param.restart_data.interval_time       = 1.0;
     this->param.restart_data.interval_wall_time  = 1.e6;
     this->param.restart_data.interval_time_steps = 1e8;
-    this->param.restart_data.filename = this->output_directory + this->output_name + "restart";
+    this->param.restart_data.filename =
+      this->output_parameters.directory + this->output_parameters.filename + "restart";
 
     // output of solver information
     this->param.solver_info_data.interval_time = characteristic_time;
@@ -471,12 +435,13 @@ public:
   {
     PostProcessorData<dim> pp_data;
 
-    std::string name = this->output_name + "_l" + std::to_string(this->param.grid.n_refine_global) +
-                       "_k" + std::to_string(this->param.degree_u);
+    std::string name = this->output_parameters.filename + "_l" +
+                       std::to_string(this->param.grid.n_refine_global) + "_k" +
+                       std::to_string(this->param.degree_u);
 
     // write output for visualization of results
-    pp_data.output_data.write_output              = this->write_output;
-    pp_data.output_data.directory                 = this->output_directory + "vtu/";
+    pp_data.output_data.write_output              = this->output_parameters.write;
+    pp_data.output_data.directory                 = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename                  = name;
     pp_data.output_data.start_time                = start_time;
     pp_data.output_data.interval_time             = (end_time - start_time) / 20;
@@ -493,7 +458,7 @@ public:
     pp_data.mass_data.calculate               = false;
     pp_data.mass_data.start_time              = 0.0;
     pp_data.mass_data.sample_every_time_steps = 1e2;
-    pp_data.mass_data.directory               = this->output_directory;
+    pp_data.mass_data.directory               = this->output_parameters.directory;
     pp_data.mass_data.filename                = name;
     pp_data.mass_data.reference_length_scale  = 1.0;
 
@@ -502,7 +467,7 @@ public:
     pp_data.kinetic_energy_data.evaluate_individual_terms  = false;
     pp_data.kinetic_energy_data.calculate_every_time_steps = 1;
     pp_data.kinetic_energy_data.viscosity                  = viscosity;
-    pp_data.kinetic_energy_data.directory                  = this->output_directory;
+    pp_data.kinetic_energy_data.directory                  = this->output_parameters.directory;
     pp_data.kinetic_energy_data.filename                   = name;
     pp_data.kinetic_energy_data.clear_file                 = !read_restart;
 
@@ -512,12 +477,12 @@ public:
     pp_data.kinetic_energy_spectrum_data.do_fftw                       = do_fftw_during_simulation;
     pp_data.kinetic_energy_spectrum_data.write_raw_data_to_files       = !do_fftw_during_simulation;
     pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
-    pp_data.kinetic_energy_spectrum_data.directory                     = this->output_directory;
-    pp_data.kinetic_energy_spectrum_data.filename                      = name + "_energy_spectrum";
-    pp_data.kinetic_energy_spectrum_data.degree                        = this->param.degree_u;
-    pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell    = (this->param.degree_u + 1);
-    pp_data.kinetic_energy_spectrum_data.exploit_symmetry              = exploit_symmetry;
-    pp_data.kinetic_energy_spectrum_data.n_cells_1d_coarse_grid  = n_subdivisions_1d_hypercube;
+    pp_data.kinetic_energy_spectrum_data.directory = this->output_parameters.directory;
+    pp_data.kinetic_energy_spectrum_data.filename  = name + "_energy_spectrum";
+    pp_data.kinetic_energy_spectrum_data.degree    = this->param.degree_u;
+    pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (this->param.degree_u + 1);
+    pp_data.kinetic_energy_spectrum_data.exploit_symmetry           = exploit_symmetry;
+    pp_data.kinetic_energy_spectrum_data.n_cells_1d_coarse_grid     = n_subdivisions_1d_hypercube;
     pp_data.kinetic_energy_spectrum_data.refine_level            = this->param.grid.n_refine_global;
     pp_data.kinetic_energy_spectrum_data.length_symmetric_domain = right;
     pp_data.kinetic_energy_spectrum_data.clear_file              = !read_restart;
@@ -527,6 +492,47 @@ public:
 
     return pp;
   }
+
+  // mesh type
+  std::string mesh_type_string = "Cartesian";
+  MeshType    mesh_type        = MeshType::Cartesian;
+
+  unsigned int n_subdivisions_1d_hypercube = 1;
+
+  // inviscid limit
+  bool inviscid = false;
+
+  // Reynolds number
+  double Re = 1600.0;
+
+  // reduce dofs by exploiting symmetry
+  bool exploit_symmetry = false;
+
+  // moving mesh
+  bool ALE = false;
+
+  // restart
+  bool write_restart = false;
+  bool read_restart  = false;
+
+  double const V_0                 = 1.0;
+  double const L                   = 1.0;
+  double const p_0                 = 0.0;
+  double const max_velocity        = V_0;
+  double const characteristic_time = L / V_0;
+  double const start_time          = 0.0;
+  double const end_time            = 20.0 * characteristic_time;
+  double const left = -dealii::numbers::PI * L, right = dealii::numbers::PI * L;
+
+  // viscosity
+  double viscosity = inviscid ? 0.0 : V_0 * L / Re;
+
+  // solver tolerances
+  double const ABS_TOL = 1.e-12;
+  double const REL_TOL = 1.e-6;
+
+  double const ABS_TOL_LINEAR = 1.e-12;
+  double const REL_TOL_LINEAR = 1.e-2;
 };
 
 } // namespace IncNS

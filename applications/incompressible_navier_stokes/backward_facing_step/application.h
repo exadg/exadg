@@ -150,48 +150,10 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBasePrecursor<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
-
     inflow_data_storage.reset(new InflowDataStorage<dim>(n_points_inflow));
   }
 
-  // consider a friction Reynolds number of Re_tau = u_tau * H / nu = 290
-  // and body force f = tau_w/H with tau_w = u_tau^2.
-  double const viscosity = 1.5268e-5;
-
-  // precursor simulation: data structures for storage of inflow data
-  std::shared_ptr<InflowDataStorage<dim>> inflow_data_storage;
-
-  // number of points for inflow boundary condition
-  unsigned int const n_points_inflow = 101;
-
-  unsigned int const additional_refinements_precursor = 0;
-
-  // start and end time
-  double const Re_H                 = 5540.0;
-  double const centerline_velocity  = Re_H * viscosity / Geometry::H;
-  double const characteristic_time  = Geometry::H / centerline_velocity;
-  double const start_time           = 0.0;
-  double const precursor_start_time = -300.0 * characteristic_time;
-  double const end_time             = 300.0 * characteristic_time;
-
-  // postprocessing
-
-  // sampling of statistical results
-  double const       sample_start_time      = 100.0 * characteristic_time;
-  unsigned int const sample_every_timesteps = 10;
-  unsigned int const n_points_per_line      = 101;
-
-  // solver tolerances
-  double const ABS_TOL = 1.e-12;
-  double const REL_TOL = 1.e-3;
-
-  double const ABS_TOL_LINEAR = 1.e-12;
-  double const REL_TOL_LINEAR = 1.e-2;
-
+private:
   /*
    *  Most of the parameters are the same for both domains, so we write
    *  this function for the actual domain and only "correct" the parameters
@@ -480,9 +442,9 @@ public:
 
     PostProcessorData<dim> pp_data;
     // write output for visualization of results
-    pp_data.output_data.write_output       = this->write_output;
-    pp_data.output_data.directory          = this->output_directory + "vtu/";
-    pp_data.output_data.filename           = this->output_name;
+    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename;
     pp_data.output_data.start_time         = start_time;
     pp_data.output_data.interval_time      = (end_time - start_time) / 60;
     pp_data.output_data.write_divergence   = true;
@@ -496,8 +458,8 @@ public:
     pp_data_bfs.pp_data = pp_data;
 
     // line plot data: calculate statistics along lines
-    pp_data_bfs.line_plot_data.line_data.directory                    = this->output_directory;
-    pp_data_bfs.line_plot_data.statistics_data.calculate              = true;
+    pp_data_bfs.line_plot_data.line_data.directory       = this->output_parameters.directory;
+    pp_data_bfs.line_plot_data.statistics_data.calculate = true;
     pp_data_bfs.line_plot_data.statistics_data.sample_start_time      = sample_start_time;
     pp_data_bfs.line_plot_data.statistics_data.sample_end_time        = end_time;
     pp_data_bfs.line_plot_data.statistics_data.sample_every_timesteps = sample_every_timesteps;
@@ -729,9 +691,9 @@ public:
 
     PostProcessorData<dim> pp_data;
     // write output for visualization of results
-    pp_data.output_data.write_output       = this->write_output;
-    pp_data.output_data.directory          = this->output_directory + "vtu/";
-    pp_data.output_data.filename           = this->output_name + "_precursor";
+    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename + "_precursor";
     pp_data.output_data.start_time         = start_time;
     pp_data.output_data.interval_time      = (end_time - start_time) / 60;
     pp_data.output_data.write_divergence   = true;
@@ -751,8 +713,8 @@ public:
     pp_data_bfs.turb_ch_data.sample_end_time        = end_time;
     pp_data_bfs.turb_ch_data.sample_every_timesteps = sample_every_timesteps;
     pp_data_bfs.turb_ch_data.viscosity              = viscosity;
-    pp_data_bfs.turb_ch_data.directory              = this->output_directory;
-    pp_data_bfs.turb_ch_data.filename               = this->output_name + "_precursor";
+    pp_data_bfs.turb_ch_data.directory              = this->output_parameters.directory;
+    pp_data_bfs.turb_ch_data.filename = this->output_parameters.filename + "_precursor";
 
     // use turbulent channel data to prescribe inflow velocity for BFS
     pp_data_bfs.inflow_data.write_inflow_data = true;
@@ -768,6 +730,40 @@ public:
 
     return pp;
   }
+
+  // consider a friction Reynolds number of Re_tau = u_tau * H / nu = 290
+  // and body force f = tau_w/H with tau_w = u_tau^2.
+  double const viscosity = 1.5268e-5;
+
+  // precursor simulation: data structures for storage of inflow data
+  std::shared_ptr<InflowDataStorage<dim>> inflow_data_storage;
+
+  // number of points for inflow boundary condition
+  unsigned int const n_points_inflow = 101;
+
+  unsigned int const additional_refinements_precursor = 0;
+
+  // start and end time
+  double const Re_H                 = 5540.0;
+  double const centerline_velocity  = Re_H * viscosity / Geometry::H;
+  double const characteristic_time  = Geometry::H / centerline_velocity;
+  double const start_time           = 0.0;
+  double const precursor_start_time = -300.0 * characteristic_time;
+  double const end_time             = 300.0 * characteristic_time;
+
+  // postprocessing
+
+  // sampling of statistical results
+  double const       sample_start_time      = 100.0 * characteristic_time;
+  unsigned int const sample_every_timesteps = 10;
+  unsigned int const n_points_per_line      = 101;
+
+  // solver tolerances
+  double const ABS_TOL = 1.e-12;
+  double const REL_TOL = 1.e-3;
+
+  double const ABS_TOL_LINEAR = 1.e-12;
+  double const REL_TOL_LINEAR = 1.e-2;
 };
 
 } // namespace IncNS

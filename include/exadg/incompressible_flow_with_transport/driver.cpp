@@ -70,17 +70,17 @@ Driver<dim, Number>::setup()
   if(application->get_parameters().ale_formulation) // moving mesh
   {
     AssertThrow(application->get_parameters().mesh_movement_type ==
-                  IncNS::MeshMovementType::Analytical,
+                  IncNS::MeshMovementType::Function,
                 dealii::ExcMessage("not implemented."));
 
     std::shared_ptr<dealii::Function<dim>> mesh_motion;
     mesh_motion = application->create_mesh_movement_function();
     grid_motion =
-      std::make_shared<GridMotionAnalytical<dim, Number>>(grid->mapping,
-                                                          application->get_parameters().degree_u,
-                                                          *grid->triangulation,
-                                                          mesh_motion,
-                                                          application->get_parameters().start_time);
+      std::make_shared<GridMotionFunction<dim, Number>>(grid->mapping,
+                                                        application->get_parameters().degree_u,
+                                                        *grid->triangulation,
+                                                        mesh_motion,
+                                                        application->get_parameters().start_time);
   }
 
   // initialize fluid_operator

@@ -130,10 +130,6 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
   }
 
   void
@@ -152,19 +148,7 @@ public:
     // clang-format on
   }
 
-  // size of geometry
-  double length = 1.0, height = 1.0, width = 1.0;
-
-  // single force or bending moment
-  std::string boundary_type = "SingleForce";
-
-  double force = 2500;
-
-  double element_length = 1.0;
-
-  // number of subdivisions in each direction
-  unsigned int const repetitions0 = 20, repetitions1 = 4, repetitions2 = 1;
-
+private:
   void
   set_parameters() final
   {
@@ -318,9 +302,9 @@ public:
   create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output       = this->write_output;
-    pp_data.output_data.directory          = this->output_directory + "vtu/";
-    pp_data.output_data.filename           = this->output_name;
+    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename;
     pp_data.output_data.write_higher_order = false;
     pp_data.output_data.degree             = this->param.degree;
 
@@ -341,6 +325,19 @@ public:
 
     return post;
   }
+
+  // size of geometry
+  double length = 1.0, height = 1.0, width = 1.0;
+
+  // single force or bending moment
+  std::string boundary_type = "SingleForce";
+
+  double force = 2500;
+
+  double element_length = 1.0;
+
+  // number of subdivisions in each direction
+  unsigned int const repetitions0 = 20, repetitions1 = 4, repetitions2 = 1;
 };
 
 } // namespace Structure

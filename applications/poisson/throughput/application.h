@@ -52,12 +52,6 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
-
-    string_to_enum(mesh_type, mesh_type_string);
   }
 
   void
@@ -72,8 +66,14 @@ public:
     // clang-format on
   }
 
-  std::string mesh_type_string = "Cartesian";
-  MeshType    mesh_type        = MeshType::Cartesian;
+private:
+  void
+  parse_parameters() final
+  {
+    ApplicationBase<dim, Number>::parse_parameters();
+
+    string_to_enum(mesh_type, mesh_type_string);
+  }
 
   void
   set_parameters() final
@@ -144,6 +144,9 @@ public:
 
     return pp;
   }
+
+  std::string mesh_type_string = "Cartesian";
+  MeshType    mesh_type        = MeshType::Cartesian;
 };
 
 } // namespace Poisson

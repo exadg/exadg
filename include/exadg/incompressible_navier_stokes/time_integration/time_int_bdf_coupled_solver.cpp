@@ -121,6 +121,13 @@ TimeIntBDFCoupled<dim, Number>::get_velocity_np() const
 
 template<int dim, typename Number>
 typename TimeIntBDFCoupled<dim, Number>::VectorType const &
+TimeIntBDFCoupled<dim, Number>::get_pressure() const
+{
+  return solution[0].block(1);
+}
+
+template<int dim, typename Number>
+typename TimeIntBDFCoupled<dim, Number>::VectorType const &
 TimeIntBDFCoupled<dim, Number>::get_pressure_np() const
 {
   return solution_np.block(1);

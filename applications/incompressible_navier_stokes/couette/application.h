@@ -57,19 +57,9 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
   }
 
-  double const H            = 1.0;
-  double const L            = 4.0;
-  double const max_velocity = 1.0;
-
-  double const start_time = 0.0;
-  double const end_time   = 10.0;
-
+private:
   void
   set_parameters() final
   {
@@ -255,9 +245,9 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output     = this->write_output;
-    pp_data.output_data.directory        = this->output_directory + "vtu/";
-    pp_data.output_data.filename         = this->output_name;
+    pp_data.output_data.write_output     = this->output_parameters.write;
+    pp_data.output_data.directory        = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename         = this->output_parameters.filename;
     pp_data.output_data.start_time       = start_time;
     pp_data.output_data.interval_time    = (end_time - start_time) / 20;
     pp_data.output_data.write_divergence = true;
@@ -285,6 +275,13 @@ public:
 
     return pp;
   }
+
+  double const H            = 1.0;
+  double const L            = 4.0;
+  double const max_velocity = 1.0;
+
+  double const start_time = 0.0;
+  double const end_time   = 10.0;
 };
 
 } // namespace IncNS

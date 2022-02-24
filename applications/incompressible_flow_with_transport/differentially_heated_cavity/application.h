@@ -32,58 +32,12 @@ template<int dim, typename Number>
 class Application : public FTI::ApplicationBase<dim, Number>
 {
 public:
-  // Problem specific parameters
-  double const L        = 1.0;
-  double const T_ref    = 300.0;
-  double const delta_T  = 1.0;
-  double const g        = 10.0;
-  double const beta     = 1.0 / 300.0;
-  double const Prandtl  = 1.0;
-  double const Rayleigh = 1.0e8;
-
-  // dependent parameters
-  double const kinematic_viscosity =
-    std::sqrt(g * beta * delta_T * std::pow(L, 3.0) * Prandtl / Rayleigh);
-  double const thermal_diffusivity = kinematic_viscosity / Prandtl;
-
-  double const left  = -L / 2.0;
-  double const right = L / 2.0;
-
-  double const U                   = std::sqrt(g * beta * delta_T * L);
-  double const characteristic_time = L / U;
-  double const start_time          = 0.0;
-  double const end_time            = 10.0 * characteristic_time;
-
-  double const CFL                    = 0.3;
-  double const max_velocity           = 1.0;
-  bool const   adaptive_time_stepping = true;
-
-  // vtu output
-  double const output_interval_time = (end_time - start_time) / 100.0;
-
-  // restart
-  bool const   write_restart         = false;
-  double const restart_interval_time = 10.0;
-
-  // moving mesh (ALE)
-  bool const ALE = false;
-
-  // solver tolerances
-  double const ABS_TOL = 1.e-12;
-  double const REL_TOL = 1.e-6;
-
-  double const ABS_TOL_LINEAR = 1.e-12;
-  double const REL_TOL_LINEAR = 1.e-2;
-
   Application(std::string input_file, MPI_Comm const & comm)
     : FTI::ApplicationBase<dim, Number>(input_file, comm, 1)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
   }
 
+private:
   void
   set_parameters() final
   {
@@ -95,6 +49,7 @@ public:
     this->param.formulation_viscous_term    = FormulationViscousTerm::LaplaceFormulation;
     this->param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
     this->param.ale_formulation             = ALE;
+    this->param.mesh_movement_type          = MeshMovementType::Function;
     this->param.right_hand_side             = true;
     this->param.boussinesq_term             = true;
 
@@ -126,7 +81,8 @@ public:
     // restart
     this->param.restart_data.write_restart = write_restart;
     this->param.restart_data.interval_time = restart_interval_time;
-    this->param.restart_data.filename      = this->output_directory + this->output_name + "_fluid";
+    this->param.restart_data.filename =
+      this->output_parameters.directory + this->output_parameters.filename + "_fluid";
 
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type = TriangulationType::Distributed;
@@ -271,8 +227,9 @@ public:
     // restart
     param.restart_data.write_restart = write_restart;
     param.restart_data.interval_time = restart_interval_time;
-    param.restart_data.filename =
-      this->output_directory + this->output_name + "_scalar_" + std::to_string(scalar_index);
+    param.restart_data.filename      = this->output_parameters.directory +
+                                  this->output_parameters.filename + "_scalar_" +
+                                  std::to_string(scalar_index);
 
     // output of solver information
     param.solver_info_data.interval_time = (end_time - start_time) / 10.;
@@ -399,9 +356,9 @@ public:
     IncNS::PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output       = this->write_output;
-    pp_data.output_data.directory          = this->output_directory + "vtu/";
-    pp_data.output_data.filename           = this->output_name + "_fluid";
+    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename + "_fluid";
     pp_data.output_data.start_time         = start_time;
     pp_data.output_data.interval_time      = output_interval_time;
     pp_data.output_data.write_processor_id = true;
@@ -443,10 +400,11 @@ public:
   create_postprocessor_scalar(unsigned int const scalar_index) final
   {
     ConvDiff::PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output = this->write_output;
-    pp_data.output_data.directory    = this->output_directory + "vtu/";
-    pp_data.output_data.filename   = this->output_name + "_scalar_" + std::to_string(scalar_index);
-    pp_data.output_data.start_time = start_time;
+    pp_data.output_data.write_output = this->output_parameters.write;
+    pp_data.output_data.directory    = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename =
+      this->output_parameters.filename + "_scalar_" + std::to_string(scalar_index);
+    pp_data.output_data.start_time         = start_time;
     pp_data.output_data.interval_time      = output_interval_time;
     pp_data.output_data.degree             = this->scalar_param[scalar_index].degree;
     pp_data.output_data.write_higher_order = true;
@@ -456,6 +414,49 @@ public:
 
     return pp;
   }
+
+  // Problem specific parameters
+  double const L        = 1.0;
+  double const T_ref    = 300.0;
+  double const delta_T  = 1.0;
+  double const g        = 10.0;
+  double const beta     = 1.0 / 300.0;
+  double const Prandtl  = 1.0;
+  double const Rayleigh = 1.0e8;
+
+  // dependent parameters
+  double const kinematic_viscosity =
+    std::sqrt(g * beta * delta_T * std::pow(L, 3.0) * Prandtl / Rayleigh);
+  double const thermal_diffusivity = kinematic_viscosity / Prandtl;
+
+  double const left  = -L / 2.0;
+  double const right = L / 2.0;
+
+  double const U                   = std::sqrt(g * beta * delta_T * L);
+  double const characteristic_time = L / U;
+  double const start_time          = 0.0;
+  double const end_time            = 10.0 * characteristic_time;
+
+  double const CFL                    = 0.3;
+  double const max_velocity           = 1.0;
+  bool const   adaptive_time_stepping = true;
+
+  // vtu output
+  double const output_interval_time = (end_time - start_time) / 100.0;
+
+  // restart
+  bool const   write_restart         = false;
+  double const restart_interval_time = 10.0;
+
+  // moving mesh (ALE)
+  bool const ALE = false;
+
+  // solver tolerances
+  double const ABS_TOL = 1.e-12;
+  double const REL_TOL = 1.e-6;
+
+  double const ABS_TOL_LINEAR = 1.e-12;
+  double const REL_TOL_LINEAR = 1.e-2;
 };
 
 } // namespace FTI

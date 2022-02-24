@@ -37,6 +37,7 @@
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
 #include <exadg/solvers_and_preconditioners/utilities/check_multigrid.h>
 #include <exadg/solvers_and_preconditioners/utilities/petsc_operation.h>
+#include <exadg/utilities/exceptions.h>
 
 namespace ExaDG
 {
@@ -78,7 +79,7 @@ Operator<dim, Number, n_components>::distribute_dofs()
     else if(param.spatial_discretization == SpatialDiscretization::CG)
       fe = std::make_shared<dealii::FE_Q<dim>>(param.degree);
     else
-      AssertThrow(false, dealii::ExcMessage("not implemented."));
+      AssertThrow(false, ExcNotImplemented());
   }
   else if(n_components == dim)
   {
@@ -225,6 +226,24 @@ Operator<dim, Number, n_components>::setup(
 
   matrix_free      = matrix_free_in;
   matrix_free_data = matrix_free_data_in;
+
+  if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
+  {
+    interface_data_dirichlet_cached =
+      std::make_shared<ContainerInterfaceData<dim, n_components, Number>>();
+    std::vector<unsigned int> quad_indices;
+    if(param.spatial_discretization == SpatialDiscretization::DG)
+      quad_indices.emplace_back(get_quad_index());
+    else if(param.spatial_discretization == SpatialDiscretization::CG)
+      quad_indices.emplace_back(get_quad_index_gauss_lobatto());
+    else
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
+
+    interface_data_dirichlet_cached->setup(matrix_free,
+                                           get_dof_index(),
+                                           quad_indices,
+                                           boundary_descriptor->dirichlet_cached_bc);
+  }
 
   setup_operators();
 
@@ -527,6 +546,13 @@ unsigned int
 Operator<dim, Number, n_components>::get_quad_index_gauss_lobatto() const
 {
   return matrix_free_data->get_quad_index(get_quad_gauss_lobatto_name());
+}
+
+template<int dim, typename Number, int n_components>
+std::shared_ptr<ContainerInterfaceData<dim, n_components, Number>>
+Operator<dim, Number, n_components>::get_container_interface_data()
+{
+  return interface_data_dirichlet_cached;
 }
 
 template<int dim, typename Number, int n_components>

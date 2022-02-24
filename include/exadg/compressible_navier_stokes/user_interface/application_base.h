@@ -36,6 +36,7 @@
 #include <exadg/compressible_navier_stokes/user_interface/field_functions.h>
 #include <exadg/compressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/grid/grid.h>
+#include <exadg/utilities/output_parameters.h>
 
 namespace ExaDG
 {
@@ -48,13 +49,7 @@ public:
   virtual void
   add_parameters(dealii::ParameterHandler & prm)
   {
-    // clang-format off
-    prm.enter_subsection("Output");
-      prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
-      prm.add_parameter("OutputName",       output_name,      "Name of output files.");
-      prm.add_parameter("WriteOutput",      write_output,     "Decides whether vtu output is written.");
-    prm.leave_subsection();
-    // clang-format on
+    output_parameters.add_parameters(prm);
   }
 
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
@@ -91,6 +86,8 @@ public:
   void
   setup()
   {
+    parse_parameters();
+
     // parameters
     set_parameters();
     param.check();
@@ -139,6 +136,14 @@ public:
   }
 
 protected:
+  virtual void
+  parse_parameters()
+  {
+    dealii::ParameterHandler prm;
+    this->add_parameters(prm);
+    prm.parse_input(parameter_file, "", true, true);
+  }
+
   MPI_Comm const & mpi_comm;
 
   dealii::ConditionalOStream pcout;
@@ -152,8 +157,7 @@ protected:
 
   std::string parameter_file;
 
-  std::string output_directory = "output/", output_name = "output";
-  bool        write_output = false;
+  OutputParameters output_parameters;
 
 private:
   virtual void

@@ -116,12 +116,6 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
-
-    string_to_enum(mesh_type, mesh_type_string);
   }
 
   void
@@ -136,11 +130,14 @@ public:
     // clang-format on
   }
 
-  std::string mesh_type_string = "Cartesian";
-  MeshType    mesh_type        = MeshType::Cartesian;
+private:
+  void
+  parse_parameters() final
+  {
+    ApplicationBase<dim, Number>::parse_parameters();
 
-  double const start_time = 0.0;
-  double const end_time   = 20.0 * CHARACTERISTIC_TIME;
+    string_to_enum(mesh_type, mesh_type_string);
+  }
 
   void
   set_parameters() final
@@ -202,7 +199,8 @@ public:
     // restart
     this->param.restart_data.write_restart = false;
     this->param.restart_data.interval_time = 1.0;
-    this->param.restart_data.filename = this->output_directory + this->output_name + "_restart";
+    this->param.restart_data.filename =
+      this->output_parameters.directory + this->output_parameters.filename + "_restart";
 
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type = TriangulationType::Distributed;
@@ -272,9 +270,9 @@ public:
   create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output = this->write_output;
-    pp_data.output_data.directory    = this->output_directory + "vtu/";
-    pp_data.output_data.filename     = this->output_name;
+    pp_data.output_data.write_output = this->output_parameters.write;
+    pp_data.output_data.directory    = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename     = this->output_parameters.filename;
     pp_data.calculate_velocity = true; // activate this for kinetic energy calculations (see below)
     pp_data.output_data.write_pressure    = true;
     pp_data.output_data.write_velocity    = true;
@@ -289,16 +287,16 @@ public:
     pp_data.kinetic_energy_data.calculate                  = true;
     pp_data.kinetic_energy_data.calculate_every_time_steps = 1;
     pp_data.kinetic_energy_data.viscosity                  = DYN_VISCOSITY / RHO_0;
-    pp_data.kinetic_energy_data.directory                  = this->output_directory;
-    pp_data.kinetic_energy_data.filename                   = this->output_name;
+    pp_data.kinetic_energy_data.directory                  = this->output_parameters.directory;
+    pp_data.kinetic_energy_data.filename                   = this->output_parameters.filename;
 
     // kinetic energy spectrum
     pp_data.kinetic_energy_spectrum_data.calculate                     = true;
     pp_data.kinetic_energy_spectrum_data.calculate_every_time_steps    = -1;
     pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
-    pp_data.kinetic_energy_spectrum_data.directory                     = this->output_directory;
-    pp_data.kinetic_energy_spectrum_data.filename = this->output_name + "_spectrum";
-    pp_data.kinetic_energy_spectrum_data.degree   = this->param.degree;
+    pp_data.kinetic_energy_spectrum_data.directory = this->output_parameters.directory;
+    pp_data.kinetic_energy_spectrum_data.filename  = this->output_parameters.filename + "_spectrum";
+    pp_data.kinetic_energy_spectrum_data.degree    = this->param.degree;
     pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (this->param.degree + 1) * 1;
     pp_data.kinetic_energy_spectrum_data.exploit_symmetry           = false;
 
@@ -307,6 +305,12 @@ public:
 
     return pp;
   }
+
+  std::string mesh_type_string = "Cartesian";
+  MeshType    mesh_type        = MeshType::Cartesian;
+
+  double const start_time = 0.0;
+  double const end_time   = 20.0 * CHARACTERISTIC_TIME;
 };
 
 } // namespace CompNS

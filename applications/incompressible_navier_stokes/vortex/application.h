@@ -234,28 +234,9 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
   }
 
-  // set problem specific parameters like physical dimensions, etc.
-  double const u_x_max   = 1.0;
-  double const viscosity = 2.5e-2; // 1.e-2; //2.5e-2;
-
-  double const left  = -0.5;
-  double const right = 0.5;
-
-  double const start_time = 0.0;
-  double const end_time   = 1.0;
-
-  FormulationViscousTerm const formulation_viscous = FormulationViscousTerm::LaplaceFormulation;
-
-  MeshType const mesh_type = MeshType::UniformCartesian;
-
-  bool const ALE = true;
-
+private:
   void
   set_parameters() final
   {
@@ -268,7 +249,7 @@ public:
 
     // ALE
     this->param.ale_formulation                     = ALE;
-    this->param.mesh_movement_type                  = MeshMovementType::Analytical;
+    this->param.mesh_movement_type                  = MeshMovementType::Function;
     this->param.neumann_with_variable_normal_vector = ALE;
 
     // PHYSICAL QUANTITIES
@@ -303,7 +284,8 @@ public:
     this->param.restart_data.interval_time       = 0.25;
     this->param.restart_data.interval_wall_time  = 1.e6;
     this->param.restart_data.interval_time_steps = 1e8;
-    this->param.restart_data.filename            = this->output_directory + this->output_name;
+    this->param.restart_data.filename =
+      this->output_parameters.directory + this->output_parameters.filename;
 
 
     // SPATIAL DISCRETIZATION
@@ -709,17 +691,17 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output                         = this->write_output;
-    pp_data.output_data.directory                            = this->output_directory + "vtu/";
-    pp_data.output_data.filename                             = this->output_name;
-    pp_data.output_data.start_time                           = start_time;
-    pp_data.output_data.interval_time                        = (end_time - start_time) / 20;
-    pp_data.output_data.write_vorticity                      = true;
-    pp_data.output_data.write_divergence                     = true;
-    pp_data.output_data.write_velocity_magnitude             = true;
-    pp_data.output_data.write_vorticity_magnitude            = true;
-    pp_data.output_data.write_processor_id                   = true;
-    pp_data.output_data.mean_velocity.calculate              = true;
+    pp_data.output_data.write_output              = this->output_parameters.write;
+    pp_data.output_data.directory                 = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename                  = this->output_parameters.filename;
+    pp_data.output_data.start_time                = start_time;
+    pp_data.output_data.interval_time             = (end_time - start_time) / 20;
+    pp_data.output_data.write_vorticity           = true;
+    pp_data.output_data.write_divergence          = true;
+    pp_data.output_data.write_velocity_magnitude  = true;
+    pp_data.output_data.write_vorticity_magnitude = true;
+    pp_data.output_data.write_processor_id        = true;
+    pp_data.output_data.mean_velocity.calculate   = true;
     pp_data.output_data.mean_velocity.sample_start_time      = start_time;
     pp_data.output_data.mean_velocity.sample_end_time        = end_time;
     pp_data.output_data.mean_velocity.sample_every_timesteps = 1;
@@ -749,6 +731,22 @@ public:
 
     return pp;
   }
+
+  // set problem specific parameters like physical dimensions, etc.
+  double const u_x_max   = 1.0;
+  double const viscosity = 2.5e-2; // 1.e-2; //2.5e-2;
+
+  double const left  = -0.5;
+  double const right = 0.5;
+
+  double const start_time = 0.0;
+  double const end_time   = 1.0;
+
+  FormulationViscousTerm const formulation_viscous = FormulationViscousTerm::LaplaceFormulation;
+
+  MeshType const mesh_type = MeshType::UniformCartesian;
+
+  bool const ALE = true;
 };
 
 } // namespace IncNS

@@ -23,7 +23,7 @@
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
 
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
-#include <exadg/grid/grid_motion_analytical.h>
+#include <exadg/grid/grid_motion_function.h>
 #include <exadg/grid/grid_motion_poisson.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor_base.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>

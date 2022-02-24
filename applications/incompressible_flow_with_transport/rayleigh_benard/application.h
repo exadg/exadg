@@ -65,45 +65,12 @@ template<int dim, typename Number>
 class Application : public FTI::ApplicationBase<dim, Number>
 {
 public:
-  // physical quantities
-  double const L = 8.0;
-  double const H = 1.0;
-
-  double const Prandtl = 1.0;
-  double const Re      = std::sqrt(1.0e8);
-  double const Ra      = Re * Re * Prandtl;
-  double const g       = 10.0;
-  double const T_ref   = 0.0;
-  double const beta    = 1.0 / 300.0;
-  double const U       = 1.0;
-
-  double const kinematic_viscosity = U * H / Re;
-  double const thermal_diffusivity = kinematic_viscosity / Prandtl;
-
-  // u^2 = g * beta * Delta_T * h
-  double const delta_T = std::pow(U, 2.0) / beta / g / H;
-
-  double const start_time          = 0.0;
-  double const characteristic_time = H / U;
-  double const end_time            = 200.0 * characteristic_time;
-
-  // time stepping
-  double const CFL                    = 0.4;
-  double const max_velocity           = 1.0;
-  bool const   adaptive_time_stepping = true;
-
-  // vtu output
-  double const output_interval_time = (end_time - start_time) / 100.0;
-
   Application(std::string input_file, MPI_Comm const & comm)
     : FTI::ApplicationBase<dim, Number>(input_file, comm, 1)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
   }
 
+private:
   void
   set_parameters() final
   {
@@ -407,9 +374,9 @@ public:
     IncNS::PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output       = this->write_output;
-    pp_data.output_data.directory          = this->output_directory + "vtu/";
-    pp_data.output_data.filename           = this->output_name + "_fluid";
+    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename + "_fluid";
     pp_data.output_data.start_time         = start_time;
     pp_data.output_data.interval_time      = output_interval_time;
     pp_data.output_data.write_processor_id = true;
@@ -450,10 +417,11 @@ public:
   create_postprocessor_scalar(unsigned int const scalar_index) final
   {
     ConvDiff::PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output = this->write_output;
-    pp_data.output_data.directory    = this->output_directory + "vtu/";
-    pp_data.output_data.filename   = this->output_name + "_scalar_" + std::to_string(scalar_index);
-    pp_data.output_data.start_time = start_time;
+    pp_data.output_data.write_output = this->output_parameters.write;
+    pp_data.output_data.directory    = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename =
+      this->output_parameters.filename + "_scalar_" + std::to_string(scalar_index);
+    pp_data.output_data.start_time         = start_time;
     pp_data.output_data.interval_time      = output_interval_time;
     pp_data.output_data.degree             = this->scalar_param[scalar_index].degree;
     pp_data.output_data.write_higher_order = true;
@@ -463,6 +431,36 @@ public:
 
     return pp;
   }
+
+  // physical quantities
+  double const L = 8.0;
+  double const H = 1.0;
+
+  double const Prandtl = 1.0;
+  double const Re      = std::sqrt(1.0e8);
+  double const Ra      = Re * Re * Prandtl;
+  double const g       = 10.0;
+  double const T_ref   = 0.0;
+  double const beta    = 1.0 / 300.0;
+  double const U       = 1.0;
+
+  double const kinematic_viscosity = U * H / Re;
+  double const thermal_diffusivity = kinematic_viscosity / Prandtl;
+
+  // u^2 = g * beta * Delta_T * h
+  double const delta_T = std::pow(U, 2.0) / beta / g / H;
+
+  double const start_time          = 0.0;
+  double const characteristic_time = H / U;
+  double const end_time            = 200.0 * characteristic_time;
+
+  // time stepping
+  double const CFL                    = 0.4;
+  double const max_velocity           = 1.0;
+  bool const   adaptive_time_stepping = true;
+
+  // vtu output
+  double const output_interval_time = (end_time - start_time) / 100.0;
 };
 
 } // namespace FTI

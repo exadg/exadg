@@ -4,11 +4,13 @@
         "Dim": "2",
         "IsTest": "false"
     },
-    "SpatialResolution": {
-        "DegreeFluid": "3",
-        "DegreeStructure": "3",
-        "RefineFluid": "0",
-        "RefineStructure": "0"
+    "SpatialResolutionFluid": {
+        "Degree": "3",
+        "RefineSpace": "0"
+    },
+    "SpatialResolutionStructure": {
+        "Degree": "3",
+        "RefineSpace": "0"
     },
     "FSI": {
         "Method": "Aitken",

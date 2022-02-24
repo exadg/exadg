@@ -301,26 +301,9 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
   }
 
-  double length = 1.0, height = 1.0, width = 1.0;
-
-  double const E  = 1.0;
-  double const nu = 0.3;
-  double const f0 = E * (1.0 - nu) / (1 + nu) / (1.0 - 2.0 * nu); // plane strain
-
-  double const density = 1.0;
-
-  bool const   unsteady         = true;
-  double const max_displacement = 0.1 * length;
-  double const start_time       = 0.0;
-  double const end_time         = 1.0;
-  double const frequency        = 3.0 / 2.0 * dealii::numbers::PI / end_time;
-
+private:
   void
   set_parameters() final
   {
@@ -421,9 +404,9 @@ public:
   create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output       = this->write_output;
-    pp_data.output_data.directory          = this->output_directory + "vtu/";
-    pp_data.output_data.filename           = this->output_name;
+    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename;
     pp_data.output_data.start_time         = start_time;
     pp_data.output_data.interval_time      = (end_time - start_time) / 20;
     pp_data.output_data.write_higher_order = false;
@@ -441,6 +424,20 @@ public:
 
     return post;
   }
+
+  double length = 1.0, height = 1.0, width = 1.0;
+
+  double const E  = 1.0;
+  double const nu = 0.3;
+  double const f0 = E * (1.0 - nu) / (1 + nu) / (1.0 - 2.0 * nu); // plane strain
+
+  double const density = 1.0;
+
+  bool const   unsteady         = true;
+  double const max_displacement = 0.1 * length;
+  double const start_time       = 0.0;
+  double const end_time         = 1.0;
+  double const frequency        = 3.0 / 2.0 * dealii::numbers::PI / end_time;
 };
 
 } // namespace Structure

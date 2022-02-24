@@ -116,10 +116,6 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
   }
 
   void
@@ -141,17 +137,7 @@ public:
     // clang-format on
   }
 
-  double inner_radius = 0.8, outer_radius = 1.0, height = 1.0;
-
-  bool use_volume_force = true;
-
-  double volume_force = 1.0;
-
-  std::string boundary_type = "Dirichlet";
-
-  double displacement = 0.2; // "Dirichlet"
-  double area_force   = 1.0; // "Neumann"
-
+private:
   void
   set_parameters() final
   {
@@ -292,9 +278,9 @@ public:
   create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output       = this->write_output;
-    pp_data.output_data.directory          = this->output_directory + "vtu/";
-    pp_data.output_data.filename           = this->output_name;
+    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename;
     pp_data.output_data.write_higher_order = false;
     pp_data.output_data.degree             = this->param.degree;
 
@@ -303,6 +289,17 @@ public:
 
     return post;
   }
+
+  double inner_radius = 0.8, outer_radius = 1.0, height = 1.0;
+
+  bool use_volume_force = true;
+
+  double volume_force = 1.0;
+
+  std::string boundary_type = "Dirichlet";
+
+  double displacement = 0.2; // "Dirichlet"
+  double area_force   = 1.0; // "Neumann"
 };
 
 } // namespace Structure

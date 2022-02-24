@@ -120,12 +120,6 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
-
-    string_to_enum(mesh_type, mesh_type_string);
   }
 
   void
@@ -140,8 +134,14 @@ public:
     // clang-format on
   }
 
-  std::string mesh_type_string = "Cartesian";
-  MeshType    mesh_type        = MeshType::Cartesian;
+private:
+  void
+  parse_parameters() final
+  {
+    ApplicationBase<dim, Number>::parse_parameters();
+
+    string_to_enum(mesh_type, mesh_type_string);
+  }
 
   void
   set_parameters() final
@@ -260,9 +260,9 @@ public:
   create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output       = this->write_output;
-    pp_data.output_data.directory          = this->output_directory + "vtu/";
-    pp_data.output_data.filename           = this->output_name;
+    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename;
     pp_data.output_data.write_higher_order = true;
     pp_data.output_data.degree             = this->param.degree;
 
@@ -275,6 +275,9 @@ public:
 
     return pp;
   }
+
+  std::string mesh_type_string = "Cartesian";
+  MeshType    mesh_type        = MeshType::Cartesian;
 };
 
 } // namespace Poisson

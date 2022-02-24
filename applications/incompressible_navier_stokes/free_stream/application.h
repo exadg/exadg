@@ -54,10 +54,6 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
   }
 
   void
@@ -75,14 +71,7 @@ public:
     // clang-format on
   }
 
-  double const left  = -0.5;
-  double const right = 0.5;
-
-  double const start_time = 0.0;
-  double const end_time   = 10.0;
-
-  bool ALE = true;
-
+private:
   void
   set_parameters() final
   {
@@ -94,7 +83,8 @@ public:
     this->param.right_hand_side             = false;
 
     // ALE
-    this->param.ale_formulation = ALE;
+    this->param.ale_formulation    = ALE;
+    this->param.mesh_movement_type = MeshMovementType::Function;
     this->param.neumann_with_variable_normal_vector =
       false; // no Neumann boundaries for this test case
 
@@ -310,9 +300,9 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output       = this->write_output;
-    pp_data.output_data.directory          = this->output_directory + "vtu/";
-    pp_data.output_data.filename           = this->output_name;
+    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename;
     pp_data.output_data.start_time         = start_time;
     pp_data.output_data.interval_time      = (end_time - start_time) / 100;
     pp_data.output_data.write_higher_order = true;
@@ -339,6 +329,14 @@ public:
 
     return pp;
   }
+
+  double const left  = -0.5;
+  double const right = 0.5;
+
+  double const start_time = 0.0;
+  double const end_time   = 10.0;
+
+  bool ALE = true;
 };
 
 } // namespace IncNS

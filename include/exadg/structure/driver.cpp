@@ -123,6 +123,8 @@ Driver<dim, Number>::solve() const
 {
   if(application->get_parameters().problem_type == ProblemType::Unsteady)
   {
+    time_integrator->compute_initial_acceleration(
+      application->get_parameters().restarted_simulation);
     time_integrator->timeloop();
   }
   else if(application->get_parameters().problem_type == ProblemType::Steady)

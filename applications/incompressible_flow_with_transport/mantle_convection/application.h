@@ -95,43 +95,12 @@ template<int dim, typename Number>
 class Application : public FTI::ApplicationBase<dim, Number>
 {
 public:
-  // physical quantities
-  double const R0 = 0.55;
-  double const R1 = 1.0;
-
-  double const Ra                  = 1.0e8;
-  double const beta                = Ra;
-  double const kinematic_viscosity = 1.0;
-  double const thermal_diffusivity = 1.0;
-
-  double const T0 = 1.0;
-  double const T1 = 0.0;
-
-  double const H = R1 - R0;
-  double const U = std::sqrt(Ra * kinematic_viscosity * thermal_diffusivity / (H * H));
-  double const characteristic_time = H / U;
-  double const start_time          = 0.0;
-  double const end_time            = 200.0 * characteristic_time;
-
-  // CFL > 4 did not show further speed-up for 2d example
-  double const CFL                    = 2.0; // 0.4;
-  bool const   adaptive_time_stepping = true;
-
-  // solver tolerance
-  double const reltol = 1.e-3;
-
-  // vtu output
-  double const output_interval_time = (end_time - start_time) / 200.0;
-
   Application(std::string input_file, MPI_Comm const & comm)
     : FTI::ApplicationBase<dim, Number>(input_file, comm, 1)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
   }
 
+private:
   void
   set_parameters() final
   {
@@ -395,9 +364,9 @@ public:
     IncNS::PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output       = this->write_output;
-    pp_data.output_data.directory          = this->output_directory + "vtu/";
-    pp_data.output_data.filename           = this->output_name + "_fluid";
+    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename + "_fluid";
     pp_data.output_data.start_time         = start_time;
     pp_data.output_data.interval_time      = output_interval_time;
     pp_data.output_data.write_processor_id = true;
@@ -437,10 +406,11 @@ public:
   create_postprocessor_scalar(unsigned int const scalar_index) final
   {
     ConvDiff::PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output = this->write_output;
-    pp_data.output_data.directory    = this->output_directory + "vtu/";
-    pp_data.output_data.filename   = this->output_name + "_scalar_" + std::to_string(scalar_index);
-    pp_data.output_data.start_time = start_time;
+    pp_data.output_data.write_output = this->output_parameters.write;
+    pp_data.output_data.directory    = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename =
+      this->output_parameters.filename + "_scalar_" + std::to_string(scalar_index);
+    pp_data.output_data.start_time         = start_time;
     pp_data.output_data.interval_time      = output_interval_time;
     pp_data.output_data.degree             = this->scalar_param[scalar_index].degree;
     pp_data.output_data.write_higher_order = (dim == 2);
@@ -451,6 +421,34 @@ public:
 
     return pp;
   }
+
+  // physical quantities
+  double const R0 = 0.55;
+  double const R1 = 1.0;
+
+  double const Ra                  = 1.0e8;
+  double const beta                = Ra;
+  double const kinematic_viscosity = 1.0;
+  double const thermal_diffusivity = 1.0;
+
+  double const T0 = 1.0;
+  double const T1 = 0.0;
+
+  double const H = R1 - R0;
+  double const U = std::sqrt(Ra * kinematic_viscosity * thermal_diffusivity / (H * H));
+  double const characteristic_time = H / U;
+  double const start_time          = 0.0;
+  double const end_time            = 200.0 * characteristic_time;
+
+  // CFL > 4 did not show further speed-up for 2d example
+  double const CFL                    = 2.0; // 0.4;
+  bool const   adaptive_time_stepping = true;
+
+  // solver tolerance
+  double const reltol = 1.e-3;
+
+  // vtu output
+  double const output_interval_time = (end_time - start_time) / 200.0;
 };
 
 } // namespace FTI

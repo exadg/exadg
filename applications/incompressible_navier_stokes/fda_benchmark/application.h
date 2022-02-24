@@ -163,11 +163,6 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBasePrecursor<dim, Number>(input_file, comm)
   {
-    // parse application-specific parameters
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
-
     flow_rate_controller.reset(new FlowRateController(target_flow_rate,
                                                       viscosity,
                                                       max_velocity,
@@ -201,70 +196,7 @@ public:
                                                          factor_random_perturbations));
   }
 
-  // set the throat Reynolds number Re_throat = U_{mean,throat} * (2 R_throat) / nu
-  double const Re = 3500; // 500; //2000; //3500; //5000; //6500; //8000;
-
-  // kinematic viscosity (same viscosity for all Reynolds numbers)
-  double const viscosity = 3.31e-6;
-
-  double const area_inflow = FDANozzle::R_OUTER * FDANozzle::R_OUTER * dealii::numbers::PI;
-  double const area_throat = FDANozzle::R_INNER * FDANozzle::R_INNER * dealii::numbers::PI;
-
-  double const mean_velocity_throat = Re * viscosity / (2.0 * FDANozzle::R_INNER);
-  double const target_flow_rate     = mean_velocity_throat * area_throat;
-  double const mean_velocity_inflow = target_flow_rate / area_inflow;
-
-  double const max_velocity     = 2.0 * target_flow_rate / area_inflow;
-  double const max_velocity_cfl = 2.0 * target_flow_rate / area_throat;
-
-  // prescribe velocity inflow profile for nozzle domain via precursor simulation?
-  // If yes, specify additional mesh_refinements for precursor domain
-  bool const         use_precursor                    = true;
-  unsigned int const additional_refinements_precursor = 1;
-
-  // use prescribed velocity profile at inflow superimposed by random perturbations (white noise)?
-  // If yes, specify amplitude of perturbations relative to maximum velocity on centerline.
-  // Can be used with and without precursor approach
-  bool const   use_random_perturbations    = false;
-  double const factor_random_perturbations = 0.02;
-
-  std::shared_ptr<FlowRateController>     flow_rate_controller;
-  std::shared_ptr<InflowDataStorage<dim>> inflow_data_storage;
-
-  // start and end time
-
-  // estimation of flow-through time T_0 (through nozzle section)
-  // based on the mean velocity through throat
-  double const T_0                  = FDANozzle::LENGTH_THROAT / mean_velocity_throat;
-  double const start_time_precursor = -500.0 * T_0; // let the flow develop
-  double const start_time_nozzle    = 0.0 * T_0;
-  double const end_time             = 250.0 * T_0; // 150.0*T_0;
-
-  // postprocessing
-
-  // output folder
-  std::string const directory = "output/fda/Re3500/";
-
-  // flow-rate
-  std::string const filename_flowrate = "precursor_mean_velocity";
-
-  // sampling of axial and radial velocity profiles
-
-  // sampling interval should last over (100-200) * T_0 according to preliminary results.
-  double const       sample_start_time      = 50.0 * T_0; // let the flow develop
-  double const       sample_end_time        = end_time;   // that's the only reasonable choice
-  unsigned int const sample_every_timesteps = 1;
-
-  // line plot data
-  unsigned int const n_points_line_axial           = 400;
-  unsigned int const n_points_line_radial          = 64;
-  unsigned int const n_points_line_circumferential = 32;
-
-  // vtu-output
-  double const output_start_time_precursor = start_time_precursor;
-  double const output_start_time_nozzle    = start_time_nozzle;
-  double const output_interval_time        = 5.0 * T_0; // 10.0*T_0;
-
+private:
   /*
    *  Most of the parameters are the same for both domains, so we write
    *  this function for the actual domain and only "correct" the parameters
@@ -625,14 +557,14 @@ public:
 
     // write output for visualization of results
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output                         = this->write_output;
-    pp_data.output_data.directory                            = this->output_directory + "vtu/";
-    pp_data.output_data.filename                             = this->output_name + "_nozzle";
-    pp_data.output_data.start_time                           = output_start_time_nozzle;
-    pp_data.output_data.interval_time                        = output_interval_time;
-    pp_data.output_data.write_divergence                     = true;
-    pp_data.output_data.write_processor_id                   = true;
-    pp_data.output_data.mean_velocity.calculate              = true;
+    pp_data.output_data.write_output            = this->output_parameters.write;
+    pp_data.output_data.directory               = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename                = this->output_parameters.filename + "_nozzle";
+    pp_data.output_data.start_time              = output_start_time_nozzle;
+    pp_data.output_data.interval_time           = output_interval_time;
+    pp_data.output_data.write_divergence        = true;
+    pp_data.output_data.write_processor_id      = true;
+    pp_data.output_data.mean_velocity.calculate = true;
     pp_data.output_data.mean_velocity.sample_start_time      = sample_start_time;
     pp_data.output_data.mean_velocity.sample_end_time        = sample_end_time;
     pp_data.output_data.mean_velocity.sample_every_timesteps = 1;
@@ -642,8 +574,8 @@ public:
     pp_data_fda.pp_data = pp_data;
 
     // evaluation of quantities along lines
-    pp_data_fda.line_plot_data.line_data.directory                    = this->output_directory;
-    pp_data_fda.line_plot_data.statistics_data.calculate              = true;
+    pp_data_fda.line_plot_data.line_data.directory       = this->output_parameters.directory;
+    pp_data_fda.line_plot_data.statistics_data.calculate = true;
     pp_data_fda.line_plot_data.statistics_data.sample_start_time      = sample_start_time;
     pp_data_fda.line_plot_data.statistics_data.sample_end_time        = end_time;
     pp_data_fda.line_plot_data.statistics_data.sample_every_timesteps = sample_every_timesteps;
@@ -827,14 +759,14 @@ public:
 
     PostProcessorData<dim> pp_data;
     // write output for visualization of results
-    pp_data.output_data.write_output                         = this->write_output;
-    pp_data.output_data.directory                            = this->output_directory + "vtu/";
-    pp_data.output_data.filename                             = this->output_name + "_precursor";
-    pp_data.output_data.start_time                           = output_start_time_precursor;
-    pp_data.output_data.interval_time                        = output_interval_time;
-    pp_data.output_data.write_divergence                     = true;
-    pp_data.output_data.write_processor_id                   = true;
-    pp_data.output_data.mean_velocity.calculate              = true;
+    pp_data.output_data.write_output            = this->output_parameters.write;
+    pp_data.output_data.directory               = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename                = this->output_parameters.filename + "_precursor";
+    pp_data.output_data.start_time              = output_start_time_precursor;
+    pp_data.output_data.interval_time           = output_interval_time;
+    pp_data.output_data.write_divergence        = true;
+    pp_data.output_data.write_processor_id      = true;
+    pp_data.output_data.mean_velocity.calculate = true;
     pp_data.output_data.mean_velocity.sample_start_time      = sample_start_time;
     pp_data.output_data.mean_velocity.sample_end_time        = sample_end_time;
     pp_data.output_data.mean_velocity.sample_every_timesteps = 1;
@@ -858,7 +790,7 @@ public:
 
     // calculation of flow rate (use volume-based computation)
     pp_data_fda.mean_velocity_data.calculate = true;
-    pp_data_fda.mean_velocity_data.directory = this->output_directory;
+    pp_data_fda.mean_velocity_data.directory = this->output_parameters.directory;
     pp_data_fda.mean_velocity_data.filename  = filename_flowrate;
     dealii::Tensor<1, dim, double> direction;
     direction[2]                                 = 1.0;
@@ -875,6 +807,70 @@ public:
 
     return pp;
   }
+
+  // set the throat Reynolds number Re_throat = U_{mean,throat} * (2 R_throat) / nu
+  double const Re = 3500; // 500; //2000; //3500; //5000; //6500; //8000;
+
+  // kinematic viscosity (same viscosity for all Reynolds numbers)
+  double const viscosity = 3.31e-6;
+
+  double const area_inflow = FDANozzle::R_OUTER * FDANozzle::R_OUTER * dealii::numbers::PI;
+  double const area_throat = FDANozzle::R_INNER * FDANozzle::R_INNER * dealii::numbers::PI;
+
+  double const mean_velocity_throat = Re * viscosity / (2.0 * FDANozzle::R_INNER);
+  double const target_flow_rate     = mean_velocity_throat * area_throat;
+  double const mean_velocity_inflow = target_flow_rate / area_inflow;
+
+  double const max_velocity     = 2.0 * target_flow_rate / area_inflow;
+  double const max_velocity_cfl = 2.0 * target_flow_rate / area_throat;
+
+  // prescribe velocity inflow profile for nozzle domain via precursor simulation?
+  // If yes, specify additional mesh_refinements for precursor domain
+  bool const         use_precursor                    = true;
+  unsigned int const additional_refinements_precursor = 1;
+
+  // use prescribed velocity profile at inflow superimposed by random perturbations (white noise)?
+  // If yes, specify amplitude of perturbations relative to maximum velocity on centerline.
+  // Can be used with and without precursor approach
+  bool const   use_random_perturbations    = false;
+  double const factor_random_perturbations = 0.02;
+
+  std::shared_ptr<FlowRateController>     flow_rate_controller;
+  std::shared_ptr<InflowDataStorage<dim>> inflow_data_storage;
+
+  // start and end time
+
+  // estimation of flow-through time T_0 (through nozzle section)
+  // based on the mean velocity through throat
+  double const T_0                  = FDANozzle::LENGTH_THROAT / mean_velocity_throat;
+  double const start_time_precursor = -500.0 * T_0; // let the flow develop
+  double const start_time_nozzle    = 0.0 * T_0;
+  double const end_time             = 250.0 * T_0; // 150.0*T_0;
+
+  // postprocessing
+
+  // output folder
+  std::string const directory = "output/fda/Re3500/";
+
+  // flow-rate
+  std::string const filename_flowrate = "precursor_mean_velocity";
+
+  // sampling of axial and radial velocity profiles
+
+  // sampling interval should last over (100-200) * T_0 according to preliminary results.
+  double const       sample_start_time      = 50.0 * T_0; // let the flow develop
+  double const       sample_end_time        = end_time;   // that's the only reasonable choice
+  unsigned int const sample_every_timesteps = 1;
+
+  // line plot data
+  unsigned int const n_points_line_axial           = 400;
+  unsigned int const n_points_line_radial          = 64;
+  unsigned int const n_points_line_circumferential = 32;
+
+  // vtu-output
+  double const output_start_time_precursor = start_time_precursor;
+  double const output_start_time_nozzle    = start_time_nozzle;
+  double const output_interval_time        = 5.0 * T_0; // 10.0*T_0;
 };
 
 } // namespace IncNS

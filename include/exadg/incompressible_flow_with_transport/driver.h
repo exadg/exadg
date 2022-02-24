@@ -27,7 +27,6 @@
 
 // utilities
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
-#include <exadg/grid/grid_motion_analytical.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/utilities/print_functions.h>
 #include <exadg/utilities/print_general_infos.h>
@@ -39,6 +38,7 @@
 
 // IncNS
 #include <exadg/convection_diffusion/spatial_discretization/operator.h>
+#include <exadg/grid/grid_motion_function.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.h>

@@ -30,6 +30,7 @@
 
 
 // ExaDG
+#include <exadg/functions_and_boundary_conditions/interface_coupling.h>
 #include <exadg/grid/grid.h>
 #include <exadg/grid/grid_motion_interface.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/divergence_calculator.h>
@@ -197,10 +198,11 @@ public:
   get_dof_index_pressure() const;
 
   unsigned int
-  get_dof_index_velocity_scalar() const;
-
-  unsigned int
   get_quad_index_velocity_linear() const;
+
+protected:
+  unsigned int
+  get_dof_index_velocity_scalar() const;
 
   unsigned int
   get_quad_index_pressure() const;
@@ -217,6 +219,7 @@ public:
   unsigned int
   get_quad_index_velocity_linearized() const;
 
+public:
   std::shared_ptr<dealii::Mapping<dim> const>
   get_mapping() const;
 
@@ -247,6 +250,10 @@ public:
   dealii::VectorizedArray<Number>
   get_viscosity_boundary_face(unsigned int const face, unsigned int const q) const;
 
+  // Multiphysics coupling via "Cached" boundary conditions
+  std::shared_ptr<ContainerInterfaceData<dim, dim, Number>>
+  get_container_interface_data();
+
   void
   set_velocity_ptr(VectorType const & velocity) const;
 
@@ -272,20 +279,6 @@ public:
   prescribe_initial_conditions(VectorType & velocity,
                                VectorType & pressure,
                                double const time) const;
-
-  /*
-   * Fill a DoF vector with velocity Dirichlet values on Dirichlet boundaries.
-   *
-   * Note that this function only works as long as one uses a nodal dealii::FE_DGQ element with
-   * Gauss-Lobatto points. Otherwise, the quadrature formula used in this function does not match
-   * the nodes of the element, and the values injected by this function into the DoF vector are not
-   * the degrees of freedom of the underlying finite element space.
-   */
-  void
-  interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time);
-
-  void
-  interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time);
 
   // FSI: coupling fluid -> structure
   // fills a DoF-vector (velocity) with values of traction on fluid-structure interface
@@ -520,7 +513,9 @@ protected:
    */
   Parameters const & param;
 
-protected:
+  /*
+   * A name describing the field being solved.
+   */
   std::string const field;
 
   /*
@@ -579,6 +574,11 @@ private:
   std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
 
   bool pressure_level_is_undefined;
+
+  /*
+   * Interface coupling
+   */
+  std::shared_ptr<ContainerInterfaceData<dim, dim, Number>> interface_data_dirichlet_cached;
 
 protected:
   /*
@@ -692,20 +692,6 @@ private:
                   Range const &) const
   {
   }
-
-  void
-  local_interpolate_velocity_dirichlet_bc_boundary_face(
-    dealii::MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                            dst,
-    VectorType const &                      src,
-    Range const &                           face_range) const;
-
-  void
-  local_interpolate_pressure_dirichlet_bc_boundary_face(
-    dealii::MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                            dst,
-    VectorType const &                      src,
-    Range const &                           face_range) const;
 
   void
   local_interpolate_stress_bc_boundary_face(dealii::MatrixFree<dim, Number> const & matrix_free,

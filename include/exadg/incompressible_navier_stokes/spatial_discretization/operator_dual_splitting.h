@@ -127,6 +127,17 @@ public:
                 bool const &       update_preconditioner,
                 double const &     scaling_factor_mass);
 
+  /*
+   * Fill a DoF vector with velocity Dirichlet values on Dirichlet boundaries.
+   *
+   * Note that this function only works as long as one uses a nodal dealii::FE_DGQ element with
+   * Gauss-Lobatto points. Otherwise, the quadrature formula used in this function does not match
+   * the nodes of the element, and the values injected by this function into the DoF vector are not
+   * the degrees of freedom of the underlying finite element space.
+   */
+  void
+  interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time);
+
 private:
   /*
    * Setup of Helmholtz solver (operator, preconditioner, solver).
@@ -210,6 +221,13 @@ private:
                                               VectorType &                            dst,
                                               VectorType const &                      src,
                                               Range const & face_range) const;
+
+  void
+  local_interpolate_velocity_dirichlet_bc_boundary_face(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           face_range) const;
 
 
   /*

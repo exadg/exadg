@@ -166,14 +166,10 @@ TimeIntBDF<dim, Number>::ale_update()
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::advance_one_timestep_partitioned_solve(bool const use_extrapolation,
-                                                                bool const store_solution)
+TimeIntBDF<dim, Number>::advance_one_timestep_partitioned_solve(bool const use_extrapolation)
 {
-  if(this->use_extrapolation == false)
-    AssertThrow(this->store_solution == true, dealii::ExcMessage("Invalid parameters."));
-
   this->use_extrapolation = use_extrapolation;
-  this->store_solution    = store_solution;
+  this->store_solution    = true;
 
   Base::advance_one_timestep_solve();
 }
