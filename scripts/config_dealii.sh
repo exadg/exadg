@@ -30,6 +30,12 @@ DEAL=$WORKING_DIRECTORY/sw/dealii
 
 rm -rf CMakeFiles/ CMakeCache.txt
 
+# Note on compiler flags: Note that "-march=native" requires that the hardware 
+# on which you compile the code is consistent with the hardware on which you 
+# execute the code. If this is not the case, consider to specify the target 
+# hardware for compilation, e.g. "-march=haswell" or "-march=skylake-avx512", 
+# where "-march=haswell" can also be used for recent AMD x86-64 hardware. 
+
 cmake \
     -D CMAKE_BUILD_TYPE="DebugRelease" \
     -D CMAKE_CXX_FLAGS="-std=c++17 -march=native -Wno-array-bounds -Wno-literal-suffix -pthread" \
