@@ -272,14 +272,28 @@ OperatorBase<dim, Number, n_components>::apply(VectorType & dst, VectorType cons
   }
   else
   {
+    // We need to zero constrained degrees of freedom. The contribution of these
+    // degrees of freedom to the matrix-vector product has already been taken into account
+    // in the right-hand side vector. Put differently, setting the constrained degrees of
+    // freedom to zero is equivalent to the idea of eliminating those columns of the matrix
+    // that correspond to constrained degrees of freedom.
     for(unsigned int i = 0; i < constrained_indices.size(); ++i)
     {
       constrained_values_src[i] = src.local_element(constrained_indices[i]);
       const_cast<VectorType &>(src).local_element(constrained_indices[i]) = 0.;
     }
 
+    // Compute matrix-vector product. Constrained degrees of freedom will not have
+    // an effect since they have been zeroed before.
     matrix_free->cell_loop(&This::cell_loop, this, dst, src, true);
 
+    // Constrained degree of freedom are not removed from the system of equations.
+    // Instead, we set the diagonal entries of the matrix to 1 for these constrained
+    // degrees of freedom. This means that we simply copy the constrained values to the
+    // dst vector. Since we have already computed the matrix-vector product, the
+    // constrained values can be written back to the src vector, i.e. having completed
+    // the function apply(), the src vector should be the same as before calling this
+    // function.
     for(unsigned int i = 0; i < constrained_indices.size(); ++i)
     {
       const_cast<VectorType &>(src).local_element(constrained_indices[i]) =
@@ -303,6 +317,8 @@ OperatorBase<dim, Number, n_components>::apply_add(VectorType & dst, VectorType 
   }
   else
   {
+    // See function apply() for comments.
+
     for(unsigned int i = 0; i < constrained_indices.size(); ++i)
     {
       constrained_values_dst[i] =
@@ -350,17 +366,33 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
 
   if(!is_dg)
   {
-    // set values on Dirichlet boundaries
+    // Set constrained degrees of freedom according to Dirichlet boundary conditions. The rest of
+    // the vector contains zeros.
     VectorType temp1;
     matrix_free->initialize_dof_vector(temp1, data.dof_index);
     set_constrained_values(temp1, time);
 
-    // perform matrix-vector product and shift vector to right-hand side
+    // Perform matrix-vector product using temp1 as source vector and shift the resulting vector to
+    // the right-hand side. N.B.: Due to the coupling of degrees of freedom, constrained degrees of
+    // freedom also impact entries of the result vector (equivalently: rows of the matrix-vector
+    // product) corresponding to non-constrained degrees of freedom. This implies that we have to
+    // set vector entries of constrained degrees of freedom to zero when computing matrix-vector
+    // products in iterative solvers, since their contribution has already been taken into account
+    // in the rhs vector. Note that this procedure is equivalent to eliminating "columns" of the
+    // associated "matrix" representing the linear operator.
     VectorType temp2;
     matrix_free->initialize_dof_vector(temp2, data.dof_index);
     matrix_free->cell_loop(&This::cell_loop_dbc, this, temp2, temp1);
     rhs -= temp2;
 
+    // Finally, set entries of rhs vector equal to Dirichlet boundary values for the
+    // constrained degrees of freedom. This procedure is related to a linear system of equations
+    // where we do not eliminate rows corresponding to constrained degrees of freedom, but where
+    // the associated "matrix" contains a value of 1 on the diagonal for these rows.
+    // Using this technique, the linear system of equations is solvable and the initially solution
+    // does not have to contain the correct solution values for constrained degrees of freedom.
+    // Instead, the iteration procedure will converge towards the correct solution according to the
+    // convergence criteria specified for the linear solver.
     for(unsigned int i = 0; i < constrained_indices.size(); ++i)
     {
       rhs.local_element(constrained_indices[i]) = temp1.local_element(constrained_indices[i]);
