@@ -4,11 +4,9 @@
         "Dim": "2",
         "IsTest": "false"
     },
-    "SpatialResolution": {
-        "DegreeFluid": "2",
-        "DegreeStructure": "3",
-        "RefineFluid": "1",
-        "RefineStructure": "3"
+    "SpatialResolutionFluid": {
+        "Degree": "2",
+        "RefineSpace": "1"
     },
     "preciceConfiguration": {
         "preciceConfigFile": "../precice-config.xml",

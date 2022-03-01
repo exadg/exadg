@@ -84,7 +84,7 @@ public:
       dealii::Timer timer_local;
       timer_local.restart();
 
-      this->application->setup_fluid_and_ale();
+      this->application->fluid->setup();
 
       this->timer_tree.insert({"FSI", "Setup", "Application"}, timer_local.wall_time());
     }
@@ -96,26 +96,26 @@ public:
       timer_local.restart();
 
       // ALE: initialize PDE operator
-      if(this->application->get_parameters_fluid().mesh_movement_type ==
+      if(this->application->fluid->get_parameters().mesh_movement_type ==
          IncNS::MeshMovementType::Poisson)
       {
         ale_poisson_operator = std::make_shared<Poisson::Operator<dim, Number, dim>>(
-          this->application->get_grid_fluid(),
-          this->application->get_boundary_descriptor_ale_poisson(),
-          this->application->get_field_functions_ale_poisson(),
-          this->application->get_parameters_ale_poisson(),
+          this->application->fluid->get_grid(),
+          this->application->fluid->get_boundary_descriptor_ale_poisson(),
+          this->application->fluid->get_field_functions_ale_poisson(),
+          this->application->fluid->get_parameters_ale_poisson(),
           "Poisson",
           this->mpi_comm);
       }
-      else if(this->application->get_parameters_fluid().mesh_movement_type ==
+      else if(this->application->fluid->get_parameters().mesh_movement_type ==
               IncNS::MeshMovementType::Elasticity)
       {
         ale_elasticity_operator = std::make_shared<Structure::Operator<dim, Number>>(
-          this->application->get_grid_fluid(),
-          this->application->get_boundary_descriptor_ale_elasticity(),
-          this->application->get_field_functions_ale_elasticity(),
-          this->application->get_material_descriptor_ale_elasticity(),
-          this->application->get_parameters_ale_elasticity(),
+          this->application->fluid->get_grid(),
+          this->application->fluid->get_boundary_descriptor_ale_elasticity(),
+          this->application->fluid->get_field_functions_ale_elasticity(),
+          this->application->fluid->get_material_descriptor_ale_elasticity(),
+          this->application->fluid->get_parameters_ale_elasticity(),
           "ale_elasticity",
           this->mpi_comm);
       }
@@ -127,16 +127,16 @@ public:
       // ALE: initialize matrix_free_data
       ale_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
 
-      if(this->application->get_parameters_fluid().mesh_movement_type ==
+      if(this->application->fluid->get_parameters().mesh_movement_type ==
          IncNS::MeshMovementType::Poisson)
       {
-        if(this->application->get_parameters_ale_poisson().enable_cell_based_face_loops)
-          Categorization::do_cell_based_loops(*this->application->get_grid_fluid()->triangulation,
+        if(this->application->fluid->get_parameters_ale_poisson().enable_cell_based_face_loops)
+          Categorization::do_cell_based_loops(*this->application->fluid->get_grid()->triangulation,
                                               ale_matrix_free_data->data);
 
         ale_matrix_free_data->append(ale_poisson_operator);
       }
-      else if(this->application->get_parameters_fluid().mesh_movement_type ==
+      else if(this->application->fluid->get_parameters().mesh_movement_type ==
               IncNS::MeshMovementType::Elasticity)
       {
         ale_matrix_free_data->append(ale_elasticity_operator);
@@ -148,20 +148,20 @@ public:
 
       // ALE: initialize matrix_free
       ale_matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-      ale_matrix_free->reinit(*this->application->get_grid_fluid()->mapping,
+      ale_matrix_free->reinit(*this->application->fluid->get_grid()->mapping,
                               ale_matrix_free_data->get_dof_handler_vector(),
                               ale_matrix_free_data->get_constraint_vector(),
                               ale_matrix_free_data->get_quadrature_vector(),
                               ale_matrix_free_data->data);
 
       // ALE: setup PDE operator and solver
-      if(this->application->get_parameters_fluid().mesh_movement_type ==
+      if(this->application->fluid->get_parameters().mesh_movement_type ==
          IncNS::MeshMovementType::Poisson)
       {
         ale_poisson_operator->setup(ale_matrix_free, ale_matrix_free_data);
         ale_poisson_operator->setup_solver();
       }
-      else if(this->application->get_parameters_fluid().mesh_movement_type ==
+      else if(this->application->fluid->get_parameters().mesh_movement_type ==
               IncNS::MeshMovementType::Elasticity)
       {
         ale_elasticity_operator->setup(ale_matrix_free, ale_matrix_free_data);
@@ -173,19 +173,19 @@ public:
       }
 
       // ALE: create grid motion object
-      if(this->application->get_parameters_fluid().mesh_movement_type ==
+      if(this->application->fluid->get_parameters().mesh_movement_type ==
          IncNS::MeshMovementType::Poisson)
       {
         fluid_grid_motion = std::make_shared<GridMotionPoisson<dim, Number>>(
-          this->application->get_grid_fluid()->mapping, ale_poisson_operator);
+          this->application->fluid->get_grid()->mapping, ale_poisson_operator);
       }
-      else if(this->application->get_parameters_fluid().mesh_movement_type ==
+      else if(this->application->fluid->get_parameters().mesh_movement_type ==
               IncNS::MeshMovementType::Elasticity)
       {
         fluid_grid_motion = std::make_shared<GridMotionElasticity<dim, Number>>(
-          this->application->get_grid_fluid()->mapping,
+          this->application->fluid->get_grid()->mapping,
           ale_elasticity_operator,
-          this->application->get_parameters_ale_elasticity());
+          this->application->fluid->get_parameters_ale_elasticity());
       }
       else
       {
@@ -203,11 +203,11 @@ public:
 
       // initialize fluid_operator
       fluid_operator =
-        IncNS::create_operator<dim, Number>(this->application->get_grid_fluid(),
+        IncNS::create_operator<dim, Number>(this->application->fluid->get_grid(),
                                             fluid_grid_motion,
-                                            this->application->get_boundary_descriptor_fluid(),
-                                            this->application->get_field_functions_fluid(),
-                                            this->application->get_parameters_fluid(),
+                                            this->application->fluid->get_boundary_descriptor(),
+                                            this->application->fluid->get_field_functions(),
+                                            this->application->fluid->get_parameters(),
                                             "fluid",
                                             this->mpi_comm);
 
@@ -216,11 +216,11 @@ public:
       fluid_matrix_free_data->append(fluid_operator);
 
       fluid_matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-      if(this->application->get_parameters_fluid().use_cell_based_face_loops)
-        Categorization::do_cell_based_loops(*this->application->get_grid_fluid()->triangulation,
+      if(this->application->fluid->get_parameters().use_cell_based_face_loops)
+        Categorization::do_cell_based_loops(*this->application->fluid->get_grid()->triangulation,
                                             fluid_matrix_free_data->data);
       std::shared_ptr<dealii::Mapping<dim> const> mapping =
-        get_dynamic_mapping<dim, Number>(this->application->get_grid_fluid(), fluid_grid_motion);
+        get_dynamic_mapping<dim, Number>(this->application->fluid->get_grid(), fluid_grid_motion);
       fluid_matrix_free->reinit(*mapping,
                                 fluid_matrix_free_data->get_dof_handler_vector(),
                                 fluid_matrix_free_data->get_constraint_vector(),
@@ -231,7 +231,7 @@ public:
       fluid_operator->setup(fluid_matrix_free, fluid_matrix_free_data);
 
       // setup postprocessor
-      fluid_postprocessor = this->application->create_postprocessor_fluid();
+      fluid_postprocessor = this->application->fluid->create_postprocessor();
       fluid_postprocessor->setup(*fluid_operator);
 
       this->timer_tree.insert({"FSI", "Setup", "Fluid"}, timer_local.wall_time());
@@ -246,7 +246,7 @@ public:
       std::make_shared<ExaDG::preCICE::Adapter<dim, dim, VectorType>>(this->precice_parameters,
                                                                       this->mpi_comm);
 
-    this->precice->add_write_surface(this->application->get_boundary_descriptor_fluid()
+    this->precice->add_write_surface(this->application->fluid->get_boundary_descriptor()
                                        ->velocity->dirichlet_cached_bc.begin()
                                        ->first,
                                      this->precice_parameters.write_mesh_name,
@@ -264,14 +264,14 @@ public:
         std::make_shared<ExaDG::preCICE::InterfaceCoupling<dim, dim, Number>>();
 
       // Poisson mesh movement
-      if(this->application->get_parameters_fluid().mesh_movement_type ==
+      if(this->application->fluid->get_parameters().mesh_movement_type ==
          IncNS::MeshMovementType::Poisson)
       {
         std::vector<unsigned int> quad_indices;
-        if(this->application->get_parameters_ale_poisson().spatial_discretization ==
+        if(this->application->fluid->get_parameters_ale_poisson().spatial_discretization ==
            Poisson::SpatialDiscretization::DG)
           quad_indices.emplace_back(ale_poisson_operator->get_quad_index());
-        else if(this->application->get_parameters_ale_poisson().spatial_discretization ==
+        else if(this->application->fluid->get_parameters_ale_poisson().spatial_discretization ==
                 Poisson::SpatialDiscretization::CG)
           quad_indices.emplace_back(ale_poisson_operator->get_quad_index_gauss_lobatto());
         else
@@ -281,10 +281,10 @@ public:
           ale_matrix_free,
           ale_poisson_operator->get_dof_index(),
           quad_indices,
-          this->application->get_boundary_descriptor_ale_poisson()->dirichlet_cached_bc);
+          this->application->fluid->get_boundary_descriptor_ale_poisson()->dirichlet_cached_bc);
       }
       // Elasticity mesh movement
-      else if(this->application->get_parameters_fluid().mesh_movement_type ==
+      else if(this->application->fluid->get_parameters().mesh_movement_type ==
               IncNS::MeshMovementType::Elasticity)
       {
         std::vector<unsigned int> quad_indices;
@@ -294,7 +294,7 @@ public:
           ale_matrix_free,
           ale_elasticity_operator->get_dof_index(),
           quad_indices,
-          this->application->get_boundary_descriptor_ale_elasticity()->dirichlet_cached_bc);
+          this->application->fluid->get_boundary_descriptor_ale_elasticity()->dirichlet_cached_bc);
       }
       else
       {
@@ -322,7 +322,7 @@ public:
         fluid_matrix_free,
         fluid_operator->get_dof_index_velocity(),
         quad_indices,
-        this->application->get_boundary_descriptor_fluid()->velocity->dirichlet_cached_bc);
+        this->application->fluid->get_boundary_descriptor()->velocity->dirichlet_cached_bc);
 
       // TODO: Parametrize
       this->precice->add_read_surface(quadrature_point_locations,
@@ -346,19 +346,19 @@ public:
     {
       // setup time integrator before calling setup_solvers (this is necessary since the setup
       // of the solvers depends on quantities such as the time_step_size or gamma0!!!)
-      AssertThrow(this->application->get_parameters_fluid().solver_type ==
+      AssertThrow(this->application->fluid->get_parameters().solver_type ==
                     IncNS::SolverType::Unsteady,
                   ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
       // initialize fluid_time_integrator
       fluid_time_integrator =
         IncNS::create_time_integrator<dim, Number>(fluid_operator,
-                                                   this->application->get_parameters_fluid(),
+                                                   this->application->fluid->get_parameters(),
                                                    this->mpi_comm,
                                                    this->is_test,
                                                    fluid_postprocessor);
 
-      fluid_time_integrator->setup(this->application->get_parameters_fluid().restarted_simulation);
+      fluid_time_integrator->setup(this->application->fluid->get_parameters().restarted_simulation);
 
       fluid_operator->setup_solvers(
         fluid_time_integrator->get_scaling_factor_time_derivative_term(),
@@ -371,7 +371,7 @@ public:
   void
   solve() const final
   {
-    Assert(this->application->get_parameters_fluid().adaptive_time_stepping == false,
+    Assert(this->application->fluid->get_parameters().adaptive_time_stepping == false,
            ExcNotImplemented());
 
     bool is_new_time_window = true;
@@ -449,12 +449,12 @@ public:
     // Throughput in DoFs/s per time step per core
     types::global_dof_index DoFs = fluid_operator->get_number_of_dofs();
 
-    if(this->application->get_parameters_fluid().mesh_movement_type ==
+    if(this->application->fluid->get_parameters().mesh_movement_type ==
        IncNS::MeshMovementType::Poisson)
     {
       DoFs += ale_poisson_operator->get_number_of_dofs();
     }
-    else if(this->application->get_parameters_fluid().mesh_movement_type ==
+    else if(this->application->fluid->get_parameters().mesh_movement_type ==
             IncNS::MeshMovementType::Elasticity)
     {
       DoFs += ale_elasticity_operator->get_number_of_dofs();
@@ -532,7 +532,7 @@ private:
 
     sub_timer.restart();
     std::shared_ptr<dealii::Mapping<dim> const> mapping =
-      get_dynamic_mapping<dim, Number>(this->application->get_grid_fluid(), fluid_grid_motion);
+      get_dynamic_mapping<dim, Number>(this->application->fluid->get_grid(), fluid_grid_motion);
     fluid_matrix_free->update_mapping(*mapping);
     this->timer_tree.insert({"FSI", "ALE", "Update matrix-free"}, sub_timer.wall_time());
 

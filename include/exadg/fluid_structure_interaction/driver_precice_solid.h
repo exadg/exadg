@@ -89,11 +89,11 @@ public:
 
       // setup spatial operator
       structure_operator = std::make_shared<Structure::Operator<dim, Number>>(
-        this->application->get_grid_structure(),
-        this->application->get_boundary_descriptor_structure(),
-        this->application->get_field_functions_structure(),
-        this->application->get_material_descriptor_structure(),
-        this->application->get_parameters_structure(),
+        this->application->structure->get_grid(),
+        this->application->structure->get_boundary_descriptor(),
+        this->application->structure->get_field_functions(),
+        this->application->structure->get_material_descriptor(),
+        this->application->structure->get_parameters(),
         "elasticity",
         this->mpi_comm);
 
@@ -102,7 +102,7 @@ public:
       structure_matrix_free_data->append(structure_operator);
 
       structure_matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-      structure_matrix_free->reinit(*this->application->get_grid_structure()->mapping,
+      structure_matrix_free->reinit(*this->application->structure->get_grid()->mapping,
                                     structure_matrix_free_data->get_dof_handler_vector(),
                                     structure_matrix_free_data->get_constraint_vector(),
                                     structure_matrix_free_data->get_quadrature_vector(),
@@ -111,9 +111,9 @@ public:
       structure_operator->setup(structure_matrix_free, structure_matrix_free_data);
 
       // initialize postprocessor
-      structure_postprocessor = this->application->create_postprocessor_structure();
+      structure_postprocessor = this->application->structure->create_postprocessor();
       structure_postprocessor->setup(structure_operator->get_dof_handler(),
-                                     *this->application->get_grid_structure()->mapping);
+                                     *this->application->structure->get_grid()->mapping);
 
       this->timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
     }
@@ -128,7 +128,7 @@ public:
                                                                       this->mpi_comm);
 
     this->precice->add_write_surface(
-      this->application->get_boundary_descriptor_structure()->neumann_cached_bc.begin()->first,
+      this->application->structure->get_boundary_descriptor()->neumann_cached_bc.begin()->first,
       this->precice_parameters.write_mesh_name,
       {this->precice_parameters.displacement_data_name,
        this->precice_parameters.velocity_data_name},
@@ -147,7 +147,7 @@ public:
         structure_matrix_free,
         structure_operator->get_dof_index(),
         quad_indices,
-        this->application->get_boundary_descriptor_structure()->neumann_cached_bc);
+        this->application->structure->get_boundary_descriptor()->neumann_cached_bc);
 
       this->precice->add_read_surface(quadrature_point_locations,
                                       structure_matrix_free,
@@ -172,12 +172,12 @@ public:
       structure_time_integrator = std::make_shared<Structure::TimeIntGenAlpha<dim, Number>>(
         structure_operator,
         structure_postprocessor,
-        this->application->get_parameters_structure(),
+        this->application->structure->get_parameters(),
         this->mpi_comm,
         this->is_test);
 
       structure_time_integrator->setup(
-        this->application->get_parameters_structure().restarted_simulation);
+        this->application->structure->get_parameters().restarted_simulation);
 
       structure_operator->setup_solver();
     }

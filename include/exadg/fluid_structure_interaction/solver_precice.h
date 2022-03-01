@@ -35,54 +35,6 @@
 
 namespace ExaDG
 {
-struct ResolutionParameters
-{
-  ResolutionParameters()
-  {
-  }
-
-  ResolutionParameters(const std::string & input_file)
-  {
-    dealii::ParameterHandler prm;
-    add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
-  }
-
-  void
-  add_parameters(dealii::ParameterHandler & prm)
-  {
-    // clang-format off
-    prm.enter_subsection("SpatialResolution");
-      prm.add_parameter("DegreeFluid",
-                        degree_fluid,
-                        "Polynomial degree of fluid (velocity).",
-                        dealii::Patterns::Integer(1,EXADG_DEGREE_MAX),
-                        true);
-      prm.add_parameter("DegreeStructure",
-                        degree_structure,
-                        "Polynomial degree of structural problem.",
-                        dealii::Patterns::Integer(1,EXADG_DEGREE_MAX),
-                        true);
-      prm.add_parameter("RefineFluid",
-                        refine_fluid,
-                        "Number of mesh refinements (fluid).",
-                        dealii::Patterns::Integer(0,20),
-                        true);
-      prm.add_parameter("RefineStructure",
-                        refine_structure,
-                        "Number of mesh refinements (structure).",
-                        dealii::Patterns::Integer(0,20),
-                        true);
-    prm.leave_subsection();
-    // clang-format on
-  }
-
-  unsigned int degree_fluid = 3, degree_structure = 3;
-
-  unsigned int refine_fluid = 0, refine_structure = 0;
-};
-
-
 void
 create_input_file(std::string const & input_file)
 {
@@ -90,9 +42,6 @@ create_input_file(std::string const & input_file)
 
   GeneralParameters general;
   general.add_parameters(prm);
-
-  ResolutionParameters resolution;
-  resolution.add_parameters(prm);
 
   ExaDG::preCICE::ConfigurationParameters precice_parameters;
   precice_parameters.add_parameters(prm);
@@ -102,13 +51,7 @@ create_input_file(std::string const & input_file)
   constexpr int Dim = 2;
   using Number      = double;
 
-  try
-  {
-    FSI::get_application<Dim, Number>(input_file, MPI_COMM_WORLD)->add_parameters(prm);
-  }
-  catch(...)
-  {
-  }
+  FSI::get_application<Dim, Number>(input_file, MPI_COMM_WORLD)->add_parameters(prm);
 
   prm.print_parameters(input_file,
                        dealii::ParameterHandler::Short |
@@ -126,12 +69,6 @@ run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_tes
   std::shared_ptr<FSI::ApplicationBase<dim, Number>> application =
     FSI::get_application<dim, Number>(input_file, mpi_comm);
 
-
-  ExaDG::ResolutionParameters resolution(input_file);
-  application->set_parameters_convergence_study(resolution.degree_fluid,
-                                                resolution.degree_structure,
-                                                resolution.refine_fluid,
-                                                resolution.refine_structure);
 
   ExaDG::preCICE::ConfigurationParameters            precice_param(input_file);
   std::shared_ptr<FSI::preCICE::Driver<dim, Number>> driver;
