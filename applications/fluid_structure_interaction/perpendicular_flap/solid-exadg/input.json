@@ -5,8 +5,8 @@
         "IsTest": "false"
     },
     "SpatialResolutionStructure": {
-        "Degree": "3",
-        "RefineSpace": "3"
+        "Degree": "2",
+        "RefineSpace": "2"
     },
     "preciceConfiguration": {
         "preciceConfigFile": "../precice-config.xml",

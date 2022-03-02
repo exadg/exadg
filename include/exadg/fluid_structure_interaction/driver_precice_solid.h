@@ -63,66 +63,72 @@ public:
   {
   }
 
+
   void
-  setup()
+  setup_application()
   {
-    dealii::Timer timer;
-    timer.restart();
+    dealii::Timer timer_local;
+    timer_local.restart();
 
-    this->pcout << std::endl << "Setting up fluid-structure interaction solver:" << std::endl;
+    this->application->structure->setup();
 
-    /************************************** APPLICATION *****************************************/
-    {
-      dealii::Timer timer_local;
-      timer_local.restart();
-
-      this->application->setup_structure();
-
-      this->timer_tree.insert({"FSI", "Setup", "Application"}, timer_local.wall_time());
-    }
-    /************************************** APPLICATION *****************************************/
-
-    /**************************************** STRUCTURE *****************************************/
-    {
-      dealii::Timer timer_local;
-      timer_local.restart();
-
-      // setup spatial operator
-      structure_operator = std::make_shared<Structure::Operator<dim, Number>>(
-        this->application->structure->get_grid(),
-        this->application->structure->get_boundary_descriptor(),
-        this->application->structure->get_field_functions(),
-        this->application->structure->get_material_descriptor(),
-        this->application->structure->get_parameters(),
-        "elasticity",
-        this->mpi_comm);
-
-      // initialize matrix_free
-      structure_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-      structure_matrix_free_data->append(structure_operator);
-
-      structure_matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-      structure_matrix_free->reinit(*this->application->structure->get_grid()->mapping,
-                                    structure_matrix_free_data->get_dof_handler_vector(),
-                                    structure_matrix_free_data->get_constraint_vector(),
-                                    structure_matrix_free_data->get_quadrature_vector(),
-                                    structure_matrix_free_data->data);
-
-      structure_operator->setup(structure_matrix_free, structure_matrix_free_data);
-
-      // initialize postprocessor
-      structure_postprocessor = this->application->structure->create_postprocessor();
-      structure_postprocessor->setup(structure_operator->get_dof_handler(),
-                                     *this->application->structure->get_grid()->mapping);
-
-      this->timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
-    }
-
-    /**************************************** STRUCTURE *****************************************/
+    this->timer_tree.insert({"FSI", "Setup", "Application"}, timer_local.wall_time());
+  }
 
 
-    /*********************************** INTERFACE COUPLING *************************************/
+  void
+  setup_structure()
+  {
+    dealii::Timer timer_local;
+    timer_local.restart();
 
+    // setup spatial operator
+    structure_operator = std::make_shared<Structure::Operator<dim, Number>>(
+      this->application->structure->get_grid(),
+      this->application->structure->get_boundary_descriptor(),
+      this->application->structure->get_field_functions(),
+      this->application->structure->get_material_descriptor(),
+      this->application->structure->get_parameters(),
+      "elasticity",
+      this->mpi_comm);
+
+    // initialize matrix_free
+    structure_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
+    structure_matrix_free_data->append(structure_operator);
+
+    structure_matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
+    structure_matrix_free->reinit(*this->application->structure->get_grid()->mapping,
+                                  structure_matrix_free_data->get_dof_handler_vector(),
+                                  structure_matrix_free_data->get_constraint_vector(),
+                                  structure_matrix_free_data->get_quadrature_vector(),
+                                  structure_matrix_free_data->data);
+
+    structure_operator->setup(structure_matrix_free, structure_matrix_free_data);
+
+    // initialize postprocessor
+    structure_postprocessor = this->application->structure->create_postprocessor();
+    structure_postprocessor->setup(structure_operator->get_dof_handler(),
+                                   *this->application->structure->get_grid()->mapping);
+
+    structure_time_integrator = std::make_shared<Structure::TimeIntGenAlpha<dim, Number>>(
+      structure_operator,
+      structure_postprocessor,
+      this->application->structure->get_parameters(),
+      this->mpi_comm,
+      this->is_test);
+
+    structure_time_integrator->setup(
+      this->application->structure->get_parameters().restarted_simulation);
+
+    structure_operator->setup_solver();
+    this->timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
+  }
+
+
+
+  void
+  setup_interface_coupling()
+  {
     this->precice =
       std::make_shared<ExaDG::preCICE::Adapter<dim, dim, VectorType>>(this->precice_parameters,
                                                                       this->mpi_comm);
@@ -138,8 +144,10 @@ public:
       numbers::invalid_unsigned_int);
 
     {
-      std::vector<unsigned int> quad_indices;
-      quad_indices.emplace_back(structure_operator->get_quad_index());
+      // TODO: The ExaDG terminal sets up the quadrature point locations, which are already
+      // contained in the container_interface_data
+      std::vector<unsigned int> quad_indices =
+        structure_operator->get_container_interface_data_neumann()->get_quad_indices();
 
       // VectorType stress_fluid;
       auto exadg_terminal = std::make_shared<ExaDG::preCICE::InterfaceCoupling<dim, dim, Number>>();
@@ -160,29 +168,26 @@ public:
       displacement_structure = 0;
       this->precice->initialize_precice(displacement_structure);
     }
+  }
 
+
+
+  void
+  setup()
+  {
+    dealii::Timer timer;
+    timer.restart();
+
+    this->pcout << std::endl << "Setting up fluid-structure interaction solver:" << std::endl;
+
+    setup_application();
+
+    setup_structure();
+
+    setup_interface_coupling();
+
+    this->timer_tree.insert({"FSI", "Setup"}, timer.wall_time());
     /*********************************** INTERFACE COUPLING *************************************/
-
-
-    /**************************** SETUP TIME INTEGRATORS AND SOLVERS ****************************/
-
-    // Structure
-    {
-      // initialize time integrator
-      structure_time_integrator = std::make_shared<Structure::TimeIntGenAlpha<dim, Number>>(
-        structure_operator,
-        structure_postprocessor,
-        this->application->structure->get_parameters(),
-        this->mpi_comm,
-        this->is_test);
-
-      structure_time_integrator->setup(
-        this->application->structure->get_parameters().restarted_simulation);
-
-      structure_operator->setup_solver();
-    }
-
-    /**************************** SETUP TIME INTEGRATORS AND SOLVERS ****************************/
   }
 
   void
@@ -201,7 +206,7 @@ public:
 
       // solve structural problem
       // store_solution needs to be true for compatibility
-      structure_time_integrator->advance_one_timestep_partitioned_solve(is_new_time_window, true);
+      structure_time_integrator->advance_one_timestep_partitioned_solve(is_new_time_window);
       // send displacement data to ale
       coupling_structure_to_ale(structure_time_integrator->get_displacement_np(),
                                 structure_time_integrator->get_time_step_size());

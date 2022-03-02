@@ -72,25 +72,20 @@ public:
   }
 
   void
-  setup()
+  setup_application()
   {
-    dealii::Timer timer;
-    timer.restart();
+    dealii::Timer timer_local;
+    timer_local.restart();
 
-    this->pcout << std::endl << "Setting up fluid-structure interaction solver:" << std::endl;
+    this->application->fluid->setup();
 
-    /************************************** APPLICATION *****************************************/
-    {
-      dealii::Timer timer_local;
-      timer_local.restart();
+    this->timer_tree.insert({"FSI", "Setup", "Application"}, timer_local.wall_time());
+  }
 
-      this->application->fluid->setup();
 
-      this->timer_tree.insert({"FSI", "Setup", "Application"}, timer_local.wall_time());
-    }
-    /************************************** APPLICATION *****************************************/
-
-    /******************************************* ALE ********************************************/
+  void
+  setup_fluid_and_ale()
+  {
     {
       dealii::Timer timer_local;
       timer_local.restart();
@@ -194,9 +189,6 @@ public:
 
       this->timer_tree.insert({"FSI", "Setup", "ALE"}, timer_local.wall_time());
     }
-    /******************************************* ALE ********************************************/
-
-    /****************************************** FLUID *******************************************/
     {
       dealii::Timer timer_local;
       timer_local.restart();
@@ -235,12 +227,33 @@ public:
       fluid_postprocessor->setup(*fluid_operator);
 
       this->timer_tree.insert({"FSI", "Setup", "Fluid"}, timer_local.wall_time());
+
+      // setup time integrator before calling setup_solvers (this is necessary since the setup
+      // of the solvers depends on quantities such as the time_step_size or gamma0!!!)
+      AssertThrow(this->application->fluid->get_parameters().solver_type ==
+                    IncNS::SolverType::Unsteady,
+                  ExcMessage("Invalid parameter in context of fluid-structure interaction."));
+
+      // initialize fluid_time_integrator
+      fluid_time_integrator =
+        IncNS::create_time_integrator<dim, Number>(fluid_operator,
+                                                   this->application->fluid->get_parameters(),
+                                                   this->mpi_comm,
+                                                   this->is_test,
+                                                   fluid_postprocessor);
+
+      fluid_time_integrator->setup(this->application->fluid->get_parameters().restarted_simulation);
+
+      fluid_operator->setup_solvers(
+        fluid_time_integrator->get_scaling_factor_time_derivative_term(),
+        fluid_time_integrator->get_velocity());
     }
-    /****************************************** FLUID *******************************************/
+  }
 
 
-    /*********************************** INTERFACE COUPLING *************************************/
-
+  void
+  setup_interface_coupling()
+  {
     // writing
     this->precice =
       std::make_shared<ExaDG::preCICE::Adapter<dim, dim, VectorType>>(this->precice_parameters,
@@ -267,15 +280,9 @@ public:
       if(this->application->fluid->get_parameters().mesh_movement_type ==
          IncNS::MeshMovementType::Poisson)
       {
-        std::vector<unsigned int> quad_indices;
-        if(this->application->fluid->get_parameters_ale_poisson().spatial_discretization ==
-           Poisson::SpatialDiscretization::DG)
-          quad_indices.emplace_back(ale_poisson_operator->get_quad_index());
-        else if(this->application->fluid->get_parameters_ale_poisson().spatial_discretization ==
-                Poisson::SpatialDiscretization::CG)
-          quad_indices.emplace_back(ale_poisson_operator->get_quad_index_gauss_lobatto());
-        else
-          AssertThrow(false, ExcNotImplemented());
+        // TODO Reuse quadrature point locations from the interface data (see comment in structure)
+        auto quad_indices =
+          ale_poisson_operator->get_container_interface_data()->get_quad_indices();
 
         quadrature_point_locations = exadg_terminal_ale->setup(
           ale_matrix_free,
@@ -287,8 +294,8 @@ public:
       else if(this->application->fluid->get_parameters().mesh_movement_type ==
               IncNS::MeshMovementType::Elasticity)
       {
-        std::vector<unsigned int> quad_indices;
-        quad_indices.emplace_back(ale_elasticity_operator->get_quad_index_gauss_lobatto());
+        auto quad_indices =
+          ale_elasticity_operator->get_container_interface_data_dirichlet()->get_quad_indices();
 
         quadrature_point_locations = exadg_terminal_ale->setup(
           ale_matrix_free,
@@ -309,10 +316,7 @@ public:
 
     // structure to fluid
     {
-      std::vector<unsigned int> quad_indices;
-      quad_indices.emplace_back(fluid_operator->get_quad_index_velocity_linear());
-      quad_indices.emplace_back(fluid_operator->get_quad_index_velocity_nonlinear());
-      quad_indices.emplace_back(fluid_operator->get_quad_index_velocity_gauss_lobatto());
+      auto quad_indices = fluid_operator->get_container_interface_data()->get_quad_indices();
 
       VectorType velocity_structure;
       fluid_operator->initialize_vector_velocity(velocity_structure);
@@ -335,37 +339,25 @@ public:
       initial_stress = 0;
       this->precice->initialize_precice(initial_stress);
     }
+  }
 
 
-    /*********************************** INTERFACE COUPLING *************************************/
 
+  void
+  setup()
+  {
+    dealii::Timer timer;
+    timer.restart();
 
-    /**************************** SETUP TIME INTEGRATORS AND SOLVERS ****************************/
+    this->pcout << std::endl << "Setting up fluid-structure interaction solver:" << std::endl;
 
-    // fluid
-    {
-      // setup time integrator before calling setup_solvers (this is necessary since the setup
-      // of the solvers depends on quantities such as the time_step_size or gamma0!!!)
-      AssertThrow(this->application->fluid->get_parameters().solver_type ==
-                    IncNS::SolverType::Unsteady,
-                  ExcMessage("Invalid parameter in context of fluid-structure interaction."));
+    setup_application();
 
-      // initialize fluid_time_integrator
-      fluid_time_integrator =
-        IncNS::create_time_integrator<dim, Number>(fluid_operator,
-                                                   this->application->fluid->get_parameters(),
-                                                   this->mpi_comm,
-                                                   this->is_test,
-                                                   fluid_postprocessor);
+    setup_fluid_and_ale();
 
-      fluid_time_integrator->setup(this->application->fluid->get_parameters().restarted_simulation);
+    setup_interface_coupling();
 
-      fluid_operator->setup_solvers(
-        fluid_time_integrator->get_scaling_factor_time_derivative_term(),
-        fluid_time_integrator->get_velocity());
-    }
-
-    /**************************** SETUP TIME INTEGRATORS AND SOLVERS ****************************/
+    this->timer_tree.insert({"FSI", "Setup"}, timer.wall_time());
   }
 
   void
@@ -393,7 +385,7 @@ public:
         coupling_structure_to_fluid();
 
         // solve fluid problem
-        fluid_time_integrator->advance_one_timestep_partitioned_solve(is_new_time_window, true);
+        fluid_time_integrator->advance_one_timestep_partitioned_solve(is_new_time_window);
 
         // compute and send stress to solid
         coupling_fluid_to_structure();
