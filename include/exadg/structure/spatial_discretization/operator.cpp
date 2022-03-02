@@ -643,6 +643,10 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
                                                    double const       factor,
                                                    double const       time) const
 {
+  // Note that constrained degrees of freedom have to be zero for dst and const_vector
+  // in order to ensure convergence of the Newton solver. This is checked at the
+  // end of this function.
+
   // elasticity operator
   elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
   elasticity_operator_nonlinear.set_time(time);
