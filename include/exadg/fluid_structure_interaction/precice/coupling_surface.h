@@ -19,7 +19,9 @@
  *  ______________________________________________________________________
  */
 
-#pragma once
+#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_COUPLING_SURFACE_H_
+#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_COUPLING_SURFACE_H_
+
 
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/vectorization.h>
@@ -254,3 +256,5 @@ CouplingSurface<dim, data_dim, VectorizedArrayType>::print_info(const bool      
 
 } // namespace preCICE
 } // namespace ExaDG
+
+#endif

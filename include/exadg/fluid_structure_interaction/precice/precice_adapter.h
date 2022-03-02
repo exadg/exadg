@@ -19,7 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#pragma once
+#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_PRECICE_ADAPTER_H_
+#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_PRECICE_ADAPTER_H_
 
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/mpi.h>
@@ -398,5 +399,8 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::is_time_window_complete
   return precice->isTimeWindowComplete();
 }
 
+
 } // namespace preCICE
 } // namespace ExaDG
+
+#endif

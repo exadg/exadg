@@ -19,8 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#pragma once
+#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DOF_TOOLS_EXTENSION_H_
+#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DOF_TOOLS_EXTENSION_H_
 
+// deal.II
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
 
@@ -90,3 +92,5 @@ map_boundary_dofs_to_support_points(
 } // namespace DoFTools
 
 DEAL_II_NAMESPACE_CLOSE
+
+#endif

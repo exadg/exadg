@@ -19,9 +19,13 @@
  *  ______________________________________________________________________
  */
 
-#pragma once
+#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_PRECICE_PARAMETERS_H_
+#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_PRECICE_PARAMETERS_H_
 
+// deal.II
 #include <deal.II/base/parameter_handler.h>
+
+// ExaDG
 #include <exadg/fluid_structure_interaction/precice/coupling_surface.h>
 
 namespace ExaDG
@@ -148,3 +152,5 @@ ConfigurationParameters::string_to_enum(WriteDataType & enum_out, const std::str
 
 } // namespace preCICE
 } // namespace ExaDG
+
+#endif

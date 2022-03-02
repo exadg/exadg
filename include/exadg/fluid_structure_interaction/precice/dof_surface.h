@@ -20,7 +20,8 @@
  *  ______________________________________________________________________
  */
 
-#pragma once
+#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DOF_SURFACE_H_
+#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DOF_SURFACE_H_
 
 #include <deal.II/dofs/dof_tools.h>
 
@@ -217,6 +218,7 @@ DoFSurface<dim, data_dim, VectorizedArrayType>::get_surface_type() const
          dealii::Utilities::to_string(mf_dof_index);
 }
 
-
 } // namespace preCICE
 } // namespace ExaDG
+
+#endif

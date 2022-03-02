@@ -19,7 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#pragma once
+#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_QUAD_SURFACE_H_
+#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_QUAD_SURFACE_H_
 
 #include <deal.II/matrix_free/fe_evaluation.h>
 
@@ -291,3 +292,5 @@ QuadSurface<dim, data_dim, VectorizedArrayType>::get_surface_type() const
 
 } // namespace preCICE
 } // namespace ExaDG
+
+#endif
