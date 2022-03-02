@@ -9,8 +9,6 @@ namespace ExaDG
 {
 namespace preCICE
 {
-using namespace dealii;
-
 /**
  * Derived class of the CouplingSurface: the classical coupling approach,
  * where each participant defines an interface based on the locally owned
@@ -22,11 +20,11 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 class DoFSurface : public CouplingSurface<dim, data_dim, VectorizedArrayType>
 {
 public:
-  DoFSurface(std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
-             std::shared_ptr<precice::SolverInterface>                           precice,
-             const std::string                                                   mesh_name,
-             const types::boundary_id                                            surface_id,
-             const int                                                           mf_dof_index)
+  DoFSurface(std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+             std::shared_ptr<precice::SolverInterface>                                   precice,
+             const std::string                                                           mesh_name,
+             const dealii::types::boundary_id                                            surface_id,
+             const int mf_dof_index)
     : CouplingSurface<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
       mf_dof_index(mf_dof_index)
   {
@@ -37,7 +35,7 @@ public:
    *        coupling the classical preCICE way
    */
   virtual void
-  define_coupling_mesh(const std::vector<Point<dim>> & vec) override;
+  define_coupling_mesh(const std::vector<dealii::Point<dim>> & vec) override;
 
   /**
    * @brief write_data Evaluates the given @param data at the
@@ -48,15 +46,15 @@ public:
    *            displacement for FSI)
    */
   virtual void
-  write_data(const LinearAlgebra::distributed::Vector<double> & data_vector,
-             const std::string &                                data_name) override;
+  write_data(const dealii::LinearAlgebra::distributed::Vector<double> & data_vector,
+             const std::string &                                        data_name) override;
 
 
 private:
   /// The preCICE IDs
   std::vector<int> coupling_nodes_ids;
   /// The deal.II associated IDs
-  std::vector<std::array<types::global_dof_index, data_dim>> global_indices;
+  std::vector<std::array<dealii::types::global_dof_index, data_dim>> global_indices;
 
   /// Indices related to the FEEvaluation (have a look at the initialization
   /// of the MatrixFree)
@@ -71,9 +69,9 @@ private:
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 DoFSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
-  const std::vector<Point<dim>> &)
+  const std::vector<dealii::Point<dim>> &)
 {
-  Assert(this->mesh_id != -1, ExcNotInitialized());
+  Assert(this->mesh_id != -1, dealii::ExcNotInitialized());
 
   // In order to avoid that we define the surface multiple times when reader
   // and writer refer to the same object
@@ -83,30 +81,31 @@ DoFSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
   // Get and sort the global dof indices
   auto get_component_dofs = [&](const int component) {
     // Get a component mask of the vector component
-    ComponentMask component_mask(data_dim, false);
+    dealii::ComponentMask component_mask(data_dim, false);
     component_mask.set(component, true);
 
     // Get the global DoF indices of the component
     // Compute the intersection with locally owned dofs
     // TODO: This is super inefficient, have a look at the
     // dof_handler.n_boundary_dofs implementation for a proper version
-    const IndexSet indices =
-      (DoFTools::extract_boundary_dofs(this->mf_data->get_dof_handler(mf_dof_index),
-                                       component_mask,
-                                       std::set<types::boundary_id>{
-                                         this->dealii_boundary_surface_id}) &
+    const dealii::IndexSet indices =
+      (dealii::DoFTools::extract_boundary_dofs(this->mf_data->get_dof_handler(mf_dof_index),
+                                               component_mask,
+                                               std::set<dealii::types::boundary_id>{
+                                                 this->dealii_boundary_surface_id}) &
        this->mf_data->get_dof_handler(mf_dof_index).locally_owned_dofs());
 
     Assert(indices.n_elements() * data_dim ==
              this->mf_data->get_dof_handler(mf_dof_index)
-               .n_boundary_dofs(std::set<types::boundary_id>{this->dealii_boundary_surface_id}),
-           ExcInternalError());
+               .n_boundary_dofs(
+                 std::set<dealii::types::boundary_id>{this->dealii_boundary_surface_id}),
+           dealii::ExcInternalError());
     // Resize the global dof index conatiner in case we call this lambda for
     // the first time
     if(component == 0)
       global_indices.resize(indices.n_elements());
     // fill the first array entry with the respective component
-    types::global_dof_index iterator = 0;
+    dealii::types::global_dof_index iterator = 0;
     for(const auto dof : indices)
     {
       global_indices[iterator][component] = dof;
@@ -119,15 +118,16 @@ DoFSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
     get_component_dofs(d);
   // Compute the coordinates of the indices (only one component required here)
   // We select the zeroth component
-  std::map<types::global_dof_index, Point<dim>> support_points;
-  ComponentMask                                 component_mask(data_dim, false);
+  std::map<dealii::types::global_dof_index, dealii::Point<dim>> support_points;
+  dealii::ComponentMask                                         component_mask(data_dim, false);
   component_mask.set(0, true);
 
-  DoFTools::map_boundary_dofs_to_support_points(*(this->mf_data->get_mapping_info().mapping),
-                                                this->mf_data->get_dof_handler(mf_dof_index),
-                                                support_points,
-                                                component_mask,
-                                                this->dealii_boundary_surface_id);
+  dealii::DoFTools::map_boundary_dofs_to_support_points(
+    *(this->mf_data->get_mapping_info().mapping),
+    this->mf_data->get_dof_handler(mf_dof_index),
+    support_points,
+    component_mask,
+    this->dealii_boundary_surface_id);
 
 
   // Set size of the preCICE ID vector
@@ -156,12 +156,12 @@ DoFSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 DoFSurface<dim, data_dim, VectorizedArrayType>::write_data(
-  const LinearAlgebra::distributed::Vector<double> & data_vector,
-  const std::string &                                data_name)
+  const dealii::LinearAlgebra::distributed::Vector<double> & data_vector,
+  const std::string &                                        data_name)
 {
   const int write_data_id = this->write_data_map.at(data_name);
-  Assert(write_data_id != -1, ExcNotInitialized());
-  Assert(coupling_nodes_ids.size() > 0, ExcNotInitialized());
+  Assert(write_data_id != -1, dealii::ExcNotInitialized());
+  Assert(coupling_nodes_ids.size() > 0, dealii::ExcNotInitialized());
 
   std::array<double, data_dim> write_data;
   for(std::size_t i = 0; i < global_indices.size(); ++i)
@@ -191,7 +191,8 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 std::string
 DoFSurface<dim, data_dim, VectorizedArrayType>::get_surface_type() const
 {
-  return "DoF support points using matrix-free dof index " + Utilities::to_string(mf_dof_index);
+  return "DoF support points using matrix-free dof index " +
+         dealii::Utilities::to_string(mf_dof_index);
 }
 
 

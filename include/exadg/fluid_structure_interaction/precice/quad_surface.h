@@ -8,8 +8,6 @@ namespace ExaDG
 {
 namespace preCICE
 {
-using namespace dealii;
-
 /**
  * Derived class of the CouplingSurface: the classical coupling approach,
  * where each participant defines an surface based on the locally owned
@@ -21,12 +19,12 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 class QuadSurface : public CouplingSurface<dim, data_dim, VectorizedArrayType>
 {
 public:
-  QuadSurface(std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
-              std::shared_ptr<precice::SolverInterface>                           precice,
-              const std::string                                                   mesh_name,
-              const types::boundary_id                                            surface_id,
-              const int                                                           mf_dof_index,
-              const int                                                           mf_quad_index)
+  QuadSurface(std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+              std::shared_ptr<precice::SolverInterface>                                   precice,
+              const std::string                                                           mesh_name,
+              const dealii::types::boundary_id surface_id,
+              const int                        mf_dof_index,
+              const int                        mf_quad_index)
     : CouplingSurface<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
       mf_dof_index(mf_dof_index),
       mf_quad_index(mf_quad_index)
@@ -42,7 +40,7 @@ public:
    *        coupling the classical preCICE way
    */
   virtual void
-  define_coupling_mesh(const std::vector<Point<dim>> & vec) override;
+  define_coupling_mesh(const std::vector<dealii::Point<dim>> & vec) override;
 
   /**
    * @brief write_data Evaluates the given @param data at the
@@ -55,8 +53,8 @@ public:
    *            update_ghost_values must be calles before
    */
   virtual void
-  write_data(const LinearAlgebra::distributed::Vector<double> & data_vector,
-             const std::string &                                data_name) override;
+  write_data(const dealii::LinearAlgebra::distributed::Vector<double> & data_vector,
+             const std::string &                                        data_name) override;
 
 private:
   /**
@@ -70,9 +68,9 @@ private:
    */
   void
   write_data_factory(
-    const LinearAlgebra::distributed::Vector<double> &                  data_vector,
+    const dealii::LinearAlgebra::distributed::Vector<double> &          data_vector,
     const int                                                           write_data_id,
-    const EvaluationFlags::EvaluationFlags                              flags,
+    const dealii::EvaluationFlags::EvaluationFlags                      flags,
     const std::function<value_type(FEFaceIntegrator &, unsigned int)> & get_write_value);
 
   /// The preCICE IDs
@@ -92,9 +90,9 @@ private:
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 QuadSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
-  const std::vector<Point<dim>> &)
+  const std::vector<dealii::Point<dim>> &)
 {
-  Assert(this->mesh_id != -1, ExcNotInitialized());
+  Assert(this->mesh_id != -1, dealii::ExcNotInitialized());
 
   // In order to avoid that we define the surface multiple times when reader
   // and writer refer to the same object
@@ -128,7 +126,7 @@ QuadSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
     {
       const auto local_vertex = phi.quadrature_point(q);
 
-      // Transform Point<Vectorized> into preCICE conform format
+      // Transform dealii::Point<Vectorized> into preCICE conform format
       // We store here also the potential 'dummy'/empty lanes (not only
       // active_faces), but it allows us to use a static loop as well as a
       // static array for the indices
@@ -150,7 +148,7 @@ QuadSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
   // the IDs preCICE knows
   Assert(size * VectorizedArrayType::size() >=
            static_cast<unsigned int>(this->precice->getMeshVertexSize(this->mesh_id)),
-         ExcInternalError());
+         dealii::ExcInternalError());
 
   if(this->read_data_map.size() > 0)
     this->print_info(true, this->precice->getMeshVertexSize(this->mesh_id));
@@ -162,8 +160,8 @@ QuadSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 QuadSurface<dim, data_dim, VectorizedArrayType>::write_data(
-  const LinearAlgebra::distributed::Vector<double> & data_vector,
-  const std::string &                                data_name)
+  const dealii::LinearAlgebra::distributed::Vector<double> & data_vector,
+  const std::string &                                        data_name)
 {
   const int write_data_id = this->write_data_map.at(data_name);
 
@@ -172,19 +170,19 @@ QuadSurface<dim, data_dim, VectorizedArrayType>::write_data(
     case WriteDataType::values_on_q_points:
       write_data_factory(data_vector,
                          write_data_id,
-                         EvaluationFlags::values,
+                         dealii::EvaluationFlags::values,
                          [](auto & phi, auto q_point) { return phi.get_value(q_point); });
       break;
     case WriteDataType::normal_gradients_on_q_points:
       write_data_factory(data_vector,
                          write_data_id,
-                         EvaluationFlags::gradients,
+                         dealii::EvaluationFlags::gradients,
                          [](auto & phi, auto q_point) {
                            return phi.get_normal_derivative(q_point);
                          });
       break;
     default:
-      AssertThrow(false, ExcNotImplemented());
+      AssertThrow(false, dealii::ExcNotImplemented());
   }
 }
 
@@ -193,13 +191,13 @@ QuadSurface<dim, data_dim, VectorizedArrayType>::write_data(
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 QuadSurface<dim, data_dim, VectorizedArrayType>::write_data_factory(
-  const LinearAlgebra::distributed::Vector<double> &                  data_vector,
+  const dealii::LinearAlgebra::distributed::Vector<double> &          data_vector,
   const int                                                           write_data_id,
-  const EvaluationFlags::EvaluationFlags                              flags,
+  const dealii::EvaluationFlags::EvaluationFlags                      flags,
   const std::function<value_type(FEFaceIntegrator &, unsigned int)> & get_write_value)
 {
-  Assert(write_data_id != -1, ExcNotInitialized());
-  Assert(coupling_nodes_ids.size() > 0, ExcNotInitialized());
+  Assert(write_data_id != -1, dealii::ExcNotInitialized());
+  Assert(coupling_nodes_ids.size() > 0, dealii::ExcNotInitialized());
   // Similar as in define_coupling_mesh
   FEFaceIntegrator phi(*this->mf_data, true, mf_dof_index, mf_quad_index);
 
@@ -229,7 +227,7 @@ QuadSurface<dim, data_dim, VectorizedArrayType>::write_data_factory(
     for(unsigned int q = 0; q < phi.n_q_points; ++q)
     {
       const auto local_data = get_write_value(phi, q);
-      Assert(index != coupling_nodes_ids.end(), ExcInternalError());
+      Assert(index != coupling_nodes_ids.end(), dealii::ExcInternalError());
 
       // Constexpr evaluation required in order to comply with the
       // compiler here
@@ -264,7 +262,8 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 std::string
 QuadSurface<dim, data_dim, VectorizedArrayType>::get_surface_type() const
 {
-  return "quadrature points using matrix-free quad index " + Utilities::to_string(mf_quad_index);
+  return "quadrature points using matrix-free quad index " +
+         dealii::Utilities::to_string(mf_quad_index);
 }
 
 } // namespace preCICE

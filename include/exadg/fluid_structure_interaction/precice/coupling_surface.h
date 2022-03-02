@@ -123,7 +123,7 @@ protected:
   std::map<std::string, int> read_data_map;
   std::map<std::string, int> write_data_map;
 
-  const types::boundary_id dealii_boundary_surface_id;
+  const dealii::types::boundary_id dealii_boundary_surface_id;
 
   WriteDataType write_data_type;
 
@@ -209,10 +209,10 @@ CouplingSurface<dim, data_dim, VectorizedArrayType>::print_info(const bool      
                                                                 const unsigned int local_size) const
 {
   Assert(mf_data.get() != 0, dealii::ExcNotInitialized());
-  ConditionalOStream pcout(std::cout,
-                           Utilities::MPI::this_mpi_process(
-                             mf_data->get_dof_handler().get_communicator()) == 0);
-  const auto         map = (reader ? read_data_map : write_data_map);
+  dealii::ConditionalOStream pcout(std::cout,
+                                   dealii::Utilities::MPI::this_mpi_process(
+                                     mf_data->get_dof_handler().get_communicator()) == 0);
+  const auto                 map = (reader ? read_data_map : write_data_map);
 
   auto        names      = map.begin();
   std::string data_names = names->first;
@@ -224,7 +224,8 @@ CouplingSurface<dim, data_dim, VectorizedArrayType>::print_info(const bool      
         << "--     . data name(s): " << data_names << "\n"
         << "--     . associated mesh: " << mesh_name << "\n"
         << "--     . Number of coupling nodes: "
-        << Utilities::MPI::sum(local_size, mf_data->get_dof_handler().get_communicator()) << "\n"
+        << dealii::Utilities::MPI::sum(local_size, mf_data->get_dof_handler().get_communicator())
+        << "\n"
         << "--     . Node location: " << get_surface_type() << "\n"
         << std::endl;
 }

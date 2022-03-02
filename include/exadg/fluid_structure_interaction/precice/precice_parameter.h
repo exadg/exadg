@@ -7,8 +7,6 @@ namespace ExaDG
 {
 namespace preCICE
 {
-using namespace dealii;
-
 /**
  * This class declares all preCICE parameters, which can be specified in the
  * parameter file. The subsection abut preCICE configurations is directly
@@ -40,7 +38,7 @@ struct ConfigurationParameters
   WriteDataType write_data_type = WriteDataType::undefined;
 
   void
-  add_parameters(ParameterHandler & prm);
+  add_parameters(dealii::ParameterHandler & prm);
 
   void
   string_to_enum(WriteDataType & enum_out, const std::string & string_in);
@@ -60,52 +58,52 @@ ConfigurationParameters::ConfigurationParameters(const std::string & input_file)
 
 
 void
-ConfigurationParameters::add_parameters(ParameterHandler & prm)
+ConfigurationParameters::add_parameters(dealii::ParameterHandler & prm)
 {
   prm.enter_subsection("preciceConfiguration");
   {
     prm.add_parameter("preciceConfigFile",
                       config_file,
                       "Name of the precice configuration file",
-                      Patterns::Anything());
+                      dealii::Patterns::Anything());
     prm.add_parameter("Physics",
                       physics,
                       "Specify the side you want to compute (Fluid vs Structure)",
-                      Patterns::Selection("Structure|Fluid|undefined"));
+                      dealii::Patterns::Selection("Structure|Fluid|undefined"));
     prm.add_parameter("ParticipantName",
                       participant_name,
                       "Name of the participant in the precice-config.xml file",
-                      Patterns::Anything());
+                      dealii::Patterns::Anything());
     prm.add_parameter("ReadMeshName",
                       read_mesh_name,
                       "Name of the read coupling mesh in the precice-config.xml file",
-                      Patterns::Anything());
+                      dealii::Patterns::Anything());
     prm.add_parameter("WriteMeshName",
                       write_mesh_name,
                       "Name of the write coupling mesh in the precice-config.xml file",
-                      Patterns::Anything());
+                      dealii::Patterns::Anything());
     prm.add_parameter("ALEMeshName",
                       ale_mesh_name,
                       "Name of the ale-mesh in the precice-config.xml file",
-                      Patterns::Anything());
+                      dealii::Patterns::Anything());
     prm.add_parameter("WriteDataSpecification",
                       write_data_specification,
                       "Specification of the write data location and the data type",
-                      Patterns::Selection(
+                      dealii::Patterns::Selection(
                         "values_on_dofs|values_on_q_points|normal_gradients_on_q_points|"
                         "values_on_other_mesh|gradients_on_other_mesh"));
     prm.add_parameter("VelocityDataName",
                       velocity_data_name,
                       "Name of the Velocity data in the precice-config.xml file",
-                      Patterns::Anything());
+                      dealii::Patterns::Anything());
     prm.add_parameter("DisplacementDataName",
                       displacement_data_name,
                       "Name of the Displacement data in the precice-config.xml file",
-                      Patterns::Anything());
+                      dealii::Patterns::Anything());
     prm.add_parameter("StressDataName",
                       stress_data_name,
                       "Name of the Stress data in the precice-config.xml file",
-                      Patterns::Anything());
+                      dealii::Patterns::Anything());
   }
   prm.leave_subsection();
 }
@@ -124,7 +122,7 @@ ConfigurationParameters::string_to_enum(WriteDataType & enum_out, const std::str
   else if(string_in == "normal_gradients_on_q_points")
     enum_out = WriteDataType::normal_gradients_on_q_points;
   else
-    AssertThrow(false, ExcMessage("Unknwon write data type."));
+    AssertThrow(false, dealii::ExcMessage("Unknwon write data type."));
 }
 
 } // namespace preCICE

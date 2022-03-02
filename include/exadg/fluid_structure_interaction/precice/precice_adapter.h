@@ -28,7 +28,7 @@ namespace preCICE
 template<int dim,
          int data_dim,
          typename VectorType,
-         typename VectorizedArrayType = VectorizedArray<double>>
+         typename VectorizedArrayType = dealii::VectorizedArray<double>>
 class Adapter
 {
 public:
@@ -72,22 +72,23 @@ public:
   initialize_precice(const VectorType & dealii_to_precice);
 
   void
-  add_write_surface(const dealii::types::boundary_id surface_id,
-                    const std::string &              mesh_name,
-                    const std::vector<std::string> & write_data_names,
-                    const WriteDataType              write_data_type,
-                    std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
-                    const unsigned int                                                  dof_index,
-                    const unsigned int write_quad_index);
+  add_write_surface(
+    const dealii::types::boundary_id                                            surface_id,
+    const std::string &                                                         mesh_name,
+    const std::vector<std::string> &                                            write_data_names,
+    const WriteDataType                                                         write_data_type,
+    std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+    const unsigned int                                                          dof_index,
+    const unsigned int                                                          write_quad_index);
 
 
   void
   add_read_surface(
-    const std::vector<Point<dim>> &                                      points,
-    std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>>  data,
-    std::shared_ptr<ExaDG::preCICE::InterfaceCoupling<dim, dim, double>> exadg_terminal,
-    const std::string &                                                  mesh_name,
-    const std::vector<std::string> &                                     read_data_name);
+    const std::vector<dealii::Point<dim>> &                                     points,
+    std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+    std::shared_ptr<ExaDG::preCICE::InterfaceCoupling<dim, dim, double>>        exadg_terminal,
+    const std::string &                                                         mesh_name,
+    const std::vector<std::string> &                                            read_data_name);
 
   /**
    * @brief      Advances preCICE after every timestep
@@ -179,10 +180,11 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::Adapter(const Parameter
                                                                  MPI_Comm               mpi_comm)
 
 {
-  precice = std::make_shared<precice::SolverInterface>(parameters.participant_name,
-                                                       parameters.config_file,
-                                                       Utilities::MPI::this_mpi_process(mpi_comm),
-                                                       Utilities::MPI::n_mpi_processes(mpi_comm));
+  precice =
+    std::make_shared<precice::SolverInterface>(parameters.participant_name,
+                                               parameters.config_file,
+                                               dealii::Utilities::MPI::this_mpi_process(mpi_comm),
+                                               dealii::Utilities::MPI::n_mpi_processes(mpi_comm));
 
   AssertThrow(dim == precice->getDimensions(), dealii::ExcInternalError());
   AssertThrow(dim > 1, dealii::ExcNotImplemented());
@@ -193,13 +195,13 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::Adapter(const Parameter
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_surface(
-  const dealii::types::boundary_id                                    dealii_boundary_surface_id,
-  const std::string &                                                 mesh_name,
-  const std::vector<std::string> &                                    write_data_names,
-  const WriteDataType                                                 write_data_type,
-  std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
-  const unsigned int                                                  dof_index,
-  const unsigned int                                                  quad_index)
+  const dealii::types::boundary_id dealii_boundary_surface_id,
+  const std::string &              mesh_name,
+  const std::vector<std::string> & write_data_names,
+  const WriteDataType              write_data_type,
+  std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+  const unsigned int                                                          dof_index,
+  const unsigned int                                                          quad_index)
 {
   // Check, if we already have such an interface
   const auto found_reader = reader.find(mesh_name);
@@ -226,7 +228,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_surface(
   }
 
   // Register the write data
-  const std::vector<Point<dim>> points;
+  const std::vector<dealii::Point<dim>> points;
   for(const auto & data_name : write_data_names)
     writer.at(mesh_name)->add_write_data(data_name);
 
@@ -240,11 +242,11 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_surface(
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_read_surface(
-  const std::vector<Point<dim>> &                                      points,
-  std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>>  data,
-  std::shared_ptr<ExaDG::preCICE::InterfaceCoupling<dim, dim, double>> exadg_terminal,
-  const std::string &                                                  mesh_name,
-  const std::vector<std::string> &                                     read_data_names)
+  const std::vector<dealii::Point<dim>> &                                     points,
+  std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+  std::shared_ptr<ExaDG::preCICE::InterfaceCoupling<dim, dim, double>>        exadg_terminal,
+  const std::string &                                                         mesh_name,
+  const std::vector<std::string> &                                            read_data_names)
 {
   reader.insert(
     {mesh_name,

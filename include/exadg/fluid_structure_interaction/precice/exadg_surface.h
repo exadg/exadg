@@ -9,21 +9,19 @@ namespace ExaDG
 {
 namespace preCICE
 {
-using namespace dealii;
-
 /**
  * Derived class of the CouplingSurface: shallow wrapper,
  * where the participant defines a vector of points and
- * the interface handles only the exchange with preCICE.
+ * the interface handles only the dealii::Exchange with preCICE.
  */
 template<int dim, int data_dim, typename VectorizedArrayType>
 class ExaDGSurface : public CouplingSurface<dim, data_dim, VectorizedArrayType>
 {
 public:
-  ExaDGSurface(std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
-               std::shared_ptr<precice::SolverInterface>                           precice,
-               const std::string                                                   mesh_name,
-               const types::boundary_id surface_id = numbers::invalid_unsigned_int)
+  ExaDGSurface(std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+               std::shared_ptr<precice::SolverInterface>                                   precice,
+               const std::string                mesh_name,
+               const dealii::types::boundary_id surface_id = dealii::numbers::invalid_unsigned_int)
     : CouplingSurface<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id)
   {
   }
@@ -33,7 +31,7 @@ public:
    *        coupling the classical preCICE way
    */
   virtual void
-  define_coupling_mesh(const std::vector<Point<dim>> & vec) override;
+  define_coupling_mesh(const std::vector<dealii::Point<dim>> & vec) override;
 
   /**
    * @brief write_data
@@ -44,8 +42,8 @@ public:
    *            update_ghost_values must be calles before
    */
   virtual void
-  write_data(const LinearAlgebra::distributed::Vector<double> & data_vector,
-             const std::string &                                data_name) override;
+  write_data(const dealii::LinearAlgebra::distributed::Vector<double> & data_vector,
+             const std::string &                                        data_name) override;
 
   virtual void
   read_block_data(const std::string & data_name) const override;
@@ -69,9 +67,9 @@ private:
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 ExaDGSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
-  const std::vector<Point<dim>> & vec)
+  const std::vector<dealii::Point<dim>> & vec)
 {
-  Assert(this->mesh_id != -1, ExcNotInitialized());
+  Assert(this->mesh_id != -1, dealii::ExcNotInitialized());
 
   // In order to avoid that we define the surface multiple times when reader
   // and writer refer to the same object
@@ -97,7 +95,7 @@ ExaDGSurface<dim, data_dim, VectorizedArrayType>::read_block_data(
 {
   const int read_data_id = this->read_data_map.at(data_name);
 
-  std::vector<Tensor<1, dim>> values(coupling_nodes_ids.size());
+  std::vector<dealii::Tensor<1, dim>> values(coupling_nodes_ids.size());
   if constexpr(data_dim > 1)
   {
     this->precice->readBlockVectorData(read_data_id,
@@ -107,9 +105,9 @@ ExaDGSurface<dim, data_dim, VectorizedArrayType>::read_block_data(
   }
   else
   {
-    AssertThrow(false, ExcNotImplemented());
+    AssertThrow(false, dealii::ExcNotImplemented());
   }
-  Assert(exadg_terminal.get() != nullptr, ExcNotInitialized());
+  Assert(exadg_terminal.get() != nullptr, dealii::ExcNotInitialized());
   exadg_terminal->update_data(values);
 }
 
@@ -128,10 +126,10 @@ ExaDGSurface<dim, data_dim, VectorizedArrayType>::set_data_pointer(
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 ExaDGSurface<dim, data_dim, VectorizedArrayType>::write_data(
-  const LinearAlgebra::distributed::Vector<double> &,
+  const dealii::LinearAlgebra::distributed::Vector<double> &,
   const std::string &)
 {
-  AssertThrow(false, ExcNotImplemented());
+  AssertThrow(false, dealii::ExcNotImplemented());
 }
 
 
@@ -139,7 +137,7 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 std::string
 ExaDGSurface<dim, data_dim, VectorizedArrayType>::get_surface_type() const
 {
-  return "exadg shallow wrapper ";
+  return "exadg shallow wrapper";
 }
 
 } // namespace preCICE
