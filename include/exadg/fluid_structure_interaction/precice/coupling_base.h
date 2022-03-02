@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_COUPLING_SURFACE_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_COUPLING_SURFACE_H_
+#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_COUPLING_BASE_H_
+#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_COUPLING_BASE_H_
 
 
 #include <deal.II/base/conditional_ostream.h>
@@ -57,15 +57,15 @@ enum class WriteDataType
  * spatial coordinates.
  */
 template<int dim, int data_dim, typename VectorizedArrayType>
-class CouplingSurface
+class CouplingBase
 {
 public:
-  CouplingSurface(std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
-                  std::shared_ptr<precice::SolverInterface> precice,
-                  const std::string                         mesh_name,
-                  const dealii::types::boundary_id          surface_id);
+  CouplingBase(std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+               std::shared_ptr<precice::SolverInterface>                                   precice,
+               const std::string                mesh_name,
+               const dealii::types::boundary_id surface_id);
 
-  virtual ~CouplingSurface() = default;
+  virtual ~CouplingBase() = default;
 
   /// Alias for the face integrator
   using FEFaceIntegrator = FaceIntegrator<dim, data_dim, double, VectorizedArrayType>;
@@ -116,8 +116,8 @@ public:
   add_write_data(const std::string & write_data_name);
 
   /**
-   * @brief
-   *
+   * @brief Set the WriteDataType in this class which determines the location of
+   * the write data (e.g. DoFs)
    */
   void
   set_write_data_type(WriteDataType write_data_specification);
@@ -157,7 +157,7 @@ protected:
 
 
 template<int dim, int data_dim, typename VectorizedArrayType>
-CouplingSurface<dim, data_dim, VectorizedArrayType>::CouplingSurface(
+CouplingBase<dim, data_dim, VectorizedArrayType>::CouplingBase(
   std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> matrix_free_,
   std::shared_ptr<precice::SolverInterface>                                   precice,
   const std::string                                                           mesh_name,
@@ -178,8 +178,7 @@ CouplingSurface<dim, data_dim, VectorizedArrayType>::CouplingSurface(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-CouplingSurface<dim, data_dim, VectorizedArrayType>::add_read_data(
-  const std::string & read_data_name)
+CouplingBase<dim, data_dim, VectorizedArrayType>::add_read_data(const std::string & read_data_name)
 {
   Assert(mesh_id != -1, dealii::ExcNotInitialized());
   const int read_data_id = precice->getDataID(read_data_name, mesh_id);
@@ -190,7 +189,7 @@ CouplingSurface<dim, data_dim, VectorizedArrayType>::add_read_data(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-CouplingSurface<dim, data_dim, VectorizedArrayType>::add_write_data(
+CouplingBase<dim, data_dim, VectorizedArrayType>::add_write_data(
   const std::string & write_data_name)
 {
   Assert(mesh_id != -1, dealii::ExcNotInitialized());
@@ -201,7 +200,7 @@ CouplingSurface<dim, data_dim, VectorizedArrayType>::add_write_data(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-CouplingSurface<dim, data_dim, VectorizedArrayType>::set_write_data_type(
+CouplingBase<dim, data_dim, VectorizedArrayType>::set_write_data_type(
   WriteDataType write_data_specification)
 {
   write_data_type = write_data_specification;
@@ -211,7 +210,7 @@ CouplingSurface<dim, data_dim, VectorizedArrayType>::set_write_data_type(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-CouplingSurface<dim, data_dim, VectorizedArrayType>::process_coupling_mesh()
+CouplingBase<dim, data_dim, VectorizedArrayType>::process_coupling_mesh()
 {
   return;
 }
@@ -220,7 +219,7 @@ CouplingSurface<dim, data_dim, VectorizedArrayType>::process_coupling_mesh()
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-CouplingSurface<dim, data_dim, VectorizedArrayType>::read_block_data(const std::string &) const
+CouplingBase<dim, data_dim, VectorizedArrayType>::read_block_data(const std::string &) const
 {
   AssertThrow(false, dealii::ExcNotImplemented());
 }
@@ -228,8 +227,8 @@ CouplingSurface<dim, data_dim, VectorizedArrayType>::read_block_data(const std::
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-CouplingSurface<dim, data_dim, VectorizedArrayType>::print_info(const bool         reader,
-                                                                const unsigned int local_size) const
+CouplingBase<dim, data_dim, VectorizedArrayType>::print_info(const bool         reader,
+                                                             const unsigned int local_size) const
 {
   Assert(matrix_free.get() != 0, dealii::ExcNotInitialized());
   dealii::ConditionalOStream pcout(std::cout,

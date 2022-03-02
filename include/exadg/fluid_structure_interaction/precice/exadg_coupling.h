@@ -19,12 +19,12 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_EXADG_SURFACE_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_EXADG_SURFACE_H_
+#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_EXADG_COUPLING_H_
+#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_EXADG_COUPLING_H_
 
 #include <deal.II/matrix_free/fe_evaluation.h>
 
-#include <exadg/fluid_structure_interaction/precice/coupling_surface.h>
+#include <exadg/fluid_structure_interaction/precice/coupling_base.h>
 #include <exadg/fluid_structure_interaction/precice/interface_coupling.h>
 
 namespace ExaDG
@@ -32,19 +32,19 @@ namespace ExaDG
 namespace preCICE
 {
 /**
- * Derived class of the CouplingSurface: shallow wrapper,
- * where the participant defines a vector of points and
- * the interface handles only the dealii::Exchange with preCICE.
+ * Derived class of the CouplingBase: shallow wrapper around the preCICE API functions,
+ * where the participant defines a vector of points and the interface class here handles
+ * the data exchange with preCICE, i.e., defining a coupling mesh and passing data to preCICE.
  */
 template<int dim, int data_dim, typename VectorizedArrayType>
-class ExaDGSurface : public CouplingSurface<dim, data_dim, VectorizedArrayType>
+class ExaDGCoupling : public CouplingBase<dim, data_dim, VectorizedArrayType>
 {
 public:
-  ExaDGSurface(std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
-               std::shared_ptr<precice::SolverInterface>                                   precice,
-               const std::string                mesh_name,
-               const dealii::types::boundary_id surface_id = dealii::numbers::invalid_unsigned_int)
-    : CouplingSurface<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id)
+  ExaDGCoupling(std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+                std::shared_ptr<precice::SolverInterface>                                   precice,
+                const std::string                mesh_name,
+                const dealii::types::boundary_id surface_id = dealii::numbers::invalid_unsigned_int)
+    : CouplingBase<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id)
   {
   }
 
@@ -88,7 +88,7 @@ private:
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-ExaDGSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
+ExaDGCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
   const std::vector<dealii::Point<dim>> & vec)
 {
   Assert(this->mesh_id != -1, dealii::ExcNotInitialized());
@@ -112,7 +112,7 @@ ExaDGSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-ExaDGSurface<dim, data_dim, VectorizedArrayType>::read_block_data(
+ExaDGCoupling<dim, data_dim, VectorizedArrayType>::read_block_data(
   const std::string & data_name) const
 {
   const int read_data_id = this->read_data_map.at(data_name);
@@ -137,7 +137,7 @@ ExaDGSurface<dim, data_dim, VectorizedArrayType>::read_block_data(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-ExaDGSurface<dim, data_dim, VectorizedArrayType>::set_data_pointer(
+ExaDGCoupling<dim, data_dim, VectorizedArrayType>::set_data_pointer(
   std::shared_ptr<ExaDG::preCICE::InterfaceCoupling<dim, dim, double>> exadg_terminal_)
 {
   exadg_terminal = exadg_terminal_;
@@ -147,7 +147,7 @@ ExaDGSurface<dim, data_dim, VectorizedArrayType>::set_data_pointer(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-ExaDGSurface<dim, data_dim, VectorizedArrayType>::write_data(
+ExaDGCoupling<dim, data_dim, VectorizedArrayType>::write_data(
   const dealii::LinearAlgebra::distributed::Vector<double> &,
   const std::string &)
 {
@@ -157,7 +157,7 @@ ExaDGSurface<dim, data_dim, VectorizedArrayType>::write_data(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 std::string
-ExaDGSurface<dim, data_dim, VectorizedArrayType>::get_surface_type() const
+ExaDGCoupling<dim, data_dim, VectorizedArrayType>::get_surface_type() const
 {
   return "exadg shallow wrapper";
 }

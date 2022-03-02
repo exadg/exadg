@@ -26,7 +26,7 @@
 #include <deal.II/base/parameter_handler.h>
 
 // ExaDG
-#include <exadg/fluid_structure_interaction/precice/coupling_surface.h>
+#include <exadg/fluid_structure_interaction/precice/coupling_base.h>
 
 namespace ExaDG
 {

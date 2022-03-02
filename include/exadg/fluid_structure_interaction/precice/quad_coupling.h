@@ -19,35 +19,35 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_QUAD_SURFACE_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_QUAD_SURFACE_H_
+#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_QUAD_COUPLING_H_
+#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_QUAD_COUPLING_H_
 
 #include <deal.II/matrix_free/fe_evaluation.h>
 
-#include <exadg/fluid_structure_interaction/precice/coupling_surface.h>
+#include <exadg/fluid_structure_interaction/precice/coupling_base.h>
 
 namespace ExaDG
 {
 namespace preCICE
 {
 /**
- * Derived class of the CouplingSurface: the classical coupling approach,
+ * Derived class of the CouplingBase: the classical coupling approach,
  * where each participant defines an surface based on the locally owned
  * triangulation. Here, quadrature points are used for reading and writing.
  * data_dim is equivalent to n_components, indicating the type of your data in
  * the preCICE sense (Vector vs Scalar)
  */
 template<int dim, int data_dim, typename VectorizedArrayType>
-class QuadSurface : public CouplingSurface<dim, data_dim, VectorizedArrayType>
+class QuadCoupling : public CouplingBase<dim, data_dim, VectorizedArrayType>
 {
 public:
-  QuadSurface(std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
-              std::shared_ptr<precice::SolverInterface>                                   precice,
-              const std::string                                                           mesh_name,
-              const dealii::types::boundary_id surface_id,
-              const int                        mf_dof_index,
-              const int                        mf_quad_index)
-    : CouplingSurface<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
+  QuadCoupling(std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+               std::shared_ptr<precice::SolverInterface>                                   precice,
+               const std::string                mesh_name,
+               const dealii::types::boundary_id surface_id,
+               const int                        mf_dof_index,
+               const int                        mf_quad_index)
+    : CouplingBase<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
       mf_dof_index(mf_dof_index),
       mf_quad_index(mf_quad_index)
   {
@@ -55,8 +55,8 @@ public:
 
   /// Alias as defined in the base class
   using FEFaceIntegrator =
-    typename CouplingSurface<dim, data_dim, VectorizedArrayType>::FEFaceIntegrator;
-  using value_type = typename CouplingSurface<dim, data_dim, VectorizedArrayType>::value_type;
+    typename CouplingBase<dim, data_dim, VectorizedArrayType>::FEFaceIntegrator;
+  using value_type = typename CouplingBase<dim, data_dim, VectorizedArrayType>::value_type;
 
   /**
    * @brief define_mesh_vertices Define a vertex coupling mesh for preCICE
@@ -73,7 +73,9 @@ public:
    * @param[in] data_vector The data to be passed to preCICE (absolute
    *            displacement for FSI). Note that the data_vector needs to
    *            contain valid ghost values for parallel runs, i.e.
-   *            update_ghost_values must be calles before
+   *            update_ghost_values must be calles before. In addition,
+   *            constraints need to be applied manually to the data before
+   *            passing it into this function
    */
   virtual void
   write_data(const dealii::LinearAlgebra::distributed::Vector<double> & data_vector,
@@ -112,7 +114,7 @@ private:
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-QuadSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
+QuadCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
   const std::vector<dealii::Point<dim>> &)
 {
   Assert(this->mesh_id != -1, dealii::ExcNotInitialized());
@@ -183,7 +185,7 @@ QuadSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-QuadSurface<dim, data_dim, VectorizedArrayType>::write_data(
+QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data(
   const dealii::LinearAlgebra::distributed::Vector<double> & data_vector,
   const std::string &                                        data_name)
 {
@@ -214,7 +216,7 @@ QuadSurface<dim, data_dim, VectorizedArrayType>::write_data(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-QuadSurface<dim, data_dim, VectorizedArrayType>::write_data_factory(
+QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data_factory(
   const dealii::LinearAlgebra::distributed::Vector<double> &          data_vector,
   const int                                                           write_data_id,
   const dealii::EvaluationFlags::EvaluationFlags                      flags,
@@ -284,7 +286,7 @@ QuadSurface<dim, data_dim, VectorizedArrayType>::write_data_factory(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 std::string
-QuadSurface<dim, data_dim, VectorizedArrayType>::get_surface_type() const
+QuadCoupling<dim, data_dim, VectorizedArrayType>::get_surface_type() const
 {
   return "quadrature points using matrix-free quad index " +
          dealii::Utilities::to_string(mf_quad_index);

@@ -20,12 +20,12 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DOF_SURFACE_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DOF_SURFACE_H_
+#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DOF_COUPLING_H_
+#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DOF_COUPLING_H_
 
 #include <deal.II/dofs/dof_tools.h>
 
-#include <exadg/fluid_structure_interaction/precice/coupling_surface.h>
+#include <exadg/fluid_structure_interaction/precice/coupling_base.h>
 #include <exadg/fluid_structure_interaction/precice/dof_tools_extension.h>
 
 namespace ExaDG
@@ -33,22 +33,22 @@ namespace ExaDG
 namespace preCICE
 {
 /**
- * Derived class of the CouplingSurface: the classical coupling approach,
+ * Derived class of the CouplingBase: the classical coupling approach,
  * where each participant defines an interface based on the locally owned
  * triangulation. Here, dof support points are used for reading and writing.
  * data_dim is equivalent to n_components, indicating the type of your data in
  * the preCICE sense (Vector vs Scalar)
  */
 template<int dim, int data_dim, typename VectorizedArrayType>
-class DoFSurface : public CouplingSurface<dim, data_dim, VectorizedArrayType>
+class DoFCoupling : public CouplingBase<dim, data_dim, VectorizedArrayType>
 {
 public:
-  DoFSurface(std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
-             std::shared_ptr<precice::SolverInterface>                                   precice,
-             const std::string                                                           mesh_name,
-             const dealii::types::boundary_id                                            surface_id,
-             const int mf_dof_index)
-    : CouplingSurface<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
+  DoFCoupling(std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+              std::shared_ptr<precice::SolverInterface>                                   precice,
+              const std::string                                                           mesh_name,
+              const dealii::types::boundary_id surface_id,
+              const int                        mf_dof_index)
+    : CouplingBase<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
       mf_dof_index(mf_dof_index)
   {
   }
@@ -91,7 +91,7 @@ private:
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-DoFSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
+DoFCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
   const std::vector<dealii::Point<dim>> &)
 {
   Assert(this->mesh_id != -1, dealii::ExcNotInitialized());
@@ -178,7 +178,7 @@ DoFSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-DoFSurface<dim, data_dim, VectorizedArrayType>::write_data(
+DoFCoupling<dim, data_dim, VectorizedArrayType>::write_data(
   const dealii::LinearAlgebra::distributed::Vector<double> & data_vector,
   const std::string &                                        data_name)
 {
@@ -212,7 +212,7 @@ DoFSurface<dim, data_dim, VectorizedArrayType>::write_data(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 std::string
-DoFSurface<dim, data_dim, VectorizedArrayType>::get_surface_type() const
+DoFCoupling<dim, data_dim, VectorizedArrayType>::get_surface_type() const
 {
   return "DoF support points using matrix-free dof index " +
          dealii::Utilities::to_string(mf_dof_index);

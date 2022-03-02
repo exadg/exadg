@@ -31,9 +31,9 @@
 
 #include <deal.II/matrix_free/matrix_free.h>
 
-#include <exadg/fluid_structure_interaction/precice/dof_surface.h>
-#include <exadg/fluid_structure_interaction/precice/exadg_surface.h>
-#include <exadg/fluid_structure_interaction/precice/quad_surface.h>
+#include <exadg/fluid_structure_interaction/precice/dof_coupling.h>
+#include <exadg/fluid_structure_interaction/precice/exadg_coupling.h>
+#include <exadg/fluid_structure_interaction/precice/quad_coupling.h>
 #include <precice/SolverInterface.hpp>
 
 #include <ostream>
@@ -54,7 +54,7 @@ template<int dim,
 class Adapter
 {
 public:
-  using value_type = typename CouplingSurface<dim, data_dim, VectorizedArrayType>::value_type;
+  using value_type = typename CouplingBase<dim, data_dim, VectorizedArrayType>::value_type;
   /**
    * @brief      Constructor, which sets up the precice Solverinterface
    *
@@ -184,12 +184,11 @@ private:
   std::shared_ptr<precice::SolverInterface> precice;
 
   /// The objects handling reading and writing data
-  std::map<std::string, std::shared_ptr<CouplingSurface<dim, data_dim, VectorizedArrayType>>>
-    writer;
+  std::map<std::string, std::shared_ptr<CouplingBase<dim, data_dim, VectorizedArrayType>>> writer;
 
-  // We restrict the reader to be of type ExaDGSurface for the moment, as all other choices don't
+  // We restrict the reader to be of type ExaDGCoupling for the moment, as all other choices don't
   // make sense
-  std::map<std::string, std::shared_ptr<ExaDGSurface<dim, data_dim, VectorizedArrayType>>> reader;
+  std::map<std::string, std::shared_ptr<ExaDGCoupling<dim, data_dim, VectorizedArrayType>>> reader;
 
   // Container to store time dependent data in case of an implicit coupling
   std::vector<VectorType> old_state_data;
@@ -237,7 +236,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_surface(
   else if(write_data_type == WriteDataType::values_on_dofs)
   {
     writer.insert({mesh_name,
-                   std::make_shared<DoFSurface<dim, data_dim, VectorizedArrayType>>(
+                   std::make_shared<DoFCoupling<dim, data_dim, VectorizedArrayType>>(
                      data, precice, mesh_name, dealii_boundary_surface_id, dof_index)});
   }
   else
@@ -246,7 +245,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_surface(
              write_data_type == WriteDataType::normal_gradients_on_q_points,
            dealii::ExcNotImplemented());
     writer.insert({mesh_name,
-                   std::make_shared<QuadSurface<dim, data_dim, VectorizedArrayType>>(
+                   std::make_shared<QuadCoupling<dim, data_dim, VectorizedArrayType>>(
                      data, precice, mesh_name, dealii_boundary_surface_id, dof_index, quad_index)});
   }
 
@@ -271,9 +270,10 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_read_surface(
   const std::string &                                                         mesh_name,
   const std::vector<std::string> &                                            read_data_names)
 {
-  reader.insert(
-    {mesh_name,
-     std::make_shared<ExaDGSurface<dim, data_dim, VectorizedArrayType>>(data, precice, mesh_name)});
+  reader.insert({mesh_name,
+                 std::make_shared<ExaDGCoupling<dim, data_dim, VectorizedArrayType>>(data,
+                                                                                     precice,
+                                                                                     mesh_name)});
   reader.at(mesh_name)->set_data_pointer(exadg_terminal);
   for(const auto & data_name : read_data_names)
     reader.at(mesh_name)->add_read_data(data_name);
