@@ -243,6 +243,20 @@ OperatorBase<dim, Number, n_components>::set_constrained_values_to_zero(VectorTy
 }
 
 template<int dim, typename Number, int n_components>
+bool
+OperatorBase<dim, Number, n_components>::check_constrained_values_are_zero(
+  VectorType const & vector) const
+{
+  for(unsigned int i = 0; i < constrained_indices.size(); ++i)
+  {
+    if(vector.local_element(constrained_indices[i]) > std::numeric_limits<Number>::min())
+      return false;
+  }
+
+  return true;
+}
+
+template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::calculate_inverse_diagonal(VectorType & diagonal) const
 {

@@ -263,6 +263,9 @@ public:
   void
   set_constrained_values_to_zero(VectorType & vector) const;
 
+  bool
+  check_constrained_values_are_zero(VectorType const & vector) const;
+
   /*
    * This function solves the (non-)linear system of equations.
    */

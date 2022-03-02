@@ -172,6 +172,9 @@ public:
   void
   set_constrained_values_to_zero(VectorType & vector) const;
 
+  bool
+  check_constrained_values_are_zero(VectorType const & vector) const;
+
   void
   calculate_inverse_diagonal(VectorType & diagonal) const;
 

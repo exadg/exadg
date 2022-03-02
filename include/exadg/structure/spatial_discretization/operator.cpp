@@ -662,6 +662,11 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
     body_force_operator.evaluate_add(body_forces, src, time);
     dst -= body_forces;
   }
+
+  // check that constrained degrees of freedom are really zero
+  AssertThrow(check_constrained_values_are_zero(dst),
+              dealii::ExcMessage(
+                "Expected that constrained degrees of freedom are zero. Aborting."));
 }
 
 template<int dim, typename Number>
@@ -718,6 +723,16 @@ Operator<dim, Number>::set_constrained_values_to_zero(VectorType & vector) const
 }
 
 template<int dim, typename Number>
+bool
+Operator<dim, Number>::check_constrained_values_are_zero(VectorType const & vector) const
+{
+  if(param.large_deformation)
+    return elasticity_operator_nonlinear.check_constrained_values_are_zero(vector);
+  else
+    return elasticity_operator_linear.check_constrained_values_are_zero(vector);
+}
+
+template<int dim, typename Number>
 std::tuple<unsigned int, unsigned int>
 Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
                                        VectorType const & rhs,
@@ -739,9 +754,6 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
 
   // solve nonlinear problem
   auto const iter = newton_solver->solve(sol, update);
-
-  // set inhomogeneous Dirichlet values
-  elasticity_operator_nonlinear.set_constrained_values(sol, time);
 
   return iter;
 }
