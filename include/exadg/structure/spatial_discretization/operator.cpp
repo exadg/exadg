@@ -780,6 +780,10 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
   // constrained degrees of freedom have been taken into account in the
   // rhs vector and the linear solver (and matrix_free) may not touch
   // the constrained degrees of freedom.
+  // We are on the safe side if we set the constraints afterwards,
+  // because the solution might be wrong for the constrained degrees of
+  // freedom if the rhs vector does not contain the correct values for
+  // the constrained degrees of freedom.
   elasticity_operator_linear.set_constrained_values(sol, time);
 
   return iterations;
