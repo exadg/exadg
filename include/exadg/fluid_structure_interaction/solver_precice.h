@@ -43,7 +43,7 @@ create_input_file(std::string const & input_file)
   GeneralParameters general;
   general.add_parameters(prm);
 
-  ExaDG::preCICE::ConfigurationParameters precice_parameters;
+  preCICE::ConfigurationParameters precice_parameters;
   precice_parameters.add_parameters(prm);
 
   // we have to assume a default dimension and default Number type
@@ -70,7 +70,7 @@ run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_tes
     FSI::get_application<dim, Number>(input_file, mpi_comm);
 
 
-  ExaDG::preCICE::ConfigurationParameters            precice_param(input_file);
+  preCICE::ConfigurationParameters                   precice_param(input_file);
   std::shared_ptr<FSI::preCICE::Driver<dim, Number>> driver;
 
   // We have different drivers for Fluid and Solid since the data exchange and underlying
