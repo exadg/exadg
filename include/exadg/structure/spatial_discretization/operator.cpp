@@ -664,9 +664,8 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
   }
 
   // check that constrained degrees of freedom are really zero
-  AssertThrow(check_constrained_values_are_zero(dst),
-              dealii::ExcMessage(
-                "Expected that constrained degrees of freedom are zero. Aborting."));
+  Assert(check_constrained_values_are_zero(dst),
+         dealii::ExcMessage("Expected that constrained degrees of freedom are zero. Aborting."));
 }
 
 template<int dim, typename Number>

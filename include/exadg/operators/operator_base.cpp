@@ -249,7 +249,7 @@ OperatorBase<dim, Number, n_components>::check_constrained_values_are_zero(
 {
   for(unsigned int i = 0; i < constrained_indices.size(); ++i)
   {
-    if(std::abs(vector.local_element(constrained_indices[i])) > std::numeric_limits<Number>::min())
+    if(vector.local_element(constrained_indices[i]) != 0.0)
       return false;
   }
 
