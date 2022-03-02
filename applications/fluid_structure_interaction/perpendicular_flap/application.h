@@ -5,7 +5,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
 // Perpendicular flap
 double const U_MEAN          = 10;
 double const FLUID_VISCOSITY = 1;
@@ -47,15 +46,15 @@ double const REL_TOL_LINEARIZED = 1.e-6;
 double const ABS_TOL_LINEARIZED = 1.e-12;
 
 template<int dim>
-class InflowBC : public Function<dim>
+class InflowBC : public dealii::Function<dim>
 {
 public:
-  InflowBC() : Function<dim>(dim, 0.0)
+  InflowBC() : dealii::Function<dim>(dim, 0.0)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     (void)p;
     double result = 0.0;
@@ -68,22 +67,22 @@ public:
 };
 
 template<int dim>
-class SpatiallyVaryingE : public Function<dim>
+class SpatiallyVaryingE : public dealii::Function<dim>
 {
 public:
-  SpatiallyVaryingE() : Function<dim>(1, 0.0)
+  SpatiallyVaryingE() : dealii::Function<dim>(1, 0.0)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     (void)component;
 
     double const length_scale = 2.0 * THICKNESS_S;
     double const x            = p[0];
     double const value =
-      (std::abs(x) < length_scale) ? std::cos(x / length_scale * 0.5 * numbers::PI) : 0.0;
+      (std::abs(x) < length_scale) ? std::cos(x / length_scale * 0.5 * dealii::numbers::PI) : 0.0;
 
     return 1. + 100. * value * value;
   }
@@ -261,49 +260,54 @@ private:
   }
 
   void
-  create_triangulation(Triangulation<2> & tria)
+  create_triangulation(dealii::Triangulation<2> & tria)
   {
-    std::vector<Triangulation<2>> tria_vec;
+    std::vector<dealii::Triangulation<2>> tria_vec;
     tria_vec.resize(5);
 
-    GridGenerator::subdivided_hyper_rectangle(tria_vec[0],
-                                              {16, 1} /* subdivisions x,y */,
-                                              Point<2>(X_0, Y_0),
-                                              Point<2>(CENTER_S - (0.5 * THICKNESS_S), HEIGHT_S));
+    dealii::GridGenerator::subdivided_hyper_rectangle(
+      tria_vec[0],
+      {16, 4} /* subdivisions x,y */,
+      dealii::Point<2>(X_0, Y_0),
+      dealii::Point<2>(CENTER_S - (0.5 * THICKNESS_S), HEIGHT_S));
 
-    GridGenerator::subdivided_hyper_rectangle(tria_vec[1],
-                                              {16, 3} /* subdivisions x,y */,
-                                              Point<2>(X_0, HEIGHT_S),
-                                              Point<2>(CENTER_S - (0.5 * THICKNESS_S), H));
+    dealii::GridGenerator::subdivided_hyper_rectangle(
+      tria_vec[1],
+      {16, 12} /* subdivisions x,y */,
+      dealii::Point<2>(X_0, HEIGHT_S),
+      dealii::Point<2>(CENTER_S - (0.5 * THICKNESS_S), H));
 
-    GridGenerator::subdivided_hyper_rectangle(tria_vec[2],
-                                              {1, 3} /* subdivisions x,y */,
-                                              Point<2>(CENTER_S - (0.5 * THICKNESS_S), HEIGHT_S),
-                                              Point<2>(CENTER_S + (0.5 * THICKNESS_S), H));
+    dealii::GridGenerator::subdivided_hyper_rectangle(
+      tria_vec[2],
+      {1, 12} /* subdivisions x,y */,
+      dealii::Point<2>(CENTER_S - (0.5 * THICKNESS_S), HEIGHT_S),
+      dealii::Point<2>(CENTER_S + (0.5 * THICKNESS_S), H));
 
-    GridGenerator::subdivided_hyper_rectangle(tria_vec[3],
-                                              {16, 3} /* subdivisions x,y */,
-                                              Point<2>(CENTER_S + (0.5 * THICKNESS_S), HEIGHT_S),
-                                              Point<2>(L, H));
+    dealii::GridGenerator::subdivided_hyper_rectangle(
+      tria_vec[3],
+      {16, 12} /* subdivisions x,y */,
+      dealii::Point<2>(CENTER_S + (0.5 * THICKNESS_S), HEIGHT_S),
+      dealii::Point<2>(L, H));
 
-    GridGenerator::subdivided_hyper_rectangle(tria_vec[4],
-                                              {16, 1} /* subdivisions x,y */,
-                                              Point<2>(CENTER_S + (0.5 * THICKNESS_S), Y_0),
-                                              Point<2>(L, HEIGHT_S));
+    dealii::GridGenerator::subdivided_hyper_rectangle(
+      tria_vec[4],
+      {16, 4} /* subdivisions x,y */,
+      dealii::Point<2>(CENTER_S + (0.5 * THICKNESS_S), Y_0),
+      dealii::Point<2>(L, HEIGHT_S));
 
-    std::vector<Triangulation<2> const *> tria_vec_ptr(tria_vec.size());
+    std::vector<dealii::Triangulation<2> const *> tria_vec_ptr(tria_vec.size());
     for(unsigned int i = 0; i < tria_vec.size(); ++i)
       tria_vec_ptr[i] = &tria_vec[i];
 
-    GridGenerator::merge_triangulations(tria_vec_ptr, tria);
+    dealii::GridGenerator::merge_triangulations(tria_vec_ptr, tria);
   }
 
   void
-  create_triangulation(Triangulation<3> & tria)
+  create_triangulation(dealii::Triangulation<3> & tria)
   {
     (void)tria;
 
-    AssertThrow(false, ExcMessage("not implemented."));
+    AssertThrow(false, dealii::ExcMessage("not implemented."));
   }
 
   void
@@ -315,7 +319,7 @@ private:
 
     for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
         if(cell->face(f)->at_boundary())
         {
@@ -341,7 +345,7 @@ private:
           }
           else
           {
-            AssertThrow(false, ExcNotImplemented());
+            AssertThrow(false, dealii::ExcNotImplemented());
           }
         }
       }
@@ -354,19 +358,20 @@ private:
   {
     std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor = this->boundary_descriptor;
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_fsi;
 
     // fill boundary descriptor velocity
     boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(BOUNDARY_ID_INFLOW, new InflowBC<dim>()));
     boundary_descriptor->velocity->neumann_bc.insert(
       pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_BOTTOM_WALL, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_BOTTOM_WALL, new dealii::Functions::ZeroFunction<dim>(dim)));
     // fluid-structure interface
     boundary_descriptor->velocity->dirichlet_cached_bc.insert(
       pair_fsi(BOUNDARY_ID_FLAG, new FunctionCached<1, dim>()));
@@ -375,7 +380,7 @@ private:
     boundary_descriptor->pressure->neumann_bc.insert(BOUNDARY_ID_WALLS);
     boundary_descriptor->pressure->neumann_bc.insert(BOUNDARY_ID_INFLOW);
     boundary_descriptor->pressure->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(1)));
+      pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(1)));
     boundary_descriptor->pressure->neumann_bc.insert(BOUNDARY_ID_BOTTOM_WALL);
     boundary_descriptor->pressure->neumann_bc.insert(BOUNDARY_ID_FLAG);
   }
@@ -386,9 +391,10 @@ private:
     std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions = this->field_functions;
 
     field_functions->initial_solution_velocity.reset(new InflowBC<dim>());
-    field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_solution_pressure.reset(new dealii::Functions::ZeroFunction<dim>(1));
+    field_functions->analytical_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
@@ -445,18 +451,19 @@ private:
     std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor =
       this->ale_poisson_boundary_descriptor;
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_fsi;
 
     boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_INFLOW, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_INFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_BOTTOM_WALL, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_BOTTOM_WALL, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // fluid-structure interface
     boundary_descriptor->dirichlet_cached_bc.insert(
@@ -470,8 +477,8 @@ private:
     std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions =
       this->ale_poisson_field_functions;
 
-    field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_solution.reset(new dealii::Functions::ZeroFunction<dim>(dim));
+    field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   void
@@ -510,28 +517,29 @@ private:
     std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor =
       this->ale_elasticity_boundary_descriptor;
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-    typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+                                                                                  pair;
+    typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_fsi;
 
     boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
-      pair_mask(BOUNDARY_ID_WALLS, ComponentMask()));
+      pair_mask(BOUNDARY_ID_WALLS, dealii::ComponentMask()));
     boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_INFLOW, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_INFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
-      pair_mask(BOUNDARY_ID_INFLOW, ComponentMask()));
+      pair_mask(BOUNDARY_ID_INFLOW, dealii::ComponentMask()));
     boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
-      pair_mask(BOUNDARY_ID_OUTFLOW, ComponentMask()));
+      pair_mask(BOUNDARY_ID_OUTFLOW, dealii::ComponentMask()));
     boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_BOTTOM_WALL, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_BOTTOM_WALL, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
-      pair_mask(BOUNDARY_ID_BOTTOM_WALL, ComponentMask()));
+      pair_mask(BOUNDARY_ID_BOTTOM_WALL, dealii::ComponentMask()));
 
     // fluid-structure interface
     boundary_descriptor->dirichlet_cached_bc.insert(
@@ -546,14 +554,14 @@ private:
 
     using namespace Structure;
 
-    typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
+    typedef std::pair<dealii::types::material_id, std::shared_ptr<MaterialData>> Pair;
 
     MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlaneStrain;
 
-    double const                   E       = 1.0;
-    double const                   poisson = 0.3;
-    std::shared_ptr<Function<dim>> E_function;
+    double const                           E       = 1.0;
+    double const                           poisson = 0.3;
+    std::shared_ptr<dealii::Function<dim>> E_function;
     E_function.reset(new SpatiallyVaryingE<dim>());
     material_descriptor->insert(
       Pair(0, new StVenantKirchhoffData<dim>(type, E, poisson, two_dim_type, E_function)));
@@ -565,9 +573,9 @@ private:
     std::shared_ptr<Structure::FieldFunctions<dim>> field_functions =
       this->ale_elasticity_field_functions;
 
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+    field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_displacement.reset(new dealii::Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_velocity.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 };
 } // namespace FluidFSI
@@ -626,27 +634,28 @@ public:
   }
 
   void
-  create_triangulation(Triangulation<2> & tria)
+  create_triangulation(dealii::Triangulation<2> & tria)
   {
     if(STRUCTURE_COVERS_FLAG_ONLY)
     {
-      GridGenerator::subdivided_hyper_rectangle(tria,
-                                                {1, N_CELLS_FLAG_Y} /* subdivisions x,y */,
-                                                Point<2>(CENTER_S - (THICKNESS_S * 0.5), 0),
-                                                Point<2>(CENTER_S + (THICKNESS_S * 0.5), HEIGHT_S));
+      dealii::GridGenerator::subdivided_hyper_rectangle(
+        tria,
+        {1, N_CELLS_FLAG_Y} /* subdivisions x,y */,
+        dealii::Point<2>(CENTER_S - (THICKNESS_S * 0.5), 0),
+        dealii::Point<2>(CENTER_S + (THICKNESS_S * 0.5), HEIGHT_S));
     }
     else
     {
-      Assert(false, ExcNotImplemented());
+      Assert(false, dealii::ExcNotImplemented());
     }
   }
 
   void
-  create_triangulation(Triangulation<3> & tria)
+  create_triangulation(dealii::Triangulation<3> & tria)
   {
     (void)tria;
 
-    AssertThrow(false, ExcMessage("not implemented."));
+    AssertThrow(false, dealii::ExcMessage("not implemented."));
   }
 
   void
@@ -658,7 +667,7 @@ public:
 
     for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
         double const y   = cell->face(f)->center()(1);
         double const TOL = 1.e-12;
@@ -675,7 +684,7 @@ public:
           }
           else
           {
-            AssertThrow(false, ExcInternalError());
+            AssertThrow(false, dealii::ExcInternalError());
           }
         }
       }
@@ -690,16 +699,17 @@ public:
     std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor =
       this->boundary_descriptor;
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-    typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+                                                                                  pair;
+    typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_fsi;
 
     boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_BOTTOM_WALL, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_BOTTOM_WALL, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
-      pair_mask(BOUNDARY_ID_BOTTOM_WALL, ComponentMask()));
+      pair_mask(BOUNDARY_ID_BOTTOM_WALL, dealii::ComponentMask()));
 
     // fluid-structure interface
     boundary_descriptor->neumann_cached_bc.insert(
@@ -711,9 +721,9 @@ public:
   {
     std::shared_ptr<Structure::FieldFunctions<dim>> field_functions = this->field_functions;
 
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+    field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_displacement.reset(new dealii::Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_velocity.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   void
@@ -723,7 +733,7 @@ public:
 
     using namespace Structure;
 
-    typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
+    typedef std::pair<dealii::types::material_id, std::shared_ptr<MaterialData>> Pair;
 
     MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlaneStrain;
