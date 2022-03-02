@@ -65,8 +65,11 @@ private:
 public:
   InterfaceCoupling() = default;
 
-
-
+  /**
+   * @brief Initialize the interface
+   *
+   * @return std::vector<dealii::Point<dim>> The quadrature points located at the coupling interface
+   */
   std::vector<dealii::Point<dim>>
   setup(std::shared_ptr<const dealii::MatrixFree<dim, Number>> matrix_free_dst,
         unsigned int const                                     dof_index_dst,

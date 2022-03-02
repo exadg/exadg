@@ -79,7 +79,7 @@ DoFSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
     return;
 
   // Get and sort the global dof indices
-  auto get_component_dofs = [&](const int component) {
+  auto const get_component_dofs = [&](const int component) {
     // Get a component mask of the vector component
     dealii::ComponentMask component_mask(data_dim, false);
     component_mask.set(component, true);
@@ -89,14 +89,14 @@ DoFSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
     // TODO: This is super inefficient, have a look at the
     // dof_handler.n_boundary_dofs implementation for a proper version
     const dealii::IndexSet indices =
-      (dealii::DoFTools::extract_boundary_dofs(this->mf_data->get_dof_handler(mf_dof_index),
+      (dealii::DoFTools::extract_boundary_dofs(this->matrix_free->get_dof_handler(mf_dof_index),
                                                component_mask,
                                                std::set<dealii::types::boundary_id>{
                                                  this->dealii_boundary_surface_id}) &
-       this->mf_data->get_dof_handler(mf_dof_index).locally_owned_dofs());
+       this->matrix_free->get_dof_handler(mf_dof_index).locally_owned_dofs());
 
     Assert(indices.n_elements() * data_dim ==
-             this->mf_data->get_dof_handler(mf_dof_index)
+             this->matrix_free->get_dof_handler(mf_dof_index)
                .n_boundary_dofs(
                  std::set<dealii::types::boundary_id>{this->dealii_boundary_surface_id}),
            dealii::ExcInternalError());
@@ -123,8 +123,8 @@ DoFSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
   component_mask.set(0, true);
 
   dealii::DoFTools::map_boundary_dofs_to_support_points(
-    *(this->mf_data->get_mapping_info().mapping),
-    this->mf_data->get_dof_handler(mf_dof_index),
+    *(this->matrix_free->get_mapping_info().mapping),
+    this->matrix_free->get_dof_handler(mf_dof_index),
     support_points,
     component_mask,
     this->dealii_boundary_surface_id);
@@ -167,7 +167,7 @@ DoFSurface<dim, data_dim, VectorizedArrayType>::write_data(
   for(std::size_t i = 0; i < global_indices.size(); ++i)
   {
     // Extract relevant elements from global vector
-    for(int d = 0; d < data_dim; ++d)
+    for(unsigned int d = 0; d < data_dim; ++d)
     {
       const auto element = global_indices[i][d];
       write_data[d]      = data_vector[element];

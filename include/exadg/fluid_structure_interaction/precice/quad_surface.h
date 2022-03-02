@@ -35,6 +35,7 @@ public:
   using FEFaceIntegrator =
     typename CouplingSurface<dim, data_dim, VectorizedArrayType>::FEFaceIntegrator;
   using value_type = typename CouplingSurface<dim, data_dim, VectorizedArrayType>::value_type;
+
   /**
    * @brief define_mesh_vertices Define a vertex coupling mesh for preCICE
    *        coupling the classical preCICE way
@@ -100,26 +101,27 @@ QuadSurface<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
     return;
 
   // Initial guess: half of the boundary is part of the coupling surface
-  coupling_nodes_ids.reserve(this->mf_data->n_boundary_face_batches() * 0.5);
+  coupling_nodes_ids.reserve(this->matrix_free->n_boundary_face_batches() * 0.5);
 
   // Set up data structures
-  FEFaceIntegrator phi(*this->mf_data, true, mf_dof_index, mf_quad_index);
+  FEFaceIntegrator phi(*this->matrix_free, true, mf_dof_index, mf_quad_index);
   std::array<double, dim * VectorizedArrayType::size()> unrolled_vertices;
   std::array<int, VectorizedArrayType::size()>          node_ids;
   unsigned int                                          size = 0;
   // Loop over all boundary faces
-  for(unsigned int face = this->mf_data->n_inner_face_batches();
-      face < this->mf_data->n_boundary_face_batches() + this->mf_data->n_inner_face_batches();
+  for(unsigned int face = this->matrix_free->n_inner_face_batches();
+      face <
+      this->matrix_free->n_boundary_face_batches() + this->matrix_free->n_inner_face_batches();
       ++face)
   {
-    const auto boundary_id = this->mf_data->get_boundary_id(face);
+    const auto boundary_id = this->matrix_free->get_boundary_id(face);
 
     // Only for interface nodes
     if(boundary_id != this->dealii_boundary_surface_id)
       continue;
 
     phi.reinit(face);
-    const int active_faces = this->mf_data->n_active_entries_per_face_batch(face);
+    const int active_faces = this->matrix_free->n_active_entries_per_face_batch(face);
 
     // Loop over all quadrature points and pass the vertices to preCICE
     for(unsigned int q = 0; q < phi.n_q_points; ++q)
@@ -199,7 +201,7 @@ QuadSurface<dim, data_dim, VectorizedArrayType>::write_data_factory(
   Assert(write_data_id != -1, dealii::ExcNotInitialized());
   Assert(coupling_nodes_ids.size() > 0, dealii::ExcNotInitialized());
   // Similar as in define_coupling_mesh
-  FEFaceIntegrator phi(*this->mf_data, true, mf_dof_index, mf_quad_index);
+  FEFaceIntegrator phi(*this->matrix_free, true, mf_dof_index, mf_quad_index);
 
   // In order to unroll the vectorization
   std::array<double, data_dim * VectorizedArrayType::size()> unrolled_local_data;
@@ -208,11 +210,12 @@ QuadSurface<dim, data_dim, VectorizedArrayType>::write_data_factory(
   auto index = coupling_nodes_ids.begin();
 
   // Loop over all faces
-  for(unsigned int face = this->mf_data->n_inner_face_batches();
-      face < this->mf_data->n_boundary_face_batches() + this->mf_data->n_inner_face_batches();
+  for(unsigned int face = this->matrix_free->n_inner_face_batches();
+      face <
+      this->matrix_free->n_boundary_face_batches() + this->matrix_free->n_inner_face_batches();
       ++face)
   {
-    const auto boundary_id = this->mf_data->get_boundary_id(face);
+    const auto boundary_id = this->matrix_free->get_boundary_id(face);
 
     // Only for interface nodes
     if(boundary_id != this->dealii_boundary_surface_id)
@@ -222,12 +225,12 @@ QuadSurface<dim, data_dim, VectorizedArrayType>::write_data_factory(
     phi.reinit(face);
     phi.read_dof_values_plain(data_vector);
     phi.evaluate(flags);
-    const int active_faces = this->mf_data->n_active_entries_per_face_batch(face);
+    const int active_faces = this->matrix_free->n_active_entries_per_face_batch(face);
 
-    for(unsigned int q = 0; q < phi.n_q_points; ++q)
+    for(unsigned int q = 0; q < phi.n_q_points; ++q, ++index)
     {
-      const auto local_data = get_write_value(phi, q);
       Assert(index != coupling_nodes_ids.end(), dealii::ExcInternalError());
+      const auto local_data = get_write_value(phi, q);
 
       // Constexpr evaluation required in order to comply with the
       // compiler here
@@ -251,7 +254,6 @@ QuadSurface<dim, data_dim, VectorizedArrayType>::write_data_factory(
                                             index->data(),
                                             &local_data[0]);
       }
-      ++index;
     }
   }
 }

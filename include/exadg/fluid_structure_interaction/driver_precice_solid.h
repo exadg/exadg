@@ -253,7 +253,7 @@ public:
     this->timer_tree.print_level(this->pcout, 1);
 
     this->pcout << std::endl << "Timings for level 2:" << std::endl;
-    // this->timer_tree.print_level(this->pcout, 2);
+    this->timer_tree.print_level(this->pcout, 2);
 
     // Throughput in DoFs/s per time step per core
     dealii::types::global_dof_index DoFs = structure_operator->get_number_of_dofs();

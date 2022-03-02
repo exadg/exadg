@@ -326,7 +326,6 @@ public:
         quad_indices,
         this->application->fluid->get_boundary_descriptor()->velocity->dirichlet_cached_bc);
 
-      // TODO: Parametrize
       this->precice->add_read_surface(quadrature_point_locations,
                                       fluid_matrix_free,
                                       exadg_terminal_fluid,
@@ -371,7 +370,7 @@ public:
       // pre-solve
       fluid_time_integrator->advance_one_timestep_pre_solve(is_new_time_window);
 
-      this->precice->save_current_state_if_required([&]() { /*TODO*/ });
+      this->precice->save_current_state_if_required([&]() {});
 
       {
         coupling_structure_to_ale();
@@ -397,7 +396,7 @@ public:
       }
 
       // Needs to be called before the swaps in post_solve
-      this->precice->reload_old_state_if_required([&]() { /*TODO*/ });
+      this->precice->reload_old_state_if_required([&]() {});
 
       // post-solve
       if(is_new_time_window)
@@ -432,9 +431,8 @@ public:
     this->pcout << std::endl << "Timings for level 1:" << std::endl;
     this->timer_tree.print_level(this->pcout, 1);
 
-    // TODO: This assumes that we have at least two levels, otherwise failure
     this->pcout << std::endl << "Timings for level 2:" << std::endl;
-    // this->timer_tree.print_level(this->pcout, 2);
+    this->timer_tree.print_level(this->pcout, 2);
 
     // Throughput in DoFs/s per time step per core
     dealii::types::global_dof_index DoFs = fluid_operator->get_number_of_dofs();

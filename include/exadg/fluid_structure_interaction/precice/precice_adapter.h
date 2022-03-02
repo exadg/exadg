@@ -156,14 +156,15 @@ public:
   is_time_window_complete() const;
 
 
-
 private:
   // public precice solverinterface, needed in order to steer the time loop
   // inside the solver.
   std::shared_ptr<precice::SolverInterface> precice;
+
   /// The objects handling reading and writing data
   std::map<std::string, std::shared_ptr<CouplingSurface<dim, data_dim, VectorizedArrayType>>>
     writer;
+
   // We restrict the reader to be of type ExaDGSurface for the moment, as all other choices don't
   // make sense
   std::map<std::string, std::shared_ptr<ExaDGSurface<dim, data_dim, VectorizedArrayType>>> reader;

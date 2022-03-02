@@ -111,7 +111,7 @@ protected:
   print_info(const bool reader, const unsigned int local_size) const;
 
   /// The dealii::MatrixFree object (preCICE can only handle double precision)
-  std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> mf_data;
+  std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> matrix_free;
 
   /// public precice solverinterface
   std::shared_ptr<precice::SolverInterface> precice;
@@ -135,17 +135,17 @@ protected:
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 CouplingSurface<dim, data_dim, VectorizedArrayType>::CouplingSurface(
-  std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+  std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> matrix_free_,
   std::shared_ptr<precice::SolverInterface>                                   precice,
   const std::string                                                           mesh_name,
   const dealii::types::boundary_id                                            surface_id)
-  : mf_data(data),
+  : matrix_free(matrix_free_),
     precice(precice),
     mesh_name(mesh_name),
     dealii_boundary_surface_id(surface_id),
     write_data_type(WriteDataType::undefined)
 {
-  Assert(data.get() != nullptr, dealii::ExcNotInitialized());
+  Assert(matrix_free_.get() != nullptr, dealii::ExcNotInitialized());
   Assert(precice.get() != nullptr, dealii::ExcNotInitialized());
 
   // Ask preCICE already in the constructor for the IDs
@@ -208,10 +208,10 @@ void
 CouplingSurface<dim, data_dim, VectorizedArrayType>::print_info(const bool         reader,
                                                                 const unsigned int local_size) const
 {
-  Assert(mf_data.get() != 0, dealii::ExcNotInitialized());
+  Assert(matrix_free.get() != 0, dealii::ExcNotInitialized());
   dealii::ConditionalOStream pcout(std::cout,
                                    dealii::Utilities::MPI::this_mpi_process(
-                                     mf_data->get_dof_handler().get_communicator()) == 0);
+                                     matrix_free->get_dof_handler().get_communicator()) == 0);
   const auto                 map = (reader ? read_data_map : write_data_map);
 
   auto        names      = map.begin();
@@ -224,7 +224,8 @@ CouplingSurface<dim, data_dim, VectorizedArrayType>::print_info(const bool      
         << "--     . data name(s): " << data_names << "\n"
         << "--     . associated mesh: " << mesh_name << "\n"
         << "--     . Number of coupling nodes: "
-        << dealii::Utilities::MPI::sum(local_size, mf_data->get_dof_handler().get_communicator())
+        << dealii::Utilities::MPI::sum(local_size,
+                                       matrix_free->get_dof_handler().get_communicator())
         << "\n"
         << "--     . Node location: " << get_surface_type() << "\n"
         << std::endl;
