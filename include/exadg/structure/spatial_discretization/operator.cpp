@@ -772,7 +772,11 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
   // solve linear system of equations
   unsigned int const iterations = linear_solver->solve(sol, rhs, false);
 
-  // set Dirichlet values
+  // set Dirichlet values: Note that it does not matter whether we set
+  // the constrained degrees of freedom before or after the solve. The
+  // constrained degrees of freedom have been taken into account in the
+  // rhs vector and the linear solver (and matrix_free) may not touch
+  // the constrained degrees of freedom.
   elasticity_operator_linear.set_constrained_values(sol, time);
 
   return iterations;

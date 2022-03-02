@@ -405,7 +405,11 @@ Operator<dim, Number, n_components>::solve(VectorType &       sol,
 
   unsigned int iterations = iterative_solver->solve(sol, rhs, /* update_preconditioner = */ false);
 
-  // apply Dirichlet boundary conditions in case of continuous elements
+  // set Dirichlet values: Note that it does not matter whether we set
+  // the constrained degrees of freedom before or after the solve. The
+  // constrained degrees of freedom have been taken into account in the
+  // rhs vector and the linear solver (and matrix_free) may not touch
+  // the constrained degrees of freedom.
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
     laplace_operator.set_constrained_values(sol, time);
