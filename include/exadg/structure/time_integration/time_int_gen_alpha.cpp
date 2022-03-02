@@ -127,23 +127,17 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
   this->compute_const_vector(rhs, displacement_n, velocity_n, acceleration_n);
   pde_operator->apply_mass_operator(const_vector, rhs);
 
-  // Set entries of const_vector corresponding to Dirichlet degrees of freedom
-  // to zero in order to allow convergence of solvers (especially for the Newton
-  // solver).
-  // The linear solver should converge without this line because the linear operator
-  // has values of 1 on the diagonal for constrained degrees of freedom. Note,
-  // however, that without the line below the solution obtained by the linear solver
-  // would then be inconsistent with the inhomogeneous Dirichlet BCs, i.e., the
-  // constrained degrees of freedom would have to be set according to the Dirichlet
-  // BCs after the solution of the linear system of equations (even if the linear
-  // system of equations uses an initial solution that contains the correct
-  // constrained degrees of freedom).
-  pde_operator->set_constrained_values_to_zero(const_vector);
-
   if(param.large_deformation == false) // linear case
   {
     // calculate right-hand side vector
     pde_operator->compute_rhs_linear(rhs, this->get_mid_time());
+
+    // Constrained degrees of freedom have already been set
+    // correctly in the function compute_rhs_vector() for the rhs vector.
+    // Hence, the following line ensures that adding const_vector to rhs
+    // does not alter the constrained degrees of freedom of rhs.
+    pde_operator->set_constrained_values_to_zero(const_vector);
+
     // shift const_vector to right-hand side
     rhs.add(-1.0, const_vector);
   }

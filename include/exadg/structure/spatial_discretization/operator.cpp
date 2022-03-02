@@ -643,10 +643,6 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
                                                    double const       factor,
                                                    double const       time) const
 {
-  // Note that constrained degrees of freedom have to be zero for dst and const_vector
-  // in order to ensure convergence of the Newton solver. This is checked at the
-  // end of this function.
-
   // elasticity operator
   elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
   elasticity_operator_nonlinear.set_time(time);
@@ -667,9 +663,11 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
     dst -= body_forces;
   }
 
-  // check that constrained degrees of freedom are really zero
-  Assert(check_constrained_values_are_zero(dst),
-         dealii::ExcMessage("Expected that constrained degrees of freedom are zero. Aborting."));
+  // To ensure convergence of the Newton solver, the residual has to be zero
+  // for constrained degrees of freedom as well, which might not be the case
+  // in general, e.g. due to const_vector. Hence, we set the constrained
+  // degrees of freedom explicitly to zero.
+  set_constrained_values_to_zero(dst);
 }
 
 template<int dim, typename Number>
@@ -723,16 +721,6 @@ Operator<dim, Number>::set_constrained_values_to_zero(VectorType & vector) const
     elasticity_operator_nonlinear.set_constrained_values_to_zero(vector);
   else
     elasticity_operator_linear.set_constrained_values_to_zero(vector);
-}
-
-template<int dim, typename Number>
-bool
-Operator<dim, Number>::check_constrained_values_are_zero(VectorType const & vector) const
-{
-  if(param.large_deformation)
-    return elasticity_operator_nonlinear.check_constrained_values_are_zero(vector);
-  else
-    return elasticity_operator_linear.check_constrained_values_are_zero(vector);
 }
 
 template<int dim, typename Number>
