@@ -46,13 +46,11 @@ namespace FSI
 {
 namespace preCICE
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class DriverSolid : public Driver<dim, Number>
 {
 private:
-  using VectorType = typename LinearAlgebra::distributed::Vector<Number>;
+  using VectorType = typename dealii::LinearAlgebra::distributed::Vector<Number>;
 
 public:
   DriverSolid(std::string const &                           input_file,
@@ -141,7 +139,7 @@ public:
       this->precice_parameters.write_data_type,
       structure_matrix_free,
       structure_operator->get_dof_index(),
-      numbers::invalid_unsigned_int);
+      dealii::numbers::invalid_unsigned_int);
 
     {
       // TODO: The ExaDG terminal sets up the quadrature point locations, which are already
@@ -258,12 +256,12 @@ public:
     // this->timer_tree.print_level(this->pcout, 2);
 
     // Throughput in DoFs/s per time step per core
-    types::global_dof_index DoFs = structure_operator->get_number_of_dofs();
+    dealii::types::global_dof_index DoFs = structure_operator->get_number_of_dofs();
 
-    unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(this->mpi_comm);
+    unsigned int const N_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(this->mpi_comm);
 
-    Utilities::MPI::MinMaxAvg total_time_data =
-      Utilities::MPI::min_max_avg(total_time, this->mpi_comm);
+    dealii::Utilities::MPI::MinMaxAvg total_time_data =
+      dealii::Utilities::MPI::min_max_avg(total_time, this->mpi_comm);
     double const total_time_avg = total_time_data.avg;
 
     unsigned int N_time_steps = structure_time_integrator->get_number_of_time_steps();
@@ -311,8 +309,8 @@ private:
   std::shared_ptr<Grid<dim>> structure_grid;
 
   // matrix-free
-  std::shared_ptr<MatrixFreeData<dim, Number>> structure_matrix_free_data;
-  std::shared_ptr<MatrixFree<dim, Number>>     structure_matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>>     structure_matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> structure_matrix_free;
 
   // spatial discretization
   std::shared_ptr<Structure::Operator<dim, Number>> structure_operator;

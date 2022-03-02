@@ -54,13 +54,11 @@ namespace FSI
 {
 namespace preCICE
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class DriverFluid : public Driver<dim, Number>
 {
 private:
-  using VectorType = typename LinearAlgebra::distributed::Vector<Number>;
+  using VectorType = typename dealii::LinearAlgebra::distributed::Vector<Number>;
 
 public:
   DriverFluid(std::string const &                           input_file,
@@ -230,9 +228,9 @@ public:
 
       // setup time integrator before calling setup_solvers (this is necessary since the setup
       // of the solvers depends on quantities such as the time_step_size or gamma0!!!)
-      AssertThrow(this->application->fluid->get_parameters().solver_type ==
-                    IncNS::SolverType::Unsteady,
-                  ExcMessage("Invalid parameter in context of fluid-structure interaction."));
+      AssertThrow(
+        this->application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady,
+        dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
       // initialize fluid_time_integrator
       fluid_time_integrator =
@@ -272,8 +270,8 @@ public:
     // structure to ALE
     {
       // Declare some data structures
-      std::vector<Point<dim>> quadrature_point_locations;
-      auto                    exadg_terminal_ale =
+      std::vector<dealii::Point<dim>> quadrature_point_locations;
+      auto                            exadg_terminal_ale =
         std::make_shared<ExaDG::preCICE::InterfaceCoupling<dim, dim, Number>>();
 
       // Poisson mesh movement
@@ -305,7 +303,7 @@ public:
       }
       else
       {
-        AssertThrow(false, ExcNotImplemented());
+        AssertThrow(false, dealii::ExcNotImplemented());
       }
       this->precice->add_read_surface(quadrature_point_locations,
                                       ale_matrix_free,
@@ -364,7 +362,7 @@ public:
   solve() const final
   {
     Assert(this->application->fluid->get_parameters().adaptive_time_stepping == false,
-           ExcNotImplemented());
+           dealii::ExcNotImplemented());
 
     bool is_new_time_window = true;
     // preCICE dictates when the time loop is finished
@@ -439,7 +437,7 @@ public:
     // this->timer_tree.print_level(this->pcout, 2);
 
     // Throughput in DoFs/s per time step per core
-    types::global_dof_index DoFs = fluid_operator->get_number_of_dofs();
+    dealii::types::global_dof_index DoFs = fluid_operator->get_number_of_dofs();
 
     if(this->application->fluid->get_parameters().mesh_movement_type ==
        IncNS::MeshMovementType::Poisson)
@@ -453,13 +451,13 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("not implemented."));
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
     }
 
-    unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(this->mpi_comm);
+    unsigned int const N_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(this->mpi_comm);
 
-    Utilities::MPI::MinMaxAvg total_time_data =
-      Utilities::MPI::min_max_avg(total_time, this->mpi_comm);
+    dealii::Utilities::MPI::MinMaxAvg total_time_data =
+      dealii::Utilities::MPI::min_max_avg(total_time, this->mpi_comm);
     double const total_time_avg = total_time_data.avg;
 
     unsigned int N_time_steps = fluid_time_integrator->get_number_of_time_steps();
@@ -548,8 +546,8 @@ private:
   std::shared_ptr<GridMotionBase<dim, Number>> fluid_grid_motion;
 
   // matrix-free
-  std::shared_ptr<MatrixFreeData<dim, Number>> fluid_matrix_free_data;
-  std::shared_ptr<MatrixFree<dim, Number>>     fluid_matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>>     fluid_matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> fluid_matrix_free;
 
   // spatial discretization
   std::shared_ptr<IncNS::SpatialOperatorBase<dim, Number>> fluid_operator;
@@ -566,8 +564,8 @@ private:
   /************************************ ALE - MOVING MESH *************************************/
 
   // use a PDE solver for moving mesh problem
-  std::shared_ptr<MatrixFreeData<dim, Number>> ale_matrix_free_data;
-  std::shared_ptr<MatrixFree<dim, Number>>     ale_matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>>     ale_matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> ale_matrix_free;
 
   // Poisson-type mesh motion
   std::shared_ptr<Poisson::Operator<dim, Number, dim>> ale_poisson_operator;

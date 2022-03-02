@@ -20,8 +20,6 @@ namespace ExaDG
 {
 namespace preCICE
 {
-using namespace dealii;
-
 /**
  * The Adapter class keeps together with the CouplingInterfaes all
  * functionalities to couple deal.II to other solvers with preCICE i.e. data
@@ -74,7 +72,7 @@ public:
   initialize_precice(const VectorType & dealii_to_precice);
 
   void
-  add_write_surface(const types::boundary_id         surface_id,
+  add_write_surface(const dealii::types::boundary_id surface_id,
                     const std::string &              mesh_name,
                     const std::vector<std::string> & write_data_names,
                     const WriteDataType              write_data_type,
@@ -186,8 +184,8 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::Adapter(const Parameter
                                                        Utilities::MPI::this_mpi_process(mpi_comm),
                                                        Utilities::MPI::n_mpi_processes(mpi_comm));
 
-  AssertThrow(dim == precice->getDimensions(), ExcInternalError());
-  AssertThrow(dim > 1, ExcNotImplemented());
+  AssertThrow(dim == precice->getDimensions(), dealii::ExcInternalError());
+  AssertThrow(dim > 1, dealii::ExcNotImplemented());
 }
 
 
@@ -195,7 +193,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::Adapter(const Parameter
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_surface(
-  const types::boundary_id                                            dealii_boundary_surface_id,
+  const dealii::types::boundary_id                                    dealii_boundary_surface_id,
   const std::string &                                                 mesh_name,
   const std::vector<std::string> &                                    write_data_names,
   const WriteDataType                                                 write_data_type,
@@ -221,7 +219,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_surface(
   {
     Assert(write_data_type == WriteDataType::values_on_q_points ||
              write_data_type == WriteDataType::normal_gradients_on_q_points,
-           ExcNotImplemented());
+           dealii::ExcNotImplemented());
     writer.insert({mesh_name,
                    std::make_shared<QuadSurface<dim, data_dim, VectorizedArrayType>>(
                      data, precice, mesh_name, dealii_boundary_surface_id, dof_index, quad_index)});

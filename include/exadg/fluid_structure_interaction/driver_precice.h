@@ -38,13 +38,11 @@ namespace FSI
 {
 namespace preCICE
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class Driver
 {
 private:
-  using VectorType = LinearAlgebra::distributed::Vector<Number>;
+  using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
 
 public:
   Driver(std::string const &                           input_file,
@@ -52,7 +50,7 @@ public:
          std::shared_ptr<ApplicationBase<dim, Number>> app,
          bool const                                    is_test)
     : mpi_comm(comm),
-      pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0),
+      pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(comm) == 0),
       application(app),
       precice_parameters(ExaDG::preCICE::ConfigurationParameters(input_file)),
       is_test(is_test)
@@ -81,7 +79,7 @@ protected:
   MPI_Comm const mpi_comm;
 
   // output to std::cout
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   // application
   std::shared_ptr<ApplicationBase<dim, Number>>                  application;
