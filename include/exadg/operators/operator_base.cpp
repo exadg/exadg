@@ -384,19 +384,6 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
     matrix_free->initialize_dof_vector(temp2, data.dof_index);
     matrix_free->cell_loop(&This::cell_loop_dbc, this, temp2, temp1);
     rhs -= temp2;
-
-    // Finally, set entries of rhs vector equal to Dirichlet boundary values for the
-    // constrained degrees of freedom. This procedure is related to a linear system of equations
-    // where we do not eliminate rows corresponding to constrained degrees of freedom, but where
-    // the associated "matrix" contains a value of 1 on the diagonal for these rows.
-    // Using this technique, the linear system of equations is solvable and the initially solution
-    // does not have to contain the correct solution values for constrained degrees of freedom.
-    // Instead, the iteration procedure will converge towards the correct solution according to the
-    // convergence criteria specified for the linear solver.
-    for(unsigned int i = 0; i < constrained_indices.size(); ++i)
-    {
-      rhs.local_element(constrained_indices[i]) = temp1.local_element(constrained_indices[i]);
-    }
   }
 }
 

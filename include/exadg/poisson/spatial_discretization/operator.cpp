@@ -403,17 +403,26 @@ Operator<dim, Number, n_components>::solve(VectorType &       sol,
     check_multigrid.check();
   }
 
-  unsigned int iterations = iterative_solver->solve(sol, rhs, /* update_preconditioner = */ false);
+  // Set entries of rhs vector that correspond to constrained degrees of freedom to zero.
+  // As a result, constrained degrees of freedom of the solution vector will be zero
+  // after the solve. The correct inhomogeneous boundary conditions have to be applied
+  // after the solution of the linear system of equations. This means that this step is
+  // optional, with the consequence that the constrained degrees of freedom of the
+  // solution would contain any unknown values (since we do not which values the rhs
+  // vector contains for the constrained degrees of freedom).
+  VectorType & rhs_mutable = const_cast<VectorType &>(rhs);
+  if(param.spatial_discretization == SpatialDiscretization::CG)
+  {
+    laplace_operator.set_constrained_values_to_zero(rhs_mutable);
+  }
 
-  // set Dirichlet values: Note that it does not matter whether we set
-  // the constrained degrees of freedom before or after the solve. The
-  // constrained degrees of freedom have been taken into account in the
-  // rhs vector and the linear solver (and matrix_free) may not touch
-  // the constrained degrees of freedom.
-  // We are on the safe side if we set the constraints afterwards,
-  // because the solution might be wrong for the constrained degrees of
-  // freedom if the rhs vector does not contain the correct values for
-  // the constrained degrees of freedom.
+  unsigned int iterations =
+    iterative_solver->solve(sol, rhs_mutable, /* update_preconditioner = */ false);
+
+  // set Dirichlet values: The constrained degrees of freedom are zero after the solve
+  // since we have set the corresponding entries of the rhs vector to zero. Hence, we
+  // now need to set the constrained degrees of freedom according to the Dirichlet
+  // boundary conditions.
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
     laplace_operator.set_constrained_values(sol, time);

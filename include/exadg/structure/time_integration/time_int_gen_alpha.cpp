@@ -132,12 +132,6 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
     // calculate right-hand side vector
     pde_operator->compute_rhs_linear(rhs, this->get_mid_time());
 
-    // Constrained degrees of freedom have already been set
-    // correctly in the function compute_rhs_vector() for the rhs vector.
-    // Hence, the following line ensures that adding const_vector to rhs
-    // does not alter the constrained degrees of freedom of rhs.
-    pde_operator->set_constrained_values_to_zero(const_vector);
-
     // shift const_vector to right-hand side
     rhs.add(-1.0, const_vector);
   }

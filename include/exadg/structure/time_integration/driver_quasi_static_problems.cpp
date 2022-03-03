@@ -52,7 +52,10 @@ template<int dim, typename Number>
 void
 DriverQuasiStatic<dim, Number>::setup()
 {
-  AssertThrow(param.large_deformation, dealii::ExcMessage("Not implemented."));
+  AssertThrow(
+    param.large_deformation,
+    dealii::ExcMessage(
+      "DriverQuasiStatic makes only sense for nonlinear problems. For linear problems, use DriverSteady instead."));
 
   // initialize global solution vectors (allocation)
   initialize_vectors();
