@@ -64,9 +64,6 @@ public:
   virtual void
   compute_rhs_linear(VectorType & dst, double const time) const = 0;
 
-  virtual void
-  set_constrained_values_to_zero(VectorType & vector) const = 0;
-
   virtual std::tuple<unsigned int, unsigned int>
   solve_nonlinear(VectorType &       sol,
                   VectorType const & rhs,

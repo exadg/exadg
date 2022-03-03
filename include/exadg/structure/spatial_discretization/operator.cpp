@@ -667,7 +667,7 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
   // for constrained degrees of freedom as well, which might not be the case
   // in general, e.g. due to const_vector. Hence, we set the constrained
   // degrees of freedom explicitly to zero.
-  set_constrained_values_to_zero(dst);
+  elasticity_operator_nonlinear.set_constrained_values_to_zero(dst);
 }
 
 template<int dim, typename Number>
@@ -711,16 +711,6 @@ Operator<dim, Number>::apply_linear_operator(VectorType &       dst,
   elasticity_operator_linear.set_scaling_factor_mass_operator(factor);
   elasticity_operator_linear.set_time(time);
   elasticity_operator_linear.vmult(dst, src);
-}
-
-template<int dim, typename Number>
-void
-Operator<dim, Number>::set_constrained_values_to_zero(VectorType & vector) const
-{
-  if(param.large_deformation)
-    elasticity_operator_nonlinear.set_constrained_values_to_zero(vector);
-  else
-    elasticity_operator_linear.set_constrained_values_to_zero(vector);
 }
 
 template<int dim, typename Number>
@@ -768,7 +758,7 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
   // solution would contain any unknown values (since we do not which values the rhs
   // vector contains for the constrained degrees of freedom).
   VectorType & rhs_mutable = const_cast<VectorType &>(rhs);
-  set_constrained_values_to_zero(rhs_mutable);
+  elasticity_operator_linear.set_constrained_values_to_zero(rhs_mutable);
 
   // solve linear system of equations
   unsigned int const iterations = linear_solver->solve(sol, rhs_mutable, false);
