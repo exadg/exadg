@@ -41,8 +41,8 @@ MultigridPreconditioner<dim, Number, n_components>::initialize(
   std::shared_ptr<dealii::Mapping<dim> const> mapping,
   LaplaceOperatorData<rank, dim> const &      data_in,
   bool const                                  mesh_is_moving,
-  Map const *                                 dirichlet_bc,
-  PeriodicFacePairs const *                   periodic_face_pairs)
+  Map const &                                 dirichlet_bc,
+  PeriodicFacePairs const &                   periodic_face_pairs)
 {
   data = data_in;
 

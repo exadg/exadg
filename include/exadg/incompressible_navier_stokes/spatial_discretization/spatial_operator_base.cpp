@@ -1140,8 +1140,8 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
                                 get_dynamic_mapping<dim, Number>(grid, grid_motion),
                                 laplace_operator.get_data(),
                                 param.ale_formulation,
-                                &laplace_operator.get_data().bc->dirichlet_bc,
-                                &grid->periodic_faces);
+                                laplace_operator.get_data().bc->dirichlet_bc,
+                                grid->periodic_faces);
 
   // setup solver
   Krylov::SolverDataCG solver_data;
@@ -1478,8 +1478,8 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
                                     this->get_mapping(),
                                     *this->projection_operator,
                                     this->param.ale_formulation,
-                                    &this->projection_operator->get_data().bc->dirichlet_bc,
-                                    &grid->periodic_faces);
+                                    this->projection_operator->get_data().bc->dirichlet_bc,
+                                    grid->periodic_faces);
     }
     else
     {

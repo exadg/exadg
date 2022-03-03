@@ -390,8 +390,8 @@ Operator<dim, Number>::initialize_preconditioner()
                                     grid->mapping,
                                     elasticity_operator_nonlinear,
                                     true,
-                                    &elasticity_operator_nonlinear.get_data().bc->dirichlet_bc,
-                                    &grid->periodic_faces);
+                                    elasticity_operator_nonlinear.get_data().bc->dirichlet_bc,
+                                    grid->periodic_faces);
     }
     else
     {
@@ -407,8 +407,8 @@ Operator<dim, Number>::initialize_preconditioner()
                                     grid->mapping,
                                     elasticity_operator_linear,
                                     false,
-                                    &elasticity_operator_linear.get_data().bc->dirichlet_bc,
-                                    &grid->periodic_faces);
+                                    elasticity_operator_linear.get_data().bc->dirichlet_bc,
+                                    grid->periodic_faces);
     }
   }
   else if(param.preconditioner == Preconditioner::AMG)
