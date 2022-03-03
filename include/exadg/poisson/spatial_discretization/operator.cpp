@@ -414,6 +414,10 @@ Operator<dim, Number, n_components>::solve(VectorType &       sol,
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
     laplace_operator.set_constrained_values_to_zero(rhs_mutable);
+    // we can reduce iteration counts considerably if we set solution entries
+    // consistent to the rhs vector (the linear operator contains values of 1 on the
+    // diagonal).
+    laplace_operator.set_constrained_values_to_zero(sol);
   }
 
   unsigned int iterations =

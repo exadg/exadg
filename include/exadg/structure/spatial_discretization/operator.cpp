@@ -759,6 +759,10 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
   // vector contains for the constrained degrees of freedom).
   VectorType & rhs_mutable = const_cast<VectorType &>(rhs);
   elasticity_operator_linear.set_constrained_values_to_zero(rhs_mutable);
+  // we can reduce iteration counts considerably if we set solution entries
+  // consistent to the rhs vector (the linear operator contains values of 1 on the
+  // diagonal).
+  elasticity_operator_linear.set_constrained_values_to_zero(sol);
 
   // solve linear system of equations
   unsigned int const iterations = linear_solver->solve(sol, rhs_mutable, false);
