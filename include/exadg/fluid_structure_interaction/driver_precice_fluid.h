@@ -333,7 +333,6 @@ public:
                                       {this->precice_parameters.velocity_data_name});
       VectorType initial_stress;
       fluid_operator->initialize_vector_velocity(initial_stress);
-      initial_stress = 0;
       this->precice->initialize_precice(initial_stress);
     }
   }
