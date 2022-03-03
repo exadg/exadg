@@ -131,7 +131,6 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
   {
     // calculate right-hand side vector
     pde_operator->compute_rhs_linear(rhs, this->get_mid_time());
-
     // shift const_vector to right-hand side
     rhs.add(-1.0, const_vector);
   }

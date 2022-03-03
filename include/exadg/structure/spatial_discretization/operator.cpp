@@ -736,6 +736,15 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   // solve nonlinear problem
   auto const iter = newton_solver->solve(sol, update);
 
+  // This step should actually be optional: The constraints have already been set
+  // before the nonlinear solver is called and no contributions to the constrained
+  // degrees of freedom should be added in the Newton solver by the linearized solver
+  // (because the residual vector forming the rhs of the linearized problem is zero
+  // for constrained degrees of freedom, the initial solution of the linearized
+  // solver is also zero, and the linearized operator contains values of 1 on the
+  // diagonal for constrained degrees of freedom.
+  elasticity_operator_nonlinear.set_constrained_values(sol, time);
+
   return iter;
 }
 
@@ -750,27 +759,18 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
   elasticity_operator_linear.set_scaling_factor_mass_operator(factor);
   elasticity_operator_linear.set_time(time);
 
-  // Set entries of rhs vector that correspond to constrained degrees of freedom to zero.
-  // As a result, constrained degrees of freedom of the solution vector will be zero
-  // after the solve. The correct inhomogeneous boundary conditions have to be applied
-  // after the solution of the linear system of equations. This means that this step is
-  // optional, with the consequence that the constrained degrees of freedom of the
-  // solution would contain any unknown values (since we do not which values the rhs
-  // vector contains for the constrained degrees of freedom).
+  // Set constrained degrees of freedom of rhs vector according to the prescribed
+  // Dirichlet boundary conditions.
   VectorType & rhs_mutable = const_cast<VectorType &>(rhs);
-  elasticity_operator_linear.set_constrained_values_to_zero(rhs_mutable);
-  // we can reduce iteration counts considerably if we set solution entries
-  // consistent to the rhs vector (the linear operator contains values of 1 on the
-  // diagonal).
-  elasticity_operator_linear.set_constrained_values_to_zero(sol);
+  elasticity_operator_linear.set_constrained_values(rhs_mutable, time);
 
   // solve linear system of equations
   unsigned int const iterations = linear_solver->solve(sol, rhs_mutable, false);
 
-  // set Dirichlet values: The constrained degrees of freedom are zero after the solve
-  // since we have set the corresponding entries of the rhs vector to zero. Hence, we
-  // now need to set the constrained degrees of freedom according to the Dirichlet
-  // boundary conditions.
+  // This step should actually be optional: The constrained degrees of freedom of the
+  // rhs vector contain the Dirichlet boundary values and the linear operator contains
+  // values of 1 on the diagonal. Hence, sol should already contain the correct
+  // Dirichlet boundary values for constrained degrees of freedom.
   elasticity_operator_linear.set_constrained_values(sol, time);
 
   return iterations;

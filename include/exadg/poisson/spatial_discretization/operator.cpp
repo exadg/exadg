@@ -403,30 +403,21 @@ Operator<dim, Number, n_components>::solve(VectorType &       sol,
     check_multigrid.check();
   }
 
-  // Set entries of rhs vector that correspond to constrained degrees of freedom to zero.
-  // As a result, constrained degrees of freedom of the solution vector will be zero
-  // after the solve. The correct inhomogeneous boundary conditions have to be applied
-  // after the solution of the linear system of equations. This means that this step is
-  // optional, with the consequence that the constrained degrees of freedom of the
-  // solution would contain any unknown values (since we do not which values the rhs
-  // vector contains for the constrained degrees of freedom).
+  // Set constrained degrees of freedom of rhs vector according to the prescribed
+  // Dirichlet boundary conditions.
   VectorType & rhs_mutable = const_cast<VectorType &>(rhs);
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
-    laplace_operator.set_constrained_values_to_zero(rhs_mutable);
-    // we can reduce iteration counts considerably if we set solution entries
-    // consistent to the rhs vector (the linear operator contains values of 1 on the
-    // diagonal).
-    laplace_operator.set_constrained_values_to_zero(sol);
+    laplace_operator.set_constrained_values(rhs_mutable, time);
   }
 
   unsigned int iterations =
     iterative_solver->solve(sol, rhs_mutable, /* update_preconditioner = */ false);
 
-  // set Dirichlet values: The constrained degrees of freedom are zero after the solve
-  // since we have set the corresponding entries of the rhs vector to zero. Hence, we
-  // now need to set the constrained degrees of freedom according to the Dirichlet
-  // boundary conditions.
+  // This step should actually be optional: The constrained degrees of freedom of the
+  // rhs vector contain the Dirichlet boundary values and the linear operator contains
+  // values of 1 on the diagonal. Hence, sol should already contain the correct
+  // Dirichlet boundary values for constrained degrees of freedom.
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
     laplace_operator.set_constrained_values(sol, time);
