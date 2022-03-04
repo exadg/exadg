@@ -93,7 +93,7 @@ public:
     this->precice =
       std::make_shared<ExaDG::preCICE::Adapter<dim, dim, VectorType>>(this->precice_parameters,
                                                                       this->mpi_comm);
-
+    // TODO generalize interface handling for multiple interface IDs
     this->precice->add_write_surface(
       this->application->structure->get_boundary_descriptor()->neumann_cached_bc.begin()->first,
       this->precice_parameters.write_mesh_name,

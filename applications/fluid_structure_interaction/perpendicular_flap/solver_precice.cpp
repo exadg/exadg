@@ -20,7 +20,7 @@
  */
 
 // solver
-#include <exadg/fluid_structure_interaction/solver_precice.h>
+#include <exadg/fluid_structure_interaction/precice/solver.h>
 
 // application
 #include "application.h"

@@ -100,6 +100,7 @@ public:
       std::make_shared<ExaDG::preCICE::Adapter<dim, dim, VectorType>>(this->precice_parameters,
                                                                       this->mpi_comm);
 
+    // TODO generalize interface handling for multiple interface IDs
     this->precice->add_write_surface(this->application->fluid->get_boundary_descriptor()
                                        ->velocity->dirichlet_cached_bc.begin()
                                        ->first,
