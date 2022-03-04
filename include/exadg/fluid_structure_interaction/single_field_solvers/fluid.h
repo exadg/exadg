@@ -43,6 +43,9 @@
 // utilities
 #include <exadg/utilities/timer_tree.h>
 
+// application
+#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
+
 namespace ExaDG
 {
 namespace FSI

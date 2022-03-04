@@ -27,10 +27,12 @@
 // application
 #include <exadg/fluid_structure_interaction/precice/precice_adapter.h>
 #include <exadg/fluid_structure_interaction/precice/precice_parameters.h>
+#include <exadg/fluid_structure_interaction/single_field_solvers/fluid.h>
+#include <exadg/fluid_structure_interaction/single_field_solvers/structure.h>
 #include <exadg/fluid_structure_interaction/user_interface/application_base.h>
-
 // grid
 #include <exadg/grid/get_dynamic_mapping.h>
+#include <exadg/utilities/print_general_infos.h>
 
 namespace ExaDG
 {
@@ -55,6 +57,7 @@ public:
       precice_parameters(ExaDG::preCICE::ConfigurationParameters(input_file)),
       is_test(is_test)
   {
+    print_general_info<Number>(pcout, mpi_comm, is_test);
   }
 
   static void

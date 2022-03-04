@@ -59,6 +59,7 @@ public:
               bool const                                    is_test)
     : Driver<dim, Number>(input_file, comm, app, is_test)
   {
+    structure = std::make_shared<SolverStructure<dim, Number>>();
   }
 
 
@@ -80,45 +81,8 @@ public:
     dealii::Timer timer_local;
     timer_local.restart();
 
-    // setup spatial operator
-    structure_operator = std::make_shared<Structure::Operator<dim, Number>>(
-      this->application->structure->get_grid(),
-      this->application->structure->get_boundary_descriptor(),
-      this->application->structure->get_field_functions(),
-      this->application->structure->get_material_descriptor(),
-      this->application->structure->get_parameters(),
-      "elasticity",
-      this->mpi_comm);
+    structure->setup(this->application->structure, this->mpi_comm, this->is_test);
 
-    // initialize matrix_free
-    structure_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-    structure_matrix_free_data->append(structure_operator);
-
-    structure_matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-    structure_matrix_free->reinit(*this->application->structure->get_grid()->mapping,
-                                  structure_matrix_free_data->get_dof_handler_vector(),
-                                  structure_matrix_free_data->get_constraint_vector(),
-                                  structure_matrix_free_data->get_quadrature_vector(),
-                                  structure_matrix_free_data->data);
-
-    structure_operator->setup(structure_matrix_free, structure_matrix_free_data);
-
-    // initialize postprocessor
-    structure_postprocessor = this->application->structure->create_postprocessor();
-    structure_postprocessor->setup(structure_operator->get_dof_handler(),
-                                   *this->application->structure->get_grid()->mapping);
-
-    structure_time_integrator = std::make_shared<Structure::TimeIntGenAlpha<dim, Number>>(
-      structure_operator,
-      structure_postprocessor,
-      this->application->structure->get_parameters(),
-      this->mpi_comm,
-      this->is_test);
-
-    structure_time_integrator->setup(
-      this->application->structure->get_parameters().restarted_simulation);
-
-    structure_operator->setup_solver();
     this->timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
   }
 
@@ -137,32 +101,32 @@ public:
       {this->precice_parameters.displacement_data_name,
        this->precice_parameters.velocity_data_name},
       this->precice_parameters.write_data_type,
-      structure_matrix_free,
-      structure_operator->get_dof_index(),
+      structure->matrix_free,
+      structure->pde_operator->get_dof_index(),
       dealii::numbers::invalid_unsigned_int);
 
     {
       // TODO: The ExaDG terminal sets up the quadrature point locations, which are already
       // contained in the container_interface_data
       std::vector<unsigned int> quad_indices =
-        structure_operator->get_container_interface_data_neumann()->get_quad_indices();
+        structure->pde_operator->get_container_interface_data_neumann()->get_quad_indices();
 
       // VectorType stress_fluid;
       auto exadg_terminal = std::make_shared<ExaDG::preCICE::InterfaceCoupling<dim, dim, Number>>();
       auto quadrature_point_locations = exadg_terminal->setup(
-        structure_matrix_free,
-        structure_operator->get_dof_index(),
+        structure->matrix_free,
+        structure->pde_operator->get_dof_index(),
         quad_indices,
         this->application->structure->get_boundary_descriptor()->neumann_cached_bc);
 
       this->precice->add_read_surface(quadrature_point_locations,
-                                      structure_matrix_free,
+                                      structure->matrix_free,
                                       exadg_terminal,
                                       this->precice_parameters.read_mesh_name,
                                       {this->precice_parameters.stress_data_name});
 
       VectorType displacement_structure;
-      structure_operator->initialize_dof_vector(displacement_structure);
+      structure->pde_operator->initialize_dof_vector(displacement_structure);
       displacement_structure = 0;
       this->precice->initialize_precice(displacement_structure);
     }
@@ -195,7 +159,7 @@ public:
     // preCICE dictates when the time loop is finished
     while(this->precice->is_coupling_ongoing())
     {
-      structure_time_integrator->advance_one_timestep_pre_solve(is_new_time_window);
+      structure->time_integrator->advance_one_timestep_pre_solve(is_new_time_window);
 
       this->precice->save_current_state_if_required([&]() {});
 
@@ -204,19 +168,19 @@ public:
 
       // solve structural problem
       // store_solution needs to be true for compatibility
-      structure_time_integrator->advance_one_timestep_partitioned_solve(is_new_time_window);
+      structure->time_integrator->advance_one_timestep_partitioned_solve(is_new_time_window);
       // send displacement data to ale
-      coupling_structure_to_ale(structure_time_integrator->get_displacement_np(),
-                                structure_time_integrator->get_time_step_size());
+      coupling_structure_to_ale(structure->time_integrator->get_displacement_np(),
+                                structure->time_integrator->get_time_step_size());
 
       // send velocity boundary condition for fluid
-      coupling_structure_to_fluid(structure_time_integrator->get_velocity_np(),
-                                  structure_time_integrator->get_time_step_size());
+      coupling_structure_to_fluid(structure->time_integrator->get_velocity_np(),
+                                  structure->time_integrator->get_time_step_size());
 
       // TODO: Add synchronization for the time-step size here. For now, we only allow a constant
       // time-step size
       dealii::Timer precice_timer;
-      this->precice->advance(structure_time_integrator->get_time_step_size());
+      this->precice->advance(structure->time_integrator->get_time_step_size());
       is_new_time_window = this->precice->is_time_window_complete();
       this->timer_tree.insert({"FSI", "preCICE"}, precice_timer.wall_time());
 
@@ -224,7 +188,7 @@ public:
       this->precice->reload_old_state_if_required([&]() {});
 
       if(is_new_time_window)
-        structure_time_integrator->advance_one_timestep_post_solve();
+        structure->time_integrator->advance_one_timestep_post_solve();
     }
   }
 
@@ -240,14 +204,14 @@ public:
     this->pcout << "Performance results for fluid-structure interaction solver:" << std::endl;
 
     this->pcout << std::endl << "Structure:" << std::endl;
-    structure_time_integrator->print_iterations();
+    structure->time_integrator->print_iterations();
 
     // wall times
     this->pcout << std::endl << "Wall times:" << std::endl;
 
     this->timer_tree.insert({"FSI"}, total_time);
 
-    this->timer_tree.insert({"FSI"}, structure_time_integrator->get_timings(), "Structure");
+    this->timer_tree.insert({"FSI"}, structure->time_integrator->get_timings(), "Structure");
 
     this->pcout << std::endl << "Timings for level 1:" << std::endl;
     this->timer_tree.print_level(this->pcout, 1);
@@ -256,7 +220,7 @@ public:
     this->timer_tree.print_level(this->pcout, 2);
 
     // Throughput in DoFs/s per time step per core
-    dealii::types::global_dof_index DoFs = structure_operator->get_number_of_dofs();
+    dealii::types::global_dof_index DoFs = structure->pde_operator->get_number_of_dofs();
 
     unsigned int const N_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(this->mpi_comm);
 
@@ -264,7 +228,7 @@ public:
       dealii::Utilities::MPI::min_max_avg(total_time, this->mpi_comm);
     double const total_time_avg = total_time_data.avg;
 
-    unsigned int N_time_steps = structure_time_integrator->get_number_of_time_steps();
+    unsigned int N_time_steps = structure->time_integrator->get_number_of_time_steps();
 
     print_throughput_unsteady(this->pcout, DoFs, total_time_avg, N_time_steps, N_mpi_processes);
 
@@ -305,21 +269,8 @@ private:
                                    this->precice_parameters.stress_data_name);
   }
 
-  // grid
-  std::shared_ptr<Grid<dim>> structure_grid;
-
-  // matrix-free
-  std::shared_ptr<MatrixFreeData<dim, Number>>     structure_matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> structure_matrix_free;
-
-  // spatial discretization
-  std::shared_ptr<Structure::Operator<dim, Number>> structure_operator;
-
-  // temporal discretization
-  std::shared_ptr<Structure::TimeIntGenAlpha<dim, Number>> structure_time_integrator;
-
-  // postprocessor
-  std::shared_ptr<Structure::PostProcessor<dim, Number>> structure_postprocessor;
+  // the solver
+  std::shared_ptr<SolverStructure<dim, Number>> structure;
 
   /**************************************** STRUCTURE *****************************************/
 };
