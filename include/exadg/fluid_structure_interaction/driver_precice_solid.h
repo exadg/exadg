@@ -23,7 +23,6 @@
 #define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_SOLID_H_
 
 // application
-#include <exadg/fluid_structure_interaction/precice/interface_coupling.h>
 #include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 
 // utilities
@@ -106,28 +105,14 @@ public:
       dealii::numbers::invalid_unsigned_int);
 
     {
-      // TODO: The ExaDG terminal sets up the quadrature point locations, which are already
-      // contained in the container_interface_data
-      std::vector<unsigned int> quad_indices =
-        structure->pde_operator->get_container_interface_data_neumann()->get_quad_indices();
-
-      // VectorType stress_fluid;
-      auto exadg_terminal = std::make_shared<ExaDG::preCICE::InterfaceCoupling<dim, dim, Number>>();
-      auto quadrature_point_locations = exadg_terminal->setup(
+      this->precice->add_read_surface(
         structure->matrix_free,
-        structure->pde_operator->get_dof_index(),
-        quad_indices,
-        this->application->structure->get_boundary_descriptor()->neumann_cached_bc);
-
-      this->precice->add_read_surface(quadrature_point_locations,
-                                      structure->matrix_free,
-                                      exadg_terminal,
-                                      this->precice_parameters.read_mesh_name,
-                                      {this->precice_parameters.stress_data_name});
+        structure->pde_operator->get_container_interface_data_neumann(),
+        this->precice_parameters.read_mesh_name,
+        {this->precice_parameters.stress_data_name});
 
       VectorType displacement_structure;
       structure->pde_operator->initialize_dof_vector(displacement_structure);
-      displacement_structure = 0;
       this->precice->initialize_precice(displacement_structure);
     }
   }
@@ -151,6 +136,8 @@ public:
     this->timer_tree.insert({"FSI", "Setup"}, timer.wall_time());
     /*********************************** INTERFACE COUPLING *************************************/
   }
+
+
 
   void
   solve() const final

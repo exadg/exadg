@@ -23,7 +23,6 @@
 #define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_FLUID_H_
 
 // application
-#include <exadg/fluid_structure_interaction/precice/interface_coupling.h>
 #include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 
 // utilities
@@ -113,66 +112,35 @@ public:
 
     // structure to ALE
     {
-      // Declare some data structures
-      std::vector<dealii::Point<dim>> quadrature_point_locations;
-      auto                            exadg_terminal_ale =
-        std::make_shared<ExaDG::preCICE::InterfaceCoupling<dim, dim, Number>>();
-
       // Poisson mesh movement
       if(this->application->fluid->get_parameters().mesh_movement_type ==
          IncNS::MeshMovementType::Poisson)
       {
-        // TODO Reuse quadrature point locations from the interface data (see comment in structure)
-        auto quad_indices =
-          fluid->ale_poisson_operator->get_container_interface_data()->get_quad_indices();
-
-        quadrature_point_locations = exadg_terminal_ale->setup(
-          fluid->ale_matrix_free,
-          fluid->ale_poisson_operator->get_dof_index(),
-          quad_indices,
-          this->application->fluid->get_boundary_descriptor_ale_poisson()->dirichlet_cached_bc);
+        this->precice->add_read_surface(fluid->ale_matrix_free,
+                                        fluid->ale_poisson_operator->get_container_interface_data(),
+                                        this->precice_parameters.ale_mesh_name,
+                                        {this->precice_parameters.displacement_data_name});
       }
       // Elasticity mesh movement
       else if(this->application->fluid->get_parameters().mesh_movement_type ==
               IncNS::MeshMovementType::Elasticity)
       {
-        auto quad_indices = fluid->ale_elasticity_operator->get_container_interface_data_dirichlet()
-                              ->get_quad_indices();
-
-        quadrature_point_locations = exadg_terminal_ale->setup(
+        this->precice->add_read_surface(
           fluid->ale_matrix_free,
-          fluid->ale_elasticity_operator->get_dof_index(),
-          quad_indices,
-          this->application->fluid->get_boundary_descriptor_ale_elasticity()->dirichlet_cached_bc);
+          fluid->ale_elasticity_operator->get_container_interface_data_dirichlet(),
+          this->precice_parameters.ale_mesh_name,
+          {this->precice_parameters.displacement_data_name});
       }
       else
       {
         AssertThrow(false, dealii::ExcNotImplemented());
       }
-      this->precice->add_read_surface(quadrature_point_locations,
-                                      fluid->ale_matrix_free,
-                                      exadg_terminal_ale,
-                                      this->precice_parameters.ale_mesh_name,
-                                      {this->precice_parameters.displacement_data_name});
     }
 
     // structure to fluid
     {
-      auto quad_indices = fluid->pde_operator->get_container_interface_data()->get_quad_indices();
-
-      VectorType velocity_structure;
-      fluid->pde_operator->initialize_vector_velocity(velocity_structure);
-      auto exadg_terminal_fluid =
-        std::make_shared<ExaDG::preCICE::InterfaceCoupling<dim, dim, Number>>();
-      auto quadrature_point_locations = exadg_terminal_fluid->setup(
-        fluid->matrix_free,
-        fluid->pde_operator->get_dof_index_velocity(),
-        quad_indices,
-        this->application->fluid->get_boundary_descriptor()->velocity->dirichlet_cached_bc);
-
-      this->precice->add_read_surface(quadrature_point_locations,
-                                      fluid->matrix_free,
-                                      exadg_terminal_fluid,
+      this->precice->add_read_surface(fluid->matrix_free,
+                                      fluid->pde_operator->get_container_interface_data(),
                                       this->precice_parameters.read_mesh_name,
                                       {this->precice_parameters.velocity_data_name});
       VectorType initial_stress;
@@ -264,7 +232,7 @@ public:
     fluid->time_integrator->print_iterations();
 
     this->pcout << std::endl << "ALE:" << std::endl;
-    fluid_grid_motion->print_iterations();
+    fluid->ale_grid_motion->print_iterations();
 
     // wall times
     this->pcout << std::endl << "Wall times:" << std::endl;
@@ -349,14 +317,7 @@ private:
                               fluid->time_integrator->get_time_step_size());
   }
 
-  /****************************************** FLUID *******************************************/
-
-  // grid
-  std::shared_ptr<Grid<dim>> fluid_grid;
-
-  // moving mapping (ALE)
-  std::shared_ptr<GridMotionBase<dim, Number>> fluid_grid_motion;
-
+  // solver
   std::shared_ptr<SolverFluid<dim, Number>> fluid;
 };
 

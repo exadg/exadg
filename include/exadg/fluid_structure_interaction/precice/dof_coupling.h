@@ -58,7 +58,7 @@ public:
    *        coupling the classical preCICE way
    */
   virtual void
-  define_coupling_mesh(const std::vector<dealii::Point<dim>> & vec) override;
+  define_coupling_mesh() override;
 
   /**
    * @brief write_data Evaluates the given @param data at the
@@ -91,8 +91,7 @@ private:
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-DoFCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
-  const std::vector<dealii::Point<dim>> &)
+DoFCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
 {
   Assert(this->mesh_id != -1, dealii::ExcNotInitialized());
 

@@ -22,10 +22,8 @@
 #ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_EXADG_COUPLING_H_
 #define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_EXADG_COUPLING_H_
 
-#include <deal.II/matrix_free/fe_evaluation.h>
-
 #include <exadg/fluid_structure_interaction/precice/coupling_base.h>
-#include <exadg/fluid_structure_interaction/precice/interface_coupling.h>
+#include <exadg/functions_and_boundary_conditions/interface_coupling.h>
 
 namespace ExaDG
 {
@@ -42,9 +40,11 @@ class ExaDGCoupling : public CouplingBase<dim, data_dim, VectorizedArrayType>
 public:
   ExaDGCoupling(std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
                 std::shared_ptr<precice::SolverInterface>                                   precice,
-                const std::string                mesh_name,
+                const std::string                                              mesh_name,
+                std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>> interface_data_,
                 const dealii::types::boundary_id surface_id = dealii::numbers::invalid_unsigned_int)
-    : CouplingBase<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id)
+    : CouplingBase<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
+      interface_data(interface_data_)
   {
   }
 
@@ -53,7 +53,7 @@ public:
    *        coupling the classical preCICE way
    */
   virtual void
-  define_coupling_mesh(const std::vector<dealii::Point<dim>> & vec) override;
+  define_coupling_mesh() override;
 
   /**
    * @brief write_data
@@ -70,13 +70,10 @@ public:
   virtual void
   read_block_data(const std::string & data_name) const override;
 
-  void
-  set_data_pointer(
-    std::shared_ptr<ExaDG::preCICE::InterfaceCoupling<dim, dim, double>> exadg_terminal_);
-
 private:
   /// Accessor for ExaDG data structures
-  std::shared_ptr<ExaDG::preCICE::InterfaceCoupling<dim, dim, double>> exadg_terminal;
+  std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>> interface_data;
+
   /// The preCICE IDs
   std::vector<int> coupling_nodes_ids;
 
@@ -88,20 +85,33 @@ private:
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-ExaDGCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh(
-  const std::vector<dealii::Point<dim>> & vec)
+ExaDGCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
 {
   Assert(this->mesh_id != -1, dealii::ExcNotInitialized());
+  Assert(interface_data.get() != nullptr, dealii::ExcNotInitialized());
 
   // In order to avoid that we define the surface multiple times when reader
   // and writer refer to the same object
   if(coupling_nodes_ids.size() > 0)
     return;
 
-  // Initial guess: half of the boundary is part of the coupling surface
-  coupling_nodes_ids.resize(vec.size());
+  for(auto quad_index : interface_data->get_quad_indices())
+  {
+    // returns std::vector<dealii::Point<dim>>
+    const auto & points = interface_data->get_array_q_points(quad_index);
 
-  this->precice->setMeshVertices(this->mesh_id, vec.size(), &vec[0][0], coupling_nodes_ids.data());
+    // Get current size of our interface
+    auto const start_index = coupling_nodes_ids.size();
+
+    // Allocate memory for new interface nodes
+    coupling_nodes_ids.resize(start_index + points.size());
+
+    // Set the vertices
+    this->precice->setMeshVertices(this->mesh_id,
+                                   points.size(),
+                                   &points[0][0],
+                                   &coupling_nodes_ids[start_index]);
+  }
 
   if(this->read_data_map.size() > 0)
     this->print_info(true, this->precice->getMeshVertexSize(this->mesh_id));
@@ -115,32 +125,32 @@ void
 ExaDGCoupling<dim, data_dim, VectorizedArrayType>::read_block_data(
   const std::string & data_name) const
 {
+  Assert(interface_data.get() != nullptr, dealii::ExcNotInitialized());
+
   const int read_data_id = this->read_data_map.at(data_name);
 
-  std::vector<dealii::Tensor<1, dim>> values(coupling_nodes_ids.size());
-  if constexpr(data_dim > 1)
+  // summarizing the IDs already read
+  unsigned int start_index = 0;
+  // extract values of each quadrature rule
+  for(auto quad_index : interface_data->get_quad_indices())
   {
-    this->precice->readBlockVectorData(read_data_id,
-                                       coupling_nodes_ids.size(),
-                                       coupling_nodes_ids.data(),
-                                       &values[0][0]);
+    if constexpr(data_dim > 1)
+    {
+      auto &     array_solution = interface_data->get_array_solution(quad_index);
+      auto const array_size     = array_solution.size();
+
+      AssertIndexRange(start_index, coupling_nodes_ids.size());
+      this->precice->readBlockVectorData(read_data_id,
+                                         array_size,
+                                         &coupling_nodes_ids[start_index],
+                                         &array_solution[0][0]);
+      start_index += array_size;
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcNotImplemented());
+    }
   }
-  else
-  {
-    AssertThrow(false, dealii::ExcNotImplemented());
-  }
-  Assert(exadg_terminal.get() != nullptr, dealii::ExcNotInitialized());
-  exadg_terminal->update_data(values);
-}
-
-
-
-template<int dim, int data_dim, typename VectorizedArrayType>
-void
-ExaDGCoupling<dim, data_dim, VectorizedArrayType>::set_data_pointer(
-  std::shared_ptr<ExaDG::preCICE::InterfaceCoupling<dim, dim, double>> exadg_terminal_)
-{
-  exadg_terminal = exadg_terminal_;
 }
 
 

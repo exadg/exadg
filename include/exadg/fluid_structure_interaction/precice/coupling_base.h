@@ -75,7 +75,7 @@ public:
    *        data points
    */
   virtual void
-  define_coupling_mesh(const std::vector<dealii::Point<dim>> & vec) = 0;
+  define_coupling_mesh() = 0;
 
   /**
    * @brief process_coupling_mesh (optional) Handle post-preCICE-initialization

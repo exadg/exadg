@@ -105,12 +105,10 @@ public:
 
 
   void
-  add_read_surface(
-    const std::vector<dealii::Point<dim>> &                                     points,
-    std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
-    std::shared_ptr<ExaDG::preCICE::InterfaceCoupling<dim, dim, double>>        exadg_terminal,
-    const std::string &                                                         mesh_name,
-    const std::vector<std::string> &                                            read_data_name);
+  add_read_surface(std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+                   std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>> interface_data,
+                   const std::string &                                            mesh_name,
+                   const std::vector<std::string> &                               read_data_name);
 
   /**
    * @brief      Advances preCICE after every timestep
@@ -256,7 +254,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_surface(
 
   writer.at(mesh_name)->set_write_data_type(write_data_type);
   // Finally initialize the surface
-  writer.at(mesh_name)->define_coupling_mesh(points);
+  writer.at(mesh_name)->define_coupling_mesh();
 }
 
 
@@ -264,20 +262,18 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_surface(
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_read_surface(
-  const std::vector<dealii::Point<dim>> &                                     points,
   std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
-  std::shared_ptr<ExaDG::preCICE::InterfaceCoupling<dim, dim, double>>        exadg_terminal,
+  std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>>              interface_data,
   const std::string &                                                         mesh_name,
   const std::vector<std::string> &                                            read_data_names)
 {
   reader.insert({mesh_name,
-                 std::make_shared<ExaDGCoupling<dim, data_dim, VectorizedArrayType>>(data,
-                                                                                     precice,
-                                                                                     mesh_name)});
-  reader.at(mesh_name)->set_data_pointer(exadg_terminal);
+                 std::make_shared<ExaDGCoupling<dim, data_dim, VectorizedArrayType>>(
+                   data, precice, mesh_name, interface_data)});
+
   for(const auto & data_name : read_data_names)
     reader.at(mesh_name)->add_read_data(data_name);
-  reader.at(mesh_name)->define_coupling_mesh(points);
+  reader.at(mesh_name)->define_coupling_mesh();
 }
 
 
