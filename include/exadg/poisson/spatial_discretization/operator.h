@@ -133,6 +133,7 @@ public:
                      VectorTypeDouble const &                         src) const;
 #endif
 
+  // TODO: we currently need this function public for precice-based FSI
   unsigned int
   get_dof_index() const;
 

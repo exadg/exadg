@@ -27,9 +27,9 @@
 
 // ExaDG
 #include <exadg/configuration/config.h>
-#include <exadg/fluid_structure_interaction/driver_precice.h>
-#include <exadg/fluid_structure_interaction/driver_precice_fluid.h>
-#include <exadg/fluid_structure_interaction/driver_precice_solid.h>
+#include <exadg/fluid_structure_interaction/precice/driver.h>
+#include <exadg/fluid_structure_interaction/precice/driver_fluid.h>
+#include <exadg/fluid_structure_interaction/precice/driver_solid.h>
 #include <exadg/fluid_structure_interaction/user_interface/declare_get_application.h>
 #include <exadg/utilities/general_parameters.h>
 
