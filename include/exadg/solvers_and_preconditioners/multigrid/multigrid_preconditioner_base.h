@@ -97,9 +97,9 @@ public:
              dealii::Triangulation<dim> const *          tria,
              dealii::FiniteElement<dim> const &          fe,
              std::shared_ptr<dealii::Mapping<dim> const> mapping,
-             bool const                                  operator_is_singular = false,
-             Map const *                                 dirichlet_bc         = nullptr,
-             PeriodicFacePairs const *                   periodic_face_pairs  = nullptr);
+             bool const                                  operator_is_singular,
+             Map const &                                 dirichlet_bc,
+             PeriodicFacePairs const &                   periodic_face_pairs);
 
   /*
    * This function applies the multigrid preconditioner dst = P^{-1} src.
@@ -172,10 +172,10 @@ protected:
    */
   virtual void
   initialize_dof_handler_and_constraints(bool                               is_singular,
-                                         PeriodicFacePairs const *          periodic_face_pairs,
+                                         PeriodicFacePairs const &          periodic_face_pairs,
                                          dealii::FiniteElement<dim> const & fe,
                                          dealii::Triangulation<dim> const * tria,
-                                         Map const *                        dirichlet_bc);
+                                         Map const &                        dirichlet_bc);
 
   void
   do_initialize_dof_handler_and_constraints(

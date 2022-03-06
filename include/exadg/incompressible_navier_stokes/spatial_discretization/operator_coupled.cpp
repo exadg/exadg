@@ -465,8 +465,8 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
                                 this->momentum_operator,
                                 this->param.multigrid_operator_type_velocity_block,
                                 this->param.ale_formulation,
-                                &this->momentum_operator.get_data().bc->dirichlet_bc,
-                                &this->grid->periodic_faces);
+                                this->momentum_operator.get_data().bc->dirichlet_bc,
+                                this->grid->periodic_faces);
 }
 
 template<int dim, typename Number>
@@ -590,8 +590,8 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complement()
                                 this->get_mapping(),
                                 laplace_operator_data,
                                 this->param.ale_formulation,
-                                &laplace_operator_data.bc->dirichlet_bc,
-                                &this->grid->periodic_faces);
+                                laplace_operator_data.bc->dirichlet_bc,
+                                this->grid->periodic_faces);
 }
 
 template<int dim, typename Number>

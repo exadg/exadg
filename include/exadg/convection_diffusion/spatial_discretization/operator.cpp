@@ -475,8 +475,8 @@ Operator<dim, Number>::initialize_preconditioner()
                                   combined_operator,
                                   param.mg_operator_type,
                                   param.ale_formulation,
-                                  &data.bc->dirichlet_bc,
-                                  &grid->periodic_faces);
+                                  data.bc->dirichlet_bc,
+                                  grid->periodic_faces);
   }
   else
   {

@@ -42,8 +42,8 @@ MultigridPreconditionerProjection<dim, Number>::initialize(
   std::shared_ptr<dealii::Mapping<dim> const> mapping,
   PDEOperator const &                         pde_operator,
   bool const                                  mesh_is_moving,
-  Map const *                                 dirichlet_bc,
-  PeriodicFacePairs const *                   periodic_face_pairs)
+  Map const &                                 dirichlet_bc,
+  PeriodicFacePairs const &                   periodic_face_pairs)
 {
   this->pde_operator = &pde_operator;
 

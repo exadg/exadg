@@ -50,8 +50,8 @@ MultigridPreconditioner<dim, Number>::initialize(
   PDEOperator const &                         pde_operator,
   MultigridOperatorType const &               mg_operator_type,
   bool const                                  mesh_is_moving,
-  Map const *                                 dirichlet_bc,
-  PeriodicFacePairs const *                   periodic_face_pairs)
+  Map const &                                 dirichlet_bc,
+  PeriodicFacePairs const &                   periodic_face_pairs)
 {
   this->pde_operator     = &pde_operator;
   this->mg_operator_type = mg_operator_type;
@@ -199,10 +199,10 @@ template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
   bool const                         operator_is_singular,
-  PeriodicFacePairs const *          periodic_face_pairs,
+  PeriodicFacePairs const &          periodic_face_pairs,
   dealii::FiniteElement<dim> const & fe,
   dealii::Triangulation<dim> const * tria,
-  Map const *                        dirichlet_bc)
+  Map const &                        dirichlet_bc)
 {
   Base::initialize_dof_handler_and_constraints(
     operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc);
@@ -213,7 +213,7 @@ MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
     dealii::FESystem<dim> fe_velocity(dealii::FE_DGQ<dim>(fe.degree), dim);
     Map                   dirichlet_bc_velocity;
     this->do_initialize_dof_handler_and_constraints(false,
-                                                    *periodic_face_pairs,
+                                                    periodic_face_pairs,
                                                     fe_velocity,
                                                     tria,
                                                     dirichlet_bc_velocity,

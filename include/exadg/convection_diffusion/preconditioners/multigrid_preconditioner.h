@@ -70,8 +70,8 @@ public:
              PDEOperator const &                         pde_operator,
              MultigridOperatorType const &               mg_operator_type,
              bool const                                  mesh_is_moving,
-             Map const *                                 dirichlet_bc        = nullptr,
-             PeriodicFacePairs const *                   periodic_face_pairs = nullptr);
+             Map const &                                 dirichlet_bc,
+             PeriodicFacePairs const &                   periodic_face_pairs);
 
   /*
    *  This function updates the multigrid preconditioner.
@@ -90,10 +90,10 @@ private:
 
   void
   initialize_dof_handler_and_constraints(bool const                         operator_is_singular,
-                                         PeriodicFacePairs const *          periodic_face_pairs,
+                                         PeriodicFacePairs const &          periodic_face_pairs,
                                          dealii::FiniteElement<dim> const & fe,
                                          dealii::Triangulation<dim> const * tria,
-                                         Map const *                        dirichlet_bc) override;
+                                         Map const &                        dirichlet_bc) override;
 
   void
   initialize_transfer_operators() override;

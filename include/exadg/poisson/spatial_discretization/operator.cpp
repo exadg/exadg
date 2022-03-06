@@ -283,8 +283,8 @@ Operator<dim, Number, n_components>::setup_solver()
                                   grid->mapping,
                                   laplace_operator.get_data(),
                                   false /* moving_mesh */,
-                                  &laplace_operator.get_data().bc->dirichlet_bc,
-                                  &grid->periodic_faces);
+                                  laplace_operator.get_data().bc->dirichlet_bc,
+                                  grid->periodic_faces);
   }
   else
   {

@@ -131,8 +131,8 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
                                   this->momentum_operator,
                                   this->param.multigrid_operator_type_momentum,
                                   this->param.ale_formulation,
-                                  &this->momentum_operator.get_data().bc->dirichlet_bc,
-                                  &this->grid->periodic_faces);
+                                  this->momentum_operator.get_data().bc->dirichlet_bc,
+                                  this->grid->periodic_faces);
   }
   else
   {
