@@ -141,8 +141,8 @@ $(function() {
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>             <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1CombinedOperator.html">PDEOperator</a> <span class="keyword">const</span> &amp;                         pde_operator,</div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>             MultigridOperatorType <span class="keyword">const</span> &amp;               mg_operator_type,</div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>             <span class="keywordtype">bool</span> <span class="keyword">const</span>                                  mesh_is_moving,</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>             Map <span class="keyword">const</span> *                                 dirichlet_bc        = <span class="keyword">nullptr</span>,</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>             PeriodicFacePairs <span class="keyword">const</span> *                   periodic_face_pairs = <span class="keyword">nullptr</span>);</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>             Map <span class="keyword">const</span> &amp;                                 dirichlet_bc,</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>             PeriodicFacePairs <span class="keyword">const</span> &amp;                   periodic_face_pairs);</div>
 <div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
 <div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span><span class="comment">   *  This function updates the multigrid preconditioner.</span></div>
@@ -161,10 +161,10 @@ $(function() {
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  initialize_dof_handler_and_constraints(<span class="keywordtype">bool</span> <span class="keyword">const</span>                         operator_is_singular,</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>                                         PeriodicFacePairs <span class="keyword">const</span> *          periodic_face_pairs,</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>                                         PeriodicFacePairs <span class="keyword">const</span> &amp;          periodic_face_pairs,</div>
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>                                         dealii::FiniteElement&lt;dim&gt; <span class="keyword">const</span> &amp; fe,</div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>                                         dealii::Triangulation&lt;dim&gt; <span class="keyword">const</span> * tria,</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>                                         Map <span class="keyword">const</span> *                        dirichlet_bc) <span class="keyword">override</span>;</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>                                         Map <span class="keyword">const</span> &amp;                        dirichlet_bc) <span class="keyword">override</span>;</div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  initialize_transfer_operators() <span class="keyword">override</span>;</div>

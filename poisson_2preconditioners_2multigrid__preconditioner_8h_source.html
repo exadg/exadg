@@ -135,8 +135,8 @@ $(function() {
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>             std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; mapping,</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>             <a class="code hl_struct" href="structExaDG_1_1Poisson_1_1LaplaceOperatorData.html">LaplaceOperatorData&lt;rank, dim&gt;</a> <span class="keyword">const</span> &amp;      data_in,</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>             <span class="keywordtype">bool</span> <span class="keyword">const</span>                                  mesh_is_moving,</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>             Map <span class="keyword">const</span> *                                 dirichlet_bc        = <span class="keyword">nullptr</span>,</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>             PeriodicFacePairs <span class="keyword">const</span> *                   periodic_face_pairs = <span class="keyword">nullptr</span>);</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>             Map <span class="keyword">const</span> &amp;                                 dirichlet_bc,</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>             PeriodicFacePairs <span class="keyword">const</span> &amp;                   periodic_face_pairs);</div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  update() <span class="keyword">override</span>;</div>
