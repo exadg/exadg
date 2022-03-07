@@ -384,13 +384,23 @@ Operator<dim, Number>::initialize_preconditioner()
       std::shared_ptr<Multigrid> mg_preconditioner =
         std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
+      typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+        pair;
+
+      std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+        dirichlet_boundary_conditions = elasticity_operator_nonlinear.get_data().bc->dirichlet_bc;
+
+      for(auto iter : elasticity_operator_nonlinear.get_data().bc->dirichlet_cached_bc)
+        dirichlet_boundary_conditions.insert(
+          pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+
       mg_preconditioner->initialize(param.multigrid_data,
                                     &dof_handler.get_triangulation(),
                                     dof_handler.get_fe(),
                                     grid->mapping,
                                     elasticity_operator_nonlinear,
-                                    true,
-                                    elasticity_operator_nonlinear.get_data().bc->dirichlet_bc,
+                                    param.large_deformation,
+                                    dirichlet_boundary_conditions,
                                     grid->periodic_faces);
     }
     else
@@ -401,13 +411,23 @@ Operator<dim, Number>::initialize_preconditioner()
       std::shared_ptr<Multigrid> mg_preconditioner =
         std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
+      typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+        pair;
+
+      std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+        dirichlet_boundary_conditions = elasticity_operator_linear.get_data().bc->dirichlet_bc;
+
+      for(auto iter : elasticity_operator_linear.get_data().bc->dirichlet_cached_bc)
+        dirichlet_boundary_conditions.insert(
+          pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+
       mg_preconditioner->initialize(param.multigrid_data,
                                     &dof_handler.get_triangulation(),
                                     dof_handler.get_fe(),
                                     grid->mapping,
                                     elasticity_operator_linear,
-                                    false,
-                                    elasticity_operator_linear.get_data().bc->dirichlet_bc,
+                                    param.large_deformation,
+                                    dirichlet_boundary_conditions,
                                     grid->periodic_faces);
     }
   }
