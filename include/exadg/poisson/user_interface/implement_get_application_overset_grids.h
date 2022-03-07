@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POISSON_USER_INTERFACE_DECLARE_GET_APPLICATION_H_
-#define INCLUDE_EXADG_POISSON_USER_INTERFACE_DECLARE_GET_APPLICATION_H_
+#ifndef INCLUDE_EXADG_POISSON_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_OVERSET_GRIDS_H_
+#define INCLUDE_EXADG_POISSON_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_OVERSET_GRIDS_H_
 
 #include <exadg/poisson/user_interface/application_base.h>
 
@@ -29,16 +29,14 @@ namespace ExaDG
 namespace Poisson
 {
 template<int dim, typename Number>
-std::shared_ptr<ApplicationBase<dim, Number>>
-get_application(std::string input_file, MPI_Comm const & comm);
-
-template<int dim, typename Number>
 std::shared_ptr<ApplicationOversetGridsBase<dim, Number>>
-get_application_overset_grids(std::string input_file, MPI_Comm const & comm);
+get_application_overset_grids(std::string input_file, MPI_Comm const & comm)
+{
+  return std::make_shared<Application<dim, Number>>(input_file, comm);
+}
 
 } // namespace Poisson
 } // namespace ExaDG
 
 
-
-#endif /* INCLUDE_EXADG_POISSON_USER_INTERFACE_DECLARE_GET_APPLICATION_H_ */
+#endif /* INCLUDE_EXADG_POISSON_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_OVERSET_GRIDS_H_ */

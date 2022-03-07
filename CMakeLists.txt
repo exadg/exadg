@@ -97,6 +97,7 @@ SET(TARGET_SRC
      include/exadg/poisson/preconditioners/multigrid_preconditioner.cpp
      include/exadg/poisson/postprocessor/postprocessor.cpp
      include/exadg/poisson/driver.cpp
+     include/exadg/poisson/overset_grids/driver.cpp
      # convection-diffusion equation
      include/exadg/convection_diffusion/user_interface/enum_types.cpp
      include/exadg/convection_diffusion/user_interface/parameters.cpp

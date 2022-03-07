@@ -67,7 +67,7 @@ public:
   {
   }
 
-  void
+  virtual void
   set_parameters_refinement_study(unsigned int const degree,
                                   unsigned int const refine_space,
                                   unsigned int const n_subdivisions_1d_hypercube)
@@ -180,6 +180,195 @@ private:
 
   virtual void
   set_field_functions() = 0;
+};
+
+template<int dim, typename Number>
+class ApplicationOversetGridsBase
+{
+public:
+  typedef typename std::vector<
+    dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>>
+    PeriodicFaces;
+
+  virtual void
+  add_parameters(dealii::ParameterHandler & prm)
+  {
+    output_parameters.add_parameters(prm);
+  }
+
+  ApplicationOversetGridsBase(std::string parameter_file, MPI_Comm const & comm)
+    : mpi_comm(comm),
+      pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
+      parameter_file(parameter_file)
+  {
+  }
+
+  virtual ~ApplicationOversetGridsBase()
+  {
+  }
+
+  virtual void
+  set_parameters_refinement_study(unsigned int const degree,
+                                  unsigned int const refine_space,
+                                  unsigned int const n_subdivisions_1d_hypercube)
+  {
+    this->param.degree = degree;
+
+    this->param.grid.n_refine_global             = refine_space;
+    this->param.grid.n_subdivisions_1d_hypercube = n_subdivisions_1d_hypercube;
+
+    this->param_second.degree = degree;
+
+    this->param_second.grid.n_refine_global             = refine_space;
+    this->param_second.grid.n_subdivisions_1d_hypercube = n_subdivisions_1d_hypercube;
+  }
+
+  void
+  setup()
+  {
+    parse_parameters();
+
+    // parameters
+    set_parameters();
+    param.check();
+    param.print(pcout, "List of parameters:");
+
+    // grid
+    grid = std::make_shared<Grid<dim>>(param.grid, mpi_comm);
+    create_grid();
+    print_grid_info(pcout, *grid);
+
+    // boundary conditions
+    boundary_descriptor = std::make_shared<BoundaryDescriptor<1, dim>>();
+    set_boundary_descriptor();
+    verify_boundary_conditions(*boundary_descriptor, *grid);
+
+    // field functions
+    field_functions = std::make_shared<FieldFunctions<dim>>();
+    set_field_functions();
+
+    // parameters
+    set_parameters_second();
+    param_second.check();
+    param_second.print(this->pcout, "List of parameters second domain:");
+
+    // grid
+    grid_second = std::make_shared<Grid<dim>>(param_second.grid, this->mpi_comm);
+    create_grid_second();
+    print_grid_info(this->pcout, *grid_second);
+
+    // boundary conditions
+    boundary_descriptor_second = std::make_shared<BoundaryDescriptor<1, dim>>();
+    set_boundary_descriptor_second();
+    verify_boundary_conditions(*boundary_descriptor_second, *grid_second);
+
+    // field functions
+    field_functions_second = std::make_shared<FieldFunctions<dim>>();
+    set_field_functions_second();
+  }
+
+  virtual std::shared_ptr<Poisson::PostProcessorBase<dim, Number>>
+  create_postprocessor() = 0;
+
+  Parameters const &
+  get_parameters() const
+  {
+    return param;
+  }
+
+  std::shared_ptr<Grid<dim> const>
+  get_grid() const
+  {
+    return grid;
+  }
+
+  std::shared_ptr<BoundaryDescriptor<1, dim> const>
+  get_boundary_descriptor() const
+  {
+    return boundary_descriptor;
+  }
+
+  std::shared_ptr<FieldFunctions<dim> const>
+  get_field_functions() const
+  {
+    return field_functions;
+  }
+
+  virtual std::shared_ptr<Poisson::PostProcessorBase<dim, Number>>
+  create_postprocessor_second() = 0;
+
+  Parameters const &
+  get_parameters_second() const
+  {
+    return param_second;
+  }
+
+  std::shared_ptr<Grid<dim> const>
+  get_grid_second() const
+  {
+    return grid_second;
+  }
+
+  std::shared_ptr<BoundaryDescriptor<1, dim> const>
+  get_boundary_descriptor_second() const
+  {
+    return boundary_descriptor_second;
+  }
+
+  std::shared_ptr<FieldFunctions<dim> const>
+  get_field_functions_second() const
+  {
+    return field_functions_second;
+  }
+
+protected:
+  virtual void
+  parse_parameters()
+  {
+    dealii::ParameterHandler prm;
+    this->add_parameters(prm);
+    prm.parse_input(parameter_file, "", true, true);
+  }
+
+  MPI_Comm const & mpi_comm;
+
+  dealii::ConditionalOStream pcout;
+
+  Parameters param, param_second;
+
+  std::shared_ptr<Grid<dim>> grid, grid_second;
+
+  std::shared_ptr<BoundaryDescriptor<1, dim>> boundary_descriptor, boundary_descriptor_second;
+  std::shared_ptr<FieldFunctions<dim>>        field_functions, field_functions_second;
+
+  std::string parameter_file;
+
+  OutputParameters output_parameters;
+
+private:
+  virtual void
+  set_parameters() = 0;
+
+  virtual void
+  create_grid() = 0;
+
+  virtual void
+  set_boundary_descriptor() = 0;
+
+  virtual void
+  set_field_functions() = 0;
+
+  virtual void
+  set_parameters_second() = 0;
+
+  virtual void
+  create_grid_second() = 0;
+
+  virtual void
+  set_boundary_descriptor_second() = 0;
+
+  virtual void
+  set_field_functions_second() = 0;
 };
 
 } // namespace Poisson

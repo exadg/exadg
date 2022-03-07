@@ -238,6 +238,8 @@ public:
   void
   update_data(VectorType const & dof_vector_src)
   {
+    std::cout << "dof_vector_src.l2_norm() = " << dof_vector_src.l2_norm() << std::endl;
+
 #if DEAL_II_VERSION_GTE(10, 0, 0)
     dof_vector_src.update_ghost_values();
 #else
@@ -263,6 +265,10 @@ public:
 #endif
 
       auto & array_solution = interface_data_dst->get_array_solution(quadrature);
+
+      Assert(result.size() == array_solution.size(),
+             dealii::ExcMessage("Vectors must have the same length."));
+
       for(unsigned int i = 0; i < result.size(); ++i)
         array_solution[i] = result[i];
     }

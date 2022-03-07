@@ -73,7 +73,7 @@ private:
   PostProcessorData<dim> pp_data;
 
   OutputGenerator<dim, Number> output_generator;
-  ErrorCalculator<dim, Number> error_calculator;
+  //  ErrorCalculator<dim, Number> error_calculator;
 };
 
 } // namespace Poisson
