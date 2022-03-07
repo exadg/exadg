@@ -390,6 +390,11 @@ Operator<dim, Number>::initialize_preconditioner()
       std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
         dirichlet_boundary_conditions = elasticity_operator_nonlinear.get_data().bc->dirichlet_bc;
 
+      // We also need to add DirichletCached boundary conditions. From the
+      // perspective of multigrid, there is no difference between standard
+      // and cached Dirichlet BCs. Since multigrid does not need information
+      // about inhomogeneous boundary data, we simply fill the map with
+      // dealii::Functions::ZeroFunction for DirichletCached BCs.
       for(auto iter : elasticity_operator_nonlinear.get_data().bc->dirichlet_cached_bc)
         dirichlet_boundary_conditions.insert(
           pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
@@ -417,6 +422,11 @@ Operator<dim, Number>::initialize_preconditioner()
       std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
         dirichlet_boundary_conditions = elasticity_operator_linear.get_data().bc->dirichlet_bc;
 
+      // We also need to add DirichletCached boundary conditions. From the
+      // perspective of multigrid, there is no difference between standard
+      // and cached Dirichlet BCs. Since multigrid does not need information
+      // about inhomogeneous boundary data, we simply fill the map with
+      // dealii::Functions::ZeroFunction for DirichletCached BCs.
       for(auto iter : elasticity_operator_linear.get_data().bc->dirichlet_cached_bc)
         dirichlet_boundary_conditions.insert(
           pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
