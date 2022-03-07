@@ -1471,6 +1471,21 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       std::shared_ptr<Multigrid> mg_preconditioner =
         std::dynamic_pointer_cast<Multigrid>(preconditioner_projection);
 
+      typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+        pair;
+
+      std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+        dirichlet_boundary_conditions = this->projection_operator->get_data().bc->dirichlet_bc;
+
+      // We also need to add DirichletCached boundary conditions. From the
+      // perspective of multigrid, there is no difference between standard
+      // and cached Dirichlet BCs. Since multigrid does not need information
+      // about inhomogeneous boundary data, we simply fill the map with
+      // dealii::Functions::ZeroFunction for DirichletCached BCs.
+      for(auto iter : this->projection_operator->get_data().bc->dirichlet_cached_bc)
+        dirichlet_boundary_conditions.insert(
+          pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+
       auto const & dof_handler = this->get_dof_handler_u();
       mg_preconditioner->initialize(this->param.multigrid_data_projection,
                                     &dof_handler.get_triangulation(),
@@ -1478,7 +1493,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
                                     this->get_mapping(),
                                     *this->projection_operator,
                                     this->param.ale_formulation,
-                                    this->projection_operator->get_data().bc->dirichlet_bc,
+                                    dirichlet_boundary_conditions,
                                     grid->periodic_faces);
     }
     else
