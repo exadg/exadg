@@ -30,8 +30,8 @@ namespace Poisson
 {
 template<int dim, typename Number>
 DriverOversetGrids<dim, Number>::DriverOversetGrids(
-  MPI_Comm const &                                          comm,
-  std::shared_ptr<ApplicationOversetGridsBase<dim, Number>> app)
+  MPI_Comm const &                                               comm,
+  std::shared_ptr<ApplicationOversetGridsBase<dim, dim, Number>> app)
   : mpi_comm(comm),
     pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     application(app)
@@ -51,10 +51,10 @@ DriverOversetGrids<dim, Number>::setup()
   {
     // initialize Poisson operator
     pde_operator =
-      std::make_shared<Operator<dim, Number, dim>>(application->get_grid(),
-                                                   application->get_boundary_descriptor(),
-                                                   application->get_field_functions(),
-                                                   application->get_parameters(),
+      std::make_shared<Operator<dim, Number, dim>>(application->domain1->get_grid(),
+                                                   application->domain1->get_boundary_descriptor(),
+                                                   application->domain1->get_field_functions(),
+                                                   application->domain1->get_parameters(),
                                                    "Poisson",
                                                    mpi_comm);
 
@@ -63,10 +63,10 @@ DriverOversetGrids<dim, Number>::setup()
     matrix_free_data->append(pde_operator);
 
     matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-    if(application->get_parameters().enable_cell_based_face_loops)
-      Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
+    if(application->domain1->get_parameters().enable_cell_based_face_loops)
+      Categorization::do_cell_based_loops(*application->domain1->get_grid()->triangulation,
                                           matrix_free_data->data);
-    matrix_free->reinit(*application->get_grid()->mapping,
+    matrix_free->reinit(*application->domain1->get_grid()->mapping,
                         matrix_free_data->get_dof_handler_vector(),
                         matrix_free_data->get_constraint_vector(),
                         matrix_free_data->get_quadrature_vector(),
@@ -77,18 +77,19 @@ DriverOversetGrids<dim, Number>::setup()
     pde_operator->setup_solver();
 
     // initialize postprocessor
-    postprocessor = application->create_postprocessor();
-    postprocessor->setup(pde_operator->get_dof_handler(), *application->get_grid()->mapping);
+    postprocessor = application->domain1->create_postprocessor();
+    postprocessor->setup(pde_operator->get_dof_handler(),
+                         *application->domain1->get_grid()->mapping);
   }
 
   // second domain
   {
     // initialize Poisson operator
     pde_operator_second =
-      std::make_shared<Operator<dim, Number, dim>>(application->get_grid_second(),
-                                                   application->get_boundary_descriptor_second(),
-                                                   application->get_field_functions_second(),
-                                                   application->get_parameters_second(),
+      std::make_shared<Operator<dim, Number, dim>>(application->domain2->get_grid(),
+                                                   application->domain2->get_boundary_descriptor(),
+                                                   application->domain2->get_field_functions(),
+                                                   application->domain2->get_parameters(),
                                                    "Poisson",
                                                    mpi_comm);
 
@@ -97,10 +98,10 @@ DriverOversetGrids<dim, Number>::setup()
     matrix_free_data_second->append(pde_operator_second);
 
     matrix_free_second = std::make_shared<dealii::MatrixFree<dim, Number>>();
-    if(application->get_parameters_second().enable_cell_based_face_loops)
-      Categorization::do_cell_based_loops(*application->get_grid_second()->triangulation,
+    if(application->domain2->get_parameters().enable_cell_based_face_loops)
+      Categorization::do_cell_based_loops(*application->domain2->get_grid()->triangulation,
                                           matrix_free_data_second->data);
-    matrix_free_second->reinit(*application->get_grid_second()->mapping,
+    matrix_free_second->reinit(*application->domain2->get_grid()->mapping,
                                matrix_free_data_second->get_dof_handler_vector(),
                                matrix_free_data_second->get_constraint_vector(),
                                matrix_free_data_second->get_quadrature_vector(),
@@ -111,9 +112,9 @@ DriverOversetGrids<dim, Number>::setup()
     pde_operator_second->setup_solver();
 
     // initialize postprocessor
-    postprocessor_second = application->create_postprocessor_second();
+    postprocessor_second = application->domain2->create_postprocessor();
     postprocessor_second->setup(pde_operator_second->get_dof_handler(),
-                                *application->get_grid_second()->mapping);
+                                *application->domain2->get_grid()->mapping);
   }
 
   // interface coupling
@@ -129,7 +130,7 @@ DriverOversetGrids<dim, Number>::setup()
     first_to_second->setup(pde_operator_second->get_container_interface_data(),
                            dummy,
                            pde_operator->get_dof_handler(),
-                           *application->get_grid()->mapping,
+                           *application->domain1->get_grid()->mapping,
                            1.e-8 /* geometric tolerance */);
 
 
@@ -142,7 +143,7 @@ DriverOversetGrids<dim, Number>::setup()
     //      pde_operator->get_container_interface_data(),
     //      dummy,
     //      pde_operator_second->get_dof_handler(),
-    //      *application->get_grid_second()->mapping,
+    //      *application->domain2->get_grid()->mapping,
     //      1.e-8 /* geometric tolerance */);
   }
 }

@@ -109,10 +109,10 @@ template<int dim, typename Number>
 class Driver
 {
 public:
-  Driver(MPI_Comm const &                              mpi_comm,
-         std::shared_ptr<ApplicationBase<dim, Number>> application,
-         bool const                                    is_test,
-         bool const                                    is_throughput_study);
+  Driver(MPI_Comm const &                                 mpi_comm,
+         std::shared_ptr<ApplicationBase<dim, 1, Number>> application,
+         bool const                                       is_test,
+         bool const                                       is_throughput_study);
 
   void
   setup();
@@ -145,7 +145,7 @@ private:
   bool const is_throughput_study;
 
   // application
-  std::shared_ptr<ApplicationBase<dim, Number>> application;
+  std::shared_ptr<ApplicationBase<dim, 1, Number>> application;
 
   std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
   std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;

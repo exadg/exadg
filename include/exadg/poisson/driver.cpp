@@ -34,10 +34,10 @@ namespace ExaDG
 namespace Poisson
 {
 template<int dim, typename Number>
-Driver<dim, Number>::Driver(MPI_Comm const &                              comm,
-                            std::shared_ptr<ApplicationBase<dim, Number>> app,
-                            bool const                                    is_test,
-                            bool const                                    is_throughput_study)
+Driver<dim, Number>::Driver(MPI_Comm const &                                 comm,
+                            std::shared_ptr<ApplicationBase<dim, 1, Number>> app,
+                            bool const                                       is_test,
+                            bool const                                       is_throughput_study)
   : mpi_comm(comm),
     pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     is_test(is_test),

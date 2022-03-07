@@ -51,7 +51,8 @@ create_input_file(std::string const & input_file)
   // for the automatic generation of a default input file
   unsigned int const Dim = 2;
   typedef double     Number;
-  Poisson::get_application_overset_grids<Dim, Number>(input_file, MPI_COMM_WORLD)
+  // TODO: make n_components a parameter
+  Poisson::get_application_overset_grids<Dim, Dim, Number>(input_file, MPI_COMM_WORLD)
     ->add_parameters(prm);
 
   prm.print_parameters(input_file,
@@ -66,8 +67,9 @@ run(std::string const & input_file,
     unsigned int const  refine_space,
     MPI_Comm const &    mpi_comm)
 {
-  std::shared_ptr<Poisson::ApplicationOversetGridsBase<dim, Number>> application =
-    Poisson::get_application_overset_grids<dim, Number>(input_file, mpi_comm);
+  // TODO: make n_components a parameter
+  std::shared_ptr<Poisson::ApplicationOversetGridsBase<dim, dim, Number>> application =
+    Poisson::get_application_overset_grids<dim, dim, Number>(input_file, mpi_comm);
 
   application->set_parameters_refinement_study(degree, refine_space, 1 /* n_cells_1d */);
 

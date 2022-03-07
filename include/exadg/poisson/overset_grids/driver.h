@@ -46,8 +46,8 @@ template<int dim, typename Number>
 class DriverOversetGrids
 {
 public:
-  DriverOversetGrids(MPI_Comm const &                                          mpi_comm,
-                     std::shared_ptr<ApplicationOversetGridsBase<dim, Number>> application);
+  DriverOversetGrids(MPI_Comm const &                                               mpi_comm,
+                     std::shared_ptr<ApplicationOversetGridsBase<dim, dim, Number>> application);
 
   void
   setup();
@@ -62,8 +62,8 @@ private:
   // output to std::cout
   dealii::ConditionalOStream pcout;
 
-  // application
-  std::shared_ptr<ApplicationOversetGridsBase<dim, Number>> application;
+  // application: TODO make n_components a variable
+  std::shared_ptr<ApplicationOversetGridsBase<dim, dim, Number>> application;
 
   std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free, matrix_free_second;
   std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data, matrix_free_data_second;

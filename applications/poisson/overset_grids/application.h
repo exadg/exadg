@@ -71,12 +71,12 @@ public:
 };
 
 
-template<int dim, typename Number>
-class Application : public ApplicationOversetGridsBase<dim, Number>
+template<int dim, int n_components, typename Number>
+class Domain1 : public ApplicationBase<dim, n_components, Number>
 {
 public:
-  Application(std::string input_file, MPI_Comm const & comm)
-    : ApplicationOversetGridsBase<dim, Number>(input_file, comm)
+  Domain1(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, n_components, Number>(input_file, comm)
   {
   }
 
@@ -161,11 +161,23 @@ private:
 
     return pp;
   }
+};
 
-  void
-  set_parameters_second() final
+
+template<int dim, int n_components, typename Number>
+class Domain2 : public ApplicationBase<dim, n_components, Number>
+{
+public:
+  Domain2(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, n_components, Number>(input_file, comm)
   {
-    Parameters & p = this->param_second;
+  }
+
+private:
+  void
+  set_parameters() final
+  {
+    Parameters & p = this->param;
 
     // MATHEMATICAL MODEL
     p.right_hand_side = true;
@@ -196,18 +208,18 @@ private:
   }
 
   void
-  create_grid_second() final
+  create_grid() final
   {
     // create triangulation
     double const length = 0.5;
     double const left = -length, right = length;
-    dealii::GridGenerator::subdivided_hyper_cube(*this->grid_second->triangulation, 1, left, right);
+    dealii::GridGenerator::subdivided_hyper_cube(*this->grid->triangulation, 1, left, right);
 
-    this->grid_second->triangulation->refine_global(2 * this->param_second.grid.n_refine_global);
+    this->grid->triangulation->refine_global(2 * this->param.grid.n_refine_global);
   }
 
   void
-  set_boundary_descriptor_second() final
+  set_boundary_descriptor() final
   {
     typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
       pair;
@@ -216,28 +228,27 @@ private:
       pair_cached;
 
     // these lines show exemplarily how the boundary descriptors are filled
-    this->boundary_descriptor_second->dirichlet_cached_bc.insert(
+    this->boundary_descriptor->dirichlet_cached_bc.insert(
       pair_cached(0, new FunctionCached<1, dim>()));
   }
 
   void
-  set_field_functions_second() final
+  set_field_functions() final
   {
     // these lines show exemplarily how the field functions are filled
-    this->field_functions_second->initial_solution.reset(
-      new dealii::Functions::ZeroFunction<dim>(dim));
-    this->field_functions_second->right_hand_side.reset(new RightHandSide<dim>(dim));
+    this->field_functions->initial_solution.reset(new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->right_hand_side.reset(new RightHandSide<dim>(dim));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  create_postprocessor_second() final
+  create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output       = this->output_parameters.write;
     pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = this->output_parameters.filename + "_second";
     pp_data.output_data.write_higher_order = true;
-    pp_data.output_data.degree             = this->param_second.degree;
+    pp_data.output_data.degree             = this->param.degree;
 
     pp_data.error_data.analytical_solution_available = true;
     pp_data.error_data.analytical_solution.reset(new Solution<dim>(dim));
@@ -247,6 +258,17 @@ private:
     pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return pp;
+  }
+};
+
+template<int dim, int n_components, typename Number>
+class Application : public ApplicationOversetGridsBase<dim, n_components, Number>
+{
+public:
+  Application(std::string input_file, MPI_Comm const & comm)
+  {
+    this->domain1 = std::make_shared<Domain1<dim, n_components, Number>>(input_file, comm);
+    this->domain2 = std::make_shared<Domain2<dim, n_components, Number>>(input_file, comm);
   }
 };
 
