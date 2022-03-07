@@ -206,7 +206,7 @@ public:
 
     // To improve robustness, make sure that not all entries of marked_vertices are false.
     // Otherwise, points will simply not be found by RemotePointEvaluation and results will
-    / probably be wrong.bool all_false = true;
+    // probably be wrong.bool all_false = true;
     for(auto iter : marked_vertices)
     {
       if(iter == true)
