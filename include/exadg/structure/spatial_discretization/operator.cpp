@@ -742,7 +742,7 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   // (because the residual vector forming the rhs of the linearized problem is zero
   // for constrained degrees of freedom, the initial solution of the linearized
   // solver is also zero, and the linearized operator contains values of 1 on the
-  // diagonal for constrained degrees of freedom.
+  // diagonal for constrained degrees of freedom).
   elasticity_operator_nonlinear.set_constrained_values(sol, time);
 
   return iter;
