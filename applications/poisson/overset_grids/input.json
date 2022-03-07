@@ -1,0 +1,18 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "3",
+        "DegreeMax": "3",
+        "RefineSpaceMin": "2",
+        "RefineSpaceMax": "2"
+    },
+    "Output": {
+        "OutputDirectory": "output/overset_grids/",
+        "OutputName": "solution",
+        "WriteOutput": "true"
+    }
+}
