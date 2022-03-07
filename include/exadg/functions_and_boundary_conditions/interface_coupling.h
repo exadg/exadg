@@ -238,8 +238,6 @@ public:
   void
   update_data(VectorType const & dof_vector_src)
   {
-    std::cout << "dof_vector_src.l2_norm() = " << dof_vector_src.l2_norm() << std::endl;
-
 #if DEAL_II_VERSION_GTE(10, 0, 0)
     dof_vector_src.update_ghost_values();
 #else
