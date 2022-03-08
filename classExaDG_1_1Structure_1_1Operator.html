@@ -123,8 +123,6 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_nonlinear_opera
 <tr class="memitem:ab6f503f1d15c2124de109398c4c44c99"><td class="memItemLeft" align="right" valign="top"><a id="ab6f503f1d15c2124de109398c4c44c99" name="ab6f503f1d15c2124de109398c4c44c99"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_linear_operator</b> (VectorType &amp;dst, VectorType const &amp;src, double const factor, double const time) const</td></tr>
 <tr class="separator:ab6f503f1d15c2124de109398c4c44c99"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9df55add0458a19dcca3e24bd9139c09"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a9df55add0458a19dcca3e24bd9139c09">set_constrained_values_to_zero</a> (VectorType &amp;vector) const</td></tr>
-<tr class="separator:a9df55add0458a19dcca3e24bd9139c09"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a320b5e723770cc5983378cffeaa39f3b"><td class="memItemLeft" align="right" valign="top">std::tuple&lt; unsigned int, unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a320b5e723770cc5983378cffeaa39f3b">solve_nonlinear</a> (VectorType &amp;sol, VectorType const &amp;rhs, double const factor, double const time, bool const update_preconditioner) const</td></tr>
 <tr class="separator:a320b5e723770cc5983378cffeaa39f3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a4baf85c90fff27dff3e9ff355a71af"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a3a4baf85c90fff27dff3e9ff355a71af">solve_linear</a> (VectorType &amp;sol, VectorType const &amp;rhs, double const factor, double const time) const</td></tr>
@@ -165,9 +163,6 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_mass_op
 <tr class="memitem:a181f23068426faeb67e7831dc10f0875"><td class="memItemLeft" align="right" valign="top"><a id="a181f23068426faeb67e7831dc10f0875" name="a181f23068426faeb67e7831dc10f0875"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>compute_rhs_linear</b> (VectorType &amp;dst, double const time) const =0</td></tr>
 <tr class="separator:a181f23068426faeb67e7831dc10f0875"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aac33ac952d4b14fbff7ec0ff3a6efb9c"><td class="memItemLeft" align="right" valign="top"><a id="aac33ac952d4b14fbff7ec0ff3a6efb9c" name="aac33ac952d4b14fbff7ec0ff3a6efb9c"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_constrained_values_to_zero</b> (VectorType &amp;vector) const =0</td></tr>
-<tr class="separator:aac33ac952d4b14fbff7ec0ff3a6efb9c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a85e52327fd16ed653656584aa5448270"><td class="memItemLeft" align="right" valign="top"><a id="a85e52327fd16ed653656584aa5448270" name="a85e52327fd16ed653656584aa5448270"></a>
 virtual std::tuple&lt; unsigned int, unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>solve_nonlinear</b> (VectorType &amp;sol, VectorType const &amp;rhs, double const factor, double const time, bool const update_preconditioner) const =0</td></tr>
 <tr class="separator:a85e52327fd16ed653656584aa5448270"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -406,36 +401,6 @@ template&lt;int dim, typename Number &gt; </div>
           <td></td>
           <td>)</td>
           <td></td><td> const</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classExaDG_1_1Structure_1_1Interface_1_1Operator.html">ExaDG::Structure::Interface::Operator&lt; Number &gt;</a>.</p>
-
-</div>
-</div>
-<a id="a9df55add0458a19dcca3e24bd9139c09" name="a9df55add0458a19dcca3e24bd9139c09"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9df55add0458a19dcca3e24bd9139c09">&#9670;&nbsp;</a></span>set_constrained_values_to_zero()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::set_constrained_values_to_zero </td>
-          <td>(</td>
-          <td class="paramtype">VectorType &amp;&#160;</td>
-          <td class="paramname"><em>vector</em></td><td>)</td>
-          <td> const</td>
         </tr>
       </table>
   </td>
