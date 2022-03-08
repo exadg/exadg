@@ -403,9 +403,21 @@ Operator<dim, Number, n_components>::solve(VectorType &       sol,
     check_multigrid.check();
   }
 
-  unsigned int iterations = iterative_solver->solve(sol, rhs, /* update_preconditioner = */ false);
+  // Set constrained degrees of freedom of rhs vector according to the prescribed
+  // Dirichlet boundary conditions.
+  VectorType & rhs_mutable = const_cast<VectorType &>(rhs);
+  if(param.spatial_discretization == SpatialDiscretization::CG)
+  {
+    laplace_operator.set_constrained_values(rhs_mutable, time);
+  }
 
-  // apply Dirichlet boundary conditions in case of continuous elements
+  unsigned int iterations =
+    iterative_solver->solve(sol, rhs_mutable, /* update_preconditioner = */ false);
+
+  // This step should actually be optional: The constrained degrees of freedom of the
+  // rhs vector contain the Dirichlet boundary values and the linear operator contains
+  // values of 1 on the diagonal. Hence, sol should already contain the correct
+  // Dirichlet boundary values for constrained degrees of freedom.
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
     laplace_operator.set_constrained_values(sol, time);

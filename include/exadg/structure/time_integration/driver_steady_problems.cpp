@@ -106,9 +106,12 @@ DriverSteady<dim, Number>::do_solve()
 
   if(param.large_deformation) // nonlinear problem
   {
-    VectorType const_vector;
-    auto const iter = pde_operator->solve_nonlinear(
-      solution, const_vector, 0.0 /* no mass term */, 0.0 /* time */, param.update_preconditioner);
+    VectorType const const_vector_dummy; // will not be used
+    auto const       iter = pde_operator->solve_nonlinear(solution,
+                                                    const_vector_dummy,
+                                                    0.0 /* no mass term */,
+                                                    0.0 /* time */,
+                                                    param.update_preconditioner);
 
     unsigned int const N_iter_nonlinear = std::get<0>(iter);
     unsigned int const N_iter_linear    = std::get<1>(iter);

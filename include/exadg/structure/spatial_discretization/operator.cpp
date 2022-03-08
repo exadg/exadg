@@ -662,6 +662,12 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
     body_force_operator.evaluate_add(body_forces, src, time);
     dst -= body_forces;
   }
+
+  // To ensure convergence of the Newton solver, the residual has to be zero
+  // for constrained degrees of freedom as well, which might not be the case
+  // in general, e.g. due to const_vector. Hence, we set the constrained
+  // degrees of freedom explicitly to zero.
+  elasticity_operator_nonlinear.set_constrained_values_to_zero(dst);
 }
 
 template<int dim, typename Number>
@@ -708,16 +714,6 @@ Operator<dim, Number>::apply_linear_operator(VectorType &       dst,
 }
 
 template<int dim, typename Number>
-void
-Operator<dim, Number>::set_constrained_values_to_zero(VectorType & vector) const
-{
-  if(param.large_deformation)
-    elasticity_operator_nonlinear.set_constrained_values_to_zero(vector);
-  else
-    elasticity_operator_linear.set_constrained_values_to_zero(vector);
-}
-
-template<int dim, typename Number>
 std::tuple<unsigned int, unsigned int>
 Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
                                        VectorType const & rhs,
@@ -740,7 +736,13 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   // solve nonlinear problem
   auto const iter = newton_solver->solve(sol, update);
 
-  // set inhomogeneous Dirichlet values
+  // This step should actually be optional: The constraints have already been set
+  // before the nonlinear solver is called and no contributions to the constrained
+  // degrees of freedom should be added in the Newton solver by the linearized solver
+  // (because the residual vector forming the rhs of the linearized problem is zero
+  // for constrained degrees of freedom, the initial solution of the linearized
+  // solver is also zero, and the linearized operator contains values of 1 on the
+  // diagonal for constrained degrees of freedom).
   elasticity_operator_nonlinear.set_constrained_values(sol, time);
 
   return iter;
@@ -757,10 +759,18 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
   elasticity_operator_linear.set_scaling_factor_mass_operator(factor);
   elasticity_operator_linear.set_time(time);
 
-  // solve linear system of equations
-  unsigned int const iterations = linear_solver->solve(sol, rhs, false);
+  // Set constrained degrees of freedom of rhs vector according to the prescribed
+  // Dirichlet boundary conditions.
+  VectorType & rhs_mutable = const_cast<VectorType &>(rhs);
+  elasticity_operator_linear.set_constrained_values(rhs_mutable, time);
 
-  // set Dirichlet values
+  // solve linear system of equations
+  unsigned int const iterations = linear_solver->solve(sol, rhs_mutable, false);
+
+  // This step should actually be optional: The constrained degrees of freedom of the
+  // rhs vector contain the Dirichlet boundary values and the linear operator contains
+  // values of 1 on the diagonal. Hence, sol should already contain the correct
+  // Dirichlet boundary values for constrained degrees of freedom.
   elasticity_operator_linear.set_constrained_values(sol, time);
 
   return iterations;

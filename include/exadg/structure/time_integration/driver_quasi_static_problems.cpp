@@ -52,7 +52,10 @@ template<int dim, typename Number>
 void
 DriverQuasiStatic<dim, Number>::setup()
 {
-  AssertThrow(param.large_deformation, dealii::ExcMessage("Not implemented."));
+  AssertThrow(
+    param.large_deformation,
+    dealii::ExcMessage(
+      "DriverQuasiStatic makes only sense for nonlinear problems. For linear problems, use DriverSteady instead."));
 
   // initialize global solution vectors (allocation)
   initialize_vectors();
@@ -226,17 +229,19 @@ DriverQuasiStatic<dim, Number>::solve_step(double const load_factor)
 
   output_solver_info_header(load_factor);
 
-  VectorType const const_vector;
-
   bool const update_preconditioner =
     this->param.update_preconditioner &&
     ((this->step_number - 1) % this->param.update_preconditioner_every_time_steps == 0);
 
-  auto const iter = pde_operator->solve_nonlinear(
+  VectorType const const_vector; // will not be used
+  auto const       iter = pde_operator->solve_nonlinear(
     solution, const_vector, 0.0 /*no mass term*/, load_factor /* = time */, update_preconditioner);
 
+  unsigned int const N_iter_nonlinear = std::get<0>(iter);
+  unsigned int const N_iter_linear    = std::get<1>(iter);
+
   if(not(is_test))
-    print_solver_info_nonlinear(pcout, std::get<0>(iter), std::get<1>(iter), timer.wall_time());
+    print_solver_info_nonlinear(pcout, N_iter_nonlinear, N_iter_linear, timer.wall_time());
 
   return iter;
 }
