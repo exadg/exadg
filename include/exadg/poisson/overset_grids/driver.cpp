@@ -39,8 +39,8 @@ DriverOversetGrids<dim, Number>::DriverOversetGrids(
 {
   print_general_info<Number>(pcout, mpi_comm, false /* is_test */);
 
-  poisson1 = std::make_shared<SolverPoisson<dim, Number>>();
-  poisson2 = std::make_shared<SolverPoisson<dim, Number>>();
+  poisson1 = std::make_shared<SolverPoisson<dim, dim, Number>>();
+  poisson2 = std::make_shared<SolverPoisson<dim, dim, Number>>();
 }
 
 template<int dim, typename Number>

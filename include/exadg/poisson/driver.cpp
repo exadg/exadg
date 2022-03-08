@@ -49,6 +49,8 @@ Driver<dim, Number>::Driver(MPI_Comm const &                                 com
     solve_time(0.0)
 {
   print_general_info<Number>(pcout, mpi_comm, is_test);
+
+  poisson = std::make_shared<SolverPoisson<dim, 1, Number>>();
 }
 
 template<int dim, typename Number>
@@ -62,42 +64,7 @@ Driver<dim, Number>::setup()
 
   application->setup();
 
-  // initialize Poisson operator
-  pde_operator = std::make_shared<Operator<dim, Number>>(application->get_grid(),
-                                                         application->get_boundary_descriptor(),
-                                                         application->get_field_functions(),
-                                                         application->get_parameters(),
-                                                         "Poisson",
-                                                         mpi_comm);
-
-  // initialize matrix_free
-  matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-  matrix_free_data->append(pde_operator);
-
-  matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-  if(application->get_parameters().enable_cell_based_face_loops)
-    Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
-                                        matrix_free_data->data);
-  matrix_free->reinit(*application->get_grid()->mapping,
-                      matrix_free_data->get_dof_handler_vector(),
-                      matrix_free_data->get_constraint_vector(),
-                      matrix_free_data->get_quadrature_vector(),
-                      matrix_free_data->data);
-
-  pde_operator->setup(matrix_free, matrix_free_data);
-
-  // setup solver
-  if(not(is_throughput_study))
-  {
-    pde_operator->setup_solver();
-  }
-
-  // initialize postprocessor
-  if(not(is_throughput_study))
-  {
-    postprocessor = application->create_postprocessor();
-    postprocessor->setup(pde_operator->get_dof_handler(), *application->get_grid()->mapping);
-  }
+  poisson->setup(application, mpi_comm, is_throughput_study);
 
   timer_tree.insert({"Poisson", "Setup"}, timer.wall_time());
 }
@@ -111,29 +78,29 @@ Driver<dim, Number>::solve()
   timer.restart();
   dealii::LinearAlgebra::distributed::Vector<Number> rhs;
   dealii::LinearAlgebra::distributed::Vector<Number> sol;
-  pde_operator->initialize_dof_vector(rhs);
-  pde_operator->initialize_dof_vector(sol);
-  pde_operator->prescribe_initial_conditions(sol);
+  poisson->pde_operator->initialize_dof_vector(rhs);
+  poisson->pde_operator->initialize_dof_vector(sol);
+  poisson->pde_operator->prescribe_initial_conditions(sol);
   timer_tree.insert({"Poisson", "Vector init"}, timer.wall_time());
 
   // postprocessing of results
   timer.restart();
-  postprocessor->do_postprocessing(sol);
+  poisson->postprocessor->do_postprocessing(sol);
   timer_tree.insert({"Poisson", "Postprocessing"}, timer.wall_time());
 
   // calculate right-hand side
   timer.restart();
-  pde_operator->rhs(rhs);
+  poisson->pde_operator->rhs(rhs);
   timer_tree.insert({"Poisson", "Right-hand side"}, timer.wall_time());
 
   // solve linear system of equations
   timer.restart();
-  iterations = pde_operator->solve(sol, rhs, 0.0 /* time */);
+  iterations = poisson->pde_operator->solve(sol, rhs, 0.0 /* time */);
   solve_time += timer.wall_time();
 
   // postprocessing of results
   timer.restart();
-  postprocessor->do_postprocessing(sol);
+  poisson->postprocessor->do_postprocessing(sol);
   timer_tree.insert({"Poisson", "Postprocessing"}, timer.wall_time());
 }
 
@@ -141,9 +108,9 @@ template<int dim, typename Number>
 SolverResult
 Driver<dim, Number>::print_performance_results(double const total_time) const
 {
-  double const n_10 = pde_operator->get_n10();
+  double const n_10 = poisson->pde_operator->get_n10();
 
-  dealii::types::global_dof_index const DoFs = pde_operator->get_number_of_dofs();
+  dealii::types::global_dof_index const DoFs = poisson->pde_operator->get_number_of_dofs();
 
   unsigned int const N_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
 
@@ -164,13 +131,13 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
                 << "  Iterations n_10      = " << std::fixed << std::setprecision(1) << n_10
                 << std::endl
                 << "  Convergence rate rho = " << std::fixed << std::setprecision(4)
-                << pde_operator->get_average_convergence_rate() << std::endl;
+                << poisson->pde_operator->get_average_convergence_rate() << std::endl;
 
     // wall times
     timer_tree.insert({"Poisson"}, total_time);
 
     // insert sub-tree for Krylov solver
-    timer_tree.insert({"Poisson"}, pde_operator->get_timings());
+    timer_tree.insert({"Poisson"}, poisson->pde_operator->get_timings());
 
     pcout << std::endl << "Timings for level 1:" << std::endl;
     timer_tree.print_level(pcout, 1);
@@ -211,8 +178,8 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   string_to_enum(operator_type, operator_type_string);
 
   dealii::LinearAlgebra::distributed::Vector<Number> dst, src;
-  pde_operator->initialize_dof_vector(src);
-  pde_operator->initialize_dof_vector(dst);
+  poisson->pde_operator->initialize_dof_vector(src);
+  poisson->pde_operator->initialize_dof_vector(dst);
   src = 1.0;
 
 #ifdef DEAL_II_WITH_TRILINOS
@@ -227,8 +194,8 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   if(operator_type == OperatorType::MatrixBased)
   {
 #ifdef DEAL_II_WITH_TRILINOS
-    pde_operator->init_system_matrix(system_matrix, mpi_comm);
-    pde_operator->calculate_system_matrix(system_matrix);
+    poisson->pde_operator->init_system_matrix(system_matrix, mpi_comm);
+    poisson->pde_operator->calculate_system_matrix(system_matrix);
 #else
     AssertThrow(
       false, dealii::ExcMessage("Activate DEAL_II_WITH_TRILINOS for matrix-based computations."));
@@ -238,12 +205,12 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   const std::function<void(void)> operator_evaluation = [&](void) {
     if(operator_type == OperatorType::MatrixFree)
     {
-      pde_operator->vmult(dst, src);
+      poisson->pde_operator->vmult(dst, src);
     }
     else if(operator_type == OperatorType::MatrixBased)
     {
 #ifdef DEAL_II_WITH_TRILINOS
-      pde_operator->vmult_matrix_based(dst_trilinos, system_matrix, src_trilinos);
+      poisson->pde_operator->vmult_matrix_based(dst_trilinos, system_matrix, src_trilinos);
 #else
       AssertThrow(false, dealii::ExcMessage("Activate DEAL_II_WITH_TRILINOS."));
 #endif
@@ -258,7 +225,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
                                                             mpi_comm);
 
   // calculate throughput
-  dealii::types::global_dof_index const dofs = pde_operator->get_number_of_dofs();
+  dealii::types::global_dof_index const dofs = poisson->pde_operator->get_number_of_dofs();
 
   double const throughput = (double)dofs / wall_time;
 

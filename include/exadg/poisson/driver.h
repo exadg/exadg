@@ -28,6 +28,7 @@
 
 // ExaDG
 #include <exadg/matrix_free/matrix_free_data.h>
+#include <exadg/poisson/solver_poisson.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 #include <exadg/poisson/user_interface/application_base.h>
 #include <exadg/utilities/solver_result.h>
@@ -142,12 +143,7 @@ private:
   // application
   std::shared_ptr<ApplicationBase<dim, 1, Number>> application;
 
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
-
-  std::shared_ptr<Operator<dim, Number>> pde_operator;
-
-  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
+  std::shared_ptr<SolverPoisson<dim, 1, Number>> poisson;
 
   // number of iterations
   mutable unsigned int iterations;

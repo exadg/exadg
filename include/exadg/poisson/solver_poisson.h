@@ -31,27 +31,23 @@ namespace ExaDG
 {
 namespace Poisson
 {
-template<int dim, typename Number>
+template<int dim, int n_components, typename Number>
 class SolverPoisson
 {
 public:
   void
-  setup(std::shared_ptr<ApplicationBase<dim, dim, Number>> application,
-        MPI_Comm const                                     mpi_comm,
-        bool const                                         is_test)
+  setup(std::shared_ptr<ApplicationBase<dim, n_components, Number>> application,
+        MPI_Comm const                                              mpi_comm,
+        bool const                                                  is_throughput_study)
   {
-    (void)is_test;
-
-    // initialize Poisson operator
     pde_operator =
-      std::make_shared<Operator<dim, Number, dim>>(application->get_grid(),
-                                                   application->get_boundary_descriptor(),
-                                                   application->get_field_functions(),
-                                                   application->get_parameters(),
-                                                   "Poisson",
-                                                   mpi_comm);
+      std::make_shared<Operator<dim, Number, n_components>>(application->get_grid(),
+                                                            application->get_boundary_descriptor(),
+                                                            application->get_field_functions(),
+                                                            application->get_parameters(),
+                                                            "Poisson",
+                                                            mpi_comm);
 
-    // initialize matrix_free
     matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
     matrix_free_data->append(pde_operator);
 
@@ -67,19 +63,21 @@ public:
 
     pde_operator->setup(matrix_free, matrix_free_data);
 
-    pde_operator->setup_solver();
+    if(not(is_throughput_study))
+    {
+      pde_operator->setup_solver();
 
-    // initialize postprocessor
-    postprocessor = application->create_postprocessor();
-    postprocessor->setup(pde_operator->get_dof_handler(), *application->get_grid()->mapping);
+      postprocessor = application->create_postprocessor();
+      postprocessor->setup(pde_operator->get_dof_handler(), *application->get_grid()->mapping);
+    }
   }
 
+  std::shared_ptr<Operator<dim, Number, n_components>> pde_operator;
+  std::shared_ptr<PostProcessorBase<dim, Number>>      postprocessor;
+
+private:
   std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
   std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
-
-  std::shared_ptr<Operator<dim, Number, dim>> pde_operator;
-
-  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
 };
 
 } // namespace Poisson

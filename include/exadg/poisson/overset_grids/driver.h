@@ -54,7 +54,7 @@ private:
   std::shared_ptr<ApplicationOversetGridsBase<dim, dim, Number>> application;
 
   // Poisson solvers
-  std::shared_ptr<SolverPoisson<dim, Number>> poisson1, poisson2;
+  std::shared_ptr<SolverPoisson<dim, dim, Number>> poisson1, poisson2;
 
   // interface coupling
   std::shared_ptr<InterfaceCoupling<dim, dim, Number>> first_to_second, second_to_first;
