@@ -50,7 +50,6 @@ private:
   // output to std::cout
   dealii::ConditionalOStream pcout;
 
-  // application: TODO make n_components a variable
   std::shared_ptr<ApplicationOversetGridsBase<dim, dim, Number>> application;
 
   // Poisson solvers

@@ -118,8 +118,8 @@ DriverOversetGrids<dim, Number>::solve()
     first_to_second->update_data(sol);
 
     // calculate right-hand side
-    poisson1->pde_operator->rhs(rhs_2);
-    poisson1->pde_operator->solve(sol_2, rhs_2, 0.0 /* time */);
+    poisson2->pde_operator->rhs(rhs_2);
+    poisson2->pde_operator->solve(sol_2, rhs_2, 0.0 /* time */);
 
     // Transfer data from 2 to 1
     // TODO
@@ -129,7 +129,7 @@ DriverOversetGrids<dim, Number>::solve()
     // TODO this could be shifted outside the loop
     // currently located within the loop to check convergence visually
     poisson1->postprocessor->do_postprocessing(sol);
-    poisson1->postprocessor->do_postprocessing(sol_2);
+    poisson2->postprocessor->do_postprocessing(sol_2);
 
     // TODO check convergence
     ++iter;
