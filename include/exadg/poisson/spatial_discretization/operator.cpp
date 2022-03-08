@@ -43,8 +43,8 @@ namespace ExaDG
 {
 namespace Poisson
 {
-template<int dim, typename Number, int n_components>
-Operator<dim, Number, n_components>::Operator(
+template<int dim, int n_components, typename Number>
+Operator<dim, n_components, Number>::Operator(
   std::shared_ptr<Grid<dim> const>                     grid_in,
   std::shared_ptr<BoundaryDescriptor<rank, dim> const> boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim> const>           field_functions_in,
@@ -68,9 +68,9 @@ Operator<dim, Number, n_components>::Operator(
   pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 void
-Operator<dim, Number, n_components>::distribute_dofs()
+Operator<dim, n_components, Number>::distribute_dofs()
 {
   if(n_components == 1)
   {
@@ -149,9 +149,9 @@ Operator<dim, Number, n_components>::distribute_dofs()
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 void
-Operator<dim, Number, n_components>::fill_matrix_free_data(
+Operator<dim, n_components, Number>::fill_matrix_free_data(
   MatrixFreeData<dim, Number> & matrix_free_data) const
 {
   // append mapping flags
@@ -189,9 +189,9 @@ Operator<dim, Number, n_components>::fill_matrix_free_data(
   }
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 void
-Operator<dim, Number, n_components>::setup_operators()
+Operator<dim, n_components, Number>::setup_operators()
 {
   // Laplace operator
   Poisson::LaplaceOperatorData<rank, dim> laplace_operator_data;
@@ -216,9 +216,9 @@ Operator<dim, Number, n_components>::setup_operators()
   }
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 void
-Operator<dim, Number, n_components>::setup(
+Operator<dim, n_components, Number>::setup(
   std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_in,
   std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data_in)
 {
@@ -250,9 +250,9 @@ Operator<dim, Number, n_components>::setup(
   pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 void
-Operator<dim, Number, n_components>::setup_solver()
+Operator<dim, n_components, Number>::setup_solver()
 {
   pcout << std::endl << "Setup Poisson solver ..." << std::endl;
 
@@ -353,16 +353,16 @@ Operator<dim, Number, n_components>::setup_solver()
   pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 void
-Operator<dim, Number, n_components>::initialize_dof_vector(VectorType & src) const
+Operator<dim, n_components, Number>::initialize_dof_vector(VectorType & src) const
 {
   matrix_free->initialize_dof_vector(src, get_dof_index());
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 void
-Operator<dim, Number, n_components>::prescribe_initial_conditions(VectorType & src) const
+Operator<dim, n_components, Number>::prescribe_initial_conditions(VectorType & src) const
 {
   field_functions->initial_solution->set_time(0.0);
 
@@ -377,9 +377,9 @@ Operator<dim, Number, n_components>::prescribe_initial_conditions(VectorType & s
   src = src_double;
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 void
-Operator<dim, Number, n_components>::rhs(VectorType & dst, double const time) const
+Operator<dim, n_components, Number>::rhs(VectorType & dst, double const time) const
 {
   dst = 0;
 
@@ -390,16 +390,16 @@ Operator<dim, Number, n_components>::rhs(VectorType & dst, double const time) co
     rhs_operator.evaluate_add(dst, time);
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 void
-Operator<dim, Number, n_components>::vmult(VectorType & dst, VectorType const & src) const
+Operator<dim, n_components, Number>::vmult(VectorType & dst, VectorType const & src) const
 {
   laplace_operator.vmult(dst, src);
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 unsigned int
-Operator<dim, Number, n_components>::solve(VectorType &       sol,
+Operator<dim, n_components, Number>::solve(VectorType &       sol,
                                            VectorType const & rhs,
                                            double const       time) const
 {
@@ -441,55 +441,55 @@ Operator<dim, Number, n_components>::solve(VectorType &       sol,
   return iterations;
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 dealii::DoFHandler<dim> const &
-Operator<dim, Number, n_components>::get_dof_handler() const
+Operator<dim, n_components, Number>::get_dof_handler() const
 {
   return dof_handler;
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 dealii::types::global_dof_index
-Operator<dim, Number, n_components>::get_number_of_dofs() const
+Operator<dim, n_components, Number>::get_number_of_dofs() const
 {
   return dof_handler.n_dofs();
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 double
-Operator<dim, Number, n_components>::get_n10() const
+Operator<dim, n_components, Number>::get_n10() const
 {
   return iterative_solver->n10;
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 double
-Operator<dim, Number, n_components>::get_average_convergence_rate() const
+Operator<dim, n_components, Number>::get_average_convergence_rate() const
 {
   return iterative_solver->rho;
 }
 
 #ifdef DEAL_II_WITH_TRILINOS
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 void
-Operator<dim, Number, n_components>::init_system_matrix(
+Operator<dim, n_components, Number>::init_system_matrix(
   dealii::TrilinosWrappers::SparseMatrix & system_matrix,
   MPI_Comm const &                         mpi_comm) const
 {
   laplace_operator.init_system_matrix(system_matrix, mpi_comm);
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 void
-Operator<dim, Number, n_components>::calculate_system_matrix(
+Operator<dim, n_components, Number>::calculate_system_matrix(
   dealii::TrilinosWrappers::SparseMatrix & system_matrix) const
 {
   laplace_operator.calculate_system_matrix(system_matrix);
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 void
-Operator<dim, Number, n_components>::vmult_matrix_based(
+Operator<dim, n_components, Number>::vmult_matrix_based(
   VectorTypeDouble &                             dst,
   dealii::TrilinosWrappers::SparseMatrix const & system_matrix,
   VectorTypeDouble const &                       src) const
@@ -499,26 +499,26 @@ Operator<dim, Number, n_components>::vmult_matrix_based(
 #endif
 
 #ifdef DEAL_II_WITH_PETSC
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 void
-Operator<dim, Number, n_components>::init_system_matrix(
+Operator<dim, n_components, Number>::init_system_matrix(
   dealii::PETScWrappers::MPI::SparseMatrix & system_matrix,
   MPI_Comm const &                           mpi_comm) const
 {
   laplace_operator.init_system_matrix(system_matrix, mpi_comm);
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 void
-Operator<dim, Number, n_components>::calculate_system_matrix(
+Operator<dim, n_components, Number>::calculate_system_matrix(
   dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const
 {
   laplace_operator.calculate_system_matrix(system_matrix);
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 void
-Operator<dim, Number, n_components>::vmult_matrix_based(
+Operator<dim, n_components, Number>::vmult_matrix_based(
   VectorTypeDouble &                               dst,
   dealii::PETScWrappers::MPI::SparseMatrix const & system_matrix,
   VectorTypeDouble const &                         src) const
@@ -533,70 +533,70 @@ Operator<dim, Number, n_components>::vmult_matrix_based(
 }
 #endif
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 std::string
-Operator<dim, Number, n_components>::get_dof_name() const
+Operator<dim, n_components, Number>::get_dof_name() const
 {
   return field + "_" + dof_index;
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 std::string
-Operator<dim, Number, n_components>::get_quad_name() const
+Operator<dim, n_components, Number>::get_quad_name() const
 {
   return field + "_" + quad_index;
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 std::string
-Operator<dim, Number, n_components>::get_quad_gauss_lobatto_name() const
+Operator<dim, n_components, Number>::get_quad_gauss_lobatto_name() const
 {
   return field + "_" + quad_index_gauss_lobatto;
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 unsigned int
-Operator<dim, Number, n_components>::get_dof_index() const
+Operator<dim, n_components, Number>::get_dof_index() const
 {
   return matrix_free_data->get_dof_index(get_dof_name());
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 unsigned int
-Operator<dim, Number, n_components>::get_quad_index() const
+Operator<dim, n_components, Number>::get_quad_index() const
 {
   return matrix_free_data->get_quad_index(get_quad_name());
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 unsigned int
-Operator<dim, Number, n_components>::get_quad_index_gauss_lobatto() const
+Operator<dim, n_components, Number>::get_quad_index_gauss_lobatto() const
 {
   return matrix_free_data->get_quad_index(get_quad_gauss_lobatto_name());
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 std::shared_ptr<ContainerInterfaceData<dim, n_components, Number>>
-Operator<dim, Number, n_components>::get_container_interface_data()
+Operator<dim, n_components, Number>::get_container_interface_data()
 {
   return interface_data_dirichlet_cached;
 }
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 std::shared_ptr<TimerTree>
-Operator<dim, Number, n_components>::get_timings() const
+Operator<dim, n_components, Number>::get_timings() const
 {
   return iterative_solver->get_timings();
 }
 
-template class Operator<2, float, 1>;
-template class Operator<2, double, 1>;
-template class Operator<2, float, 2>;
-template class Operator<2, double, 2>;
+template class Operator<2, 1, float>;
+template class Operator<2, 1, double>;
+template class Operator<2, 2, float>;
+template class Operator<2, 2, double>;
 
-template class Operator<3, float, 1>;
-template class Operator<3, double, 1>;
-template class Operator<3, float, 3>;
-template class Operator<3, double, 3>;
+template class Operator<3, 1, float>;
+template class Operator<3, 1, double>;
+template class Operator<3, 3, float>;
+template class Operator<3, 3, double>;
 } // namespace Poisson
 } // namespace ExaDG

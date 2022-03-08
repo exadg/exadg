@@ -45,7 +45,7 @@ public:
    * Constructor.
    */
   GridMotionPoisson(std::shared_ptr<dealii::Mapping<dim> const>          mapping_undeformed,
-                    std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson_operator)
+                    std::shared_ptr<Poisson::Operator<dim, dim, Number>> poisson_operator)
     : GridMotionBase<dim, Number>(mapping_undeformed,
                                   // extract mapping_degree_moving from Poisson operator
                                   poisson_operator->get_dof_handler().get_fe().degree,
@@ -106,7 +106,7 @@ public:
   }
 
 private:
-  std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson;
+  std::shared_ptr<Poisson::Operator<dim, dim, Number>> poisson;
 
   // store solution of previous time step / iteration so that a good initial
   // guess is available in the next step, easing convergence or reducing computational

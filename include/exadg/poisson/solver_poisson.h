@@ -41,7 +41,7 @@ public:
         bool const                                                  is_throughput_study)
   {
     pde_operator =
-      std::make_shared<Operator<dim, Number, n_components>>(application->get_grid(),
+      std::make_shared<Operator<dim, n_components, Number>>(application->get_grid(),
                                                             application->get_boundary_descriptor(),
                                                             application->get_field_functions(),
                                                             application->get_parameters(),
@@ -72,7 +72,7 @@ public:
     }
   }
 
-  std::shared_ptr<Operator<dim, Number, n_components>> pde_operator;
+  std::shared_ptr<Operator<dim, n_components, Number>> pde_operator;
   std::shared_ptr<PostProcessorBase<dim, Number>>      postprocessor;
 
 private:

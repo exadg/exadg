@@ -216,7 +216,7 @@ private:
   // solve mesh deformation by a Poisson problem
   std::shared_ptr<MatrixFreeData<dim, Number>>         poisson_matrix_free_data;
   std::shared_ptr<dealii::MatrixFree<dim, Number>>     poisson_matrix_free;
-  std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson_operator;
+  std::shared_ptr<Poisson::Operator<dim, dim, Number>> poisson_operator;
 
   /*
    * MatrixFree
