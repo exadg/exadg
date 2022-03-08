@@ -207,15 +207,8 @@ public:
     // To improve robustness, make sure that not all entries of marked_vertices are false.
     // Otherwise, points will simply not be found by RemotePointEvaluation and results will
     // probably be wrong.
-    bool all_false = true;
-    for(auto iter : marked_vertices)
-    {
-      if(iter == true)
-        all_false = false;
-    }
-
-    if(all_false)
-      marked_vertices = std::vector<bool>(dof_handler_src_.get_triangulation().n_vertices(), true);
+    if (std::all_of(marked_vertices.begin(), marked_vertices.end(), [](bool marked){return marked == false;}))
+      std::fill(marked_vertices.begin(), marked_vertices.end(), true);
 #endif
 
     for(auto quad_index : interface_data_dst->get_quad_indices())
