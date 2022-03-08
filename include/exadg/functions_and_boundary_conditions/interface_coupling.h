@@ -207,8 +207,12 @@ public:
     // To improve robustness, make sure that not all entries of marked_vertices are false.
     // Otherwise, points will simply not be found by RemotePointEvaluation and results will
     // probably be wrong.
-    if (std::all_of(marked_vertices.begin(), marked_vertices.end(), [](bool marked){return marked == false;}))
+    if(std::all_of(marked_vertices.begin(), marked_vertices.end(), [](bool vertex_is_marked) {
+         return vertex_is_marked == false;
+       }))
+    {
       std::fill(marked_vertices.begin(), marked_vertices.end(), true);
+    }
 #endif
 
     for(auto quad_index : interface_data_dst->get_quad_indices())
