@@ -277,13 +277,28 @@ Operator<dim, Number, n_components>::setup_solver()
     std::shared_ptr<Multigrid> mg_preconditioner =
       std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
+
+    std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      dirichlet_boundary_conditions = laplace_operator.get_data().bc->dirichlet_bc;
+
+    // We also need to add DirichletCached boundary conditions. From the
+    // perspective of multigrid, there is no difference between standard
+    // and cached Dirichlet BCs. Since multigrid does not need information
+    // about inhomogeneous boundary data, we simply fill the map with
+    // dealii::Functions::ZeroFunction for DirichletCached BCs.
+    for(auto iter : laplace_operator.get_data().bc->dirichlet_cached_bc)
+      dirichlet_boundary_conditions.insert(
+        pair(iter.first, new dealii::Functions::ZeroFunction<dim>(n_components)));
+
     mg_preconditioner->initialize(mg_data,
                                   &dof_handler.get_triangulation(),
                                   dof_handler.get_fe(),
                                   grid->mapping,
                                   laplace_operator.get_data(),
                                   false /* moving_mesh */,
-                                  laplace_operator.get_data().bc->dirichlet_bc,
+                                  dirichlet_boundary_conditions,
                                   grid->periodic_faces);
   }
   else

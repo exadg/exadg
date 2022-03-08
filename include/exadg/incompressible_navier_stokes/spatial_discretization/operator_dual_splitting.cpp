@@ -116,10 +116,24 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
     std::shared_ptr<Multigrid> mg_preconditioner =
       std::dynamic_pointer_cast<Multigrid>(helmholtz_preconditioner);
 
-    auto & dof_handler = this->get_dof_handler_u();
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
+
+    std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      dirichlet_boundary_conditions = this->momentum_operator.get_data().bc->dirichlet_bc;
+
+    // We also need to add DirichletCached boundary conditions. From the
+    // perspective of multigrid, there is no difference between standard
+    // and cached Dirichlet BCs. Since multigrid does not need information
+    // about inhomogeneous boundary data, we simply fill the map with
+    // dealii::Functions::ZeroFunction for DirichletCached BCs.
+    for(auto iter : this->momentum_operator.get_data().bc->dirichlet_cached_bc)
+      dirichlet_boundary_conditions.insert(
+        pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+
     mg_preconditioner->initialize(this->param.multigrid_data_viscous,
-                                  &dof_handler.get_triangulation(),
-                                  dof_handler.get_fe(),
+                                  &this->get_dof_handler_u().get_triangulation(),
+                                  this->get_dof_handler_u().get_fe(),
                                   this->get_mapping(),
                                   this->momentum_operator,
                                   MultigridOperatorType::ReactionDiffusion,
