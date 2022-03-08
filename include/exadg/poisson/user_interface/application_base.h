@@ -31,6 +31,8 @@
 #include <deal.II/grid/tria_description.h>
 
 // ExaDG
+#include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
+#include <exadg/grid/calculate_maximum_aspect_ratio.h>
 #include <exadg/grid/grid.h>
 #include <exadg/poisson/postprocessor/postprocessor.h>
 #include <exadg/poisson/user_interface/boundary_descriptor.h>

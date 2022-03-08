@@ -21,6 +21,7 @@
 
 // ExaDG
 #include <exadg/poisson/overset_grids/driver.h>
+#include <exadg/utilities/print_general_infos.h>
 #include <exadg/utilities/print_solver_results.h>
 #include <exadg/utilities/throughput_parameters.h>
 
@@ -37,6 +38,9 @@ DriverOversetGrids<dim, Number>::DriverOversetGrids(
     application(app)
 {
   print_general_info<Number>(pcout, mpi_comm, false /* is_test */);
+
+  poisson1 = std::make_shared<SolverPoisson<dim, Number>>();
+  poisson2 = std::make_shared<SolverPoisson<dim, Number>>();
 }
 
 template<int dim, typename Number>
@@ -47,77 +51,11 @@ DriverOversetGrids<dim, Number>::setup()
 
   application->setup();
 
-  // first domain
-  {
-    // initialize Poisson operator
-    pde_operator =
-      std::make_shared<Operator<dim, Number, dim>>(application->domain1->get_grid(),
-                                                   application->domain1->get_boundary_descriptor(),
-                                                   application->domain1->get_field_functions(),
-                                                   application->domain1->get_parameters(),
-                                                   "Poisson",
-                                                   mpi_comm);
+  // setup Poisson solvers
+  poisson1->setup(application->domain1, mpi_comm, false /* is_test */);
+  poisson2->setup(application->domain2, mpi_comm, false /* is_test */);
 
-    // initialize matrix_free
-    matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-    matrix_free_data->append(pde_operator);
-
-    matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-    if(application->domain1->get_parameters().enable_cell_based_face_loops)
-      Categorization::do_cell_based_loops(*application->domain1->get_grid()->triangulation,
-                                          matrix_free_data->data);
-    matrix_free->reinit(*application->domain1->get_grid()->mapping,
-                        matrix_free_data->get_dof_handler_vector(),
-                        matrix_free_data->get_constraint_vector(),
-                        matrix_free_data->get_quadrature_vector(),
-                        matrix_free_data->data);
-
-    pde_operator->setup(matrix_free, matrix_free_data);
-
-    pde_operator->setup_solver();
-
-    // initialize postprocessor
-    postprocessor = application->domain1->create_postprocessor();
-    postprocessor->setup(pde_operator->get_dof_handler(),
-                         *application->domain1->get_grid()->mapping);
-  }
-
-  // second domain
-  {
-    // initialize Poisson operator
-    pde_operator_second =
-      std::make_shared<Operator<dim, Number, dim>>(application->domain2->get_grid(),
-                                                   application->domain2->get_boundary_descriptor(),
-                                                   application->domain2->get_field_functions(),
-                                                   application->domain2->get_parameters(),
-                                                   "Poisson",
-                                                   mpi_comm);
-
-    // initialize matrix_free
-    matrix_free_data_second = std::make_shared<MatrixFreeData<dim, Number>>();
-    matrix_free_data_second->append(pde_operator_second);
-
-    matrix_free_second = std::make_shared<dealii::MatrixFree<dim, Number>>();
-    if(application->domain2->get_parameters().enable_cell_based_face_loops)
-      Categorization::do_cell_based_loops(*application->domain2->get_grid()->triangulation,
-                                          matrix_free_data_second->data);
-    matrix_free_second->reinit(*application->domain2->get_grid()->mapping,
-                               matrix_free_data_second->get_dof_handler_vector(),
-                               matrix_free_data_second->get_constraint_vector(),
-                               matrix_free_data_second->get_quadrature_vector(),
-                               matrix_free_data_second->data);
-
-    pde_operator_second->setup(matrix_free_second, matrix_free_data_second);
-
-    pde_operator_second->setup_solver();
-
-    // initialize postprocessor
-    postprocessor_second = application->domain2->create_postprocessor();
-    postprocessor_second->setup(pde_operator_second->get_dof_handler(),
-                                *application->domain2->get_grid()->mapping);
-  }
-
-  // interface coupling
+  // setup interface coupling
   {
     // main domain to domain 2
     pcout << std::endl << "Setup interface coupling first -> second ..." << std::endl;
@@ -127,9 +65,9 @@ DriverOversetGrids<dim, Number>::setup()
     // is that the two domains are not connected along boundaries but are overlapping instead. To
     // resolve this, the implementation of InterfaceCoupling needs to be generalized.
     std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim, double>>> dummy;
-    first_to_second->setup(pde_operator_second->get_container_interface_data(),
+    first_to_second->setup(poisson2->pde_operator->get_container_interface_data(),
                            dummy,
-                           pde_operator->get_dof_handler(),
+                           poisson1->pde_operator->get_dof_handler(),
                            *application->domain1->get_grid()->mapping,
                            1.e-8 /* geometric tolerance */);
 
@@ -140,9 +78,9 @@ DriverOversetGrids<dim, Number>::setup()
     second_to_first = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
     // TODO
     //    second_to_first->setup(
-    //      pde_operator->get_container_interface_data(),
+    //      poisson1->pde_operator->get_container_interface_data(),
     //      dummy,
-    //      pde_operator_second->get_dof_handler(),
+    //      poisson2->pde_operator->get_dof_handler(),
     //      *application->domain2->get_grid()->mapping,
     //      1.e-8 /* geometric tolerance */);
   }
@@ -155,17 +93,17 @@ DriverOversetGrids<dim, Number>::solve()
   // initialization of vectors
   dealii::LinearAlgebra::distributed::Vector<Number> rhs, rhs_2;
   dealii::LinearAlgebra::distributed::Vector<Number> sol, sol_2;
-  pde_operator->initialize_dof_vector(rhs);
-  pde_operator->initialize_dof_vector(sol);
-  pde_operator->prescribe_initial_conditions(sol);
+  poisson1->pde_operator->initialize_dof_vector(rhs);
+  poisson1->pde_operator->initialize_dof_vector(sol);
+  poisson1->pde_operator->prescribe_initial_conditions(sol);
 
-  pde_operator_second->initialize_dof_vector(rhs_2);
-  pde_operator_second->initialize_dof_vector(sol_2);
-  pde_operator_second->prescribe_initial_conditions(sol_2);
+  poisson2->pde_operator->initialize_dof_vector(rhs_2);
+  poisson2->pde_operator->initialize_dof_vector(sol_2);
+  poisson2->pde_operator->prescribe_initial_conditions(sol_2);
 
   // postprocessing of results
-  postprocessor->do_postprocessing(sol);
-  postprocessor_second->do_postprocessing(sol_2);
+  poisson1->postprocessor->do_postprocessing(sol);
+  poisson2->postprocessor->do_postprocessing(sol_2);
 
   // solve linear system of equations
   bool         converged = false;
@@ -173,15 +111,15 @@ DriverOversetGrids<dim, Number>::solve()
   while(not(converged))
   {
     // calculate right-hand side
-    pde_operator->rhs(rhs);
-    pde_operator->solve(sol, rhs, 0.0 /* time */);
+    poisson1->pde_operator->rhs(rhs);
+    poisson1->pde_operator->solve(sol, rhs, 0.0 /* time */);
 
     // Transfer data domain 1 to domain 2
     first_to_second->update_data(sol);
 
     // calculate right-hand side
-    pde_operator_second->rhs(rhs_2);
-    pde_operator_second->solve(sol_2, rhs_2, 0.0 /* time */);
+    poisson1->pde_operator->rhs(rhs_2);
+    poisson1->pde_operator->solve(sol_2, rhs_2, 0.0 /* time */);
 
     // Transfer data from 2 to 1
     // TODO
@@ -190,8 +128,8 @@ DriverOversetGrids<dim, Number>::solve()
     // postprocessing of results
     // TODO this could be shifted outside the loop
     // currently located within the loop to check convergence visually
-    postprocessor->do_postprocessing(sol);
-    postprocessor_second->do_postprocessing(sol_2);
+    poisson1->postprocessor->do_postprocessing(sol);
+    poisson1->postprocessor->do_postprocessing(sol_2);
 
     // TODO check convergence
     ++iter;

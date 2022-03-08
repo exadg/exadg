@@ -27,14 +27,9 @@
 #include <deal.II/base/timer.h>
 
 // ExaDG
-#include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
-#include <exadg/grid/calculate_maximum_aspect_ratio.h>
-#include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 #include <exadg/poisson/user_interface/application_base.h>
-#include <exadg/utilities/print_functions.h>
-#include <exadg/utilities/print_general_infos.h>
 #include <exadg/utilities/solver_result.h>
 #include <exadg/utilities/timer_tree.h>
 

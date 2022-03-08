@@ -26,6 +26,8 @@
 
 // ExaDG
 #include <exadg/poisson/driver.h>
+#include <exadg/utilities/print_functions.h>
+#include <exadg/utilities/print_general_infos.h>
 #include <exadg/utilities/print_solver_results.h>
 #include <exadg/utilities/throughput_parameters.h>
 

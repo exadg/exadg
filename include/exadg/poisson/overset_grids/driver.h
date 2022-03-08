@@ -22,21 +22,9 @@
 #ifndef INCLUDE_EXADG_POISSON_OVERSET_GRIDS_DRIVER_H_
 #define INCLUDE_EXADG_POISSON_OVERSET_GRIDS_DRIVER_H_
 
-// deal.II
-#include <deal.II/base/revision.h>
-#include <deal.II/base/timer.h>
-
 // ExaDG
-#include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
-#include <exadg/grid/calculate_maximum_aspect_ratio.h>
-#include <exadg/grid/mapping_dof_vector.h>
-#include <exadg/matrix_free/matrix_free_data.h>
-#include <exadg/poisson/spatial_discretization/operator.h>
-#include <exadg/poisson/user_interface/application_base.h>
-#include <exadg/utilities/print_functions.h>
-#include <exadg/utilities/print_general_infos.h>
-#include <exadg/utilities/solver_result.h>
-#include <exadg/utilities/timer_tree.h>
+#include <exadg/functions_and_boundary_conditions/interface_coupling.h>
+#include <exadg/poisson/solver_poisson.h>
 
 namespace ExaDG
 {
@@ -65,12 +53,8 @@ private:
   // application: TODO make n_components a variable
   std::shared_ptr<ApplicationOversetGridsBase<dim, dim, Number>> application;
 
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free, matrix_free_second;
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data, matrix_free_data_second;
-
-  std::shared_ptr<Operator<dim, Number, dim>> pde_operator, pde_operator_second;
-
-  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor, postprocessor_second;
+  // Poisson solvers
+  std::shared_ptr<SolverPoisson<dim, Number>> poisson1, poisson2;
 
   // interface coupling
   std::shared_ptr<InterfaceCoupling<dim, dim, Number>> first_to_second, second_to_first;
