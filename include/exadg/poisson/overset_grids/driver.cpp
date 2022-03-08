@@ -71,18 +71,19 @@ DriverOversetGrids<dim, Number>::setup()
                            *application->domain1->get_grid()->mapping,
                            1.e-8 /* geometric tolerance */);
 
+    pcout << std::endl << "... done." << std::endl;
 
     // domain 2 to domain 1
     pcout << std::endl << "Setup interface coupling second -> first ..." << std::endl;
 
     second_to_first = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
-    // TODO
-    //    second_to_first->setup(
-    //      poisson1->pde_operator->get_container_interface_data(),
-    //      dummy,
-    //      poisson2->pde_operator->get_dof_handler(),
-    //      *application->domain2->get_grid()->mapping,
-    //      1.e-8 /* geometric tolerance */);
+    second_to_first->setup(poisson1->pde_operator->get_container_interface_data(),
+                           dummy,
+                           poisson2->pde_operator->get_dof_handler(),
+                           *application->domain2->get_grid()->mapping,
+                           1.e-8 /* geometric tolerance */);
+
+    pcout << std::endl << "... done." << std::endl;
   }
 }
 
@@ -122,12 +123,9 @@ DriverOversetGrids<dim, Number>::solve()
     poisson2->pde_operator->solve(sol_2, rhs_2, 0.0 /* time */);
 
     // Transfer data from 2 to 1
-    // TODO
-    //    second_to_first->update_data(sol);
+    second_to_first->update_data(sol_2);
 
     // postprocessing of results
-    // TODO this could be shifted outside the loop
-    // currently located within the loop to check convergence visually
     poisson1->postprocessor->do_postprocessing(sol);
     poisson2->postprocessor->do_postprocessing(sol_2);
 

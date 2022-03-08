@@ -176,6 +176,9 @@ public:
         dealii::Mapping<dim> const &                                       mapping_src_,
         double const                                                       tolerance_)
   {
+    AssertThrow(interface_data_dst_.get(),
+                dealii::ExcMessage("Received uninitialized variable. Aborting."));
+
     interface_data_dst = interface_data_dst_;
     dof_handler_src    = &dof_handler_src_;
 

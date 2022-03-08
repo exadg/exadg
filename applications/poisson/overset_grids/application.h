@@ -25,27 +25,6 @@ namespace ExaDG
 {
 namespace Poisson
 {
-double const FREQUENCY = 1.5 * dealii::numbers::PI;
-
-template<int dim>
-class Solution : public dealii::Function<dim>
-{
-public:
-  Solution(unsigned int const n_components) : dealii::Function<dim>(n_components, 0.0)
-  {
-  }
-
-  double
-  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
-  {
-    double result = 1.0;
-    for(unsigned int d = 0; d < dim; ++d)
-      result *= std::sin(FREQUENCY * p[d]);
-
-    return result;
-  }
-};
-
 template<int dim>
 class RightHandSide : public dealii::Function<dim>
 {
@@ -55,16 +34,12 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const component) const
+  value(dealii::Point<dim> const & /* p */, unsigned int const component) const
   {
     double result = 0.0;
 
     if(component > 0)
-    {
-      result = FREQUENCY * FREQUENCY * dim;
-      for(unsigned int d = 0; d < dim; ++d)
-        result *= std::sin(FREQUENCY * p[d]);
-    }
+      result = 1.0;
 
     return result;
   }
@@ -117,9 +92,24 @@ private:
   void
   create_grid() final
   {
-    double const length = 1.0;
-    double const left = -length, right = length;
-    dealii::GridGenerator::subdivided_hyper_cube(*this->grid->triangulation, 1, left, right);
+    double const       right = 1.0;
+    dealii::Point<dim> p1, p2;
+    p1[0] = 0.0;
+    p1[1] = 0.0;
+    p2[0] = right;
+    p2[1] = 1.0;
+    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation, {1, 1}, p1, p2);
+
+    for(auto cell : *this->grid->triangulation)
+    {
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      {
+        if((std::fabs(cell.face(f)->center()(0) - right) < 1e-12))
+        {
+          cell.face(f)->set_boundary_id(1);
+        }
+      }
+    }
 
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
@@ -130,8 +120,14 @@ private:
     typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
       pair;
 
-    // these lines show exemplarily how the boundary descriptors are filled
-    this->boundary_descriptor->dirichlet_bc.insert(pair(0, new Solution<dim>(dim)));
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
+      pair_cached;
+
+    this->boundary_descriptor->dirichlet_bc.insert(
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
+
+    this->boundary_descriptor->dirichlet_cached_bc.insert(
+      pair_cached(1, new FunctionCached<1, dim>()));
   }
 
   void
@@ -206,12 +202,26 @@ private:
   void
   create_grid() final
   {
-    // create triangulation
-    double const length = 0.5;
-    double const left = -length, right = length;
-    dealii::GridGenerator::subdivided_hyper_cube(*this->grid->triangulation, 1, left, right);
+    double const       left = 0.5;
+    dealii::Point<dim> p1, p2;
+    p1[0] = left;
+    p1[1] = 0.0;
+    p2[0] = left + 1.0;
+    p2[1] = 1.0;
+    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation, {2, 2}, p1, p2);
 
-    this->grid->triangulation->refine_global(2 * this->param.grid.n_refine_global);
+    for(auto cell : *this->grid->triangulation)
+    {
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      {
+        if((std::fabs(cell.face(f)->center()(0) - left) < 1e-12))
+        {
+          cell.face(f)->set_boundary_id(1);
+        }
+      }
+    }
+
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void
@@ -223,9 +233,10 @@ private:
     typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_cached;
 
-    // these lines show exemplarily how the boundary descriptors are filled
+    this->boundary_descriptor->dirichlet_bc.insert(
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
     this->boundary_descriptor->dirichlet_cached_bc.insert(
-      pair_cached(0, new FunctionCached<1, dim>()));
+      pair_cached(1, new FunctionCached<1, dim>()));
   }
 
   void
