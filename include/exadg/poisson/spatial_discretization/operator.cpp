@@ -290,7 +290,7 @@ Operator<dim, Number, n_components>::setup_solver()
     // dealii::Functions::ZeroFunction for DirichletCached BCs.
     for(auto iter : laplace_operator.get_data().bc->dirichlet_cached_bc)
       dirichlet_boundary_conditions.insert(
-        pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+        pair(iter.first, new dealii::Functions::ZeroFunction<dim>(n_components)));
 
     mg_preconditioner->initialize(mg_data,
                                   &dof_handler.get_triangulation(),
