@@ -152,10 +152,6 @@ private:
     pp_data.output_data.write_higher_order = true;
     pp_data.output_data.degree             = this->param.degree;
 
-    pp_data.error_data.analytical_solution_available = true;
-    pp_data.error_data.analytical_solution.reset(new Solution<dim>(dim));
-    pp_data.error_data.calculate_relative_errors = true;
-
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
@@ -249,10 +245,6 @@ private:
     pp_data.output_data.filename           = this->output_parameters.filename + "_second";
     pp_data.output_data.write_higher_order = true;
     pp_data.output_data.degree             = this->param.degree;
-
-    pp_data.error_data.analytical_solution_available = true;
-    pp_data.error_data.analytical_solution.reset(new Solution<dim>(dim));
-    pp_data.error_data.calculate_relative_errors = true;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));

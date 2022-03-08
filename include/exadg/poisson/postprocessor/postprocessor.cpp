@@ -29,7 +29,8 @@ namespace Poisson
 template<int dim, typename Number>
 PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & pp_data_in,
                                           MPI_Comm const &               mpi_comm_in)
-  : mpi_comm(mpi_comm_in), pp_data(pp_data_in),
+  : mpi_comm(mpi_comm_in),
+    pp_data(pp_data_in),
     output_generator(mpi_comm_in),
     error_calculator(mpi_comm_in)
 {
@@ -38,7 +39,7 @@ PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & pp_data
 template<int dim, typename Number>
 void
 PostProcessor<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler,
-                                  dealii::Mapping<dim> const &         mapping)
+                                  dealii::Mapping<dim> const &    mapping)
 {
   error_calculator.setup(dof_handler, mapping, pp_data.error_data);
 
