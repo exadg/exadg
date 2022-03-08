@@ -58,7 +58,7 @@ public:
   PostProcessor(PostProcessorData<dim> const & pp_data, MPI_Comm const & mpi_comm);
 
   void
-  setup(dealii::DoFHandler<dim, dim> const & dof_handler,
+  setup(dealii::DoFHandler<dim> const & dof_handler,
         dealii::Mapping<dim> const &         mapping) override;
 
   void
@@ -73,7 +73,7 @@ private:
   PostProcessorData<dim> pp_data;
 
   OutputGenerator<dim, Number> output_generator;
-  //  ErrorCalculator<dim, Number> error_calculator;
+  ErrorCalculator<dim, Number> error_calculator;
 };
 
 } // namespace Poisson

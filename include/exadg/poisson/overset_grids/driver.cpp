@@ -52,8 +52,8 @@ DriverOversetGrids<dim, Number>::setup()
   application->setup();
 
   // setup Poisson solvers
-  poisson1->setup(application->domain1, mpi_comm, false /* is_test */);
-  poisson2->setup(application->domain2, mpi_comm, false /* is_test */);
+  poisson1->setup(application->domain1, mpi_comm, false);
+  poisson2->setup(application->domain2, mpi_comm, false);
 
   // setup interface coupling
   {
