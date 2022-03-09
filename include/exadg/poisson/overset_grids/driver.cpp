@@ -57,7 +57,7 @@ DriverOversetGrids<dim, n_components, Number>::setup()
 
   // setup interface coupling
   {
-    // main domain to domain 2
+    // domain 1 to domain 2
     pcout << std::endl << "Setup interface coupling first -> second ..." << std::endl;
 
     first_to_second = std::make_shared<InterfaceCoupling<dim, n_components, Number>>();
@@ -92,18 +92,18 @@ void
 DriverOversetGrids<dim, n_components, Number>::solve()
 {
   // initialization of vectors
-  dealii::LinearAlgebra::distributed::Vector<Number> rhs, rhs_2;
-  dealii::LinearAlgebra::distributed::Vector<Number> sol, sol_2;
-  poisson1->pde_operator->initialize_dof_vector(rhs);
-  poisson1->pde_operator->initialize_dof_vector(sol);
-  poisson1->pde_operator->prescribe_initial_conditions(sol);
+  dealii::LinearAlgebra::distributed::Vector<Number> rhs_1, rhs_2;
+  dealii::LinearAlgebra::distributed::Vector<Number> sol_1, sol_2;
+  poisson1->pde_operator->initialize_dof_vector(rhs_1);
+  poisson1->pde_operator->initialize_dof_vector(sol_1);
+  poisson1->pde_operator->prescribe_initial_conditions(sol_1);
 
   poisson2->pde_operator->initialize_dof_vector(rhs_2);
   poisson2->pde_operator->initialize_dof_vector(sol_2);
   poisson2->pde_operator->prescribe_initial_conditions(sol_2);
 
   // postprocessing of results
-  poisson1->postprocessor->do_postprocessing(sol);
+  poisson1->postprocessor->do_postprocessing(sol_1);
   poisson2->postprocessor->do_postprocessing(sol_2);
 
   // solve linear system of equations
@@ -111,14 +111,14 @@ DriverOversetGrids<dim, n_components, Number>::solve()
   unsigned int iter      = 0;
   while(not(converged))
   {
-    // calculate right-hand side
-    poisson1->pde_operator->rhs(rhs);
-    poisson1->pde_operator->solve(sol, rhs, 0.0 /* time */);
+    // solve on domain 1
+    poisson1->pde_operator->rhs(rhs_1);
+    poisson1->pde_operator->solve(sol_1, rhs_1, 0.0 /* time */);
 
     // Transfer data domain 1 to domain 2
-    first_to_second->update_data(sol);
+    first_to_second->update_data(sol_1);
 
-    // calculate right-hand side
+    // solve on domain 2
     poisson2->pde_operator->rhs(rhs_2);
     poisson2->pde_operator->solve(sol_2, rhs_2, 0.0 /* time */);
 
@@ -126,7 +126,7 @@ DriverOversetGrids<dim, n_components, Number>::solve()
     second_to_first->update_data(sol_2);
 
     // postprocessing of results
-    poisson1->postprocessor->do_postprocessing(sol);
+    poisson1->postprocessor->do_postprocessing(sol_1);
     poisson2->postprocessor->do_postprocessing(sol_2);
 
     // TODO check convergence
