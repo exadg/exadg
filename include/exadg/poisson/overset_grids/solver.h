@@ -60,7 +60,7 @@ create_input_file(std::string const & input_file)
                          dealii::ParameterHandler::KeepDeclarationOrder);
 }
 
-template<int dim, typename Number>
+template<int dim, int n_components, typename Number>
 void
 run(std::string const & input_file,
     unsigned int const  degree,
@@ -68,13 +68,13 @@ run(std::string const & input_file,
     MPI_Comm const &    mpi_comm)
 {
   // TODO: make n_components a parameter
-  std::shared_ptr<Poisson::ApplicationOversetGridsBase<dim, dim, Number>> application =
-    Poisson::get_application_overset_grids<dim, dim, Number>(input_file, mpi_comm);
+  std::shared_ptr<Poisson::ApplicationOversetGridsBase<dim, n_components, Number>> application =
+    Poisson::get_application_overset_grids<dim, n_components, Number>(input_file, mpi_comm);
 
   application->set_parameters_refinement_study(degree, refine_space, 1 /* n_cells_1d */);
 
-  std::shared_ptr<Poisson::DriverOversetGrids<dim, Number>> driver =
-    std::make_shared<Poisson::DriverOversetGrids<dim, Number>>(mpi_comm, application);
+  std::shared_ptr<Poisson::DriverOversetGrids<dim, n_components, Number>> driver =
+    std::make_shared<Poisson::DriverOversetGrids<dim, n_components, Number>>(mpi_comm, application);
 
   driver->setup();
 
@@ -126,13 +126,13 @@ main(int argc, char ** argv)
         ++refine_space)
     {
       if(general.dim == 2 && general.precision == "float")
-        ExaDG::run<2, float>(input_file, degree, refine_space, mpi_comm);
+        ExaDG::run<2, 1, float>(input_file, degree, refine_space, mpi_comm);
       else if(general.dim == 2 && general.precision == "double")
-        ExaDG::run<2, double>(input_file, degree, refine_space, mpi_comm);
+        ExaDG::run<2, 1, double>(input_file, degree, refine_space, mpi_comm);
       else if(general.dim == 3 && general.precision == "float")
-        ExaDG::run<3, float>(input_file, degree, refine_space, mpi_comm);
+        ExaDG::run<3, 1, float>(input_file, degree, refine_space, mpi_comm);
       else if(general.dim == 3 && general.precision == "double")
-        ExaDG::run<3, double>(input_file, degree, refine_space, mpi_comm);
+        ExaDG::run<3, 1, double>(input_file, degree, refine_space, mpi_comm);
       else
         AssertThrow(false,
                     dealii::ExcMessage("Only dim = 2|3 and precision = float|double implemented."));

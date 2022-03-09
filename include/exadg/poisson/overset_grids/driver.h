@@ -30,12 +30,13 @@ namespace ExaDG
 {
 namespace Poisson
 {
-template<int dim, typename Number>
+template<int dim, int n_components, typename Number>
 class DriverOversetGrids
 {
 public:
-  DriverOversetGrids(MPI_Comm const &                                               mpi_comm,
-                     std::shared_ptr<ApplicationOversetGridsBase<dim, dim, Number>> application);
+  DriverOversetGrids(
+    MPI_Comm const &                                                        mpi_comm,
+    std::shared_ptr<ApplicationOversetGridsBase<dim, n_components, Number>> application);
 
   void
   setup();
@@ -44,19 +45,22 @@ public:
   solve();
 
 private:
+  static unsigned int const rank =
+    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : dealii::numbers::invalid_unsigned_int);
+
   // MPI communicator
   MPI_Comm const mpi_comm;
 
   // output to std::cout
   dealii::ConditionalOStream pcout;
 
-  std::shared_ptr<ApplicationOversetGridsBase<dim, dim, Number>> application;
+  std::shared_ptr<ApplicationOversetGridsBase<dim, n_components, Number>> application;
 
   // Poisson solvers
-  std::shared_ptr<SolverPoisson<dim, dim, Number>> poisson1, poisson2;
+  std::shared_ptr<SolverPoisson<dim, n_components, Number>> poisson1, poisson2;
 
   // interface coupling
-  std::shared_ptr<InterfaceCoupling<dim, dim, Number>> first_to_second, second_to_first;
+  std::shared_ptr<InterfaceCoupling<dim, n_components, Number>> first_to_second, second_to_first;
 };
 
 } // namespace Poisson

@@ -33,18 +33,21 @@ namespace ExaDG
 template<int rank, int dim, typename Number = double>
 class FunctionCached
 {
+public:
+  typedef dealii::Tensor<rank, dim, Number> value_type;
+
 private:
   using Id = std::tuple<unsigned int /*face*/, unsigned int /*q*/, unsigned int /*v*/>;
 
   using MapVectorIndex      = std::map<Id, dealii::types::global_dof_index>;
-  using ArraySolutionValues = std::vector<dealii::Tensor<rank, dim, double>>;
+  using ArraySolutionValues = std::vector<value_type>;
 
 public:
   FunctionCached() : map_map_vector_index(nullptr), map_array_solution(nullptr)
   {
   }
 
-  dealii::Tensor<rank, dim, Number>
+  value_type
   tensor_value(unsigned int const face,
                unsigned int const q,
                unsigned int const v,

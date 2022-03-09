@@ -48,7 +48,10 @@ private:
   using MapVectorIndex = std::map<Id, dealii::types::global_dof_index>;
 
   using ArrayQuadraturePoints = std::vector<dealii::Point<dim>>;
-  using ArraySolutionValues   = std::vector<dealii::Tensor<rank, dim, double>>;
+
+  typedef typename FunctionCached<rank, dim, double>::value_type value_type;
+
+  using ArraySolutionValues = std::vector<value_type>;
 
 public:
   ContainerInterfaceData()
@@ -108,7 +111,7 @@ public:
         }
       }
 
-      array_solution_dst.resize(array_q_points_dst.size(), dealii::Tensor<rank, dim, double>());
+      array_solution_dst.resize(array_q_points_dst.size(), value_type());
     }
 
     // finally, give boundary condition access to the data
@@ -252,13 +255,13 @@ public:
     for(auto quadrature : interface_data_dst->get_quad_indices())
     {
 #if DEAL_II_VERSION_GTE(10, 0, 0)
-      std::vector<dealii::Tensor<rank, dim, Number>> const result =
+      auto const result =
         dealii::VectorTools::point_values<n_components>(map_evaluator[quadrature],
                                                         *dof_handler_src,
                                                         dof_vector_src,
                                                         dealii::VectorTools::EvaluationFlags::avg);
 #else
-      std::vector<dealii::Tensor<rank, dim, double>> const result =
+      auto const result =
         dealii::VectorTools::point_values<n_components>(map_evaluator[quadrature],
                                                         *dof_handler_src,
                                                         dof_vector_src_double,

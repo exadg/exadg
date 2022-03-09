@@ -25,37 +25,19 @@ namespace ExaDG
 {
 namespace Poisson
 {
-template<int dim>
-class RightHandSide : public dealii::Function<dim>
-{
-public:
-  RightHandSide(unsigned int const n_components) : dealii::Function<dim>(n_components, 0.0 /*time*/)
-  {
-  }
-
-  double
-  value(dealii::Point<dim> const & /* p */, unsigned int const component) const
-  {
-    double result = 0.0;
-
-    if(component > 0)
-      result = 1.0;
-
-    return result;
-  }
-};
-
-
 template<int dim, int n_components, typename Number>
 class Domain1 : public ApplicationBase<dim, n_components, Number>
 {
+private:
+  static unsigned int const rank =
+    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : dealii::numbers::invalid_unsigned_int);
+
 public:
   Domain1(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, n_components, Number>(input_file, comm)
   {
   }
 
-private:
   void
   set_parameters() final
   {
@@ -120,22 +102,25 @@ private:
     typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
       pair;
 
-    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
-      pair_cached;
+    typedef
+      typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<rank, dim>>>
+        pair_cached;
 
     this->boundary_descriptor->dirichlet_bc.insert(
       pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     this->boundary_descriptor->dirichlet_cached_bc.insert(
-      pair_cached(1, new FunctionCached<1, dim>()));
+      pair_cached(1, new FunctionCached<rank, dim>()));
   }
 
   void
   set_field_functions() final
   {
     // these lines show exemplarily how the field functions are filled
-    this->field_functions->initial_solution.reset(new dealii::Functions::ZeroFunction<dim>(dim));
-    this->field_functions->right_hand_side.reset(new RightHandSide<dim>(dim));
+    this->field_functions->initial_solution.reset(
+      new dealii::Functions::ZeroFunction<dim>(n_components));
+    this->field_functions->right_hand_side.reset(
+      new dealii::Functions::ConstantFunction<dim>(1.0, n_components));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
@@ -159,6 +144,10 @@ private:
 template<int dim, int n_components, typename Number>
 class Domain2 : public ApplicationBase<dim, n_components, Number>
 {
+private:
+  static unsigned int const rank =
+    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : dealii::numbers::invalid_unsigned_int);
+
 public:
   Domain2(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, n_components, Number>(input_file, comm)
@@ -230,21 +219,24 @@ private:
     typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
       pair;
 
-    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
-      pair_cached;
+    typedef
+      typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<rank, dim>>>
+        pair_cached;
 
     this->boundary_descriptor->dirichlet_bc.insert(
-      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(n_components)));
     this->boundary_descriptor->dirichlet_cached_bc.insert(
-      pair_cached(1, new FunctionCached<1, dim>()));
+      pair_cached(1, new FunctionCached<rank, dim>()));
   }
 
   void
   set_field_functions() final
   {
     // these lines show exemplarily how the field functions are filled
-    this->field_functions->initial_solution.reset(new dealii::Functions::ZeroFunction<dim>(dim));
-    this->field_functions->right_hand_side.reset(new RightHandSide<dim>(dim));
+    this->field_functions->initial_solution.reset(
+      new dealii::Functions::ZeroFunction<dim>(n_components));
+    this->field_functions->right_hand_side.reset(
+      new dealii::Functions::ConstantFunction<dim>(1.0, n_components));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

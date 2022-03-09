@@ -29,23 +29,23 @@ namespace ExaDG
 {
 namespace Poisson
 {
-template<int dim, typename Number>
-DriverOversetGrids<dim, Number>::DriverOversetGrids(
-  MPI_Comm const &                                               comm,
-  std::shared_ptr<ApplicationOversetGridsBase<dim, dim, Number>> app)
+template<int dim, int n_components, typename Number>
+DriverOversetGrids<dim, n_components, Number>::DriverOversetGrids(
+  MPI_Comm const &                                                        comm,
+  std::shared_ptr<ApplicationOversetGridsBase<dim, n_components, Number>> app)
   : mpi_comm(comm),
     pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     application(app)
 {
   print_general_info<Number>(pcout, mpi_comm, false /* is_test */);
 
-  poisson1 = std::make_shared<SolverPoisson<dim, dim, Number>>();
-  poisson2 = std::make_shared<SolverPoisson<dim, dim, Number>>();
+  poisson1 = std::make_shared<SolverPoisson<dim, n_components, Number>>();
+  poisson2 = std::make_shared<SolverPoisson<dim, n_components, Number>>();
 }
 
-template<int dim, typename Number>
+template<int dim, int n_components, typename Number>
 void
-DriverOversetGrids<dim, Number>::setup()
+DriverOversetGrids<dim, n_components, Number>::setup()
 {
   pcout << std::endl << "Setting up Poisson solver for overset grids:" << std::endl;
 
@@ -60,11 +60,11 @@ DriverOversetGrids<dim, Number>::setup()
     // main domain to domain 2
     pcout << std::endl << "Setup interface coupling first -> second ..." << std::endl;
 
-    first_to_second = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
+    first_to_second = std::make_shared<InterfaceCoupling<dim, n_components, Number>>();
     // No map of boundary IDs can be provided to make the search more efficient. The reason behind
     // is that the two domains are not connected along boundaries but are overlapping instead. To
     // resolve this, the implementation of InterfaceCoupling needs to be generalized.
-    std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim, double>>> dummy;
+    std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<rank, dim, double>>> dummy;
     first_to_second->setup(poisson2->pde_operator->get_container_interface_data(),
                            dummy,
                            poisson1->pde_operator->get_dof_handler(),
@@ -76,7 +76,7 @@ DriverOversetGrids<dim, Number>::setup()
     // domain 2 to domain 1
     pcout << std::endl << "Setup interface coupling second -> first ..." << std::endl;
 
-    second_to_first = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
+    second_to_first = std::make_shared<InterfaceCoupling<dim, n_components, Number>>();
     second_to_first->setup(poisson1->pde_operator->get_container_interface_data(),
                            dummy,
                            poisson2->pde_operator->get_dof_handler(),
@@ -87,9 +87,9 @@ DriverOversetGrids<dim, Number>::setup()
   }
 }
 
-template<int dim, typename Number>
+template<int dim, int n_components, typename Number>
 void
-DriverOversetGrids<dim, Number>::solve()
+DriverOversetGrids<dim, n_components, Number>::solve()
 {
   // initialization of vectors
   dealii::LinearAlgebra::distributed::Vector<Number> rhs, rhs_2;
@@ -136,11 +136,15 @@ DriverOversetGrids<dim, Number>::solve()
   }
 }
 
-template class DriverOversetGrids<2, float>;
-template class DriverOversetGrids<3, float>;
+template class DriverOversetGrids<2, 1, float>;
+template class DriverOversetGrids<3, 1, float>;
+template class DriverOversetGrids<2, 2, float>;
+template class DriverOversetGrids<3, 3, float>;
 
-template class DriverOversetGrids<2, double>;
-template class DriverOversetGrids<3, double>;
+template class DriverOversetGrids<2, 1, double>;
+template class DriverOversetGrids<3, 1, double>;
+template class DriverOversetGrids<2, 2, double>;
+template class DriverOversetGrids<3, 3, double>;
 
 } // namespace Poisson
 } // namespace ExaDG
