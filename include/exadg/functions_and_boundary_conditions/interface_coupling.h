@@ -163,6 +163,12 @@ public:
   {
   }
 
+  /**
+   * setup() function.
+   *
+   * TODO: The part dealing with marked vertices needs to be generalized. Currently,
+   * use an empty map_bc_src_ to deactivate the feature marked_vertices.
+   */
   void
   setup(std::shared_ptr<ContainerInterfaceData<dim, n_components, Number>> interface_data_dst_,
         MapBoundaryCondition const &                                       map_bc_src_,
@@ -177,6 +183,7 @@ public:
     // mark vertices at interface in order to make search of active cells around point more
     // efficient
     std::vector<bool> marked_vertices(dof_handler_src_.get_triangulation().n_vertices(), false);
+
     for(auto const & cell : dof_handler_src_.get_triangulation().active_cell_iterators())
     {
       if(!cell->is_artificial() && cell->at_boundary())
@@ -195,6 +202,16 @@ public:
           }
         }
       }
+    }
+
+    // To improve robustness, make sure that not all entries of marked_vertices are false.
+    // Otherwise, points will simply not be found by RemotePointEvaluation and results will
+    // probably be wrong.
+    if(std::all_of(marked_vertices.begin(), marked_vertices.end(), [](bool vertex_is_marked) {
+         return vertex_is_marked == false;
+       }))
+    {
+      marked_vertices.clear();
     }
 #endif
 
