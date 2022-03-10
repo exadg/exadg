@@ -38,15 +38,12 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 class ExaDGCoupling : public CouplingBase<dim, data_dim, VectorizedArrayType>
 {
 public:
-  ExaDGCoupling(std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
-                std::shared_ptr<precice::SolverInterface>                                   precice,
-                const std::string                                              mesh_name,
-                std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>> interface_data_,
-                const dealii::types::boundary_id surface_id = dealii::numbers::invalid_unsigned_int)
-    : CouplingBase<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
-      interface_data(interface_data_)
-  {
-  }
+  ExaDGCoupling(
+    std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+    std::shared_ptr<precice::SolverInterface>                                   precice,
+    const std::string                                                           mesh_name,
+    std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>>              interface_data_,
+    const dealii::types::boundary_id surface_id = dealii::numbers::invalid_unsigned_int);
 
   /**
    * @brief define_mesh_vertices Define a vertex coupling mesh for preCICE
@@ -80,6 +77,20 @@ private:
   virtual std::string
   get_surface_type() const override;
 };
+
+
+
+template<int dim, int data_dim, typename VectorizedArrayType>
+ExaDGCoupling<dim, data_dim, VectorizedArrayType>::ExaDGCoupling(
+  std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+  std::shared_ptr<precice::SolverInterface>                                   precice,
+  const std::string                                                           mesh_name,
+  std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>>              interface_data_,
+  const dealii::types::boundary_id                                            surface_id)
+  : CouplingBase<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
+    interface_data(interface_data_)
+{
+}
 
 
 

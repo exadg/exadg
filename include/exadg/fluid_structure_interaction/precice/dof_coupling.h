@@ -47,12 +47,7 @@ public:
               std::shared_ptr<precice::SolverInterface>                                   precice,
               const std::string                                                           mesh_name,
               const dealii::types::boundary_id surface_id,
-              const int                        mf_dof_index)
-    : CouplingBase<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
-      mf_dof_index(mf_dof_index)
-  {
-  }
-
+              const int                        mf_dof_index);
   /**
    * @brief define_mesh_vertices Define a vertex coupling mesh for preCICE
    *        coupling the classical preCICE way
@@ -86,6 +81,20 @@ private:
   virtual std::string
   get_surface_type() const override;
 };
+
+
+
+template<int dim, int data_dim, typename VectorizedArrayType>
+DoFCoupling<dim, data_dim, VectorizedArrayType>::DoFCoupling(
+  std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+  std::shared_ptr<precice::SolverInterface>                                   precice,
+  const std::string                                                           mesh_name,
+  const dealii::types::boundary_id                                            surface_id,
+  const int                                                                   mf_dof_index)
+  : CouplingBase<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
+    mf_dof_index(mf_dof_index)
+{
+}
 
 
 

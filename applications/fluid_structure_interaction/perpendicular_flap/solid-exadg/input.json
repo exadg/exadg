@@ -18,5 +18,10 @@
         "StressDataName": "Stress",
         "DisplacementDataName": "Displacement",
         "VelocityDataName": "Velocity"
+    },
+    "Output": {
+        "OutputDirectory": "output/",
+        "OutputName": "perpendicular_flap",
+        "WriteOutput": "true"
     }
 }

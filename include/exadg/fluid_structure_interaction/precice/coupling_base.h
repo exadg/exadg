@@ -22,13 +22,16 @@
 #ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_COUPLING_BASE_H_
 #define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_COUPLING_BASE_H_
 
-
+// deal.II
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/vectorization.h>
 
 #include <deal.II/matrix_free/matrix_free.h>
 
+// ExaDG
 #include <exadg/matrix_free/integrators.h>
+
+// preCICE
 #include <precice/SolverInterface.hpp>
 
 namespace ExaDG

@@ -22,8 +22,6 @@
 #ifndef APPLICATIONS_FSI_PERPENDICULAR_FLAP_H_
 #define APPLICATIONS_FSI_PERPENDICULAR_FLAP_H_
 
-#include <exadg/grid/one_sided_cylindrical_manifold.h>
-
 namespace ExaDG
 {
 // Perpendicular flap
@@ -422,8 +420,8 @@ private:
     IncNS::PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output       = true;
-    pp_data.output_data.directory          = this->output_parameters.directory;
+    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = this->output_parameters.filename + "_fluid";
     pp_data.output_data.write_boundary_IDs = true;
     pp_data.output_data.write_processor_id = true;
@@ -765,8 +763,8 @@ public:
     using namespace Structure;
 
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output       = true;
-    pp_data.output_data.directory          = this->output_parameters.directory;
+    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = this->output_parameters.filename + "_structure";
     pp_data.output_data.write_processor_id = true;
     pp_data.output_data.start_time         = 0.0;

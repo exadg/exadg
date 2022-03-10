@@ -22,6 +22,7 @@
 #ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_PRECICE_ADAPTER_H_
 #define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_PRECICE_ADAPTER_H_
 
+// deal.II
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/utilities.h>
@@ -31,9 +32,12 @@
 
 #include <deal.II/matrix_free/matrix_free.h>
 
+// ExaDG
 #include <exadg/fluid_structure_interaction/precice/dof_coupling.h>
 #include <exadg/fluid_structure_interaction/precice/exadg_coupling.h>
 #include <exadg/fluid_structure_interaction/precice/quad_coupling.h>
+
+// preCICE
 #include <precice/SolverInterface.hpp>
 
 #include <ostream>

@@ -93,28 +93,34 @@ public:
     this->precice =
       std::make_shared<ExaDG::preCICE::Adapter<dim, dim, VectorType>>(this->precice_parameters,
                                                                       this->mpi_comm);
-    // TODO generalize interface handling for multiple interface IDs
-    this->precice->add_write_surface(
-      this->application->structure->get_boundary_descriptor()->neumann_cached_bc.begin()->first,
-      this->precice_parameters.write_mesh_name,
-      {this->precice_parameters.displacement_data_name,
-       this->precice_parameters.velocity_data_name},
-      this->precice_parameters.write_data_type,
-      structure->matrix_free,
-      structure->pde_operator->get_dof_index(),
-      dealii::numbers::invalid_unsigned_int);
 
+    // structure to fluid
+    {
+      // TODO generalize interface handling for multiple interface IDs
+      this->precice->add_write_surface(
+        this->application->structure->get_boundary_descriptor()->neumann_cached_bc.begin()->first,
+        this->precice_parameters.write_mesh_name,
+        {this->precice_parameters.displacement_data_name,
+         this->precice_parameters.velocity_data_name},
+        this->precice_parameters.write_data_type,
+        structure->matrix_free,
+        structure->pde_operator->get_dof_index(),
+        dealii::numbers::invalid_unsigned_int);
+    }
+
+    // fluid to structure
     {
       this->precice->add_read_surface(
         structure->matrix_free,
         structure->pde_operator->get_container_interface_data_neumann(),
         this->precice_parameters.read_mesh_name,
         {this->precice_parameters.stress_data_name});
-
-      VectorType displacement_structure;
-      structure->pde_operator->initialize_dof_vector(displacement_structure);
-      this->precice->initialize_precice(displacement_structure);
     }
+
+    // initialize preCICE with initial displacement data
+    VectorType displacement_structure;
+    structure->pde_operator->initialize_dof_vector(displacement_structure);
+    this->precice->initialize_precice(displacement_structure);
   }
 
 
@@ -160,7 +166,7 @@ public:
       coupling_structure_to_ale(structure->time_integrator->get_displacement_np(),
                                 structure->time_integrator->get_time_step_size());
 
-      // send velocity boundary condition for fluid
+      // send velocity boundary condition to fluid
       coupling_structure_to_fluid(structure->time_integrator->get_velocity_np(),
                                   structure->time_integrator->get_time_step_size());
 

@@ -95,21 +95,23 @@ public:
   void
   setup_interface_coupling()
   {
-    // writing
     this->precice =
       std::make_shared<ExaDG::preCICE::Adapter<dim, dim, VectorType>>(this->precice_parameters,
                                                                       this->mpi_comm);
 
-    // TODO generalize interface handling for multiple interface IDs
-    this->precice->add_write_surface(this->application->fluid->get_boundary_descriptor()
-                                       ->velocity->dirichlet_cached_bc.begin()
-                                       ->first,
-                                     this->precice_parameters.write_mesh_name,
-                                     {this->precice_parameters.stress_data_name},
-                                     this->precice_parameters.write_data_type,
-                                     fluid->matrix_free,
-                                     fluid->pde_operator->get_dof_index_velocity(),
-                                     fluid->pde_operator->get_quad_index_velocity_linear());
+    // fluid to structure
+    {
+      // TODO generalize interface handling for multiple interface IDs
+      this->precice->add_write_surface(this->application->fluid->get_boundary_descriptor()
+                                         ->velocity->dirichlet_cached_bc.begin()
+                                         ->first,
+                                       this->precice_parameters.write_mesh_name,
+                                       {this->precice_parameters.stress_data_name},
+                                       this->precice_parameters.write_data_type,
+                                       fluid->matrix_free,
+                                       fluid->pde_operator->get_dof_index_velocity(),
+                                       fluid->pde_operator->get_quad_index_velocity_linear());
+    }
 
     // structure to ALE
     {
@@ -144,10 +146,12 @@ public:
                                       fluid->pde_operator->get_container_interface_data(),
                                       this->precice_parameters.read_mesh_name,
                                       {this->precice_parameters.velocity_data_name});
-      VectorType initial_stress;
-      fluid->pde_operator->initialize_vector_velocity(initial_stress);
-      this->precice->initialize_precice(initial_stress);
     }
+
+    // initialize preCICE with initial stress data
+    VectorType initial_stress;
+    fluid->pde_operator->initialize_vector_velocity(initial_stress);
+    this->precice->initialize_precice(initial_stress);
   }
 
 

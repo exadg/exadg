@@ -46,12 +46,7 @@ public:
                const std::string                mesh_name,
                const dealii::types::boundary_id surface_id,
                const int                        mf_dof_index,
-               const int                        mf_quad_index)
-    : CouplingBase<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
-      mf_dof_index(mf_dof_index),
-      mf_quad_index(mf_quad_index)
-  {
-  }
+               const int                        mf_quad_index);
 
   /// Alias as defined in the base class
   using FEFaceIntegrator =
@@ -109,6 +104,22 @@ private:
   virtual std::string
   get_surface_type() const override;
 };
+
+
+
+template<int dim, int data_dim, typename VectorizedArrayType>
+QuadCoupling<dim, data_dim, VectorizedArrayType>::QuadCoupling(
+  std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+  std::shared_ptr<precice::SolverInterface>                                   precice,
+  const std::string                                                           mesh_name,
+  const dealii::types::boundary_id                                            surface_id,
+  const int                                                                   mf_dof_index_,
+  const int                                                                   mf_quad_index_)
+  : CouplingBase<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
+    mf_dof_index(mf_dof_index_),
+    mf_quad_index(mf_quad_index_)
+{
+}
 
 
 
