@@ -75,13 +75,71 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a56a1527c3c5de8e9c3c96b3761c35a45"><td class="memItemLeft" align="right" valign="top"><a id="a56a1527c3c5de8e9c3c96b3761c35a45" name="a56a1527c3c5de8e9c3c96b3761c35a45"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; dim, n_components, Number &gt; &gt; interface_data_dst_, MapBoundaryCondition const &amp;map_bc_src_, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler_src_, dealii::Mapping&lt; dim &gt; const &amp;mapping_src_, double const tolerance_)</td></tr>
+<tr class="memitem:a56a1527c3c5de8e9c3c96b3761c35a45"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1InterfaceCoupling.html#a56a1527c3c5de8e9c3c96b3761c35a45">setup</a> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; dim, n_components, Number &gt; &gt; interface_data_dst_, MapBoundaryCondition const &amp;map_bc_src_, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler_src_, dealii::Mapping&lt; dim &gt; const &amp;mapping_src_, double const tolerance_)</td></tr>
 <tr class="separator:a56a1527c3c5de8e9c3c96b3761c35a45"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa7993c755df85bb31a00373dd0295a91"><td class="memItemLeft" align="right" valign="top"><a id="aa7993c755df85bb31a00373dd0295a91" name="aa7993c755df85bb31a00373dd0295a91"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update_data</b> (VectorType const &amp;dof_vector_src)</td></tr>
 <tr class="separator:aa7993c755df85bb31a00373dd0295a91"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a56a1527c3c5de8e9c3c96b3761c35a45" name="a56a1527c3c5de8e9c3c96b3761c35a45"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a56a1527c3c5de8e9c3c96b3761c35a45">&#9670;&nbsp;</a></span>setup()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, int n_components, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1InterfaceCoupling.html">ExaDG::InterfaceCoupling</a>&lt; dim, n_components, Number &gt;::setup </td>
+          <td>(</td>
+          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; dim, n_components, Number &gt; &gt;&#160;</td>
+          <td class="paramname"><em>interface_data_dst_</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MapBoundaryCondition const &amp;&#160;</td>
+          <td class="paramname"><em>map_bc_src_</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>dof_handler_src_</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">dealii::Mapping&lt; dim &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>mapping_src_</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double const&#160;</td>
+          <td class="paramname"><em>tolerance_</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p ><a class="el" href="classExaDG_1_1InterfaceCoupling.html#a56a1527c3c5de8e9c3c96b3761c35a45">setup()</a> function.</p>
+<p >TODO: The part dealing with marked vertices needs to be generalized. Currently, use an empty map_bc_src_ to deactivate the feature marked_vertices. </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/functions_and_boundary_conditions/<a class="el" href="interface__coupling_8h_source.html">interface_coupling.h</a></li>
 </ul>
