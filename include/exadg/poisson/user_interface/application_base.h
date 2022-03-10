@@ -23,10 +23,7 @@
 #define INCLUDE_EXADG_POISSON_USER_INTERFACE_APPLICATION_BASE_H_
 
 // deal.II
-#include <deal.II/distributed/fully_distributed_tria.h>
-#include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/manifold_lib.h>
 #include <deal.II/grid/tria_description.h>
 
@@ -39,6 +36,7 @@
 #include <exadg/poisson/user_interface/field_functions.h>
 #include <exadg/poisson/user_interface/parameters.h>
 #include <exadg/utilities/output_parameters.h>
+#include <exadg/utilities/resolution_parameters.h>
 
 namespace ExaDG
 {
@@ -191,10 +189,17 @@ template<int dim, int n_components, typename Number>
 class ApplicationOversetGridsBase
 {
 public:
+  ApplicationOversetGridsBase(std::string parameter_file) : parameter_file(parameter_file)
+  {
+  }
+
   virtual void
   add_parameters(dealii::ParameterHandler & prm)
   {
+    resolution1.add_parameters(prm, "ResolutionDomain1");
     domain1->add_parameters(prm);
+
+    resolution2.add_parameters(prm, "ResolutionDomain2");
     domain2->add_parameters(prm);
   }
 
@@ -205,20 +210,40 @@ public:
   void
   setup()
   {
+    // parse and set resolution parameters for both domains
+    parse_resolution_parameters();
+    domain1->set_parameters_refinement_study(resolution1.degree,
+                                             resolution1.refine_space,
+                                             0 /* not used */);
+    domain2->set_parameters_refinement_study(resolution2.degree,
+                                             resolution2.refine_space,
+                                             0 /* not used */);
+
     domain1->setup();
     domain2->setup();
   }
 
-  virtual void
-  set_parameters_refinement_study(unsigned int const degree,
-                                  unsigned int const refine_space,
-                                  unsigned int const n_subdivisions_1d_hypercube)
+  std::shared_ptr<ApplicationBase<dim, n_components, Number>> domain1, domain2;
+
+private:
+  /**
+   * Here, parse only those parameters not covered by ApplicationBase implementations
+   * (domain1 and domain2).
+   */
+  void
+  parse_resolution_parameters()
   {
-    domain1->set_parameters_refinement_study(degree, refine_space, n_subdivisions_1d_hypercube);
-    domain2->set_parameters_refinement_study(degree, refine_space, n_subdivisions_1d_hypercube);
+    dealii::ParameterHandler prm;
+
+    resolution1.add_parameters(prm, "ResolutionDomain1");
+    resolution2.add_parameters(prm, "ResolutionDomain2");
+
+    prm.parse_input(parameter_file, "", true, true);
   }
 
-  std::shared_ptr<ApplicationBase<dim, n_components, Number>> domain1, domain2;
+  std::string parameter_file;
+
+  ResolutionParameters resolution1, resolution2;
 };
 
 } // namespace Poisson
