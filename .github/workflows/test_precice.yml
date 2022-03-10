@@ -1,4 +1,4 @@
-name: GitHub CI
+name: GitHub preCICE CI
 
 on:
   push:
@@ -17,14 +17,15 @@ env:
 
 jobs:
   build:
-    name: Build ${{ matrix.build_type }}-dealii:${{ matrix.dealii_version }}
+    name: Build ${{ matrix.build_type }}-dealii:${{ matrix.dealii_version }}-preCICE:${{ matrix.use_precice }}
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        build_type: ["Release", "Debug"]
-        dealii_version: ["master", "v9.3.0"]
+        build_type: ["Debug"]
+        dealii_version: ["master"]
+        use_precice: ["ON"]
     
     container:
       image: dealii/dealii:${{ matrix.dealii_version }}-focal
@@ -36,10 +37,16 @@ jobs:
           
       - uses: actions/checkout@v2
 
+      - name: Install preCICE
+        run: |
+          sudo apt-get -y update
+          wget https://github.com/precice/precice/releases/download/v2.3.0/libprecice2_2.3.0_focal.deb
+          sudo apt-get -y install ./libprecice2_2.3.0_focal.deb
+
       - name: Compile
         run: |
           mkdir build
           cd build
-          cmake ../ -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          cmake ../ -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DEXADG_WITH_PRECICE=${{ matrix.use_precice }}
           make -j${{ env.COMPILE_JOBS }}
           
