@@ -11,6 +11,6 @@ var searchData=
   ['rhskerneldata_8',['RHSKernelData',['../structExaDG_1_1IncNS_1_1Operators_1_1RHSKernelData.html',1,'ExaDG::IncNS::Operators::RHSKernelData&lt; dim &gt;'],['../structExaDG_1_1Operators_1_1RHSKernelData.html',1,'ExaDG::Operators::RHSKernelData&lt; dim &gt;']]],
   ['rhsoperator_9',['RHSOperator',['../classExaDG_1_1IncNS_1_1RHSOperator.html',1,'ExaDG::IncNS::RHSOperator&lt; dim, Number &gt;'],['../classExaDG_1_1RHSOperator.html',1,'ExaDG::RHSOperator&lt; dim, Number, n_components &gt;']]],
   ['rhsoperator_3c_20dim_2c_20double_20_3e_10',['RHSOperator&lt; dim, double &gt;',['../classExaDG_1_1IncNS_1_1RHSOperator.html',1,'ExaDG::IncNS']]],
-  ['rhsoperator_3c_20dim_2c_20number_2c_201_20_3e_11',['RHSOperator&lt; dim, Number, 1 &gt;',['../classExaDG_1_1RHSOperator.html',1,'ExaDG']]],
+  ['rhsoperator_3c_20dim_2c_20number_2c_20n_5fcomponents_20_3e_11',['RHSOperator&lt; dim, Number, n_components &gt;',['../classExaDG_1_1RHSOperator.html',1,'ExaDG']]],
   ['rhsoperatordata_12',['RHSOperatorData',['../structExaDG_1_1IncNS_1_1RHSOperatorData.html',1,'ExaDG::IncNS::RHSOperatorData&lt; dim &gt;'],['../structExaDG_1_1RHSOperatorData.html',1,'ExaDG::RHSOperatorData&lt; dim &gt;']]]
 ];

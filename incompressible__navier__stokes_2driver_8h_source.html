@@ -287,7 +287,7 @@ $(function() {
 <div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>  <span class="comment">// solve mesh deformation by a Poisson problem</span></div>
 <div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>  std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt;&gt;         poisson_matrix_free_data;</div>
 <div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>  std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt;&gt;     poisson_matrix_free;</div>
-<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>  std::shared_ptr&lt;Poisson::Operator&lt;dim, Number, dim&gt;&gt; poisson_operator;</div>
+<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>  std::shared_ptr&lt;Poisson::Operator&lt;dim, dim, Number&gt;&gt; poisson_operator;</div>
 <div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span> </div>
 <div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span><span class="comment">   * MatrixFree</span></div>

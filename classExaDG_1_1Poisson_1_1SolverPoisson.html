@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.3"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::FunctionCached&lt; rank, dim, Number &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::Poisson::SolverPoisson&lt; dim, n_components, Number &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -62,35 +62,35 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>ExaDG</b></li><li class="navelem"><a class="el" href="classExaDG_1_1FunctionCached.html">FunctionCached</a></li>  </ul>
+<li class="navelem"><b>ExaDG</b></li><li class="navelem"><b>Poisson</b></li><li class="navelem"><a class="el" href="classExaDG_1_1Poisson_1_1SolverPoisson.html">SolverPoisson</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="classExaDG_1_1FunctionCached-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::FunctionCached&lt; rank, dim, Number &gt; Class Template Reference</div></div>
+<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="classExaDG_1_1Poisson_1_1SolverPoisson-members.html">List of all members</a>  </div>
+  <div class="headertitle"><div class="title">ExaDG::Poisson::SolverPoisson&lt; dim, n_components, Number &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
-Public Types</h2></td></tr>
-<tr class="memitem:a28f6bda155759273954856b66994e2a0"><td class="memItemLeft" align="right" valign="top"><a id="a28f6bda155759273954856b66994e2a0" name="a28f6bda155759273954856b66994e2a0"></a>
-typedef dealii::Tensor&lt; rank, dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>value_type</b></td></tr>
-<tr class="separator:a28f6bda155759273954856b66994e2a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:acdbeed2e27634e7972f07c2a8e8e0927"><td class="memItemLeft" align="right" valign="top"><a id="acdbeed2e27634e7972f07c2a8e8e0927" name="acdbeed2e27634e7972f07c2a8e8e0927"></a>
-value_type&#160;</td><td class="memItemRight" valign="bottom"><b>tensor_value</b> (unsigned int const face, unsigned int const q, unsigned int const v, unsigned int const quad_index) const</td></tr>
-<tr class="separator:acdbeed2e27634e7972f07c2a8e8e0927"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a81a12e8dd40768bcd718b8973f512e3b"><td class="memItemLeft" align="right" valign="top"><a id="a81a12e8dd40768bcd718b8973f512e3b" name="a81a12e8dd40768bcd718b8973f512e3b"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_data_pointer</b> (std::map&lt; unsigned int, MapVectorIndex &gt; const &amp;map_map_vector_index_, std::map&lt; unsigned int, ArraySolutionValues &gt; const &amp;map_array_solution_)</td></tr>
-<tr class="separator:a81a12e8dd40768bcd718b8973f512e3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa09078bb9fefdfc3996f76ab7dc6f87"><td class="memItemLeft" align="right" valign="top"><a id="aaa09078bb9fefdfc3996f76ab7dc6f87" name="aaa09078bb9fefdfc3996f76ab7dc6f87"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">ApplicationBase</a>&lt; dim, n_components, Number &gt; &gt; application, MPI_Comm const mpi_comm, bool const is_throughput_study)</td></tr>
+<tr class="separator:aaa09078bb9fefdfc3996f76ab7dc6f87"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:aba5eb7ccfd53efd54de375309ae65167"><td class="memItemLeft" align="right" valign="top"><a id="aba5eb7ccfd53efd54de375309ae65167" name="aba5eb7ccfd53efd54de375309ae65167"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Poisson_1_1Operator.html">Operator</a>&lt; dim, n_components, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>pde_operator</b></td></tr>
+<tr class="separator:aba5eb7ccfd53efd54de375309ae65167"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c03a4d18c9ce757affa2d6a17e90bff"><td class="memItemLeft" align="right" valign="top"><a id="a4c03a4d18c9ce757affa2d6a17e90bff" name="a4c03a4d18c9ce757affa2d6a17e90bff"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessorBase.html">PostProcessorBase</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>postprocessor</b></td></tr>
+<tr class="separator:a4c03a4d18c9ce757affa2d6a17e90bff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/exadg/functions_and_boundary_conditions/<a class="el" href="function__cached_8h_source.html">function_cached.h</a></li>
+<li>include/exadg/poisson/<a class="el" href="solver__poisson_8h_source.html">solver_poisson.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

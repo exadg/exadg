@@ -160,7 +160,7 @@ $(function() {
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt;&gt; ale_matrix_free;</div>
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  <span class="comment">// Poisson-type grid motion</span></div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  std::shared_ptr&lt;Poisson::Operator&lt;dim, Number, dim&gt;&gt; ale_poisson_operator;</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  std::shared_ptr&lt;Poisson::Operator&lt;dim, dim, Number&gt;&gt; ale_poisson_operator;</div>
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="comment">// elasticity-type grid motion</span></div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  std::shared_ptr&lt;Structure::Operator&lt;dim, Number&gt;&gt; ale_elasticity_operator;</div>
@@ -180,7 +180,7 @@ $(function() {
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  <span class="comment">// ALE: initialize PDE operator</span></div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  <span class="keywordflow">if</span>(application-&gt;get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)</div>
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  {</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    ale_poisson_operator = std::make_shared&lt;Poisson::Operator&lt;dim, Number, dim&gt;&gt;(</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    ale_poisson_operator = std::make_shared&lt;Poisson::Operator&lt;dim, dim, Number&gt;&gt;(</div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>      application-&gt;get_grid(),</div>
 <div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>      application-&gt;get_boundary_descriptor_ale_poisson(),</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>      application-&gt;get_field_functions_ale_poisson(),</div>

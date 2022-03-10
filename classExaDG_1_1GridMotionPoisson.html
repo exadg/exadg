@@ -102,8 +102,8 @@ typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a72143947a07879039807e809c2e552f4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionPoisson.html#a72143947a07879039807e809c2e552f4">GridMotionPoisson</a> (std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping_undeformed, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Poisson_1_1Operator.html">Poisson::Operator</a>&lt; dim, Number, dim &gt; &gt; poisson_operator)</td></tr>
-<tr class="separator:a72143947a07879039807e809c2e552f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a00b8f321182c24d9b03d2c82f68f1866"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionPoisson.html#a00b8f321182c24d9b03d2c82f68f1866">GridMotionPoisson</a> (std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping_undeformed, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Poisson_1_1Operator.html">Poisson::Operator</a>&lt; dim, dim, Number &gt; &gt; poisson_operator)</td></tr>
+<tr class="separator:a00b8f321182c24d9b03d2c82f68f1866"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9d0c457bb394d7aa920831a8f3ffd091"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionPoisson.html#a9d0c457bb394d7aa920831a8f3ffd091">update</a> (double const time, bool const print_solver_info) override</td></tr>
 <tr class="separator:a9d0c457bb394d7aa920831a8f3ffd091"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad2f9ee28df7619af9d82160f52b4edad"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionPoisson.html#ad2f9ee28df7619af9d82160f52b4edad">print_iterations</a> () const override</td></tr>
@@ -141,8 +141,8 @@ std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MappingDoFVector.html">Map
 <div class="textblock"><div class="compoundTemplParams">template&lt;int dim, typename Number&gt;<br />
 class ExaDG::GridMotionPoisson&lt; dim, Number &gt;</div><p >Class for moving grid problems based on a Poisson-type grid motion technique. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a72143947a07879039807e809c2e552f4" name="a72143947a07879039807e809c2e552f4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a72143947a07879039807e809c2e552f4">&#9670;&nbsp;</a></span>GridMotionPoisson()</h2>
+<a id="a00b8f321182c24d9b03d2c82f68f1866" name="a00b8f321182c24d9b03d2c82f68f1866"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a00b8f321182c24d9b03d2c82f68f1866">&#9670;&nbsp;</a></span>GridMotionPoisson()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -161,7 +161,7 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Poisson_1_1Operator.html">Poisson::Operator</a>&lt; dim, Number, dim &gt; &gt;&#160;</td>
+          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Poisson_1_1Operator.html">Poisson::Operator</a>&lt; dim, dim, Number &gt; &gt;&#160;</td>
           <td class="paramname"><em>poisson_operator</em>&#160;</td>
         </tr>
         <tr>

@@ -90,13 +90,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:af33866d9b35bd19e92edea9f57f34072"><td class="memItemLeft" align="right" valign="top"><a id="af33866d9b35bd19e92edea9f57f34072" name="af33866d9b35bd19e92edea9f57f34072"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>PostProcessor</b> (<a class="el" href="structExaDG_1_1Poisson_1_1PostProcessorData.html">PostProcessorData</a>&lt; dim &gt; const &amp;pp_data, MPI_Comm const &amp;mpi_comm)</td></tr>
 <tr class="separator:af33866d9b35bd19e92edea9f57f34072"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a79367102afbb85fe2173ea9a63af27c2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Poisson_1_1PostProcessor.html#a79367102afbb85fe2173ea9a63af27c2">setup</a> (dealii::DoFHandler&lt; dim, dim &gt; const &amp;dof_handler, dealii::Mapping&lt; dim &gt; const &amp;mapping) override</td></tr>
-<tr class="separator:a79367102afbb85fe2173ea9a63af27c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a286a74d94b79dbdf84bde746caeecd4b"><td class="memItemLeft" align="right" valign="top"><a id="a286a74d94b79dbdf84bde746caeecd4b" name="a286a74d94b79dbdf84bde746caeecd4b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler, dealii::Mapping&lt; dim &gt; const &amp;mapping) override</td></tr>
+<tr class="separator:a286a74d94b79dbdf84bde746caeecd4b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad2351de1768f8300e9dbc59e5b512c05"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Poisson_1_1PostProcessor.html#ad2351de1768f8300e9dbc59e5b512c05">do_postprocessing</a> (VectorType const &amp;solution, double const time=0.0, int const time_step_number=-1) override</td></tr>
 <tr class="separator:ad2351de1768f8300e9dbc59e5b512c05"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae9f094a12f3de631bd47f3bce58e4762"><td class="memItemLeft" align="right" valign="top"><a id="ae9f094a12f3de631bd47f3bce58e4762" name="ae9f094a12f3de631bd47f3bce58e4762"></a>
+<tr class="inherit_header pub_methods_classExaDG_1_1Poisson_1_1PostProcessorBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1Poisson_1_1PostProcessorBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessorBase.html">ExaDG::Poisson::PostProcessorBase&lt; dim, Number &gt;</a></td></tr>
+<tr class="memitem:ae9f094a12f3de631bd47f3bce58e4762 inherit pub_methods_classExaDG_1_1Poisson_1_1PostProcessorBase"><td class="memItemLeft" align="right" valign="top"><a id="ae9f094a12f3de631bd47f3bce58e4762" name="ae9f094a12f3de631bd47f3bce58e4762"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (dealii::DoFHandler&lt; dim, dim &gt; const &amp;dof_handler, dealii::Mapping&lt; dim &gt; const &amp;mapping)=0</td></tr>
-<tr class="separator:ae9f094a12f3de631bd47f3bce58e4762"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:ae9f094a12f3de631bd47f3bce58e4762 inherit pub_methods_classExaDG_1_1Poisson_1_1PostProcessorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a58ed75cbda64c3ef716af631171155f2"><td class="memItemLeft" align="right" valign="top"><a id="a58ed75cbda64c3ef716af631171155f2" name="a58ed75cbda64c3ef716af631171155f2"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_postprocessing</b> (VectorType const &amp;solution, double const time=0.0, int const time_step_number=-1)=0</td></tr>
 <tr class="separator:a58ed75cbda64c3ef716af631171155f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -171,46 +173,6 @@ template&lt;int dim, typename Number &gt; </div>
 </div><div class="memdoc">
 
 <p>Implements <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessorInterface.html">ExaDG::Poisson::PostProcessorInterface&lt; Number &gt;</a>.</p>
-
-</div>
-</div>
-<a id="a79367102afbb85fe2173ea9a63af27c2" name="a79367102afbb85fe2173ea9a63af27c2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a79367102afbb85fe2173ea9a63af27c2">&#9670;&nbsp;</a></span>setup()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessor.html">ExaDG::Poisson::PostProcessor</a>&lt; dim, Number &gt;::setup </td>
-          <td>(</td>
-          <td class="paramtype">dealii::DoFHandler&lt; dim, dim &gt; const &amp;&#160;</td>
-          <td class="paramname"><em>dof_handler</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">dealii::Mapping&lt; dim &gt; const &amp;&#160;</td>
-          <td class="paramname"><em>mapping</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessorBase.html">ExaDG::Poisson::PostProcessorBase&lt; dim, Number &gt;</a>.</p>
 
 </div>
 </div>

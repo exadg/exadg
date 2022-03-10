@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.3"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::Poisson::Operator&lt; dim, Number, n_components &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::Poisson::Operator&lt; dim, n_components, Number &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -69,11 +69,11 @@ $(function() {
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classExaDG_1_1Poisson_1_1Operator-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::Poisson::Operator&lt; dim, Number, n_components &gt; Class Template Reference</div></div>
+  <div class="headertitle"><div class="title">ExaDG::Poisson::Operator&lt; dim, n_components, Number &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <div class="dynheader">
-Inheritance diagram for ExaDG::Poisson::Operator&lt; dim, Number, n_components &gt;:</div>
+Inheritance diagram for ExaDG::Poisson::Operator&lt; dim, n_components, Number &gt;:</div>
 <div class="dyncontent">
  <div class="center">
   <img src="classExaDG_1_1Poisson_1_1Operator.png" alt=""/>
@@ -81,51 +81,51 @@ Inheritance diagram for ExaDG::Poisson::Operator&lt; dim, Number, n_components &
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a915d0265107dd97eceb23febccb145a2"><td class="memItemLeft" align="right" valign="top"><a id="a915d0265107dd97eceb23febccb145a2" name="a915d0265107dd97eceb23febccb145a2"></a>
+<tr class="memitem:a9d10e93cb08f2f8b233f9dc7d3fef4b7"><td class="memItemLeft" align="right" valign="top"><a id="a9d10e93cb08f2f8b233f9dc7d3fef4b7" name="a9d10e93cb08f2f8b233f9dc7d3fef4b7"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>Operator</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; rank, dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, <a class="el" href="classExaDG_1_1Poisson_1_1Parameters.html">Parameters</a> const &amp;param, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
-<tr class="separator:a915d0265107dd97eceb23febccb145a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa55a118b1bda5bf47461314502f9b498"><td class="memItemLeft" align="right" valign="top"><a id="aa55a118b1bda5bf47461314502f9b498" name="aa55a118b1bda5bf47461314502f9b498"></a>
+<tr class="separator:a9d10e93cb08f2f8b233f9dc7d3fef4b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85d839d13ca1c8f40e97b81618f8e786"><td class="memItemLeft" align="right" valign="top"><a id="a85d839d13ca1c8f40e97b81618f8e786" name="a85d839d13ca1c8f40e97b81618f8e786"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data</b> (<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &amp;matrix_free_data) const</td></tr>
-<tr class="separator:aa55a118b1bda5bf47461314502f9b498"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0e875bfa329eb8e37f46b3638737daff"><td class="memItemLeft" align="right" valign="top"><a id="a0e875bfa329eb8e37f46b3638737daff" name="a0e875bfa329eb8e37f46b3638737daff"></a>
+<tr class="separator:a85d839d13ca1c8f40e97b81618f8e786"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a316feb89a67203e381d8a1e29996c923"><td class="memItemLeft" align="right" valign="top"><a id="a316feb89a67203e381d8a1e29996c923" name="a316feb89a67203e381d8a1e29996c923"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &gt; matrix_free_data)</td></tr>
-<tr class="separator:a0e875bfa329eb8e37f46b3638737daff"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acec1c8390137c20b981f258467e8e1e7"><td class="memItemLeft" align="right" valign="top"><a id="acec1c8390137c20b981f258467e8e1e7" name="acec1c8390137c20b981f258467e8e1e7"></a>
+<tr class="separator:a316feb89a67203e381d8a1e29996c923"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aba15a62a9fe00511f7988ebeb6990660"><td class="memItemLeft" align="right" valign="top"><a id="aba15a62a9fe00511f7988ebeb6990660" name="aba15a62a9fe00511f7988ebeb6990660"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_solver</b> ()</td></tr>
-<tr class="separator:acec1c8390137c20b981f258467e8e1e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7e9474f8fe55c9ca3408bd4d0787fb6b"><td class="memItemLeft" align="right" valign="top"><a id="a7e9474f8fe55c9ca3408bd4d0787fb6b" name="a7e9474f8fe55c9ca3408bd4d0787fb6b"></a>
+<tr class="separator:aba15a62a9fe00511f7988ebeb6990660"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a303922334e332dc80448d1a59afe6ea6"><td class="memItemLeft" align="right" valign="top"><a id="a303922334e332dc80448d1a59afe6ea6" name="a303922334e332dc80448d1a59afe6ea6"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_dof_vector</b> (VectorType &amp;src) const</td></tr>
-<tr class="separator:a7e9474f8fe55c9ca3408bd4d0787fb6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a449b468c95b008424b872d249454a4ed"><td class="memItemLeft" align="right" valign="top"><a id="a449b468c95b008424b872d249454a4ed" name="a449b468c95b008424b872d249454a4ed"></a>
+<tr class="separator:a303922334e332dc80448d1a59afe6ea6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3551e4add969754cae883cd3591be1f2"><td class="memItemLeft" align="right" valign="top"><a id="a3551e4add969754cae883cd3591be1f2" name="a3551e4add969754cae883cd3591be1f2"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>prescribe_initial_conditions</b> (VectorType &amp;src) const</td></tr>
-<tr class="separator:a449b468c95b008424b872d249454a4ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a384a0ec36f291083916084b4b95c9890"><td class="memItemLeft" align="right" valign="top"><a id="a384a0ec36f291083916084b4b95c9890" name="a384a0ec36f291083916084b4b95c9890"></a>
+<tr class="separator:a3551e4add969754cae883cd3591be1f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0be93a7399a40d157b61309f27b95ada"><td class="memItemLeft" align="right" valign="top"><a id="a0be93a7399a40d157b61309f27b95ada" name="a0be93a7399a40d157b61309f27b95ada"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>rhs</b> (VectorType &amp;dst, double const time=0.0) const</td></tr>
-<tr class="separator:a384a0ec36f291083916084b4b95c9890"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5b19e91598f67e44555c883ab5cecfe2"><td class="memItemLeft" align="right" valign="top"><a id="a5b19e91598f67e44555c883ab5cecfe2" name="a5b19e91598f67e44555c883ab5cecfe2"></a>
+<tr class="separator:a0be93a7399a40d157b61309f27b95ada"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac6db10c62fe267da027734c7e29b9f6f"><td class="memItemLeft" align="right" valign="top"><a id="ac6db10c62fe267da027734c7e29b9f6f" name="ac6db10c62fe267da027734c7e29b9f6f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:a5b19e91598f67e44555c883ab5cecfe2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa44002f47b403f32146bc446287f56be"><td class="memItemLeft" align="right" valign="top"><a id="aa44002f47b403f32146bc446287f56be" name="aa44002f47b403f32146bc446287f56be"></a>
+<tr class="separator:ac6db10c62fe267da027734c7e29b9f6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ae458fa2d9a354bbd0ff83bef4dcf94"><td class="memItemLeft" align="right" valign="top"><a id="a0ae458fa2d9a354bbd0ff83bef4dcf94" name="a0ae458fa2d9a354bbd0ff83bef4dcf94"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve</b> (VectorType &amp;sol, VectorType const &amp;rhs, double const time) const</td></tr>
-<tr class="separator:aa44002f47b403f32146bc446287f56be"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a632f2dd88691b9fd9958288f572670c6"><td class="memItemLeft" align="right" valign="top"><a id="a632f2dd88691b9fd9958288f572670c6" name="a632f2dd88691b9fd9958288f572670c6"></a>
+<tr class="separator:a0ae458fa2d9a354bbd0ff83bef4dcf94"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ffc8d0c8141b4769fad1fef9a5b5e94"><td class="memItemLeft" align="right" valign="top"><a id="a5ffc8d0c8141b4769fad1fef9a5b5e94" name="a5ffc8d0c8141b4769fad1fef9a5b5e94"></a>
 dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler</b> () const</td></tr>
-<tr class="separator:a632f2dd88691b9fd9958288f572670c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adcbcb29b200c93e55001349a67ac90e7"><td class="memItemLeft" align="right" valign="top"><a id="adcbcb29b200c93e55001349a67ac90e7" name="adcbcb29b200c93e55001349a67ac90e7"></a>
+<tr class="separator:a5ffc8d0c8141b4769fad1fef9a5b5e94"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5a46d1e596ac68c338cea563c56cdced"><td class="memItemLeft" align="right" valign="top"><a id="a5a46d1e596ac68c338cea563c56cdced" name="a5a46d1e596ac68c338cea563c56cdced"></a>
 dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>get_number_of_dofs</b> () const</td></tr>
-<tr class="separator:adcbcb29b200c93e55001349a67ac90e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae0ac0d81b93ee1f438f8178bcb8ab039"><td class="memItemLeft" align="right" valign="top"><a id="ae0ac0d81b93ee1f438f8178bcb8ab039" name="ae0ac0d81b93ee1f438f8178bcb8ab039"></a>
+<tr class="separator:a5a46d1e596ac68c338cea563c56cdced"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a66959bfd0307ec2e8e2de4849d28ec84"><td class="memItemLeft" align="right" valign="top"><a id="a66959bfd0307ec2e8e2de4849d28ec84" name="a66959bfd0307ec2e8e2de4849d28ec84"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>get_n10</b> () const</td></tr>
-<tr class="separator:ae0ac0d81b93ee1f438f8178bcb8ab039"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae201d4a150fbd628a423843e8cc028a0"><td class="memItemLeft" align="right" valign="top"><a id="ae201d4a150fbd628a423843e8cc028a0" name="ae201d4a150fbd628a423843e8cc028a0"></a>
+<tr class="separator:a66959bfd0307ec2e8e2de4849d28ec84"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4ff6db0568d73ed4bff7199773a70d39"><td class="memItemLeft" align="right" valign="top"><a id="a4ff6db0568d73ed4bff7199773a70d39" name="a4ff6db0568d73ed4bff7199773a70d39"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>get_average_convergence_rate</b> () const</td></tr>
-<tr class="separator:ae201d4a150fbd628a423843e8cc028a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0869a4d374842255eb00f7c3631d3405"><td class="memItemLeft" align="right" valign="top"><a id="a0869a4d374842255eb00f7c3631d3405" name="a0869a4d374842255eb00f7c3631d3405"></a>
+<tr class="separator:a4ff6db0568d73ed4bff7199773a70d39"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2474db478ec1e9a3ba91909bba34f53e"><td class="memItemLeft" align="right" valign="top"><a id="a2474db478ec1e9a3ba91909bba34f53e" name="a2474db478ec1e9a3ba91909bba34f53e"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; dim, n_components, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_container_interface_data</b> ()</td></tr>
-<tr class="separator:a0869a4d374842255eb00f7c3631d3405"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a89c19bb0fa2ad740df46399acdc193f6"><td class="memItemLeft" align="right" valign="top"><a id="a89c19bb0fa2ad740df46399acdc193f6" name="a89c19bb0fa2ad740df46399acdc193f6"></a>
+<tr class="separator:a2474db478ec1e9a3ba91909bba34f53e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae05fa65fba1104c16dc6a659f1d73092"><td class="memItemLeft" align="right" valign="top"><a id="ae05fa65fba1104c16dc6a659f1d73092" name="ae05fa65fba1104c16dc6a659f1d73092"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_timings</b> () const</td></tr>
-<tr class="separator:a89c19bb0fa2ad740df46399acdc193f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:ae05fa65fba1104c16dc6a659f1d73092"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/exadg/poisson/spatial_discretization/<a class="el" href="poisson_2spatial__discretization_2operator_8h_source.html">operator.h</a></li>

@@ -62,21 +62,19 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>ExaDG</b></li><li class="navelem"><b>Poisson</b></li><li class="navelem"><a class="el" href="classExaDG_1_1Poisson_1_1Driver.html">Driver</a></li>  </ul>
+<li class="navelem"><b>ExaDG</b></li><li class="navelem"><b>Poisson</b></li><li class="navelem"><a class="el" href="classExaDG_1_1Poisson_1_1SolverPoisson.html">SolverPoisson</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
-  <div class="headertitle"><div class="title">ExaDG::Poisson::Driver&lt; dim, Number &gt; Member List</div></div>
+  <div class="headertitle"><div class="title">ExaDG::Poisson::SolverPoisson&lt; dim, n_components, Number &gt; Member List</div></div>
 </div><!--header-->
 <div class="contents">
 
-<p>This is the complete list of members for <a class="el" href="classExaDG_1_1Poisson_1_1Driver.html">ExaDG::Poisson::Driver&lt; dim, Number &gt;</a>, including all inherited members.</p>
+<p>This is the complete list of members for <a class="el" href="classExaDG_1_1Poisson_1_1SolverPoisson.html">ExaDG::Poisson::SolverPoisson&lt; dim, n_components, Number &gt;</a>, including all inherited members.</p>
 <table class="directory">
-  <tr bgcolor="#f0f0f0" class="even"><td class="entry"><b>apply_operator</b>(std::string const &amp;operator_type_string, unsigned int const n_repetitions_inner, unsigned int const n_repetitions_outer) const (defined in <a class="el" href="classExaDG_1_1Poisson_1_1Driver.html">ExaDG::Poisson::Driver&lt; dim, Number &gt;</a>)</td><td class="entry"><a class="el" href="classExaDG_1_1Poisson_1_1Driver.html">ExaDG::Poisson::Driver&lt; dim, Number &gt;</a></td><td class="entry"></td></tr>
-  <tr bgcolor="#f0f0f0" class="odd"><td class="entry"><b>Driver</b>(MPI_Comm const &amp;mpi_comm, std::shared_ptr&lt; ApplicationBase&lt; dim, 1, Number &gt; &gt; application, bool const is_test, bool const is_throughput_study) (defined in <a class="el" href="classExaDG_1_1Poisson_1_1Driver.html">ExaDG::Poisson::Driver&lt; dim, Number &gt;</a>)</td><td class="entry"><a class="el" href="classExaDG_1_1Poisson_1_1Driver.html">ExaDG::Poisson::Driver&lt; dim, Number &gt;</a></td><td class="entry"></td></tr>
-  <tr bgcolor="#f0f0f0" class="even"><td class="entry"><b>print_performance_results</b>(double const total_time) const (defined in <a class="el" href="classExaDG_1_1Poisson_1_1Driver.html">ExaDG::Poisson::Driver&lt; dim, Number &gt;</a>)</td><td class="entry"><a class="el" href="classExaDG_1_1Poisson_1_1Driver.html">ExaDG::Poisson::Driver&lt; dim, Number &gt;</a></td><td class="entry"></td></tr>
-  <tr bgcolor="#f0f0f0" class="odd"><td class="entry"><b>setup</b>() (defined in <a class="el" href="classExaDG_1_1Poisson_1_1Driver.html">ExaDG::Poisson::Driver&lt; dim, Number &gt;</a>)</td><td class="entry"><a class="el" href="classExaDG_1_1Poisson_1_1Driver.html">ExaDG::Poisson::Driver&lt; dim, Number &gt;</a></td><td class="entry"></td></tr>
-  <tr bgcolor="#f0f0f0" class="even"><td class="entry"><b>solve</b>() (defined in <a class="el" href="classExaDG_1_1Poisson_1_1Driver.html">ExaDG::Poisson::Driver&lt; dim, Number &gt;</a>)</td><td class="entry"><a class="el" href="classExaDG_1_1Poisson_1_1Driver.html">ExaDG::Poisson::Driver&lt; dim, Number &gt;</a></td><td class="entry"></td></tr>
+  <tr bgcolor="#f0f0f0" class="even"><td class="entry"><b>pde_operator</b> (defined in <a class="el" href="classExaDG_1_1Poisson_1_1SolverPoisson.html">ExaDG::Poisson::SolverPoisson&lt; dim, n_components, Number &gt;</a>)</td><td class="entry"><a class="el" href="classExaDG_1_1Poisson_1_1SolverPoisson.html">ExaDG::Poisson::SolverPoisson&lt; dim, n_components, Number &gt;</a></td><td class="entry"></td></tr>
+  <tr bgcolor="#f0f0f0" class="odd"><td class="entry"><b>postprocessor</b> (defined in <a class="el" href="classExaDG_1_1Poisson_1_1SolverPoisson.html">ExaDG::Poisson::SolverPoisson&lt; dim, n_components, Number &gt;</a>)</td><td class="entry"><a class="el" href="classExaDG_1_1Poisson_1_1SolverPoisson.html">ExaDG::Poisson::SolverPoisson&lt; dim, n_components, Number &gt;</a></td><td class="entry"></td></tr>
+  <tr bgcolor="#f0f0f0" class="even"><td class="entry"><b>setup</b>(std::shared_ptr&lt; ApplicationBase&lt; dim, n_components, Number &gt; &gt; application, MPI_Comm const mpi_comm, bool const is_throughput_study) (defined in <a class="el" href="classExaDG_1_1Poisson_1_1SolverPoisson.html">ExaDG::Poisson::SolverPoisson&lt; dim, n_components, Number &gt;</a>)</td><td class="entry"><a class="el" href="classExaDG_1_1Poisson_1_1SolverPoisson.html">ExaDG::Poisson::SolverPoisson&lt; dim, n_components, Number &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
 </table></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
