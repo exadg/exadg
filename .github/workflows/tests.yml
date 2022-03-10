@@ -17,7 +17,7 @@ env:
 
 jobs:
   build:
-    name: Build ${{ matrix.build_type }}-dealii:${{ matrix.dealii_version }}
+    name: Build ${{ matrix.build_type }}-dealii:${{ matrix.dealii_version }}-preCICE:${{ matrix.use_precice }}
     runs-on: ubuntu-latest
 
     strategy:
@@ -39,6 +39,7 @@ jobs:
 
       - name: Install preCICE
         run: |
+          sudo apt-get -y update
           wget https://github.com/precice/precice/releases/download/v2.3.0/libprecice2_2.3.0_focal.deb
           sudo apt-get -y install ./libprecice2_2.3.0_focal.deb
 
