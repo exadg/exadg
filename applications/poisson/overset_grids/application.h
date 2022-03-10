@@ -272,6 +272,6 @@ public:
 
 } // namespace ExaDG
 
-#include <exadg/poisson/user_interface/implement_get_application_overset_grids.h>
+#include <exadg/poisson/overset_grids/user_interface/implement_get_application.h>
 
 #endif /* APPLICATIONS_POISSON_TEST_CASES_TEMPLATE_H_ */

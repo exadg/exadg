@@ -185,67 +185,6 @@ private:
   set_field_functions() = 0;
 };
 
-template<int dim, int n_components, typename Number>
-class ApplicationOversetGridsBase
-{
-public:
-  ApplicationOversetGridsBase(std::string parameter_file) : parameter_file(parameter_file)
-  {
-  }
-
-  void
-  add_parameters(dealii::ParameterHandler & prm)
-  {
-    resolution1.add_parameters(prm, "ResolutionDomain1");
-    resolution2.add_parameters(prm, "ResolutionDomain2");
-
-    domain1->add_parameters(prm);
-    domain2->add_parameters(prm);
-  }
-
-  virtual ~ApplicationOversetGridsBase()
-  {
-  }
-
-  void
-  setup()
-  {
-    // parse and set resolution parameters for both domains
-    parse_resolution_parameters();
-    domain1->set_parameters_refinement_study(resolution1.degree,
-                                             resolution1.refine_space,
-                                             0 /* not used */);
-    domain2->set_parameters_refinement_study(resolution2.degree,
-                                             resolution2.refine_space,
-                                             0 /* not used */);
-
-    domain1->setup();
-    domain2->setup();
-  }
-
-  std::shared_ptr<ApplicationBase<dim, n_components, Number>> domain1, domain2;
-
-private:
-  /**
-   * Here, parse only those parameters not covered by ApplicationBase implementations
-   * (domain1 and domain2).
-   */
-  void
-  parse_resolution_parameters()
-  {
-    dealii::ParameterHandler prm;
-
-    resolution1.add_parameters(prm, "ResolutionDomain1");
-    resolution2.add_parameters(prm, "ResolutionDomain2");
-
-    prm.parse_input(parameter_file, "", true, true);
-  }
-
-  std::string parameter_file;
-
-  ResolutionParameters resolution1, resolution2;
-};
-
 } // namespace Poisson
 } // namespace ExaDG
 

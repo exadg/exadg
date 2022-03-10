@@ -32,7 +32,7 @@
 #include <exadg/utilities/resolution_parameters.h>
 
 // application
-#include <exadg/poisson/user_interface/declare_get_application.h>
+#include <exadg/poisson/overset_grids/user_interface/declare_get_application.h>
 
 namespace ExaDG
 {
