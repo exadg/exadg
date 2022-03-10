@@ -193,13 +193,13 @@ public:
   {
   }
 
-  virtual void
+  void
   add_parameters(dealii::ParameterHandler & prm)
   {
     resolution1.add_parameters(prm, "ResolutionDomain1");
-    domain1->add_parameters(prm);
-
     resolution2.add_parameters(prm, "ResolutionDomain2");
+
+    domain1->add_parameters(prm);
     domain2->add_parameters(prm);
   }
 

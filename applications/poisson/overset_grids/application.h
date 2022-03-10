@@ -80,7 +80,7 @@ public:
     p1[1] = 0.0;
     p2[0] = right;
     p2[1] = 1.0;
-    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation, {1, 1}, p1, p2);
+    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation, {3, 3}, p1, p2);
 
     for(auto cell : *this->grid->triangulation)
     {
@@ -261,6 +261,7 @@ class Application : public ApplicationOversetGridsBase<dim, n_components, Number
 {
 public:
   Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationOversetGridsBase<dim, n_components, Number>(input_file)
   {
     this->domain1 = std::make_shared<Domain1<dim, n_components, Number>>(input_file, comm);
     this->domain2 = std::make_shared<Domain2<dim, n_components, Number>>(input_file, comm);

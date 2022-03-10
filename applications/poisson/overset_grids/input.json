@@ -4,15 +4,17 @@
         "Dim": "2",
         "IsTest": "false"
     },
-    "SpatialResolution": {
-        "DegreeMin": "3",
-        "DegreeMax": "3",
-        "RefineSpaceMin": "2",
-        "RefineSpaceMax": "2"
+    "ResolutionDomain1": {
+        "Degree": "3",
+        "RefineSpace": "0"
+    },
+    "ResolutionDomain2": {
+        "Degree": "3",
+        "RefineSpace": "2"
     },
     "Output": {
         "OutputDirectory": "output/overset_grids/",
         "OutputName": "solution",
-        "WriteOutput": "true"
+        "WriteOutput": "false"
     }
 }
