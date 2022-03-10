@@ -211,7 +211,7 @@ public:
          return vertex_is_marked == false;
        }))
     {
-      std::fill(marked_vertices.begin(), marked_vertices.end(), true);
+      marked_vertices.clear();
     }
 #endif
 
