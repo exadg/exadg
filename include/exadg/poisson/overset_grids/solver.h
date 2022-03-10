@@ -48,7 +48,7 @@ create_input_file(std::string const & input_file)
   // for the automatic generation of a default input file
   unsigned int const Dim = 2;
   typedef double     Number;
-  Poisson::get_application_overset_grids<Dim, Dim, Number>(input_file, MPI_COMM_WORLD)
+  Poisson::get_application_overset_grids<Dim, 1, Number>(input_file, MPI_COMM_WORLD)
     ->add_parameters(prm);
 
   prm.print_parameters(input_file,
