@@ -38,8 +38,8 @@ PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & pp_data
 
 template<int dim, typename Number>
 void
-PostProcessor<dim, Number>::setup(dealii::DoFHandler<dim, dim> const & dof_handler,
-                                  dealii::Mapping<dim> const &         mapping)
+PostProcessor<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler,
+                                  dealii::Mapping<dim> const &    mapping)
 {
   error_calculator.setup(dof_handler, mapping, pp_data.error_data);
 

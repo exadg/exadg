@@ -58,8 +58,7 @@ public:
   PostProcessor(PostProcessorData<dim> const & pp_data, MPI_Comm const & mpi_comm);
 
   void
-  setup(dealii::DoFHandler<dim, dim> const & dof_handler,
-        dealii::Mapping<dim> const &         mapping) override;
+  setup(dealii::DoFHandler<dim> const & dof_handler, dealii::Mapping<dim> const & mapping) override;
 
   void
   do_postprocessing(VectorType const & solution,

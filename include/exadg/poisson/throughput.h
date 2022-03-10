@@ -66,7 +66,7 @@ create_input_file(std::string const & input_file)
     // for the automatic generation of a default input file
     unsigned int const Dim = 2;
     typedef double     Number;
-    Poisson::get_application<Dim, Number>(input_file, MPI_COMM_WORLD)->add_parameters(prm);
+    Poisson::get_application<Dim, 1, Number>(input_file, MPI_COMM_WORLD)->add_parameters(prm);
   }
   catch(...)
   {
@@ -87,8 +87,8 @@ run(ThroughputParameters const & throughput,
     MPI_Comm const &             mpi_comm,
     bool const                   is_test)
 {
-  std::shared_ptr<Poisson::ApplicationBase<dim, Number>> application =
-    Poisson::get_application<dim, Number>(input_file, mpi_comm);
+  std::shared_ptr<Poisson::ApplicationBase<dim, 1, Number>> application =
+    Poisson::get_application<dim, 1, Number>(input_file, mpi_comm);
 
   application->set_parameters_refinement_study(degree, refine_space, n_cells_1d);
 

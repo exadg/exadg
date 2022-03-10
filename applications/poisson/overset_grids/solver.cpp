@@ -19,24 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POISSON_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
-#define INCLUDE_EXADG_POISSON_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
+// solver
+#include <exadg/poisson/overset_grids/solver.h>
 
-#include <exadg/poisson/user_interface/application_base.h>
-
-namespace ExaDG
-{
-namespace Poisson
-{
-template<int dim, int n_components, typename Number>
-std::shared_ptr<ApplicationBase<dim, n_components, Number>>
-get_application(std::string input_file, MPI_Comm const & comm)
-{
-  return std::make_shared<Application<dim, n_components, Number>>(input_file, comm);
-}
-
-} // namespace Poisson
-} // namespace ExaDG
-
-
-#endif /* INCLUDE_EXADG_POISSON_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_ */
+// application
+#include "application.h"

@@ -27,14 +27,10 @@
 #include <deal.II/base/timer.h>
 
 // ExaDG
-#include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
-#include <exadg/grid/calculate_maximum_aspect_ratio.h>
-#include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/matrix_free/matrix_free_data.h>
+#include <exadg/poisson/solver_poisson.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 #include <exadg/poisson/user_interface/application_base.h>
-#include <exadg/utilities/print_functions.h>
-#include <exadg/utilities/print_general_infos.h>
 #include <exadg/utilities/solver_result.h>
 #include <exadg/utilities/timer_tree.h>
 
@@ -109,10 +105,10 @@ template<int dim, typename Number>
 class Driver
 {
 public:
-  Driver(MPI_Comm const &                              mpi_comm,
-         std::shared_ptr<ApplicationBase<dim, Number>> application,
-         bool const                                    is_test,
-         bool const                                    is_throughput_study);
+  Driver(MPI_Comm const &                                 mpi_comm,
+         std::shared_ptr<ApplicationBase<dim, 1, Number>> application,
+         bool const                                       is_test,
+         bool const                                       is_throughput_study);
 
   void
   setup();
@@ -145,14 +141,9 @@ private:
   bool const is_throughput_study;
 
   // application
-  std::shared_ptr<ApplicationBase<dim, Number>> application;
+  std::shared_ptr<ApplicationBase<dim, 1, Number>> application;
 
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
-
-  std::shared_ptr<Operator<dim, Number>> pde_operator;
-
-  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
+  std::shared_ptr<SolverPoisson<dim, 1, Number>> poisson;
 
   // number of iterations
   mutable unsigned int iterations;
