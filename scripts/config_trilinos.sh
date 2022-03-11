@@ -26,12 +26,15 @@
 #
 #########################################################################
 
-TRILINOS_HOME=../
-EXTRA_ARGS=$@
-
-MPIDIR=/usr/lib64/openmpi
-
 rm -rf CMakeFiles/ CMakeCache.txt
+
+TRILINOS_HOME=../
+TRILINOS_INSTALL=$WORKING_DIRECTORY/trilinos-install
+
+MPIDIR=/usr
+#MPIDIR=/usr/lib64/openmpi
+
+EXTRA_ARGS=$@
 
 cmake \
     -D CMAKE_BUILD_TYPE:STRING="RELEASE" \
@@ -41,7 +44,7 @@ cmake \
     -D CMAKE_CXX_FLAGS="-march=native -O3" \
     -D CMAKE_C_FLAGS="-march=native -O3" \
     -D CMAKE_FORTRAN_FLAGS="-march=native" \
-    -D CMAKE_INSTALL_PREFIX:STRING="$WORKING_DIRECTORY/sw/trilinos-install" \
+    -D CMAKE_INSTALL_PREFIX:STRING="$TRILINOS_INSTALL" \
     -D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
     -D CMAKE_COLOR_MAKEFILE:BOOL=ON \
     -D BUILD_SHARED_LIBS:BOOL=ON \
