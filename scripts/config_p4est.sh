@@ -1,6 +1,6 @@
 #!/bin/sh
 #########################################################################
-# 
+#
 #                 #######               ######  #######
 #                 ##                    ##   ## ##
 #                 #####   ##  ## #####  ##   ## ## ####
@@ -26,23 +26,8 @@
 #
 #########################################################################
 
-rm -rf CMakeFiles/ CMakeCache.txt libexadg.so libexadg.a include/exadg/configuration/config.h
+DEALII=$WORKING_DIRECTORY/dealii
+P4EST=$WORKING_DIRECTORY/p4est
+P4EST_INSTALL=$WORKING_DIRECTORY/p4est-install
 
-DEAL=$WORKING_DIRECTORY/dealii/build
-# or, alternatively, the dealii-install directory
-#DEAL=$WORKING_DIRECTORY/dealii-install
-
-FFTW=$WORKING_DIRECTORY/fftw-install
-LIKWID=$WORKING_DIRECTORY/likwid-install
-
-cmake \
-    -D DEGREE_MAX=15 \
-    -D DEAL_II_DIR="$DEAL" \
-    -D USE_FFTW=ON \
-    -D FFTW_LIB="$FFTW/lib" \
-    -D FFTW_INCLUDE="$FFTW/include" \
-    -D LIKWID_LIB="$LIKWID/lib" \
-    -D LIKWID_INCLUDE="$LIKWID/include" \
-    -D BUILD_SHARED_LIBS=ON \
-    -D PICKUP_TESTS=ON \
-    ../
+$DEALII/doc/external-libs/p4est-setup.sh $P4EST/p4est-2.0.tar.gz $P4EST_INSTALL
