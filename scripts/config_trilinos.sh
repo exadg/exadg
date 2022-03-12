@@ -28,8 +28,8 @@
 
 rm -rf CMakeFiles/ CMakeCache.txt
 
-TRILINOS_HOME=../
-TRILINOS_INSTALL=$WORKING_DIRECTORY/trilinos-install
+TRILINOS=../
+TRILINOS_INSTALL=$WORKING_DIRECTORY/trilinos/install
 
 MPIDIR=/usr
 #MPIDIR=/usr/lib64/openmpi
@@ -151,5 +151,5 @@ cmake \
     -D Phdmesh_ENABLE_Netcdf:BOOL=ON \
     -D Phdmesh_ENABLE_Pthread:BOOL=ON \
     $EXTRA_ARGS \
-    ${TRILINOS_HOME}
+    ${TRILINOS}
 

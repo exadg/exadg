@@ -29,13 +29,13 @@
 rm -rf CMakeFiles/ CMakeCache.txt
 
 DEAL=$WORKING_DIRECTORY/dealii
-DEAL_INSTALL=$WORKING_DIRECTORY/dealii-install
+DEAL_INSTALL=$WORKING_DIRECTORY/dealii/install
 
 # TPLs
-P4EST=$WORKING_DIRECTORY/p4est-install
+P4EST=$WORKING_DIRECTORY/p4est
 METIS=$WORKING_DIRECTORY/metis
-TRILINOS=$WORKING_DIRECTORY/trilinos-install
-PETSC=$WORKING_DIRECTORY/petsc-3.14.5
+TRILINOS=$WORKING_DIRECTORY/trilinos/install
+PETSC=$WORKING_DIRECTORY/petsc/petsc-3.14.5
 
 # Note on compiler flags: Note that "-march=native" requires that the hardware 
 # on which you compile the code is consistent with the hardware on which you 

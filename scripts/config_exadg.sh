@@ -28,12 +28,13 @@
 
 rm -rf CMakeFiles/ CMakeCache.txt libexadg.so libexadg.a include/exadg/configuration/config.h
 
+# use the dealii/build directory
 DEAL=$WORKING_DIRECTORY/dealii/build
-# or, alternatively, the dealii-install directory
-#DEAL=$WORKING_DIRECTORY/dealii-install
+# or, alternatively, the dealii/install directory
+#DEAL=$WORKING_DIRECTORY/dealii/install
 
-FFTW=$WORKING_DIRECTORY/fftw-install
-LIKWID=$WORKING_DIRECTORY/likwid-install
+FFTW=$WORKING_DIRECTORY/fftw/install
+LIKWID=$WORKING_DIRECTORY/likwid/install
 
 cmake \
     -D DEGREE_MAX=15 \

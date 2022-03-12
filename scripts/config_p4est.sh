@@ -28,6 +28,5 @@
 
 DEALII=$WORKING_DIRECTORY/dealii
 P4EST=$WORKING_DIRECTORY/p4est
-P4EST_INSTALL=$WORKING_DIRECTORY/p4est-install
 
-$DEALII/doc/external-libs/p4est-setup.sh $P4EST/p4est-2.0.tar.gz $P4EST_INSTALL
+$DEALII/doc/external-libs/p4est-setup.sh $P4EST/p4est-2.0.tar.gz `pwd`

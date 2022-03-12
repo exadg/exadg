@@ -26,4 +26,6 @@
 #
 #########################################################################
 
-./configure --enable-mpi --enable-shared --enable-static --enable-avx512 --prefix=$WORKING_DIRECTORY/fftw-install
+FFTW_INSTALL=$WORKING_DIRECTORY/fftw/install
+
+./configure --enable-mpi --enable-shared --enable-static --enable-avx512 --prefix=$FFTW_INSTALL
