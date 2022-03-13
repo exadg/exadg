@@ -1,6 +1,6 @@
 #!/bin/sh
 #########################################################################
-# 
+#
 #                 #######               ######  #######
 #                 ##                    ##   ## ##
 #                 #####   ##  ## #####  ##   ## ## ####
@@ -26,24 +26,6 @@
 #
 #########################################################################
 
-rm -rf CMakeFiles/ CMakeCache.txt libexadg.so libexadg.a include/exadg/configuration/config.h
+FFTW_INSTALL=$WORKING_DIRECTORY/fftw/install
 
-# use the dealii/build directory
-DEAL=$WORKING_DIRECTORY/dealii/build
-# or, alternatively, the dealii/install directory
-#DEAL=$WORKING_DIRECTORY/dealii/install
-
-FFTW=$WORKING_DIRECTORY/fftw/install
-LIKWID=$WORKING_DIRECTORY/likwid/install
-
-cmake \
-    -D DEGREE_MAX=15 \
-    -D DEAL_II_DIR="$DEAL" \
-    -D USE_FFTW=ON \
-    -D FFTW_LIB="$FFTW/lib" \
-    -D FFTW_INCLUDE="$FFTW/include" \
-    -D LIKWID_LIB="$LIKWID/lib" \
-    -D LIKWID_INCLUDE="$LIKWID/include" \
-    -D BUILD_SHARED_LIBS=ON \
-    -D PICKUP_TESTS=ON \
-    ../
+./configure --enable-mpi --enable-shared --enable-static --enable-avx512 --prefix=$FFTW_INSTALL
