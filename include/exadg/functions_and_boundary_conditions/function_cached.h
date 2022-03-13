@@ -22,6 +22,9 @@
 #ifndef INCLUDE_FUNCTIONALITIES_FUNCTION_INTERPOLATION_H_
 #define INCLUDE_FUNCTIONALITIES_FUNCTION_INTERPOLATION_H_
 
+// deal.II
+#include <deal.II/base/tensor.h>
+
 namespace ExaDG
 {
 /*
@@ -43,45 +46,17 @@ private:
   using ArraySolutionValues = std::vector<value_type>;
 
 public:
-  FunctionCached() : map_map_vector_index(nullptr), map_array_solution(nullptr)
-  {
-  }
+  FunctionCached();
 
   value_type
   tensor_value(unsigned int const face,
                unsigned int const q,
                unsigned int const v,
-               unsigned int const quad_index) const
-  {
-    Assert(map_map_vector_index != nullptr,
-           dealii::ExcMessage("Pointer global_map_vector_index is not initialized."));
-    Assert(map_map_vector_index->find(quad_index) != map_map_vector_index->end(),
-           dealii::ExcMessage("Specified quad_index does not exist in global_map_vector_index."));
-
-    Assert(map_array_solution != nullptr,
-           dealii::ExcMessage("Pointer map_array_solution is not initialized."));
-    Assert(map_array_solution->find(quad_index) != map_array_solution->end(),
-           dealii::ExcMessage("Specified quad_index does not exist in map_array_solution."));
-
-    MapVectorIndex const &      map_vector_index = map_map_vector_index->find(quad_index)->second;
-    ArraySolutionValues const & array_solution   = map_array_solution->find(quad_index)->second;
-
-    Id                              id    = std::make_tuple(face, q, v);
-    dealii::types::global_dof_index index = map_vector_index.find(id)->second;
-
-    Assert(index < array_solution.size(),
-           dealii::ExcMessage("Index exceeds dimensions of vector."));
-
-    return array_solution[index];
-  }
+               unsigned int const quad_index) const;
 
   void
   set_data_pointer(std::map<unsigned int, MapVectorIndex> const &      map_map_vector_index_,
-                   std::map<unsigned int, ArraySolutionValues> const & map_array_solution_)
-  {
-    map_map_vector_index = &map_map_vector_index_;
-    map_array_solution   = &map_array_solution_;
-  }
+                   std::map<unsigned int, ArraySolutionValues> const & map_array_solution_);
 
 private:
   std::map<unsigned int, MapVectorIndex> const *      map_map_vector_index;
