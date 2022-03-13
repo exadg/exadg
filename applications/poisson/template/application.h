@@ -45,12 +45,12 @@ public:
   }
 };
 
-template<int dim, typename Number>
-class Application : public ApplicationBase<dim, Number>
+template<int dim, int n_components, typename Number>
+class Application : public ApplicationBase<dim, n_components, Number>
 {
 public:
   Application(std::string input_file, MPI_Comm const & comm)
-    : ApplicationBase<dim, Number>(input_file, comm)
+    : ApplicationBase<dim, n_components, Number>(input_file, comm)
   {
   }
 

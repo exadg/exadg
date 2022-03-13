@@ -81,7 +81,7 @@ Driver<dim, Number>::setup()
       application->setup_poisson();
 
       // initialize Poisson operator
-      poisson_operator = std::make_shared<Poisson::Operator<dim, Number, dim>>(
+      poisson_operator = std::make_shared<Poisson::Operator<dim, dim, Number>>(
         application->get_grid(),
         application->get_boundary_descriptor_poisson(),
         application->get_field_functions_poisson(),

@@ -92,7 +92,7 @@ public:
   std::shared_ptr<dealii::MatrixFree<dim, Number>> ale_matrix_free;
 
   // Poisson-type grid motion
-  std::shared_ptr<Poisson::Operator<dim, Number, dim>> ale_poisson_operator;
+  std::shared_ptr<Poisson::Operator<dim, dim, Number>> ale_poisson_operator;
 
   // elasticity-type grid motion
   std::shared_ptr<Structure::Operator<dim, Number>> ale_elasticity_operator;
@@ -112,7 +112,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   // ALE: initialize PDE operator
   if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)
   {
-    ale_poisson_operator = std::make_shared<Poisson::Operator<dim, Number, dim>>(
+    ale_poisson_operator = std::make_shared<Poisson::Operator<dim, dim, Number>>(
       application->get_grid(),
       application->get_boundary_descriptor_ale_poisson(),
       application->get_field_functions_ale_poisson(),

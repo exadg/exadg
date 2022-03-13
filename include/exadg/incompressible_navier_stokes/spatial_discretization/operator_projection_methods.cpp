@@ -179,8 +179,8 @@ OperatorProjectionMethods<dim, Number>::initialize_preconditioner_pressure_poiss
                                   this->get_mapping(),
                                   laplace_operator.get_data(),
                                   this->param.ale_formulation,
-                                  &laplace_operator.get_data().bc->dirichlet_bc,
-                                  &this->grid->periodic_faces);
+                                  laplace_operator.get_data().bc->dirichlet_bc,
+                                  this->grid->periodic_faces);
   }
   else
   {

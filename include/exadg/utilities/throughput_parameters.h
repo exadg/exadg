@@ -22,6 +22,11 @@
 #ifndef INCLUDE_EXADG_UTILITIES_THROUGHPUT_PARAMETERS_H_
 #define INCLUDE_EXADG_UTILITIES_THROUGHPUT_PARAMETERS_H_
 
+// likwid
+#ifdef LIKWID_PERFMON
+#  include <likwid.h>
+#endif
+
 // deal.II
 #include <deal.II/base/parameter_handler.h>
 

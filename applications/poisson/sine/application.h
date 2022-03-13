@@ -113,19 +113,19 @@ string_to_enum(MeshType & enum_type, std::string const & string_type)
   // clang-format on
 }
 
-template<int dim, typename Number>
-class Application : public ApplicationBase<dim, Number>
+template<int dim, int n_components, typename Number>
+class Application : public ApplicationBase<dim, n_components, Number>
 {
 public:
   Application(std::string input_file, MPI_Comm const & comm)
-    : ApplicationBase<dim, Number>(input_file, comm)
+    : ApplicationBase<dim, n_components, Number>(input_file, comm)
   {
   }
 
   void
   add_parameters(dealii::ParameterHandler & prm)
   {
-    ApplicationBase<dim, Number>::add_parameters(prm);
+    ApplicationBase<dim, n_components, Number>::add_parameters(prm);
 
     // clang-format off
     prm.enter_subsection("Application");
@@ -138,7 +138,7 @@ private:
   void
   parse_parameters() final
   {
-    ApplicationBase<dim, Number>::parse_parameters();
+    ApplicationBase<dim, n_components, Number>::parse_parameters();
 
     string_to_enum(mesh_type, mesh_type_string);
   }

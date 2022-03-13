@@ -65,8 +65,8 @@ public:
              std::shared_ptr<dealii::Mapping<dim> const> mapping,
              ElasticityOperatorBase<dim, Number> const & pde_operator,
              bool const                                  nonlinear_operator,
-             Map const *                                 dirichlet_bc        = nullptr,
-             PeriodicFacePairs const *                   periodic_face_pairs = nullptr);
+             Map const &                                 dirichlet_bc,
+             PeriodicFacePairs const &                   periodic_face_pairs);
 
   /*
    * This function updates the multigrid preconditioner.

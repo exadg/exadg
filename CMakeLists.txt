@@ -65,7 +65,9 @@ SET(TARGET_SRC
      include/exadg/time_integration/time_int_gen_alpha_base.cpp
      include/exadg/time_integration/enum_types.cpp
      include/exadg/grid/enum_types.cpp
+     include/exadg/functions_and_boundary_conditions/function_cached.cpp
      include/exadg/functions_and_boundary_conditions/linear_interpolation.cpp
+     include/exadg/functions_and_boundary_conditions/interface_coupling.cpp
      include/exadg/matrix_free/resolve_templates_float_2d.cpp
      include/exadg/matrix_free/resolve_templates_float_3d.cpp
      include/exadg/matrix_free/resolve_templates_double_2d.cpp
@@ -97,6 +99,7 @@ SET(TARGET_SRC
      include/exadg/poisson/preconditioners/multigrid_preconditioner.cpp
      include/exadg/poisson/postprocessor/postprocessor.cpp
      include/exadg/poisson/driver.cpp
+     include/exadg/poisson/overset_grids/driver.cpp
      # convection-diffusion equation
      include/exadg/convection_diffusion/user_interface/enum_types.cpp
      include/exadg/convection_diffusion/user_interface/parameters.cpp

@@ -26,19 +26,24 @@
 #
 #########################################################################
 
-#rm -rf CMakeFiles/ CMakeCache.txt libexadg.so libexadg.a include/exadg/configuration/config.h
+rm -rf CMakeFiles/ CMakeCache.txt libexadg.so libexadg.a include/exadg/configuration/config.h
 
-FFTW_INSTALL=$WORKING_DIRECTORY/path/to/fftw-install
-LIKWID_INSTALL=$WORKING_DIRECTORY/path/to/likwid-install
+# use the dealii/build directory
+DEAL=$WORKING_DIRECTORY/dealii/build
+# or, alternatively, the dealii/install directory
+#DEAL=$WORKING_DIRECTORY/dealii/install
+
+FFTW=$WORKING_DIRECTORY/fftw/install
+LIKWID=$WORKING_DIRECTORY/likwid/install
 
 cmake \
     -D DEGREE_MAX=15 \
-    -D DEAL_II_DIR="$WORKING_DIRECTORY/sw/dealii-build" \
+    -D DEAL_II_DIR="$DEAL" \
     -D USE_FFTW=ON \
-    -D FFTW_LIB="$FFTW_INSTALL/lib" \
-    -D FFTW_INCLUDE="$FFTW_INSTALL/include" \
-    -D LIKWID_LIB="$LIKWID_INSTALL/lib" \
-    -D LIKWID_INCLUDE="$LIKWID_INSTALL/include" \
+    -D FFTW_LIB="$FFTW/lib" \
+    -D FFTW_INCLUDE="$FFTW/include" \
+    -D LIKWID_LIB="$LIKWID/lib" \
+    -D LIKWID_INCLUDE="$LIKWID/include" \
     -D BUILD_SHARED_LIBS=ON \
     -D PICKUP_TESTS=ON \
     ../

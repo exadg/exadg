@@ -63,8 +63,8 @@ MultigridPreconditionerBase<dim, Number>::initialize(
   dealii::FiniteElement<dim> const &          fe,
   std::shared_ptr<dealii::Mapping<dim> const> mapping,
   bool const                                  operator_is_singular,
-  Map const *                                 dirichlet_bc,
-  PeriodicFacePairs const *                   periodic_face_pairs)
+  Map const &                                 dirichlet_bc,
+  PeriodicFacePairs const &                   periodic_face_pairs)
 {
   this->data = data;
 
@@ -701,32 +701,11 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_dof_handler_and_constraints(
   bool const                         operator_is_singular,
-  PeriodicFacePairs const *          periodic_face_pairs_in,
+  PeriodicFacePairs const &          periodic_face_pairs,
   dealii::FiniteElement<dim> const & fe,
   dealii::Triangulation<dim> const * tria,
-  Map const *                        dirichlet_bc_in)
+  Map const &                        dirichlet_bc)
 {
-  bool const is_dg = (fe.dofs_per_vertex == 0);
-
-  if(data.coarse_problem.preconditioner == MultigridCoarseGridPreconditioner::AMG ||
-     data.coarse_problem.solver == MultigridCoarseGridSolver::AMG || !is_dg ||
-     data.involves_c_transfer())
-  {
-    AssertThrow(
-      dirichlet_bc_in != nullptr && periodic_face_pairs_in != nullptr,
-      dealii::ExcMessage(
-        "You have to provide Dirichlet BCs and periodic face pairs if you want to use continuous elements or AMG!"));
-  }
-
-  // In the case of nullptr, these data structures simply remain empty.
-  Map dirichlet_bc;
-  if(dirichlet_bc_in != nullptr)
-    dirichlet_bc = *dirichlet_bc_in;
-
-  PeriodicFacePairs periodic_face_pairs;
-  if(dirichlet_bc_in != nullptr)
-    periodic_face_pairs = *periodic_face_pairs_in;
-
   this->do_initialize_dof_handler_and_constraints(operator_is_singular,
                                                   periodic_face_pairs,
                                                   fe,

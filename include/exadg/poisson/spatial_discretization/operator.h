@@ -38,7 +38,7 @@ namespace ExaDG
 {
 namespace Poisson
 {
-template<int dim, typename Number, int n_components = 1>
+template<int dim, int n_components, typename Number>
 class Operator : public dealii::Subscriptor
 {
 private:

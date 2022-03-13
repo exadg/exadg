@@ -260,9 +260,6 @@ public:
                         double const       factor,
                         double const       time) const;
 
-  void
-  set_constrained_values_to_zero(VectorType & vector) const;
-
   /*
    * This function solves the (non-)linear system of equations.
    */

@@ -30,7 +30,6 @@ DEAL=$WORKING_DIRECTORY/sw/dealii
 
 rm -rf CMakeFiles/ CMakeCache.txt
 
-# issue the build - must usually not be modified
 cmake \
   -D CMAKE_BUILD_TYPE="DebugRelease" \
   -D CMAKE_CXX_FLAGS="-std=c++17 -march=skylake-avx512 -Wno-array-bounds -Wno-literal-suffix -pthread" \

@@ -384,14 +384,29 @@ Operator<dim, Number>::initialize_preconditioner()
       std::shared_ptr<Multigrid> mg_preconditioner =
         std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
+      typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+        pair;
+
+      std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+        dirichlet_boundary_conditions = elasticity_operator_nonlinear.get_data().bc->dirichlet_bc;
+
+      // We also need to add DirichletCached boundary conditions. From the
+      // perspective of multigrid, there is no difference between standard
+      // and cached Dirichlet BCs. Since multigrid does not need information
+      // about inhomogeneous boundary data, we simply fill the map with
+      // dealii::Functions::ZeroFunction for DirichletCached BCs.
+      for(auto iter : elasticity_operator_nonlinear.get_data().bc->dirichlet_cached_bc)
+        dirichlet_boundary_conditions.insert(
+          pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+
       mg_preconditioner->initialize(param.multigrid_data,
                                     &dof_handler.get_triangulation(),
                                     dof_handler.get_fe(),
                                     grid->mapping,
                                     elasticity_operator_nonlinear,
-                                    true,
-                                    &elasticity_operator_nonlinear.get_data().bc->dirichlet_bc,
-                                    &grid->periodic_faces);
+                                    param.large_deformation,
+                                    dirichlet_boundary_conditions,
+                                    grid->periodic_faces);
     }
     else
     {
@@ -401,14 +416,29 @@ Operator<dim, Number>::initialize_preconditioner()
       std::shared_ptr<Multigrid> mg_preconditioner =
         std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
+      typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+        pair;
+
+      std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+        dirichlet_boundary_conditions = elasticity_operator_linear.get_data().bc->dirichlet_bc;
+
+      // We also need to add DirichletCached boundary conditions. From the
+      // perspective of multigrid, there is no difference between standard
+      // and cached Dirichlet BCs. Since multigrid does not need information
+      // about inhomogeneous boundary data, we simply fill the map with
+      // dealii::Functions::ZeroFunction for DirichletCached BCs.
+      for(auto iter : elasticity_operator_linear.get_data().bc->dirichlet_cached_bc)
+        dirichlet_boundary_conditions.insert(
+          pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+
       mg_preconditioner->initialize(param.multigrid_data,
                                     &dof_handler.get_triangulation(),
                                     dof_handler.get_fe(),
                                     grid->mapping,
                                     elasticity_operator_linear,
-                                    false,
-                                    &elasticity_operator_linear.get_data().bc->dirichlet_bc,
-                                    &grid->periodic_faces);
+                                    param.large_deformation,
+                                    dirichlet_boundary_conditions,
+                                    grid->periodic_faces);
     }
   }
   else if(param.preconditioner == Preconditioner::AMG)
@@ -662,6 +692,12 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
     body_force_operator.evaluate_add(body_forces, src, time);
     dst -= body_forces;
   }
+
+  // To ensure convergence of the Newton solver, the residual has to be zero
+  // for constrained degrees of freedom as well, which might not be the case
+  // in general, e.g. due to const_vector. Hence, we set the constrained
+  // degrees of freedom explicitly to zero.
+  elasticity_operator_nonlinear.set_constrained_values_to_zero(dst);
 }
 
 template<int dim, typename Number>
@@ -708,16 +744,6 @@ Operator<dim, Number>::apply_linear_operator(VectorType &       dst,
 }
 
 template<int dim, typename Number>
-void
-Operator<dim, Number>::set_constrained_values_to_zero(VectorType & vector) const
-{
-  if(param.large_deformation)
-    elasticity_operator_nonlinear.set_constrained_values_to_zero(vector);
-  else
-    elasticity_operator_linear.set_constrained_values_to_zero(vector);
-}
-
-template<int dim, typename Number>
 std::tuple<unsigned int, unsigned int>
 Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
                                        VectorType const & rhs,
@@ -740,7 +766,13 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   // solve nonlinear problem
   auto const iter = newton_solver->solve(sol, update);
 
-  // set inhomogeneous Dirichlet values
+  // This step should actually be optional: The constraints have already been set
+  // before the nonlinear solver is called and no contributions to the constrained
+  // degrees of freedom should be added in the Newton solver by the linearized solver
+  // (because the residual vector forming the rhs of the linearized problem is zero
+  // for constrained degrees of freedom, the initial solution of the linearized
+  // solver is also zero, and the linearized operator contains values of 1 on the
+  // diagonal for constrained degrees of freedom).
   elasticity_operator_nonlinear.set_constrained_values(sol, time);
 
   return iter;
@@ -757,10 +789,18 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
   elasticity_operator_linear.set_scaling_factor_mass_operator(factor);
   elasticity_operator_linear.set_time(time);
 
-  // solve linear system of equations
-  unsigned int const iterations = linear_solver->solve(sol, rhs, false);
+  // Set constrained degrees of freedom of rhs vector according to the prescribed
+  // Dirichlet boundary conditions.
+  VectorType & rhs_mutable = const_cast<VectorType &>(rhs);
+  elasticity_operator_linear.set_constrained_values(rhs_mutable, time);
 
-  // set Dirichlet values
+  // solve linear system of equations
+  unsigned int const iterations = linear_solver->solve(sol, rhs_mutable, false);
+
+  // This step should actually be optional: The constrained degrees of freedom of the
+  // rhs vector contain the Dirichlet boundary values and the linear operator contains
+  // values of 1 on the diagonal. Hence, sol should already contain the correct
+  // Dirichlet boundary values for constrained degrees of freedom.
   elasticity_operator_linear.set_constrained_values(sol, time);
 
   return iterations;

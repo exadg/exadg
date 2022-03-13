@@ -457,16 +457,30 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
   std::shared_ptr<Multigrid> mg_preconditioner =
     std::dynamic_pointer_cast<Multigrid>(preconditioner_momentum);
 
-  auto & dof_handler = this->get_dof_handler_u();
+  typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+    pair;
+
+  std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+    dirichlet_boundary_conditions = this->momentum_operator.get_data().bc->dirichlet_bc;
+
+  // We also need to add DirichletCached boundary conditions. From the
+  // perspective of multigrid, there is no difference between standard
+  // and cached Dirichlet BCs. Since multigrid does not need information
+  // about inhomogeneous boundary data, we simply fill the map with
+  // dealii::Functions::ZeroFunction for DirichletCached BCs.
+  for(auto iter : this->momentum_operator.get_data().bc->dirichlet_cached_bc)
+    dirichlet_boundary_conditions.insert(
+      pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+
   mg_preconditioner->initialize(this->param.multigrid_data_velocity_block,
-                                &dof_handler.get_triangulation(),
-                                dof_handler.get_fe(),
+                                &this->get_dof_handler_u().get_triangulation(),
+                                this->get_dof_handler_u().get_fe(),
                                 this->get_mapping(),
                                 this->momentum_operator,
                                 this->param.multigrid_operator_type_velocity_block,
                                 this->param.ale_formulation,
-                                &this->momentum_operator.get_data().bc->dirichlet_bc,
-                                &this->grid->periodic_faces);
+                                dirichlet_boundary_conditions,
+                                this->grid->periodic_faces);
 }
 
 template<int dim, typename Number>
@@ -590,8 +604,8 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complement()
                                 this->get_mapping(),
                                 laplace_operator_data,
                                 this->param.ale_formulation,
-                                &laplace_operator_data.bc->dirichlet_bc,
-                                &this->grid->periodic_faces);
+                                laplace_operator_data.bc->dirichlet_bc,
+                                this->grid->periodic_faces);
 }
 
 template<int dim, typename Number>

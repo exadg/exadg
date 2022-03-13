@@ -23,29 +23,32 @@
 #define INCLUDE_EXADG_POISSON_USER_INTERFACE_APPLICATION_BASE_H_
 
 // deal.II
-#include <deal.II/distributed/fully_distributed_tria.h>
-#include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/manifold_lib.h>
 #include <deal.II/grid/tria_description.h>
 
 // ExaDG
+#include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
+#include <exadg/grid/calculate_maximum_aspect_ratio.h>
 #include <exadg/grid/grid.h>
 #include <exadg/poisson/postprocessor/postprocessor.h>
 #include <exadg/poisson/user_interface/boundary_descriptor.h>
 #include <exadg/poisson/user_interface/field_functions.h>
 #include <exadg/poisson/user_interface/parameters.h>
 #include <exadg/utilities/output_parameters.h>
+#include <exadg/utilities/resolution_parameters.h>
 
 namespace ExaDG
 {
 namespace Poisson
 {
-template<int dim, typename Number>
+template<int dim, int n_components, typename Number>
 class ApplicationBase
 {
 public:
+  static unsigned int const rank =
+    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : dealii::numbers::invalid_unsigned_int);
+
   typedef typename std::vector<
     dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>>
     PeriodicFaces;
@@ -67,7 +70,7 @@ public:
   {
   }
 
-  void
+  virtual void
   set_parameters_refinement_study(unsigned int const degree,
                                   unsigned int const refine_space,
                                   unsigned int const n_subdivisions_1d_hypercube)
@@ -106,7 +109,7 @@ public:
     }
 
     // boundary conditions
-    boundary_descriptor = std::make_shared<BoundaryDescriptor<0, dim>>();
+    boundary_descriptor = std::make_shared<BoundaryDescriptor<rank, dim>>();
     set_boundary_descriptor();
     verify_boundary_conditions(*boundary_descriptor, *grid);
 
@@ -130,7 +133,7 @@ public:
     return grid;
   }
 
-  std::shared_ptr<BoundaryDescriptor<0, dim> const>
+  std::shared_ptr<BoundaryDescriptor<rank, dim> const>
   get_boundary_descriptor() const
   {
     return boundary_descriptor;
@@ -159,8 +162,8 @@ protected:
 
   std::shared_ptr<Grid<dim>> grid;
 
-  std::shared_ptr<BoundaryDescriptor<0, dim>> boundary_descriptor;
-  std::shared_ptr<FieldFunctions<dim>>        field_functions;
+  std::shared_ptr<BoundaryDescriptor<rank, dim>> boundary_descriptor;
+  std::shared_ptr<FieldFunctions<dim>>           field_functions;
 
   std::string parameter_file;
 
