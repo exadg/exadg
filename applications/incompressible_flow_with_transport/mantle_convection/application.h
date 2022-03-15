@@ -313,15 +313,21 @@ private:
     {
       for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
-        bool face_at_outer_boundary = true;
-        for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+        if(cell->face(f)->at_boundary())
         {
-          if(std::abs(center.distance(cell->face(f)->vertex(v)) - R1) > 1e-12 * R1)
-            face_at_outer_boundary = false;
-        }
+          bool face_at_outer_boundary = true;
+          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+          {
+            if(std::abs(center.distance(cell->face(f)->vertex(v)) - R1) > 1e-12 * R1)
+            {
+              face_at_outer_boundary = false;
+              break;
+            }
+          }
 
-        if(face_at_outer_boundary)
-          cell->face(f)->set_boundary_id(1);
+          if(face_at_outer_boundary)
+            cell->face(f)->set_boundary_id(1);
+        }
       }
     }
 
