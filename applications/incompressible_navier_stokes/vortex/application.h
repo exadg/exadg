@@ -445,7 +445,7 @@ private:
             mesh_type == MeshType::ComplexVolumeManifold)
     {
       // Complex Geometry
-      dealii::Triangulation<dim> tria1, tria2;
+      dealii::Triangulation<dim> tria1, tria2, tria_coarse;
       double const               radius = (right - left) * 0.25;
       double const               width  = right - left;
       dealii::GridGenerator::hyper_shell(
@@ -456,16 +456,17 @@ private:
         dealii::GridTools::rotate(dealii::numbers::PI / 4, tria1);
       }
       dealii::GridGenerator::hyper_ball(tria2, dealii::Point<dim>(), radius);
-      dealii::GridGenerator::merge_triangulations(tria1, tria2, *this->grid->triangulation);
+      tria2.reset_all_manifolds();
+      dealii::GridGenerator::merge_triangulations(tria1, tria2, tria_coarse);
 
       // manifolds
-      this->grid->triangulation->set_all_manifold_ids(0);
+      tria_coarse.set_all_manifold_ids(0);
 
       // vectors of manifold_ids and face_ids required only in case of volume manifold
       std::vector<unsigned int> manifold_ids;
       std::vector<unsigned int> face_ids;
 
-      for(auto cell : this->grid->triangulation->active_cell_iterators())
+      for(auto cell : tria_coarse.active_cell_iterators())
       {
         for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
         {
@@ -518,7 +519,7 @@ private:
 
         for(unsigned int i = 0; i < manifold_ids.size(); ++i)
         {
-          for(auto cell : this->grid->triangulation->active_cell_iterators())
+          for(auto cell : tria_coarse.active_cell_iterators())
           {
             if(cell->manifold_id() == manifold_ids[i])
             {
@@ -526,7 +527,7 @@ private:
               manifold_vec[i] =
                 std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
                   new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
-              this->grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
+              tria_coarse.set_manifold(manifold_ids[i], *(manifold_vec[i]));
             }
           }
         }
@@ -536,8 +537,9 @@ private:
         AssertThrow(false, dealii::ExcMessage("Should not arrive here."));
       }
 
-      // refine globally due to boundary conditions for vortex problem
-      this->grid->triangulation->refine_global(1);
+      tria_coarse.refine_global(1);
+      // make sure that the triangulation does not have refinements at this point
+      dealii::GridGenerator::flatten_triangulation(tria_coarse, *this->grid->triangulation);
     }
     else if(mesh_type == MeshType::Curvilinear)
     {
