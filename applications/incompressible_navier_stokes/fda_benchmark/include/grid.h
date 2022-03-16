@@ -239,21 +239,27 @@ create_grid_and_set_boundary_ids_nozzle(
     {
       for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
-        bool face_at_sphere_boundary = true;
-        for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+        if(cell->face(f)->at_boundary())
         {
-          dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
-          if(std::abs((cell->face(f)->vertex(v) - point).norm() - R_OUTER) > 1e-12)
+          bool face_at_sphere_boundary = true;
+          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
           {
-            face_at_sphere_boundary = false;
+            dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
+            if(std::abs((cell->face(f)->vertex(v) - point).norm() - R_OUTER) > 1e-12)
+            {
+              face_at_sphere_boundary = false;
+              break;
+            }
           }
-        }
-        if(face_at_sphere_boundary)
-        {
-          face_ids.push_back(f);
-          unsigned int manifold_id = manifold_ids.size() + 1;
-          cell->set_all_manifold_ids(manifold_id);
-          manifold_ids.push_back(manifold_id);
+
+          if(face_at_sphere_boundary)
+          {
+            face_ids.push_back(f);
+            unsigned int manifold_id = manifold_ids.size() + 1;
+            cell->set_all_manifold_ids(manifold_id);
+            manifold_ids.push_back(manifold_id);
+            break;
+          }
         }
       }
     }
@@ -262,32 +268,38 @@ create_grid_and_set_boundary_ids_nozzle(
     {
       for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
-        bool   face_at_sphere_boundary = true;
-        double min_z                   = std::numeric_limits<double>::max();
-        double max_z                   = -std::numeric_limits<double>::max();
-
-        for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+        if(cell->face(f)->at_boundary())
         {
-          double const z = cell->face(f)->vertex(v)[2];
-          if(z > max_z)
-            max_z = z;
-          if(z < min_z)
-            min_z = z;
+          bool   face_at_sphere_boundary = true;
+          double min_z                   = std::numeric_limits<double>::max();
+          double max_z                   = -std::numeric_limits<double>::max();
 
-          dealii::Point<dim> point = dealii::Point<dim>(0, 0, z);
-          if(std::abs((cell->face(f)->vertex(v) - point).norm() - radius_function(z)) > 1e-12)
+          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
           {
-            face_at_sphere_boundary = false;
+            double const z = cell->face(f)->vertex(v)[2];
+            if(z > max_z)
+              max_z = z;
+            if(z < min_z)
+              min_z = z;
+
+            dealii::Point<dim> point = dealii::Point<dim>(0, 0, z);
+            if(std::abs((cell->face(f)->vertex(v) - point).norm() - radius_function(z)) > 1e-12)
+            {
+              face_at_sphere_boundary = false;
+              break;
+            }
           }
-        }
-        if(face_at_sphere_boundary)
-        {
-          face_ids_cone.push_back(f);
-          unsigned int manifold_id = MANIFOLD_ID_OFFSET_CONE + manifold_ids_cone.size() + 1;
-          cell->set_all_manifold_ids(manifold_id);
-          manifold_ids_cone.push_back(manifold_id);
-          radius_0_cone.push_back(radius_function(min_z));
-          radius_1_cone.push_back(radius_function(max_z));
+
+          if(face_at_sphere_boundary)
+          {
+            face_ids_cone.push_back(f);
+            unsigned int manifold_id = MANIFOLD_ID_OFFSET_CONE + manifold_ids_cone.size() + 1;
+            cell->set_all_manifold_ids(manifold_id);
+            manifold_ids_cone.push_back(manifold_id);
+            radius_0_cone.push_back(radius_function(min_z));
+            radius_1_cone.push_back(radius_function(max_z));
+            break;
+          }
         }
       }
     }
@@ -296,21 +308,27 @@ create_grid_and_set_boundary_ids_nozzle(
     {
       for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
-        bool face_at_sphere_boundary = true;
-        for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+        if(cell->face(f)->at_boundary())
         {
-          dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
-          if(std::abs((cell->face(f)->vertex(v) - point).norm() - R_INNER) > 1e-12)
+          bool face_at_sphere_boundary = true;
+          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
           {
-            face_at_sphere_boundary = false;
+            dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
+            if(std::abs((cell->face(f)->vertex(v) - point).norm() - R_INNER) > 1e-12)
+            {
+              face_at_sphere_boundary = false;
+              break;
+            }
           }
-        }
-        if(face_at_sphere_boundary)
-        {
-          face_ids.push_back(f);
-          unsigned int manifold_id = manifold_ids.size() + 1;
-          cell->set_all_manifold_ids(manifold_id);
-          manifold_ids.push_back(manifold_id);
+
+          if(face_at_sphere_boundary)
+          {
+            face_ids.push_back(f);
+            unsigned int manifold_id = manifold_ids.size() + 1;
+            cell->set_all_manifold_ids(manifold_id);
+            manifold_ids.push_back(manifold_id);
+            break;
+          }
         }
       }
     }
@@ -326,22 +344,28 @@ create_grid_and_set_boundary_ids_nozzle(
       // one-sided cylindrical manifold for core region
       for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
-        bool face_at_sphere_boundary = true;
-        for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+        if(cell->face(f)->at_boundary())
         {
-          dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
-          if(std::abs((cell->face(f)->vertex(v) - point).norm() - R_INNER) > 1e-12 ||
-             (cell->center() - point2).norm() > R_INNER / std::sqrt(2.0))
+          bool face_at_sphere_boundary = true;
+          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
           {
-            face_at_sphere_boundary = false;
+            dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
+            if(std::abs((cell->face(f)->vertex(v) - point).norm() - R_INNER) > 1e-12 ||
+               (cell->center() - point2).norm() > R_INNER / std::sqrt(2.0))
+            {
+              face_at_sphere_boundary = false;
+              break;
+            }
           }
-        }
-        if(face_at_sphere_boundary)
-        {
-          face_ids.push_back(f);
-          unsigned int manifold_id = manifold_ids.size() + 1;
-          cell->set_all_manifold_ids(manifold_id);
-          manifold_ids.push_back(manifold_id);
+
+          if(face_at_sphere_boundary)
+          {
+            face_ids.push_back(f);
+            unsigned int manifold_id = manifold_ids.size() + 1;
+            cell->set_all_manifold_ids(manifold_id);
+            manifold_ids.push_back(manifold_id);
+            break;
+          }
         }
       }
     }

@@ -311,21 +311,29 @@ private:
     {
       for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
-        bool face_at_outer_boundary = true;
-        for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+        if(cell->face(f)->at_boundary())
         {
-          dealii::Point<dim> point =
-            dealii::Point<dim>(cell->face(f)->vertex(v)[0], cell->face(f)->vertex(v)[1], 0);
+          bool face_at_cylindrical_boundary = true;
+          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+          {
+            dealii::Point<dim> point =
+              dealii::Point<dim>(cell->face(f)->vertex(v)[0], cell->face(f)->vertex(v)[1], 0);
 
-          if(std::abs(point.norm() - R_INNER) > GEOMETRY_TOL)
-            face_at_outer_boundary = false;
-        }
-        if(face_at_outer_boundary)
-        {
-          face_ids.push_back(f);
-          unsigned int manifold_id = manifold_ids.size() + 1;
-          cell->set_all_manifold_ids(manifold_id);
-          manifold_ids.push_back(manifold_id);
+            if(std::abs(point.norm() - R_INNER) > GEOMETRY_TOL)
+            {
+              face_at_cylindrical_boundary = false;
+              break;
+            }
+          }
+
+          if(face_at_cylindrical_boundary)
+          {
+            face_ids.push_back(f);
+            unsigned int manifold_id = manifold_ids.size() + 1;
+            cell->set_all_manifold_ids(manifold_id);
+            manifold_ids.push_back(manifold_id);
+            break;
+          }
         }
       }
     }
@@ -681,8 +689,12 @@ private:
               dealii::Point<dim>(cell->face(f)->vertex(v)[0], cell->face(f)->vertex(v)[1], 0);
 
             if(std::abs(point.norm() - R_OUTER) > TOL)
+            {
               face_at_outer_boundary = false;
+              break;
+            }
           }
+
           if(face_at_outer_boundary)
           {
             cell->face(f)->set_boundary_id(BOUNDARY_ID_WALLS);

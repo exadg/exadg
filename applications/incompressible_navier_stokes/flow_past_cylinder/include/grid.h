@@ -97,9 +97,7 @@ void
 set_boundary_ids(dealii::Triangulation<dim> & tria, bool compute_in_2d)
 {
   // Set the cylinder boundary to 2, outflow to 1, the rest to 0.
-  for(typename dealii::Triangulation<dim>::active_cell_iterator cell = tria.begin();
-      cell != tria.end();
-      ++cell)
+  for(auto cell : tria.active_cell_iterators())
   {
     for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f) // loop over cells
     {
@@ -225,8 +223,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
       // set manifold ID's
       tria.set_all_manifold_ids(0);
 
-      for(dealii::Triangulation<2>::active_cell_iterator cell = tria.begin(); cell != tria.end();
-          ++cell)
+      for(auto cell : tria.active_cell_iterators())
       {
         if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
         {
@@ -242,18 +239,26 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
         {
           for(unsigned int f = 0; f < dealii::GeometryInfo<2>::faces_per_cell; ++f)
           {
-            bool face_at_sphere_boundary = true;
-            for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+            if(cell->face(f)->at_boundary())
             {
-              if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > 1e-12)
-                face_at_sphere_boundary = false;
-            }
-            if(face_at_sphere_boundary)
-            {
-              face_ids.push_back(f);
-              unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
-              cell->set_all_manifold_ids(manifold_id);
-              manifold_ids.push_back(manifold_id);
+              bool face_at_sphere_boundary = true;
+              for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+              {
+                if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > 1e-12)
+                {
+                  face_at_sphere_boundary = false;
+                  break;
+                }
+              }
+
+              if(face_at_sphere_boundary)
+              {
+                face_ids.push_back(f);
+                unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
+                cell->set_all_manifold_ids(manifold_id);
+                manifold_ids.push_back(manifold_id);
+                break;
+              }
             }
           }
         }
@@ -367,8 +372,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
       // set manifold ID's
       tria.set_all_manifold_ids(0);
 
-      for(dealii::Triangulation<2>::active_cell_iterator cell = tria.begin(); cell != tria.end();
-          ++cell)
+      for(auto cell : tria.active_cell_iterators())
       {
         if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
         {
@@ -378,23 +382,33 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
         else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
         {
           if(center.distance(cell->center()) <= R_2)
+          {
             cell->set_all_manifold_ids(MANIFOLD_ID);
+          }
           else
           {
             for(unsigned int f = 0; f < dealii::GeometryInfo<2>::faces_per_cell; ++f)
             {
-              bool face_at_sphere_boundary = true;
-              for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+              if(cell->face(f)->at_boundary())
               {
-                if(std::abs(center.distance(cell->face(f)->vertex(v)) - R_2) > 1e-12)
-                  face_at_sphere_boundary = false;
-              }
-              if(face_at_sphere_boundary)
-              {
-                face_ids.push_back(f);
-                unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
-                cell->set_all_manifold_ids(manifold_id);
-                manifold_ids.push_back(manifold_id);
+                bool face_at_sphere_boundary = true;
+                for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+                {
+                  if(std::abs(center.distance(cell->face(f)->vertex(v)) - R_2) > 1e-12)
+                  {
+                    face_at_sphere_boundary = false;
+                    break;
+                  }
+                }
+
+                if(face_at_sphere_boundary)
+                {
+                  face_ids.push_back(f);
+                  unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
+                  cell->set_all_manifold_ids(manifold_id);
+                  manifold_ids.push_back(manifold_id);
+                  break;
+                }
               }
             }
           }
@@ -495,8 +509,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
       // set manifold ID's
       tria.set_all_manifold_ids(0);
 
-      for(dealii::Triangulation<2>::active_cell_iterator cell = tria.begin(); cell != tria.end();
-          ++cell)
+      for(auto cell : tria.active_cell_iterators())
       {
         if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
         {
@@ -508,18 +521,26 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
           {
             for(unsigned int f = 0; f < dealii::GeometryInfo<2>::faces_per_cell; ++f)
             {
-              bool face_at_sphere_boundary = true;
-              for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+              if(cell->face(f)->at_boundary())
               {
-                if(std::abs(center.distance(cell->face(f)->vertex(v)) - R_3) > 1e-12)
-                  face_at_sphere_boundary = false;
-              }
-              if(face_at_sphere_boundary)
-              {
-                face_ids.push_back(f);
-                unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
-                cell->set_all_manifold_ids(manifold_id);
-                manifold_ids.push_back(manifold_id);
+                bool face_at_sphere_boundary = true;
+                for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+                {
+                  if(std::abs(center.distance(cell->face(f)->vertex(v)) - R_3) > 1e-12)
+                  {
+                    face_at_sphere_boundary = false;
+                    break;
+                  }
+                }
+
+                if(face_at_sphere_boundary)
+                {
+                  face_ids.push_back(f);
+                  unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
+                  cell->set_all_manifold_ids(manifold_id);
+                  manifold_ids.push_back(manifold_id);
+                  break;
+                }
               }
             }
           }
@@ -601,25 +622,32 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
       // set manifold ID's
       tria.set_all_manifold_ids(0);
 
-      for(dealii::Triangulation<2>::active_cell_iterator cell = tria.begin(); cell != tria.end();
-          ++cell)
+      for(auto cell : tria.active_cell_iterators())
       {
         if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
         {
           for(unsigned int f = 0; f < dealii::GeometryInfo<2>::faces_per_cell; ++f)
           {
-            bool face_at_sphere_boundary = true;
-            for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+            if(cell->face(f)->at_boundary())
             {
-              if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > 1e-12)
-                face_at_sphere_boundary = false;
-            }
-            if(face_at_sphere_boundary)
-            {
-              face_ids.push_back(f);
-              unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
-              cell->set_all_manifold_ids(manifold_id);
-              manifold_ids.push_back(manifold_id);
+              bool face_at_sphere_boundary = true;
+              for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+              {
+                if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > 1e-12)
+                {
+                  face_at_sphere_boundary = false;
+                  break;
+                }
+              }
+
+              if(face_at_sphere_boundary)
+              {
+                face_ids.push_back(f);
+                unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
+                cell->set_all_manifold_ids(manifold_id);
+                manifold_ids.push_back(manifold_id);
+                break;
+              }
             }
           }
         }
@@ -660,8 +688,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
 
     if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
     {
-      for(dealii::Triangulation<3>::active_cell_iterator cell = tria.begin(); cell != tria.end();
-          ++cell)
+      for(auto cell : tria.active_cell_iterators())
       {
         for(unsigned int f = 0; f < dealii::GeometryInfo<3>::faces_per_cell; ++f)
         {
@@ -675,25 +702,32 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
     }
     else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
     {
-      for(dealii::Triangulation<3>::active_cell_iterator cell = tria.begin(); cell != tria.end();
-          ++cell)
+      for(auto cell : tria.active_cell_iterators())
       {
         for(unsigned int f = 0; f < dealii::GeometryInfo<3>::faces_per_cell; ++f)
         {
-          bool face_at_sphere_boundary = true;
-          for(unsigned int v = 0; v < dealii::GeometryInfo<3 - 1>::vertices_per_cell; ++v)
+          if(cell->face(f)->at_boundary())
           {
-            if(std::abs(dealii::Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
-                          .distance(cell->face(f)->vertex(v)) -
-                        R) > 1e-12)
-              face_at_sphere_boundary = false;
-          }
-          if(face_at_sphere_boundary)
-          {
-            face_ids.push_back(f);
-            unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
-            cell->set_all_manifold_ids(manifold_id);
-            manifold_ids.push_back(manifold_id);
+            bool face_at_sphere_boundary = true;
+            for(unsigned int v = 0; v < dealii::GeometryInfo<3 - 1>::vertices_per_cell; ++v)
+            {
+              if(std::abs(dealii::Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
+                            .distance(cell->face(f)->vertex(v)) -
+                          R) > 1e-12)
+              {
+                face_at_sphere_boundary = false;
+                break;
+              }
+            }
+
+            if(face_at_sphere_boundary)
+            {
+              face_ids.push_back(f);
+              unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
+              cell->set_all_manifold_ids(manifold_id);
+              manifold_ids.push_back(manifold_id);
+              break;
+            }
           }
         }
       }
@@ -714,8 +748,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
 
     if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
     {
-      for(dealii::Triangulation<3>::active_cell_iterator cell = tria.begin(); cell != tria.end();
-          ++cell)
+      for(auto cell : tria.active_cell_iterators())
       {
         if(dealii::Point<3>(X_C, Y_C, cell->center()[2]).distance(cell->center()) <= R_2)
           cell->set_all_manifold_ids(MANIFOLD_ID);
@@ -723,8 +756,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
     }
     else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
     {
-      for(dealii::Triangulation<3>::active_cell_iterator cell = tria.begin(); cell != tria.end();
-          ++cell)
+      for(auto cell : tria.active_cell_iterators())
       {
         if(dealii::Point<3>(X_C, Y_C, cell->center()[2]).distance(cell->center()) <= R_2)
           cell->set_all_manifold_ids(MANIFOLD_ID);
@@ -732,20 +764,28 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
         {
           for(unsigned int f = 0; f < dealii::GeometryInfo<3>::faces_per_cell; ++f)
           {
-            bool face_at_sphere_boundary = true;
-            for(unsigned int v = 0; v < dealii::GeometryInfo<3 - 1>::vertices_per_cell; ++v)
+            if(cell->face(f)->at_boundary())
             {
-              if(std::abs(dealii::Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
-                            .distance(cell->face(f)->vertex(v)) -
-                          R_2) > 1e-12)
-                face_at_sphere_boundary = false;
-            }
-            if(face_at_sphere_boundary)
-            {
-              face_ids.push_back(f);
-              unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
-              cell->set_all_manifold_ids(manifold_id);
-              manifold_ids.push_back(manifold_id);
+              bool face_at_sphere_boundary = true;
+              for(unsigned int v = 0; v < dealii::GeometryInfo<3 - 1>::vertices_per_cell; ++v)
+              {
+                if(std::abs(dealii::Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
+                              .distance(cell->face(f)->vertex(v)) -
+                            R_2) > 1e-12)
+                {
+                  face_at_sphere_boundary = false;
+                  break;
+                }
+              }
+
+              if(face_at_sphere_boundary)
+              {
+                face_ids.push_back(f);
+                unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
+                cell->set_all_manifold_ids(manifold_id);
+                manifold_ids.push_back(manifold_id);
+                break;
+              }
             }
           }
         }
@@ -767,8 +807,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
 
     if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
     {
-      for(dealii::Triangulation<3>::active_cell_iterator cell = tria.begin(); cell != tria.end();
-          ++cell)
+      for(auto cell : tria.active_cell_iterators())
       {
         if(dealii::Point<3>(X_C, Y_C, cell->center()[2]).distance(cell->center()) <= R_3)
           cell->set_all_manifold_ids(MANIFOLD_ID);
@@ -776,20 +815,28 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
         {
           for(unsigned int f = 0; f < dealii::GeometryInfo<3>::faces_per_cell; ++f)
           {
-            bool face_at_sphere_boundary = true;
-            for(unsigned int v = 0; v < dealii::GeometryInfo<3 - 1>::vertices_per_cell; ++v)
+            if(cell->face(f)->at_boundary())
             {
-              if(std::abs(dealii::Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
-                            .distance(cell->face(f)->vertex(v)) -
-                          R_3) > 1e-12)
-                face_at_sphere_boundary = false;
-            }
-            if(face_at_sphere_boundary)
-            {
-              face_ids.push_back(f);
-              unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
-              cell->set_all_manifold_ids(manifold_id);
-              manifold_ids.push_back(manifold_id);
+              bool face_at_sphere_boundary = true;
+              for(unsigned int v = 0; v < dealii::GeometryInfo<3 - 1>::vertices_per_cell; ++v)
+              {
+                if(std::abs(dealii::Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
+                              .distance(cell->face(f)->vertex(v)) -
+                            R_3) > 1e-12)
+                {
+                  face_at_sphere_boundary = false;
+                  break;
+                }
+              }
+
+              if(face_at_sphere_boundary)
+              {
+                face_ids.push_back(f);
+                unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
+                cell->set_all_manifold_ids(manifold_id);
+                manifold_ids.push_back(manifold_id);
+                break;
+              }
             }
           }
         }
@@ -810,25 +857,32 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
 
     if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
     {
-      for(dealii::Triangulation<3>::active_cell_iterator cell = tria.begin(); cell != tria.end();
-          ++cell)
+      for(auto cell : tria.active_cell_iterators())
       {
         for(unsigned int f = 0; f < dealii::GeometryInfo<3>::faces_per_cell; ++f)
         {
-          bool face_at_sphere_boundary = true;
-          for(unsigned int v = 0; v < dealii::GeometryInfo<3 - 1>::vertices_per_cell; ++v)
+          if(cell->face(f)->at_boundary())
           {
-            if(std::abs(dealii::Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
-                          .distance(cell->face(f)->vertex(v)) -
-                        R) > 1e-12)
-              face_at_sphere_boundary = false;
-          }
-          if(face_at_sphere_boundary)
-          {
-            face_ids.push_back(f);
-            unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
-            cell->set_all_manifold_ids(manifold_id);
-            manifold_ids.push_back(manifold_id);
+            bool face_at_sphere_boundary = true;
+            for(unsigned int v = 0; v < dealii::GeometryInfo<3 - 1>::vertices_per_cell; ++v)
+            {
+              if(std::abs(dealii::Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
+                            .distance(cell->face(f)->vertex(v)) -
+                          R) > 1e-12)
+              {
+                face_at_sphere_boundary = false;
+                break;
+              }
+            }
+
+            if(face_at_sphere_boundary)
+            {
+              face_ids.push_back(f);
+              unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
+              cell->set_all_manifold_ids(manifold_id);
+              manifold_ids.push_back(manifold_id);
+              break;
+            }
           }
         }
       }
@@ -1001,9 +1055,7 @@ void
 set_boundary_ids(dealii::Triangulation<dim> & tria)
 {
   // Set the wall boundary and inflow to 0, cylinder boundary to 2, outflow to 1
-  for(typename dealii::Triangulation<dim>::active_cell_iterator cell = tria.begin();
-      cell != tria.end();
-      ++cell)
+  for(auto cell : tria.active_cell_iterators())
   {
     for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f) // loop over cells
     {

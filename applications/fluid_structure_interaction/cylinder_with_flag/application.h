@@ -421,11 +421,13 @@ private:
 
     for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
+      double const TOL = 1.e-12;
+
+      // boundary IDs
       for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
-        double const x   = cell->face(f)->center()(0);
-        double const y   = cell->face(f)->center()(1);
-        double const TOL = 1.e-12;
+        double const x = cell->face(f)->center()(0);
+        double const y = cell->face(f)->center()(1);
 
         if(std::fabs(y - Y_0) < TOL || std::fabs(y - H) < TOL)
         {
@@ -452,22 +454,30 @@ private:
         {
           cell->face(f)->set_boundary_id(BOUNDARY_ID_FLAG);
         }
+      }
 
-        // manifold IDs
-        for(unsigned int f = 0; f < dealii::GeometryInfo<2>::faces_per_cell; ++f)
+      // manifold IDs
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      {
+        if(cell->face(f)->at_boundary())
         {
-          bool face_at_sphere_boundary = cell->face(f)->at_boundary();
-          for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+          bool face_at_sphere_boundary = true;
+          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
           {
             if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > TOL)
+            {
               face_at_sphere_boundary = false;
+              break;
+            }
           }
+
           if(face_at_sphere_boundary)
           {
             face_ids.push_back(f);
             unsigned int manifold_id = manifold_id_start + manifold_ids.size() + 1;
             cell->set_all_manifold_ids(manifold_id);
             manifold_ids.push_back(manifold_id);
+            break;
           }
         }
       }
@@ -930,47 +940,59 @@ private:
 
     for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
+      double const TOL = 1.e-12;
+
+      // boundary IDs
       for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
-        double const x   = cell->face(f)->center()(0);
-        double const TOL = 1.e-12;
+        double const x = cell->face(f)->center()(0);
 
-        if(STRUCTURE_COVERS_FLAG_ONLY)
+        if(cell->face(f)->at_boundary())
         {
-          if(cell->face(f)->at_boundary() &&
-             (x < X_C + R * std::cos(std::asin(T / (2.0 * R))) + TOL))
+          if(STRUCTURE_COVERS_FLAG_ONLY)
           {
-            cell->face(f)->set_boundary_id(BOUNDARY_ID_CYLINDER);
+            if(x < X_C + R * std::cos(std::asin(T / (2.0 * R))) + TOL)
+            {
+              cell->face(f)->set_boundary_id(BOUNDARY_ID_CYLINDER);
+            }
+          }
+          else
+          {
+            if(x < X_C + R * std::cos(std::asin(T / (2.0 * R))))
+            {
+              cell->face(f)->set_boundary_id(BOUNDARY_ID_CYLINDER);
+            }
+          }
+
+          if(x > X_C + R * std::cos(std::asin(T / (2.0 * R))))
+          {
+            cell->face(f)->set_boundary_id(BOUNDARY_ID_FLAG);
           }
         }
-        else
-        {
-          if(cell->face(f)->at_boundary() && (x < X_C + R * std::cos(std::asin(T / (2.0 * R)))))
-          {
-            cell->face(f)->set_boundary_id(BOUNDARY_ID_CYLINDER);
-          }
-        }
+      }
 
-        if(cell->face(f)->at_boundary() && (x > X_C + R * std::cos(std::asin(T / (2.0 * R)))))
+      // manifold IDs
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      {
+        if(cell->face(f)->at_boundary())
         {
-          cell->face(f)->set_boundary_id(BOUNDARY_ID_FLAG);
-        }
-
-        // manifold IDs
-        for(unsigned int f = 0; f < dealii::GeometryInfo<2>::faces_per_cell; ++f)
-        {
-          bool face_at_sphere_boundary = cell->face(f)->at_boundary();
-          for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+          bool face_at_sphere_boundary = true;
+          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
           {
             if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > TOL)
+            {
               face_at_sphere_boundary = false;
+              break;
+            }
           }
+
           if(face_at_sphere_boundary)
           {
             face_ids.push_back(f);
             unsigned int manifold_id = manifold_id_start + manifold_ids.size() + 1;
             cell->set_all_manifold_ids(manifold_id);
             manifold_ids.push_back(manifold_id);
+            break;
           }
         }
       }
