@@ -244,8 +244,6 @@ private:
                         right,
                         curvilinear_mesh,
                         deformation);
-
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void
