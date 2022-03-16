@@ -77,21 +77,10 @@ public:
     double const       right = 1.0;
     dealii::Point<dim> p1, p2;
     p1[0] = 0.0;
-    p1[1] = 0.0;
+    p1[1] = 0.5;
     p2[0] = right;
-    p2[1] = 1.0;
+    p2[1] = 1.5;
     dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation, {3, 3}, p1, p2);
-
-    for(auto cell : *this->grid->triangulation)
-    {
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
-      {
-        if((std::fabs(cell.face(f)->center()(0) - right) < 1e-12))
-        {
-          cell.face(f)->set_boundary_id(1);
-        }
-      }
-    }
 
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
@@ -110,7 +99,8 @@ public:
       pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     this->boundary_descriptor->dirichlet_cached_bc.insert(
-      pair_cached(1, new FunctionCached<rank, dim>()));
+      pair_cached(std::numeric_limits<dealii::types::boundary_id>::max() - 1,
+                  new FunctionCached<rank, dim>()));
   }
 
   void
@@ -199,17 +189,6 @@ private:
     p2[1] = 1.0;
     dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation, {2, 2}, p1, p2);
 
-    for(auto cell : *this->grid->triangulation)
-    {
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
-      {
-        if((std::fabs(cell.face(f)->center()(0) - left) < 1e-12))
-        {
-          cell.face(f)->set_boundary_id(1);
-        }
-      }
-    }
-
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
@@ -226,7 +205,8 @@ private:
     this->boundary_descriptor->dirichlet_bc.insert(
       pair(0, new dealii::Functions::ZeroFunction<dim>(n_components)));
     this->boundary_descriptor->dirichlet_cached_bc.insert(
-      pair_cached(1, new FunctionCached<rank, dim>()));
+      pair_cached(std::numeric_limits<dealii::types::boundary_id>::max() - 1,
+                  new FunctionCached<rank, dim>()));
   }
 
   void
@@ -261,7 +241,7 @@ class Application : public ApplicationOversetGridsBase<dim, n_components, Number
 {
 public:
   Application(std::string input_file, MPI_Comm const & comm)
-    : ApplicationOversetGridsBase<dim, n_components, Number>(input_file)
+    : ApplicationOversetGridsBase<dim, n_components, Number>(input_file, comm)
   {
     this->domain1 = std::make_shared<Domain1<dim, n_components, Number>>(input_file, comm);
     this->domain2 = std::make_shared<Domain2<dim, n_components, Number>>(input_file, comm);
