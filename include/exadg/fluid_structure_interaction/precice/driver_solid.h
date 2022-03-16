@@ -140,7 +140,6 @@ public:
     setup_interface_coupling();
 
     this->timer_tree.insert({"FSI", "Setup"}, timer.wall_time());
-    /*********************************** INTERFACE COUPLING *************************************/
   }
 
 
@@ -264,8 +263,6 @@ private:
 
   // the solver
   std::shared_ptr<SolverStructure<dim, Number>> structure;
-
-  /**************************************** STRUCTURE *****************************************/
 };
 
 } // namespace preCICE

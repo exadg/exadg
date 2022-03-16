@@ -34,14 +34,8 @@ namespace preCICE
 {
 /**
  * This class declares all preCICE parameters, which can be specified in the
- * parameter file. The subsection about preCICE configurations is directly
- * interlinked to the Adapter class.
- */
-
-/**
- * @brief ConfigurationParameters: Specifies preCICE related information.
- *        A lot of these information need to be consistent with the
- *        precice-config.xml file.
+ * parameter file. A lot of these information need to be consistent with the
+ * precice-config.xml file.
  */
 struct ConfigurationParameters
 {

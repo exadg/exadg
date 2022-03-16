@@ -60,12 +60,6 @@ public:
     print_general_info<Number>(pcout, mpi_comm, is_test);
   }
 
-  static void
-  add_parameters(dealii::ParameterHandler & prm)
-  {
-    (void)prm;
-  }
-
   virtual void
   setup() = 0;
 
