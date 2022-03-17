@@ -268,8 +268,9 @@ private:
   void
   create_grid() final
   {
+    double R_INNER_FLUID = R_INNER*0.8;
     dealii::Triangulation<2> tria_2d;
-    dealii::GridGenerator::hyper_ball(tria_2d, dealii::Point<2>(), R_INNER);
+    dealii::GridGenerator::hyper_ball(tria_2d, dealii::Point<2>(), R_INNER_FLUID);
     dealii::GridGenerator::extrude_triangulation(tria_2d,
                                                  N_CELLS_AXIAL / 4 + 1,
                                                  L,
@@ -319,7 +320,7 @@ private:
             dealii::Point<dim> point =
               dealii::Point<dim>(cell->face(f)->vertex(v)[0], cell->face(f)->vertex(v)[1], 0);
 
-            if(std::abs(point.norm() - R_INNER) > GEOMETRY_TOL)
+            if(std::abs(point.norm() - R_INNER_FLUID) > GEOMETRY_TOL)
             {
               face_at_cylindrical_boundary = false;
               break;
