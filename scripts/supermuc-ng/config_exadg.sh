@@ -34,6 +34,7 @@ cmake \
   -D EXADG_WITH_FFTW=ON \
   -D FFTW_LIB="$WORKING_DIRECTORY/sw/fftw-3.3.7-install/lib/" \
   -D FFTW_INCLUDE="$WORKING_DIRECTORY/sw/fftw-3.3.7-install/include" \
+  -D EXADG_WITH_LIKWID=ON \
   -D LIKWID_LIB="/dss/dsshome1/lrz/sys/spack/release/19.1/opt/x86_avx512/likwid/4.3.3-gcc-axo3q7s/lib" \
   -D LIKWID_INCLUDE="/dss/dsshome1/lrz/sys/spack/release/19.1/opt/x86_avx512/likwid/4.3.3-gcc-axo3q7s/include" \
   -D BUILD_SHARED_LIBS=ON \

@@ -42,6 +42,7 @@ cmake \
     -D EXADG_WITH_FFTW=ON \
     -D FFTW_LIB="$FFTW/lib" \
     -D FFTW_INCLUDE="$FFTW/include" \
+    -D EXADG_WITH_LIKWID=ON \
     -D LIKWID_LIB="$LIKWID/lib" \
     -D LIKWID_INCLUDE="$LIKWID/include" \
     -D BUILD_SHARED_LIBS=ON \
