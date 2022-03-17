@@ -90,7 +90,7 @@ struct ThroughputParameters
   {
   }
 
-  ThroughputParameters(const std::string & input_file)
+  ThroughputParameters(std::string const & input_file)
   {
     dealii::ParameterHandler prm;
     add_parameters(prm);

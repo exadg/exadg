@@ -36,7 +36,7 @@ struct SpatialResolutionParameters
   {
   }
 
-  SpatialResolutionParameters(const std::string & input_file)
+  SpatialResolutionParameters(std::string const & input_file)
   {
     dealii::ParameterHandler prm;
     add_parameters(prm);
@@ -85,7 +85,7 @@ struct TemporalResolutionParameters
   {
   }
 
-  TemporalResolutionParameters(const std::string & input_file)
+  TemporalResolutionParameters(std::string const & input_file)
   {
     dealii::ParameterHandler prm;
     add_parameters(prm);
@@ -121,7 +121,7 @@ struct ResolutionParameters
   {
   }
 
-  ResolutionParameters(const std::string & input_file)
+  ResolutionParameters(std::string const & input_file)
   {
     dealii::ParameterHandler prm;
     add_parameters(prm);

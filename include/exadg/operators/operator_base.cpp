@@ -210,7 +210,7 @@ OperatorBase<dim, Number, n_components>::n() const
 
 template<int dim, typename Number, int n_components>
 Number
-OperatorBase<dim, Number, n_components>::el(unsigned int const, const unsigned int) const
+OperatorBase<dim, Number, n_components>::el(unsigned int const, unsigned int const) const
 {
   AssertThrow(false, dealii::ExcMessage("Matrix-free does not allow for entry access"));
   return Number();

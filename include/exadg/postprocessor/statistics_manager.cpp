@@ -350,7 +350,7 @@ StatisticsManager<dim, Number>::evaluate(std::vector<VectorType> const & velocit
 
 template<int dim, typename Number>
 void
-StatisticsManager<dim, Number>::write_output(const std::string filename,
+StatisticsManager<dim, Number>::write_output(std::string const filename,
                                              double const      dynamic_viscosity,
                                              double const      density)
 {

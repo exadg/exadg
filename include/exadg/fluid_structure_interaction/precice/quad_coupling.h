@@ -41,12 +41,12 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 class QuadCoupling : public CouplingBase<dim, data_dim, VectorizedArrayType>
 {
 public:
-  QuadCoupling(std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+  QuadCoupling(std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
                std::shared_ptr<precice::SolverInterface>                                   precice,
-               const std::string                mesh_name,
-               const dealii::types::boundary_id surface_id,
-               const int                        mf_dof_index,
-               const int                        mf_quad_index);
+               std::string const                mesh_name,
+               dealii::types::boundary_id const surface_id,
+               int const                        mf_dof_index,
+               int const                        mf_quad_index);
 
   /// Alias as defined in the base class
   using FEFaceIntegrator =
@@ -73,8 +73,8 @@ public:
    *            passing it into this function
    */
   virtual void
-  write_data(const dealii::LinearAlgebra::distributed::Vector<double> & data_vector,
-             const std::string &                                        data_name) override;
+  write_data(dealii::LinearAlgebra::distributed::Vector<double> const & data_vector,
+             std::string const &                                        data_name) override;
 
 private:
   /**
@@ -88,18 +88,18 @@ private:
    */
   void
   write_data_factory(
-    const dealii::LinearAlgebra::distributed::Vector<double> &          data_vector,
-    const int                                                           write_data_id,
-    const dealii::EvaluationFlags::EvaluationFlags                      flags,
-    const std::function<value_type(FEFaceIntegrator &, unsigned int)> & get_write_value);
+    dealii::LinearAlgebra::distributed::Vector<double> const &          data_vector,
+    int const                                                           write_data_id,
+    dealii::EvaluationFlags::EvaluationFlags const                     flags,
+    std::function<value_type(FEFaceIntegrator &, unsigned int)> const & get_write_value);
 
   /// The preCICE IDs
   std::vector<std::array<int, VectorizedArrayType::size()>> coupling_nodes_ids;
 
   /// Indices related to the FEEvaluation (have a look at the initialization
   /// of the MatrixFree)
-  const int mf_dof_index;
-  const int mf_quad_index;
+  int const mf_dof_index;
+  int const mf_quad_index;
 
   virtual std::string
   get_surface_type() const override;
@@ -109,12 +109,12 @@ private:
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 QuadCoupling<dim, data_dim, VectorizedArrayType>::QuadCoupling(
-  std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+  std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
   std::shared_ptr<precice::SolverInterface>                                   precice,
-  const std::string                                                           mesh_name,
-  const dealii::types::boundary_id                                            surface_id,
-  const int                                                                   mf_dof_index_,
-  const int                                                                   mf_quad_index_)
+  std::string const                                                           mesh_name,
+  dealii::types::boundary_id const                                            surface_id,
+  int const                                                                   mf_dof_index_,
+  int const                                                                   mf_quad_index_)
   : CouplingBase<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
     mf_dof_index(mf_dof_index_),
     mf_quad_index(mf_quad_index_)
@@ -148,19 +148,19 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
       this->matrix_free->n_boundary_face_batches() + this->matrix_free->n_inner_face_batches();
       ++face)
   {
-    const auto boundary_id = this->matrix_free->get_boundary_id(face);
+    auto const boundary_id = this->matrix_free->get_boundary_id(face);
 
     // Only for interface nodes
     if(boundary_id != this->dealii_boundary_surface_id)
       continue;
 
     phi.reinit(face);
-    const int active_faces = this->matrix_free->n_active_entries_per_face_batch(face);
+    int const active_faces = this->matrix_free->n_active_entries_per_face_batch(face);
 
     // Loop over all quadrature points and pass the vertices to preCICE
     for(unsigned int q = 0; q < phi.n_q_points; ++q)
     {
-      const auto local_vertex = phi.quadrature_point(q);
+      auto const local_vertex = phi.quadrature_point(q);
 
       // Transform dealii::Point<Vectorized> into preCICE conform format
       // We store here also the potential 'dummy'/empty lanes (not only
@@ -196,10 +196,10 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data(
-  const dealii::LinearAlgebra::distributed::Vector<double> & data_vector,
-  const std::string &                                        data_name)
+  dealii::LinearAlgebra::distributed::Vector<double> const & data_vector,
+  std::string const &                                        data_name)
 {
-  const int write_data_id = this->write_data_map.at(data_name);
+  int const write_data_id = this->write_data_map.at(data_name);
 
   switch(this->write_data_type)
   {
@@ -227,10 +227,10 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data(
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data_factory(
-  const dealii::LinearAlgebra::distributed::Vector<double> &          data_vector,
-  const int                                                           write_data_id,
-  const dealii::EvaluationFlags::EvaluationFlags                      flags,
-  const std::function<value_type(FEFaceIntegrator &, unsigned int)> & get_write_value)
+  dealii::LinearAlgebra::distributed::Vector<double> const &          data_vector,
+  int const                                                           write_data_id,
+  dealii::EvaluationFlags::EvaluationFlags const                      flags,
+  std::function<value_type(FEFaceIntegrator &, unsigned int)> const & get_write_value)
 {
   Assert(write_data_id != -1, dealii::ExcNotInitialized());
   Assert(coupling_nodes_ids.size() > 0, dealii::ExcNotInitialized());
@@ -249,7 +249,7 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data_factory(
       this->matrix_free->n_boundary_face_batches() + this->matrix_free->n_inner_face_batches();
       ++face)
   {
-    const auto boundary_id = this->matrix_free->get_boundary_id(face);
+    auto const boundary_id = this->matrix_free->get_boundary_id(face);
 
     // Only for interface nodes
     if(boundary_id != this->dealii_boundary_surface_id)
@@ -259,12 +259,12 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data_factory(
     phi.reinit(face);
     phi.read_dof_values_plain(data_vector);
     phi.evaluate(flags);
-    const int active_faces = this->matrix_free->n_active_entries_per_face_batch(face);
+    int const active_faces = this->matrix_free->n_active_entries_per_face_batch(face);
 
     for(unsigned int q = 0; q < phi.n_q_points; ++q, ++index)
     {
       Assert(index != coupling_nodes_ids.end(), dealii::ExcInternalError());
-      const auto local_data = get_write_value(phi, q);
+      auto const local_data = get_write_value(phi, q);
 
       // Constexpr evaluation required in order to comply with the
       // compiler here

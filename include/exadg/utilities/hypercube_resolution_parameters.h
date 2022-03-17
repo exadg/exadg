@@ -174,7 +174,7 @@ struct HypercubeResolutionParameters
   {
   }
 
-  HypercubeResolutionParameters(const std::string & input_file, unsigned int const dim) : dim(dim)
+  HypercubeResolutionParameters(std::string const & input_file, unsigned int const dim) : dim(dim)
   {
     dealii::ParameterHandler prm;
     add_parameters(prm);

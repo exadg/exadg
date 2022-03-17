@@ -59,7 +59,7 @@ create_periodic_box(std::shared_ptr<dealii::Triangulation<dim>>              tri
         cell != triangulation->end();
         ++cell)
     {
-      for(const unsigned int v : cell->vertex_indices())
+      for(unsigned int const v : cell->vertex_indices())
       {
         if(vertex_touched[cell->vertex_index(v)] == false)
         {
@@ -76,7 +76,7 @@ create_periodic_box(std::shared_ptr<dealii::Triangulation<dim>>              tri
                                                      endc = triangulation->end();
   for(; cell != endc; ++cell)
   {
-    for(const unsigned int face_number : cell->face_indices())
+    for(unsigned int const face_number : cell->face_indices())
     {
       // x-direction
       if((std::fabs(cell->face(face_number)->center()(0) - left) < 1e-12))

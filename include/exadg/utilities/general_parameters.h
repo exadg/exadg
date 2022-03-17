@@ -33,7 +33,7 @@ struct GeneralParameters
   {
   }
 
-  GeneralParameters(const std::string & input_file)
+  GeneralParameters(std::string const & input_file)
   {
     dealii::ParameterHandler prm;
     add_parameters(prm);

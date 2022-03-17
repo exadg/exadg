@@ -81,7 +81,7 @@ public:
    *             solver (using quadrature points for reading)
    */
   template<typename ParameterClass>
-  Adapter(const ParameterClass & parameters, MPI_Comm mpi_comm);
+  Adapter(ParameterClass const & parameters, MPI_Comm mpi_comm);
 
 
   /**
@@ -95,30 +95,30 @@ public:
    *             your initial condition.
    */
   void
-  initialize_precice(const VectorType & dealii_to_precice);
+  initialize_precice(VectorType const & dealii_to_precice);
 
   void
   add_write_surface(
-    const dealii::types::boundary_id                                            surface_id,
-    const std::string &                                                         mesh_name,
-    const std::vector<std::string> &                                            write_data_names,
-    const WriteDataType                                                         write_data_type,
-    std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
-    const unsigned int                                                          dof_index,
-    const unsigned int                                                          write_quad_index);
+    dealii::types::boundary_id const                                            surface_id,
+    std::string const &                                                         mesh_name,
+    std::vector<std::string> const &                                            write_data_names,
+    WriteDataType const                                                         write_data_type,
+    std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
+    unsigned int const                                                          dof_index,
+    unsigned int const                                                          write_quad_index);
 
 
   void
-  add_read_surface(std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+  add_read_surface(std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
                    std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>> interface_data,
-                   const std::string &                                            mesh_name,
-                   const std::vector<std::string> &                               read_data_name);
+                   std::string const &                                            mesh_name,
+                   std::vector<std::string> const &                               read_data_name);
 
   /**
    * @brief      Advances preCICE after every timestep
    */
   void
-  advance(const double computed_timestep_length);
+  advance(double const computed_timestep_length);
 
   /**
    * @brief      Saves current state of time dependent variables in case of an
@@ -133,7 +133,7 @@ public:
    *             both functions.
    */
   void
-  save_current_state_if_required(const std::function<void()> & save_state);
+  save_current_state_if_required(std::function<void()> const & save_state);
 
   /**
    * @brief      Reloads the previously stored variables in case of an implicit
@@ -150,17 +150,17 @@ public:
    *             vector must be the same for both functions.
    */
   void
-  reload_old_state_if_required(const std::function<void()> & reload_old_state);
+  reload_old_state_if_required(std::function<void()> const & reload_old_state);
 
 
   void
-  write_data(const std::string & write_mesh_name,
-             const std::string & write_data_name,
-             const VectorType &  write_data,
-             const double        computed_timestep_length);
+  write_data(std::string const & write_mesh_name,
+             std::string const & write_data_name,
+             VectorType const &  write_data,
+             double const        computed_timestep_length);
 
   void
-  read_block_data(const std::string & mesh_name, const std::string & data_name) const;
+  read_block_data(std::string const & mesh_name, const std::string & data_name) const;
 
   /**
    * @brief is_coupling_ongoing Calls the preCICE API function isCouplingOnGoing
@@ -200,7 +200,7 @@ private:
 
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 template<typename ParameterClass>
-Adapter<dim, data_dim, VectorType, VectorizedArrayType>::Adapter(const ParameterClass & parameters,
+Adapter<dim, data_dim, VectorType, VectorizedArrayType>::Adapter(ParameterClass const & parameters,
                                                                  MPI_Comm               mpi_comm)
 
 {
@@ -219,16 +219,16 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::Adapter(const Parameter
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_surface(
-  const dealii::types::boundary_id dealii_boundary_surface_id,
-  const std::string &              mesh_name,
-  const std::vector<std::string> & write_data_names,
-  const WriteDataType              write_data_type,
-  std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
-  const unsigned int                                                          dof_index,
-  const unsigned int                                                          quad_index)
+  dealii::types::boundary_id const dealii_boundary_surface_id,
+  std::string const &              mesh_name,
+  std::vector<std::string> const & write_data_names,
+  WriteDataType const              write_data_type,
+  std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
+  unsigned int const                                                          dof_index,
+  unsigned int const                                                          quad_index)
 {
   // Check, if we already have such an interface
-  const auto found_reader = reader.find(mesh_name);
+  auto const found_reader = reader.find(mesh_name);
 
   if(found_reader != reader.end())
   {
@@ -252,8 +252,8 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_surface(
   }
 
   // Register the write data
-  const std::vector<dealii::Point<dim>> points;
-  for(const auto & data_name : write_data_names)
+  std::vector<dealii::Point<dim>> const points;
+  for(auto const & data_name : write_data_names)
     writer.at(mesh_name)->add_write_data(data_name);
 
   writer.at(mesh_name)->set_write_data_type(write_data_type);
@@ -266,16 +266,16 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_surface(
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_read_surface(
-  std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+  std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
   std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>>              interface_data,
-  const std::string &                                                         mesh_name,
-  const std::vector<std::string> &                                            read_data_names)
+  std::string const &                                                         mesh_name,
+  std::vector<std::string> const &                                            read_data_names)
 {
   reader.insert({mesh_name,
                  std::make_shared<ExaDGCoupling<dim, data_dim, VectorizedArrayType>>(
                    data, precice, mesh_name, interface_data)});
 
-  for(const auto & data_name : read_data_names)
+  for(auto const & data_name : read_data_names)
     reader.at(mesh_name)->add_read_data(data_name);
   reader.at(mesh_name)->define_coupling_mesh();
 }
@@ -285,7 +285,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_read_surface(
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::initialize_precice(
-  const VectorType & dealii_to_precice)
+  VectorType const & dealii_to_precice)
 {
   // if(!dealii_to_precice.has_ghost_elements())
   //   dealii_to_precice.update_ghost_values();
@@ -318,10 +318,10 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::initialize_precice(
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::write_data(
-  const std::string & write_mesh_name,
-  const std::string & write_data_name,
-  const VectorType &  dealii_to_precice,
-  const double        computed_timestep_length)
+  std::string const & write_mesh_name,
+  std::string const & write_data_name,
+  VectorType const &  dealii_to_precice,
+  double const        computed_timestep_length)
 {
   if(precice->isWriteDataRequired(computed_timestep_length))
     writer.at(write_mesh_name)->write_data(dealii_to_precice, write_data_name);
@@ -330,7 +330,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::write_data(
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::advance(
-  const double computed_timestep_length)
+  double const computed_timestep_length)
 {
   // Here, we need to specify the computed time step length and pass it to
   // preCICE
@@ -343,8 +343,8 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::advance(
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::read_block_data(
-  const std::string & mesh_name,
-  const std::string & data_name) const
+  std::string const & mesh_name,
+  std::string const & data_name) const
 {
   reader.at(mesh_name)->read_block_data(data_name);
 }
@@ -354,7 +354,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::read_block_data(
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 inline void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::save_current_state_if_required(
-  const std::function<void()> & save_state)
+  std::function<void()> const & save_state)
 {
   // First, we let preCICE check, whether we need to store the variables.
   // Then, the data is stored in the class
@@ -370,7 +370,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::save_current_state_if_r
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 inline void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::reload_old_state_if_required(
-  const std::function<void()> & reload_old_state)
+  std::function<void()> const & reload_old_state)
 {
   // In case we need to reload a state, we just take the internally stored
   // data vectors and write then in to the input data

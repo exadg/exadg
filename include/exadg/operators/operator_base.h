@@ -158,7 +158,7 @@ public:
   n() const;
 
   Number
-  el(unsigned int const, const unsigned int) const;
+  el(unsigned int const, unsigned int const) const;
 
   bool
   is_empty_locally() const;
