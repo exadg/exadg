@@ -20,11 +20,14 @@ var searchData=
   ['divergencepenaltykerneldata_17',['DivergencePenaltyKernelData',['../structExaDG_1_1IncNS_1_1Operators_1_1DivergencePenaltyKernelData.html',1,'ExaDG::IncNS::Operators']]],
   ['divergencepenaltyoperator_18',['DivergencePenaltyOperator',['../classExaDG_1_1IncNS_1_1DivergencePenaltyOperator.html',1,'ExaDG::IncNS']]],
   ['divergencepenaltyoperator_3c_20dim_2c_20double_20_3e_19',['DivergencePenaltyOperator&lt; dim, double &gt;',['../classExaDG_1_1IncNS_1_1DivergencePenaltyOperator.html',1,'ExaDG::IncNS']]],
-  ['driver_20',['Driver',['../classExaDG_1_1CompNS_1_1Driver.html',1,'ExaDG::CompNS::Driver&lt; dim, Number &gt;'],['../classExaDG_1_1ConvDiff_1_1Driver.html',1,'ExaDG::ConvDiff::Driver&lt; dim, Number &gt;'],['../classExaDG_1_1FSI_1_1Driver.html',1,'ExaDG::FSI::Driver&lt; dim, Number &gt;'],['../classExaDG_1_1FTI_1_1Driver.html',1,'ExaDG::FTI::Driver&lt; dim, Number &gt;'],['../classExaDG_1_1IncNS_1_1Driver.html',1,'ExaDG::IncNS::Driver&lt; dim, Number &gt;'],['../classExaDG_1_1Poisson_1_1Driver.html',1,'ExaDG::Poisson::Driver&lt; dim, Number &gt;'],['../classExaDG_1_1Structure_1_1Driver.html',1,'ExaDG::Structure::Driver&lt; dim, Number &gt;']]],
-  ['driveroversetgrids_21',['DriverOversetGrids',['../classExaDG_1_1Poisson_1_1DriverOversetGrids.html',1,'ExaDG::Poisson']]],
-  ['driverprecursor_22',['DriverPrecursor',['../classExaDG_1_1IncNS_1_1DriverPrecursor.html',1,'ExaDG::IncNS']]],
-  ['driverquasistatic_23',['DriverQuasiStatic',['../classExaDG_1_1Structure_1_1DriverQuasiStatic.html',1,'ExaDG::Structure']]],
-  ['driversteady_24',['DriverSteady',['../classExaDG_1_1Structure_1_1DriverSteady.html',1,'ExaDG::Structure']]],
-  ['driversteadyproblems_25',['DriverSteadyProblems',['../classExaDG_1_1ConvDiff_1_1DriverSteadyProblems.html',1,'ExaDG::ConvDiff::DriverSteadyProblems&lt; Number &gt;'],['../classExaDG_1_1IncNS_1_1DriverSteadyProblems.html',1,'ExaDG::IncNS::DriverSteadyProblems&lt; dim, Number &gt;']]],
-  ['dynamicconvergencetable_26',['DynamicConvergenceTable',['../classExaDG_1_1DynamicConvergenceTable.html',1,'ExaDG']]]
+  ['dofcoupling_20',['DoFCoupling',['../classExaDG_1_1preCICE_1_1DoFCoupling.html',1,'ExaDG::preCICE']]],
+  ['driver_21',['Driver',['../classExaDG_1_1CompNS_1_1Driver.html',1,'ExaDG::CompNS::Driver&lt; dim, Number &gt;'],['../classExaDG_1_1ConvDiff_1_1Driver.html',1,'ExaDG::ConvDiff::Driver&lt; dim, Number &gt;'],['../classExaDG_1_1FSI_1_1Driver.html',1,'ExaDG::FSI::Driver&lt; dim, Number &gt;'],['../classExaDG_1_1FSI_1_1preCICE_1_1Driver.html',1,'ExaDG::FSI::preCICE::Driver&lt; dim, Number &gt;'],['../classExaDG_1_1FTI_1_1Driver.html',1,'ExaDG::FTI::Driver&lt; dim, Number &gt;'],['../classExaDG_1_1IncNS_1_1Driver.html',1,'ExaDG::IncNS::Driver&lt; dim, Number &gt;'],['../classExaDG_1_1Poisson_1_1Driver.html',1,'ExaDG::Poisson::Driver&lt; dim, Number &gt;'],['../classExaDG_1_1Structure_1_1Driver.html',1,'ExaDG::Structure::Driver&lt; dim, Number &gt;']]],
+  ['driverfluid_22',['DriverFluid',['../classExaDG_1_1FSI_1_1preCICE_1_1DriverFluid.html',1,'ExaDG::FSI::preCICE']]],
+  ['driveroversetgrids_23',['DriverOversetGrids',['../classExaDG_1_1Poisson_1_1DriverOversetGrids.html',1,'ExaDG::Poisson']]],
+  ['driverprecursor_24',['DriverPrecursor',['../classExaDG_1_1IncNS_1_1DriverPrecursor.html',1,'ExaDG::IncNS']]],
+  ['driverquasistatic_25',['DriverQuasiStatic',['../classExaDG_1_1Structure_1_1DriverQuasiStatic.html',1,'ExaDG::Structure']]],
+  ['driversolid_26',['DriverSolid',['../classExaDG_1_1FSI_1_1preCICE_1_1DriverSolid.html',1,'ExaDG::FSI::preCICE']]],
+  ['driversteady_27',['DriverSteady',['../classExaDG_1_1Structure_1_1DriverSteady.html',1,'ExaDG::Structure']]],
+  ['driversteadyproblems_28',['DriverSteadyProblems',['../classExaDG_1_1ConvDiff_1_1DriverSteadyProblems.html',1,'ExaDG::ConvDiff::DriverSteadyProblems&lt; Number &gt;'],['../classExaDG_1_1IncNS_1_1DriverSteadyProblems.html',1,'ExaDG::IncNS::DriverSteadyProblems&lt; dim, Number &gt;']]],
+  ['dynamicconvergencetable_29',['DynamicConvergenceTable',['../classExaDG_1_1DynamicConvergenceTable.html',1,'ExaDG']]]
 ];
