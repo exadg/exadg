@@ -32,6 +32,6 @@ REPLACE_STRING=$2
 echo "replace " $SEARCH_STRING " by " $REPLACE_STRING " in all files"
 
 # loop over all files, and replace SEARCH_STRING by REPLACE_STRING
-for i in $(find . -type f \( -name "*.h" -o -name "*.h.in" -o -name "*.cc" -o -name "*.cpp" \) ); do 
-  sed -i "s/$SEARCH_STRING/$REPLACE_STRING/g" $i
+for i in $(find . -type f \( -name "*.h" -o -name "*.h.in" -o -name "*.cc" -o -name "*.cpp" -o -name "*.txt" -o -name "*.sh" -o -name "*.cmake" \) ); do 
+  sed -i "s/$SEARCH_STRING/$REPLACE_STRING/" $i
 done
