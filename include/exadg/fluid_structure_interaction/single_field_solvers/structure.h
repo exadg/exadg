@@ -26,6 +26,9 @@
 #include <exadg/structure/spatial_discretization/operator.h>
 #include <exadg/structure/time_integration/time_int_gen_alpha.h>
 
+// application
+#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
+
 namespace ExaDG
 {
 namespace FSI

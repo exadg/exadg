@@ -240,6 +240,26 @@ IF(LIKWID)
     TARGET_LINK_LIBRARIES(exadg ${LIKWID})
 ENDIF()
 
+# preCICE
+# Pick up preCICE if we are able to locate it
+OPTION(EXADG_WITH_PRECICE "Use preCICE" OFF})
+IF(${EXADG_WITH_PRECICE})
+    # the environment variable precice_DIR is searched by default
+    FIND_PACKAGE(precice 2.0
+      HINTS ${precice_DIR} ${PRECICE_DIR} $ENV{PRECICE_DIR}
+    )
+    IF(NOT ${precice_FOUND})
+      MESSAGE(FATAL_ERROR "\n"
+       "*** Could not locate a (sufficiently recent) version of preCICE. ***\n\n"
+       "You may want to either pass a flag -Dprecice_DIR=/path/to/precice to cmake\n"
+       "(where the path points to the installation prefix or the build directory)\n"
+       " or set an environment variable \"precice_DIR\" that contains this path.")
+    ENDIF()
+    ADD_DEFINITIONS(-DEXADG_WITH_PRECICE)
+    MESSAGE(STATUS "Found preCICE version ${precice_VERSION} at ${precice_DIR}")
+    TARGET_LINK_LIBRARIES(exadg precice::precice)
+ENDIF()
+
 # DEBUG vs. RELEASE
 ADD_CUSTOM_TARGET(debug
   COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Debug ${CMAKE_SOURCE_DIR}

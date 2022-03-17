@@ -298,6 +298,10 @@ public:
   std::shared_ptr<ContainerInterfaceData<dim, dim, Number>>
   get_container_interface_data_dirichlet();
 
+  // TODO: we currently need this function public for precice-based FSI
+  unsigned int
+  get_dof_index() const;
+
 private:
   /*
    * Initializes dealii::DoFHandler.
@@ -319,9 +323,6 @@ private:
 
   unsigned int
   get_dof_index_mass() const;
-
-  unsigned int
-  get_dof_index() const;
 
   unsigned int
   get_quad_index() const;

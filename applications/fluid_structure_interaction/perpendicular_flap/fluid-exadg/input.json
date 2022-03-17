@@ -1,0 +1,28 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "SpatialResolutionFluid": {
+        "Degree": "2",
+        "RefineSpace": "1"
+    },
+    "preciceConfiguration": {
+        "preciceConfigFile": "../precice-config.xml",
+        "Physics": "Fluid",
+        "ParticipantName": "Fluid",
+        "ReadMeshName": "Fluid-Mesh-read",
+        "WriteMeshName": "Fluid-Mesh-write",
+        "ALEMeshName": "ALE-Mesh",
+        "WriteDataSpecification": "values_on_q_points",
+        "DisplacementDataName": "Displacement",
+        "VelocityDataName": "Velocity",
+        "StressDataName": "Stress"
+    },
+    "Output": {
+        "OutputDirectory": "output/",
+        "OutputName": "perpendicular_flap",
+        "WriteOutput": "true"
+    }
+}

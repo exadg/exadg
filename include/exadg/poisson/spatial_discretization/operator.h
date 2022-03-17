@@ -133,6 +133,10 @@ public:
                      VectorTypeDouble const &                         src) const;
 #endif
 
+  // TODO: we currently need this function public for precice-based FSI
+  unsigned int
+  get_dof_index() const;
+
 private:
   std::string
   get_dof_name() const;
@@ -142,9 +146,6 @@ private:
 
   std::string
   get_quad_gauss_lobatto_name() const;
-
-  unsigned int
-  get_dof_index() const;
 
   unsigned int
   get_quad_index() const;
