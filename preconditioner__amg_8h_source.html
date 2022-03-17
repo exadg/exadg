@@ -111,7 +111,7 @@ $(function() {
 <div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>create_subcommunicator(dealii::DoFHandler&lt;dim, spacedim&gt; <span class="keyword">const</span> &amp; dof_handler)</div>
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>{</div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n_locally_owned_cells = 0;</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keyword">auto</span> &amp; cell : dof_handler.active_cell_iterators())</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="keywordflow">for</span>(<span class="keyword">auto</span> <span class="keyword">const</span> &amp; cell : dof_handler.active_cell_iterators())</div>
 <div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    <span class="keywordflow">if</span>(cell-&gt;is_locally_owned())</div>
 <div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>      ++n_locally_owned_cells;</div>
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>

@@ -84,35 +84,35 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>value_type</b> = typ
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aacd860c763ab6bcbe6b6f01953c7e116"><td class="memTemplParams" colspan="2">template&lt;typename ParameterClass &gt; </td></tr>
-<tr class="memitem:aacd860c763ab6bcbe6b6f01953c7e116"><td class="memTemplItemLeft" align="right" valign="top">&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classExaDG_1_1preCICE_1_1Adapter.html#aacd860c763ab6bcbe6b6f01953c7e116">Adapter</a> (const ParameterClass &amp;parameters, MPI_Comm mpi_comm)</td></tr>
-<tr class="memdesc:aacd860c763ab6bcbe6b6f01953c7e116"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor, which sets up the precice Solverinterface.  <a href="classExaDG_1_1preCICE_1_1Adapter.html#aacd860c763ab6bcbe6b6f01953c7e116">More...</a><br /></td></tr>
-<tr class="separator:aacd860c763ab6bcbe6b6f01953c7e116"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aae9a75949c524fe5713c8215a8535c77"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1preCICE_1_1Adapter.html#aae9a75949c524fe5713c8215a8535c77">initialize_precice</a> (const VectorType &amp;dealii_to_precice)</td></tr>
-<tr class="memdesc:aae9a75949c524fe5713c8215a8535c77"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes preCICE and passes all relevant data to preCICE.  <a href="classExaDG_1_1preCICE_1_1Adapter.html#aae9a75949c524fe5713c8215a8535c77">More...</a><br /></td></tr>
-<tr class="separator:aae9a75949c524fe5713c8215a8535c77"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acf23a90307400d271675859bd2743982"><td class="memItemLeft" align="right" valign="top"><a id="acf23a90307400d271675859bd2743982" name="acf23a90307400d271675859bd2743982"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>add_write_surface</b> (const dealii::types::boundary_id surface_id, const std::string &amp;mesh_name, const std::vector&lt; std::string &gt; &amp;write_data_names, const WriteDataType write_data_type, std::shared_ptr&lt; const dealii::MatrixFree&lt; dim, double, VectorizedArrayType &gt; &gt; data, const unsigned int dof_index, const unsigned int write_quad_index)</td></tr>
-<tr class="separator:acf23a90307400d271675859bd2743982"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa63ed40fcb3969fda396999e01d8b31b"><td class="memItemLeft" align="right" valign="top"><a id="aa63ed40fcb3969fda396999e01d8b31b" name="aa63ed40fcb3969fda396999e01d8b31b"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>add_read_surface</b> (std::shared_ptr&lt; const dealii::MatrixFree&lt; dim, double, VectorizedArrayType &gt; &gt; data, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; dim, data_dim, double &gt; &gt; interface_data, const std::string &amp;mesh_name, const std::vector&lt; std::string &gt; &amp;read_data_name)</td></tr>
-<tr class="separator:aa63ed40fcb3969fda396999e01d8b31b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a890f36e000208aff94122ddf67b0c29f"><td class="memItemLeft" align="right" valign="top"><a id="a890f36e000208aff94122ddf67b0c29f" name="a890f36e000208aff94122ddf67b0c29f"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>advance</b> (const double computed_timestep_length)</td></tr>
-<tr class="memdesc:a890f36e000208aff94122ddf67b0c29f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Advances preCICE after every timestep. <br /></td></tr>
-<tr class="separator:a890f36e000208aff94122ddf67b0c29f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af15a69e1e1b6f16e381dfebb89803551"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1preCICE_1_1Adapter.html#af15a69e1e1b6f16e381dfebb89803551">save_current_state_if_required</a> (const std::function&lt; void()&gt; &amp;save_state)</td></tr>
-<tr class="memdesc:af15a69e1e1b6f16e381dfebb89803551"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves current state of time dependent variables in case of an implicit coupling.  <a href="classExaDG_1_1preCICE_1_1Adapter.html#af15a69e1e1b6f16e381dfebb89803551">More...</a><br /></td></tr>
-<tr class="separator:af15a69e1e1b6f16e381dfebb89803551"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abf91fa8b83702d4b762cdc22626461fd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1preCICE_1_1Adapter.html#abf91fa8b83702d4b762cdc22626461fd">reload_old_state_if_required</a> (const std::function&lt; void()&gt; &amp;reload_old_state)</td></tr>
-<tr class="memdesc:abf91fa8b83702d4b762cdc22626461fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads the previously stored variables in case of an implicit coupling. The current implementation supports subcycling, i.e. previously refers o the last time <code><a class="el" href="classExaDG_1_1preCICE_1_1Adapter.html#af15a69e1e1b6f16e381dfebb89803551" title="Saves current state of time dependent variables in case of an implicit coupling.">save_current_state_if_required()</a></code> has been called.  <a href="classExaDG_1_1preCICE_1_1Adapter.html#abf91fa8b83702d4b762cdc22626461fd">More...</a><br /></td></tr>
-<tr class="separator:abf91fa8b83702d4b762cdc22626461fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae8f862f0e7b91b62549f51fbeac048c8"><td class="memItemLeft" align="right" valign="top"><a id="ae8f862f0e7b91b62549f51fbeac048c8" name="ae8f862f0e7b91b62549f51fbeac048c8"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>write_data</b> (const std::string &amp;write_mesh_name, const std::string &amp;write_data_name, const VectorType &amp;write_data, const double computed_timestep_length)</td></tr>
-<tr class="separator:ae8f862f0e7b91b62549f51fbeac048c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a567d618bfef8fbb44c56cbce79a517c9"><td class="memItemLeft" align="right" valign="top"><a id="a567d618bfef8fbb44c56cbce79a517c9" name="a567d618bfef8fbb44c56cbce79a517c9"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>read_block_data</b> (const std::string &amp;mesh_name, const std::string &amp;data_name) const</td></tr>
-<tr class="separator:a567d618bfef8fbb44c56cbce79a517c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a63c8979bce9695ea240c6e01b89e75d4"><td class="memTemplParams" colspan="2">template&lt;typename ParameterClass &gt; </td></tr>
+<tr class="memitem:a63c8979bce9695ea240c6e01b89e75d4"><td class="memTemplItemLeft" align="right" valign="top">&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classExaDG_1_1preCICE_1_1Adapter.html#a63c8979bce9695ea240c6e01b89e75d4">Adapter</a> (ParameterClass const &amp;parameters, MPI_Comm mpi_comm)</td></tr>
+<tr class="memdesc:a63c8979bce9695ea240c6e01b89e75d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor, which sets up the precice Solverinterface.  <a href="classExaDG_1_1preCICE_1_1Adapter.html#a63c8979bce9695ea240c6e01b89e75d4">More...</a><br /></td></tr>
+<tr class="separator:a63c8979bce9695ea240c6e01b89e75d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a354da3e6f864bb6f65a03d1b20305bd6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1preCICE_1_1Adapter.html#a354da3e6f864bb6f65a03d1b20305bd6">initialize_precice</a> (VectorType const &amp;dealii_to_precice)</td></tr>
+<tr class="memdesc:a354da3e6f864bb6f65a03d1b20305bd6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes preCICE and passes all relevant data to preCICE.  <a href="classExaDG_1_1preCICE_1_1Adapter.html#a354da3e6f864bb6f65a03d1b20305bd6">More...</a><br /></td></tr>
+<tr class="separator:a354da3e6f864bb6f65a03d1b20305bd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaae7ddc7f73789c4678943e1d8af3ded"><td class="memItemLeft" align="right" valign="top"><a id="aaae7ddc7f73789c4678943e1d8af3ded" name="aaae7ddc7f73789c4678943e1d8af3ded"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>add_write_surface</b> (dealii::types::boundary_id const surface_id, std::string const &amp;mesh_name, std::vector&lt; std::string &gt; const &amp;write_data_names, WriteDataType const write_data_type, std::shared_ptr&lt; dealii::MatrixFree&lt; dim, double, VectorizedArrayType &gt; const &gt; data, unsigned int const dof_index, unsigned int const write_quad_index)</td></tr>
+<tr class="separator:aaae7ddc7f73789c4678943e1d8af3ded"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a51c563ebc39ffe8544ddf55cb8b8b3c4"><td class="memItemLeft" align="right" valign="top"><a id="a51c563ebc39ffe8544ddf55cb8b8b3c4" name="a51c563ebc39ffe8544ddf55cb8b8b3c4"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>add_read_surface</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, double, VectorizedArrayType &gt; const &gt; data, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; dim, data_dim, double &gt; &gt; interface_data, std::string const &amp;mesh_name, std::vector&lt; std::string &gt; const &amp;read_data_name)</td></tr>
+<tr class="separator:a51c563ebc39ffe8544ddf55cb8b8b3c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adbe8ebd71c3d1452576121eae1f02e3e"><td class="memItemLeft" align="right" valign="top"><a id="adbe8ebd71c3d1452576121eae1f02e3e" name="adbe8ebd71c3d1452576121eae1f02e3e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>advance</b> (double const computed_timestep_length)</td></tr>
+<tr class="memdesc:adbe8ebd71c3d1452576121eae1f02e3e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Advances preCICE after every timestep. <br /></td></tr>
+<tr class="separator:adbe8ebd71c3d1452576121eae1f02e3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a4afd77dd457397b831862cce372cde"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1preCICE_1_1Adapter.html#a7a4afd77dd457397b831862cce372cde">save_current_state_if_required</a> (std::function&lt; void()&gt; const &amp;save_state)</td></tr>
+<tr class="memdesc:a7a4afd77dd457397b831862cce372cde"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves current state of time dependent variables in case of an implicit coupling.  <a href="classExaDG_1_1preCICE_1_1Adapter.html#a7a4afd77dd457397b831862cce372cde">More...</a><br /></td></tr>
+<tr class="separator:a7a4afd77dd457397b831862cce372cde"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ce4e88f107c66747490f6747705f4d7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1preCICE_1_1Adapter.html#a0ce4e88f107c66747490f6747705f4d7">reload_old_state_if_required</a> (std::function&lt; void()&gt; const &amp;reload_old_state)</td></tr>
+<tr class="memdesc:a0ce4e88f107c66747490f6747705f4d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads the previously stored variables in case of an implicit coupling. The current implementation supports subcycling, i.e. previously refers o the last time <code><a class="el" href="classExaDG_1_1preCICE_1_1Adapter.html#a7a4afd77dd457397b831862cce372cde" title="Saves current state of time dependent variables in case of an implicit coupling.">save_current_state_if_required()</a></code> has been called.  <a href="classExaDG_1_1preCICE_1_1Adapter.html#a0ce4e88f107c66747490f6747705f4d7">More...</a><br /></td></tr>
+<tr class="separator:a0ce4e88f107c66747490f6747705f4d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d3783b7158738861f8f6e4f54c62c8a"><td class="memItemLeft" align="right" valign="top"><a id="a1d3783b7158738861f8f6e4f54c62c8a" name="a1d3783b7158738861f8f6e4f54c62c8a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>write_data</b> (std::string const &amp;write_mesh_name, std::string const &amp;write_data_name, VectorType const &amp;write_data, double const computed_timestep_length)</td></tr>
+<tr class="separator:a1d3783b7158738861f8f6e4f54c62c8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae60a865405e152e4892513f5e69b4430"><td class="memItemLeft" align="right" valign="top"><a id="ae60a865405e152e4892513f5e69b4430" name="ae60a865405e152e4892513f5e69b4430"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>read_block_data</b> (std::string const &amp;mesh_name, const std::string &amp;data_name) const</td></tr>
+<tr class="separator:ae60a865405e152e4892513f5e69b4430"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acd75a0a0d95f49c6a44ecfff5e72497b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1preCICE_1_1Adapter.html#acd75a0a0d95f49c6a44ecfff5e72497b">is_coupling_ongoing</a> () const</td></tr>
 <tr class="memdesc:acd75a0a0d95f49c6a44ecfff5e72497b"><td class="mdescLeft">&#160;</td><td class="mdescRight">is_coupling_ongoing Calls the preCICE API function isCouplingOnGoing  <a href="classExaDG_1_1preCICE_1_1Adapter.html#acd75a0a0d95f49c6a44ecfff5e72497b">More...</a><br /></td></tr>
 <tr class="separator:acd75a0a0d95f49c6a44ecfff5e72497b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -124,8 +124,8 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>read_block_data</b> (
 <div class="textblock"><div class="compoundTemplParams">template&lt;int dim, int data_dim, typename VectorType, typename VectorizedArrayType = dealii::VectorizedArray&lt;double&gt;&gt;<br />
 class ExaDG::preCICE::Adapter&lt; dim, data_dim, VectorType, VectorizedArrayType &gt;</div><p >The <a class="el" href="classExaDG_1_1preCICE_1_1Adapter.html">Adapter</a> class keeps together with the CouplingInterfaes all functionalities to couple deal.II to other solvers with preCICE i.e. data structures are set up, necessary information is passed to preCICE etc. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="aacd860c763ab6bcbe6b6f01953c7e116" name="aacd860c763ab6bcbe6b6f01953c7e116"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aacd860c763ab6bcbe6b6f01953c7e116">&#9670;&nbsp;</a></span>Adapter()</h2>
+<a id="a63c8979bce9695ea240c6e01b89e75d4" name="a63c8979bce9695ea240c6e01b89e75d4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a63c8979bce9695ea240c6e01b89e75d4">&#9670;&nbsp;</a></span>Adapter()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -137,7 +137,7 @@ template&lt;typename ParameterClass &gt; </div>
         <tr>
           <td class="memname"><a class="el" href="classExaDG_1_1preCICE_1_1Adapter.html">ExaDG::preCICE::Adapter</a>&lt; dim, data_dim, VectorType, VectorizedArrayType &gt;::Adapter </td>
           <td>(</td>
-          <td class="paramtype">const ParameterClass &amp;&#160;</td>
+          <td class="paramtype">ParameterClass const &amp;&#160;</td>
           <td class="paramname"><em>parameters</em>, </td>
         </tr>
         <tr>
@@ -176,8 +176,8 @@ template&lt;typename ParameterClass &gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="aae9a75949c524fe5713c8215a8535c77" name="aae9a75949c524fe5713c8215a8535c77"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aae9a75949c524fe5713c8215a8535c77">&#9670;&nbsp;</a></span>initialize_precice()</h2>
+<a id="a354da3e6f864bb6f65a03d1b20305bd6" name="a354da3e6f864bb6f65a03d1b20305bd6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a354da3e6f864bb6f65a03d1b20305bd6">&#9670;&nbsp;</a></span>initialize_precice()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -187,7 +187,7 @@ template&lt;int dim, int data_dim, typename VectorType , typename VectorizedArra
         <tr>
           <td class="memname">void <a class="el" href="classExaDG_1_1preCICE_1_1Adapter.html">ExaDG::preCICE::Adapter</a>&lt; dim, data_dim, VectorType, VectorizedArrayType &gt;::initialize_precice </td>
           <td>(</td>
-          <td class="paramtype">const VectorType &amp;&#160;</td>
+          <td class="paramtype">VectorType const &amp;&#160;</td>
           <td class="paramname"><em>dealii_to_precice</em></td><td>)</td>
           <td></td>
         </tr>
@@ -258,8 +258,8 @@ template&lt;int dim, int data_dim, typename VectorType , typename VectorizedArra
 
 </div>
 </div>
-<a id="abf91fa8b83702d4b762cdc22626461fd" name="abf91fa8b83702d4b762cdc22626461fd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abf91fa8b83702d4b762cdc22626461fd">&#9670;&nbsp;</a></span>reload_old_state_if_required()</h2>
+<a id="a0ce4e88f107c66747490f6747705f4d7" name="a0ce4e88f107c66747490f6747705f4d7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0ce4e88f107c66747490f6747705f4d7">&#9670;&nbsp;</a></span>reload_old_state_if_required()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -272,7 +272,7 @@ template&lt;int dim, int data_dim, typename VectorType , typename VectorizedArra
         <tr>
           <td class="memname">void <a class="el" href="classExaDG_1_1preCICE_1_1Adapter.html">ExaDG::preCICE::Adapter</a>&lt; dim, data_dim, VectorType, VectorizedArrayType &gt;::reload_old_state_if_required </td>
           <td>(</td>
-          <td class="paramtype">const std::function&lt; void()&gt; &amp;&#160;</td>
+          <td class="paramtype">std::function&lt; void()&gt; const &amp;&#160;</td>
           <td class="paramname"><em>reload_old_state</em></td><td>)</td>
           <td></td>
         </tr>
@@ -284,7 +284,7 @@ template&lt;int dim, int data_dim, typename VectorType , typename VectorizedArra
 </table>
 </div><div class="memdoc">
 
-<p>Reloads the previously stored variables in case of an implicit coupling. The current implementation supports subcycling, i.e. previously refers o the last time <code><a class="el" href="classExaDG_1_1preCICE_1_1Adapter.html#af15a69e1e1b6f16e381dfebb89803551" title="Saves current state of time dependent variables in case of an implicit coupling.">save_current_state_if_required()</a></code> has been called. </p>
+<p>Reloads the previously stored variables in case of an implicit coupling. The current implementation supports subcycling, i.e. previously refers o the last time <code><a class="el" href="classExaDG_1_1preCICE_1_1Adapter.html#a7a4afd77dd457397b831862cce372cde" title="Saves current state of time dependent variables in case of an implicit coupling.">save_current_state_if_required()</a></code> has been called. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[out]</td><td class="paramname">state_variables</td><td>Vector containing all variables to reload as reference</td></tr>
@@ -295,8 +295,8 @@ template&lt;int dim, int data_dim, typename VectorType , typename VectorizedArra
 
 </div>
 </div>
-<a id="af15a69e1e1b6f16e381dfebb89803551" name="af15a69e1e1b6f16e381dfebb89803551"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af15a69e1e1b6f16e381dfebb89803551">&#9670;&nbsp;</a></span>save_current_state_if_required()</h2>
+<a id="a7a4afd77dd457397b831862cce372cde" name="a7a4afd77dd457397b831862cce372cde"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7a4afd77dd457397b831862cce372cde">&#9670;&nbsp;</a></span>save_current_state_if_required()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -309,7 +309,7 @@ template&lt;int dim, int data_dim, typename VectorType , typename VectorizedArra
         <tr>
           <td class="memname">void <a class="el" href="classExaDG_1_1preCICE_1_1Adapter.html">ExaDG::preCICE::Adapter</a>&lt; dim, data_dim, VectorType, VectorizedArrayType &gt;::save_current_state_if_required </td>
           <td>(</td>
-          <td class="paramtype">const std::function&lt; void()&gt; &amp;&#160;</td>
+          <td class="paramtype">std::function&lt; void()&gt; const &amp;&#160;</td>
           <td class="paramname"><em>save_state</em></td><td>)</td>
           <td></td>
         </tr>

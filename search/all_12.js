@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['save_5fcurrent_5fstate_5fif_5frequired_0',['save_current_state_if_required',['../classExaDG_1_1preCICE_1_1Adapter.html#af15a69e1e1b6f16e381dfebb89803551',1,'ExaDG::preCICE::Adapter']]],
+  ['save_5fcurrent_5fstate_5fif_5frequired_0',['save_current_state_if_required',['../classExaDG_1_1preCICE_1_1Adapter.html#a7a4afd77dd457397b831862cce372cde',1,'ExaDG::preCICE::Adapter']]],
   ['serialize_1',['serialize',['../classdealspectrum_1_1Interpolator.html#a8283a193758ed7bc6fd68fd2f3cd9847',1,'dealspectrum::Interpolator::serialize(char const *filename)'],['../classdealspectrum_1_1Interpolator.html#a6b09f98b6b45095290fa3ea8269f0c16',1,'dealspectrum::Interpolator::serialize(char const *filename, double const *&amp;src)'],['../classdealspectrum_1_1SpectralAnalysis.html#a5823986be9b1e140e8a408cdcdd5b59c',1,'dealspectrum::SpectralAnalysis::serialize()']]],
   ['set_5fwrite_5fdata_5ftype_2',['set_write_data_type',['../classExaDG_1_1preCICE_1_1CouplingBase.html#aae21d6fc764dbd5051ec7c27cc38d11a',1,'ExaDG::preCICE::CouplingBase']]],
   ['setup_3',['Setup',['../classdealspectrum_1_1Setup.html',1,'dealspectrum::Setup'],['../classdealspectrum_1_1Setup.html#ae48fcc6968bba36f4300ec7e88009717',1,'dealspectrum::Setup::Setup()']]],

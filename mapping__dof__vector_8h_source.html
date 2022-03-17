@@ -433,8 +433,8 @@ $(function() {
 <div class="line"><a id="l00405" name="l00405"></a><span class="lineno">  405</span>  }</div>
 <div class="line"><a id="l00406" name="l00406"></a><span class="lineno">  406</span> </div>
 <div class="line"><a id="l00407" name="l00407"></a><span class="lineno">  407</span>  <span class="comment">// a function that initializes the dof-vector for a given level and dof_handler</span></div>
-<div class="line"><a id="l00408" name="l00408"></a><span class="lineno">  408</span>  <span class="keyword">const</span> std::function&lt;void(<span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>, VectorType &amp;)&gt; initialize_dof_vector =</div>
-<div class="line"><a id="l00409" name="l00409"></a><span class="lineno">  409</span>    [&amp;](<span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> h_level, VectorType &amp; vector) {</div>
+<div class="line"><a id="l00408" name="l00408"></a><span class="lineno">  408</span>  <span class="keyword">const</span> std::function&lt;void(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>, VectorType &amp;)&gt; initialize_dof_vector =</div>
+<div class="line"><a id="l00409" name="l00409"></a><span class="lineno">  409</span>    [&amp;](<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> h_level, VectorType &amp; vector) {</div>
 <div class="line"><a id="l00410" name="l00410"></a><span class="lineno">  410</span>      dealii::IndexSet locally_relevant_dofs;</div>
 <div class="line"><a id="l00411" name="l00411"></a><span class="lineno">  411</span>      dealii::DoFTools::extract_locally_relevant_dofs(coarse_grid_dof_handlers[h_level],</div>
 <div class="line"><a id="l00412" name="l00412"></a><span class="lineno">  412</span>                                                      locally_relevant_dofs);</div>

@@ -307,7 +307,7 @@ $(function() {
 <div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span><span class="keyword">private</span>:</div>
 <div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>  coupling_structure_to_ale(VectorType <span class="keyword">const</span> &amp; displacement_structure,</div>
-<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>                            <span class="keyword">const</span> <span class="keywordtype">double</span>       time_step_size)<span class="keyword"> const</span></div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>                            <span class="keywordtype">double</span> <span class="keyword">const</span>       time_step_size)<span class="keyword"> const</span></div>
 <div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span><span class="keyword">  </span>{</div>
 <div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>    this-&gt;precice-&gt;write_data(this-&gt;precice_parameters.write_mesh_name,</div>
 <div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>                              this-&gt;precice_parameters.displacement_data_name,</div>
@@ -317,7 +317,7 @@ $(function() {
 <div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span> </div>
 <div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>  coupling_structure_to_fluid(VectorType <span class="keyword">const</span> &amp; velocity_structure,</div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>                              <span class="keyword">const</span> <span class="keywordtype">double</span>       time_step_size)<span class="keyword"> const</span></div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>                              <span class="keywordtype">double</span> <span class="keyword">const</span>       time_step_size)<span class="keyword"> const</span></div>
 <div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span><span class="keyword">  </span>{</div>
 <div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>    this-&gt;precice-&gt;write_data(this-&gt;precice_parameters.write_mesh_name,</div>
 <div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>                              this-&gt;precice_parameters.velocity_data_name,</div>

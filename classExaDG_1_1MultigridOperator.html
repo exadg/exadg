@@ -120,8 +120,8 @@ std::shared_ptr&lt; Operator &gt;&#160;</td><td class="memItemRight" valign="bot
 <tr class="separator:ad7d64850d69bf59fb21b526e78853481"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6752bfcedfa0e690a627e3be295b7337"><td class="memItemLeft" align="right" valign="top">virtual dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a6752bfcedfa0e690a627e3be295b7337">n</a> () const</td></tr>
 <tr class="separator:a6752bfcedfa0e690a627e3be295b7337"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a827fbd3a9cff3bdaa21df85d88808981"><td class="memItemLeft" align="right" valign="top">virtual Number&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a827fbd3a9cff3bdaa21df85d88808981">el</a> (unsigned int const i, const unsigned int j) const</td></tr>
-<tr class="separator:a827fbd3a9cff3bdaa21df85d88808981"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acff84cc63385f7758556acc3ad95df26"><td class="memItemLeft" align="right" valign="top">virtual Number&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#acff84cc63385f7758556acc3ad95df26">el</a> (unsigned int const i, unsigned int const j) const</td></tr>
+<tr class="separator:acff84cc63385f7758556acc3ad95df26"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a49da76db9200d367ab00bdbe42500b08"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a49da76db9200d367ab00bdbe42500b08">initialize_dof_vector</a> (VectorType &amp;vector) const</td></tr>
 <tr class="separator:a49da76db9200d367ab00bdbe42500b08"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3eba6d8150eb8cd59768f9fba80e4aff"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a3eba6d8150eb8cd59768f9fba80e4aff">vmult</a> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
@@ -153,9 +153,9 @@ virtual dealii::types::global_dof_index&#160;</td><td class="memItemRight" valig
 <tr class="memitem:afc3a242565935b42102c846dfae81a43"><td class="memItemLeft" align="right" valign="top"><a id="afc3a242565935b42102c846dfae81a43" name="afc3a242565935b42102c846dfae81a43"></a>
 virtual dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>n</b> () const =0</td></tr>
 <tr class="separator:afc3a242565935b42102c846dfae81a43"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a439a4a97bb6a68f2e65749f3d3abbcfa"><td class="memItemLeft" align="right" valign="top"><a id="a439a4a97bb6a68f2e65749f3d3abbcfa" name="a439a4a97bb6a68f2e65749f3d3abbcfa"></a>
-virtual Number&#160;</td><td class="memItemRight" valign="bottom"><b>el</b> (unsigned int const, const unsigned int) const =0</td></tr>
-<tr class="separator:a439a4a97bb6a68f2e65749f3d3abbcfa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a915fa7d4a736c7d3683aa76d851c496d"><td class="memItemLeft" align="right" valign="top"><a id="a915fa7d4a736c7d3683aa76d851c496d" name="a915fa7d4a736c7d3683aa76d851c496d"></a>
+virtual Number&#160;</td><td class="memItemRight" valign="bottom"><b>el</b> (unsigned int const, unsigned int const) const =0</td></tr>
+<tr class="separator:a915fa7d4a736c7d3683aa76d851c496d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaa03644e9e5ff73c4c22276086ca10b5"><td class="memItemLeft" align="right" valign="top"><a id="aaa03644e9e5ff73c4c22276086ca10b5" name="aaa03644e9e5ff73c4c22276086ca10b5"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_dof_vector</b> (VectorType &amp;vector) const =0</td></tr>
 <tr class="separator:aaa03644e9e5ff73c4c22276086ca10b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -252,8 +252,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
 
 </div>
 </div>
-<a id="a827fbd3a9cff3bdaa21df85d88808981" name="a827fbd3a9cff3bdaa21df85d88808981"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a827fbd3a9cff3bdaa21df85d88808981">&#9670;&nbsp;</a></span>el()</h2>
+<a id="acff84cc63385f7758556acc3ad95df26" name="acff84cc63385f7758556acc3ad95df26"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acff84cc63385f7758556acc3ad95df26">&#9670;&nbsp;</a></span>el()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -272,7 +272,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const unsigned int&#160;</td>
+          <td class="paramtype">unsigned int const&#160;</td>
           <td class="paramname"><em>j</em>&#160;</td>
         </tr>
         <tr>

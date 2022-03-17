@@ -107,20 +107,20 @@ $(function() {
 <div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keywordtype">int</span> spacedim&gt;</div>
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="keywordtype">void</span></div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>map_boundary_dofs_to_support_points(</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="keyword">const</span> Mapping&lt;dim, spacedim&gt; &amp;                       mapping,</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keyword">const</span> DoFHandler&lt;dim, spacedim&gt; &amp;                    dof_handler,</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  Mapping&lt;dim, spacedim&gt; <span class="keyword">const</span> &amp;                       mapping,</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  DoFHandler&lt;dim, spacedim&gt; <span class="keyword">const</span> &amp;                    dof_handler,</div>
 <div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  std::map&lt;types::global_dof_index, Point&lt;spacedim&gt;&gt; &amp; support_points,</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keyword">const</span> ComponentMask &amp;                                in_mask,</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="keyword">const</span> types::boundary_id                             boundary_id)</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  ComponentMask <span class="keyword">const</span> &amp;                                in_mask,</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  types::boundary_id <span class="keyword">const</span>                             boundary_id)</div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>{</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keyword">const</span> FiniteElement&lt;dim, spacedim&gt; &amp; fe = dof_handler.get_fe();</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  FiniteElement&lt;dim, spacedim&gt; <span class="keyword">const</span> &amp; fe = dof_handler.get_fe();</div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="comment">// check whether every fe in the collection has support points</span></div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  Assert(fe.has_support_points(), <span class="keyword">typename</span> FiniteElement&lt;dim&gt;::ExcFEHasNoSupportPoints());</div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  Quadrature&lt;dim - 1&gt; <span class="keyword">const</span> quad(fe.get_unit_face_support_points());</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="comment">// Take care of components</span></div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keyword">const</span> ComponentMask mask =</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  ComponentMask <span class="keyword">const</span> mask =</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    (in_mask.size() == 0 ? ComponentMask(fe.n_components(), <span class="keyword">true</span>) : in_mask);</div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="comment">// Now loop over all cells and enquire the support points on each</span></div>
@@ -133,9 +133,9 @@ $(function() {
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  FEFaceValues&lt;dim, spacedim&gt; fe_values(mapping, fe, quad, update_quadrature_points);</div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  std::vector&lt;types::global_dof_index&gt; local_dof_indices;</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keyword">auto</span> &amp; cell : dof_handler.active_cell_iterators())</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keywordflow">for</span>(<span class="keyword">auto</span> <span class="keyword">const</span> &amp; cell : dof_handler.active_cell_iterators())</div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    <span class="keywordflow">if</span>(cell-&gt;is_locally_owned())</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>      <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keyword">auto</span> &amp; face : cell-&gt;face_iterators())</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>      <span class="keywordflow">for</span>(<span class="keyword">auto</span> <span class="keyword">const</span> &amp; face : cell-&gt;face_iterators())</div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>        <span class="keywordflow">if</span>(face-&gt;at_boundary() == <span class="keyword">true</span> &amp;&amp; face-&gt;boundary_id() == boundary_id)</div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>        <span class="comment">// only work on locally relevant cells</span></div>
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>        {</div>
@@ -144,11 +144,11 @@ $(function() {
 <div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>          local_dof_indices.resize(fe.dofs_per_face);</div>
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>          face-&gt;get_dof_indices(local_dof_indices);</div>
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span> </div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>          <span class="keyword">const</span> std::vector&lt;Point&lt;spacedim&gt;&gt; &amp; points = fe_values.get_quadrature_points();</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>          std::vector&lt;Point&lt;spacedim&gt;&gt; <span class="keyword">const</span> &amp; points = fe_values.get_quadrature_points();</div>
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span> </div>
 <div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>          <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; fe.n_dofs_per_face(); ++i)</div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>          {</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>            <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> dof_comp = fe.face_system_to_component_index(i).first;</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>            <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> dof_comp = fe.face_system_to_component_index(i).first;</div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>            <span class="comment">// insert the values into the map if it is a valid component</span></div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>            <span class="keywordflow">if</span>(mask[dof_comp])</div>

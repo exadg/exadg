@@ -180,7 +180,7 @@ $(function() {
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    dealii::Point&lt;dim&gt; x;</div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    <span class="comment">// standard mapping from reference space to physical space using d-linear shape functions</span></div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> v : cell-&gt;vertex_indices())</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> v : cell-&gt;vertex_indices())</div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    {</div>
 <div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>      <span class="keywordtype">double</span> shape_function_value = cell-&gt;reference_cell().d_linear_shape_function(xi, v);</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>      x += shape_function_value * cell-&gt;vertex(v);</div>
@@ -322,7 +322,7 @@ $(function() {
 <div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>    dealii::Tensor&lt;2, dim&gt; jacobian;</div>
 <div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span> </div>
 <div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>    <span class="comment">// standard mapping from reference space to physical space using d-linear shape functions</span></div>
-<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>    <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> v : cell-&gt;vertex_indices())</div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> v : cell-&gt;vertex_indices())</div>
 <div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>    {</div>
 <div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>      dealii::Tensor&lt;1, dim&gt; shape_function_gradient =</div>
 <div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>        cell-&gt;reference_cell().d_linear_shape_function_gradient(xi, v);</div>
@@ -496,7 +496,7 @@ $(function() {
 <div class="line"><a id="l00425" name="l00425"></a><span class="lineno">  425</span>    dealii::Point&lt;dim&gt; x;</div>
 <div class="line"><a id="l00426" name="l00426"></a><span class="lineno">  426</span> </div>
 <div class="line"><a id="l00427" name="l00427"></a><span class="lineno">  427</span>    <span class="comment">// standard mapping from reference space to physical space using d-linear shape functions</span></div>
-<div class="line"><a id="l00428" name="l00428"></a><span class="lineno">  428</span>    <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> v : cell-&gt;vertex_indices())</div>
+<div class="line"><a id="l00428" name="l00428"></a><span class="lineno">  428</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> v : cell-&gt;vertex_indices())</div>
 <div class="line"><a id="l00429" name="l00429"></a><span class="lineno">  429</span>    {</div>
 <div class="line"><a id="l00430" name="l00430"></a><span class="lineno">  430</span>      <span class="keywordtype">double</span> shape_function_value = cell-&gt;reference_cell().d_linear_shape_function(xi, v);</div>
 <div class="line"><a id="l00431" name="l00431"></a><span class="lineno">  431</span>      x += shape_function_value * cell-&gt;vertex(v);</div>
@@ -527,7 +527,7 @@ $(function() {
 <div class="line"><a id="l00456" name="l00456"></a><span class="lineno">  456</span>    <span class="comment">// calculate displacement as compared to straight sided quadrilateral element</span></div>
 <div class="line"><a id="l00457" name="l00457"></a><span class="lineno">  457</span>    <span class="comment">// on the face that is subject to the manifold</span></div>
 <div class="line"><a id="l00458" name="l00458"></a><span class="lineno">  458</span>    dealii::Tensor&lt;1, 2&gt; displ, x_lin;</div>
-<div class="line"><a id="l00459" name="l00459"></a><span class="lineno">  459</span>    <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> v : dealii::ReferenceCells::template get_hypercube&lt;1&gt;().vertex_indices())</div>
+<div class="line"><a id="l00459" name="l00459"></a><span class="lineno">  459</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> v : dealii::ReferenceCells::template get_hypercube&lt;1&gt;().vertex_indices())</div>
 <div class="line"><a id="l00460" name="l00460"></a><span class="lineno">  460</span>    {</div>
 <div class="line"><a id="l00461" name="l00461"></a><span class="lineno">  461</span>      <span class="keywordtype">double</span> shape_function_value =</div>
 <div class="line"><a id="l00462" name="l00462"></a><span class="lineno">  462</span>        dealii::ReferenceCells::template get_hypercube&lt;1&gt;().d_linear_shape_function(</div>
@@ -641,7 +641,7 @@ $(function() {
 <div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span>    dealii::Tensor&lt;2, dim&gt; jacobian;</div>
 <div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span> </div>
 <div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>    <span class="comment">// standard mapping from reference space to physical space using d-linear shape functions</span></div>
-<div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>    <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> v : cell-&gt;vertex_indices())</div>
+<div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> v : cell-&gt;vertex_indices())</div>
 <div class="line"><a id="l00574" name="l00574"></a><span class="lineno">  574</span>    {</div>
 <div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span>      dealii::Tensor&lt;1, dim&gt; shape_function_gradient =</div>
 <div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span>        cell-&gt;reference_cell().d_linear_shape_function_gradient(xi, v);</div>
