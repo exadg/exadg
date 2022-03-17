@@ -40,7 +40,7 @@ std::unique_ptr<MPI_Comm, void (*)(MPI_Comm *)>
 create_subcommunicator(dealii::DoFHandler<dim, spacedim> const & dof_handler)
 {
   unsigned int n_locally_owned_cells = 0;
-  for(const auto & cell : dof_handler.active_cell_iterators())
+  for(auto const & cell : dof_handler.active_cell_iterators())
     if(cell->is_locally_owned())
       ++n_locally_owned_cells;
 

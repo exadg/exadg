@@ -169,7 +169,7 @@ private:
 template<class Number>
 void
 output_eigenvalues(const std::vector<Number> & eigenvalues,
-                   const std::string &         text,
+                   std::string const &         text,
                    MPI_Comm const &            mpi_comm)
 {
   if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)

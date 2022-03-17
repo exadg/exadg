@@ -41,7 +41,7 @@ struct ConfigurationParameters
 {
   ConfigurationParameters() = default;
 
-  ConfigurationParameters(const std::string & input_file);
+  ConfigurationParameters(std::string const & input_file);
 
   std::string config_file              = "precice config-file";
   std::string physics                  = "undefined";
@@ -60,12 +60,12 @@ struct ConfigurationParameters
   add_parameters(dealii::ParameterHandler & prm);
 
   void
-  string_to_enum(WriteDataType & enum_out, const std::string & string_in);
+  string_to_enum(WriteDataType & enum_out, std::string const & string_in);
 };
 
 
 
-ConfigurationParameters::ConfigurationParameters(const std::string & input_file)
+ConfigurationParameters::ConfigurationParameters(std::string const & input_file)
 {
   dealii::ParameterHandler prm;
   add_parameters(prm);
@@ -128,7 +128,7 @@ ConfigurationParameters::add_parameters(dealii::ParameterHandler & prm)
 }
 
 void
-ConfigurationParameters::string_to_enum(WriteDataType & enum_out, const std::string & string_in)
+ConfigurationParameters::string_to_enum(WriteDataType & enum_out, std::string const & string_in)
 {
   if(string_in == "values_on_dofs")
     enum_out = WriteDataType::values_on_dofs;

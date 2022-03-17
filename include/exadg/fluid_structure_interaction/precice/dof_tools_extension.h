@@ -40,20 +40,20 @@ namespace DoFTools
 template<int dim, int spacedim>
 void
 map_boundary_dofs_to_support_points(
-  const Mapping<dim, spacedim> &                       mapping,
-  const DoFHandler<dim, spacedim> &                    dof_handler,
+  Mapping<dim, spacedim> const &                       mapping,
+  DoFHandler<dim, spacedim> const &                    dof_handler,
   std::map<types::global_dof_index, Point<spacedim>> & support_points,
-  const ComponentMask &                                in_mask,
-  const types::boundary_id                             boundary_id)
+  ComponentMask const &                                in_mask,
+  types::boundary_id const                             boundary_id)
 {
-  const FiniteElement<dim, spacedim> & fe = dof_handler.get_fe();
+  FiniteElement<dim, spacedim> const & fe = dof_handler.get_fe();
   // check whether every fe in the collection has support points
   Assert(fe.has_support_points(), typename FiniteElement<dim>::ExcFEHasNoSupportPoints());
 
   Quadrature<dim - 1> const quad(fe.get_unit_face_support_points());
 
   // Take care of components
-  const ComponentMask mask =
+  ComponentMask const mask =
     (in_mask.size() == 0 ? ComponentMask(fe.n_components(), true) : in_mask);
 
   // Now loop over all cells and enquire the support points on each
@@ -66,9 +66,9 @@ map_boundary_dofs_to_support_points(
   FEFaceValues<dim, spacedim> fe_values(mapping, fe, quad, update_quadrature_points);
 
   std::vector<types::global_dof_index> local_dof_indices;
-  for(const auto & cell : dof_handler.active_cell_iterators())
+  for(auto const & cell : dof_handler.active_cell_iterators())
     if(cell->is_locally_owned())
-      for(const auto & face : cell->face_iterators())
+      for(auto const & face : cell->face_iterators())
         if(face->at_boundary() == true && face->boundary_id() == boundary_id)
         // only work on locally relevant cells
         {
@@ -77,11 +77,11 @@ map_boundary_dofs_to_support_points(
           local_dof_indices.resize(fe.dofs_per_face);
           face->get_dof_indices(local_dof_indices);
 
-          const std::vector<Point<spacedim>> & points = fe_values.get_quadrature_points();
+          std::vector<Point<spacedim>> const & points = fe_values.get_quadrature_points();
 
           for(unsigned int i = 0; i < fe.n_dofs_per_face(); ++i)
           {
-            const unsigned int dof_comp = fe.face_system_to_component_index(i).first;
+            unsigned int const dof_comp = fe.face_system_to_component_index(i).first;
 
             // insert the values into the map if it is a valid component
             if(mask[dof_comp])

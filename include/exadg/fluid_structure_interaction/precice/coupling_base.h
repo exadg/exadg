@@ -63,10 +63,10 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 class CouplingBase
 {
 public:
-  CouplingBase(std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+  CouplingBase(std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
                std::shared_ptr<precice::SolverInterface>                                   precice,
-               const std::string                mesh_name,
-               const dealii::types::boundary_id surface_id);
+               std::string const                mesh_name,
+               dealii::types::boundary_id const surface_id);
 
   virtual ~CouplingBase() = default;
 
@@ -97,26 +97,26 @@ public:
    *        preCICE.
    */
   virtual void
-  write_data(const dealii::LinearAlgebra::distributed::Vector<double> & data_vector,
-             const std::string &                                        data_name) = 0;
+  write_data(dealii::LinearAlgebra::distributed::Vector<double> const & data_vector,
+             std::string const &                                        data_name) = 0;
 
 
   virtual void
-  read_block_data(const std::string & data_name) const;
+  read_block_data(std::string const & data_name) const;
 
   /**
    * @brief Queries data IDs from preCICE for the given read data name
    * @param read_data_name
    */
   void
-  add_read_data(const std::string & read_data_name);
+  add_read_data(std::string const & read_data_name);
 
   /**
    * @brief Queries data IDs from preCICE for the given write data name
    * @param write_data_name
    */
   void
-  add_write_data(const std::string & write_data_name);
+  add_write_data(std::string const & write_data_name);
 
   /**
    * @brief Set the WriteDataType in this class which determines the location of
@@ -134,22 +134,22 @@ protected:
    * @param[in] local_size The number of element the local process works on
    */
   void
-  print_info(const bool reader, const unsigned int local_size) const;
+  print_info(bool const reader, unsigned int const local_size) const;
 
   /// The dealii::MatrixFree object (preCICE can only handle double precision)
-  std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> matrix_free;
+  std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> matrix_free;
 
   /// public precice solverinterface
   std::shared_ptr<precice::SolverInterface> precice;
 
   /// Configuration parameters
-  const std::string mesh_name;
+  std::string const mesh_name;
   int               mesh_id;
   // Map between data ID (preCICE) and the data name
   std::map<std::string, int> read_data_map;
   std::map<std::string, int> write_data_map;
 
-  const dealii::types::boundary_id dealii_boundary_surface_id;
+  dealii::types::boundary_id const dealii_boundary_surface_id;
 
   WriteDataType write_data_type;
 
@@ -161,10 +161,10 @@ protected:
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 CouplingBase<dim, data_dim, VectorizedArrayType>::CouplingBase(
-  std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> matrix_free_,
+  std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> matrix_free_,
   std::shared_ptr<precice::SolverInterface>                                   precice,
-  const std::string                                                           mesh_name,
-  const dealii::types::boundary_id                                            surface_id)
+  std::string const                                                           mesh_name,
+  dealii::types::boundary_id const                                            surface_id)
   : matrix_free(matrix_free_),
     precice(precice),
     mesh_name(mesh_name),
@@ -181,10 +181,10 @@ CouplingBase<dim, data_dim, VectorizedArrayType>::CouplingBase(
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-CouplingBase<dim, data_dim, VectorizedArrayType>::add_read_data(const std::string & read_data_name)
+CouplingBase<dim, data_dim, VectorizedArrayType>::add_read_data(std::string const & read_data_name)
 {
   Assert(mesh_id != -1, dealii::ExcNotInitialized());
-  const int read_data_id = precice->getDataID(read_data_name, mesh_id);
+  int const read_data_id = precice->getDataID(read_data_name, mesh_id);
   read_data_map.insert({read_data_name, read_data_id});
 }
 
@@ -193,10 +193,10 @@ CouplingBase<dim, data_dim, VectorizedArrayType>::add_read_data(const std::strin
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 CouplingBase<dim, data_dim, VectorizedArrayType>::add_write_data(
-  const std::string & write_data_name)
+  std::string const & write_data_name)
 {
   Assert(mesh_id != -1, dealii::ExcNotInitialized());
-  const int write_data_id = precice->getDataID(write_data_name, mesh_id);
+  int const write_data_id = precice->getDataID(write_data_name, mesh_id);
   write_data_map.insert({write_data_name, write_data_id});
 }
 
@@ -222,7 +222,7 @@ CouplingBase<dim, data_dim, VectorizedArrayType>::process_coupling_mesh()
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-CouplingBase<dim, data_dim, VectorizedArrayType>::read_block_data(const std::string &) const
+CouplingBase<dim, data_dim, VectorizedArrayType>::read_block_data(std::string const &) const
 {
   AssertThrow(false, dealii::ExcNotImplemented());
 }
@@ -230,14 +230,14 @@ CouplingBase<dim, data_dim, VectorizedArrayType>::read_block_data(const std::str
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-CouplingBase<dim, data_dim, VectorizedArrayType>::print_info(const bool         reader,
-                                                             const unsigned int local_size) const
+CouplingBase<dim, data_dim, VectorizedArrayType>::print_info(bool const         reader,
+                                                             unsigned int const local_size) const
 {
   Assert(matrix_free.get() != 0, dealii::ExcNotInitialized());
   dealii::ConditionalOStream pcout(std::cout,
                                    dealii::Utilities::MPI::this_mpi_process(
                                      matrix_free->get_dof_handler().get_communicator()) == 0);
-  const auto                 map = (reader ? read_data_map : write_data_map);
+  auto const                 map = (reader ? read_data_map : write_data_map);
 
   auto        names      = map.begin();
   std::string data_names = names->first;

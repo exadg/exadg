@@ -405,8 +405,8 @@ initialize_multigrid(
   }
 
   // a function that initializes the dof-vector for a given level and dof_handler
-  const std::function<void(const unsigned int, VectorType &)> initialize_dof_vector =
-    [&](const unsigned int h_level, VectorType & vector) {
+  const std::function<void(unsigned int const, VectorType &)> initialize_dof_vector =
+    [&](unsigned int const h_level, VectorType & vector) {
       dealii::IndexSet locally_relevant_dofs;
       dealii::DoFTools::extract_locally_relevant_dofs(coarse_grid_dof_handlers[h_level],
                                                       locally_relevant_dofs);

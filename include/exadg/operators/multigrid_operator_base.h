@@ -61,7 +61,7 @@ public:
   n() const = 0;
 
   virtual Number
-  el(unsigned int const, const unsigned int) const = 0;
+  el(unsigned int const, unsigned int const) const = 0;
 
   virtual void
   initialize_dof_vector(VectorType & vector) const = 0;

@@ -36,11 +36,11 @@ calculate_maximum_vertex_distance(typename dealii::Triangulation<dim>::active_ce
 {
   double maximum_vertex_distance = 0.0;
 
-  for(const unsigned int i : cell->vertex_indices())
+  for(unsigned int const i : cell->vertex_indices())
   {
     dealii::Point<dim> & ref_vertex = cell->vertex(i);
     // start the loop with the second vertex!
-    for(const unsigned int j : cell->vertex_indices())
+    for(unsigned int const j : cell->vertex_indices())
     {
       if(j != i)
       {

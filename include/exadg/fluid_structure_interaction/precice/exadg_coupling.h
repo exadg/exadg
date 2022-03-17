@@ -39,11 +39,11 @@ class ExaDGCoupling : public CouplingBase<dim, data_dim, VectorizedArrayType>
 {
 public:
   ExaDGCoupling(
-    std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+    std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
     std::shared_ptr<precice::SolverInterface>                                   precice,
-    const std::string                                                           mesh_name,
+    std::string const                                                           mesh_name,
     std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>>              interface_data_,
-    const dealii::types::boundary_id surface_id = dealii::numbers::invalid_unsigned_int);
+    dealii::types::boundary_id const surface_id = dealii::numbers::invalid_unsigned_int);
 
   /**
    * @brief define_mesh_vertices Define a vertex coupling mesh for preCICE
@@ -61,11 +61,11 @@ public:
    *            update_ghost_values must be calles before
    */
   virtual void
-  write_data(const dealii::LinearAlgebra::distributed::Vector<double> & data_vector,
-             const std::string &                                        data_name) override;
+  write_data(dealii::LinearAlgebra::distributed::Vector<double> const & data_vector,
+             std::string const &                                        data_name) override;
 
   virtual void
-  read_block_data(const std::string & data_name) const override;
+  read_block_data(std::string const & data_name) const override;
 
 private:
   /// Accessor for ExaDG data structures
@@ -82,11 +82,11 @@ private:
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 ExaDGCoupling<dim, data_dim, VectorizedArrayType>::ExaDGCoupling(
-  std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+  std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
   std::shared_ptr<precice::SolverInterface>                                   precice,
-  const std::string                                                           mesh_name,
+  std::string const                                                           mesh_name,
   std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>>              interface_data_,
-  const dealii::types::boundary_id                                            surface_id)
+  dealii::types::boundary_id const                                            surface_id)
   : CouplingBase<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
     interface_data(interface_data_)
 {
@@ -109,7 +109,7 @@ ExaDGCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
   for(auto quad_index : interface_data->get_quad_indices())
   {
     // returns std::vector<dealii::Point<dim>>
-    const auto & points = interface_data->get_array_q_points(quad_index);
+    auto const & points = interface_data->get_array_q_points(quad_index);
 
     // Get current size of our interface
     auto const start_index = coupling_nodes_ids.size();
@@ -134,11 +134,11 @@ ExaDGCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 ExaDGCoupling<dim, data_dim, VectorizedArrayType>::read_block_data(
-  const std::string & data_name) const
+  std::string const & data_name) const
 {
   Assert(interface_data.get() != nullptr, dealii::ExcNotInitialized());
 
-  const int read_data_id = this->read_data_map.at(data_name);
+  int const read_data_id = this->read_data_map.at(data_name);
 
   // summarizing the IDs already read
   unsigned int start_index = 0;
@@ -169,8 +169,8 @@ ExaDGCoupling<dim, data_dim, VectorizedArrayType>::read_block_data(
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 ExaDGCoupling<dim, data_dim, VectorizedArrayType>::write_data(
-  const dealii::LinearAlgebra::distributed::Vector<double> &,
-  const std::string &)
+  dealii::LinearAlgebra::distributed::Vector<double> const &,
+  std::string const &)
 {
   AssertThrow(false, dealii::ExcNotImplemented());
 }

@@ -43,11 +43,11 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 class DoFCoupling : public CouplingBase<dim, data_dim, VectorizedArrayType>
 {
 public:
-  DoFCoupling(std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+  DoFCoupling(std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
               std::shared_ptr<precice::SolverInterface>                                   precice,
-              const std::string                                                           mesh_name,
-              const dealii::types::boundary_id surface_id,
-              const int                        mf_dof_index);
+              std::string const                                                           mesh_name,
+              dealii::types::boundary_id const surface_id,
+              int const                        mf_dof_index);
   /**
    * @brief define_mesh_vertices Define a vertex coupling mesh for preCICE
    *        coupling the classical preCICE way
@@ -64,8 +64,8 @@ public:
    *            displacement for FSI)
    */
   virtual void
-  write_data(const dealii::LinearAlgebra::distributed::Vector<double> & data_vector,
-             const std::string &                                        data_name) override;
+  write_data(dealii::LinearAlgebra::distributed::Vector<double> const & data_vector,
+             std::string const &                                        data_name) override;
 
 
 private:
@@ -76,7 +76,7 @@ private:
 
   /// Indices related to the FEEvaluation (have a look at the initialization
   /// of the MatrixFree)
-  const int mf_dof_index;
+  int const mf_dof_index;
 
   virtual std::string
   get_surface_type() const override;
@@ -86,11 +86,11 @@ private:
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 DoFCoupling<dim, data_dim, VectorizedArrayType>::DoFCoupling(
-  std::shared_ptr<const dealii::MatrixFree<dim, double, VectorizedArrayType>> data,
+  std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
   std::shared_ptr<precice::SolverInterface>                                   precice,
-  const std::string                                                           mesh_name,
-  const dealii::types::boundary_id                                            surface_id,
-  const int                                                                   mf_dof_index)
+  std::string const                                                           mesh_name,
+  dealii::types::boundary_id const                                            surface_id,
+  int const                                                                   mf_dof_index)
   : CouplingBase<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
     mf_dof_index(mf_dof_index)
 {
@@ -110,7 +110,7 @@ DoFCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
     return;
 
   // Get and sort the global dof indices
-  auto const get_component_dofs = [&](const int component) {
+  auto const get_component_dofs = [&](int const component) {
     // Get a component mask of the vector component
     dealii::ComponentMask component_mask(data_dim, false);
     component_mask.set(component, true);
@@ -119,7 +119,7 @@ DoFCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
     // Compute the intersection with locally owned dofs
     // TODO: This is super inefficient, have a look at the
     // dof_handler.n_boundary_dofs implementation for a proper version
-    const dealii::IndexSet indices =
+    dealii::IndexSet const indices =
       (dealii::DoFTools::extract_boundary_dofs(this->matrix_free->get_dof_handler(mf_dof_index),
                                                component_mask,
                                                std::set<dealii::types::boundary_id>{
@@ -137,7 +137,7 @@ DoFCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
       global_indices.resize(indices.n_elements());
     // fill the first array entry with the respective component
     dealii::types::global_dof_index iterator = 0;
-    for(const auto dof : indices)
+    for(auto const dof : indices)
     {
       global_indices[iterator][component] = dof;
       ++iterator;
@@ -167,12 +167,12 @@ DoFCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
   for(std::size_t i = 0; i < global_indices.size(); ++i)
   {
     // Get index of the zeroth component
-    const auto element = global_indices[i][0];
+    auto const element = global_indices[i][0];
     for(int d = 0; d < dim; ++d)
       nodes_position[d] = support_points[element][d];
 
     // pass node coordinates to precice
-    const int precice_id = this->precice->setMeshVertex(this->mesh_id, nodes_position.data());
+    int const precice_id = this->precice->setMeshVertex(this->mesh_id, nodes_position.data());
     coupling_nodes_ids.emplace_back(precice_id);
   }
 
@@ -187,10 +187,10 @@ DoFCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
 DoFCoupling<dim, data_dim, VectorizedArrayType>::write_data(
-  const dealii::LinearAlgebra::distributed::Vector<double> & data_vector,
-  const std::string &                                        data_name)
+  dealii::LinearAlgebra::distributed::Vector<double> const & data_vector,
+  std::string const &                                        data_name)
 {
-  const int write_data_id = this->write_data_map.at(data_name);
+  int const write_data_id = this->write_data_map.at(data_name);
   Assert(write_data_id != -1, dealii::ExcNotInitialized());
   Assert(coupling_nodes_ids.size() > 0, dealii::ExcNotInitialized());
 
@@ -200,7 +200,7 @@ DoFCoupling<dim, data_dim, VectorizedArrayType>::write_data(
     // Extract relevant elements from global vector
     for(unsigned int d = 0; d < data_dim; ++d)
     {
-      const auto element = global_indices[i][d];
+      auto const element = global_indices[i][d];
       write_data[d]      = data_vector[element];
     }
 

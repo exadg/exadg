@@ -191,7 +191,7 @@ public:
    *
    */
   void
-  execute(double const * src, const std::string & file_name = "", const double time = 0.0)
+  execute(double const * src, std::string const & file_name = "", double const time = 0.0)
   {
     if(write)
     {
@@ -317,7 +317,7 @@ public:
   }
 
   void
-  execute(double const *, const std::string & = "", const double = 0.0)
+  execute(double const *, std::string const & = "", double const = 0.0)
   {
   }
 
@@ -509,7 +509,7 @@ KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & vel
   // extract beginning of vector...
   Number const * temp = velocity.begin();
 
-  const std::string file_name = data.filename + "_" + dealii::Utilities::int_to_string(counter, 4);
+  std::string const file_name = data.filename + "_" + dealii::Utilities::int_to_string(counter, 4);
 
   deal_spectrum_wrapper->execute((double *)temp, file_name, time);
 

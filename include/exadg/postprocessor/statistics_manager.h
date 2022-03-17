@@ -118,7 +118,7 @@ public:
   evaluate(const std::vector<VectorType> & velocity);
 
   void
-  write_output(const std::string filename, double const dynamic_viscosity, double const density);
+  write_output(std::string const filename, double const dynamic_viscosity, double const density);
 
   void
   reset();

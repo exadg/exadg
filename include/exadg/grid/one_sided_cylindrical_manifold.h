@@ -109,7 +109,7 @@ public:
     dealii::Point<dim> x;
 
     // standard mapping from reference space to physical space using d-linear shape functions
-    for(const unsigned int v : cell->vertex_indices())
+    for(unsigned int const v : cell->vertex_indices())
     {
       double shape_function_value = cell->reference_cell().d_linear_shape_function(xi, v);
       x += shape_function_value * cell->vertex(v);
@@ -251,7 +251,7 @@ public:
     dealii::Tensor<2, dim> jacobian;
 
     // standard mapping from reference space to physical space using d-linear shape functions
-    for(const unsigned int v : cell->vertex_indices())
+    for(unsigned int const v : cell->vertex_indices())
     {
       dealii::Tensor<1, dim> shape_function_gradient =
         cell->reference_cell().d_linear_shape_function_gradient(xi, v);
@@ -425,7 +425,7 @@ public:
     dealii::Point<dim> x;
 
     // standard mapping from reference space to physical space using d-linear shape functions
-    for(const unsigned int v : cell->vertex_indices())
+    for(unsigned int const v : cell->vertex_indices())
     {
       double shape_function_value = cell->reference_cell().d_linear_shape_function(xi, v);
       x += shape_function_value * cell->vertex(v);
@@ -456,7 +456,7 @@ public:
     // calculate displacement as compared to straight sided quadrilateral element
     // on the face that is subject to the manifold
     dealii::Tensor<1, 2> displ, x_lin;
-    for(const unsigned int v : dealii::ReferenceCells::template get_hypercube<1>().vertex_indices())
+    for(unsigned int const v : dealii::ReferenceCells::template get_hypercube<1>().vertex_indices())
     {
       double shape_function_value =
         dealii::ReferenceCells::template get_hypercube<1>().d_linear_shape_function(
@@ -570,7 +570,7 @@ public:
     dealii::Tensor<2, dim> jacobian;
 
     // standard mapping from reference space to physical space using d-linear shape functions
-    for(const unsigned int v : cell->vertex_indices())
+    for(unsigned int const v : cell->vertex_indices())
     {
       dealii::Tensor<1, dim> shape_function_gradient =
         cell->reference_cell().d_linear_shape_function_gradient(xi, v);

@@ -236,7 +236,7 @@ public:
 private:
   void
   coupling_structure_to_ale(VectorType const & displacement_structure,
-                            const double       time_step_size) const
+                            double const       time_step_size) const
   {
     this->precice->write_data(this->precice_parameters.write_mesh_name,
                               this->precice_parameters.displacement_data_name,
@@ -246,7 +246,7 @@ private:
 
   void
   coupling_structure_to_fluid(VectorType const & velocity_structure,
-                              const double       time_step_size) const
+                              double const       time_step_size) const
   {
     this->precice->write_data(this->precice_parameters.write_mesh_name,
                               this->precice_parameters.velocity_data_name,
