@@ -90,7 +90,7 @@ private:
   write_data_factory(
     dealii::LinearAlgebra::distributed::Vector<double> const &          data_vector,
     int const                                                           write_data_id,
-    dealii::EvaluationFlags::EvaluationFlags const                     flags,
+    dealii::EvaluationFlags::EvaluationFlags const                      flags,
     std::function<value_type(FEFaceIntegrator &, unsigned int)> const & get_write_value);
 
   /// The preCICE IDs
