@@ -246,7 +246,6 @@ ENDIF()
 # preCICE
 OPTION(EXADG_WITH_PRECICE "Use preCICE" OFF})
 IF(${EXADG_WITH_PRECICE})
-    ADD_DEFINITIONS(-DEXADG_WITH_PRECICE)
     # the environment variable precice_DIR is searched by default
     FIND_PACKAGE(precice 2.0
       HINTS ${precice_DIR} ${PRECICE_DIR} $ENV{PRECICE_DIR}
