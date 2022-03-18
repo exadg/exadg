@@ -64,11 +64,10 @@ DriverOversetGrids<dim, n_components, Number>::setup()
     // No map of boundary IDs can be provided to make the search more efficient. The reason behind
     // is that the two domains are not connected along boundaries but are overlapping instead. To
     // resolve this, the implementation of InterfaceCoupling needs to be generalized.
-    std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<rank, dim, double>>> dummy;
     first_to_second->setup(poisson2->pde_operator->get_container_interface_data(),
-                           dummy,
                            poisson1->pde_operator->get_dof_handler(),
                            *application->domain1->get_grid()->mapping,
+                           {} /* marked_vertices */,
                            1.e-8 /* geometric tolerance */);
 
     pcout << std::endl << "... done." << std::endl;
@@ -78,9 +77,9 @@ DriverOversetGrids<dim, n_components, Number>::setup()
 
     second_to_first = std::make_shared<InterfaceCoupling<dim, n_components, Number>>();
     second_to_first->setup(poisson1->pde_operator->get_container_interface_data(),
-                           dummy,
                            poisson2->pde_operator->get_dof_handler(),
                            *application->domain2->get_grid()->mapping,
+                           {} /* marked_vertices */,
                            1.e-8 /* geometric tolerance */);
 
     pcout << std::endl << "... done." << std::endl;
