@@ -135,7 +135,7 @@ InterfaceCoupling<dim, n_components, Number>::setup(
   if(marked_vertices_src_.size() > 0)
   {
     AssertThrow(marked_vertices_src_.size() ==
-                  (unsigned int)dof_handler_src_.get_triangulation().n_active_cells(),
+                  (unsigned int)dof_handler_src_.get_triangulation().n_vertices(),
                 dealii::ExcMessage("Vector marked_vertices_src_ has invalid size."));
   }
 
