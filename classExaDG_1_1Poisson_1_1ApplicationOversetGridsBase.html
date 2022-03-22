@@ -69,6 +69,7 @@ $(function() {
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pro-attribs">Protected Attributes</a> &#124;
 <a href="classExaDG_1_1Poisson_1_1ApplicationOversetGridsBase-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">ExaDG::Poisson::ApplicationOversetGridsBase&lt; dim, n_components, Number &gt; Class Template Reference</div></div>
 </div><!--header-->
@@ -76,9 +77,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:afe050e7ffd3f2a92be18607da0a250d7"><td class="memItemLeft" align="right" valign="top"><a id="afe050e7ffd3f2a92be18607da0a250d7" name="afe050e7ffd3f2a92be18607da0a250d7"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>ApplicationOversetGridsBase</b> (std::string parameter_file)</td></tr>
-<tr class="separator:afe050e7ffd3f2a92be18607da0a250d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8d6569946e37d14c710c4083d8b04265"><td class="memItemLeft" align="right" valign="top"><a id="a8d6569946e37d14c710c4083d8b04265" name="a8d6569946e37d14c710c4083d8b04265"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>ApplicationOversetGridsBase</b> (std::string parameter_file, MPI_Comm const &amp;comm)</td></tr>
+<tr class="separator:a8d6569946e37d14c710c4083d8b04265"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a847ec5048871fb517e6065d1681c1297"><td class="memItemLeft" align="right" valign="top"><a id="a847ec5048871fb517e6065d1681c1297" name="a847ec5048871fb517e6065d1681c1297"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameters</b> (dealii::ParameterHandler &amp;prm)</td></tr>
 <tr class="separator:a847ec5048871fb517e6065d1681c1297"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -94,7 +95,42 @@ std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase
 <tr class="memitem:add776b43a3d8fd0c6e363033837dc827"><td class="memItemLeft" align="right" valign="top"><a id="add776b43a3d8fd0c6e363033837dc827" name="add776b43a3d8fd0c6e363033837dc827"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">ApplicationBase</a>&lt; dim, n_components, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>domain2</b></td></tr>
 <tr class="separator:add776b43a3d8fd0c6e363033837dc827"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
+Protected Attributes</h2></td></tr>
+<tr class="memitem:a7b08a6f4b2189572652c73415d6deaad"><td class="memItemLeft" align="right" valign="top"><a id="a7b08a6f4b2189572652c73415d6deaad" name="a7b08a6f4b2189572652c73415d6deaad"></a>
+MPI_Comm const  &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>mpi_comm</b></td></tr>
+<tr class="separator:a7b08a6f4b2189572652c73415d6deaad"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4f6207f4d6079f01fe83d2a8ae6b4631"><td class="memItemLeft" align="right" valign="top">dealii::types::boundary_id&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Poisson_1_1ApplicationOversetGridsBase.html#a4f6207f4d6079f01fe83d2a8ae6b4631">boundary_id_overlap</a></td></tr>
+<tr class="separator:a4f6207f4d6079f01fe83d2a8ae6b4631"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="a4f6207f4d6079f01fe83d2a8ae6b4631" name="a4f6207f4d6079f01fe83d2a8ae6b4631"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4f6207f4d6079f01fe83d2a8ae6b4631">&#9670;&nbsp;</a></span>boundary_id_overlap</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, int n_components, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">dealii::types::boundary_id <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationOversetGridsBase.html">ExaDG::Poisson::ApplicationOversetGridsBase</a>&lt; dim, n_components, Number &gt;::boundary_id_overlap</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">=</div>
+<div class="line">    std::numeric_limits&lt;dealii::types::boundary_id&gt;::max() - 1</div>
+</div><!-- fragment -->
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/poisson/overset_grids/user_interface/<a class="el" href="poisson_2overset__grids_2user__interface_2application__base_8h_source.html">application_base.h</a></li>
 </ul>

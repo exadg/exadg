@@ -75,15 +75,15 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a56a1527c3c5de8e9c3c96b3761c35a45"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1InterfaceCoupling.html#a56a1527c3c5de8e9c3c96b3761c35a45">setup</a> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; dim, n_components, Number &gt; &gt; interface_data_dst_, MapBoundaryCondition const &amp;map_bc_src_, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler_src_, dealii::Mapping&lt; dim &gt; const &amp;mapping_src_, double const tolerance_)</td></tr>
-<tr class="separator:a56a1527c3c5de8e9c3c96b3761c35a45"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aff5ea829ee074454b6c2efad28d2daa2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1InterfaceCoupling.html#aff5ea829ee074454b6c2efad28d2daa2">setup</a> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; dim, n_components, Number &gt; &gt; interface_data_dst_, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler_src_, dealii::Mapping&lt; dim &gt; const &amp;mapping_src_, std::vector&lt; bool &gt; const &amp;marked_vertices_src_, double const tolerance_)</td></tr>
+<tr class="separator:aff5ea829ee074454b6c2efad28d2daa2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa7993c755df85bb31a00373dd0295a91"><td class="memItemLeft" align="right" valign="top"><a id="aa7993c755df85bb31a00373dd0295a91" name="aa7993c755df85bb31a00373dd0295a91"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update_data</b> (VectorType const &amp;dof_vector_src)</td></tr>
 <tr class="separator:aa7993c755df85bb31a00373dd0295a91"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a56a1527c3c5de8e9c3c96b3761c35a45" name="a56a1527c3c5de8e9c3c96b3761c35a45"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a56a1527c3c5de8e9c3c96b3761c35a45">&#9670;&nbsp;</a></span>setup()</h2>
+<a id="aff5ea829ee074454b6c2efad28d2daa2" name="aff5ea829ee074454b6c2efad28d2daa2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aff5ea829ee074454b6c2efad28d2daa2">&#9670;&nbsp;</a></span>setup()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -95,12 +95,6 @@ template&lt;int dim, int n_components, typename Number &gt; </div>
           <td>(</td>
           <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; dim, n_components, Number &gt; &gt;&#160;</td>
           <td class="paramname"><em>interface_data_dst_</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">MapBoundaryCondition const &amp;&#160;</td>
-          <td class="paramname"><em>map_bc_src_</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -117,6 +111,12 @@ template&lt;int dim, int n_components, typename Number &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">std::vector&lt; bool &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>marked_vertices_src_</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">double const&#160;</td>
           <td class="paramname"><em>tolerance_</em>&#160;</td>
         </tr>
@@ -127,8 +127,14 @@ template&lt;int dim, int n_components, typename Number &gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
-<p ><a class="el" href="classExaDG_1_1InterfaceCoupling.html#a56a1527c3c5de8e9c3c96b3761c35a45">setup()</a> function.</p>
-<p >TODO: The part dealing with marked vertices needs to be generalized. Currently, use an empty map_bc_src_ to deactivate the feature marked_vertices. </p>
+<p ><a class="el" href="classExaDG_1_1InterfaceCoupling.html#aff5ea829ee074454b6c2efad28d2daa2">setup()</a> function.</p>
+<p >The aim of</p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">marked_vertices_src_</td><td>is to make the search of points on the src side computationally more efficient. If no useful information can be provided for this parameter, an empty vector has to be passed to this function.</td></tr>
+    <tr><td class="paramname">tolerance_</td><td>is a geometric tolerance passed to dealii::RemotePointEvaluation and used for the search of points on the src side. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>

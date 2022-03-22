@@ -4,7 +4,7 @@ var searchData=
   ['serialize_1',['serialize',['../classdealspectrum_1_1Interpolator.html#a8283a193758ed7bc6fd68fd2f3cd9847',1,'dealspectrum::Interpolator::serialize(char const *filename)'],['../classdealspectrum_1_1Interpolator.html#a6b09f98b6b45095290fa3ea8269f0c16',1,'dealspectrum::Interpolator::serialize(char const *filename, double const *&amp;src)'],['../classdealspectrum_1_1SpectralAnalysis.html#a5823986be9b1e140e8a408cdcdd5b59c',1,'dealspectrum::SpectralAnalysis::serialize()']]],
   ['set_5fwrite_5fdata_5ftype_2',['set_write_data_type',['../classExaDG_1_1preCICE_1_1CouplingBase.html#aae21d6fc764dbd5051ec7c27cc38d11a',1,'ExaDG::preCICE::CouplingBase']]],
   ['setup_3',['Setup',['../classdealspectrum_1_1Setup.html',1,'dealspectrum::Setup'],['../classdealspectrum_1_1Setup.html#ae48fcc6968bba36f4300ec7e88009717',1,'dealspectrum::Setup::Setup()']]],
-  ['setup_4',['setup',['../classExaDG_1_1InterfaceCoupling.html#a56a1527c3c5de8e9c3c96b3761c35a45',1,'ExaDG::InterfaceCoupling']]],
+  ['setup_4',['setup',['../classExaDG_1_1InterfaceCoupling.html#aff5ea829ee074454b6c2efad28d2daa2',1,'ExaDG::InterfaceCoupling']]],
   ['smootherbase_5',['SmootherBase',['../classExaDG_1_1SmootherBase.html',1,'ExaDG']]],
   ['smootherdata_6',['SmootherData',['../structExaDG_1_1SmootherData.html',1,'ExaDG']]],
   ['solutionfield_7',['SolutionField',['../classExaDG_1_1SolutionField.html',1,'ExaDG']]],

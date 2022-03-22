@@ -167,39 +167,39 @@ $(function() {
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span><span class="keyword">public</span>:</div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  <a class="code hl_class" href="classExaDG_1_1InterfaceCoupling.html">InterfaceCoupling</a>();</div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span> </div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  <a class="code hl_function" href="classExaDG_1_1InterfaceCoupling.html#a56a1527c3c5de8e9c3c96b3761c35a45">setup</a>(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData&lt;dim, n_components, Number&gt;</a>&gt; interface_data_dst_,</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>        MapBoundaryCondition <span class="keyword">const</span> &amp;                                       map_bc_src_,</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>        dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp;                                    dof_handler_src_,</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>        dealii::Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;                                       mapping_src_,</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>        <span class="keywordtype">double</span> <span class="keyword">const</span>                                                       tolerance_);</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span> </div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  update_data(VectorType <span class="keyword">const</span> &amp; dof_vector_src);</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span> </div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span><span class="comment">   * dst-side</span></div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  std::shared_ptr&lt;ContainerInterfaceData&lt;dim, n_components, Number&gt;&gt; interface_data_dst;</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span><span class="comment">   *  Evaluates solution on src-side in those points specified by dst-side</span></div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  std::map&lt;quad_index, dealii::Utilities::MPI::RemotePointEvaluation&lt;dim&gt;&gt; map_evaluator;</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span><span class="comment">   * src-side</span></div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> * dof_handler_src;</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>};</div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span> </div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span> </div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_FUNCTIONALITIES_INTERFACE_COUPLING_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  <a class="code hl_function" href="classExaDG_1_1InterfaceCoupling.html#aff5ea829ee074454b6c2efad28d2daa2">setup</a>(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData&lt;dim, n_components, Number&gt;</a>&gt; interface_data_dst_,</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>        dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp;                                    dof_handler_src_,</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>        dealii::Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;                                       mapping_src_,</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>        std::vector&lt;bool&gt; <span class="keyword">const</span> &amp;                                          marked_vertices_src_,</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>        <span class="keywordtype">double</span> <span class="keyword">const</span>                                                       tolerance_);</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  update_data(VectorType <span class="keyword">const</span> &amp; dof_vector_src);</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span><span class="comment">   * dst-side</span></div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  std::shared_ptr&lt;ContainerInterfaceData&lt;dim, n_components, Number&gt;&gt; interface_data_dst;</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span> </div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span><span class="comment">   *  Evaluates solution on src-side in those points specified by dst-side</span></div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  std::map&lt;quad_index, dealii::Utilities::MPI::RemotePointEvaluation&lt;dim&gt;&gt; map_evaluator;</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span> </div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span><span class="comment">   * src-side</span></div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> * dof_handler_src;</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>};</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span> </div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span> </div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_FUNCTIONALITIES_INTERFACE_COUPLING_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1ContainerInterfaceData_html"><div class="ttname"><a href="classExaDG_1_1ContainerInterfaceData.html">ExaDG::ContainerInterfaceData</a></div><div class="ttdef"><b>Definition:</b> interface_coupling.h:36</div></div>
 <div class="ttc" id="aclassExaDG_1_1InterfaceCoupling_html"><div class="ttname"><a href="classExaDG_1_1InterfaceCoupling.html">ExaDG::InterfaceCoupling</a></div><div class="ttdef"><b>Definition:</b> interface_coupling.h:84</div></div>
-<div class="ttc" id="aclassExaDG_1_1InterfaceCoupling_html_a56a1527c3c5de8e9c3c96b3761c35a45"><div class="ttname"><a href="classExaDG_1_1InterfaceCoupling.html#a56a1527c3c5de8e9c3c96b3761c35a45">ExaDG::InterfaceCoupling::setup</a></div><div class="ttdeci">void setup(std::shared_ptr&lt; ContainerInterfaceData&lt; dim, n_components, Number &gt; &gt; interface_data_dst_, MapBoundaryCondition const &amp;map_bc_src_, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler_src_, dealii::Mapping&lt; dim &gt; const &amp;mapping_src_, double const tolerance_)</div><div class="ttdef"><b>Definition:</b> interface_coupling.cpp:125</div></div>
+<div class="ttc" id="aclassExaDG_1_1InterfaceCoupling_html_aff5ea829ee074454b6c2efad28d2daa2"><div class="ttname"><a href="classExaDG_1_1InterfaceCoupling.html#aff5ea829ee074454b6c2efad28d2daa2">ExaDG::InterfaceCoupling::setup</a></div><div class="ttdeci">void setup(std::shared_ptr&lt; ContainerInterfaceData&lt; dim, n_components, Number &gt; &gt; interface_data_dst_, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler_src_, dealii::Mapping&lt; dim &gt; const &amp;mapping_src_, std::vector&lt; bool &gt; const &amp;marked_vertices_src_, double const tolerance_)</div><div class="ttdef"><b>Definition:</b> interface_coupling.cpp:125</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
