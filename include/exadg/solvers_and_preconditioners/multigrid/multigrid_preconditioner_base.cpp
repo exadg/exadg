@@ -21,7 +21,7 @@
 
 // deal.II
 #include <deal.II/distributed/fully_distributed_tria.h>
-#if DEAL_II_VERSION_GTE(10, 0, 0)
+#if DEAL_II_VERSION_GTE(9, 4, 0)
 #  include <deal.II/distributed/repartitioning_policy_tools.h>
 #endif
 #include <deal.II/fe/fe_dgq.h>
@@ -314,7 +314,7 @@ MultigridPreconditionerBase<dim, Number>::check_levels(std::vector<MGLevelInfo> 
   }
 }
 
-#if DEAL_II_VERSION_GTE(10, 0, 0)
+#if DEAL_II_VERSION_GTE(9, 4, 0)
 
 /**
  * A class to use for the deal.II coarsening functionality, where we try to
@@ -469,7 +469,7 @@ std::vector<std::shared_ptr<dealii::Triangulation<dim, spacedim> const>>
 create_geometric_coarsening_sequence(
   dealii::Triangulation<dim, spacedim> const & fine_triangulation_in)
 {
-#if DEAL_II_VERSION_GTE(10, 0, 0)
+#if DEAL_II_VERSION_GTE(9, 4, 0)
 
   return dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
     fine_triangulation_in,

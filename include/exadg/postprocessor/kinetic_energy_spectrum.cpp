@@ -110,7 +110,7 @@ public:
     MPI_Exscan(&n_local_cells,
                &global_offset,
                1,
-#  if DEAL_II_VERSION_GTE(10, 0, 0)
+#  if DEAL_II_VERSION_GTE(9, 4, 0)
                dealii::Utilities::MPI::mpi_type_id_for_type<decltype(global_offset)>,
 #  else
                dealii::Utilities::MPI::mpi_type_id(&global_offset),

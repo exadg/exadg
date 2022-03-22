@@ -28,7 +28,7 @@
 DEAL_II_NAMESPACE_OPEN
 
 
-#if DEAL_II_VERSION_GTE(10, 0, 0)
+#if DEAL_II_VERSION_GTE(9, 4, 0)
 
 
 template struct dealii::internal::FEEvaluationFactory<deal_II_dimension, deal_II_scalar_vectorized>;

@@ -52,7 +52,7 @@ write_output(OutputDataBase const &          output_data,
   std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
     component_interpretation(dim, dealii::DataComponentInterpretation::component_is_part_of_vector);
 
-#if !DEAL_II_VERSION_GTE(10, 0, 0)
+#if !DEAL_II_VERSION_GTE(9, 4, 0)
   solution_vector.update_ghost_values();
 #endif
 

@@ -60,7 +60,7 @@ write_output(OutputData const &                                         output_d
     velocity_component_interpretation(
       dim, dealii::DataComponentInterpretation::component_is_part_of_vector);
 
-#if !DEAL_II_VERSION_GTE(10, 0, 0)
+#if !DEAL_II_VERSION_GTE(9, 4, 0)
   velocity.update_ghost_values();
 #endif
 
@@ -69,7 +69,7 @@ write_output(OutputData const &                                         output_d
                            velocity_names,
                            velocity_component_interpretation);
 
-#if !DEAL_II_VERSION_GTE(10, 0, 0)
+#if !DEAL_II_VERSION_GTE(9, 4, 0)
   pressure.update_ghost_values();
 #endif
 
@@ -91,7 +91,7 @@ write_output(OutputData const &                                         output_d
       it != additional_fields.end();
       ++it)
   {
-#if !DEAL_II_VERSION_GTE(10, 0, 0)
+#if !DEAL_II_VERSION_GTE(9, 4, 0)
     it->vector->update_ghost_values();
 #endif
 
