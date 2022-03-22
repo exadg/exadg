@@ -51,7 +51,7 @@ write_output(OutputDataBase const &          output_data,
 
   data_out.attach_dof_handler(dof_handler);
 
-#if !DEAL_II_VERSION_GTE(10, 0, 0)
+#if !DEAL_II_VERSION_GTE(9, 4, 0)
   solution_vector.update_ghost_values();
 #endif
 

@@ -121,7 +121,7 @@ apply_taylor_green_symmetry(dealii::DoFHandler<dim> const & dof_handler_symm,
     dealii::Utilities::MPI::ConsensusAlgorithms::Selector<
       std::pair<dealii::types::global_dof_index, dealii::types::global_dof_index>,
       unsigned int>
-#if DEAL_II_VERSION_GTE(10, 0, 0)
+#if DEAL_II_VERSION_GTE(9, 4, 0)
       consensus_algorithm;
     consensus_algorithm.run(process, comm);
 #else

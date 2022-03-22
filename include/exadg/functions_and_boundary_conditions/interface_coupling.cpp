@@ -149,7 +149,7 @@ InterfaceCoupling<dim, n_components, Number>::setup(
                           dealii::Utilities::MPI::RemotePointEvaluation<dim>(
                             tolerance_,
                             false
-#if DEAL_II_VERSION_GTE(10, 0, 0)
+#if DEAL_II_VERSION_GTE(9, 4, 0)
                             ,
                             0,
                             [marked_vertices_src_]() { return marked_vertices_src_; }
@@ -166,7 +166,7 @@ template<int dim, int n_components, typename Number>
 void
 InterfaceCoupling<dim, n_components, Number>::update_data(VectorType const & dof_vector_src)
 {
-#if DEAL_II_VERSION_GTE(10, 0, 0)
+#if DEAL_II_VERSION_GTE(9, 4, 0)
   dof_vector_src.update_ghost_values();
 #else
   dealii::LinearAlgebra::distributed::Vector<double> dof_vector_src_double;
@@ -176,7 +176,7 @@ InterfaceCoupling<dim, n_components, Number>::update_data(VectorType const & dof
 
   for(auto quadrature : interface_data_dst->get_quad_indices())
   {
-#if DEAL_II_VERSION_GTE(10, 0, 0)
+#if DEAL_II_VERSION_GTE(9, 4, 0)
     auto const result =
       dealii::VectorTools::point_values<n_components>(map_evaluator[quadrature],
                                                       *dof_handler_src,
