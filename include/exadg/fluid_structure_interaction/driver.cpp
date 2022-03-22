@@ -21,6 +21,7 @@
 
 // ExaDG
 #include <exadg/fluid_structure_interaction/driver.h>
+#include <exadg/grid/marked_vertices.h>
 #include <exadg/utilities/print_general_infos.h>
 
 namespace ExaDG
@@ -103,13 +104,18 @@ Driver<dim, Number>::setup_interface_coupling()
 
     pcout << std::endl << "Setup interface coupling structure -> ALE ..." << std::endl;
 
+    auto const & tria         = structure->pde_operator->get_dof_handler().get_triangulation();
+    auto const   boundary_ids = extract_set_of_keys_from_map(
+      application->structure->get_boundary_descriptor()->neumann_cached_bc);
+    auto const marked_vertices_structure = get_marked_vertices_via_boundary_ids(tria, boundary_ids);
+
     if(application->fluid->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
       structure_to_ale = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
       structure_to_ale->setup(fluid->ale_poisson_operator->get_container_interface_data(),
-                              application->structure->get_boundary_descriptor()->neumann_cached_bc,
                               structure->pde_operator->get_dof_handler(),
                               *application->structure->get_grid()->mapping,
+                              marked_vertices_structure,
                               parameters.geometric_tolerance);
     }
     else if(application->fluid->get_parameters().mesh_movement_type ==
@@ -118,9 +124,9 @@ Driver<dim, Number>::setup_interface_coupling()
       structure_to_ale = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
       structure_to_ale->setup(
         fluid->ale_elasticity_operator->get_container_interface_data_dirichlet(),
-        application->structure->get_boundary_descriptor()->neumann_cached_bc,
         structure->pde_operator->get_dof_handler(),
         *application->structure->get_grid()->mapping,
+        marked_vertices_structure,
         parameters.geometric_tolerance);
     }
     else
@@ -140,11 +146,16 @@ Driver<dim, Number>::setup_interface_coupling()
 
     pcout << std::endl << "Setup interface coupling structure -> fluid ..." << std::endl;
 
+    auto const & tria         = structure->pde_operator->get_dof_handler().get_triangulation();
+    auto const   boundary_ids = extract_set_of_keys_from_map(
+      application->structure->get_boundary_descriptor()->neumann_cached_bc);
+    auto const marked_vertices_structure = get_marked_vertices_via_boundary_ids(tria, boundary_ids);
+
     structure_to_fluid = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
     structure_to_fluid->setup(fluid->pde_operator->get_container_interface_data(),
-                              application->structure->get_boundary_descriptor()->neumann_cached_bc,
                               structure->pde_operator->get_dof_handler(),
                               *application->structure->get_grid()->mapping,
+                              marked_vertices_structure,
                               parameters.geometric_tolerance);
 
     pcout << std::endl << "... done!" << std::endl;
@@ -159,15 +170,20 @@ Driver<dim, Number>::setup_interface_coupling()
 
     pcout << std::endl << "Setup interface coupling fluid -> structure ..." << std::endl;
 
-    fluid_to_structure = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
     std::shared_ptr<dealii::Mapping<dim> const> mapping_fluid =
       get_dynamic_mapping<dim, Number>(application->fluid->get_grid(), fluid->ale_grid_motion);
-    fluid_to_structure->setup(
-      structure->pde_operator->get_container_interface_data_neumann(),
-      application->fluid->get_boundary_descriptor()->velocity->dirichlet_cached_bc,
-      fluid->pde_operator->get_dof_handler_u(),
-      *mapping_fluid,
-      parameters.geometric_tolerance);
+
+    auto const & tria         = fluid->pde_operator->get_dof_handler_u().get_triangulation();
+    auto const   boundary_ids = extract_set_of_keys_from_map(
+      application->fluid->get_boundary_descriptor()->velocity->dirichlet_cached_bc);
+    auto const marked_vertices_fluid = get_marked_vertices_via_boundary_ids(tria, boundary_ids);
+
+    fluid_to_structure = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
+    fluid_to_structure->setup(structure->pde_operator->get_container_interface_data_neumann(),
+                              fluid->pde_operator->get_dof_handler_u(),
+                              *mapping_fluid,
+                              marked_vertices_fluid,
+                              parameters.geometric_tolerance);
 
     pcout << std::endl << "... done!" << std::endl;
 

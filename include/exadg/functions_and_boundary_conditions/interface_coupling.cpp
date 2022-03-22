@@ -124,52 +124,23 @@ template<int dim, int n_components, typename Number>
 void
 InterfaceCoupling<dim, n_components, Number>::setup(
   std::shared_ptr<ContainerInterfaceData<dim, n_components, Number>> interface_data_dst_,
-  MapBoundaryCondition const &                                       map_bc_src_,
   dealii::DoFHandler<dim> const &                                    dof_handler_src_,
   dealii::Mapping<dim> const &                                       mapping_src_,
+  std::vector<bool> const &                                          marked_vertices_src_,
   double const                                                       tolerance_)
 {
   AssertThrow(interface_data_dst_.get(),
               dealii::ExcMessage("Received uninitialized variable. Aborting."));
 
+  if(marked_vertices_src_.size() > 0)
+  {
+    AssertThrow(marked_vertices_src_.size() ==
+                  (unsigned int)dof_handler_src_.get_triangulation().n_vertices(),
+                dealii::ExcMessage("Vector marked_vertices_src_ has invalid size."));
+  }
+
   interface_data_dst = interface_data_dst_;
   dof_handler_src    = &dof_handler_src_;
-
-#if DEAL_II_VERSION_GTE(10, 0, 0)
-  // mark vertices at interface in order to make search of active cells around point more
-  // efficient
-  std::vector<bool> marked_vertices(dof_handler_src_.get_triangulation().n_vertices(), false);
-
-  for(auto const & cell : dof_handler_src_.get_triangulation().active_cell_iterators())
-  {
-    if(!cell->is_artificial() && cell->at_boundary())
-    {
-      for(unsigned int const f : cell->face_indices())
-      {
-        if(cell->face(f)->at_boundary())
-        {
-          if(map_bc_src_.find(cell->face(f)->boundary_id()) != map_bc_src_.end())
-          {
-            for(unsigned int const v : cell->face(f)->vertex_indices())
-            {
-              marked_vertices[cell->face(f)->vertex_index(v)] = true;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  // To improve robustness, make sure that not all entries of marked_vertices are false.
-  // Otherwise, points will simply not be found by RemotePointEvaluation and results will
-  // probably be wrong.
-  if(std::all_of(marked_vertices.begin(), marked_vertices.end(), [](bool vertex_is_marked) {
-       return vertex_is_marked == false;
-     }))
-  {
-    marked_vertices.clear();
-  }
-#endif
 
   for(auto quad_index : interface_data_dst->get_quad_indices())
   {
@@ -181,7 +152,7 @@ InterfaceCoupling<dim, n_components, Number>::setup(
 #if DEAL_II_VERSION_GTE(10, 0, 0)
                             ,
                             0,
-                            [marked_vertices]() { return marked_vertices; }
+                            [marked_vertices_src_]() { return marked_vertices_src_; }
 #endif
                             ));
 

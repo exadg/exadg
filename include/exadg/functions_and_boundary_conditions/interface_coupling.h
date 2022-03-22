@@ -99,14 +99,18 @@ public:
   /**
    * setup() function.
    *
-   * TODO: The part dealing with marked vertices needs to be generalized. Currently,
-   * use an empty map_bc_src_ to deactivate the feature marked_vertices.
+   * The aim of @param marked_vertices_src_ is to make the search of points on the src side
+   * computationally more efficient. If no useful information can be provided for this parameter, an
+   * empty vector has to be passed to this function.
+   *
+   * @param tolerance_ is a geometric tolerance passed to dealii::RemotePointEvaluation and used for
+   * the search of points on the src side.
    */
   void
   setup(std::shared_ptr<ContainerInterfaceData<dim, n_components, Number>> interface_data_dst_,
-        MapBoundaryCondition const &                                       map_bc_src_,
         dealii::DoFHandler<dim> const &                                    dof_handler_src_,
         dealii::Mapping<dim> const &                                       mapping_src_,
+        std::vector<bool> const &                                          marked_vertices_src_,
         double const                                                       tolerance_);
 
   void
