@@ -721,29 +721,30 @@ namespace
 // temporary hack
 template<int dim, int spacedim, typename SparsityPatternType, typename Number>
 void
-make_sparsity_pattern(const dealii::DoFHandler<dim, spacedim> & dof,
+make_sparsity_pattern(const dealii::DoFHandler<dim, spacedim> & dof_handler,
                       SparsityPatternType &                     sparsity,
                       unsigned int const                        level,
                       dealii::AffineConstraints<Number> const & constraints,
                       bool const                                keep_constrained_dofs = true)
 {
-  const dealii::types::global_dof_index n_dofs = dof.n_dofs(level);
+  const dealii::types::global_dof_index n_dofs = dof_handler.n_dofs(level);
   (void)n_dofs;
 
   Assert(sparsity.n_rows() == n_dofs, dealii::ExcDimensionMismatch(sparsity.n_rows(), n_dofs));
   Assert(sparsity.n_cols() == n_dofs, dealii::ExcDimensionMismatch(sparsity.n_cols(), n_dofs));
 
-  unsigned int const                           dofs_per_cell = dof.get_fe().n_dofs_per_cell();
+  unsigned int const dofs_per_cell = dof_handler.get_fe().n_dofs_per_cell();
   std::vector<dealii::types::global_dof_index> dofs_on_this_cell(dofs_per_cell);
-  typename dealii::DoFHandler<dim, spacedim>::cell_iterator cell = dof.begin(level),
-                                                            endc = dof.end(level);
-  for(; cell != endc; ++cell)
-    if(dof.get_triangulation().locally_owned_subdomain() == dealii::numbers::invalid_subdomain_id ||
-       cell->level_subdomain_id() == dof.get_triangulation().locally_owned_subdomain())
+  for(auto const & cell : dof_handler.cell_iterators_on_level(level))
+  {
+    if(dof_handler.get_triangulation().locally_owned_subdomain() ==
+         dealii::numbers::invalid_subdomain_id ||
+       cell->level_subdomain_id() == dof_handler.get_triangulation().locally_owned_subdomain())
     {
       cell->get_mg_dof_indices(dofs_on_this_cell);
       constraints.add_entries_local_to_global(dofs_on_this_cell, sparsity, keep_constrained_dofs);
     }
+  }
 }
 } // namespace
 

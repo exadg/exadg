@@ -556,11 +556,9 @@ SpatialOperatorBase<dim, Number>::initialization_pure_dirichlet_bc()
   if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     typename dealii::DoFHandler<dim>::active_cell_iterator first_cell;
-    typename dealii::DoFHandler<dim>::active_cell_iterator cell = dof_handler_p.begin_active(),
-                                                           endc = dof_handler_p.end();
 
     bool processor_has_active_cells = false;
-    for(; cell != endc; ++cell)
+    for(auto const & cell : dof_handler_p.active_cell_iterators())
     {
       if(cell->is_locally_owned())
       {

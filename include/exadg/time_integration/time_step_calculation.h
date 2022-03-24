@@ -102,15 +102,12 @@ calculate_max_velocity(dealii::Triangulation<dim> const &     triangulation,
                        double const                           time,
                        MPI_Comm const &                       mpi_comm)
 {
-  typename dealii::Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(),
-                                                            endc = triangulation.end();
-
   double U = 0.0, max_U = std::numeric_limits<double>::min();
 
   dealii::Tensor<1, dim, double> vel;
   velocity->set_time(time);
 
-  for(; cell != endc; ++cell)
+  for(auto const & cell : triangulation.active_cell_iterators())
   {
     if(cell->is_locally_owned())
     {

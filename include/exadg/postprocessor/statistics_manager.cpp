@@ -197,9 +197,7 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
       }
 
       // loop over all cells
-      for(typename dealii::DoFHandler<dim>::active_cell_iterator cell = dof_handler.begin_active();
-          cell != dof_handler.end();
-          ++cell)
+      for(auto const & cell : dof_handler.active_cell_iterators())
       {
         if(cell->is_locally_owned())
         {
@@ -493,9 +491,7 @@ StatisticsManager<dim, Number>::do_evaluate(const std::vector<VectorType const *
   std::vector<dealii::types::global_dof_index> dof_indices(dof_handler.get_fe().dofs_per_cell);
 
   // loop over all cells and perform averaging/integration for all locally owned cells
-  for(typename dealii::DoFHandler<dim>::active_cell_iterator cell = dof_handler.begin_active();
-      cell != dof_handler.end();
-      ++cell)
+  for(auto const & cell : dof_handler.active_cell_iterators())
   {
     if(cell->is_locally_owned())
     {

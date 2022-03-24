@@ -157,7 +157,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
 
     // then move the vertices to the points where we want them to be to create a slightly asymmetric
     // cube with a hole
-    for(dealii::Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
+    for(auto const & cell : middle.cell_iterators())
     {
       for(unsigned int v = 0; v < dealii::GeometryInfo<2>::vertices_per_cell; ++v)
       {
@@ -189,7 +189,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
     }
 
     // the same for the inner circle
-    for(dealii::Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
+    for(auto const & cell : middle.cell_iterators())
     {
       for(unsigned int v = 0; v < dealii::GeometryInfo<2>::vertices_per_cell; ++v)
       {
@@ -305,7 +305,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
 
     // then move the vertices to the points where we want them to be to create a slightly asymmetric
     // cube with a hole
-    for(dealii::Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
+    for(auto const & cell : middle.cell_iterators())
     {
       for(unsigned int v = 0; v < dealii::GeometryInfo<2>::vertices_per_cell; ++v)
       {
@@ -448,7 +448,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
     dealii::GridTools::shift(dealii::Point<2>(outer_radius + X_1, outer_radius), middle);
 
     // then move the vertices to the points where we want them to be
-    for(dealii::Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
+    for(auto const & cell : middle.cell_iterators())
     {
       for(unsigned int v = 0; v < dealii::GeometryInfo<2>::vertices_per_cell; ++v)
       {
@@ -475,7 +475,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
     }
 
     // the same for the inner circle
-    for(dealii::Triangulation<2>::cell_iterator cell = circle.begin(); cell != circle.end(); ++cell)
+    for(auto const & cell : circle.cell_iterators())
     {
       for(unsigned int v = 0; v < dealii::GeometryInfo<2>::vertices_per_cell; ++v)
       {
@@ -580,7 +580,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
     dealii::GridTools::shift(dealii::Point<2>(outer_radius + X_1, outer_radius), middle);
 
     // then move the vertices to the points where we want them to be
-    for(dealii::Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
+    for(auto const & cell : middle.cell_iterators())
     {
       for(unsigned int v = 0; v < dealii::GeometryInfo<2>::vertices_per_cell; ++v)
       {
@@ -954,9 +954,7 @@ create_coarse_triangulation(dealii::Triangulation<dim> &                        
 
   for(unsigned int i = 0; i < manifold_ids.size(); ++i)
   {
-    for(typename dealii::Triangulation<dim>::cell_iterator cell = triangulation.begin();
-        cell != triangulation.end();
-        ++cell)
+    for(auto const & cell : triangulation.cell_iterators())
     {
       if(cell->manifold_id() == manifold_ids[i])
       {
