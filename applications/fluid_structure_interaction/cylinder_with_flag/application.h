@@ -424,7 +424,7 @@ private:
       double const TOL = 1.e-12;
 
       // boundary IDs
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         double const x = cell->face(f)->center()(0);
         double const y = cell->face(f)->center()(1);
@@ -457,7 +457,7 @@ private:
       }
 
       // manifold IDs
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         if(cell->face(f)->at_boundary())
         {
@@ -943,7 +943,7 @@ private:
       double const TOL = 1.e-12;
 
       // boundary IDs
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         double const x = cell->face(f)->center()(0);
 
@@ -972,7 +972,7 @@ private:
       }
 
       // manifold IDs
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         if(cell->face(f)->at_boundary())
         {

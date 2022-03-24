@@ -174,7 +174,7 @@ private:
     auto cell_hint_2 = typename dealii::Triangulation<dim>::active_cell_iterator();
     for(auto cell : domain1->get_grid()->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         if(cell->face(f)->at_boundary())
         {
@@ -200,7 +200,7 @@ private:
     auto cell_hint_1 = typename dealii::Triangulation<dim>::active_cell_iterator();
     for(auto cell : domain2->get_grid()->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         if(cell->face(f)->at_boundary())
         {

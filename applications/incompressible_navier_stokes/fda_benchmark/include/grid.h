@@ -237,7 +237,7 @@ create_grid_and_set_boundary_ids_nozzle(
     // INFLOW
     if(cell->center()[2] < Z2_INFLOW)
     {
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         if(cell->face(f)->at_boundary())
         {
@@ -266,7 +266,7 @@ create_grid_and_set_boundary_ids_nozzle(
     // CONE
     else if(cell->center()[2] > Z1_CONE && cell->center()[2] < Z2_CONE)
     {
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         if(cell->face(f)->at_boundary())
         {
@@ -306,7 +306,7 @@ create_grid_and_set_boundary_ids_nozzle(
     // THROAT
     else if(cell->center()[2] > Z1_THROAT && cell->center()[2] < Z2_THROAT)
     {
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         if(cell->face(f)->at_boundary())
         {
@@ -342,7 +342,7 @@ create_grid_and_set_boundary_ids_nozzle(
         cell->set_all_manifold_ids(MANIFOLD_ID_CYLINDER);
 
       // one-sided cylindrical manifold for core region
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         if(cell->face(f)->at_boundary())
         {
@@ -425,7 +425,7 @@ create_grid_and_set_boundary_ids_nozzle(
    */
   for(auto cell : triangulation->active_cell_iterators())
   {
-    for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+    for(auto const & f : cell->face_indices())
     {
       // inflow boundary on the left has ID = 1
       if((std::fabs(cell->face(f)->center()[2] - Z1_INFLOW) < 1e-12))

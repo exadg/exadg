@@ -422,7 +422,7 @@ private:
 
     for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         double const x   = cell->face(f)->center()(0);
         double const y   = cell->face(f)->center()(1);
@@ -798,7 +798,7 @@ private:
 
     for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         if(cell->face(f)->at_boundary())
         {

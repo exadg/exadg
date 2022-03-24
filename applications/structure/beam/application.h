@@ -206,7 +206,7 @@ private:
     double const tol = 1.e-8;
     for(auto cell : *this->grid->triangulation)
     {
-      for(unsigned int face = 0; face < dealii::GeometryInfo<dim>::faces_per_cell; ++face)
+      for(auto const & face : cell.face_indices())
       {
         // left face
         if(std::fabs(cell.face(face)->center()(0) - 0) < tol)

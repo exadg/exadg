@@ -311,7 +311,7 @@ private:
 
     for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         if(cell->face(f)->at_boundary())
         {

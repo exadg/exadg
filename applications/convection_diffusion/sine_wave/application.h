@@ -125,7 +125,7 @@ private:
     // set boundary id of 1 at right boundary (outflow)
     for(auto cell : *this->grid->triangulation)
     {
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell.face_indices())
       {
         if((std::fabs(cell.face(f)->center()(0) - right) < 1e-12))
           cell.face(f)->set_boundary_id(1);

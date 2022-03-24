@@ -302,7 +302,7 @@ private:
     // set boundary IDs: 0 by default, set left boundary to 1
     for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         if((std::fabs(cell->face(f)->center()(1) - 0.0) < 1e-12))
           cell->face(f)->set_boundary_id(1);

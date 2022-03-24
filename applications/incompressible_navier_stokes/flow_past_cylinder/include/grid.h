@@ -99,7 +99,7 @@ set_boundary_ids(dealii::Triangulation<dim> & tria, bool compute_in_2d)
   // Set the cylinder boundary to 2, outflow to 1, the rest to 0.
   for(auto cell : tria.active_cell_iterators())
   {
-    for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f) // loop over cells
+    for(auto const & f : cell->face_indices())
     {
       if(cell->face(f)->at_boundary())
       {
@@ -227,7 +227,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
       {
         if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
         {
-          for(unsigned int f = 0; f < dealii::GeometryInfo<2>::faces_per_cell; ++f)
+          for(auto const & f : cell->face_indices())
           {
             if(cell->face(f)->at_boundary() && center.distance(cell->face(f)->center()) <= R)
             {
@@ -237,7 +237,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
         }
         else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
         {
-          for(unsigned int f = 0; f < dealii::GeometryInfo<2>::faces_per_cell; ++f)
+          for(auto const & f : cell->face_indices())
           {
             if(cell->face(f)->at_boundary())
             {
@@ -387,7 +387,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
           }
           else
           {
-            for(unsigned int f = 0; f < dealii::GeometryInfo<2>::faces_per_cell; ++f)
+            for(auto const & f : cell->face_indices())
             {
               if(cell->face(f)->at_boundary())
               {
@@ -519,7 +519,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
           }
           else
           {
-            for(unsigned int f = 0; f < dealii::GeometryInfo<2>::faces_per_cell; ++f)
+            for(auto const & f : cell->face_indices())
             {
               if(cell->face(f)->at_boundary())
               {
@@ -626,7 +626,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
       {
         if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
         {
-          for(unsigned int f = 0; f < dealii::GeometryInfo<2>::faces_per_cell; ++f)
+          for(auto const & f : cell->face_indices())
           {
             if(cell->face(f)->at_boundary())
             {
@@ -690,7 +690,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
     {
       for(auto cell : tria.active_cell_iterators())
       {
-        for(unsigned int f = 0; f < dealii::GeometryInfo<3>::faces_per_cell; ++f)
+        for(auto const & f : cell->face_indices())
         {
           if(cell->face(f)->at_boundary() && dealii::Point<3>(X_C, Y_C, cell->face(f)->center()[2])
                                                  .distance(cell->face(f)->center()) <= R)
@@ -704,7 +704,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
     {
       for(auto cell : tria.active_cell_iterators())
       {
-        for(unsigned int f = 0; f < dealii::GeometryInfo<3>::faces_per_cell; ++f)
+        for(auto const & f : cell->face_indices())
         {
           if(cell->face(f)->at_boundary())
           {
@@ -762,7 +762,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
           cell->set_all_manifold_ids(MANIFOLD_ID);
         else
         {
-          for(unsigned int f = 0; f < dealii::GeometryInfo<3>::faces_per_cell; ++f)
+          for(auto const & f : cell->face_indices())
           {
             if(cell->face(f)->at_boundary())
             {
@@ -810,10 +810,12 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
       for(auto cell : tria.active_cell_iterators())
       {
         if(dealii::Point<3>(X_C, Y_C, cell->center()[2]).distance(cell->center()) <= R_3)
+        {
           cell->set_all_manifold_ids(MANIFOLD_ID);
+        }
         else
         {
-          for(unsigned int f = 0; f < dealii::GeometryInfo<3>::faces_per_cell; ++f)
+          for(auto const & f : cell->face_indices())
           {
             if(cell->face(f)->at_boundary())
             {
@@ -859,7 +861,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
     {
       for(auto cell : tria.active_cell_iterators())
       {
-        for(unsigned int f = 0; f < dealii::GeometryInfo<3>::faces_per_cell; ++f)
+        for(auto const & f : cell->face_indices())
         {
           if(cell->face(f)->at_boundary())
           {
@@ -1055,7 +1057,7 @@ set_boundary_ids(dealii::Triangulation<dim> & tria)
   // Set the wall boundary and inflow to 0, cylinder boundary to 2, outflow to 1
   for(auto cell : tria.active_cell_iterators())
   {
-    for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f) // loop over cells
+    for(auto const & f : cell->face_indices())
     {
       if(cell->face(f)->at_boundary())
       {
