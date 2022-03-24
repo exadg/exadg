@@ -179,7 +179,7 @@ private:
         if(cell->face(f)->at_boundary())
         {
           std::vector<dealii::Point<dim>> points;
-          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+          for(auto const & v : cell->face(f)->vertex_indices())
             points.push_back(cell->face(f)->vertex(v));
 
           Location location =
@@ -205,7 +205,7 @@ private:
         if(cell->face(f)->at_boundary())
         {
           std::vector<dealii::Point<dim>> points;
-          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+          for(auto const & v : cell->face(f)->vertex_indices())
             points.push_back(cell->face(f)->vertex(v));
 
           Location location =

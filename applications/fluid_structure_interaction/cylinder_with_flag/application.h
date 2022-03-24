@@ -462,7 +462,7 @@ private:
         if(cell->face(f)->at_boundary())
         {
           bool face_at_sphere_boundary = true;
-          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+          for(auto const & v : cell->face(f)->vertex_indices())
           {
             if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > TOL)
             {
@@ -977,7 +977,7 @@ private:
         if(cell->face(f)->at_boundary())
         {
           bool face_at_sphere_boundary = true;
-          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+          for(auto const & v : cell->face(f)->vertex_indices())
           {
             if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > TOL)
             {

@@ -136,7 +136,7 @@ create_grid_and_set_boundary_ids_nozzle(
   // apply conical geometry: stretch vertex positions according to z-coordinate
   for(auto cell : tria_cone.active_cell_iterators())
   {
-    for(unsigned int v = 0; v < dealii::GeometryInfo<dim>::vertices_per_cell; ++v)
+    for(auto const & v : cell->vertex_indices())
     {
       if(cell->vertex(v)[2] > Z1_CONE + 1.e-10)
       {
@@ -144,7 +144,7 @@ create_grid_and_set_boundary_ids_nozzle(
         double const       z = cell->vertex(v)[2];
         point_2d[2]          = z;
 
-        // note that this value is onyl valid for the current dealii implementation of hyper_ball!!!
+        // note that this value is only valid for the current dealii implementation of hyper_ball!!!
         if(std::abs((cell->vertex(v) - point_2d).norm() - 2.485281374239e-03 / 6.0e-3 * R_OUTER) <
              1.e-10 ||
            std::abs((cell->vertex(v) - point_2d).norm() - R_OUTER) < 1.e-10)
@@ -242,7 +242,7 @@ create_grid_and_set_boundary_ids_nozzle(
         if(cell->face(f)->at_boundary())
         {
           bool face_at_sphere_boundary = true;
-          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+          for(auto const & v : cell->face(f)->vertex_indices())
           {
             dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
             if(std::abs((cell->face(f)->vertex(v) - point).norm() - R_OUTER) > 1e-12)
@@ -274,7 +274,7 @@ create_grid_and_set_boundary_ids_nozzle(
           double min_z                   = std::numeric_limits<double>::max();
           double max_z                   = -std::numeric_limits<double>::max();
 
-          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+          for(auto const & v : cell->face(f)->vertex_indices())
           {
             double const z = cell->face(f)->vertex(v)[2];
             if(z > max_z)
@@ -311,7 +311,7 @@ create_grid_and_set_boundary_ids_nozzle(
         if(cell->face(f)->at_boundary())
         {
           bool face_at_sphere_boundary = true;
-          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+          for(auto const & v : cell->face(f)->vertex_indices())
           {
             dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
             if(std::abs((cell->face(f)->vertex(v) - point).norm() - R_INNER) > 1e-12)
@@ -347,7 +347,7 @@ create_grid_and_set_boundary_ids_nozzle(
         if(cell->face(f)->at_boundary())
         {
           bool face_at_sphere_boundary = true;
-          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+          for(auto const & v : cell->face(f)->vertex_indices())
           {
             dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
             if(std::abs((cell->face(f)->vertex(v) - point).norm() - R_INNER) > 1e-12 ||

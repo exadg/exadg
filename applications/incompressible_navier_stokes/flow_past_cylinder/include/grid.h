@@ -159,7 +159,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
     // cube with a hole
     for(auto const & cell : middle.cell_iterators())
     {
-      for(unsigned int v = 0; v < dealii::GeometryInfo<2>::vertices_per_cell; ++v)
+      for(auto const & v : cell->vertex_indices())
       {
         dealii::Point<2> & vertex = cell->vertex(v);
         if(std::abs(vertex[0] - X_2) < 1e-10 && std::abs(vertex[1] - current_center[1]) < 1e-10)
@@ -191,7 +191,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
     // the same for the inner circle
     for(auto const & cell : middle.cell_iterators())
     {
-      for(unsigned int v = 0; v < dealii::GeometryInfo<2>::vertices_per_cell; ++v)
+      for(auto const & v : cell->vertex_indices())
       {
         dealii::Point<2> & vertex = cell->vertex(v);
 
@@ -242,7 +242,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
             if(cell->face(f)->at_boundary())
             {
               bool face_at_sphere_boundary = true;
-              for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+              for(auto const & v : cell->face(f)->vertex_indices())
               {
                 if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > 1e-12)
                 {
@@ -307,7 +307,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
     // cube with a hole
     for(auto const & cell : middle.cell_iterators())
     {
-      for(unsigned int v = 0; v < dealii::GeometryInfo<2>::vertices_per_cell; ++v)
+      for(auto const & v : cell->vertex_indices())
       {
         dealii::Point<2> & vertex = cell->vertex(v);
         if(std::abs(vertex[0] - X_2) < 1e-10 && std::abs(vertex[1] - Y_C) < 1e-10)
@@ -392,7 +392,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
               if(cell->face(f)->at_boundary())
               {
                 bool face_at_sphere_boundary = true;
-                for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+                for(auto const & v : cell->face(f)->vertex_indices())
                 {
                   if(std::abs(center.distance(cell->face(f)->vertex(v)) - R_2) > 1e-12)
                   {
@@ -450,7 +450,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
     // then move the vertices to the points where we want them to be
     for(auto const & cell : middle.cell_iterators())
     {
-      for(unsigned int v = 0; v < dealii::GeometryInfo<2>::vertices_per_cell; ++v)
+      for(auto const & v : cell->vertex_indices())
       {
         dealii::Point<2> & vertex = cell->vertex(v);
 
@@ -477,7 +477,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
     // the same for the inner circle
     for(auto const & cell : circle.cell_iterators())
     {
-      for(unsigned int v = 0; v < dealii::GeometryInfo<2>::vertices_per_cell; ++v)
+      for(auto const & v : cell->vertex_indices())
       {
         dealii::Point<2> & vertex = cell->vertex(v);
 
@@ -524,7 +524,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
               if(cell->face(f)->at_boundary())
               {
                 bool face_at_sphere_boundary = true;
-                for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+                for(auto const & v : cell->face(f)->vertex_indices())
                 {
                   if(std::abs(center.distance(cell->face(f)->vertex(v)) - R_3) > 1e-12)
                   {
@@ -582,7 +582,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
     // then move the vertices to the points where we want them to be
     for(auto const & cell : middle.cell_iterators())
     {
-      for(unsigned int v = 0; v < dealii::GeometryInfo<2>::vertices_per_cell; ++v)
+      for(auto const & v : cell->vertex_indices())
       {
         dealii::Point<2> & vertex = cell->vertex(v);
 
@@ -631,7 +631,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
             if(cell->face(f)->at_boundary())
             {
               bool face_at_sphere_boundary = true;
-              for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+              for(auto const & v : cell->face(f)->vertex_indices())
               {
                 if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > 1e-12)
                 {
@@ -709,7 +709,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
           if(cell->face(f)->at_boundary())
           {
             bool face_at_sphere_boundary = true;
-            for(unsigned int v = 0; v < dealii::GeometryInfo<3 - 1>::vertices_per_cell; ++v)
+            for(auto const & v : cell->face(f)->vertex_indices())
             {
               if(std::abs(dealii::Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
                             .distance(cell->face(f)->vertex(v)) -
@@ -767,7 +767,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
             if(cell->face(f)->at_boundary())
             {
               bool face_at_sphere_boundary = true;
-              for(unsigned int v = 0; v < dealii::GeometryInfo<3 - 1>::vertices_per_cell; ++v)
+              for(auto const & v : cell->face(f)->vertex_indices())
               {
                 if(std::abs(dealii::Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
                               .distance(cell->face(f)->vertex(v)) -
@@ -820,7 +820,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
             if(cell->face(f)->at_boundary())
             {
               bool face_at_sphere_boundary = true;
-              for(unsigned int v = 0; v < dealii::GeometryInfo<3 - 1>::vertices_per_cell; ++v)
+              for(auto const & v : cell->face(f)->vertex_indices())
               {
                 if(std::abs(dealii::Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
                               .distance(cell->face(f)->vertex(v)) -
@@ -866,7 +866,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
           if(cell->face(f)->at_boundary())
           {
             bool face_at_sphere_boundary = true;
-            for(unsigned int v = 0; v < dealii::GeometryInfo<3 - 1>::vertices_per_cell; ++v)
+            for(auto const & v : cell->face(f)->vertex_indices())
             {
               if(std::abs(dealii::Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
                             .distance(cell->face(f)->vertex(v)) -

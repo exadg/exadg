@@ -51,13 +51,13 @@ get_marked_vertices_via_boundary_ids(dealii::Triangulation<dim> const &         
   {
     if(!cell->is_artificial() && cell->at_boundary())
     {
-      for(unsigned int const f : cell->face_indices())
+      for(auto const & f : cell->face_indices())
       {
         if(cell->face(f)->at_boundary())
         {
           if(boundary_ids.find(cell->face(f)->boundary_id()) != boundary_ids.end())
           {
-            for(unsigned int const v : cell->face(f)->vertex_indices())
+            for(auto const & v : cell->face(f)->vertex_indices())
             {
               marked_vertices[cell->face(f)->vertex_index(v)] = true;
             }
