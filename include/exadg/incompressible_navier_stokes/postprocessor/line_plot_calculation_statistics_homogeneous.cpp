@@ -121,10 +121,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
     double const tolerance = 1.e-12;
 
     // For velocity quantities:
-    for(typename dealii::DoFHandler<dim>::active_cell_iterator cell =
-          dof_handler_velocity.begin_active();
-        cell != dof_handler_velocity.end();
-        ++cell)
+    for(auto const & cell : dof_handler_velocity.active_cell_iterators())
     {
       if(cell->is_locally_owned())
       {
@@ -200,10 +197,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
     // Save all cells and corresponding points on unit cell that are relevant for a given point
     // along the line. We have to do the same for the pressure because the dealii::DoFHandlers for
     // velocity and pressure are different.
-    for(typename dealii::DoFHandler<dim>::active_cell_iterator cell =
-          dof_handler_pressure.begin_active();
-        cell != dof_handler_pressure.end();
-        ++cell)
+    for(auto const & cell : dof_handler_pressure.active_cell_iterators())
     {
       if(cell->is_locally_owned())
       {

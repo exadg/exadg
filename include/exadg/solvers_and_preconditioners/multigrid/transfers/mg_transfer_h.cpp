@@ -80,13 +80,12 @@ MGTransferH<dim, Number>::interpolate(unsigned int const level_in,
   src_ghosted.copy_locally_owned_data_from(src);
   src_ghosted.update_ghost_values();
 
-  std::vector<Number>                             dof_values_coarse(fe.dofs_per_cell);
-  dealii::Vector<Number>                          dof_values_fine(fe.dofs_per_cell);
-  dealii::Vector<Number>                          tmp(fe.dofs_per_cell);
-  std::vector<dealii::types::global_dof_index>    dof_indices(fe.dofs_per_cell);
-  typename dealii::DoFHandler<dim>::cell_iterator cell = dof_handler.begin(level - 1);
-  typename dealii::DoFHandler<dim>::cell_iterator endc = dof_handler.end(level - 1);
-  for(; cell != endc; ++cell)
+  std::vector<Number>                          dof_values_coarse(fe.dofs_per_cell);
+  dealii::Vector<Number>                       dof_values_fine(fe.dofs_per_cell);
+  dealii::Vector<Number>                       tmp(fe.dofs_per_cell);
+  std::vector<dealii::types::global_dof_index> dof_indices(fe.dofs_per_cell);
+  for(auto const & cell : dof_handler.cell_iterators_on_level(level - 1))
+  {
     if(cell->is_locally_owned_on_level())
     {
       Assert(cell->has_children(), dealii::ExcNotImplemented());
@@ -108,6 +107,7 @@ MGTransferH<dim, Number>::interpolate(unsigned int const level_in,
       for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
         dst(dof_indices[i]) = dof_values_coarse[i];
     }
+  }
 
   dst.zero_out_ghost_values();
 }

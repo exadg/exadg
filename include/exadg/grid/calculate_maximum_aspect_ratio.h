@@ -32,7 +32,8 @@ namespace ExaDG
 {
 template<int dim>
 inline double
-calculate_maximum_vertex_distance(typename dealii::Triangulation<dim>::active_cell_iterator & cell)
+calculate_maximum_vertex_distance(
+  typename dealii::Triangulation<dim>::active_cell_iterator const & cell)
 {
   double maximum_vertex_distance = 0.0;
 
@@ -66,12 +67,9 @@ inline double
 calculate_aspect_ratio_vertex_distance(dealii::Triangulation<dim> const & triangulation,
                                        MPI_Comm const &                   mpi_comm)
 {
-  typename dealii::Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(),
-                                                            endc = triangulation.end();
-
   double max_aspect_ratio = 0.0;
 
-  for(; cell != endc; ++cell)
+  for(auto const & cell : triangulation.active_cell_iterators())
   {
     if(cell->is_locally_owned())
     {

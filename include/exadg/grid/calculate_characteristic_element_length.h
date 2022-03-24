@@ -37,12 +37,9 @@ inline double
 calculate_minimum_vertex_distance(dealii::Triangulation<dim> const & triangulation,
                                   MPI_Comm const &                   mpi_comm)
 {
-  typename dealii::Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(),
-                                                            endc = triangulation.end();
-
   double diameter = 0.0, min_cell_diameter = std::numeric_limits<double>::max();
 
-  for(; cell != endc; ++cell)
+  for(auto const & cell : triangulation.active_cell_iterators())
   {
     if(cell->is_locally_owned())
     {

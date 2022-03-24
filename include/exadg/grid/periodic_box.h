@@ -55,9 +55,7 @@ create_periodic_box(std::shared_ptr<dealii::Triangulation<dim>>              tri
 
     std::vector<bool> vertex_touched(triangulation->n_vertices(), false);
 
-    for(typename dealii::Triangulation<dim>::cell_iterator cell = triangulation->begin();
-        cell != triangulation->end();
-        ++cell)
+    for(auto const & cell : triangulation->cell_iterators())
     {
       for(unsigned int const v : cell->vertex_indices())
       {
@@ -72,9 +70,7 @@ create_periodic_box(std::shared_ptr<dealii::Triangulation<dim>>              tri
     }
   }
 
-  typename dealii::Triangulation<dim>::cell_iterator cell = triangulation->begin(),
-                                                     endc = triangulation->end();
-  for(; cell != endc; ++cell)
+  for(auto const & cell : triangulation->cell_iterators())
   {
     for(unsigned int const face_number : cell->face_indices())
     {
