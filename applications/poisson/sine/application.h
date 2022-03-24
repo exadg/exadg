@@ -204,7 +204,7 @@ private:
 
       for(auto cell : *this->grid->triangulation)
       {
-        for(auto const & v : cell->vertex_indices())
+        for(auto const & v : cell.vertex_indices())
         {
           if(vertex_touched[cell.vertex_index(v)] == false)
           {
