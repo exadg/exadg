@@ -151,12 +151,13 @@ private:
     param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     param.order_time_integrator           = 1;
     param.start_with_low_order            = true;
-    param.adaptive_time_stepping          = false;
-    param.calculation_of_time_step_size   = TimeStepCalculation::UserSpecified;
+    param.adaptive_time_stepping          = true;
+    param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     param.time_step_size                  = DELTA_T;
+    param.time_step_size_max              = DELTA_T;
     param.max_velocity                    = U_MEAN;
-    param.cfl                             = 0.5;
-    param.cfl_exponent_fe_degree_velocity = 1.5;
+    param.cfl                             = 0.75;
+    param.cfl_exponent_fe_degree_velocity = 1.2;
 
     // output of solver information
     param.solver_info_data.interval_time_steps = OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS;
@@ -619,7 +620,7 @@ public:
     param.problem_type         = ProblemType::Unsteady;
     param.body_force           = false;
     param.pull_back_body_force = false;
-    param.large_deformation    = true;
+    param.large_deformation    = false;
     param.pull_back_traction   = true;
 
     param.density = DENSITY_STRUCTURE;

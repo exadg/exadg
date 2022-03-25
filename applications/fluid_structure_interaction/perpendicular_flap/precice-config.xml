@@ -74,7 +74,7 @@
     <m2n:sockets from="Fluid" to="Solid" exchange-directory=".." />
 
     <coupling-scheme:serial-explicit>
-      <time-window-size value="0.01" />
+      <time-window-size valid-digits="16" method="first-participant" />
       <max-time value="5" />
       <participants first="Fluid" second="Solid" />
       <exchange data="Stress" mesh="Fluid-Mesh-write" from="Fluid" to="Solid" />
