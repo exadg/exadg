@@ -120,7 +120,7 @@ public:
     // initialize preCICE with initial displacement data
     VectorType displacement_structure;
     structure->pde_operator->initialize_dof_vector(displacement_structure);
-    this->precice->initialize_precice(displacement_structure);
+    this->allowed_time_step_size = this->precice->initialize_precice(displacement_structure);
   }
 
 
@@ -148,6 +148,11 @@ public:
   solve() const final
   {
     bool is_new_time_window = true;
+
+    // preCICE prescribes the time-step size
+    structure->time_integrator->set_current_time_step_size(
+      std::min(this->allowed_time_step_size, structure->time_integrator->get_time_step_size()));
+
     // preCICE dictates when the time loop is finished
     while(this->precice->is_coupling_ongoing())
     {
@@ -169,10 +174,9 @@ public:
       coupling_structure_to_fluid(structure->time_integrator->get_velocity_np(),
                                   structure->time_integrator->get_time_step_size());
 
-      // TODO: Add synchronization for the time-step size here. For now, we only allow a constant
-      // time-step size
       dealii::Timer precice_timer;
-      this->precice->advance(structure->time_integrator->get_time_step_size());
+      this->allowed_time_step_size =
+        this->precice->advance(structure->time_integrator->get_time_step_size());
       is_new_time_window = this->precice->is_time_window_complete();
       this->timer_tree.insert({"FSI", "preCICE"}, precice_timer.wall_time());
 
@@ -181,6 +185,12 @@ public:
 
       if(is_new_time_window)
         structure->time_integrator->advance_one_timestep_post_solve();
+
+      // We need to adjust the time-step size in case we reach a coupling time-wimdow
+      // We don't take the time-step size of the solver here into account, but rather apply the
+      // available time-step size reported by preCICE, as the GenAlpha time integrator doesn't
+      // compute a time-step size on its own
+      structure->time_integrator->set_current_time_step_size(this->allowed_time_step_size);
     }
   }
 

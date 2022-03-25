@@ -83,6 +83,9 @@ protected:
   std::shared_ptr<ExaDG::preCICE::Adapter<dim, dim, VectorType>> precice;
   ExaDG::preCICE::ConfigurationParameters                        precice_parameters;
 
+  // maximum allowed time-step size until we reach a new coupling time window
+  mutable double allowed_time_step_size = 0;
+
   // do not print wall times if is_test
   bool const is_test;
 

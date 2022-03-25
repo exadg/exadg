@@ -93,8 +93,10 @@ public:
    *             individual configuration and preCICE determines it
    *             automatically. In many cases, this data will just represent
    *             your initial condition.
+   *
+   * @return     double the allowed time-step size until the next coupling time-window is reached
    */
-  void
+  double
   initialize_precice(VectorType const & dealii_to_precice);
 
   void
@@ -115,9 +117,13 @@ public:
                    std::vector<std::string> const &                               read_data_name);
 
   /**
-   * @brief      Advances preCICE after every timestep
+   * @brief Advances preCICE after every timestep
+   *
+   * @param computed_timestep_length the time-step size computed by the solver
+   *
+   * @return double the allowed time-step size until the next coupling time-window is reached
    */
-  void
+  double
   advance(double const computed_timestep_length);
 
   /**
@@ -283,7 +289,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_read_surface(
 
 
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
-void
+double
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::initialize_precice(
   VectorType const & dealii_to_precice)
 {
@@ -291,7 +297,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::initialize_precice(
   //   dealii_to_precice.update_ghost_values();
 
   // Initialize preCICE internally
-  precice->initialize();
+  double allowed_time_step_size = precice->initialize();
 
   // Only the writer needs potentially to process the coupling mesh, if the
   // mapping is carried out in the solver
@@ -313,6 +319,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::initialize_precice(
   //                                   read_nodes_ids.size(),
   //                                   read_nodes_ids.data(),
   //                                   read_data.data());
+  return allowed_time_step_size;
 }
 
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
@@ -328,14 +335,13 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::write_data(
 }
 
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
-void
+double
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::advance(
   double const computed_timestep_length)
 {
   // Here, we need to specify the computed time step length and pass it to
   // preCICE
-  // TODO: The function returns the available time-step size which is required for time-step sync
-  precice->advance(computed_timestep_length);
+  return precice->advance(computed_timestep_length);
 }
 
 
