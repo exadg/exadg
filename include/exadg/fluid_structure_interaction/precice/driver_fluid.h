@@ -237,7 +237,7 @@ public:
         Assert(
           fluid->time_integrator->get_time_step_size() <
             this->allowed_time_step_size + std::numeric_limits<double>::min(),
-          ExcMessage(
+          dealii::ExcMessage(
             "The solver time-step size exceeded the maximum admissible time-step size allowed by preCICE. "
             "If you select adaptive time-stepping, make sure to let the Fluid participant steer the time-window size. "
             "In any other case, please disable adaptive time-stepping."));
