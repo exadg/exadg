@@ -180,16 +180,16 @@ public:
       is_new_time_window = this->precice->is_time_window_complete();
       this->timer_tree.insert({"FSI", "preCICE"}, precice_timer.wall_time());
 
-      // Needs to be called before the swaps in post_solve
+      // Needs to be called before the swaps in post_solve.
       this->precice->reload_old_state_if_required([&]() {});
 
       if(is_new_time_window)
         structure->time_integrator->advance_one_timestep_post_solve();
 
-      // We need to adjust the time-step size in case we reach a coupling time-wimdow
+      // We need to adjust the time-step size in case we reach a coupling time-wimdow.
       // We don't take the time-step size of the solver here into account, but rather apply the
       // available time-step size reported by preCICE, as the GenAlpha time integrator doesn't
-      // compute a time-step size on its own
+      // compute a time-step size on its own.
       structure->time_integrator->set_current_time_step_size(this->allowed_time_step_size);
     }
   }

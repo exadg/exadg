@@ -219,19 +219,18 @@ public:
       {
         // computes new time-step size
         fluid->time_integrator->advance_one_timestep_post_solve();
-        // next, we synchronize the time-step sizes. Subcycling would in theory be compatible in
-        // explicit coupling schemes here. In implicit coupling schemes, we need matching
-        // time-window sizes (either constant (serial or parallel schemes) or adaptively (serial
-        // scheme)) as the time-step size push back happens in the
-        // 'advance_one_timestep_post_solve()' and we cannot change two subsequent time-step sizes
-        // without a push back operation, otherwise we falsify the time integrator. However, the
-        // treatment of the boundary conditions is not handled correctly when using subcycling, as
-        // we apply the 'whole displacement' within the first time-step. In order to cope with
-        // subcycling, either the boundary condition needs to be adopted or we need to wait for a
-        // newer preCICE version (currently v2.3.0) which can handle this.
-        // Hence, we do not adjust the time-step-size of the fluid solver, but rather Assert that it
-        // is still valid. Note that we would run into a preCICE error otherwise reporting the same
-        // issue otherwise.
+        // next, we synchronize the time-step sizes. Have a look in the base class for more
+        // explanations. Subcycling would in theory be compatible in explicit coupling schemes here.
+        // In implicit coupling schemes, we need matching time-window sizes as the time-step size
+        // push back happens in the 'advance_one_timestep_post_solve()' and we cannot change two
+        // subsequent time-step sizes without a push back operation, otherwise we falsify the time
+        // integrator. However, the treatment of the boundary conditions is not handled correctly
+        // when using subcycling, as we would apply the 'whole displacement' within the first
+        // time-step (being potentially only a fractio of the whole time-windo). In order to cope
+        // with subcycling, either the boundary condition needs to be adapted or we need to wait for
+        // a newer preCICE version (currently v2.3.0) which can handle this. Hence, we do not adjust
+        // the time-step-size of the fluid solver, but rather Assert that it is still valid. Note
+        // that we would otherwise run into a preCICE assert reporting the same issue.
         // fluid->time_integrator->set_current_time_step_size(
         //   std::min(this->allowed_time_step_size, fluid->time_integrator->get_time_step_size()));
         Assert(
@@ -240,6 +239,7 @@ public:
           dealii::ExcMessage(
             "The solver time-step size exceeded the maximum admissible time-step size allowed by preCICE. "
             "If you select adaptive time-stepping, make sure to let the Fluid participant steer the time-window size. "
+            "(precice config: <coupling-scheme:serial... > <time-window-size method=\"first-participant\" />) "
             "In any other case, please disable adaptive time-stepping."));
       }
     }

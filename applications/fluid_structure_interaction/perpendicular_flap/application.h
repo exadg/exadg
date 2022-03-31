@@ -156,8 +156,8 @@ private:
     param.time_step_size                  = DELTA_T;
     param.time_step_size_max              = DELTA_T;
     param.max_velocity                    = U_MEAN;
-    param.cfl                             = 0.75;
-    param.cfl_exponent_fe_degree_velocity = 1.2;
+    param.cfl                             = 0.9;
+    param.cfl_exponent_fe_degree_velocity = 1.5;
 
     // output of solver information
     param.solver_info_data.interval_time_steps = OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS;

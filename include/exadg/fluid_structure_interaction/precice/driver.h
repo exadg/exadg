@@ -83,6 +83,23 @@ protected:
   std::shared_ptr<ExaDG::preCICE::Adapter<dim, dim, VectorType>> precice;
   ExaDG::preCICE::ConfigurationParameters                        precice_parameters;
 
+  // Nomenclature
+  // time window: denotes time interval after which FSi coupling takes place
+  // subcycling: a single field solver performs several time steps until the next FSI coupling time
+  // window is reached
+  // time step size: refers to single field solvers. In case of subcycling, one
+  // time window consists of several time step sizes.
+
+  // The time-window size is determined through the preCICE configuration by the user:
+  // The <coupling-scheme.. tag has options for
+  // <time-window-size method="fixed" ... /> which refers to a constant time window size
+  // <time-window-size method="first-participant" ... /> which refers to an adaptive time window
+  // size prescribed by the first (which is usually the Fluid) participant. The latter is only
+  // applicable in serial coupling schemes.
+  // Both solvers can exploit subcycling, but they need to synchronize at the end of a certain
+  // time-window size. Therefore, the allowed time-step size until we reach the next synchronization
+  // point needs to be determined.
+
   // maximum allowed time-step size until we reach a new coupling time window
   mutable double allowed_time_step_size = 0;
 
