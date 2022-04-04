@@ -424,7 +424,7 @@ private:
       double const TOL = 1.e-12;
 
       // boundary IDs
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         double const x = cell->face(f)->center()(0);
         double const y = cell->face(f)->center()(1);
@@ -457,12 +457,12 @@ private:
       }
 
       // manifold IDs
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         if(cell->face(f)->at_boundary())
         {
           bool face_at_sphere_boundary = true;
-          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+          for(auto const & v : cell->face(f)->vertex_indices())
           {
             if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > TOL)
             {
@@ -943,7 +943,7 @@ private:
       double const TOL = 1.e-12;
 
       // boundary IDs
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         double const x = cell->face(f)->center()(0);
 
@@ -972,12 +972,12 @@ private:
       }
 
       // manifold IDs
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         if(cell->face(f)->at_boundary())
         {
           bool face_at_sphere_boundary = true;
-          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+          for(auto const & v : cell->face(f)->vertex_indices())
           {
             if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > TOL)
             {

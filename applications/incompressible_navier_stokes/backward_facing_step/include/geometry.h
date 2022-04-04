@@ -199,7 +199,7 @@ create_grid(std::shared_ptr<dealii::Triangulation<dim>>              triangulati
   // set boundary ID's
   for(auto cell : triangulation->active_cell_iterators())
   {
-    for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+    for(auto const & f : cell->face_indices())
     {
       // outflow boundary on the right has ID = 1
       if((std::fabs(cell->face(f)->center()(0) - X1_COORDINATE_OUTFLOW) < 1.e-12))
@@ -279,7 +279,7 @@ create_grid_precursor(std::shared_ptr<dealii::Triangulation<dim>>              t
   // set boundary ID's: periodicity
   for(auto cell : triangulation->active_cell_iterators())
   {
-    for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+    for(auto const & f : cell->face_indices())
     {
       // periodicity in x-direction
       if(std::fabs(cell->face(f)->center()(0) - (center[0] - dimensions[0] / 2.0)) < 1.e-12)

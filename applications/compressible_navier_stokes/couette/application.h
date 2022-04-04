@@ -198,7 +198,7 @@ private:
      */
     for(auto cell : *this->grid->triangulation)
     {
-      for(unsigned int face = 0; face < dealii::GeometryInfo<dim>::faces_per_cell; ++face)
+      for(auto const & face : cell.face_indices())
       {
         if(std::fabs(cell.face(face)->center()(1) - point2[1]) < 1e-12)
         {

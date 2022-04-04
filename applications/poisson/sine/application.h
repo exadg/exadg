@@ -204,7 +204,7 @@ private:
 
       for(auto cell : *this->grid->triangulation)
       {
-        for(unsigned int v = 0; v < dealii::GeometryInfo<dim>::vertices_per_cell; ++v)
+        for(auto const & v : cell.vertex_indices())
         {
           if(vertex_touched[cell.vertex_index(v)] == false)
           {
@@ -225,7 +225,7 @@ private:
     {
       for(auto cell : *this->grid->triangulation)
       {
-        for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+        for(auto const & f : cell.face_indices())
         {
           if(std::fabs(cell.face(f)->center()(0) - right) < 1e-12)
           {

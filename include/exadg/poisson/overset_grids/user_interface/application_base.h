@@ -174,12 +174,12 @@ private:
     auto cell_hint_2 = typename dealii::Triangulation<dim>::active_cell_iterator();
     for(auto cell : domain1->get_grid()->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         if(cell->face(f)->at_boundary())
         {
           std::vector<dealii::Point<dim>> points;
-          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+          for(auto const & v : cell->face(f)->vertex_indices())
             points.push_back(cell->face(f)->vertex(v));
 
           Location location =
@@ -200,12 +200,12 @@ private:
     auto cell_hint_1 = typename dealii::Triangulation<dim>::active_cell_iterator();
     for(auto cell : domain2->get_grid()->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         if(cell->face(f)->at_boundary())
         {
           std::vector<dealii::Point<dim>> points;
-          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+          for(auto const & v : cell->face(f)->vertex_indices())
             points.push_back(cell->face(f)->vertex(v));
 
           Location location =

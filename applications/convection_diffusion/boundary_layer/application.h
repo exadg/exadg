@@ -134,7 +134,7 @@ private:
     // set boundary indicator
     for(auto cell : *this->grid->triangulation)
     {
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell.face_indices())
       {
         if((std::fabs(cell.face(f)->center()(1) - left) < 1e-12) ||
            (std::fabs(cell.face(f)->center()(1) - right) < 1e-12) ||

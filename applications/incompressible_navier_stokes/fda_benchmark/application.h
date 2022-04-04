@@ -401,10 +401,10 @@ private:
 
     for(auto cell : this->grid_pre->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+      for(auto const & f : cell->face_indices())
       {
         bool face_at_sphere_boundary = true;
-        for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+        for(auto const & v : cell->face(f)->vertex_indices())
         {
           dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
 
@@ -444,7 +444,7 @@ private:
      */
     for(auto cell : this->grid_pre->triangulation->active_cell_iterators())
     {
-      for(unsigned int face = 0; face < dealii::GeometryInfo<dim>::faces_per_cell; ++face)
+      for(auto const & face : cell->face_indices())
       {
         // left boundary
         if((std::fabs(cell->face(face)->center()[2] - FDANozzle::Z1_PRECURSOR) < 1e-12))
