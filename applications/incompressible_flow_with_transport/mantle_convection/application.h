@@ -309,7 +309,7 @@ private:
     dealii::Point<dim> center =
       dim == 2 ? dealii::Point<dim>(0., 0.) : dealii::Point<dim>(0., 0., 0.);
 
-    for(auto cell : this->grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->cell_iterators())
     {
       for(auto const & f : cell->face_indices())
       {

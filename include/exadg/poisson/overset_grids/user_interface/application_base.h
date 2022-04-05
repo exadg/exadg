@@ -172,7 +172,7 @@ private:
     // loop over faces of first triangulation and check whether they are located inside the second
     // triangulation
     auto cell_hint_2 = typename dealii::Triangulation<dim>::active_cell_iterator();
-    for(auto cell : domain1->get_grid()->triangulation->active_cell_iterators())
+    for(auto cell : domain1->get_grid()->triangulation->cell_iterators())
     {
       for(auto const & f : cell->face_indices())
       {
@@ -198,7 +198,7 @@ private:
     // loop over faces of second triangulation and check whether they are located inside the first
     // triangulation
     auto cell_hint_1 = typename dealii::Triangulation<dim>::active_cell_iterator();
-    for(auto cell : domain2->get_grid()->triangulation->active_cell_iterators())
+    for(auto cell : domain2->get_grid()->triangulation->cell_iterators())
     {
       for(auto const & f : cell->face_indices())
       {

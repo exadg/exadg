@@ -300,7 +300,7 @@ private:
     }
 
     // set boundary IDs: 0 by default, set left boundary to 1
-    for(auto cell : this->grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->cell_iterators())
     {
       for(auto const & f : cell->face_indices())
       {

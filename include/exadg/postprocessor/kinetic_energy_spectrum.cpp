@@ -94,7 +94,8 @@ public:
     s.init(dim, n_cells_1D, points_src, points_dst);
 
     std::vector<dealii::types::global_dof_index> local_cells;
-    for(auto const & cell : tria.active_cell_iterators())
+    for(auto const & cell : tria.cell_iterators())
+    {
       if(cell->is_active() && cell->is_locally_owned())
       {
         auto c = cell->center();
@@ -103,6 +104,7 @@ public:
 
         local_cells.push_back(norm_point_to_lex(c, n_cells_1D));
       }
+    }
 
     dealii::types::global_dof_index n_local_cells = local_cells.size();
     dealii::types::global_dof_index global_offset = 0;

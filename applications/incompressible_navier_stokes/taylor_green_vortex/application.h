@@ -357,7 +357,7 @@ private:
 
         std::vector<bool> vertex_touched(this->grid->triangulation->n_vertices(), false);
 
-        for(auto cell : this->grid->triangulation->active_cell_iterators())
+        for(auto cell : this->grid->triangulation->cell_iterators())
         {
           for(auto const & v : cell->vertex_indices())
           {

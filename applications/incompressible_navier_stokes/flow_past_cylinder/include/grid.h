@@ -97,7 +97,7 @@ void
 set_boundary_ids(dealii::Triangulation<dim> & tria, bool compute_in_2d)
 {
   // Set the cylinder boundary to 2, outflow to 1, the rest to 0.
-  for(auto cell : tria.active_cell_iterators())
+  for(auto cell : tria.cell_iterators())
   {
     for(auto const & f : cell->face_indices())
     {
@@ -223,7 +223,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
       // set manifold ID's
       tria.set_all_manifold_ids(0);
 
-      for(auto cell : tria.active_cell_iterators())
+      for(auto cell : tria.cell_iterators())
       {
         if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
         {
@@ -372,7 +372,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
       // set manifold ID's
       tria.set_all_manifold_ids(0);
 
-      for(auto cell : tria.active_cell_iterators())
+      for(auto cell : tria.cell_iterators())
       {
         if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
         {
@@ -509,7 +509,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
       // set manifold ID's
       tria.set_all_manifold_ids(0);
 
-      for(auto cell : tria.active_cell_iterators())
+      for(auto cell : tria.cell_iterators())
       {
         if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
         {
@@ -622,7 +622,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<2> & tria,
       // set manifold ID's
       tria.set_all_manifold_ids(0);
 
-      for(auto cell : tria.active_cell_iterators())
+      for(auto cell : tria.cell_iterators())
       {
         if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
         {
@@ -688,7 +688,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
 
     if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
     {
-      for(auto cell : tria.active_cell_iterators())
+      for(auto cell : tria.cell_iterators())
       {
         for(auto const & f : cell->face_indices())
         {
@@ -702,7 +702,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
     }
     else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
     {
-      for(auto cell : tria.active_cell_iterators())
+      for(auto cell : tria.cell_iterators())
       {
         for(auto const & f : cell->face_indices())
         {
@@ -748,7 +748,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
 
     if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
     {
-      for(auto cell : tria.active_cell_iterators())
+      for(auto cell : tria.cell_iterators())
       {
         if(dealii::Point<3>(X_C, Y_C, cell->center()[2]).distance(cell->center()) <= R_2)
           cell->set_all_manifold_ids(MANIFOLD_ID);
@@ -756,7 +756,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
     }
     else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
     {
-      for(auto cell : tria.active_cell_iterators())
+      for(auto cell : tria.cell_iterators())
       {
         if(dealii::Point<3>(X_C, Y_C, cell->center()[2]).distance(cell->center()) <= R_2)
           cell->set_all_manifold_ids(MANIFOLD_ID);
@@ -807,7 +807,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
 
     if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
     {
-      for(auto cell : tria.active_cell_iterators())
+      for(auto cell : tria.cell_iterators())
       {
         if(dealii::Point<3>(X_C, Y_C, cell->center()[2]).distance(cell->center()) <= R_3)
         {
@@ -859,7 +859,7 @@ void do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
 
     if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
     {
-      for(auto cell : tria.active_cell_iterators())
+      for(auto cell : tria.cell_iterators())
       {
         for(auto const & f : cell->face_indices())
         {
@@ -1055,7 +1055,7 @@ void
 set_boundary_ids(dealii::Triangulation<dim> & tria)
 {
   // Set the wall boundary and inflow to 0, cylinder boundary to 2, outflow to 1
-  for(auto cell : tria.active_cell_iterators())
+  for(auto cell : tria.cell_iterators())
   {
     for(auto const & f : cell->face_indices())
     {
@@ -1069,16 +1069,24 @@ set_boundary_ids(dealii::Triangulation<dim> & tria)
 
         if(dim == 3 ? std::abs(cell->face(f)->center()[0] - X_0) < 1e-12 :
                       std::abs(cell->face(f)->center()[0] - X_1) < 1e-12) // inflow
+        {
           cell->face(f)->set_all_boundary_ids(0);
+        }
         else if(std::abs(cell->face(f)->center()[0] - (X_0 + L)) < 1e-12) // outflow
+        {
           cell->face(f)->set_all_boundary_ids(1);
+        }
         else if(std::abs(cell->face(f)->center()[0] - point_on_centerline[0]) <=
                   (0.5 * D + 1e-12) &&
                 std::abs(cell->face(f)->center()[1] - point_on_centerline[1]) <=
                   (0.5 * D + 1e-12)) // square cylinder walls
+        {
           cell->face(f)->set_all_boundary_ids(2);
-        else
-          cell->face(f)->set_all_boundary_ids(0); // domain walls
+        }
+        else // domain walls
+        {
+          cell->face(f)->set_all_boundary_ids(0);
+        }
       }
     }
   }

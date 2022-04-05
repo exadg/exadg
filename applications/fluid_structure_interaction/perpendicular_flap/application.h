@@ -334,7 +334,7 @@ private:
 
     this->grid->triangulation->set_all_manifold_ids(0);
 
-    for(auto cell : this->grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->cell_iterators())
     {
       for(auto const & f : cell->face_indices())
       {
@@ -680,7 +680,7 @@ public:
 
     this->grid->triangulation->set_all_manifold_ids(0);
 
-    for(auto cell : this->grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->cell_iterators())
     {
       for(auto const & f : cell->face_indices())
       {

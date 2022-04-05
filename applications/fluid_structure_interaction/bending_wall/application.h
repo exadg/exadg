@@ -420,7 +420,7 @@ private:
   {
     create_triangulation(*this->grid->triangulation);
 
-    for(auto cell : this->grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->cell_iterators())
     {
       for(auto const & f : cell->face_indices())
       {
@@ -796,7 +796,7 @@ private:
                                                       p1,
                                                       p2);
 
-    for(auto cell : this->grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->cell_iterators())
     {
       for(auto const & f : cell->face_indices())
       {

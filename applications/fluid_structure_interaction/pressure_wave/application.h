@@ -275,7 +275,7 @@ private:
                                                  L,
                                                  *this->grid->triangulation);
 
-    for(auto cell : this->grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->cell_iterators())
     {
       for(auto const & f : cell->face_indices())
       {
@@ -307,7 +307,7 @@ private:
     std::vector<unsigned int> manifold_ids;
     std::vector<unsigned int> face_ids;
 
-    for(auto cell : this->grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->cell_iterators())
     {
       for(auto const & f : cell->face_indices())
       {
@@ -344,7 +344,7 @@ private:
 
     for(unsigned int i = 0; i < manifold_ids.size(); ++i)
     {
-      for(auto cell : this->grid->triangulation->active_cell_iterators())
+      for(auto cell : this->grid->triangulation->cell_iterators())
       {
         if(cell->manifold_id() == manifold_ids[i])
         {
@@ -662,7 +662,7 @@ private:
                                                  L,
                                                  *this->grid->triangulation);
 
-    for(auto cell : this->grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->cell_iterators())
     {
       for(auto const & f : cell->face_indices())
       {

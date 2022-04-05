@@ -178,7 +178,7 @@ private:
                                           outer_radius);
 
     // 0 = bottom ; 1 = top ; 2 = inner and outer radius
-    for(auto cell : this->grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->cell_iterators())
     {
       for(auto const & f : cell->face_indices())
       {

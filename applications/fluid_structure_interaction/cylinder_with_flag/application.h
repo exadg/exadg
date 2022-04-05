@@ -419,7 +419,7 @@ private:
     center[0] = X_C;
     center[1] = Y_C;
 
-    for(auto cell : this->grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->cell_iterators())
     {
       double const TOL = 1.e-12;
 
@@ -489,7 +489,7 @@ private:
 
     for(unsigned int i = 0; i < manifold_ids.size(); ++i)
     {
-      for(auto cell : this->grid->triangulation->active_cell_iterators())
+      for(auto cell : this->grid->triangulation->cell_iterators())
       {
         if(cell->manifold_id() == manifold_ids[i])
         {
@@ -938,7 +938,7 @@ private:
     center[0] = X_C;
     center[1] = Y_C;
 
-    for(auto cell : this->grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->cell_iterators())
     {
       double const TOL = 1.e-12;
 
@@ -1004,7 +1004,7 @@ private:
 
     for(unsigned int i = 0; i < manifold_ids.size(); ++i)
     {
-      for(auto cell : this->grid->triangulation->active_cell_iterators())
+      for(auto cell : this->grid->triangulation->cell_iterators())
       {
         if(cell->manifold_id() == manifold_ids[i])
         {

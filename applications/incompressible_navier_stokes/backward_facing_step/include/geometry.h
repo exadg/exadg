@@ -197,7 +197,7 @@ create_grid(std::shared_ptr<dealii::Triangulation<dim>>              triangulati
 
 
   // set boundary ID's
-  for(auto cell : triangulation->active_cell_iterators())
+  for(auto cell : triangulation->cell_iterators())
   {
     for(auto const & f : cell->face_indices())
     {
@@ -220,7 +220,7 @@ create_grid(std::shared_ptr<dealii::Triangulation<dim>>              triangulati
   {
     // manifold
     unsigned int manifold_id = 1;
-    for(auto cell : triangulation->active_cell_iterators())
+    for(auto cell : triangulation->cell_iterators())
     {
       cell->set_all_manifold_ids(manifold_id);
     }
@@ -266,7 +266,7 @@ create_grid_precursor(std::shared_ptr<dealii::Triangulation<dim>>              t
   {
     // manifold
     unsigned int manifold_id = 1;
-    for(auto cell : triangulation->active_cell_iterators())
+    for(auto cell : triangulation->cell_iterators())
     {
       cell->set_all_manifold_ids(manifold_id);
     }
@@ -277,7 +277,7 @@ create_grid_precursor(std::shared_ptr<dealii::Triangulation<dim>>              t
   }
 
   // set boundary ID's: periodicity
-  for(auto cell : triangulation->active_cell_iterators())
+  for(auto cell : triangulation->cell_iterators())
   {
     for(auto const & f : cell->face_indices())
     {
