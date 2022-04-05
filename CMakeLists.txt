@@ -236,8 +236,11 @@ ENDIF()
 # LIKWID
 OPTION(EXADG_WITH_LIKDWID "Use LIKWID" OFF)
 IF(${EXADG_WITH_LIKWID})
+    ADD_DEFINITIONS(-DEXADG_WITH_LIKWID)
     FIND_LIBRARY(LIKWID likwid HINTS ${LIKWID_LIB})
     MESSAGE(STATUS "Found LIKWID lib at ${LIKWID}")
+    # The macro LIKWID_PERFMON is used inside Likwid, i.e., we need to pass
+    # that precise macro into the Likwid machinery for compilation.
     TARGET_COMPILE_DEFINITIONS(exadg PUBLIC LIKWID_PERFMON)
     TARGET_INCLUDE_DIRECTORIES(exadg PUBLIC ${LIKWID_INCLUDE})
     TARGET_LINK_LIBRARIES(exadg ${LIKWID})
