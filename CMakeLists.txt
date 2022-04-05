@@ -27,7 +27,7 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.1.0)
 
-set(CMAKE_CXX_STANDARD 17)
+SET(CMAKE_CXX_STANDARD 17)
 
 ADD_SUBDIRECTORY(cmake)
 
@@ -200,13 +200,15 @@ PROJECT(exadg)
 OPTION(PICKUP_TESTS "Pick up ExaDG tests." ON)
 OPTION(BUILD_SHARED_LIBS "Build shared library." ON)
 
-# Configure config.h
+# Determine EXADG_DEGREE_MAX
 IF(DEGREE_MAX)
-  SET(EXADG_DEGREE_MAX ${DEGREE_MAX})
-  MESSAGE("Use EXADG_DEGREE_MAX = " ${EXADG_DEGREE_MAX} ".")
+    SET(EXADG_DEGREE_MAX ${DEGREE_MAX})
+    MESSAGE(STATUS "Use EXADG_DEGREE_MAX = " ${EXADG_DEGREE_MAX} ".")
 ELSE()
-  MESSAGE("Use EXADG_DEGREE_MAX defined in exadg/include/exadg/configuration/config.h.in.")
+    MESSAGE(STATUS "Use EXADG_DEGREE_MAX defined in exadg/include/exadg/configuration/config.h.in.")
 ENDIF()
+
+# Translate config.h.in into config.h
 CONFIGURE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/include/exadg/configuration/config.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/include/exadg/configuration/config.h
@@ -215,9 +217,9 @@ CONFIGURE_FILE(
 ADD_LIBRARY(exadg ${TARGET_SRC})
 
 # FFTW
-OPTION(USE_FFTW "Use FFTW" OFF)
-IF(${USE_FFTW})
-    ADD_DEFINITIONS(-DUSE_FFTW)
+OPTION(EXADG_WITH_FFTW "Use FFTW" OFF)
+IF(${EXADG_WITH_FFTW})
+    ADD_DEFINITIONS(-DEXADG_WITH_FFTW)
     INCLUDE_DIRECTORIES(${FFTW_INCLUDE})
     IF(${BUILD_SHARED_LIBS})
         FIND_LIBRARY(FFTW3 fftw3 HINTS ${FFTW_LIB})
@@ -226,22 +228,22 @@ IF(${USE_FFTW})
         FIND_LIBRARY(FFTW3 libfftw3.a HINTS ${FFTW_LIB})
         FIND_LIBRARY(FFTW3_MPI libfftw3_mpi.a HINTS ${FFTW_LIB})
     ENDIF()
-    MESSAGE(${FFTW3})
-    MESSAGE(${FFTW3_MPI})
+    MESSAGE(STATUS "Found FFTW lib at ${FFTW3}")
+    MESSAGE(STATUS "Found FFTW mpi lib at ${FFTW3_MPI}")
     TARGET_LINK_FFTW(exadg)
 ENDIF()
 
 # LIKWID
-FIND_LIBRARY(LIKWID likwid HINTS ${LIKWID_LIB})
-MESSAGE(${LIKWID}) 
-IF(LIKWID)
+OPTION(EXADG_WITH_LIKDWID "Use LIKWID" OFF)
+IF(${EXADG_WITH_LIKWID})
+    FIND_LIBRARY(LIKWID likwid HINTS ${LIKWID_LIB})
+    MESSAGE(STATUS "Found LIKWID lib at ${LIKWID}")
     TARGET_COMPILE_DEFINITIONS(exadg PUBLIC LIKWID_PERFMON)
     TARGET_INCLUDE_DIRECTORIES(exadg PUBLIC ${LIKWID_INCLUDE})
     TARGET_LINK_LIBRARIES(exadg ${LIKWID})
 ENDIF()
 
 # preCICE
-# Pick up preCICE if we are able to locate it
 OPTION(EXADG_WITH_PRECICE "Use preCICE" OFF})
 IF(${EXADG_WITH_PRECICE})
     # the environment variable precice_DIR is searched by default

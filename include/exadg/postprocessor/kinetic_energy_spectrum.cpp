@@ -27,7 +27,7 @@
 #include <exadg/postprocessor/mirror_dof_vector_taylor_green.h>
 #include <exadg/utilities/create_directories.h>
 
-#ifdef USE_FFTW
+#ifdef EXADG_WITH_FFTW
 // deal.II
 #  include <deal.II/base/mpi.templates.h>
 #  include <deal.II/base/mpi_noncontiguous_partitioner.h>
