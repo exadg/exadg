@@ -25,7 +25,7 @@
     },
     "Output": {
         "OutputDirectory": "output/pressure_wave/",
-        "OutputName": "test_find_points",
-        "WriteOutput": "true"
+        "OutputName": "fsi_test",
+        "WriteOutput": "false"
     }
 }
