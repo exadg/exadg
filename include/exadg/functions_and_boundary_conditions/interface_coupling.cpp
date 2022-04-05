@@ -159,6 +159,11 @@ InterfaceCoupling<dim, n_components, Number>::setup(
     map_evaluator[quad_index].reinit(interface_data_dst->get_array_q_points(quad_index),
                                      dof_handler_src_.get_triangulation(),
                                      mapping_src_);
+
+    AssertThrow(
+      map_evaluator[quad_index].all_points_found() == true,
+      dealii::ExcMessage(
+        "Setup of InterfaceCoupling was not successful. Not all points have been found."));
   }
 }
 
