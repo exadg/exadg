@@ -23,7 +23,7 @@
 #define INCLUDE_EXADG_UTILITIES_THROUGHPUT_PARAMETERS_H_
 
 // likwid
-#ifdef LIKWID_PERFMON
+#ifdef EXADG_WITH_LIKWID
 #  include <likwid.h>
 #endif
 
@@ -57,7 +57,7 @@ measure_operator_evaluation_time(std::function<void(void)> const & evaluate_oper
       dealii::Timer timer;
       timer.restart();
 
-#ifdef LIKWID_PERFMON
+#ifdef EXADG_WITH_LIKWID
       LIKWID_MARKER_START(("degree_" + std::to_string(degree)).c_str());
 #endif
 
@@ -67,7 +67,7 @@ measure_operator_evaluation_time(std::function<void(void)> const & evaluate_oper
         evaluate_operator();
       }
 
-#ifdef LIKWID_PERFMON
+#ifdef EXADG_WITH_LIKWID
       LIKWID_MARKER_STOP(("degree_" + std::to_string(degree)).c_str());
 #endif
 

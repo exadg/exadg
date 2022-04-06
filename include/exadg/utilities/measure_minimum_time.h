@@ -53,7 +53,7 @@ private:
     for(int i = 0; i < best_of; i++)
     {
       MPI_Barrier(mpi_comm);
-#ifdef LIKWID_PERFMON
+#ifdef EXADG_WITH_LIKWID
       std::string likwid_label = label + likwid_suffix;
       LIKWID_MARKER_START(likwid_label.c_str());
 #else
@@ -63,7 +63,7 @@ private:
       f();
       MPI_Barrier(mpi_comm);
       double temp = time.wall_time();
-#ifdef LIKWID_PERFMON
+#ifdef EXADG_WITH_LIKWID
       LIKWID_MARKER_STOP(likwid_label.c_str());
 #endif
       double temp_global;

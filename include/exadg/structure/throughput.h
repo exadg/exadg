@@ -23,7 +23,7 @@
 #define INCLUDE_EXADG_STRUCTURE_THROUGHPUT_H_
 
 // likwid
-#ifdef LIKWID_PERFMON
+#ifdef EXADG_WITH_LIKWID
 #  include <likwid.h>
 #endif
 
@@ -109,7 +109,7 @@ run(ThroughputParameters const & throughput,
 int
 main(int argc, char ** argv)
 {
-#ifdef LIKWID_PERFMON
+#ifdef EXADG_WITH_LIKWID
   LIKWID_MARKER_INIT;
 #endif
 
@@ -178,7 +178,7 @@ main(int argc, char ** argv)
   if(not(general.is_test))
     throughput.print_results(mpi_comm);
 
-#ifdef LIKWID_PERFMON
+#ifdef EXADG_WITH_LIKWID
   LIKWID_MARKER_CLOSE;
 #endif
 

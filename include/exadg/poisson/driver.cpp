@@ -20,7 +20,7 @@
  */
 
 // likwid
-#ifdef LIKWID_PERFMON
+#ifdef EXADG_WITH_LIKWID
 #  include <likwid.h>
 #endif
 
