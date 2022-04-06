@@ -124,7 +124,7 @@ $(function() {
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    <span class="keywordflow">for</span>(<span class="keywordtype">int</span> i = 0; i &lt; best_of; i++)</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    {</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>      MPI_Barrier(mpi_comm);</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="preprocessor">#ifdef LIKWID_PERFMON</span></div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="preprocessor">#ifdef EXADG_WITH_LIKWID</span></div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>      std::string likwid_label = label + likwid_suffix;</div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>      LIKWID_MARKER_START(likwid_label.c_str());</div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span><span class="preprocessor">#else</span></div>
@@ -134,7 +134,7 @@ $(function() {
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>      f();</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>      MPI_Barrier(mpi_comm);</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>      <span class="keywordtype">double</span> temp = time.wall_time();</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span><span class="preprocessor">#ifdef LIKWID_PERFMON</span></div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span><span class="preprocessor">#ifdef EXADG_WITH_LIKWID</span></div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>      LIKWID_MARKER_STOP(likwid_label.c_str());</div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>      <span class="keywordtype">double</span> temp_global;</div>

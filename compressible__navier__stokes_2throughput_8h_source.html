@@ -93,7 +93,7 @@ $(function() {
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#ifndef INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_THROUGHPUT_H_</span></div>
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_THROUGHPUT_H_</span></div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#ifdef LIKWID_PERFMON</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#ifdef EXADG_WITH_LIKWID</span></div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#  include &lt;likwid.h&gt;</span></div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
@@ -174,7 +174,7 @@ $(function() {
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span><span class="keywordtype">int</span></div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>main(<span class="keywordtype">int</span> argc, <span class="keywordtype">char</span> ** argv)</div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>{</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span><span class="preprocessor">#ifdef LIKWID_PERFMON</span></div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span><span class="preprocessor">#ifdef EXADG_WITH_LIKWID</span></div>
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  LIKWID_MARKER_INIT;</div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span> </div>
@@ -243,7 +243,7 @@ $(function() {
 <div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>  <span class="keywordflow">if</span>(not(general.is_test))</div>
 <div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>    throughput.print_results(mpi_comm);</div>
 <div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span> </div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span><span class="preprocessor">#ifdef LIKWID_PERFMON</span></div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span><span class="preprocessor">#ifdef EXADG_WITH_LIKWID</span></div>
 <div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  LIKWID_MARKER_CLOSE;</div>
 <div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span> </div>
