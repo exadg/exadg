@@ -134,7 +134,7 @@ create_grid_and_set_boundary_ids_nozzle(
   dealii::GridTools::shift(offset_cone, tria_cone);
 
   // apply conical geometry: stretch vertex positions according to z-coordinate
-  for(auto cell : tria_cone.active_cell_iterators())
+  for(auto cell : tria_cone.cell_iterators())
   {
     for(auto const & v : cell->vertex_indices())
     {
@@ -232,7 +232,7 @@ create_grid_and_set_boundary_ids_nozzle(
   std::vector<double>       radius_0_cone;
   std::vector<double>       radius_1_cone;
 
-  for(auto cell : current_tria->active_cell_iterators())
+  for(auto cell : current_tria->cell_iterators())
   {
     // INFLOW
     if(cell->center()[2] < Z2_INFLOW)
@@ -382,7 +382,7 @@ create_grid_and_set_boundary_ids_nozzle(
 
   for(unsigned int i = 0; i < manifold_ids.size(); ++i)
   {
-    for(auto cell : current_tria->active_cell_iterators())
+    for(auto cell : current_tria->cell_iterators())
     {
       if(cell->manifold_id() == manifold_ids[i])
       {
@@ -401,7 +401,7 @@ create_grid_and_set_boundary_ids_nozzle(
 
   for(unsigned int i = 0; i < manifold_ids_cone.size(); ++i)
   {
-    for(auto cell : current_tria->active_cell_iterators())
+    for(auto cell : current_tria->cell_iterators())
     {
       if(cell->manifold_id() == manifold_ids_cone[i])
       {
@@ -423,7 +423,7 @@ create_grid_and_set_boundary_ids_nozzle(
   /*
    *  BOUNDARY ID's
    */
-  for(auto cell : triangulation->active_cell_iterators())
+  for(auto cell : triangulation->cell_iterators())
   {
     for(auto const & f : cell->face_indices())
     {

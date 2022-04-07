@@ -394,7 +394,7 @@ private:
 
     // manifold
     unsigned int manifold_id = 1;
-    for(auto cell : this->grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->cell_iterators())
     {
       cell->set_all_manifold_ids(manifold_id);
     }
@@ -416,8 +416,10 @@ private:
     dealii::GridTools::collect_periodic_faces(
       *this->grid->triangulation, 0 + 10, 1 + 10, 0, this->grid->periodic_faces);
     if(dim == 3)
+    {
       dealii::GridTools::collect_periodic_faces(
         *this->grid->triangulation, 2 + 10, 3 + 10, 2, this->grid->periodic_faces);
+    }
 
     this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
 

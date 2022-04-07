@@ -399,7 +399,7 @@ private:
     std::vector<unsigned int> manifold_ids;
     std::vector<unsigned int> face_ids;
 
-    for(auto cell : this->grid_pre->triangulation->active_cell_iterators())
+    for(auto cell : this->grid_pre->triangulation->cell_iterators())
     {
       for(auto const & f : cell->face_indices())
       {
@@ -427,7 +427,7 @@ private:
 
     for(unsigned int i = 0; i < manifold_ids.size(); ++i)
     {
-      for(auto cell : this->grid_pre->triangulation->active_cell_iterators())
+      for(auto cell : this->grid_pre->triangulation->cell_iterators())
       {
         if(cell->manifold_id() == manifold_ids[i])
         {
@@ -442,7 +442,7 @@ private:
     /*
      *  BOUNDARY ID's
      */
-    for(auto cell : this->grid_pre->triangulation->active_cell_iterators())
+    for(auto cell : this->grid_pre->triangulation->cell_iterators())
     {
       for(auto const & face : cell->face_indices())
       {

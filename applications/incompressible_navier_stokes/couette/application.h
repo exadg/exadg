@@ -197,7 +197,7 @@ private:
                                                       point2);
 
     // set boundary indicator
-    for(auto cell : this->grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->cell_iterators())
     {
       for(auto const & face : cell->face_indices())
       {

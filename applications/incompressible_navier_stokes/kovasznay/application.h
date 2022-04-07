@@ -255,7 +255,7 @@ private:
     dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
 
     // set boundary indicator
-    for(auto cell : this->grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->cell_iterators())
     {
       for(auto const & f : cell->face_indices())
       {
