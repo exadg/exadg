@@ -36,6 +36,9 @@ DEAL=$WORKING_DIRECTORY/dealii/build
 FFTW=$WORKING_DIRECTORY/fftw/install
 LIKWID=$WORKING_DIRECTORY/likwid/install
 
+# add or override options
+EXTRA_ARGS=$@
+
 cmake \
     -D DEGREE_MAX=15 \
     -D DEAL_II_DIR="$DEAL" \
@@ -47,4 +50,5 @@ cmake \
     -D LIKWID_INCLUDE="$LIKWID/include" \
     -D BUILD_SHARED_LIBS=ON \
     -D PICKUP_TESTS=ON \
+    ${EXTRA_ARGS} \
     ../
