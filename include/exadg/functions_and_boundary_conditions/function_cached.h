@@ -24,6 +24,7 @@
 
 // deal.II
 #include <deal.II/base/tensor.h>
+#include <map>
 
 namespace ExaDG
 {
