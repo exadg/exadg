@@ -90,6 +90,77 @@ locate_object_relative_to_triangulation(
     return Location::Intersected;
 }
 
+template<int dim>
+void
+set_boundary_ids_overlap_region(dealii::Triangulation<dim> const & tria_dst,
+                                dealii::types::boundary_id const & bid,
+                                dealii::Mapping<dim> const &       mapping_src,
+                                dealii::Triangulation<dim> const & tria_src)
+{
+  std::vector<dealii::Point<dim>> points;
+  using CellIteratorType = decltype(tria_dst.begin());
+  using Id               = std::tuple<CellIteratorType /* cell */, unsigned int /*face*/>;
+  std::vector<std::pair<Id, unsigned int /* first_point_in_vector */>> id_to_vector_index;
+
+  // fill vector of points for all boundary faces
+  for(auto cell : tria_dst.cell_iterators())
+  {
+    for(auto const & f : cell->face_indices())
+    {
+      if(cell->face(f)->at_boundary())
+      {
+        for(auto const & v : cell->face(f)->vertex_indices())
+        {
+          if(v == 0)
+          {
+            Id const id = std::make_tuple(cell, f);
+            id_to_vector_index.push_back({id, points.size()});
+          }
+
+          points.push_back(cell->face(f)->vertex(v));
+        }
+      }
+    }
+  }
+
+  // create and reinit RemotePointEvaluation: find points on src-side
+  std::vector<bool> marked_vertices = {};
+  double const      tolerance       = 1.e-10;
+
+  dealii::Utilities::MPI::RemotePointEvaluation<dim> rpe =
+    dealii::Utilities::MPI::RemotePointEvaluation<dim>(tolerance,
+                                                       false
+#if DEAL_II_VERSION_GTE(9, 4, 0)
+                                                       ,
+                                                       0,
+                                                       [marked_vertices]() {
+                                                         return marked_vertices;
+                                                       }
+#endif
+    );
+
+  rpe.reinit(points, tria_src, mapping_src);
+
+  // check which points have been found and whether a face on dst-side is located inside the src
+  // triangulation
+  for(auto iter = id_to_vector_index.begin(); iter != id_to_vector_index.end(); ++iter)
+  {
+    unsigned int const begin = iter->second;
+    unsigned int const end =
+      (iter + 1 != id_to_vector_index.end()) ? (iter + 1)->second : points.size();
+
+    bool inside = true;
+    for(unsigned int i = begin; i < end; ++i)
+    {
+      inside = (inside and rpe.point_found(i));
+    }
+
+    auto const & [cell, f] = iter->first;
+    if(inside)
+      cell->face(f)->set_boundary_id(bid);
+  }
+}
+
 template<int dim, int n_components, typename Number>
 class ApplicationOversetGridsBase
 {
@@ -162,64 +233,77 @@ private:
   void
   set_boundary_ids()
   {
-    AssertThrow(dealii::Utilities::MPI::n_mpi_processes(mpi_comm) == 1,
-                dealii::ExcMessage(
-                  "This function has so far only been implemented for the serial case."));
+    set_boundary_ids_overlap_region(*domain1->get_grid()->triangulation,
+                                    boundary_id_overlap,
+                                    *domain2->get_grid()->mapping,
+                                    *domain2->get_grid()->triangulation);
 
-    std::vector<bool> marked_vertices = {};
-    double const      tolerance       = 1.e-10;
+    set_boundary_ids_overlap_region(*domain2->get_grid()->triangulation,
+                                    boundary_id_overlap,
+                                    *domain1->get_grid()->mapping,
+                                    *domain1->get_grid()->triangulation);
 
-    // loop over faces of first triangulation and check whether they are located inside the second
-    // triangulation
-    auto cell_hint_2 = typename dealii::Triangulation<dim>::active_cell_iterator();
-    for(auto cell : domain1->get_grid()->triangulation->cell_iterators())
-    {
-      for(auto const & f : cell->face_indices())
-      {
-        if(cell->face(f)->at_boundary())
-        {
-          std::vector<dealii::Point<dim>> points;
-          for(auto const & v : cell->face(f)->vertex_indices())
-            points.push_back(cell->face(f)->vertex(v));
 
-          Location location =
-            locate_object_relative_to_triangulation(*domain2->get_grid()->mapping,
-                                                    *domain2->get_grid()->triangulation,
-                                                    points,
-                                                    cell_hint_2,
-                                                    marked_vertices,
-                                                    tolerance);
-          if(location == Location::Inside)
-            cell->face(f)->set_boundary_id(boundary_id_overlap);
-        }
-      }
-    }
-
-    // loop over faces of second triangulation and check whether they are located inside the first
-    // triangulation
-    auto cell_hint_1 = typename dealii::Triangulation<dim>::active_cell_iterator();
-    for(auto cell : domain2->get_grid()->triangulation->cell_iterators())
-    {
-      for(auto const & f : cell->face_indices())
-      {
-        if(cell->face(f)->at_boundary())
-        {
-          std::vector<dealii::Point<dim>> points;
-          for(auto const & v : cell->face(f)->vertex_indices())
-            points.push_back(cell->face(f)->vertex(v));
-
-          Location location =
-            locate_object_relative_to_triangulation(*domain1->get_grid()->mapping,
-                                                    *domain1->get_grid()->triangulation,
-                                                    points,
-                                                    cell_hint_1,
-                                                    marked_vertices,
-                                                    tolerance);
-          if(location == Location::Inside)
-            cell->face(f)->set_boundary_id(boundary_id_overlap);
-        }
-      }
-    }
+    //    AssertThrow(dealii::Utilities::MPI::n_mpi_processes(mpi_comm) == 1,
+    //                dealii::ExcMessage(
+    //                  "This function has so far only been implemented for the serial case."));
+    //
+    //    std::vector<bool> marked_vertices = {};
+    //    double const      tolerance       = 1.e-10;
+    //
+    //    // loop over faces of first triangulation and check whether they are located inside the
+    //    second
+    //    // triangulation
+    //    auto cell_hint_2 = typename dealii::Triangulation<dim>::active_cell_iterator();
+    //    for(auto cell : domain1->get_grid()->triangulation->cell_iterators())
+    //    {
+    //      for(auto const & f : cell->face_indices())
+    //      {
+    //        if(cell->face(f)->at_boundary())
+    //        {
+    //          std::vector<dealii::Point<dim>> points;
+    //          for(auto const & v : cell->face(f)->vertex_indices())
+    //            points.push_back(cell->face(f)->vertex(v));
+    //
+    //          Location location =
+    //            locate_object_relative_to_triangulation(*domain2->get_grid()->mapping,
+    //                                                    *domain2->get_grid()->triangulation,
+    //                                                    points,
+    //                                                    cell_hint_2,
+    //                                                    marked_vertices,
+    //                                                    tolerance);
+    //          if(location == Location::Inside)
+    //            cell->face(f)->set_boundary_id(boundary_id_overlap);
+    //        }
+    //      }
+    //    }
+    //
+    //    // loop over faces of second triangulation and check whether they are located inside the
+    //    first
+    //    // triangulation
+    //    auto cell_hint_1 = typename dealii::Triangulation<dim>::active_cell_iterator();
+    //    for(auto cell : domain2->get_grid()->triangulation->cell_iterators())
+    //    {
+    //      for(auto const & f : cell->face_indices())
+    //      {
+    //        if(cell->face(f)->at_boundary())
+    //        {
+    //          std::vector<dealii::Point<dim>> points;
+    //          for(auto const & v : cell->face(f)->vertex_indices())
+    //            points.push_back(cell->face(f)->vertex(v));
+    //
+    //          Location location =
+    //            locate_object_relative_to_triangulation(*domain1->get_grid()->mapping,
+    //                                                    *domain1->get_grid()->triangulation,
+    //                                                    points,
+    //                                                    cell_hint_1,
+    //                                                    marked_vertices,
+    //                                                    tolerance);
+    //          if(location == Location::Inside)
+    //            cell->face(f)->set_boundary_id(boundary_id_overlap);
+    //        }
+    //      }
+    //    }
   }
 
   std::string parameter_file;
