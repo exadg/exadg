@@ -62,10 +62,6 @@ write_output(OutputData const &                              output_data,
   solution_component_interpretation[1 + dim] =
     dealii::DataComponentInterpretation::component_is_scalar;
 
-#if !DEAL_II_VERSION_GTE(9, 4, 0)
-  solution_conserved.update_ghost_values();
-#endif
-
   data_out.add_data_vector(dof_handler,
                            solution_conserved,
                            solution_names_conserved,
@@ -77,10 +73,6 @@ write_output(OutputData const &                              output_data,
       it != additional_fields.end();
       ++it)
   {
-#if !DEAL_II_VERSION_GTE(9, 4, 0)
-    it->vector->update_ghost_values();
-#endif
-
     if(it->type == SolutionFieldType::scalar)
     {
       data_out.add_data_vector(*it->dof_handler, *it->vector, it->name);

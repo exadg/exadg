@@ -24,7 +24,7 @@ jobs:
       fail-fast: false
       matrix:
         build_type: ["Release", "Debug"]
-        dealii_version: ["master", "v9.3.0"]
+        dealii_version: ["master"]
     
     container:
       image: dealii/dealii:${{ matrix.dealii_version }}-focal

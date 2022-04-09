@@ -27,10 +27,6 @@
 
 DEAL_II_NAMESPACE_OPEN
 
-
-#if DEAL_II_VERSION_GTE(9, 4, 0)
-
-
 template struct dealii::internal::FEEvaluationFactory<deal_II_dimension, deal_II_scalar_vectorized>;
 
 template struct dealii::internal::FEFaceEvaluationFactory<deal_II_dimension,
@@ -43,24 +39,5 @@ template struct dealii::internal::FEFaceEvaluationGatherFactory<
 
 template struct dealii::internal::CellwiseInverseMassFactory<deal_II_dimension,
                                                              deal_II_scalar_vectorized>;
-
-
-#else
-
-
-template struct dealii::internal::FEEvaluationFactory<deal_II_dimension,
-                                                      deal_II_scalar_vectorized::value_type,
-                                                      deal_II_scalar_vectorized>;
-
-template struct dealii::internal::FEFaceEvaluationFactory<deal_II_dimension,
-                                                          deal_II_scalar_vectorized::value_type,
-                                                          deal_II_scalar_vectorized>;
-
-template struct dealii::internal::CellwiseInverseMassFactory<deal_II_dimension,
-                                                             deal_II_scalar_vectorized::value_type,
-                                                             deal_II_scalar_vectorized>;
-
-
-#endif
 
 DEAL_II_NAMESPACE_CLOSE
