@@ -151,7 +151,7 @@ public:
     // initialize preCICE with initial stress data
     VectorType initial_stress;
     fluid->pde_operator->initialize_vector_velocity(initial_stress);
-    this->allowed_time_step_size = this->precice->initialize_precice(initial_stress);
+    this->time_until_next_coupling_window = this->precice->initialize_precice(initial_stress);
   }
 
 
@@ -180,7 +180,8 @@ public:
   {
     bool is_new_time_window = true;
     fluid->time_integrator->set_current_time_step_size(
-      std::min(this->allowed_time_step_size, fluid->time_integrator->get_time_step_size()));
+      std::min(this->time_until_next_coupling_window,
+               fluid->time_integrator->get_time_step_size()));
     // preCICE dictates when the time loop is finished
     while(this->precice->is_coupling_ongoing())
     {
@@ -205,7 +206,7 @@ public:
         coupling_fluid_to_structure();
 
         dealii::Timer precice_timer;
-        this->allowed_time_step_size =
+        this->time_until_next_coupling_window =
           this->precice->advance(fluid->time_integrator->get_time_step_size());
         is_new_time_window = this->precice->is_time_window_complete();
         this->timer_tree.insert({"FSI", "preCICE"}, precice_timer.wall_time());
@@ -219,23 +220,27 @@ public:
       {
         // computes new time-step size
         fluid->time_integrator->advance_one_timestep_post_solve();
-        // next, we synchronize the time-step sizes. Have a look in the base class for more
-        // explanations. Subcycling would in theory be compatible in explicit coupling schemes here.
-        // In implicit coupling schemes, we need matching time-window sizes as the time-step size
-        // push back happens in the 'advance_one_timestep_post_solve()' and we cannot change two
-        // subsequent time-step sizes without a push back operation, otherwise we falsify the time
-        // integrator. However, the treatment of the boundary conditions is not handled correctly
-        // when using subcycling, as we would apply the 'whole displacement' within the first
-        // time-step (being potentially only a fractio of the whole time-windo). In order to cope
-        // with subcycling, either the boundary condition needs to be adapted or we need to wait for
-        // a newer preCICE version (currently v2.3.0) which can handle this. Hence, we do not adjust
-        // the time-step-size of the fluid solver, but rather Assert that it is still valid. Note
-        // that we would otherwise run into a preCICE assert reporting the same issue.
+        // The current implementation does not allow to synchronize the time step size between the
+        // fluid field and precice. Instead, the fluid field dictates the time step size. There are
+        // two reasons behind that: first, in implicit (strong) coupling schemes, we need matching
+        // time-window sizes as the time-step size push back of the BDF scheme happens in the
+        // 'advance_one_timestep_post_solve()' and we cannot change two subsequent time-step sizes
+        // without a push back operation, otherwise we falsify the time integrator (this would still
+        // work with explicit (weak) coupling schemes). Second, the treatment of the boundary
+        // conditions is not handled correctly when using subcycling, as we would apply the 'whole
+        // displacement' within the first time-step. In order to cope with subcycling, either the
+        // boundary condition needs to be adapted or we need to wait for a newer preCICE version
+        // (currently v2.3.0) which can handle this. Hence, we do not adjust the time-step-size of
+        // the fluid solver, but rather Assert that it is still valid. Note that we would otherwise
+        // run into a preCICE assert reporting the same issue.
         // fluid->time_integrator->set_current_time_step_size(
-        //   std::min(this->allowed_time_step_size, fluid->time_integrator->get_time_step_size()));
+        //   std::min(this->time_until_next_coupling_window,
+        //   fluid->time_integrator->get_time_step_size()));
+        // Have a look in the base class for more explanations.
+        const double time_tolerance = 1e-12;
         Assert(
-          fluid->time_integrator->get_time_step_size() <
-            this->allowed_time_step_size + std::numeric_limits<double>::min(),
+          std::abs(fluid->time_integrator->get_time_step_size() -
+                   this->time_until_next_coupling_window) < time_tolerance,
           dealii::ExcMessage(
             "The solver time-step size exceeded the maximum admissible time-step size allowed by preCICE. "
             "If you select adaptive time-stepping, make sure to let the Fluid participant steer the time-window size. "

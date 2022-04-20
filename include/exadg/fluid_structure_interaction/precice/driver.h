@@ -89,9 +89,13 @@ protected:
   // window is reached
   // time step size: refers to single field solvers. In case of subcycling, one
   // time window consists of several time step sizes.
+  // serial coupling scheme: the single-field solvers are called sequentially/consecutively with
+  // data transfer from one field to another after in single-field solver.
+  // parallel coupling scheme: the single-field solvers are called simultaneously with data transfer
+  // in both directions afterwards.
 
   // The time-window size is determined through the preCICE configuration by the user:
-  // The <coupling-scheme.. tag has options for
+  // The <coupling-scheme.. /> tag has options for
   // <time-window-size method="fixed" ... /> which refers to a constant time window size
   // <time-window-size method="first-participant" ... /> which refers to an adaptive time window
   // size prescribed by the first (which is usually the Fluid) participant. The latter is only
@@ -101,7 +105,7 @@ protected:
   // point needs to be determined.
 
   // maximum allowed time-step size until we reach a new coupling time window
-  mutable double allowed_time_step_size = 0;
+  mutable double time_until_next_coupling_window = 0;
 
   // do not print wall times if is_test
   bool const is_test;

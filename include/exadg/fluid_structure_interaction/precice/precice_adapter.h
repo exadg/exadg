@@ -94,7 +94,7 @@ public:
    *             automatically. In many cases, this data will just represent
    *             your initial condition.
    *
-   * @return     double the allowed time-step size until the next coupling time-window is reached
+   * @return     double the time until the next coupling time-window is reached
    */
   double
   initialize_precice(VectorType const & dealii_to_precice);
@@ -121,7 +121,7 @@ public:
    *
    * @param computed_timestep_length the time-step size computed by the solver
    *
-   * @return double the allowed time-step size until the next coupling time-window is reached
+   * @return double the time until the next coupling time-window is reached
    */
   double
   advance(double const computed_timestep_length);
@@ -297,7 +297,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::initialize_precice(
   //   dealii_to_precice.update_ghost_values();
 
   // Initialize preCICE internally
-  double allowed_time_step_size = precice->initialize();
+  double time_until_next_coupling_window = precice->initialize();
 
   // Only the writer needs potentially to process the coupling mesh, if the
   // mapping is carried out in the solver
@@ -319,7 +319,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::initialize_precice(
   //                                   read_nodes_ids.size(),
   //                                   read_nodes_ids.data(),
   //                                   read_data.data());
-  return allowed_time_step_size;
+  return time_until_next_coupling_window;
 }
 
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>

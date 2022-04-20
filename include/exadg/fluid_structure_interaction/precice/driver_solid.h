@@ -120,7 +120,8 @@ public:
     // initialize preCICE with initial displacement data
     VectorType displacement_structure;
     structure->pde_operator->initialize_dof_vector(displacement_structure);
-    this->allowed_time_step_size = this->precice->initialize_precice(displacement_structure);
+    this->time_until_next_coupling_window =
+      this->precice->initialize_precice(displacement_structure);
   }
 
 
@@ -151,7 +152,8 @@ public:
 
     // preCICE prescribes the time-step size
     structure->time_integrator->set_current_time_step_size(
-      std::min(this->allowed_time_step_size, structure->time_integrator->get_time_step_size()));
+      std::min(this->time_until_next_coupling_window,
+               structure->time_integrator->get_time_step_size()));
 
     // preCICE dictates when the time loop is finished
     while(this->precice->is_coupling_ongoing())
@@ -175,7 +177,7 @@ public:
                                   structure->time_integrator->get_time_step_size());
 
       dealii::Timer precice_timer;
-      this->allowed_time_step_size =
+      this->time_until_next_coupling_window =
         this->precice->advance(structure->time_integrator->get_time_step_size());
       is_new_time_window = this->precice->is_time_window_complete();
       this->timer_tree.insert({"FSI", "preCICE"}, precice_timer.wall_time());
@@ -190,7 +192,7 @@ public:
       // We don't take the time-step size of the solver here into account, but rather apply the
       // available time-step size reported by preCICE, as the GenAlpha time integrator doesn't
       // compute a time-step size on its own.
-      structure->time_integrator->set_current_time_step_size(this->allowed_time_step_size);
+      structure->time_integrator->set_current_time_step_size(this->time_until_next_coupling_window);
     }
   }
 
