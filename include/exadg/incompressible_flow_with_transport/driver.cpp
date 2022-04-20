@@ -76,9 +76,9 @@ Driver<dim, Number>::setup()
     std::shared_ptr<dealii::Function<dim>> mesh_motion;
     mesh_motion = application->create_mesh_movement_function();
     grid_motion =
-      std::make_shared<GridMotionFunction<dim, Number>>(grid->mapping,
+      std::make_shared<GridMotionFunction<dim, Number>>(application->get_grid()->mapping,
                                                         application->get_parameters().degree_u,
-                                                        *grid->triangulation,
+                                                        *application->get_grid()->triangulation,
                                                         mesh_motion,
                                                         application->get_parameters().start_time);
   }
@@ -86,7 +86,7 @@ Driver<dim, Number>::setup()
   // initialize fluid_operator
   if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
-    fluid_operator = IncNS::create_operator<dim, Number>(grid,
+    fluid_operator = IncNS::create_operator<dim, Number>(application->get_grid(),
                                                          grid_motion,
                                                          application->get_boundary_descriptor(),
                                                          application->get_field_functions(),
@@ -97,7 +97,7 @@ Driver<dim, Number>::setup()
   else if(application->get_parameters().solver_type == IncNS::SolverType::Steady)
   {
     fluid_operator =
-      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(grid,
+      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(application->get_grid(),
                                                             grid_motion,
                                                             application->get_boundary_descriptor(),
                                                             application->get_field_functions(),
@@ -120,7 +120,7 @@ Driver<dim, Number>::setup()
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     scalar_operator[i] =
-      std::make_shared<ConvDiff::Operator<dim, Number>>(grid,
+      std::make_shared<ConvDiff::Operator<dim, Number>>(application->get_grid(),
                                                         grid_motion,
                                                         application->get_boundary_descriptor_scalar(
                                                           i),
@@ -138,8 +138,9 @@ Driver<dim, Number>::setup()
 
   matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
   if(application->get_parameters().use_cell_based_face_loops)
-    Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
-  matrix_free->reinit(*grid->mapping,
+    Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
+                                        matrix_free_data->data);
+  matrix_free->reinit(*application->get_grid()->mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
