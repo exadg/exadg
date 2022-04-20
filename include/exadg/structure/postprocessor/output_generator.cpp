@@ -52,10 +52,6 @@ write_output(OutputDataBase const &          output_data,
   std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
     component_interpretation(dim, dealii::DataComponentInterpretation::component_is_part_of_vector);
 
-#if !DEAL_II_VERSION_GTE(9, 4, 0)
-  solution_vector.update_ghost_values();
-#endif
-
   data_out.add_data_vector(dof_handler, solution_vector, names, component_interpretation);
 
   data_out.build_patches(mapping, output_data.degree, dealii::DataOut<dim>::curved_inner_cells);

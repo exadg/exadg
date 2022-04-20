@@ -51,10 +51,6 @@ write_output(OutputDataBase const &          output_data,
 
   data_out.attach_dof_handler(dof_handler);
 
-#if !DEAL_II_VERSION_GTE(9, 4, 0)
-  solution_vector.update_ghost_values();
-#endif
-
   data_out.add_data_vector(solution_vector, "solution");
   data_out.build_patches(mapping, output_data.degree, dealii::DataOut<dim>::curved_inner_cells);
 

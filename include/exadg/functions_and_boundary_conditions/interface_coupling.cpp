@@ -147,25 +147,18 @@ InterfaceCoupling<dim, n_components, Number>::setup(
     // exchange quadrature points with their owners
     map_evaluator.emplace(quad_index,
                           dealii::Utilities::MPI::RemotePointEvaluation<dim>(
-                            tolerance_,
-                            false
-#if DEAL_II_VERSION_GTE(9, 4, 0)
-                            ,
-                            0,
-                            [marked_vertices_src_]() { return marked_vertices_src_; }
-#endif
-                            ));
+                            tolerance_, false, 0, [marked_vertices_src_]() {
+                              return marked_vertices_src_;
+                            }));
 
     map_evaluator[quad_index].reinit(interface_data_dst->get_array_q_points(quad_index),
                                      dof_handler_src_.get_triangulation(),
                                      mapping_src_);
 
-#if DEAL_II_VERSION_GTE(9, 4, 0)
     AssertThrow(
       map_evaluator[quad_index].all_points_found() == true,
       dealii::ExcMessage(
         "Setup of InterfaceCoupling was not successful. Not all points have been found."));
-#endif
   }
 }
 
@@ -173,29 +166,15 @@ template<int dim, int n_components, typename Number>
 void
 InterfaceCoupling<dim, n_components, Number>::update_data(VectorType const & dof_vector_src)
 {
-#if DEAL_II_VERSION_GTE(9, 4, 0)
   dof_vector_src.update_ghost_values();
-#else
-  dealii::LinearAlgebra::distributed::Vector<double> dof_vector_src_double;
-  dof_vector_src_double = dof_vector_src;
-  dof_vector_src_double.update_ghost_values();
-#endif
 
   for(auto quadrature : interface_data_dst->get_quad_indices())
   {
-#if DEAL_II_VERSION_GTE(9, 4, 0)
     auto const result =
       dealii::VectorTools::point_values<n_components>(map_evaluator[quadrature],
                                                       *dof_handler_src,
                                                       dof_vector_src,
                                                       dealii::VectorTools::EvaluationFlags::avg);
-#else
-    auto const result =
-      dealii::VectorTools::point_values<n_components>(map_evaluator[quadrature],
-                                                      *dof_handler_src,
-                                                      dof_vector_src_double,
-                                                      dealii::VectorTools::EvaluationFlags::avg);
-#endif
 
     auto & array_solution = interface_data_dst->get_array_solution(quadrature);
 
