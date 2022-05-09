@@ -137,16 +137,6 @@ public:
                            VectorType const * velocity = nullptr) const;
 
   /*
-   * This function is called by OIF sub-stepping algorithm. It evaluates the convective term,
-   * multiplies the result by -1.0 and applies the inverse mass operator.
-   */
-  void
-  evaluate_oif(VectorType &       dst,
-               VectorType const & src,
-               double const       evaluation_time,
-               VectorType const * velocity = nullptr) const;
-
-  /*
    * This function calculates the inhomogeneous parts of all operators arising e.g. from
    * inhomogeneous boundary conditions or the solution at previous instants of time occurring in the
    * discrete time derivative term.

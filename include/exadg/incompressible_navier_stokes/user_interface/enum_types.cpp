@@ -212,59 +212,8 @@ enum_to_string(TreatmentOfConvectiveTerm const enum_type)
     case TreatmentOfConvectiveTerm::Explicit:
       string_type = "Explicit";
       break;
-    case TreatmentOfConvectiveTerm::ExplicitOIF:
-      string_type = "ExplicitOIF";
-      break;
     case TreatmentOfConvectiveTerm::Implicit:
       string_type = "Implicit";
-      break;
-    default:
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
-      break;
-  }
-
-  return string_type;
-}
-
-std::string
-enum_to_string(TimeIntegratorOIF const enum_type)
-{
-  std::string string_type;
-
-  switch(enum_type)
-  {
-    case TimeIntegratorOIF::Undefined:
-      string_type = "Undefined";
-      break;
-    case TimeIntegratorOIF::ExplRK1Stage1:
-      string_type = "ExplRK1Stage1";
-      break;
-    case TimeIntegratorOIF::ExplRK2Stage2:
-      string_type = "ExplRK2Stage2";
-      break;
-    case TimeIntegratorOIF::ExplRK3Stage3:
-      string_type = "ExplRK3Stage3";
-      break;
-    case TimeIntegratorOIF::ExplRK4Stage4:
-      string_type = "ExplRK4Stage4";
-      break;
-    case TimeIntegratorOIF::ExplRK3Stage4Reg2C:
-      string_type = "ExplRK3Stage4Reg2C";
-      break;
-    case TimeIntegratorOIF::ExplRK3Stage7Reg2:
-      string_type = "ExplRK3Stage7Reg2";
-      break;
-    case TimeIntegratorOIF::ExplRK4Stage5Reg2C:
-      string_type = "ExplRK4Stage5Reg2C";
-      break;
-    case TimeIntegratorOIF::ExplRK4Stage8Reg2:
-      string_type = "ExplRK4Stage8Reg2";
-      break;
-    case TimeIntegratorOIF::ExplRK4Stage5Reg3C:
-      string_type = "ExplRK4Stage5Reg3C";
-      break;
-    case TimeIntegratorOIF::ExplRK5Stage9Reg2S:
-      string_type = "ExplRK5Stage9Reg2S";
       break;
     default:
       AssertThrow(false, dealii::ExcMessage("Not implemented."));

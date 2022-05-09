@@ -125,8 +125,7 @@ enum_to_string(TemporalDiscretization const enum_type);
 enum class TreatmentOfConvectiveTerm
 {
   Undefined,
-  Explicit,    // additive decomposition (IMEX)
-  ExplicitOIF, // operator-integration-factor splitting (Maday et al. 1990)
+  Explicit, // additive decomposition (IMEX)
   Implicit
 };
 

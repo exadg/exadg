@@ -57,14 +57,12 @@ private:
     this->param.solver_type                     = SolverType::Steady;
     this->param.temporal_discretization         = TemporalDiscretization::BDFCoupledSolution;
     this->param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Implicit;
-    this->param.time_integrator_oif             = TimeIntegratorOIF::ExplRK3Stage7Reg2;
     this->param.adaptive_time_stepping          = false;
     this->param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     this->param.max_velocity                    = 1.0;
     this->param.cfl_exponent_fe_degree_velocity = 1.5;
-    // Explicit: CFL_crit = 0.35 (0.4 unstable), ExplicitOIF: CFL_crit,oif = 3.0 (3.5 unstable)
-    this->param.cfl_oif               = 3.0;
-    this->param.cfl                   = this->param.cfl_oif * 1.0;
+    // Explicit: CFL_crit = 0.35 (0.4 unstable)
+    this->param.cfl                   = 3.0;
     this->param.time_step_size        = 1.0e-1;
     this->param.order_time_integrator = 2;
     this->param.start_with_low_order  = true;

@@ -54,9 +54,6 @@ TimeIntBDFBase<Number>::setup(bool const do_restart)
 {
   this->pcout << std::endl << "Setup BDF time integrator ..." << std::endl << std::flush;
 
-  // operator-integration-factor splitting
-  initialize_oif();
-
   // allocate global solution vectors
   allocate_vectors();
 
@@ -279,76 +276,6 @@ TimeIntBDFBase<Number>::update_time_integrator_constants()
 
 template<typename Number>
 void
-TimeIntBDFBase<Number>::calculate_sum_alphai_ui_oif_substepping(VectorType & sum_alphai_ui,
-                                                                double const cfl,
-                                                                double const cfl_oif)
-{
-  VectorType solution_tilde_mp(sum_alphai_ui), solution_tilde_m(sum_alphai_ui);
-
-  /*
-   * Loop over all previous time instants required by the BDF scheme and calculate u_tilde by
-   * substepping algorithm, i.e., integrate over time interval t_{n-i} <= t <= t_{n+1} for all 0 <=
-   * i <= order using explicit Runge-Kutta methods.
-   *
-   *   time t
-   *  -------->   t_{n-2}   t_{n-1}   t_{n}     t_{n+1}
-   *  _______________|_________|________|___________|___________\
-   *                 |         |        |           |           /
-   *  time_steps-vec:   dt[2]     dt[1]    dt[0]
-   *
-   *  i=0:                                   k=0
-   *                                    +---------->+
-   *
-   *  i=1:                         k=1       k=0
-   *                           +--------+---------->+
-   *
-   *  i=2:               k=2       k=1       k=0
-   *                 +-------- +--------+---------->+
-   */
-  for(unsigned int i = 0; i < order; ++i)
-  {
-    // initialize solution: u_tilde(s=0) = u(t_{n-i})
-    initialize_solution_oif_substepping(solution_tilde_m, i);
-
-    // integrate over time interval t_{n-i} <= t <= t_{n+1}
-    // which are i+1 "macro" time steps
-    for(int k = i; k >= 0; --k)
-    {
-      // integrate over interval: t_{n-k} <= t <= t_{n-k+1}
-
-      // calculate start time t_{n-k}
-      double const time_n_k = this->get_previous_time(k);
-
-      // number of sub-steps per "macro" time step
-      int M = (int)(cfl / (cfl_oif - eps));
-
-      AssertThrow(M >= 1, dealii::ExcMessage("Invalid parameters cfl and cfl_oif."));
-
-      // make sure that cfl_oif is not violated
-      if(cfl_oif < cfl / double(M) - eps)
-        M += 1;
-
-      // calculate sub-stepping time step size delta_s
-      double const delta_s = this->get_time_step_size(k) / (double)M;
-
-      for(int m = 0; m < M; ++m)
-      {
-        do_timestep_oif_substepping(solution_tilde_mp,
-                                    solution_tilde_m,
-                                    time_n_k + delta_s * m,
-                                    delta_s);
-
-        solution_tilde_mp.swap(solution_tilde_m);
-      }
-    }
-
-    // note that solution_tilde_m contains the solution since swap() has been done last
-    update_sum_alphai_ui_oif_substepping(sum_alphai_ui, solution_tilde_m, i);
-  }
-}
-
-template<typename Number>
-void
 TimeIntBDFBase<Number>::do_read_restart(std::ifstream & in)
 {
   boost::archive::binary_iarchive ia(in);
@@ -440,32 +367,6 @@ TimeIntBDFBase<Number>::postprocessing_steady_problem() const
 template<typename Number>
 void
 TimeIntBDFBase<Number>::solve_steady_problem()
-{
-  AssertThrow(false, dealii::ExcMessage("This function has to be implemented by derived classes."));
-}
-
-template<typename Number>
-void
-TimeIntBDFBase<Number>::initialize_solution_oif_substepping(VectorType &, unsigned int)
-{
-  AssertThrow(false, dealii::ExcMessage("This function has to be implemented by derived classes."));
-}
-
-template<typename Number>
-void
-TimeIntBDFBase<Number>::update_sum_alphai_ui_oif_substepping(VectorType &,
-                                                             VectorType const &,
-                                                             unsigned int)
-{
-  AssertThrow(false, dealii::ExcMessage("This function has to be implemented by derived classes."));
-}
-
-template<typename Number>
-void
-TimeIntBDFBase<Number>::do_timestep_oif_substepping(VectorType &,
-                                                    VectorType &,
-                                                    double const,
-                                                    double const)
 {
   AssertThrow(false, dealii::ExcMessage("This function has to be implemented by derived classes."));
 }

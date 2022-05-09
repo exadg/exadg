@@ -190,9 +190,6 @@ public:
   TreatmentOfConvectiveTerm treatment_of_convective_term;
 
   // description: see enum declaration
-  TimeIntegratorOIF time_integrator_oif;
-
-  // description: see enum declaration
   TimeStepCalculation calculation_of_time_step_size;
 
   // use adaptive time stepping?
@@ -222,10 +219,6 @@ public:
   // ("global" CFL number, can be larger than critical CFL in case
   // of operator-integration-factor splitting)
   double cfl;
-
-  // cfl number for operator-integration-factor splitting (has to be smaller than the
-  // critical time step size arising from the CFL restriction, cfl_oif <= cfl)
-  double cfl_oif;
 
   // dt = CFL/k_u^{exp} * h / || u ||
   double cfl_exponent_fe_degree_velocity;

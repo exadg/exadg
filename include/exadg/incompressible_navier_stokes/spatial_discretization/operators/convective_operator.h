@@ -444,92 +444,6 @@ public:
   }
 
   /*
-   *  Calculates the flux for operator with linear transport velocity w on interior faces. This
-   * function is needed for face-centric loops and the flux is therefore computed on both sides of
-   * an interior face. The interior flux (element m) is the first element in the tuple, the exterior
-   * flux (element p, neighbor) is the second element in the tuple.
-   */
-  inline DEAL_II_ALWAYS_INLINE //
-    std::tuple<vector, vector>
-    calculate_flux_linear_transport_interior_and_neighbor(vector const & uM,
-                                                          vector const & uP,
-                                                          vector const & wM,
-                                                          vector const & wP,
-                                                          vector const & normalM) const
-  {
-    vector fluxM, fluxP;
-
-    if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
-    {
-      vector flux = calculate_lax_friedrichs_flux_linear_transport(uM, uP, wM, wP, normalM);
-
-      fluxM = flux;
-      fluxP = -flux; // minus sign since n⁺ = - n⁻
-    }
-    else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
-    {
-      vector flux = calculate_upwind_flux_linear_transport(uM, uP, wM, wP, normalM);
-
-      scalar average_w_normal = 0.5 * (wM + wP) * normalM;
-
-      // second term appears since the strong formulation is implemented (integration by parts
-      // is performed twice)
-      fluxM = flux - average_w_normal * uM;
-      fluxP = -flux + average_w_normal * uP; // opposite signs since n⁺ = - n⁻
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
-    }
-
-    return std::make_tuple(fluxM, fluxP);
-  }
-
-  /*
-   *  Calculates the flux for operator with linear transport velocity w on boundary faces. The flux
-   * computation used on interior faces has to be "corrected" if a special outflow boundary
-   * condition is used on Neumann boundaries that is able to deal with backflow.
-   */
-  inline DEAL_II_ALWAYS_INLINE //
-    vector
-    calculate_flux_linear_transport_boundary(vector const &        uM,
-                                             vector const &        uP,
-                                             vector const &        wM,
-                                             vector const &        wP,
-                                             vector const &        normalM,
-                                             BoundaryTypeU const & boundary_type) const
-  {
-    vector flux;
-
-    if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
-    {
-      flux = calculate_lax_friedrichs_flux_linear_transport(uM, uP, wM, wP, normalM);
-
-      if(boundary_type == BoundaryTypeU::Neumann && data.use_outflow_bc == true)
-        apply_outflow_bc(flux, wM * normalM);
-    }
-    else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
-    {
-      flux = calculate_upwind_flux_linear_transport(uM, uP, wM, wP, normalM);
-
-      if(boundary_type == BoundaryTypeU::Neumann && data.use_outflow_bc == true)
-        apply_outflow_bc(flux, wM * normalM);
-
-      scalar average_w_normal = wM * normalM;
-
-      // second term appears since the strong formulation is implemented (integration by parts
-      // is performed twice)
-      flux = flux - average_w_normal * uM;
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
-    }
-
-    return flux;
-  }
-
-  /*
    *  Calculates the flux for linearized operator on interior faces. This function is needed for
    * face-centric loops and the flux is therefore computed on both sides of an interior face. The
    * interior flux (element m) is the first element in the tuple, the exterior flux (element p,
@@ -784,27 +698,6 @@ public:
   }
 
   /*
-   *  Calculate upwind flux for convective operator (linear transport, OIF splitting).
-   */
-  inline DEAL_II_ALWAYS_INLINE //
-    vector
-    calculate_upwind_flux_linear_transport(vector const & uM,
-                                           vector const & uP,
-                                           vector const & wM,
-                                           vector const & wP,
-                                           vector const & normalM) const
-  {
-    vector average_velocity = 0.5 * (uM + uP);
-
-    vector jump_value = uM - uP;
-
-    scalar average_normal_velocity = 0.5 * (wM + wP) * normalM;
-
-    return (average_normal_velocity * average_velocity +
-            data.upwind_factor * 0.5 * std::abs(average_normal_velocity) * jump_value);
-  }
-
-  /*
    * outflow BC according to Gravemeier et al. (2012)
    */
   inline DEAL_II_ALWAYS_INLINE //
@@ -972,7 +865,7 @@ public:
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
 
-  ConvectiveOperator() : velocity_linear_transport(nullptr)
+  ConvectiveOperator()
   {
   }
 
@@ -1002,16 +895,8 @@ public:
                                   VectorType const & src,
                                   Number const       time) const;
 
-  /*
-   * Evaluate operator (linear transport with a divergence-free velocity). This function
-   * is required in case of operator-integration-factor (OIF) splitting.
-   */
-  void
-  evaluate_linear_transport(VectorType &       dst,
-                            VectorType const & src,
-                            Number const       time,
-                            VectorType const & velocity_linear_transport) const;
-
+  // these functions are not implemented for the convective operator. They only have to exist
+  // due to the definition of the base class.
   void
   rhs(VectorType & dst) const;
 
@@ -1059,48 +944,6 @@ private:
   do_boundary_integral_nonlinear_operator(IntegratorFace & integrator,
                                           IntegratorFace & integrator_grid_velocity,
                                           dealii::types::boundary_id const & boundary_id) const;
-
-  /*
-   *  OIF splitting: evaluation of convective operator (linear transport).
-   */
-  IntegratorFlags
-  get_integrator_flags_linear_transport() const;
-
-  void
-  set_velocity_linear_transport(VectorType const & src) const;
-
-  void
-  cell_loop_linear_transport(dealii::MatrixFree<dim, Number> const & matrix_free,
-                             VectorType &                            dst,
-                             VectorType const &                      src,
-                             Range const &                           cell_range) const;
-
-  void
-  face_loop_linear_transport(dealii::MatrixFree<dim, Number> const & matrix_free,
-                             VectorType &                            dst,
-                             VectorType const &                      src,
-                             Range const &                           face_range) const;
-
-  void
-  boundary_face_loop_linear_transport(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                      VectorType &                            dst,
-                                      VectorType const &                      src,
-                                      Range const &                           face_range) const;
-
-  void
-  do_cell_integral_linear_transport(IntegratorCell & integrator, IntegratorCell & velocity) const;
-
-  void
-  do_face_integral_linear_transport(IntegratorFace & integrator_m,
-                                    IntegratorFace & integrator_p,
-                                    IntegratorFace & velocity_m,
-                                    IntegratorFace & velocity_p) const;
-
-  void
-  do_boundary_integral_linear_transport(IntegratorFace &                   integrator,
-                                        IntegratorFace &                   velocity,
-                                        dealii::types::boundary_id const & boundary_id) const;
-
 
   /*
    * Linearized operator.
@@ -1157,9 +1000,6 @@ private:
                        dealii::types::boundary_id const & boundary_id) const;
 
   ConvectiveOperatorData<dim> operator_data;
-
-  // OIF substepping
-  mutable VectorType const * velocity_linear_transport;
 
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel;
 };

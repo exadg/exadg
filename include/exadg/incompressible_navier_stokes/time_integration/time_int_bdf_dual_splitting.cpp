@@ -364,23 +364,10 @@ TimeIntBDFDualSplitting<dim, Number>::convective_step()
   // apply inverse mass operator
   pde_operator->apply_inverse_mass_operator(velocity_np, velocity_np);
 
-
-  // calculate sum (alpha_i/dt * u_tilde_i) in case of explicit treatment of convective term
-  // and operator-integration-factor (OIF) splitting
-  if(this->param.convective_problem() &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+  // calculate sum (alpha_i/dt * u_i) and add to velocity_np
+  for(unsigned int i = 0; i < velocity.size(); ++i)
   {
-    VectorType sum_alphai_ui(velocity[0]);
-    this->calculate_sum_alphai_ui_oif_substepping(sum_alphai_ui, this->cfl, this->cfl_oif);
-    velocity_np.add(1.0, sum_alphai_ui);
-  }
-  // calculate sum (alpha_i/dt * u_i) for standard BDF discretization
-  else
-  {
-    for(unsigned int i = 0; i < velocity.size(); ++i)
-    {
-      velocity_np.add(this->bdf.get_alpha(i) / this->get_time_step_size(), velocity[i]);
-    }
+    velocity_np.add(this->bdf.get_alpha(i) / this->get_time_step_size(), velocity[i]);
   }
 
   // solve discrete temporal derivative term for intermediate velocity u_hat

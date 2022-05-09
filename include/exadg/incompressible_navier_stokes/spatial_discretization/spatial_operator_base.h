@@ -64,66 +64,6 @@ namespace IncNS
 template<int dim, typename Number>
 class SpatialOperatorBase;
 
-/*
- * Operator-integration-factor (OIF) sub-stepping.
- */
-template<int dim, typename Number>
-class OperatorOIF
-{
-public:
-  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
-
-  OperatorOIF(std::shared_ptr<SpatialOperatorBase<dim, Number>> operator_in)
-    : pde_operator(operator_in),
-      transport_with_interpolated_velocity(true) // TODO adjust this parameter manually
-  {
-    if(transport_with_interpolated_velocity)
-      initialize_dof_vector(solution_interpolated);
-  }
-
-  void
-  initialize_dof_vector(VectorType & src) const
-  {
-    pde_operator->initialize_vector_velocity(src);
-  }
-
-  // OIF splitting (transport with interpolated velocity)
-  void
-  set_solutions_and_times(std::vector<VectorType const *> const & solutions_in,
-                          std::vector<double> const &             times_in)
-  {
-    solutions = solutions_in;
-    times     = times_in;
-  }
-
-  void
-  evaluate(VectorType & dst, VectorType const & src, double const time) const
-  {
-    if(transport_with_interpolated_velocity)
-    {
-      interpolate(solution_interpolated, time, solutions, times);
-
-      pde_operator->evaluate_negative_convective_term_and_apply_inverse_mass(dst,
-                                                                             src,
-                                                                             time,
-                                                                             solution_interpolated);
-    }
-    else // nonlinear transport (standard convective term)
-    {
-      pde_operator->evaluate_negative_convective_term_and_apply_inverse_mass(dst, src, time);
-    }
-  }
-
-private:
-  std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_operator;
-
-  // OIF splitting (transport with interpolated velocity)
-  bool                            transport_with_interpolated_velocity;
-  std::vector<VectorType const *> solutions;
-  std::vector<double>             times;
-  VectorType mutable solution_interpolated;
-};
-
 template<int dim, typename Number>
 class SpatialOperatorBase : public dealii::Subscriptor
 {
@@ -398,20 +338,6 @@ public:
   evaluate_velocity_divergence_term(VectorType &       dst,
                                     VectorType const & src,
                                     double const       time) const;
-
-  // OIF splitting
-  void
-  evaluate_negative_convective_term_and_apply_inverse_mass(VectorType &       dst,
-                                                           VectorType const & src,
-                                                           Number const       time) const;
-
-  // OIF splitting: interpolated velocity solution
-  void
-  evaluate_negative_convective_term_and_apply_inverse_mass(
-    VectorType &       dst,
-    VectorType const & src,
-    Number const       time,
-    VectorType const & solution_interpolated) const;
 
   // inverse velocity mass operator
   void

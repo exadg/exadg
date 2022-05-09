@@ -26,7 +26,6 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
-#include <exadg/time_integration/explicit_runge_kutta.h>
 #include <exadg/time_integration/time_int_bdf_base.h>
 
 namespace ExaDG
@@ -37,9 +36,6 @@ class Parameters;
 
 template<int dim, typename Number>
 class SpatialOperatorBase;
-
-template<int dim, typename Number>
-class OperatorOIF;
 
 template<typename Number>
 class PostProcessorInterface;
@@ -112,15 +108,6 @@ protected:
   void
   prepare_vectors_for_next_timestep() override;
 
-  /*
-   * This function implements the OIF sub-stepping algorithm. Has to be implemented here
-   * since functionality is related to incompressible flows only (nonlinear convective term).
-   */
-  void
-  calculate_sum_alphai_ui_oif_substepping(VectorType & sum_alphai_ui,
-                                          double const cfl,
-                                          double const cfl_oif) final;
-
   Parameters const & param;
 
   // number of refinement steps, where the time step size is reduced in
@@ -129,9 +116,6 @@ protected:
 
   // global cfl number
   double const cfl;
-
-  // cfl number cfl_oif for operator-integration-factor splitting
-  double const cfl_oif;
 
   // spatial discretization operator
   std::shared_ptr<OperatorBase> operator_base;
@@ -147,23 +131,6 @@ protected:
 private:
   void
   initialize_vec_convective_term();
-
-  void
-  initialize_oif() final;
-
-  void
-  initialize_solution_oif_substepping(VectorType & solution_tilde_m, unsigned int i) final;
-
-  void
-  update_sum_alphai_ui_oif_substepping(VectorType &       sum_alphai_ui,
-                                       VectorType const & u_tilde_i,
-                                       unsigned int       i) final;
-
-  void
-  do_timestep_oif_substepping(VectorType & solution_tilde_mp,
-                              VectorType & solution_tilde_m,
-                              double const start_time,
-                              double const time_step_size) final;
 
   double
   calculate_time_step_size() final;
@@ -185,12 +152,6 @@ private:
 
   void
   postprocessing() const final;
-
-  // Operator-integration-factor splitting for convective term
-  std::shared_ptr<OperatorOIF<dim, Number>> convective_operator_OIF;
-
-  // OIF splitting
-  std::shared_ptr<ExplicitTimeIntegrator<OperatorOIF<dim, Number>, VectorType>> time_integrator_OIF;
 
   // postprocessor
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor;

@@ -194,14 +194,6 @@ public:
   // estimation of maximum velocity required for CFL condition
   double max_velocity;
 
-  // specify the time integration scheme that is used for the OIF substepping of the
-  // convective term (only relevant for BDF time integration)
-  TimeIntegratorRK time_integrator_oif;
-
-  // cfl number for operator-integration-factor splitting (has to be smaller than the
-  // critical time step size arising from the CFL restriction)
-  double cfl_oif;
-
   // diffusion number (relevant number for limitation of time step size
   // when treating the diffusive term explicitly)
   double diffusion_number;

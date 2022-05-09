@@ -49,7 +49,6 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
     param(param_in),
     refine_steps_time(param_in.n_refine_time),
     cfl(param.cfl / std::pow(2.0, refine_steps_time)),
-    cfl_oif(param_in.cfl_oif / std::pow(2.0, refine_steps_time)),
     operator_base(operator_in),
     vec_convective_term(this->order),
     use_extrapolation(true),
@@ -190,85 +189,6 @@ TimeIntBDF<dim, Number>::initialize_vec_convective_term()
                                                     get_velocity(i),
                                                     this->get_previous_time(i));
     }
-  }
-}
-
-template<int dim, typename Number>
-void
-TimeIntBDF<dim, Number>::initialize_oif()
-{
-  // Operator-integration-factor splitting
-  if(param.equation_type == EquationType::NavierStokes &&
-     param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
-  {
-    convective_operator_OIF = std::make_shared<OperatorOIF<dim, Number>>(operator_base);
-
-    // initialize OIF time integrator
-    if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK1Stage1)
-    {
-      time_integrator_OIF =
-        std::make_shared<ExplicitRungeKuttaTimeIntegrator<OperatorOIF<dim, Number>, VectorType>>(
-          1, convective_operator_OIF);
-    }
-    else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK2Stage2)
-    {
-      time_integrator_OIF =
-        std::make_shared<ExplicitRungeKuttaTimeIntegrator<OperatorOIF<dim, Number>, VectorType>>(
-          2, convective_operator_OIF);
-    }
-    else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK3Stage3)
-    {
-      time_integrator_OIF =
-        std::make_shared<ExplicitRungeKuttaTimeIntegrator<OperatorOIF<dim, Number>, VectorType>>(
-          3, convective_operator_OIF);
-    }
-    else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage4)
-    {
-      time_integrator_OIF =
-        std::make_shared<ExplicitRungeKuttaTimeIntegrator<OperatorOIF<dim, Number>, VectorType>>(
-          4, convective_operator_OIF);
-    }
-    else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK3Stage4Reg2C)
-    {
-      time_integrator_OIF =
-        std::make_shared<LowStorageRK3Stage4Reg2C<OperatorOIF<dim, Number>, VectorType>>(
-          convective_operator_OIF);
-    }
-    else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage5Reg2C)
-    {
-      time_integrator_OIF =
-        std::make_shared<LowStorageRK4Stage5Reg2C<OperatorOIF<dim, Number>, VectorType>>(
-          convective_operator_OIF);
-    }
-    else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage5Reg3C)
-    {
-      time_integrator_OIF =
-        std::make_shared<LowStorageRK4Stage5Reg3C<OperatorOIF<dim, Number>, VectorType>>(
-          convective_operator_OIF);
-    }
-    else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK5Stage9Reg2S)
-    {
-      time_integrator_OIF =
-        std::make_shared<LowStorageRK5Stage9Reg2S<OperatorOIF<dim, Number>, VectorType>>(
-          convective_operator_OIF);
-    }
-    else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK3Stage7Reg2)
-    {
-      time_integrator_OIF = std::make_shared<LowStorageRKTD<OperatorOIF<dim, Number>, VectorType>>(
-        convective_operator_OIF, 3, 7);
-    }
-    else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage8Reg2)
-    {
-      time_integrator_OIF = std::make_shared<LowStorageRKTD<OperatorOIF<dim, Number>, VectorType>>(
-        convective_operator_OIF, 4, 8);
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
-    }
-
-    AssertThrow(time_integrator_OIF.get() != 0,
-                dealii::ExcMessage("OIF time integrator has not been initialized correctly."));
   }
 }
 
@@ -415,18 +335,6 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
                 dealii::ExcMessage("Specified type of time step calculation is not implemented."));
   }
 
-  if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
-  {
-    // make sure that CFL condition is used for the calculation of the time step size (the aim
-    // of the OIF splitting approach is to overcome limitations of the CFL condition)
-    AssertThrow(param.calculation_of_time_step_size == TimeStepCalculation::CFL,
-                dealii::ExcMessage(
-                  "Specified type of time step calculation is not compatible with OIF approach!"));
-
-    this->pcout << std::endl << "OIF sub-stepping for convective term:" << std::endl << std::endl;
-    print_parameter(this->pcout, "CFL (OIF)", cfl_oif);
-  }
-
   return time_step;
 }
 
@@ -466,15 +374,6 @@ TimeIntBDF<dim, Number>::print_solver_info() const
   return param.solver_info_data.write(this->global_timer.wall_time(),
                                       this->time - this->start_time,
                                       this->time_step_number);
-}
-
-template<int dim, typename Number>
-void
-TimeIntBDF<dim, Number>::initialize_solution_oif_substepping(VectorType & solution_tilde_m,
-                                                             unsigned int i)
-{
-  // initialize solution: u_tilde(s=0) = u(t_{n-i})
-  solution_tilde_m = get_velocity(i);
 }
 
 template<int dim, typename Number>
@@ -547,52 +446,6 @@ TimeIntBDF<dim, Number>::get_velocities_and_times_np(std::vector<VectorType cons
     velocities.at(i + 1) = &get_velocity(i);
     times.at(i + 1)      = this->get_previous_time(i);
   }
-}
-
-template<int dim, typename Number>
-void
-TimeIntBDF<dim, Number>::calculate_sum_alphai_ui_oif_substepping(VectorType & sum_alphai_ui,
-                                                                 double const cfl,
-                                                                 double const cfl_oif)
-{
-  std::vector<VectorType const *> velocities;
-  std::vector<double>             times;
-
-  this->get_velocities_and_times(velocities, times);
-
-  // this is only needed for transport with interpolated/extrapolated velocity
-  // as opposed to the standard nonlinear transport
-  this->convective_operator_OIF->set_solutions_and_times(velocities, times);
-
-  // call function implemented in base class for the actual OIF sub-stepping
-  TimeIntBDFBase<Number>::calculate_sum_alphai_ui_oif_substepping(sum_alphai_ui, cfl, cfl_oif);
-}
-
-template<int dim, typename Number>
-void
-TimeIntBDF<dim, Number>::update_sum_alphai_ui_oif_substepping(VectorType &       sum_alphai_ui,
-                                                              VectorType const & u_tilde_i,
-                                                              unsigned int       i)
-{
-  // calculate sum (alpha_i/dt * u_tilde_i)
-  if(i == 0)
-    sum_alphai_ui.equ(this->bdf.get_alpha(i) / this->get_time_step_size(), u_tilde_i);
-  else // i>0
-    sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), u_tilde_i);
-}
-
-template<int dim, typename Number>
-void
-TimeIntBDF<dim, Number>::do_timestep_oif_substepping(VectorType & solution_tilde_mp,
-                                                     VectorType & solution_tilde_m,
-                                                     double const start_time,
-                                                     double const time_step_size)
-{
-  // solve sub-step
-  time_integrator_OIF->solve_timestep(solution_tilde_mp,
-                                      solution_tilde_m,
-                                      start_time,
-                                      time_step_size);
 }
 
 template<int dim, typename Number>

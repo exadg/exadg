@@ -1207,38 +1207,6 @@ SpatialOperatorBase<dim, Number>::evaluate_velocity_divergence_term(VectorType &
   divergence_operator.evaluate(dst, src, time);
 }
 
-// OIF splitting
-template<int dim, typename Number>
-void
-SpatialOperatorBase<dim, Number>::evaluate_negative_convective_term_and_apply_inverse_mass(
-  VectorType &       dst,
-  VectorType const & src,
-  Number const       time) const
-{
-  convective_operator.evaluate_nonlinear_operator(dst, src, time);
-
-  // shift convective term to the rhs of the equation
-  dst *= -1.0;
-
-  inverse_mass_velocity.apply(dst, dst);
-}
-
-template<int dim, typename Number>
-void
-SpatialOperatorBase<dim, Number>::evaluate_negative_convective_term_and_apply_inverse_mass(
-  VectorType &       dst,
-  VectorType const & src,
-  Number const       time,
-  VectorType const & velocity_transport) const
-{
-  convective_operator.evaluate_linear_transport(dst, src, time, velocity_transport);
-
-  // shift convective term to the rhs of the equation
-  dst *= -1.0;
-
-  inverse_mass_velocity.apply(dst, dst);
-}
-
 template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::update_turbulence_model(VectorType const & velocity)

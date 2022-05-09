@@ -100,10 +100,8 @@ private:
     // TEMPORAL DISCRETIZATION
     this->param.temporal_discretization      = TemporalDiscretization::BDF;
     this->param.order_time_integrator        = 2; // instabilities for BDF 3 and 4
-    this->param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; // ExplicitOIF;
+    this->param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
     this->param.start_with_low_order         = false;
-    this->param.time_integrator_oif =
-      TimeIntegratorRK::ExplRK2Stage2; // ExplRK3Stage7Reg2; //ExplRK4Stage8Reg2;
 
     //    this->param.temporal_discretization      = TemporalDiscretization::ExplRK;
     //    this->param.time_integrator_rk           = TimeIntegratorRK::ExplRK3Stage7Reg2;
@@ -111,8 +109,7 @@ private:
     this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
     this->param.adaptive_time_stepping        = false;
     this->param.time_step_size                = 1.e-2;
-    this->param.cfl_oif                       = 0.25;
-    this->param.cfl                           = this->param.cfl_oif * 1.0;
+    this->param.cfl                           = 0.25;
     this->param.exponent_fe_degree_convection = 1.5;
 
     // restart

@@ -35,8 +35,5 @@ template class Operator<float>;
 template class Operator<double>;
 } // namespace Interface
 
-template class OperatorOIF<float>;
-template class OperatorOIF<double>;
-
 } // namespace ConvDiff
 } // namespace ExaDG

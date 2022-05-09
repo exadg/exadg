@@ -148,42 +148,16 @@ enum_to_string(TemporalDiscretization const enum_type);
 
 /*
  *  The convective term can be treated explicitly (Explicit) or implicitly (Implicit).
- *  ExplicitOIF (operator-integration-factor splitting) means that substepping
- *  is performed for the convective term in order to relax the CFL condition.
  */
 enum class TreatmentOfConvectiveTerm
 {
   Undefined,
   Explicit,
-  ExplicitOIF,
   Implicit
 };
 
 std::string
 enum_to_string(TreatmentOfConvectiveTerm const enum_type);
-
-/*
- *  Temporal discretization method for OIF splitting:
- *
- *    Explicit Runge-Kutta methods
- */
-enum class TimeIntegratorOIF
-{
-  Undefined,
-  ExplRK1Stage1,
-  ExplRK2Stage2,
-  ExplRK3Stage3,
-  ExplRK4Stage4,
-  ExplRK3Stage4Reg2C,
-  ExplRK3Stage7Reg2, // optimized for maximum time step sizes in DG context
-  ExplRK4Stage5Reg2C,
-  ExplRK4Stage8Reg2, // optimized for maximum time step sizes in DG context
-  ExplRK4Stage5Reg3C,
-  ExplRK5Stage9Reg2S
-};
-
-std::string
-enum_to_string(TimeIntegratorOIF const enum_type);
 
 /*
  * calculation of time step size
