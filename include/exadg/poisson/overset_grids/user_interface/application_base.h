@@ -32,11 +32,10 @@ namespace ExaDG
 {
 namespace Poisson
 {
-
 /**
  * This function determines which faces of the dst triangulation are inside the src-triangulation.
  * A face is considered inside, if all vertices of the face are inside. Then, the boundary ID is
- * set to bid for all the faces on the dst-side in the overlap region.
+ * set to bid for all the faces of the dst-triangulation in the overlap region.
  */
 template<int dim>
 void
@@ -46,7 +45,7 @@ set_boundary_ids_overlap_region(dealii::Triangulation<dim> const & tria_dst,
                                 dealii::Triangulation<dim> const & tria_src)
 {
   std::vector<dealii::Point<dim>> points;
-  using CellIteratorType = decltype(tria_dst.begin());
+  using CellIteratorType = typename dealii::Triangulation<dim>::cell_iterator;
   using Id               = std::tuple<CellIteratorType /* cell */, unsigned int /*face*/>;
   std::vector<std::pair<Id, unsigned int /* first_point_in_vector */>> id_to_vector_index;
 
@@ -103,9 +102,11 @@ set_boundary_ids_overlap_region(dealii::Triangulation<dim> const & tria_dst,
       inside = (inside and rpe.point_found(i));
     }
 
-    auto const & [cell, f] = iter->first;
     if(inside)
+    {
+      auto const & [cell, f] = iter->first;
       cell->face(f)->set_boundary_id(bid);
+    }
   }
 }
 
