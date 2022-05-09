@@ -26,7 +26,6 @@
 #include <deal.II/fe/fe_system.h>
 
 // ExaDG
-#include <exadg/functions_and_boundary_conditions/interface_coupling.h>
 #include <exadg/grid/grid.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
