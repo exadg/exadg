@@ -32,7 +32,9 @@
 #include <exadg/matrix_free/integrators.h>
 
 // preCICE
-#include <precice/SolverInterface.hpp>
+#ifdef EXADG_WITH_PRECICE
+#  include <precice/SolverInterface.hpp>
+#endif
 
 namespace ExaDG
 {
@@ -64,7 +66,9 @@ class CouplingBase
 {
 public:
   CouplingBase(std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
-               std::shared_ptr<precice::SolverInterface>                                   precice,
+#ifdef EXADG_WITH_PRECICE
+               std::shared_ptr<precice::SolverInterface> precice,
+#endif
                std::string const                mesh_name,
                dealii::types::boundary_id const surface_id);
 
@@ -140,7 +144,9 @@ protected:
   std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> matrix_free;
 
   /// public precice solverinterface
+#ifdef EXADG_WITH_PRECICE
   std::shared_ptr<precice::SolverInterface> precice;
+#endif
 
   /// Configuration parameters
   std::string const mesh_name;
@@ -162,20 +168,31 @@ protected:
 template<int dim, int data_dim, typename VectorizedArrayType>
 CouplingBase<dim, data_dim, VectorizedArrayType>::CouplingBase(
   std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> matrix_free_,
-  std::shared_ptr<precice::SolverInterface>                                   precice,
-  std::string const                                                           mesh_name,
-  dealii::types::boundary_id const                                            surface_id)
+#ifdef EXADG_WITH_PRECICE
+  std::shared_ptr<precice::SolverInterface> precice,
+#endif
+  std::string const                mesh_name,
+  dealii::types::boundary_id const surface_id)
   : matrix_free(matrix_free_),
+#ifdef EXADG_WITH_PRECICE
     precice(precice),
+#endif
     mesh_name(mesh_name),
     dealii_boundary_surface_id(surface_id),
     write_data_type(WriteDataType::undefined)
 {
   Assert(matrix_free_.get() != nullptr, dealii::ExcNotInitialized());
+
+#ifdef EXADG_WITH_PRECICE
   Assert(precice.get() != nullptr, dealii::ExcNotInitialized());
 
   // Ask preCICE already in the constructor for the IDs
   mesh_id = precice->getMeshID(mesh_name);
+#else
+  AssertThrow(false,
+              dealii::ExcMessage("EXADG_WITH_PRECICE has to be activated to use this code."));
+  mesh_id                 = 0;
+#endif
 }
 
 
@@ -184,7 +201,11 @@ void
 CouplingBase<dim, data_dim, VectorizedArrayType>::add_read_data(std::string const & read_data_name)
 {
   Assert(mesh_id != -1, dealii::ExcNotInitialized());
+#ifdef EXADG_WITH_PRECICE
   int const read_data_id = precice->getDataID(read_data_name, mesh_id);
+#else
+  int const read_data_id  = 0;
+#endif
   read_data_map.insert({read_data_name, read_data_id});
 }
 
@@ -196,7 +217,11 @@ CouplingBase<dim, data_dim, VectorizedArrayType>::add_write_data(
   std::string const & write_data_name)
 {
   Assert(mesh_id != -1, dealii::ExcNotInitialized());
+#ifdef EXADG_WITH_PRECICE
   int const write_data_id = precice->getDataID(write_data_name, mesh_id);
+#else
+  int const write_data_id = 0;
+#endif
   write_data_map.insert({write_data_name, write_data_id});
 }
 
