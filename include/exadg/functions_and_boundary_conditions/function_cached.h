@@ -29,42 +29,39 @@
 #include <tuple>
 #include <vector>
 
+// ExaDG
+#include <exadg/functions_and_boundary_conditions/interface_coupling.h>
+
 namespace ExaDG
 {
 /*
- * Note:
- * The default argument "double" could be removed but this implies that all BoundaryDescriptors
- * that use FunctionCached require another template parameter "Number", which requires
- * changes of major parts of the code.
+ * The only reason why we do not integrate ContainerInterfaceData directly into
+ * FunctionCached is that we want to use only one object of type
+ * ContainerInterfaceData for (potentially) many boundary IDs and, therefore,
+ * many objects of type FunctionCached.
  */
-template<int rank, int dim, typename Number = double>
+template<int rank, int dim>
 class FunctionCached
 {
-public:
-  typedef dealii::Tensor<rank, dim, Number> value_type;
-
 private:
-  using Id = std::tuple<unsigned int /*face*/, unsigned int /*q*/, unsigned int /*v*/>;
-
-  using MapVectorIndex      = std::map<Id, dealii::types::global_dof_index>;
-  using ArraySolutionValues = std::vector<value_type>;
+  typedef typename ContainerInterfaceData<rank, dim>::value_type value_type;
 
 public:
   FunctionCached();
 
+  // read data
   value_type
   tensor_value(unsigned int const face,
                unsigned int const q,
                unsigned int const v,
                unsigned int const quad_index) const;
 
+  // initialize data pointer
   void
-  set_data_pointer(std::map<unsigned int, MapVectorIndex> const &      map_map_vector_index_,
-                   std::map<unsigned int, ArraySolutionValues> const & map_array_solution_);
+  set_data_pointer(std::shared_ptr<ContainerInterfaceData<rank, dim>> const interface_data_);
 
 private:
-  std::map<unsigned int, MapVectorIndex> const *      map_map_vector_index;
-  std::map<unsigned int, ArraySolutionValues> const * map_array_solution;
+  std::shared_ptr<ContainerInterfaceData<rank, dim>> interface_data;
 };
 
 } // namespace ExaDG

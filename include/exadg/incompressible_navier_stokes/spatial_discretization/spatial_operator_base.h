@@ -195,7 +195,7 @@ public:
   get_viscosity_boundary_face(unsigned int const face, unsigned int const q) const;
 
   // Multiphysics coupling via "Cached" boundary conditions
-  std::shared_ptr<ContainerInterfaceData<dim, dim, Number>>
+  std::shared_ptr<ContainerInterfaceData<1, dim>>
   get_container_interface_data();
 
   void
@@ -514,7 +514,7 @@ private:
   /*
    * Interface coupling
    */
-  std::shared_ptr<ContainerInterfaceData<dim, dim, Number>> interface_data_dirichlet_cached;
+  std::shared_ptr<ContainerInterfaceData<1, dim>> interface_data_dirichlet_cached;
 
 protected:
   /*

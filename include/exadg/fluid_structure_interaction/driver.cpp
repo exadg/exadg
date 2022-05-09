@@ -111,7 +111,7 @@ Driver<dim, Number>::setup_interface_coupling()
 
     if(application->fluid->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
-      structure_to_ale = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
+      structure_to_ale = std::make_shared<InterfaceCoupling<1, dim, Number>>();
       structure_to_ale->setup(fluid->ale_poisson_operator->get_container_interface_data(),
                               structure->pde_operator->get_dof_handler(),
                               *application->structure->get_grid()->mapping,
@@ -121,7 +121,7 @@ Driver<dim, Number>::setup_interface_coupling()
     else if(application->fluid->get_parameters().mesh_movement_type ==
             IncNS::MeshMovementType::Elasticity)
     {
-      structure_to_ale = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
+      structure_to_ale = std::make_shared<InterfaceCoupling<1, dim, Number>>();
       structure_to_ale->setup(
         fluid->ale_elasticity_operator->get_container_interface_data_dirichlet(),
         structure->pde_operator->get_dof_handler(),
@@ -151,7 +151,7 @@ Driver<dim, Number>::setup_interface_coupling()
       application->structure->get_boundary_descriptor()->neumann_cached_bc);
     auto const marked_vertices_structure = get_marked_vertices_via_boundary_ids(tria, boundary_ids);
 
-    structure_to_fluid = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
+    structure_to_fluid = std::make_shared<InterfaceCoupling<1, dim, Number>>();
     structure_to_fluid->setup(fluid->pde_operator->get_container_interface_data(),
                               structure->pde_operator->get_dof_handler(),
                               *application->structure->get_grid()->mapping,
@@ -178,7 +178,7 @@ Driver<dim, Number>::setup_interface_coupling()
       application->fluid->get_boundary_descriptor()->velocity->dirichlet_cached_bc);
     auto const marked_vertices_fluid = get_marked_vertices_via_boundary_ids(tria, boundary_ids);
 
-    fluid_to_structure = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
+    fluid_to_structure = std::make_shared<InterfaceCoupling<1, dim, Number>>();
     fluid_to_structure->setup(structure->pde_operator->get_container_interface_data_neumann(),
                               fluid->pde_operator->get_dof_handler_u(),
                               *mapping_fluid,

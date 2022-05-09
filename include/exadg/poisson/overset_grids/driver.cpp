@@ -60,7 +60,7 @@ DriverOversetGrids<dim, n_components, Number>::setup()
     // domain 1 to domain 2
     pcout << std::endl << "Setup interface coupling first -> second ..." << std::endl;
 
-    first_to_second = std::make_shared<InterfaceCoupling<dim, n_components, Number>>();
+    first_to_second = std::make_shared<InterfaceCoupling<rank, dim, Number>>();
     // No map of boundary IDs can be provided to make the search more efficient. The reason behind
     // is that the two domains are not connected along boundaries but are overlapping instead. To
     // resolve this, the implementation of InterfaceCoupling needs to be generalized.
@@ -75,7 +75,7 @@ DriverOversetGrids<dim, n_components, Number>::setup()
     // domain 2 to domain 1
     pcout << std::endl << "Setup interface coupling second -> first ..." << std::endl;
 
-    second_to_first = std::make_shared<InterfaceCoupling<dim, n_components, Number>>();
+    second_to_first = std::make_shared<InterfaceCoupling<rank, dim, Number>>();
     second_to_first->setup(poisson1->pde_operator->get_container_interface_data(),
                            poisson2->pde_operator->get_dof_handler(),
                            *application->domain2->get_grid()->mapping,

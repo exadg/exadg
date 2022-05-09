@@ -99,7 +99,7 @@ public:
   get_average_convergence_rate() const;
 
   // Multiphysics coupling via "Cached" boundary conditions
-  std::shared_ptr<ContainerInterfaceData<dim, n_components, Number>>
+  std::shared_ptr<ContainerInterfaceData<rank, dim>>
   get_container_interface_data();
 
   std::shared_ptr<TimerTree>
@@ -196,8 +196,7 @@ private:
   /*
    * Interface coupling
    */
-  std::shared_ptr<ContainerInterfaceData<dim, n_components, Number>>
-    interface_data_dirichlet_cached;
+  std::shared_ptr<ContainerInterfaceData<rank, dim>> interface_data_dirichlet_cached;
 
   RHSOperator<dim, Number, n_components> rhs_operator;
 

@@ -60,7 +60,7 @@ private:
   std::shared_ptr<SolverPoisson<dim, n_components, Number>> poisson1, poisson2;
 
   // interface coupling
-  std::shared_ptr<InterfaceCoupling<dim, n_components, Number>> first_to_second, second_to_first;
+  std::shared_ptr<InterfaceCoupling<rank, dim, Number>> first_to_second, second_to_first;
 };
 
 } // namespace Poisson

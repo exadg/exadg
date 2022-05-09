@@ -24,110 +24,67 @@
 
 namespace ExaDG
 {
-template<int dim, int n_components, typename Number>
-ContainerInterfaceData<dim, n_components, Number>::ContainerInterfaceData()
+template<int rank, int dim>
+ContainerInterfaceData<rank, dim>::ContainerInterfaceData()
 {
 }
 
-template<int dim, int n_components, typename Number>
-void
-ContainerInterfaceData<dim, n_components, Number>::setup(
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_,
-  unsigned int const                               dof_index_,
-  std::vector<quad_index> const &                  quad_indices_,
-  MapBoundaryCondition const &                     map_bc_)
+template<int rank, int dim>
+typename ContainerInterfaceData<rank, dim>::value_type
+ContainerInterfaceData<rank, dim>::get_data(unsigned int const q_index,
+                                            unsigned int const face,
+                                            unsigned int const q,
+                                            unsigned int const v) const
 {
-  quad_indices = quad_indices_;
+  Assert(map_vector_index.find(q_index) != map_vector_index.end(),
+         dealii::ExcMessage("Specified q_index does not exist in map_vector_index."));
 
-  for(auto q_index : quad_indices)
-  {
-    // initialize maps
-    map_vector_index.emplace(q_index, MapVectorIndex());
-    map_q_points.emplace(q_index, ArrayQuadraturePoints());
-    map_solution.emplace(q_index, ArraySolutionValues());
+  Assert(map_solution.find(q_index) != map_solution.end(),
+         dealii::ExcMessage("Specified q_index does not exist in map_solution."));
 
-    MapVectorIndex &        map_index          = map_vector_index.find(q_index)->second;
-    ArrayQuadraturePoints & array_q_points_dst = map_q_points.find(q_index)->second;
-    ArraySolutionValues &   array_solution_dst = map_solution.find(q_index)->second;
+  Id                              id    = std::make_tuple(face, q, v);
+  dealii::types::global_dof_index index = map_vector_index.find(q_index)->second.find(id)->second;
 
-    // create map "ID = {face, q, v} <-> vector_index" and fill array of quadrature points
-    for(unsigned int face = matrix_free_->n_inner_face_batches();
-        face < matrix_free_->n_inner_face_batches() + matrix_free_->n_boundary_face_batches();
-        ++face)
-    {
-      // only consider relevant boundary IDs
-      if(map_bc_.find(matrix_free_->get_boundary_id(face)) != map_bc_.end())
-      {
-        FaceIntegrator<dim, n_components, Number> integrator(*matrix_free_,
-                                                             true,
-                                                             dof_index_,
-                                                             q_index);
-        integrator.reinit(face);
+  ArraySolutionValues const & array_solution = map_solution.find(q_index)->second;
+  Assert(index < array_solution.size(), dealii::ExcMessage("Index exceeds dimensions of vector."));
 
-        for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-        {
-          dealii::Point<dim, dealii::VectorizedArray<Number>> q_points =
-            integrator.quadrature_point(q);
-
-          for(unsigned int v = 0; v < dealii::VectorizedArray<Number>::size(); ++v)
-          {
-            dealii::Point<dim> q_point;
-            for(unsigned int d = 0; d < dim; ++d)
-              q_point[d] = q_points[d][v];
-
-            Id                              id    = std::make_tuple(face, q, v);
-            dealii::types::global_dof_index index = array_q_points_dst.size();
-            map_index.emplace(id, index);
-            array_q_points_dst.push_back(q_point);
-          }
-        }
-      }
-    }
-
-    array_solution_dst.resize(array_q_points_dst.size(), value_type());
-  }
-
-  // finally, give boundary condition access to the data
-  for(auto boundary : map_bc_)
-  {
-    boundary.second->set_data_pointer(map_vector_index, map_solution);
-  }
+  return array_solution[index];
 }
 
-template<int dim, int n_components, typename Number>
-std::vector<typename ContainerInterfaceData<dim, n_components, Number>::quad_index> const &
-ContainerInterfaceData<dim, n_components, Number>::get_quad_indices()
+template<int rank, int dim>
+std::vector<typename ContainerInterfaceData<rank, dim>::quad_index> const &
+ContainerInterfaceData<rank, dim>::get_quad_indices()
 {
   return quad_indices;
 }
 
-template<int dim, int n_components, typename Number>
-typename ContainerInterfaceData<dim, n_components, Number>::ArrayQuadraturePoints &
-ContainerInterfaceData<dim, n_components, Number>::get_array_q_points(quad_index const & q_index)
+template<int rank, int dim>
+typename ContainerInterfaceData<rank, dim>::ArrayQuadraturePoints &
+ContainerInterfaceData<rank, dim>::get_array_q_points(quad_index const & q_index)
 {
   return map_q_points[q_index];
 }
 
-template<int dim, int n_components, typename Number>
-typename ContainerInterfaceData<dim, n_components, Number>::ArraySolutionValues &
-ContainerInterfaceData<dim, n_components, Number>::get_array_solution(quad_index const & q_index)
+template<int rank, int dim>
+typename ContainerInterfaceData<rank, dim>::ArraySolutionValues &
+ContainerInterfaceData<rank, dim>::get_array_solution(quad_index const & q_index)
 {
   return map_solution[q_index];
 }
 
-template<int dim, int n_components, typename Number>
-InterfaceCoupling<dim, n_components, Number>::InterfaceCoupling() : dof_handler_src(nullptr)
+template<int rank, int dim, typename Number>
+InterfaceCoupling<rank, dim, Number>::InterfaceCoupling() : dof_handler_src(nullptr)
 {
 }
 
-template<int dim, int n_components, typename Number>
+template<int rank, int dim, typename Number>
 void
-InterfaceCoupling<dim, n_components, Number>::setup(
-  std::shared_ptr<ContainerInterfaceData<dim, n_components, Number>> interface_data_dst_,
-  dealii::DoFHandler<dim> const &                                    dof_handler_src_,
-  dealii::Mapping<dim> const &                                       mapping_src_,
-  std::vector<bool> const &                                          marked_vertices_src_,
-  double const                                                       tolerance_)
+InterfaceCoupling<rank, dim, Number>::setup(
+  std::shared_ptr<ContainerInterfaceData<rank, dim>> interface_data_dst_,
+  dealii::DoFHandler<dim> const &                    dof_handler_src_,
+  dealii::Mapping<dim> const &                       mapping_src_,
+  std::vector<bool> const &                          marked_vertices_src_,
+  double const                                       tolerance_)
 {
   AssertThrow(interface_data_dst_.get(),
               dealii::ExcMessage("Received uninitialized variable. Aborting."));
@@ -162,9 +119,9 @@ InterfaceCoupling<dim, n_components, Number>::setup(
   }
 }
 
-template<int dim, int n_components, typename Number>
+template<int rank, int dim, typename Number>
 void
-InterfaceCoupling<dim, n_components, Number>::update_data(VectorType const & dof_vector_src)
+InterfaceCoupling<rank, dim, Number>::update_data(VectorType const & dof_vector_src)
 {
   dof_vector_src.update_ghost_values();
 
@@ -186,24 +143,19 @@ InterfaceCoupling<dim, n_components, Number>::update_data(VectorType const & dof
   }
 }
 
-template class ContainerInterfaceData<2, 1, float>;
-template class ContainerInterfaceData<2, 2, float>;
-template class ContainerInterfaceData<3, 1, float>;
-template class ContainerInterfaceData<3, 3, float>;
+template class ContainerInterfaceData<0, 2>;
+template class ContainerInterfaceData<1, 2>;
+template class ContainerInterfaceData<0, 3>;
+template class ContainerInterfaceData<1, 3>;
 
-template class ContainerInterfaceData<2, 1, double>;
-template class ContainerInterfaceData<2, 2, double>;
-template class ContainerInterfaceData<3, 1, double>;
-template class ContainerInterfaceData<3, 3, double>;
+template class InterfaceCoupling<0, 2, float>;
+template class InterfaceCoupling<1, 2, float>;
+template class InterfaceCoupling<0, 3, float>;
+template class InterfaceCoupling<1, 3, float>;
 
-template class InterfaceCoupling<2, 1, float>;
-template class InterfaceCoupling<2, 2, float>;
-template class InterfaceCoupling<3, 1, float>;
-template class InterfaceCoupling<3, 3, float>;
-
-template class InterfaceCoupling<2, 1, double>;
-template class InterfaceCoupling<2, 2, double>;
-template class InterfaceCoupling<3, 1, double>;
-template class InterfaceCoupling<3, 3, double>;
+template class InterfaceCoupling<0, 2, double>;
+template class InterfaceCoupling<1, 2, double>;
+template class InterfaceCoupling<0, 3, double>;
+template class InterfaceCoupling<1, 3, double>;
 
 } // namespace ExaDG
