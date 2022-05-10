@@ -44,8 +44,10 @@ class DoFCoupling : public CouplingBase<dim, data_dim, VectorizedArrayType>
 {
 public:
   DoFCoupling(std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
-              std::shared_ptr<precice::SolverInterface>                                   precice,
-              std::string const                                                           mesh_name,
+#ifdef EXADG_WITH_PRECICE
+              std::shared_ptr<precice::SolverInterface> precice,
+#endif
+              std::string const                mesh_name,
               dealii::types::boundary_id const surface_id,
               int const                        mf_dof_index);
   /**
@@ -87,11 +89,18 @@ private:
 template<int dim, int data_dim, typename VectorizedArrayType>
 DoFCoupling<dim, data_dim, VectorizedArrayType>::DoFCoupling(
   std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
-  std::shared_ptr<precice::SolverInterface>                                   precice,
-  std::string const                                                           mesh_name,
-  dealii::types::boundary_id const                                            surface_id,
-  int const                                                                   mf_dof_index)
-  : CouplingBase<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
+#ifdef EXADG_WITH_PRECICE
+  std::shared_ptr<precice::SolverInterface> precice,
+#endif
+  std::string const                mesh_name,
+  dealii::types::boundary_id const surface_id,
+  int const                        mf_dof_index)
+  : CouplingBase<dim, data_dim, VectorizedArrayType>(data,
+#ifdef EXADG_WITH_PRECICE
+                                                     precice,
+#endif
+                                                     mesh_name,
+                                                     surface_id),
     mf_dof_index(mf_dof_index)
 {
 }
@@ -171,15 +180,21 @@ DoFCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
     for(int d = 0; d < dim; ++d)
       nodes_position[d] = support_points[element][d];
 
-    // pass node coordinates to precice
+      // pass node coordinates to precice
+#ifdef EXADG_WITH_PRECICE
     int const precice_id = this->precice->setMeshVertex(this->mesh_id, nodes_position.data());
+#else
+    int const precice_id = 0;
+#endif
     coupling_nodes_ids.emplace_back(precice_id);
   }
 
+#ifdef EXADG_WITH_PRECICE
   if(this->read_data_map.size() > 0)
     this->print_info(true, this->precice->getMeshVertexSize(this->mesh_id));
   if(this->write_data_map.size() > 0)
     this->print_info(false, this->precice->getMeshVertexSize(this->mesh_id));
+#endif
 }
 
 
@@ -204,6 +219,7 @@ DoFCoupling<dim, data_dim, VectorizedArrayType>::write_data(
       write_data[d]      = data_vector[element];
     }
 
+#ifdef EXADG_WITH_PRECICE
     // and pass them to preCICE
     if constexpr(data_dim > 1)
     {
@@ -213,6 +229,7 @@ DoFCoupling<dim, data_dim, VectorizedArrayType>::write_data(
     {
       this->precice->writeScalarData(write_data_id, coupling_nodes_ids[i], write_data[0]);
     }
+#endif
   }
 }
 

@@ -40,9 +40,11 @@ class ExaDGCoupling : public CouplingBase<dim, data_dim, VectorizedArrayType>
 public:
   ExaDGCoupling(
     std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
-    std::shared_ptr<precice::SolverInterface>                                   precice,
-    std::string const                                                           mesh_name,
-    std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>>              interface_data_,
+#ifdef EXADG_WITH_PRECICE
+    std::shared_ptr<precice::SolverInterface> precice,
+#endif
+    std::string const                                              mesh_name,
+    std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>> interface_data_,
     dealii::types::boundary_id const surface_id = dealii::numbers::invalid_unsigned_int);
 
   /**
@@ -83,11 +85,18 @@ private:
 template<int dim, int data_dim, typename VectorizedArrayType>
 ExaDGCoupling<dim, data_dim, VectorizedArrayType>::ExaDGCoupling(
   std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
-  std::shared_ptr<precice::SolverInterface>                                   precice,
-  std::string const                                                           mesh_name,
-  std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>>              interface_data_,
-  dealii::types::boundary_id const                                            surface_id)
-  : CouplingBase<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
+#ifdef EXADG_WITH_PRECICE
+  std::shared_ptr<precice::SolverInterface> precice,
+#endif
+  std::string const                                              mesh_name,
+  std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>> interface_data_,
+  dealii::types::boundary_id const                               surface_id)
+  : CouplingBase<dim, data_dim, VectorizedArrayType>(data,
+#ifdef EXADG_WITH_PRECICE
+                                                     precice,
+#endif
+                                                     mesh_name,
+                                                     surface_id),
     interface_data(interface_data_)
 {
 }
@@ -118,16 +127,20 @@ ExaDGCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
     coupling_nodes_ids.resize(start_index + points.size());
 
     // Set the vertices
+#ifdef EXADG_WITH_PRECICE
     this->precice->setMeshVertices(this->mesh_id,
                                    points.size(),
                                    &points[0][0],
                                    &coupling_nodes_ids[start_index]);
+#endif
   }
 
+#ifdef EXADG_WITH_PRECICE
   if(this->read_data_map.size() > 0)
     this->print_info(true, this->precice->getMeshVertexSize(this->mesh_id));
   if(this->write_data_map.size() > 0)
     this->print_info(false, this->precice->getMeshVertexSize(this->mesh_id));
+#endif
 }
 
 
@@ -151,10 +164,14 @@ ExaDGCoupling<dim, data_dim, VectorizedArrayType>::read_block_data(
       auto const array_size     = array_solution.size();
 
       AssertIndexRange(start_index, coupling_nodes_ids.size());
+#ifdef EXADG_WITH_PRECICE
       this->precice->readBlockVectorData(read_data_id,
                                          array_size,
                                          &coupling_nodes_ids[start_index],
                                          &array_solution[0][0]);
+#else
+      (void)read_data_id;
+#endif
       start_index += array_size;
     }
     else

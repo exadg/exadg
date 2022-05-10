@@ -42,7 +42,9 @@ class QuadCoupling : public CouplingBase<dim, data_dim, VectorizedArrayType>
 {
 public:
   QuadCoupling(std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
-               std::shared_ptr<precice::SolverInterface>                                   precice,
+#ifdef EXADG_WITH_PRECICE
+               std::shared_ptr<precice::SolverInterface> precice,
+#endif
                std::string const                mesh_name,
                dealii::types::boundary_id const surface_id,
                int const                        mf_dof_index,
@@ -110,12 +112,19 @@ private:
 template<int dim, int data_dim, typename VectorizedArrayType>
 QuadCoupling<dim, data_dim, VectorizedArrayType>::QuadCoupling(
   std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
-  std::shared_ptr<precice::SolverInterface>                                   precice,
-  std::string const                                                           mesh_name,
-  dealii::types::boundary_id const                                            surface_id,
-  int const                                                                   mf_dof_index_,
-  int const                                                                   mf_quad_index_)
-  : CouplingBase<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, surface_id),
+#ifdef EXADG_WITH_PRECICE
+  std::shared_ptr<precice::SolverInterface> precice,
+#endif
+  std::string const                mesh_name,
+  dealii::types::boundary_id const surface_id,
+  int const                        mf_dof_index_,
+  int const                        mf_quad_index_)
+  : CouplingBase<dim, data_dim, VectorizedArrayType>(data,
+#ifdef EXADG_WITH_PRECICE
+                                                     precice,
+#endif
+                                                     mesh_name,
+                                                     surface_id),
     mf_dof_index(mf_dof_index_),
     mf_quad_index(mf_quad_index_)
 {
@@ -170,16 +179,23 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
         for(unsigned int v = 0; v < VectorizedArrayType::size(); ++v)
           unrolled_vertices[d + dim * v] = local_vertex[d][v];
 
+#ifdef EXADG_WITH_PRECICE
       this->precice->setMeshVertices(this->mesh_id,
                                      active_faces,
                                      unrolled_vertices.data(),
                                      node_ids.data());
+#else
+      (void)active_faces;
+#endif
       coupling_nodes_ids.emplace_back(node_ids);
       ++size;
     }
   }
+
   // resize the IDs in case the initial guess was too large
   coupling_nodes_ids.resize(size);
+
+#ifdef EXADG_WITH_PRECICE
   // Consistency check: the number of IDs we stored is equal or greater than
   // the IDs preCICE knows
   Assert(size * VectorizedArrayType::size() >=
@@ -190,6 +206,7 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
     this->print_info(true, this->precice->getMeshVertexSize(this->mesh_id));
   if(this->write_data_map.size() > 0)
     this->print_info(false, this->precice->getMeshVertexSize(this->mesh_id));
+#endif
 }
 
 
@@ -276,17 +293,23 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data_factory(
           for(unsigned int v = 0; v < VectorizedArrayType::size(); ++v)
             unrolled_local_data[d + data_dim * v] = local_data[d][v];
 
+#ifdef EXADG_WITH_PRECICE
         this->precice->writeBlockVectorData(write_data_id,
                                             active_faces,
                                             index->data(),
                                             unrolled_local_data.data());
+#else
+        (void)active_faces;
+#endif
       }
       else
       {
+#ifdef EXADG_WITH_PRECICE
         this->precice->writeBlockScalarData(write_data_id,
                                             active_faces,
                                             index->data(),
                                             &local_data[0]);
+#endif
       }
     }
   }

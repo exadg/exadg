@@ -25,12 +25,8 @@
 #
 #########################################################################
 
-IF(${EXADG_WITH_PRECICE})
-
 TARGETNAME(TARGET_NAME ${CMAKE_CURRENT_SOURCE_DIR})
 
 PROJECT(${TARGET_NAME})
 
 EXADG_PICKUP_EXE(solver_precice.cpp ${TARGET_NAME} solver_precice)
-
-ENDIF()

@@ -38,7 +38,9 @@
 #include <exadg/fluid_structure_interaction/precice/quad_coupling.h>
 
 // preCICE
-#include <precice/SolverInterface.hpp>
+#ifdef EXADG_WITH_PRECICE
+#  include <precice/SolverInterface.hpp>
+#endif
 
 #include <ostream>
 
@@ -183,7 +185,9 @@ public:
 private:
   // public precice solverinterface, needed in order to steer the time loop
   // inside the solver.
+#ifdef EXADG_WITH_PRECICE
   std::shared_ptr<precice::SolverInterface> precice;
+#endif
 
   /// The objects handling reading and writing data
   std::map<std::string, std::shared_ptr<CouplingBase<dim, data_dim, VectorizedArrayType>>> writer;
@@ -204,6 +208,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::Adapter(ParameterClass 
                                                                  MPI_Comm               mpi_comm)
 
 {
+#ifdef EXADG_WITH_PRECICE
   precice =
     std::make_shared<precice::SolverInterface>(parameters.participant_name,
                                                parameters.config_file,
@@ -211,6 +216,13 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::Adapter(ParameterClass 
                                                dealii::Utilities::MPI::n_mpi_processes(mpi_comm));
 
   AssertThrow(dim == precice->getDimensions(), dealii::ExcInternalError());
+#else
+  (void)parameters;
+  (void)mpi_comm;
+  AssertThrow(false,
+              dealii::ExcMessage("EXADG_WITH_PRECICE has to be activated to use this code."));
+#endif
+
   AssertThrow(dim > 1, dealii::ExcNotImplemented());
 }
 
@@ -237,9 +249,15 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_surface(
   }
   else if(write_data_type == WriteDataType::values_on_dofs)
   {
-    writer.insert({mesh_name,
-                   std::make_shared<DoFCoupling<dim, data_dim, VectorizedArrayType>>(
-                     data, precice, mesh_name, dealii_boundary_surface_id, dof_index)});
+    writer.insert(
+      {mesh_name,
+       std::make_shared<DoFCoupling<dim, data_dim, VectorizedArrayType>>(data,
+#ifdef EXADG_WITH_PRECICE
+                                                                         precice,
+#endif
+                                                                         mesh_name,
+                                                                         dealii_boundary_surface_id,
+                                                                         dof_index)});
   }
   else
   {
@@ -248,7 +266,14 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_surface(
            dealii::ExcNotImplemented());
     writer.insert({mesh_name,
                    std::make_shared<QuadCoupling<dim, data_dim, VectorizedArrayType>>(
-                     data, precice, mesh_name, dealii_boundary_surface_id, dof_index, quad_index)});
+                     data,
+#ifdef EXADG_WITH_PRECICE
+                     precice,
+#endif
+                     mesh_name,
+                     dealii_boundary_surface_id,
+                     dof_index,
+                     quad_index)});
   }
 
   // Register the write data
@@ -271,9 +296,14 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_read_surface(
   std::string const &                                                         mesh_name,
   std::vector<std::string> const &                                            read_data_names)
 {
-  reader.insert({mesh_name,
-                 std::make_shared<ExaDGCoupling<dim, data_dim, VectorizedArrayType>>(
-                   data, precice, mesh_name, interface_data)});
+  reader.insert(
+    {mesh_name,
+     std::make_shared<ExaDGCoupling<dim, data_dim, VectorizedArrayType>>(data,
+#ifdef EXADG_WITH_PRECICE
+                                                                         precice,
+#endif
+                                                                         mesh_name,
+                                                                         interface_data)});
 
   for(auto const & data_name : read_data_names)
     reader.at(mesh_name)->add_read_data(data_name);
@@ -287,6 +317,7 @@ void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::initialize_precice(
   VectorType const & dealii_to_precice)
 {
+#ifdef EXADG_WITH_PRECICE
   // if(!dealii_to_precice.has_ghost_elements())
   //   dealii_to_precice.update_ghost_values();
 
@@ -313,6 +344,9 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::initialize_precice(
   //                                   read_nodes_ids.size(),
   //                                   read_nodes_ids.data(),
   //                                   read_data.data());
+#else
+  (void)dealii_to_precice;
+#endif
 }
 
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
@@ -323,8 +357,15 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::write_data(
   VectorType const &  dealii_to_precice,
   double const        computed_timestep_length)
 {
+#ifdef EXADG_WITH_PRECICE
   if(precice->isWriteDataRequired(computed_timestep_length))
     writer.at(write_mesh_name)->write_data(dealii_to_precice, write_data_name);
+#else
+  (void)write_mesh_name;
+  (void)write_data_name;
+  (void)dealii_to_precice;
+  (void)computed_timestep_length;
+#endif
 }
 
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
@@ -332,10 +373,14 @@ void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::advance(
   double const computed_timestep_length)
 {
+#ifdef EXADG_WITH_PRECICE
   // Here, we need to specify the computed time step length and pass it to
   // preCICE
   // TODO: The function returns the available time-step size which is required for time-step sync
   precice->advance(computed_timestep_length);
+#else
+  (void)computed_timestep_length;
+#endif
 }
 
 
@@ -356,6 +401,7 @@ inline void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::save_current_state_if_required(
   std::function<void()> const & save_state)
 {
+#ifdef EXADG_WITH_PRECICE
   // First, we let preCICE check, whether we need to store the variables.
   // Then, the data is stored in the class
   if(precice->isActionRequired(precice::constants::actionWriteIterationCheckpoint()))
@@ -363,6 +409,9 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::save_current_state_if_r
     save_state();
     precice->markActionFulfilled(precice::constants::actionWriteIterationCheckpoint());
   }
+#else
+  (void)save_state;
+#endif
 }
 
 
@@ -372,6 +421,7 @@ inline void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::reload_old_state_if_required(
   std::function<void()> const & reload_old_state)
 {
+#ifdef EXADG_WITH_PRECICE
   // In case we need to reload a state, we just take the internally stored
   // data vectors and write then in to the input data
   if(precice->isActionRequired(precice::constants::actionReadIterationCheckpoint()))
@@ -379,6 +429,9 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::reload_old_state_if_req
     reload_old_state();
     precice->markActionFulfilled(precice::constants::actionReadIterationCheckpoint());
   }
+#else
+  (void)reload_old_state;
+#endif
 }
 
 
@@ -387,7 +440,11 @@ template<int dim, int data_dim, typename VectorType, typename VectorizedArrayTyp
 inline bool
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::is_coupling_ongoing() const
 {
+#ifdef EXADG_WITH_PRECICE
   return precice->isCouplingOngoing();
+#else
+  return true;
+#endif
 }
 
 
@@ -396,7 +453,11 @@ template<int dim, int data_dim, typename VectorType, typename VectorizedArrayTyp
 inline bool
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::is_time_window_complete() const
 {
+#ifdef EXADG_WITH_PRECICE
   return precice->isTimeWindowComplete();
+#else
+  return true;
+#endif
 }
 
 
