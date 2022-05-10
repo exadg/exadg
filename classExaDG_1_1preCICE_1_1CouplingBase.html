@@ -101,9 +101,9 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>value_type</b> = typ
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:afc6cf57ef435a23fd021e119892fd04c"><td class="memItemLeft" align="right" valign="top"><a id="afc6cf57ef435a23fd021e119892fd04c" name="afc6cf57ef435a23fd021e119892fd04c"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>CouplingBase</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, double, VectorizedArrayType &gt; const &gt; data, std::shared_ptr&lt; precice::SolverInterface &gt; <a class="el" href="classExaDG_1_1preCICE_1_1CouplingBase.html#ae215605538a053a6207b311a25ae1823">precice</a>, std::string const <a class="el" href="classExaDG_1_1preCICE_1_1CouplingBase.html#a36e684b3ced1553f0017f75f42737fdb">mesh_name</a>, dealii::types::boundary_id const surface_id)</td></tr>
-<tr class="separator:afc6cf57ef435a23fd021e119892fd04c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d3efad8edf67e1ee85c63529f3d2163"><td class="memItemLeft" align="right" valign="top"><a id="a1d3efad8edf67e1ee85c63529f3d2163" name="a1d3efad8edf67e1ee85c63529f3d2163"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>CouplingBase</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, double, VectorizedArrayType &gt; const &gt; data, std::string const <a class="el" href="classExaDG_1_1preCICE_1_1CouplingBase.html#a36e684b3ced1553f0017f75f42737fdb">mesh_name</a>, dealii::types::boundary_id const surface_id)</td></tr>
+<tr class="separator:a1d3efad8edf67e1ee85c63529f3d2163"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abb0e72e5cb49a332e909a0f90fe8a301"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1preCICE_1_1CouplingBase.html#abb0e72e5cb49a332e909a0f90fe8a301">define_coupling_mesh</a> ()=0</td></tr>
 <tr class="memdesc:abb0e72e5cb49a332e909a0f90fe8a301"><td class="mdescLeft">&#160;</td><td class="mdescRight">define_coupling_mesh Define the coupling mesh associated to the data points  <a href="classExaDG_1_1preCICE_1_1CouplingBase.html#abb0e72e5cb49a332e909a0f90fe8a301">More...</a><br /></td></tr>
 <tr class="separator:abb0e72e5cb49a332e909a0f90fe8a301"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -143,13 +143,8 @@ Protected Attributes</h2></td></tr>
 std::shared_ptr&lt; dealii::MatrixFree&lt; dim, double, VectorizedArrayType &gt; const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>matrix_free</b></td></tr>
 <tr class="memdesc:a9023ffde51ff77d11e2d065c415e4003"><td class="mdescLeft">&#160;</td><td class="mdescRight">The dealii::MatrixFree object (preCICE can only handle double precision) <br /></td></tr>
 <tr class="separator:a9023ffde51ff77d11e2d065c415e4003"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae215605538a053a6207b311a25ae1823"><td class="memItemLeft" align="right" valign="top"><a id="ae215605538a053a6207b311a25ae1823" name="ae215605538a053a6207b311a25ae1823"></a>
-std::shared_ptr&lt; precice::SolverInterface &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>precice</b></td></tr>
-<tr class="memdesc:ae215605538a053a6207b311a25ae1823"><td class="mdescLeft">&#160;</td><td class="mdescRight">public precice solverinterface <br /></td></tr>
-<tr class="separator:ae215605538a053a6207b311a25ae1823"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a36e684b3ced1553f0017f75f42737fdb"><td class="memItemLeft" align="right" valign="top"><a id="a36e684b3ced1553f0017f75f42737fdb" name="a36e684b3ced1553f0017f75f42737fdb"></a>
-std::string const&#160;</td><td class="memItemRight" valign="bottom"><b>mesh_name</b></td></tr>
-<tr class="memdesc:a36e684b3ced1553f0017f75f42737fdb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Configuration parameters. <br /></td></tr>
+<tr class="memitem:a36e684b3ced1553f0017f75f42737fdb"><td class="memItemLeft" align="right" valign="top">std::string const&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1preCICE_1_1CouplingBase.html#a36e684b3ced1553f0017f75f42737fdb">mesh_name</a></td></tr>
+<tr class="memdesc:a36e684b3ced1553f0017f75f42737fdb"><td class="mdescLeft">&#160;</td><td class="mdescRight">public precice solverinterface  <a href="classExaDG_1_1preCICE_1_1CouplingBase.html#a36e684b3ced1553f0017f75f42737fdb">More...</a><br /></td></tr>
 <tr class="separator:a36e684b3ced1553f0017f75f42737fdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6bed150f48d28605b1d0174d5b3883a2"><td class="memItemLeft" align="right" valign="top"><a id="a6bed150f48d28605b1d0174d5b3883a2" name="a6bed150f48d28605b1d0174d5b3883a2"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>mesh_id</b></td></tr>
@@ -350,6 +345,34 @@ template&lt;int dim, int data_dim, typename VectorizedArrayType &gt; </div>
 </dl>
 
 <p>Implemented in <a class="el" href="classExaDG_1_1preCICE_1_1DoFCoupling.html#aa80ab1d61f925ec4ca2ff26303194486">ExaDG::preCICE::DoFCoupling&lt; dim, data_dim, VectorizedArrayType &gt;</a>, <a class="el" href="classExaDG_1_1preCICE_1_1ExaDGCoupling.html#a73e4610c201ff663be650e3568b58dbe">ExaDG::preCICE::ExaDGCoupling&lt; dim, data_dim, VectorizedArrayType &gt;</a>, and <a class="el" href="classExaDG_1_1preCICE_1_1QuadCoupling.html#af2ee46af2435f1ec83e2349cd8c8673b">ExaDG::preCICE::QuadCoupling&lt; dim, data_dim, VectorizedArrayType &gt;</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="a36e684b3ced1553f0017f75f42737fdb" name="a36e684b3ced1553f0017f75f42737fdb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a36e684b3ced1553f0017f75f42737fdb">&#9670;&nbsp;</a></span>mesh_name</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, int data_dim, typename VectorizedArrayType &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string const <a class="el" href="classExaDG_1_1preCICE_1_1CouplingBase.html">ExaDG::preCICE::CouplingBase</a>&lt; dim, data_dim, VectorizedArrayType &gt;::mesh_name</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>public precice solverinterface </p>
+<p >Configuration parameters </p>
 
 </div>
 </div>
