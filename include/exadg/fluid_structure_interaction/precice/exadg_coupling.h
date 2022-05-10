@@ -38,13 +38,16 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 class ExaDGCoupling : public CouplingBase<dim, data_dim, VectorizedArrayType>
 {
 public:
+  static unsigned int const rank =
+    (data_dim == 1) ? 0 : ((data_dim == dim) ? 1 : dealii::numbers::invalid_unsigned_int);
+
   ExaDGCoupling(
     std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
 #ifdef EXADG_WITH_PRECICE
     std::shared_ptr<precice::SolverInterface> precice,
 #endif
-    std::string const                                              mesh_name,
-    std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>> interface_data_,
+    std::string const                                  mesh_name,
+    std::shared_ptr<ContainerInterfaceData<rank, dim>> interface_data_,
     dealii::types::boundary_id const surface_id = dealii::numbers::invalid_unsigned_int);
 
   /**
@@ -71,7 +74,7 @@ public:
 
 private:
   /// Accessor for ExaDG data structures
-  std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>> interface_data;
+  std::shared_ptr<ContainerInterfaceData<rank, dim>> interface_data;
 
   /// The preCICE IDs
   std::vector<int> coupling_nodes_ids;
@@ -88,9 +91,9 @@ ExaDGCoupling<dim, data_dim, VectorizedArrayType>::ExaDGCoupling(
 #ifdef EXADG_WITH_PRECICE
   std::shared_ptr<precice::SolverInterface> precice,
 #endif
-  std::string const                                              mesh_name,
-  std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>> interface_data_,
-  dealii::types::boundary_id const                               surface_id)
+  std::string const                                  mesh_name,
+  std::shared_ptr<ContainerInterfaceData<rank, dim>> interface_data_,
+  dealii::types::boundary_id const                   surface_id)
   : CouplingBase<dim, data_dim, VectorizedArrayType>(data,
 #ifdef EXADG_WITH_PRECICE
                                                      precice,
