@@ -119,8 +119,8 @@ apply_taylor_green_symmetry(dealii::DoFHandler<dim> const & dof_handler_symm,
       range_has_lex, range_want_lex, comm, owning_ranks_of_ghosts, true);
 
     dealii::Utilities::MPI::ConsensusAlgorithms::Selector<
-      std::pair<dealii::types::global_dof_index, dealii::types::global_dof_index>,
-      unsigned int>
+      std::vector<std::pair<dealii::types::global_dof_index, dealii::types::global_dof_index>>,
+      std::vector<unsigned int>>
       consensus_algorithm;
     consensus_algorithm.run(process, comm);
 
