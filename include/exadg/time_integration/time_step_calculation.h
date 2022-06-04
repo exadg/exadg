@@ -253,6 +253,8 @@ calculate_time_step_cfl_local(
   CFLConditionType const                                         cfl_condition_type,
   MPI_Comm const &                                               mpi_comm)
 {
+  // Need to update ghost values for hdiv ...
+  velocity.update_ghost_values();
   CellIntegrator<dim, dim, value_type> fe_eval(data, dof_index, quad_index);
 
   double new_time_step = std::numeric_limits<double>::max();

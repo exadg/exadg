@@ -280,6 +280,9 @@ public:
   // Grid data
   GridData grid;
 
+  // type of spatial discretization approach
+  SpatialDiscretization spatial_discretization;
+
   // Polynomial degree of velocity shape functions
   unsigned int degree_u;
 
@@ -647,6 +650,25 @@ public:
   // solver data for Schur complement
   // (only relevant if exact_inversion_of_laplace_operator == true)
   SolverData solver_data_pressure_block;
+
+
+
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                            SOLVE MASS SYSTEM HDIV                                  */
+  /*                                                                                    */
+  /**************************************************************************************/
+  // We cannot apply the inverse mass operator while using HDIV. Instead we have to solve
+  // the system
+
+  // description: see enum declaration
+  SolverMassHdiv solver_mass_hdiv;
+
+  // solver data for solving mass system with hdiv
+  SolverData solver_data_mass_hdiv;
+
+  // description: see enum declaration
+  PreconditionerMassHdiv preconditioner_mass_hdiv;
 };
 
 } // namespace IncNS

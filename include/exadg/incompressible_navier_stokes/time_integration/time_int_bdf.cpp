@@ -463,6 +463,13 @@ TimeIntBDF<dim, Number>::postprocessing() const
     operator_base->move_grid_and_update_dependent_data_structures(this->get_time());
   }
 
+  // We need to distribute the dofs for HDIV before computing the error since
+  // dealii::VectorTools::integrate_difference() does not take the periodic boundary
+  // constraints into account like MatrixFree does, hence reading the wrong value.
+  // distribute() updates the otherwise unused values.
+  if(operator_base->get_spatial_discretization() == SpatialDiscretization::HDIV)
+    operator_base->get_constraint_u().distribute(const_cast<VectorType &>(get_velocity(0)));
+
   bool const standard = true;
   if(standard)
   {

@@ -91,6 +91,9 @@ Parameters::Parameters()
     // grid
     grid(GridData()),
 
+    // finite element
+    spatial_discretization(SpatialDiscretization::L2),
+
     // polynomial degrees
     degree_u(2),
     degree_p(DegreePressure::MixedOrder),
@@ -223,7 +226,12 @@ Parameters::Parameters()
     preconditioner_pressure_block(SchurComplementPreconditioner::PressureConvectionDiffusion),
     multigrid_data_pressure_block(MultigridData()),
     exact_inversion_of_laplace_operator(false),
-    solver_data_pressure_block(SolverData(1e4, 1.e-12, 1.e-6, 100))
+    solver_data_pressure_block(SolverData(1e4, 1.e-12, 1.e-6, 100)),
+
+    // Solving mass system for Hdiv
+    solver_mass_hdiv(SolverMassHdiv::CG),
+    solver_data_mass_hdiv(SolverData(1e3, 1.e-12, 1.e-6, 100)),
+    preconditioner_mass_hdiv(PreconditionerMassHdiv::PointJacobi)
 {
 }
 
@@ -251,6 +259,10 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
   // ALE
   if(ale_formulation)
   {
+    AssertThrow(spatial_discretization == SpatialDiscretization::L2,
+                dealii::ExcMessage(
+                  "ALE is currently only implemented for L2 conforming function spaces."));
+
     AssertThrow(
       formulation_convective_term == FormulationConvectiveTerm::ConvectiveFormulation,
       dealii::ExcMessage(
@@ -385,9 +397,33 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
     }
   }
 
+  if(spatial_discretization == SpatialDiscretization::HDIV)
+  {
+    AssertThrow(
+      use_divergence_penalty == false || use_continuity_penalty == false,
+      dealii::ExcMessage(
+        "Penalty terms can not be used in case of Hdiv function spaces. Think about using L2 instead, or deactivate the penatly terms."));
+    if(temporal_discretization != TemporalDiscretization::BDFCoupledSolution)
+      AssertThrow(
+        preconditioner_velocity_block != MomentumPreconditioner::InverseMassMatrix &&
+          preconditioner_velocity_block != MomentumPreconditioner::BlockJacobi &&
+          preconditioner_velocity_block != MomentumPreconditioner::Multigrid,
+        dealii::ExcMessage(
+          "Multigrid, BlockJacobi, and InverseMassMatrix as preconditioner are not availiable for HDIV. Use either PointJacobi or None instead, or change to L2 discretization. "));
+  }
+
   // HIGH-ORDER DUAL SPLITTING SCHEME
   if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
+    if(spatial_discretization == SpatialDiscretization::HDIV)
+    {
+      pcout
+        << "WARNING:" << std::endl
+        << "Using the dual splitting scheme with HDIV does not produce an exactly divergence-free"
+        << std::endl
+        << "solution. Use the coupled scheme instead if this is desired." << std::endl;
+    }
+
     AssertThrow(order_extrapolation_pressure_nbc <= order_time_integrator,
                 dealii::ExcMessage("Invalid parameter order_extrapolation_pressure_nbc!"));
 
@@ -415,6 +451,11 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
   // PRESSURE-CORRECTION SCHEME
   if(temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
+    AssertThrow(
+      spatial_discretization == SpatialDiscretization::L2,
+      dealii::ExcMessage(
+        "Pressure correction only works for L2. If you want to use Hdiv conforming elements you have to use the coupled solution"));
+
     AssertThrow(order_pressure_extrapolation <= order_time_integrator,
                 dealii::ExcMessage("Invalid parameter order_pressure_extrapolation!"));
 
@@ -468,6 +509,10 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
       use_cell_based_face_loops == true,
       dealii::ExcMessage(
         "Cell based face loops have to be used for matrix-free implementation of block diagonal preconditioner."));
+
+    AssertThrow(spatial_discretization == SpatialDiscretization::L2,
+                dealii::ExcMessage(
+                  "Block diagonal preconditioner does not work for Hdiv conforming elements"));
   }
 
 
@@ -696,6 +741,8 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
   pcout << std::endl << "Spatial discretization:" << std::endl;
 
   grid.print(pcout);
+
+  print_parameter(pcout, "Element type", enum_to_string(spatial_discretization));
 
   print_parameter(pcout, "Polynomial degree velocity", degree_u);
   print_parameter(pcout, "Polynomial degree pressure", enum_to_string(degree_p));

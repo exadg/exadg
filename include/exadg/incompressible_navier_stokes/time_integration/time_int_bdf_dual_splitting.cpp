@@ -46,6 +46,7 @@ TimeIntBDFDualSplitting<dim, Number>::TimeIntBDFDualSplitting(
     iterations_projection({0, 0}),
     iterations_viscous({0, 0}),
     iterations_penalty({0, 0}),
+    iterations_mass({0, 0}),
     extra_pressure_nbc(this->param.order_extrapolation_pressure_nbc,
                        this->param.start_with_low_order)
 {
@@ -362,7 +363,10 @@ TimeIntBDFDualSplitting<dim, Number>::convective_step()
   }
 
   // apply inverse mass operator
-  pde_operator->apply_inverse_mass_operator(velocity_np, velocity_np);
+  unsigned int const n_iter_mass =
+    pde_operator->apply_inverse_mass_operator(velocity_np, velocity_np);
+  iterations_mass.first += 1;
+  iterations_mass.second += n_iter_mass;
 
   // calculate sum (alpha_i/dt * u_i) and add to velocity_np
   for(unsigned int i = 0; i < velocity.size(); ++i)
@@ -376,7 +380,10 @@ TimeIntBDFDualSplitting<dim, Number>::convective_step()
   if(this->print_solver_info() and not(this->is_test))
   {
     this->pcout << std::endl << "Explicit convective step:";
-    print_wall_time(this->pcout, timer.wall_time());
+    if(this->param.spatial_discretization == SpatialDiscretization::HDIV)
+      print_wall_time_with_mass_iter(this->pcout, n_iter_mass, timer.wall_time());
+    else
+      print_wall_time(this->pcout, timer.wall_time());
   }
 
   this->timer_tree->insert({"Timeloop", "Convective step"}, timer.wall_time());
@@ -581,7 +588,9 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
 
   // apply inverse mass operator: this is the solution if no penalty terms are applied
   // and serves as a good initial guess for the case with penalty terms
-  pde_operator->apply_inverse_mass_operator(velocity_np, rhs);
+  unsigned int const n_iter_mass = pde_operator->apply_inverse_mass_operator(velocity_np, rhs);
+  iterations_mass.first += 1;
+  iterations_mass.second += n_iter_mass;
 
   // penalty terms
   if(this->param.apply_penalty_terms_in_postprocessing_step == false &&
@@ -622,6 +631,7 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
 
     if(this->print_solver_info() and not(this->is_test))
     {
+      // No need to print the number of mass iterations here since we should be using L2
       this->pcout << std::endl << "Solve projection step:";
       print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
     }
@@ -631,7 +641,10 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
     if(this->print_solver_info() and not(this->is_test))
     {
       this->pcout << std::endl << "Explicit projection step:";
-      print_wall_time(this->pcout, timer.wall_time());
+      if(this->param.spatial_discretization == SpatialDiscretization::HDIV)
+        print_wall_time_with_mass_iter(this->pcout, n_iter_mass, timer.wall_time());
+      else
+        print_wall_time(this->pcout, timer.wall_time());
     }
   }
 
@@ -933,6 +946,12 @@ TimeIntBDFDualSplitting<dim, Number>::print_iterations() const
     (double)iterations_projection.second / std::max(1., (double)iterations_projection.first);
   iterations_avg[3] =
     (double)iterations_viscous.second / std::max(1., (double)iterations_viscous.first);
+
+  if(this->param.spatial_discretization == SpatialDiscretization::HDIV)
+  {
+    names.push_back("Mass solver");
+    iterations_avg.push_back(iterations_mass.second / std::max(1., (double)iterations_mass.first));
+  }
 
   if(this->param.apply_penalty_terms_in_postprocessing_step)
   {

@@ -210,6 +210,20 @@ enum_to_string(ConvergenceCriterionSteadyProblem const enum_type);
 /**************************************************************************************/
 
 /*
+ *  Spatial discretization method.
+ *
+ *  HDIV implies Raviart-Thomas
+ */
+enum class SpatialDiscretization
+{
+  L2,
+  HDIV
+};
+
+std::string
+enum_to_string(SpatialDiscretization const enum_type);
+
+/*
  *  Polynomial degree of pressure shape functions in relation to velocity degree
  */
 enum class DegreePressure
@@ -610,6 +624,43 @@ enum class SchurComplementPreconditioner
 
 std::string
 enum_to_string(SchurComplementPreconditioner const enum_type);
+
+
+
+/**************************************************************************************/
+/*                                                                                    */
+/*                            SOLVE MASS SYSTEM HDIV                                  */
+/*                                                                                    */
+/**************************************************************************************/
+
+/*
+ *  Solver type for solution of mass system for hdiv:
+ *
+ *  We cannot apply the inverse mass operator while using HDIV. Instead we have to solve
+ *  the system
+ *
+ */
+enum class SolverMassHdiv
+{
+  CG
+};
+
+std::string
+enum_to_string(SolverMassHdiv const enum_type);
+
+/*
+ *  Preconditioner type for solution of mass system for hdiv:
+ *
+ *  InverseMassMatrix and BlockJacobi are not availiable..
+ */
+enum class PreconditionerMassHdiv
+{
+  None,
+  PointJacobi
+};
+
+std::string
+enum_to_string(PreconditionerMassHdiv const enum_type);
 
 
 /**************************************************************************************/

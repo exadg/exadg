@@ -172,6 +172,7 @@ private:
                                                                                  iterations_projection;
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations_viscous;
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations_penalty;
+  std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations_mass;
 
   // time integrator constants: extrapolation scheme
   ExtrapolationConstants extra_pressure_nbc;

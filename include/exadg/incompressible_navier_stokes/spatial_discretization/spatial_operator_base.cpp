@@ -53,7 +53,6 @@ SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
     field(field_in),
     dof_index_first_point(0),
     evaluation_time(0.0),
-    fe_u(new dealii::FESystem<dim>(dealii::FE_DGQ<dim>(parameters_in.degree_u), dim)),
     fe_p(parameters_in.get_degree_p(parameters_in.degree_u)),
     fe_u_scalar(parameters_in.degree_u),
     dof_handler_u(*grid_in->triangulation),
@@ -126,7 +125,8 @@ SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
     matrix_free_data.append_mapping_flags(
       Operators::ViscousKernel<dim, Number>::get_mapping_flags(true, true));
 
-  if(param.right_hand_side)
+  // RHSOperator is used to initialize the velocity field for HDIV!
+  if(param.right_hand_side || param.spatial_discretization == SpatialDiscretization::HDIV)
     matrix_free_data.append_mapping_flags(Operators::RHSKernel<dim, Number>::get_mapping_flags());
 
   if(param.use_divergence_penalty)
@@ -249,20 +249,87 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::distribute_dofs()
 {
+  if(param.spatial_discretization == SpatialDiscretization::L2)
+  {
+    fe_u = std::make_shared<dealii::FESystem<dim>>(dealii::FE_DGQ<dim>(param.degree_u), dim);
+
+    pcout << std::endl
+          << "Discontinuous Galerkin finite element discretization:" << std::endl
+          << std::endl
+          << std::flush;
+  }
+  else if(param.spatial_discretization == SpatialDiscretization::HDIV)
+  {
+    // In-parameter for RT is the degree in tangent direction, i.e the degree in normal direction
+    // will be degree+1. The FE also saves fe_u.degree = degree+1.
+    // degree - 1 is used so that the same Gauss quadrature can be used for exact integration.
+    fe_u = std::make_shared<dealii::FE_RaviartThomasNodal<dim>>(param.degree_u - 1);
+
+    pcout << std::endl
+          << "Hdiv-conforming Raviart-Thomas finite element discretization:" << std::endl
+          << "(Note that the given degree for the velocity is the degree in normal direction."
+          << std::endl
+          << " The degree in tangent direction is degree - 1. Note also that the number of dofs"
+          << std::endl
+          << "given by the dof_handler does not take the constraint of periodic boundaries into"
+          << std::endl
+          << " account.)" << std::endl
+          << std::endl
+          << std::flush;
+  }
+  else
+    AssertThrow(false, dealii::ExcMessage("FE not implemented."));
+
   // enumerate degrees of freedom
   dof_handler_u.distribute_dofs(*fe_u);
   dof_handler_p.distribute_dofs(fe_p);
   dof_handler_u_scalar.distribute_dofs(fe_u_scalar);
 
+  if(param.spatial_discretization == SpatialDiscretization::HDIV)
+  {
+    // We need to make sure the normal dofs are shared between cells on the periodic boundaries,
+    // since these are contiguous for HDIV.
+    dealii::IndexSet relevant_dofs;
+    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler_u, relevant_dofs);
+    constraint_u.reinit(relevant_dofs);
+
+    auto const & periodic_face_pair = grid->periodic_faces;
+    for(auto const & face : periodic_face_pair)
+      dealii::DoFTools::make_periodicity_constraints(
+        dof_handler_u,
+        face.cell[0]->face(face.face_idx[0])->boundary_id(),
+        face.cell[1]->face(face.face_idx[1])->boundary_id(),
+        face.face_idx[0] / 2,
+        constraint_u);
+
+
+    // Set boundaries constraints
+    if(boundary_descriptor->velocity->symmetry_bc.empty() == false)
+    {
+      for(auto bc : boundary_descriptor->velocity->symmetry_bc)
+        dealii::VectorTools::project_boundary_values_div_conforming(
+          dof_handler_u, 0, *(bc.second), bc.first, constraint_u, *get_mapping());
+    }
+    if(boundary_descriptor->velocity->dirichlet_bc.empty() == false)
+    {
+      AssertThrow(
+        false,
+        dealii::ExcMessage(
+          "Dirichlet BC are not properly implemented. The BC needs to be strongly applied in order to obtain an exactly divergence-free solution."));
+      // We would like to do something similar to above. Probably with
+      // dealii::VectorTools::interpolate_boundary_values
+      // dealii::VectorTools::project_boundary_values
+      // dealii::DoFTools::make_zero_boundary_constraints
+    }
+  }
+
   unsigned int const ndofs_per_cell_velocity =
-    dealii::Utilities::pow(param.degree_u + 1, dim) * dim;
+    (get_spatial_discretization() == SpatialDiscretization::L2) ?
+      dealii::Utilities::pow(param.degree_u + 1, dim) * dim :
+      dealii::Utilities::pow(param.degree_u, dim - 1) * (param.degree_u + 1) * dim;
   unsigned int const ndofs_per_cell_pressure =
     dealii::Utilities::pow(param.get_degree_p(param.degree_u) + 1, dim);
 
-  pcout << std::endl
-        << "Discontinuous Galerkin finite element discretization:" << std::endl
-        << std::endl
-        << std::flush;
 
   pcout << "Velocity:" << std::endl;
   print_parameter(pcout, "degree of 1D polynomials", param.degree_u);
@@ -278,7 +345,7 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
   print_parameter(pcout,
                   "number of dofs per cell",
                   ndofs_per_cell_velocity + ndofs_per_cell_pressure);
-  print_parameter(pcout, "number of dofs (total)", dof_handler_u.n_dofs() + dof_handler_p.n_dofs());
+  print_parameter(pcout, "number of dofs (total)", get_number_of_dofs());
 
   pcout << std::flush;
 }
@@ -324,7 +391,31 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   MassOperatorData<dim> mass_operator_data;
   mass_operator_data.dof_index  = get_dof_index_velocity();
   mass_operator_data.quad_index = get_quad_index_velocity_linear();
-  mass_operator.initialize(*matrix_free, constraint_dummy, mass_operator_data);
+  mass_operator.initialize(*matrix_free, constraint_u, mass_operator_data);
+
+  // Mass solver for HDIV (instead of inverse mass operator as it is unavailiable for hdiv)
+  if(param.spatial_discretization == SpatialDiscretization::HDIV)
+  {
+    Krylov::SolverDataCG solver_data;
+    solver_data.max_iter             = this->param.solver_data_mass_hdiv.max_iter;
+    solver_data.solver_tolerance_abs = this->param.solver_data_mass_hdiv.abs_tol;
+    solver_data.solver_tolerance_rel = this->param.solver_data_mass_hdiv.rel_tol;
+
+    if(param.preconditioner_mass_hdiv == PreconditionerMassHdiv::PointJacobi)
+    {
+      mass_preconditioner_hdiv =
+        std::make_shared<JacobiPreconditioner<MassOperator<dim, dim, Number>>>(this->mass_operator);
+      solver_data.use_preconditioner = true;
+    }
+    else if(param.preconditioner_mass_hdiv == PreconditionerMassHdiv::None)
+    {
+      solver_data.use_preconditioner = false;
+    }
+
+    mass_solver_hdiv = std::make_shared<
+      Krylov::SolverCG<MassOperator<dim, dim, Number>, PreconditionerBase<Number>, VectorType>>(
+      this->mass_operator, *mass_preconditioner_hdiv, solver_data);
+  }
 
   // inverse mass operator
   inverse_mass_velocity.initialize(*matrix_free,
@@ -691,7 +782,7 @@ SpatialOperatorBase<dim, Number>::get_mapping() const
 }
 
 template<int dim, typename Number>
-dealii::FESystem<dim> const &
+dealii::FiniteElement<dim> const &
 SpatialOperatorBase<dim, Number>::get_fe_u() const
 {
   return *fe_u;
@@ -733,10 +824,24 @@ SpatialOperatorBase<dim, Number>::get_constraint_p() const
 }
 
 template<int dim, typename Number>
+dealii::AffineConstraints<Number> const &
+SpatialOperatorBase<dim, Number>::get_constraint_u() const
+{
+  return constraint_u;
+}
+
+template<int dim, typename Number>
 double
 SpatialOperatorBase<dim, Number>::get_viscosity() const
 {
   return param.viscosity;
+}
+
+template<int dim, typename Number>
+SpatialDiscretization const &
+SpatialOperatorBase<dim, Number>::get_spatial_discretization() const
+{
+  return param.spatial_discretization;
 }
 
 template<int dim, typename Number>
@@ -820,17 +925,47 @@ SpatialOperatorBase<dim, Number>::prescribe_initial_conditions(VectorType & velo
   velocity_double = velocity;
   pressure_double = pressure;
 
-  dealii::VectorTools::interpolate(*get_mapping(),
-                                   dof_handler_u,
-                                   *(field_functions->initial_solution_velocity),
-                                   velocity_double);
+  if(param.spatial_discretization == SpatialDiscretization::L2)
+  {
+    dealii::VectorTools::interpolate(*get_mapping(),
+                                     dof_handler_u,
+                                     *(field_functions->initial_solution_velocity),
+                                     velocity_double);
+    velocity = velocity_double;
+  }
+  else if(param.spatial_discretization == SpatialDiscretization::HDIV)
+  {
+    // VectorTools::interpolate currently does not work for RT
+    // Instead we solve the mass sytem.
+    RHSOperatorData<dim> rhs_data_init;
+    rhs_data_init.dof_index                   = get_dof_index_velocity();
+    rhs_data_init.quad_index                  = get_quad_index_velocity_linear();
+    rhs_data_init.kernel_data.f               = field_functions->initial_solution_velocity;
+    rhs_data_init.kernel_data.boussinesq_term = false;
+
+    std::shared_ptr<dealii::Function<dim>> zero_func;
+    zero_func.reset(new dealii::Functions::ZeroFunction<dim>(dim));
+    rhs_data_init.kernel_data.gravitational_force = zero_func;
+
+    RHSOperator<dim, Number> rhs_operator_init;
+    rhs_operator_init.initialize(*matrix_free, rhs_data_init);
+
+    VectorType temp_rhs;
+    initialize_vector_velocity(temp_rhs);
+    rhs_operator_init.evaluate(temp_rhs, time);
+
+    apply_inverse_mass_operator(velocity, temp_rhs);
+  }
+  else
+  {
+    Assert(false, dealii::ExcMessage("Not implemented"));
+  }
 
   dealii::VectorTools::interpolate(*get_mapping(),
                                    dof_handler_p,
                                    *(field_functions->initial_solution_pressure),
                                    pressure_double);
 
-  velocity = velocity_double;
   pressure = pressure_double;
 }
 
@@ -1030,7 +1165,9 @@ SpatialOperatorBase<dim, Number>::compute_vorticity(VectorType & dst, VectorType
 {
   vorticity_calculator.compute_vorticity(dst, src);
 
-  inverse_mass_velocity.apply(dst, dst);
+  // If HDIV is used, an iterative solver is used,
+  // but here we ignore the number of iterations
+  this->apply_inverse_mass_operator(dst, dst);
 }
 
 template<int dim, typename Number>
@@ -1165,11 +1302,36 @@ SpatialOperatorBase<dim, Number>::compute_q_criterion(VectorType &       dst,
 }
 
 template<int dim, typename Number>
-void
+unsigned int
 SpatialOperatorBase<dim, Number>::apply_inverse_mass_operator(VectorType &       dst,
                                                               VectorType const & src) const
 {
-  inverse_mass_velocity.apply(dst, src);
+  if(param.spatial_discretization == SpatialDiscretization::L2)
+  {
+    inverse_mass_velocity.apply(dst, src);
+  }
+  else if(param.spatial_discretization == SpatialDiscretization::HDIV)
+  {
+    Assert(mass_solver_hdiv.get() != 0,
+           dealii::ExcMessage("Mass solver has not been initialized."));
+
+    VectorType temp;
+
+    if(&dst == &src)
+    {
+      temp = src;
+      return mass_solver_hdiv->solve(dst, temp, false);
+    }
+    else
+    {
+      return mass_solver_hdiv->solve(dst, src, false);
+    }
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
+  }
+  return 0;
 }
 
 template<int dim, typename Number>
