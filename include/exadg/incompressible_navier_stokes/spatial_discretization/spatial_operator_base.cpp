@@ -925,47 +925,17 @@ SpatialOperatorBase<dim, Number>::prescribe_initial_conditions(VectorType & velo
   velocity_double = velocity;
   pressure_double = pressure;
 
-  if(param.spatial_discretization == SpatialDiscretization::L2)
-  {
-    dealii::VectorTools::interpolate(*get_mapping(),
-                                     dof_handler_u,
-                                     *(field_functions->initial_solution_velocity),
-                                     velocity_double);
-    velocity = velocity_double;
-  }
-  else if(param.spatial_discretization == SpatialDiscretization::HDIV)
-  {
-    // VectorTools::interpolate currently does not work for RT
-    // Instead we solve the mass sytem.
-    RHSOperatorData<dim> rhs_data_init;
-    rhs_data_init.dof_index                   = get_dof_index_velocity();
-    rhs_data_init.quad_index                  = get_quad_index_velocity_linear();
-    rhs_data_init.kernel_data.f               = field_functions->initial_solution_velocity;
-    rhs_data_init.kernel_data.boussinesq_term = false;
-
-    std::shared_ptr<dealii::Function<dim>> zero_func;
-    zero_func.reset(new dealii::Functions::ZeroFunction<dim>(dim));
-    rhs_data_init.kernel_data.gravitational_force = zero_func;
-
-    RHSOperator<dim, Number> rhs_operator_init;
-    rhs_operator_init.initialize(*matrix_free, rhs_data_init);
-
-    VectorType temp_rhs;
-    initialize_vector_velocity(temp_rhs);
-    rhs_operator_init.evaluate(temp_rhs, time);
-
-    apply_inverse_mass_operator(velocity, temp_rhs);
-  }
-  else
-  {
-    Assert(false, dealii::ExcMessage("Not implemented"));
-  }
+  dealii::VectorTools::interpolate(*get_mapping(),
+                                   dof_handler_u,
+                                   *(field_functions->initial_solution_velocity),
+                                   velocity_double);
 
   dealii::VectorTools::interpolate(*get_mapping(),
                                    dof_handler_p,
                                    *(field_functions->initial_solution_pressure),
                                    pressure_double);
 
+  velocity = velocity_double;
   pressure = pressure_double;
 }
 
