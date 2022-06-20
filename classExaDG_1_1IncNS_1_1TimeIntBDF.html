@@ -226,8 +226,6 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:ad1fa762d0e2e93af99ae4f094680ec84"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa102fe0c6032b6673862e19099584c81"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1TimeIntBDF.html#aa102fe0c6032b6673862e19099584c81">prepare_vectors_for_next_timestep</a> () override</td></tr>
 <tr class="separator:aa102fe0c6032b6673862e19099584c81"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a16c3a5c5514990c8c9848a93da2cf6a6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1TimeIntBDF.html#a16c3a5c5514990c8c9848a93da2cf6a6">calculate_sum_alphai_ui_oif_substepping</a> (VectorType &amp;sum_alphai_ui, double const cfl, double const cfl_oif) final</td></tr>
-<tr class="separator:a16c3a5c5514990c8c9848a93da2cf6a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classExaDG_1_1TimeIntBDFBase"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classExaDG_1_1TimeIntBDFBase')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classExaDG_1_1TimeIntBDFBase.html">ExaDG::TimeIntBDFBase&lt; Number &gt;</a></td></tr>
 <tr class="memitem:aa6a777d68cdc61bcf29d6d19f18f0cfb inherit pro_methods_classExaDG_1_1TimeIntBDFBase"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1TimeIntBDFBase.html#aa6a777d68cdc61bcf29d6d19f18f0cfb">do_timestep_pre_solve</a> (bool const print_header) final</td></tr>
 <tr class="separator:aa6a777d68cdc61bcf29d6d19f18f0cfb inherit pro_methods_classExaDG_1_1TimeIntBDFBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -242,9 +240,6 @@ std::vector&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><
 <tr class="memitem:a9591fea37df8275cbb1d700a1cde12fc inherit pro_methods_classExaDG_1_1TimeIntBDFBase"><td class="memItemLeft" align="right" valign="top"><a id="a9591fea37df8275cbb1d700a1cde12fc" name="a9591fea37df8275cbb1d700a1cde12fc"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>push_back_time_step_sizes</b> ()</td></tr>
 <tr class="separator:a9591fea37df8275cbb1d700a1cde12fc inherit pro_methods_classExaDG_1_1TimeIntBDFBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4b740cb5b033ad8b0ea9348e0b9344e9 inherit pro_methods_classExaDG_1_1TimeIntBDFBase"><td class="memItemLeft" align="right" valign="top"><a id="a4b740cb5b033ad8b0ea9348e0b9344e9" name="a4b740cb5b033ad8b0ea9348e0b9344e9"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_sum_alphai_ui_oif_substepping</b> (VectorType &amp;sum_alphai_ui, double const cfl, double const cfl_oif)</td></tr>
-<tr class="separator:a4b740cb5b033ad8b0ea9348e0b9344e9 inherit pro_methods_classExaDG_1_1TimeIntBDFBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab048f669e7f7bd3a7d85aa571c31a33b inherit pro_methods_classExaDG_1_1TimeIntBDFBase"><td class="memItemLeft" align="right" valign="top"><a id="ab048f669e7f7bd3a7d85aa571c31a33b" name="ab048f669e7f7bd3a7d85aa571c31a33b"></a>
 virtual double&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_time_step_size</b> ()=0</td></tr>
 <tr class="separator:ab048f669e7f7bd3a7d85aa571c31a33b inherit pro_methods_classExaDG_1_1TimeIntBDFBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -291,9 +286,6 @@ unsigned int const&#160;</td><td class="memItemRight" valign="bottom"><b>refine_
 <tr class="memitem:a81437fddbcc83fab9488f6f51029bf2e"><td class="memItemLeft" align="right" valign="top"><a id="a81437fddbcc83fab9488f6f51029bf2e" name="a81437fddbcc83fab9488f6f51029bf2e"></a>
 double const&#160;</td><td class="memItemRight" valign="bottom"><b>cfl</b></td></tr>
 <tr class="separator:a81437fddbcc83fab9488f6f51029bf2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac590a18e5f386826b5d0af7461c6e3a0"><td class="memItemLeft" align="right" valign="top"><a id="ac590a18e5f386826b5d0af7461c6e3a0" name="ac590a18e5f386826b5d0af7461c6e3a0"></a>
-double const&#160;</td><td class="memItemRight" valign="bottom"><b>cfl_oif</b></td></tr>
-<tr class="separator:ac590a18e5f386826b5d0af7461c6e3a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2cd84a357c04ce76fba420a14bb7680b"><td class="memItemLeft" align="right" valign="top"><a id="a2cd84a357c04ce76fba420a14bb7680b" name="a2cd84a357c04ce76fba420a14bb7680b"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">OperatorBase</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>operator_base</b></td></tr>
 <tr class="separator:a2cd84a357c04ce76fba420a14bb7680b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -390,52 +382,6 @@ template&lt;int dim, typename Number &gt; </div>
 </div><div class="memdoc">
 
 <p>Implements <a class="el" href="classExaDG_1_1TimeIntBDFBase.html">ExaDG::TimeIntBDFBase&lt; Number &gt;</a>.</p>
-
-</div>
-</div>
-<a id="a16c3a5c5514990c8c9848a93da2cf6a6" name="a16c3a5c5514990c8c9848a93da2cf6a6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a16c3a5c5514990c8c9848a93da2cf6a6">&#9670;&nbsp;</a></span>calculate_sum_alphai_ui_oif_substepping()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1IncNS_1_1TimeIntBDF.html">ExaDG::IncNS::TimeIntBDF</a>&lt; dim, Number &gt;::calculate_sum_alphai_ui_oif_substepping </td>
-          <td>(</td>
-          <td class="paramtype">VectorType &amp;&#160;</td>
-          <td class="paramname"><em>sum_alphai_ui</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double const&#160;</td>
-          <td class="paramname"><em>cfl</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double const&#160;</td>
-          <td class="paramname"><em>cfl_oif</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">protected</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Reimplemented from <a class="el" href="classExaDG_1_1TimeIntBDFBase.html">ExaDG::TimeIntBDFBase&lt; Number &gt;</a>.</p>
 
 </div>
 </div>

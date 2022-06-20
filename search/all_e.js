@@ -14,13 +14,12 @@ var searchData=
   ['operatordata_11',['OperatorData',['../structExaDG_1_1Structure_1_1OperatorData.html',1,'ExaDG::Structure']]],
   ['operatordualsplitting_12',['OperatorDualSplitting',['../classExaDG_1_1IncNS_1_1OperatorDualSplitting.html',1,'ExaDG::IncNS']]],
   ['operatorexplrk_13',['OperatorExplRK',['../classExaDG_1_1ConvDiff_1_1OperatorExplRK.html',1,'ExaDG::ConvDiff']]],
-  ['operatoroif_14',['OperatorOIF',['../classExaDG_1_1ConvDiff_1_1OperatorOIF.html',1,'ExaDG::ConvDiff::OperatorOIF&lt; Number &gt;'],['../classExaDG_1_1IncNS_1_1OperatorOIF.html',1,'ExaDG::IncNS::OperatorOIF&lt; dim, Number &gt;']]],
-  ['operatorpressurecorrection_15',['OperatorPressureCorrection',['../classExaDG_1_1IncNS_1_1OperatorPressureCorrection.html',1,'ExaDG::IncNS']]],
-  ['operatorprojectionmethods_16',['OperatorProjectionMethods',['../classExaDG_1_1IncNS_1_1OperatorProjectionMethods.html',1,'ExaDG::IncNS']]],
-  ['operatorprojectionmethods_3c_20dim_2c_20double_20_3e_17',['OperatorProjectionMethods&lt; dim, double &gt;',['../classExaDG_1_1IncNS_1_1OperatorProjectionMethods.html',1,'ExaDG::IncNS']]],
-  ['outputdata_18',['OutputData',['../structExaDG_1_1CompNS_1_1OutputData.html',1,'ExaDG::CompNS::OutputData'],['../structExaDG_1_1IncNS_1_1OutputData.html',1,'ExaDG::IncNS::OutputData']]],
-  ['outputdatabase_19',['OutputDataBase',['../structExaDG_1_1OutputDataBase.html',1,'ExaDG']]],
-  ['outputdatameanvelocity_20',['OutputDataMeanVelocity',['../structExaDG_1_1IncNS_1_1OutputDataMeanVelocity.html',1,'ExaDG::IncNS']]],
-  ['outputgenerator_21',['OutputGenerator',['../classExaDG_1_1CompNS_1_1OutputGenerator.html',1,'ExaDG::CompNS::OutputGenerator&lt; dim, Number &gt;'],['../classExaDG_1_1IncNS_1_1OutputGenerator.html',1,'ExaDG::IncNS::OutputGenerator&lt; dim, Number &gt;'],['../classExaDG_1_1OutputGenerator.html',1,'ExaDG::OutputGenerator&lt; dim, Number &gt;'],['../classExaDG_1_1Structure_1_1OutputGenerator.html',1,'ExaDG::Structure::OutputGenerator&lt; dim, Number &gt;']]],
-  ['outputparameters_22',['OutputParameters',['../structExaDG_1_1OutputParameters.html',1,'ExaDG']]]
+  ['operatorpressurecorrection_14',['OperatorPressureCorrection',['../classExaDG_1_1IncNS_1_1OperatorPressureCorrection.html',1,'ExaDG::IncNS']]],
+  ['operatorprojectionmethods_15',['OperatorProjectionMethods',['../classExaDG_1_1IncNS_1_1OperatorProjectionMethods.html',1,'ExaDG::IncNS']]],
+  ['operatorprojectionmethods_3c_20dim_2c_20double_20_3e_16',['OperatorProjectionMethods&lt; dim, double &gt;',['../classExaDG_1_1IncNS_1_1OperatorProjectionMethods.html',1,'ExaDG::IncNS']]],
+  ['outputdata_17',['OutputData',['../structExaDG_1_1CompNS_1_1OutputData.html',1,'ExaDG::CompNS::OutputData'],['../structExaDG_1_1IncNS_1_1OutputData.html',1,'ExaDG::IncNS::OutputData']]],
+  ['outputdatabase_18',['OutputDataBase',['../structExaDG_1_1OutputDataBase.html',1,'ExaDG']]],
+  ['outputdatameanvelocity_19',['OutputDataMeanVelocity',['../structExaDG_1_1IncNS_1_1OutputDataMeanVelocity.html',1,'ExaDG::IncNS']]],
+  ['outputgenerator_20',['OutputGenerator',['../classExaDG_1_1CompNS_1_1OutputGenerator.html',1,'ExaDG::CompNS::OutputGenerator&lt; dim, Number &gt;'],['../classExaDG_1_1IncNS_1_1OutputGenerator.html',1,'ExaDG::IncNS::OutputGenerator&lt; dim, Number &gt;'],['../classExaDG_1_1OutputGenerator.html',1,'ExaDG::OutputGenerator&lt; dim, Number &gt;'],['../classExaDG_1_1Structure_1_1OutputGenerator.html',1,'ExaDG::Structure::OutputGenerator&lt; dim, Number &gt;']]],
+  ['outputparameters_21',['OutputParameters',['../structExaDG_1_1OutputParameters.html',1,'ExaDG']]]
 ];
