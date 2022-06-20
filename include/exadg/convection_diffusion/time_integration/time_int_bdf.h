@@ -26,7 +26,6 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
-#include <exadg/time_integration/explicit_runge_kutta.h>
 #include <exadg/time_integration/time_int_bdf_base.h>
 
 namespace ExaDG
@@ -40,9 +39,6 @@ class Operator;
 
 template<typename Number>
 class PostProcessorInterface;
-
-template<typename Number>
-class OperatorOIF;
 } // namespace ConvDiff
 
 
@@ -99,29 +95,7 @@ private:
   do_timestep_solve() final;
 
   void
-  initialize_oif() final;
-
-  void
   setup_derived() final;
-
-  void
-  calculate_sum_alphai_ui_oif_substepping(VectorType & sum_alphai_ui,
-                                          double const cfl,
-                                          double const cfl_oif) final;
-
-  void
-  initialize_solution_oif_substepping(VectorType & solution_tilde_m, unsigned int i) final;
-
-  void
-  update_sum_alphai_ui_oif_substepping(VectorType &       sum_alphai_ui,
-                                       VectorType const & u_tilde_i,
-                                       unsigned int       i) final;
-
-  void
-  do_timestep_oif_substepping(VectorType & solution_tilde_mp,
-                              VectorType & solution_tilde_m,
-                              double const start_time,
-                              double const time_step_size) final;
 
   bool
   print_solver_info() const final;
@@ -158,15 +132,7 @@ private:
   // iteration counts
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations;
 
-  // Operator-integration-factor (OIF) splitting
-
-  // cfl number for OIF splitting
-  double const cfl_oif;
-
-  std::shared_ptr<OperatorOIF<Number>> convective_operator_OIF;
-
-  std::shared_ptr<ExplicitTimeIntegrator<OperatorOIF<Number>, VectorType>> time_integrator_OIF;
-
+  // postprocessor
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor;
 
   // ALE

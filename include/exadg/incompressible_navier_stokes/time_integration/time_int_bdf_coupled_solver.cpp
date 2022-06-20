@@ -257,22 +257,11 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
 
     VectorType sum_alphai_ui(solution[0].block(0));
 
-    // calculate sum (alpha_i/dt * u_tilde_i) in case of explicit treatment of convective term
-    // and operator-integration-factor (OIF) splitting
-    if(this->param.convective_problem() &&
-       this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+    // calculate Sum_i (alpha_i/dt * u_i)
+    sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), solution[0].block(0));
+    for(unsigned int i = 1; i < solution.size(); ++i)
     {
-      this->calculate_sum_alphai_ui_oif_substepping(sum_alphai_ui, this->cfl, this->cfl_oif);
-    }
-    // calculate sum (alpha_i/dt * u_i) for standard BDF discretization
-    else
-    {
-      sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), solution[0].block(0));
-      for(unsigned int i = 1; i < solution.size(); ++i)
-      {
-        sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(),
-                          solution[i].block(0));
-      }
+      sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), solution[i].block(0));
     }
 
     // apply mass operator to sum_alphai_ui and add to rhs vector

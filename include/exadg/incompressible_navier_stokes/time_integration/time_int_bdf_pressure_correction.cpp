@@ -513,21 +513,11 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_momentum(VectorType & rhs)
    */
   VectorType sum_alphai_ui(velocity[0]);
 
-  // calculate sum (alpha_i/dt * u_tilde_i) in case of explicit treatment of convective term
-  // and operator-integration-factor (OIF) splitting
-  if(this->param.convective_problem() &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+  // calculate sum (alpha_i/dt * u_i)
+  sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), velocity[0]);
+  for(unsigned int i = 1; i < velocity.size(); ++i)
   {
-    this->calculate_sum_alphai_ui_oif_substepping(sum_alphai_ui, this->cfl, this->cfl_oif);
-  }
-  // calculate sum (alpha_i/dt * u_i) for standard BDF discretization
-  else
-  {
-    sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), velocity[0]);
-    for(unsigned int i = 1; i < velocity.size(); ++i)
-    {
-      sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), velocity[i]);
-    }
+    sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), velocity[i]);
   }
 
   pde_operator->apply_mass_operator_add(rhs, sum_alphai_ui);

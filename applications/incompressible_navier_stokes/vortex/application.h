@@ -270,8 +270,6 @@ private:
     this->param.cfl                             = 0.2; // 0.4;
     this->param.cfl_exponent_fe_degree_velocity = 1.5;
     this->param.c_eff                           = 8.0;
-    this->param.time_integrator_oif             = TimeIntegratorOIF::ExplRK3Stage7Reg2;
-    this->param.cfl_oif                         = this->param.cfl / 1.0;
 
     // output of solver information
     this->param.solver_info_data.interval_time = this->param.end_time - this->param.start_time;

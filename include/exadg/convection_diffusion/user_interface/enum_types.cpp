@@ -161,9 +161,6 @@ enum_to_string(TreatmentOfConvectiveTerm const enum_type)
     case TreatmentOfConvectiveTerm::Explicit:
       string_type = "Explicit";
       break;
-    case TreatmentOfConvectiveTerm::ExplicitOIF:
-      string_type = "ExplicitOIF";
-      break;
     case TreatmentOfConvectiveTerm::Implicit:
       string_type = "Implicit";
       break;

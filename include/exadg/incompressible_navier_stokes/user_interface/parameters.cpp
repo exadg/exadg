@@ -59,7 +59,6 @@ Parameters::Parameters()
     solver_type(SolverType::Undefined),
     temporal_discretization(TemporalDiscretization::Undefined),
     treatment_of_convective_term(TreatmentOfConvectiveTerm::Undefined),
-    time_integrator_oif(TimeIntegratorOIF::Undefined),
     calculation_of_time_step_size(TimeStepCalculation::Undefined),
     adaptive_time_stepping(false),
     adaptive_time_stepping_limiting_factor(1.2),
@@ -67,7 +66,6 @@ Parameters::Parameters()
     adaptive_time_stepping_cfl_type(CFLConditionType::VelocityNorm),
     max_velocity(-1.),
     cfl(-1.),
-    cfl_oif(-1.),
     cfl_exponent_fe_degree_velocity(2.0),
     c_eff(-1.),
     time_step_size(-1.),
@@ -263,10 +261,6 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
       dealii::ExcMessage(
         "Both problem type and solver type have to be Unsteady when using ALE formulation."));
 
-    AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::ExplicitOIF,
-                dealii::ExcMessage(
-                  "ALE formulation is not implemented for OIF substepping technique."));
-
     AssertThrow(
       convective_problem() == true,
       dealii::ExcMessage(
@@ -326,18 +320,6 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
       AssertThrow(treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit,
                   dealii::ExcMessage(
                     "Convective term has to be formulated implicitly when using a steady solver."));
-    }
-  }
-
-  if(problem_type == ProblemType::Steady && solver_type == SolverType::Unsteady)
-  {
-    if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-    {
-      AssertThrow(
-        treatment_of_convective_term != TreatmentOfConvectiveTerm::ExplicitOIF,
-        dealii::ExcMessage(
-          "Operator-integration-factor splitting approach introduces a splitting error. "
-          "Hence, this approach cannot be used to solve the steady Navier-Stokes equations."));
     }
   }
 
@@ -479,20 +461,6 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
     }
   }
 
-  // OPERATOR-INTEGRATION-FACTOR SPLITTING
-  if(treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
-  {
-    AssertThrow(time_integrator_oif != TimeIntegratorOIF::Undefined,
-                dealii::ExcMessage("parameter must be defined"));
-
-    AssertThrow(cfl > 0., dealii::ExcMessage("parameter must be defined"));
-    AssertThrow(cfl_oif > 0., dealii::ExcMessage("parameter must be defined"));
-
-    AssertThrow(ale_formulation == false,
-                dealii::ExcMessage(
-                  "ALE formulation is not implemented for OIF substepping technique."));
-  }
-
   // NUMERICAL PARAMETERS
   if(implement_block_diagonal_preconditioner_matrix_free)
   {
@@ -539,8 +507,7 @@ bool
 Parameters::linear_problem_has_to_be_solved() const
 {
   return equation_type == EquationType::Stokes ||
-         treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
-         treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF;
+         treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit;
 }
 
 unsigned int
@@ -675,13 +642,6 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
   print_parameter(pcout,
                   "Treatment of convective term",
                   enum_to_string(treatment_of_convective_term));
-
-  if(treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
-  {
-    print_parameter(pcout,
-                    "Time integrator for OIF splitting",
-                    enum_to_string(time_integrator_oif));
-  }
 
   print_parameter(pcout,
                   "Calculation of time step size",

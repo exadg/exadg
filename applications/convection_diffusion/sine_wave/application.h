@@ -78,18 +78,15 @@ private:
     this->param.diffusivity = 0.0;
 
     // TEMPORAL DISCRETIZATION
-    this->param.temporal_discretization = TemporalDiscretization::ExplRK;
-    this->param.time_integrator_rk      = TimeIntegratorRK::ExplRK3Stage7Reg2;
-    this->param.treatment_of_convective_term =
-      TreatmentOfConvectiveTerm::Explicit; // ExplicitOIF; //Explicit;
-    this->param.time_integrator_oif           = TimeIntegratorRK::ExplRK3Stage7Reg2;
+    this->param.temporal_discretization       = TemporalDiscretization::ExplRK;
+    this->param.time_integrator_rk            = TimeIntegratorRK::ExplRK3Stage7Reg2;
+    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit; // Explicit;
     this->param.adaptive_time_stepping        = true;
     this->param.order_time_integrator         = 2;
     this->param.start_with_low_order          = false;
     this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
     this->param.time_step_size                = 1.0e-1;
     this->param.cfl                           = 0.2;
-    this->param.cfl_oif                       = this->param.cfl / 1.0;
     this->param.diffusion_number              = 0.01;
 
     // SPATIAL DISCRETIZATION

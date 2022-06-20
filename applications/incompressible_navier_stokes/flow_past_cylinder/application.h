@@ -171,14 +171,12 @@ private:
     this->param.solver_type                     = SolverType::Unsteady;
     this->param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
     this->param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
-    this->param.time_integrator_oif             = TimeIntegratorOIF::ExplRK2Stage2;
     this->param.order_time_integrator           = 3;
     this->param.start_with_low_order            = true;
     this->param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     this->param.adaptive_time_stepping          = true;
     this->param.max_velocity                    = Um;
     this->param.cfl                             = cfl_number;
-    this->param.cfl_oif                         = this->param.cfl;
     this->param.cfl_exponent_fe_degree_velocity = 1.5;
     this->param.time_step_size                  = 1.0e-3;
     this->param.time_step_size_max              = 1.0e-2;

@@ -707,29 +707,6 @@ Operator<dim, Number>::evaluate_convective_term(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::evaluate_oif(VectorType &       dst,
-                                    VectorType const & src,
-                                    double const       time,
-                                    VectorType const * velocity) const
-{
-  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
-  {
-    AssertThrow(velocity != nullptr, dealii::ExcMessage("velocity pointer is not initialized."));
-
-    convective_operator.set_velocity_ptr(*velocity);
-  }
-
-  convective_operator.set_time(time);
-  convective_operator.evaluate(dst, src);
-
-  // shift convective term to the rhs of the equation
-  dst *= -1.0;
-
-  inverse_mass_operator.apply(dst, dst);
-}
-
-template<int dim, typename Number>
-void
 Operator<dim, Number>::rhs(VectorType & dst, double const time, VectorType const * velocity) const
 {
   // no need to set scaling_factor_mass because the mass operator does not contribute to rhs

@@ -55,13 +55,6 @@ public:
                              double const       evaluation_time,
                              VectorType const * velocity = nullptr) const = 0;
 
-  // explicit time integration: OIF substepping
-  virtual void
-  evaluate_oif(VectorType &       dst,
-               VectorType const & src,
-               double const       evaluation_time,
-               VectorType const * velocity = nullptr) const = 0;
-
   // implicit time integration: calculate right-hand side of linear system of equations
   virtual void
   rhs(VectorType &       dst,
@@ -158,63 +151,6 @@ public:
     else
     {
       pde_operator->evaluate_explicit_time_int(dst, src, evaluation_time);
-    }
-  }
-
-  void
-  initialize_dof_vector(VectorType & src) const
-  {
-    pde_operator->initialize_dof_vector(src);
-  }
-
-  void
-  initialize_dof_vector_velocity(VectorType & src) const
-  {
-    pde_operator->initialize_dof_vector_velocity(src);
-  }
-
-private:
-  std::shared_ptr<ConvDiff::Interface::Operator<Number>> pde_operator;
-
-  bool                            numerical_velocity_field;
-  std::vector<VectorType const *> velocities;
-  std::vector<double>             times;
-  VectorType mutable velocity_interpolated;
-};
-
-template<typename Number>
-class OperatorOIF
-{
-public:
-  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
-
-  OperatorOIF(std::shared_ptr<ConvDiff::Interface::Operator<Number>> operator_in,
-              bool const                                             numerical_velocity_field_in)
-    : pde_operator(operator_in), numerical_velocity_field(numerical_velocity_field_in)
-  {
-    if(numerical_velocity_field)
-      initialize_dof_vector_velocity(velocity_interpolated);
-  }
-
-  void
-  set_velocities_and_times(std::vector<VectorType const *> const & velocities_in,
-                           std::vector<double> const &             times_in)
-  {
-    velocities = velocities_in;
-    times      = times_in;
-  }
-
-  void
-  evaluate(VectorType & dst, VectorType const & src, double const evaluation_time) const
-  {
-    if(numerical_velocity_field)
-    {
-      interpolate(velocity_interpolated, evaluation_time, velocities, times);
-      pde_operator->evaluate_oif(dst, src, evaluation_time, &velocity_interpolated);
-    }
-    else
-    {
-      pde_operator->evaluate_oif(dst, src, evaluation_time);
     }
   }
 

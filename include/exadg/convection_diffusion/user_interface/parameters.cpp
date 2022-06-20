@@ -57,8 +57,6 @@ Parameters::Parameters()
     n_refine_time(0),
     cfl(-1.),
     max_velocity(std::numeric_limits<double>::min()),
-    time_integrator_oif(TimeIntegratorRK::Undefined),
-    cfl_oif(-1.),
     diffusion_number(-1.),
     c_eff(-1.),
     exponent_fe_degree_convection(1.5),
@@ -109,14 +107,11 @@ Parameters::check() const
     if(equation_type == EquationType::Convection ||
        equation_type == EquationType::ConvectionDiffusion)
     {
-      if(temporal_discretization == TemporalDiscretization::ExplRK ||
-         (temporal_discretization == TemporalDiscretization::BDF &&
-          treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF))
+      if(temporal_discretization == TemporalDiscretization::ExplRK)
       {
-        AssertThrow(
-          store_analytical_velocity_in_dof_vector == false,
-          dealii::ExcMessage(
-            "This option is not implemented for explicit Runge-Kutta time stepping or BDF time stepping with OIF substepping."));
+        AssertThrow(store_analytical_velocity_in_dof_vector == false,
+                    dealii::ExcMessage(
+                      "This option is not implemented for explicit Runge-Kutta time stepping."));
       }
     }
   }
@@ -201,6 +196,8 @@ Parameters::check() const
           equation_type == EquationType::ConvectionDiffusion,
         dealii::ExcMessage(
           "Type of time step calculation CFL does not make sense for the specified equation type."));
+
+      AssertThrow(cfl > 0., dealii::ExcMessage("parameter must be defined"));
     }
 
     if(calculation_of_time_step_size == TimeStepCalculation::Diffusion)
@@ -210,6 +207,8 @@ Parameters::check() const
           equation_type == EquationType::ConvectionDiffusion,
         dealii::ExcMessage(
           "Type of time step calculation Diffusion does not make sense for the specified equation type."));
+
+      AssertThrow(diffusion_number > 0., dealii::ExcMessage("parameter must be defined"));
     }
 
     if(calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion)
@@ -218,6 +217,18 @@ Parameters::check() const
         equation_type == EquationType::ConvectionDiffusion,
         dealii::ExcMessage(
           "Type of time step calculation CFLAndDiffusion does not make sense for the specified equation type."));
+
+      AssertThrow(cfl > 0., dealii::ExcMessage("parameter must be defined"));
+      AssertThrow(diffusion_number > 0., dealii::ExcMessage("parameter must be defined"));
+    }
+
+    if(calculation_of_time_step_size == TimeStepCalculation::Diffusion ||
+       calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion)
+    {
+      AssertThrow(
+        temporal_discretization == TemporalDiscretization::ExplRK,
+        dealii::ExcMessage(
+          "Diffusion-type time step calculation can only be used in case of explicit RK time integration."));
     }
 
     if(adaptive_time_stepping == true)
@@ -232,34 +243,12 @@ Parameters::check() const
     {
       AssertThrow(order_time_integrator >= 1 && order_time_integrator <= 4,
                   dealii::ExcMessage("Specified order of time integrator ExplRK not implemented!"));
-
-      // for the explicit RK method both the convective and the diffusive term are
-      // treated explicitly -> one has to specify both the CFL-number and the Diffusion-number
-      if(calculation_of_time_step_size == TimeStepCalculation::CFL ||
-         calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion)
-      {
-        AssertThrow(cfl > 0., dealii::ExcMessage("parameter must be defined"));
-      }
-      if(calculation_of_time_step_size == TimeStepCalculation::Diffusion ||
-         calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion)
-      {
-        AssertThrow(diffusion_number > 0., dealii::ExcMessage("parameter must be defined"));
-      }
     }
 
     if(temporal_discretization == TemporalDiscretization::BDF)
     {
       AssertThrow(order_time_integrator >= 1 && order_time_integrator <= 4,
                   dealii::ExcMessage("Specified order of time integrator BDF not implemented!"));
-
-      if(treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
-      {
-        AssertThrow(time_integrator_oif != TimeIntegratorRK::Undefined,
-                    dealii::ExcMessage("parameter must be defined"));
-
-        AssertThrow(cfl > 0., dealii::ExcMessage("parameter must be defined"));
-        AssertThrow(cfl_oif > 0., dealii::ExcMessage("parameter must be defined"));
-      }
     }
   }
 
@@ -289,8 +278,7 @@ Parameters::check() const
       AssertThrow(mg_operator_type != MultigridOperatorType::Undefined,
                   dealii::ExcMessage("parameter must be defined"));
 
-      if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
-         treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+      if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
       {
         AssertThrow(mg_operator_type != MultigridOperatorType::ReactionConvection &&
                       mg_operator_type != MultigridOperatorType::ReactionConvectionDiffusion,
@@ -475,13 +463,6 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
     print_parameter(pcout,
                     "Treatment of convective term",
                     enum_to_string(treatment_of_convective_term));
-
-    if(treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
-    {
-      print_parameter(pcout,
-                      "Time integrator for OIF splitting",
-                      enum_to_string(time_integrator_oif));
-    }
   }
 
   print_parameter(pcout,
