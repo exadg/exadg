@@ -192,20 +192,6 @@ print_wall_time(dealii::ConditionalOStream const & pcout, double const wall_time
 }
 
 inline void
-print_wall_time_with_mass_iter(dealii::ConditionalOStream const & pcout,
-                               unsigned int const                 iter,
-                               double const                       wall_time)
-
-{
-  // clang-format off
-  pcout << std::endl
-        << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(2) << std::right << wall_time << std::endl
-        << "  Iterations mass:   " << std::setw(7) << std::right << iter << std::endl
-        << std::flush;
-  // clang-format on
-}
-
-inline void
 print_list_of_iterations(dealii::ConditionalOStream const & pcout,
                          std::vector<std::string> const &   names,
                          std::vector<double> const &        iterations_avg)

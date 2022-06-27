@@ -228,10 +228,9 @@ Parameters::Parameters()
     exact_inversion_of_laplace_operator(false),
     solver_data_pressure_block(SolverData(1e4, 1.e-12, 1.e-6, 100)),
 
-    // Solving mass system for Hdiv
-    solver_mass_hdiv(SolverMassHdiv::CG),
-    solver_data_mass_hdiv(SolverData(1e3, 1.e-12, 1.e-6, 100)),
-    preconditioner_mass_hdiv(PreconditionerMassHdiv::PointJacobi)
+    // Solving mass system (projection) if Matrix-free inverse mass operator is not avaliable.
+    solver_data_mass(SolverData(1e3, 1.e-12, 1.e-6, 100)),
+    preconditioner_mass(PreconditionerMass::PointJacobi)
 {
 }
 
@@ -402,14 +401,13 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
     AssertThrow(
       use_divergence_penalty == false || use_continuity_penalty == false,
       dealii::ExcMessage(
-        "Penalty terms can not be used in case of Hdiv function spaces. Think about using L2 instead, or deactivate the penatly terms."));
+        "The use of penalty terms does not make sense in the case of HDIV since they are evaluated to zero. They should therefore be deactivated."));
     if(temporal_discretization != TemporalDiscretization::BDFCoupledSolution)
       AssertThrow(
-        preconditioner_velocity_block != MomentumPreconditioner::InverseMassMatrix &&
-          preconditioner_velocity_block != MomentumPreconditioner::BlockJacobi &&
-          preconditioner_velocity_block != MomentumPreconditioner::Multigrid,
+        preconditioner_velocity_block == MomentumPreconditioner::None ||
+          preconditioner_velocity_block == MomentumPreconditioner::PointJacobi,
         dealii::ExcMessage(
-          "Multigrid, BlockJacobi, and InverseMassMatrix as preconditioner are not availiable for HDIV. Use either PointJacobi or None instead, or change to L2 discretization. "));
+          "Use either PointJacobi or None as preconditioner for the momentum block in the case of HDIV - Raviart-Thomas."));
   }
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -451,10 +449,8 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
   // PRESSURE-CORRECTION SCHEME
   if(temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    AssertThrow(
-      spatial_discretization == SpatialDiscretization::L2,
-      dealii::ExcMessage(
-        "Pressure correction only works for L2. If you want to use Hdiv conforming elements you have to use the coupled solution"));
+    AssertThrow(spatial_discretization != SpatialDiscretization::HDIV,
+                dealii::ExcMessage("Not implemented."));
 
     AssertThrow(order_pressure_extrapolation <= order_time_integrator,
                 dealii::ExcMessage("Invalid parameter order_pressure_extrapolation!"));
@@ -510,9 +506,8 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
       dealii::ExcMessage(
         "Cell based face loops have to be used for matrix-free implementation of block diagonal preconditioner."));
 
-    AssertThrow(spatial_discretization == SpatialDiscretization::L2,
-                dealii::ExcMessage(
-                  "Block diagonal preconditioner does not work for Hdiv conforming elements"));
+    AssertThrow(spatial_discretization != SpatialDiscretization::HDIV,
+                dealii::ExcMessage("Not implemented."));
   }
 
 
@@ -744,7 +739,20 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
 
   print_parameter(pcout, "Element type", enum_to_string(spatial_discretization));
 
-  print_parameter(pcout, "Polynomial degree velocity", degree_u);
+  if(spatial_discretization == SpatialDiscretization::L2)
+  {
+    print_parameter(pcout, "Polynomial degree velocity: ", degree_u);
+  }
+  else if(spatial_discretization == SpatialDiscretization::HDIV)
+  {
+    print_parameter(pcout, "Polynomial degree velocity in normal direction: ", degree_u);
+    print_parameter(pcout, "Polynomial degree velocity in tangential direction: ", degree_u);
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
+  }
+
   print_parameter(pcout, "Polynomial degree pressure", enum_to_string(degree_p));
 
   if(this->convective_problem())

@@ -629,38 +629,23 @@ enum_to_string(SchurComplementPreconditioner const enum_type);
 
 /**************************************************************************************/
 /*                                                                                    */
-/*                            SOLVE MASS SYSTEM HDIV                                  */
+/*                            SOLVE MASS SYSTEM (projection)                          */
 /*                                                                                    */
 /**************************************************************************************/
 
 /*
- *  Solver type for solution of mass system for hdiv:
- *
- *  We cannot apply the inverse mass operator while using HDIV. Instead we have to solve
- *  the system
- *
- */
-enum class SolverMassHdiv
-{
-  CG
-};
-
-std::string
-enum_to_string(SolverMassHdiv const enum_type);
-
-/*
- *  Preconditioner type for solution of mass system for hdiv:
+ *  Preconditioner type for solution of mass system, i.e a projection:
  *
  *  InverseMassMatrix and BlockJacobi are not availiable..
  */
-enum class PreconditionerMassHdiv
+enum class PreconditionerMass
 {
   None,
   PointJacobi
 };
 
 std::string
-enum_to_string(PreconditionerMassHdiv const enum_type);
+enum_to_string(PreconditionerMass const enum_type);
 
 
 /**************************************************************************************/

@@ -283,7 +283,9 @@ public:
   // type of spatial discretization approach
   SpatialDiscretization spatial_discretization;
 
-  // Polynomial degree of velocity shape functions
+  // Polynomial degree of velocity shape functions. In case of H-div Raviart-Thomas 'degree_u' is
+  // the polynomial degree in normal direction and (degree_u - 1) is the degree in tangential
+  // direction.
   unsigned int degree_u;
 
   // Polynomial degree of pressure shape functions
@@ -655,20 +657,16 @@ public:
 
   /**************************************************************************************/
   /*                                                                                    */
-  /*                            SOLVE MASS SYSTEM HDIV                                  */
+  /*                            SOLVE MASS SYSTEM (projection)                          */
   /*                                                                                    */
   /**************************************************************************************/
-  // We cannot apply the inverse mass operator while using HDIV. Instead we have to solve
-  // the system
+  // Used when matrix-free inverse mass operator is not avaliable, e.g in the case of HDIV.
+
+  // solver data for solving mass system
+  SolverData solver_data_mass;
 
   // description: see enum declaration
-  SolverMassHdiv solver_mass_hdiv;
-
-  // solver data for solving mass system with hdiv
-  SolverData solver_data_mass_hdiv;
-
-  // description: see enum declaration
-  PreconditionerMassHdiv preconditioner_mass_hdiv;
+  PreconditionerMass preconditioner_mass;
 };
 
 } // namespace IncNS

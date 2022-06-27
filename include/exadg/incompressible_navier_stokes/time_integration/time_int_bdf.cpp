@@ -466,7 +466,7 @@ TimeIntBDF<dim, Number>::postprocessing() const
   // We need to distribute the dofs for HDIV before computing the error since
   // dealii::VectorTools::integrate_difference() does not take the periodic boundary
   // constraints into account like MatrixFree does, hence reading the wrong value.
-  // distribute() updates the otherwise unused values.
+  // distribute() updates the constrained values.
   if(operator_base->get_spatial_discretization() == SpatialDiscretization::HDIV)
     operator_base->get_constraint_u().distribute(const_cast<VectorType &>(get_velocity(0)));
 

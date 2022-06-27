@@ -381,7 +381,10 @@ TimeIntBDFDualSplitting<dim, Number>::convective_step()
   {
     this->pcout << std::endl << "Explicit convective step:";
     if(this->param.spatial_discretization == SpatialDiscretization::HDIV)
-      print_wall_time_with_mass_iter(this->pcout, n_iter_mass, timer.wall_time());
+    {
+      this->pcout << std::endl << "(mass system solved)";
+      print_solver_info_linear(this->pcout, n_iter_mass, timer.wall_time());
+    }
     else
       print_wall_time(this->pcout, timer.wall_time());
   }
@@ -642,7 +645,10 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
     {
       this->pcout << std::endl << "Explicit projection step:";
       if(this->param.spatial_discretization == SpatialDiscretization::HDIV)
-        print_wall_time_with_mass_iter(this->pcout, n_iter_mass, timer.wall_time());
+      {
+        this->pcout << std::endl << "(mass system solved)";
+        print_solver_info_linear(this->pcout, n_iter_mass, timer.wall_time());
+      }
       else
         print_wall_time(this->pcout, timer.wall_time());
     }

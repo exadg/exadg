@@ -310,10 +310,10 @@ enum_to_string(SpatialDiscretization const enum_type)
   switch(enum_type)
   {
     case SpatialDiscretization::L2:
-      string_type = "L2";
+      string_type = "L2 - Discontinuous Galerkin";
       break;
     case SpatialDiscretization::HDIV:
-      string_type = "HDIV (Raviart-Thomas)";
+      string_type = "HDIV - Raviart-Thomas";
       break;
     default:
       AssertThrow(false, dealii::ExcMessage("Not implemented."));
@@ -849,34 +849,16 @@ enum_to_string(SchurComplementPreconditioner const enum_type)
 }
 
 std::string
-enum_to_string(SolverMassHdiv const enum_type)
+enum_to_string(PreconditionerMass const enum_type)
 {
   std::string string_type;
 
   switch(enum_type)
   {
-    case SolverMassHdiv::CG:
-      string_type = "CG";
-      break;
-    default:
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
-      break;
-  }
-
-  return string_type;
-}
-
-std::string
-enum_to_string(PreconditionerMassHdiv const enum_type)
-{
-  std::string string_type;
-
-  switch(enum_type)
-  {
-    case PreconditionerMassHdiv::None:
+    case PreconditionerMass::None:
       string_type = "None";
       break;
-    case PreconditionerMassHdiv::PointJacobi:
+    case PreconditionerMass::PointJacobi:
       string_type = "PointJacobi";
       break;
     default:

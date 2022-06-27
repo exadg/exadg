@@ -551,10 +551,11 @@ protected:
   InverseMassOperator<dim, 1, Number>   inverse_mass_velocity_scalar;
 
   /*
-   * solver for mass system HDIV (cannot use InverseMassOperator on HDIV)
+   * solver for mass system (projection). Used when matrix-free inverse mass operator is not
+   * avaliable.
    */
-  std::shared_ptr<PreconditionerBase<Number>>     mass_preconditioner_hdiv;
-  std::shared_ptr<Krylov::SolverBase<VectorType>> mass_solver_hdiv;
+  std::shared_ptr<PreconditionerBase<Number>>     mass_preconditioner;
+  std::shared_ptr<Krylov::SolverBase<VectorType>> mass_solver;
 
   /*
    * Projection operator.
