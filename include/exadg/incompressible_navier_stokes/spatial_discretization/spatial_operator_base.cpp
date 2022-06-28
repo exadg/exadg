@@ -125,8 +125,7 @@ SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
     matrix_free_data.append_mapping_flags(
       Operators::ViscousKernel<dim, Number>::get_mapping_flags(true, true));
 
-  // RHSOperator is used to initialize the velocity field for HDIV!
-  if(param.right_hand_side || param.spatial_discretization == SpatialDiscretization::HDIV)
+  if(param.right_hand_side)
     matrix_free_data.append_mapping_flags(Operators::RHSKernel<dim, Number>::get_mapping_flags());
 
   if(param.use_divergence_penalty)
@@ -266,8 +265,10 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
   dof_handler_p.distribute_dofs(fe_p);
   dof_handler_u_scalar.distribute_dofs(fe_u_scalar);
 
+  // Strong imposition of boundary conditions in the case of HDIV
   if(param.spatial_discretization == SpatialDiscretization::HDIV)
   {
+    // Periodic boundaries
     // We need to make sure the normal dofs are shared between cells on the periodic boundaries,
     // since these are continuous for HDIV.
     dealii::IndexSet relevant_dofs;
@@ -283,20 +284,23 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
         face.face_idx[0] / 2,
         constraint_u);
 
-
-    // Set boundaries constraints
-    if(boundary_descriptor->velocity->symmetry_bc.empty() == false)
+    // Symmetry boundaries
+    // Constraints the normal components of the velocity, where "0" as second argument indicates the
+    // first component in the dof_handler.
+    if(!(boundary_descriptor->velocity->symmetry_bc.empty()))
     {
       for(auto bc : boundary_descriptor->velocity->symmetry_bc)
         dealii::VectorTools::project_boundary_values_div_conforming(
           dof_handler_u, 0, *(bc.second), bc.first, constraint_u, *get_mapping());
     }
-    if(boundary_descriptor->velocity->dirichlet_bc.empty() == false)
+
+    // Dirichlet boundaries
+    if(!(boundary_descriptor->velocity->dirichlet_bc.empty()))
     {
       AssertThrow(
         false,
         dealii::ExcMessage(
-          "Dirichlet BC are not properly implemented for HDIV. The BC needs to be strongly applied in order to obtain an exactly divergence-free solution."));
+          "Dirichlet BCs are not properly implemented for HDIV. The BCs need to be strongly applied in order to obtain an exactly divergence-free solution."));
       // We would like to do something similar to above. Probably with
       // dealii::VectorTools::interpolate_boundary_values
       // dealii::VectorTools::project_boundary_values
@@ -305,11 +309,11 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
   }
 
   unsigned int ndofs_per_cell_velocity;
-  if(get_spatial_discretization() == SpatialDiscretization::L2)
+  if(param.spatial_discretization == SpatialDiscretization::L2)
   {
     ndofs_per_cell_velocity = dealii::Utilities::pow(param.degree_u + 1, dim) * dim;
   }
-  else if(get_spatial_discretization() == SpatialDiscretization::HDIV)
+  else if(param.spatial_discretization == SpatialDiscretization::HDIV)
   {
     ndofs_per_cell_velocity =
       dealii::Utilities::pow(param.degree_u, dim - 1) * (param.degree_u + 1) * dim;
@@ -324,14 +328,14 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
 
 
   pcout << "Velocity:" << std::endl;
-  if(get_spatial_discretization() == SpatialDiscretization::L2)
+  if(param.spatial_discretization == SpatialDiscretization::L2)
   {
     print_parameter(pcout, "degree of 1D polynomials", param.degree_u);
   }
-  else if(get_spatial_discretization() == SpatialDiscretization::HDIV)
+  else if(param.spatial_discretization == SpatialDiscretization::HDIV)
   {
-    print_parameter(pcout, "degree of 1D polynomials (normal direction)", param.degree_u);
-    print_parameter(pcout, "degree of 1D polynomials (tangential direction)", (param.degree_u - 1));
+    print_parameter(pcout, "degree of 1D polynomials (normal)", param.degree_u);
+    print_parameter(pcout, "degree of 1D polynomials (tangential)", (param.degree_u - 1));
   }
   else
   {
@@ -339,7 +343,7 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
   }
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell_velocity);
   print_parameter(pcout, "number of dofs (total)", dof_handler_u.n_dofs());
-  if(get_spatial_discretization() == SpatialDiscretization::HDIV)
+  if(param.spatial_discretization == SpatialDiscretization::HDIV)
   {
     pcout << "NOTE. Continuity constraints in case of periodic boundary conditions"
           << "are not taken into account regarding the number of total DoFs." << std::endl;
@@ -402,7 +406,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   mass_operator_data.quad_index = get_quad_index_velocity_linear();
   mass_operator.initialize(*matrix_free, constraint_u, mass_operator_data);
 
-  // Mass solver for HDIV (instead of inverse mass operator as it is unavailiable for hdiv)
+  // Mass solver (used only if inverse mass operator is not avaliable)
   if(param.spatial_discretization == SpatialDiscretization::HDIV)
   {
     Krylov::SolverDataCG solver_data;
@@ -410,15 +414,19 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
     solver_data.solver_tolerance_abs = this->param.solver_data_mass.abs_tol;
     solver_data.solver_tolerance_rel = this->param.solver_data_mass.rel_tol;
 
-    if(param.preconditioner_mass == PreconditionerMass::PointJacobi)
+    if(param.preconditioner_mass == PreconditionerMass::None)
+    {
+      solver_data.use_preconditioner = false;
+    }
+    else if(param.preconditioner_mass == PreconditionerMass::PointJacobi)
     {
       mass_preconditioner =
         std::make_shared<JacobiPreconditioner<MassOperator<dim, dim, Number>>>(this->mass_operator);
       solver_data.use_preconditioner = true;
     }
-    else if(param.preconditioner_mass == PreconditionerMass::None)
+    else
     {
-      solver_data.use_preconditioner = false;
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     mass_solver = std::make_shared<

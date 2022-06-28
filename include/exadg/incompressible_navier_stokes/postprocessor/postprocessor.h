@@ -109,6 +109,9 @@ private:
 
   // evaluate quantities along lines through the domain
   LinePlotCalculator<dim, Number> line_plot_calculator;
+
+  // access to SpatialOperatorBase
+  dealii::SmartPointer<Operator const> base_operator;
 };
 
 

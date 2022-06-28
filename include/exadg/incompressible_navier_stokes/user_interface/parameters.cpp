@@ -399,15 +399,17 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
   if(spatial_discretization == SpatialDiscretization::HDIV)
   {
     AssertThrow(
-      use_divergence_penalty == false || use_continuity_penalty == false,
+      use_continuity_penalty == false,
       dealii::ExcMessage(
-        "The use of penalty terms does not make sense in the case of HDIV since they are evaluated to zero. They should therefore be deactivated."));
-    if(temporal_discretization != TemporalDiscretization::BDFCoupledSolution)
+        "The use of continuity penalty term does not make sense in the case of HDIV since it is evaluated to zero. It should therefore be deactivated."));
+    if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+    {
       AssertThrow(
         preconditioner_velocity_block == MomentumPreconditioner::None ||
           preconditioner_velocity_block == MomentumPreconditioner::PointJacobi,
         dealii::ExcMessage(
           "Use either PointJacobi or None as preconditioner for the momentum block in the case of HDIV - Raviart-Thomas."));
+    }
   }
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -420,6 +422,12 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
         << "Using the dual splitting scheme with HDIV does not produce an exactly divergence-free"
         << std::endl
         << "solution. Use the coupled scheme instead if this is desired." << std::endl;
+
+      AssertThrow(
+        preconditioner_viscous == PreconditionerViscous::None ||
+          preconditioner_viscous == PreconditionerViscous::PointJacobi,
+        dealii::ExcMessage(
+          "Use either PointJacobi or None as preconditioner for the viscous step in the case of HDIV - Raviart-Thomas."));
     }
 
     AssertThrow(order_extrapolation_pressure_nbc <= order_time_integrator,
@@ -506,7 +514,7 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
       dealii::ExcMessage(
         "Cell based face loops have to be used for matrix-free implementation of block diagonal preconditioner."));
 
-    AssertThrow(spatial_discretization != SpatialDiscretization::HDIV,
+    AssertThrow(spatial_discretization == SpatialDiscretization::L2,
                 dealii::ExcMessage("Not implemented."));
   }
 
@@ -745,8 +753,8 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
   }
   else if(spatial_discretization == SpatialDiscretization::HDIV)
   {
-    print_parameter(pcout, "Polynomial degree velocity in normal direction: ", degree_u);
-    print_parameter(pcout, "Polynomial degree velocity in tangential direction: ", degree_u);
+    print_parameter(pcout, "Polynomial degree velocity (normal): ", degree_u);
+    print_parameter(pcout, "Polynomial degree velocity (tangential): ", degree_u);
   }
   else
   {

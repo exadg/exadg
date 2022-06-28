@@ -379,14 +379,20 @@ TimeIntBDFDualSplitting<dim, Number>::convective_step()
 
   if(this->print_solver_info() and not(this->is_test))
   {
-    this->pcout << std::endl << "Explicit convective step:";
     if(this->param.spatial_discretization == SpatialDiscretization::HDIV)
     {
-      this->pcout << std::endl << "(mass system solved)";
+      this->pcout << std::endl << "Convective step:";
       print_solver_info_linear(this->pcout, n_iter_mass, timer.wall_time());
     }
-    else
+    else if(this->param.spatial_discretization == SpatialDiscretization::L2)
+    {
+      this->pcout << std::endl << "Explicit convective step:";
       print_wall_time(this->pcout, timer.wall_time());
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+    }
   }
 
   this->timer_tree->insert({"Timeloop", "Convective step"}, timer.wall_time());
@@ -634,7 +640,6 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
 
     if(this->print_solver_info() and not(this->is_test))
     {
-      // No need to print the number of mass iterations here since we should be using L2
       this->pcout << std::endl << "Solve projection step:";
       print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
     }
@@ -643,14 +648,20 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
   {
     if(this->print_solver_info() and not(this->is_test))
     {
-      this->pcout << std::endl << "Explicit projection step:";
       if(this->param.spatial_discretization == SpatialDiscretization::HDIV)
       {
-        this->pcout << std::endl << "(mass system solved)";
+        this->pcout << std::endl << "Projection step:";
         print_solver_info_linear(this->pcout, n_iter_mass, timer.wall_time());
       }
-      else
+      else if(this->param.spatial_discretization == SpatialDiscretization::L2)
+      {
+        this->pcout << std::endl << "Explicit projection step:";
         print_wall_time(this->pcout, timer.wall_time());
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      }
     }
   }
 
