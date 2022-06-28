@@ -42,6 +42,7 @@ enum class MultigridType
   hMG,
   chMG,
   hcMG,
+  cMG,
   pMG,
   cpMG,
   pcMG,

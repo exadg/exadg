@@ -157,7 +157,8 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(dealii::Triangulatio
   {
     p_levels.push_back({degree, is_dg});
   }
-  else if(mg_type == MultigridType::chMG || mg_type == MultigridType::hcMG)
+  else if(mg_type == MultigridType::cMG || mg_type == MultigridType::chMG ||
+          mg_type == MultigridType::hcMG)
   {
     p_levels.push_back({degree, false});
     p_levels.push_back({degree, is_dg});
@@ -214,6 +215,11 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(dealii::Triangulatio
   {
     for(unsigned int h = 0; h < h_levels.size(); h++)
       level_info.push_back({h_levels[h], p_levels.front()});
+  }
+  else if(mg_type == MultigridType::cMG)
+  {
+    level_info.push_back({h_levels.back(), p_levels.front()});
+    level_info.push_back({h_levels.back(), p_levels.back()});
   }
   else if(mg_type == MultigridType::chMG)
   {
