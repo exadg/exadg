@@ -63,6 +63,7 @@ Spatial discretization:
   Global refinements:                        0
   Subdivisions hypercube:                    1
   Mapping degree:                            2
+  Element type:                              L2 - Discontinuous Galerkin
   Polynomial degree velocity:                2
   Polynomial degree pressure:                Mixed-order
   Convective term - Upwind factor:           1.0000e+00
@@ -145,9 +146,6 @@ Generating grid for 2-dimensional problem:
   Mapping degree:                            2
 
 Construct incompressible Navier-Stokes operator ...
-
-Discontinuous Galerkin finite element discretization:
-
 Velocity:
   degree of 1D polynomials:                  2
   number of dofs per cell:                   18
@@ -197,7 +195,7 @@ Calculate error for velocity at time t = 1.0037e+01:
   Absolute error (L2-norm): 1.69035e-01
 
 Calculate error for pressure at time t = 1.0037e+01:
-  Absolute error (L2-norm): 1.49400e-09
+  Absolute error (L2-norm): 1.19698e-09
 
 ________________________________________________________________________________
 
@@ -208,7 +206,7 @@ Calculate error for velocity at time t = 2.0043e+01:
   Absolute error (L2-norm): 1.39526e-02
 
 Calculate error for pressure at time t = 2.0043e+01:
-  Absolute error (L2-norm): 8.57129e-11
+  Absolute error (L2-norm): 1.27090e-10
 
 ________________________________________________________________________________
 
@@ -219,7 +217,7 @@ Calculate error for velocity at time t = 3.0067e+01:
   Absolute error (L2-norm): 1.14622e-03
 
 Calculate error for pressure at time t = 3.0067e+01:
-  Absolute error (L2-norm): 7.29264e-12
+  Absolute error (L2-norm): 4.41746e-12
 
 ________________________________________________________________________________
 
@@ -230,7 +228,7 @@ Calculate error for velocity at time t = 4.0068e+01:
   Absolute error (L2-norm): 9.47099e-05
 
 Calculate error for pressure at time t = 4.0068e+01:
-  Absolute error (L2-norm): 4.56487e-13
+  Absolute error (L2-norm): 6.59638e-13
 
 ________________________________________________________________________________
 
@@ -241,7 +239,7 @@ Calculate error for velocity at time t = 5.0068e+01:
   Absolute error (L2-norm): 7.82785e-06
 
 Calculate error for pressure at time t = 5.0068e+01:
-  Absolute error (L2-norm): 3.27305e-14
+  Absolute error (L2-norm): 3.73233e-14
 
 ________________________________________________________________________________
 
@@ -252,7 +250,7 @@ Calculate error for velocity at time t = 6.0068e+01:
   Absolute error (L2-norm): 6.46979e-07
 
 Calculate error for pressure at time t = 6.0068e+01:
-  Absolute error (L2-norm): 5.47484e-15
+  Absolute error (L2-norm): 2.37471e-15
 
 ________________________________________________________________________________
 
@@ -263,7 +261,7 @@ Calculate error for velocity at time t = 7.0068e+01:
   Absolute error (L2-norm): 5.34733e-08
 
 Calculate error for pressure at time t = 7.0068e+01:
-  Absolute error (L2-norm): 7.08225e-15
+  Absolute error (L2-norm): 2.75605e-15
 
 ________________________________________________________________________________
 
@@ -271,10 +269,10 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for velocity at time t = 8.0068e+01:
-  Absolute error (L2-norm): 4.41961e-09
+  Absolute error (L2-norm): 4.41960e-09
 
 Calculate error for pressure at time t = 8.0068e+01:
-  Absolute error (L2-norm): 9.13526e-15
+  Absolute error (L2-norm): 5.03382e-15
 
 ________________________________________________________________________________
 
@@ -285,7 +283,7 @@ Calculate error for velocity at time t = 9.0068e+01:
   Absolute error (L2-norm): 3.65277e-10
 
 Calculate error for pressure at time t = 9.0068e+01:
-  Absolute error (L2-norm): 2.57512e-15
+  Absolute error (L2-norm): 6.68724e-15
 
 ________________________________________________________________________________
 
@@ -293,7 +291,7 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for velocity at time t = 1.0007e+02:
-  Absolute error (L2-norm): 3.01836e-11
+  Absolute error (L2-norm): 3.01796e-11
 
 Calculate error for pressure at time t = 1.0007e+02:
-  Absolute error (L2-norm): 7.85129e-15
+  Absolute error (L2-norm): 7.77928e-15

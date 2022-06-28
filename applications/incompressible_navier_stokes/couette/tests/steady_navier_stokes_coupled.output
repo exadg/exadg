@@ -41,6 +41,7 @@ Spatial discretization:
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            2
+  Element type:                              L2 - Discontinuous Galerkin
   Polynomial degree velocity:                2
   Polynomial degree pressure:                Mixed-order
   Convective term - Upwind factor:           1.0000e+00
@@ -131,9 +132,6 @@ Generating grid for 2-dimensional problem:
   Mapping degree:                            2
 
 Construct incompressible Navier-Stokes operator ...
-
-Discontinuous Galerkin finite element discretization:
-
 Velocity:
   degree of 1D polynomials:                  2
   number of dofs per cell:                   18
@@ -165,10 +163,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 7.85775e-13
+  Absolute error (L2-norm): 7.74429e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 2.12728e-11
+  Absolute error (L2-norm): 2.08940e-11
 
 
 
@@ -212,6 +210,7 @@ Spatial discretization:
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            3
+  Element type:                              L2 - Discontinuous Galerkin
   Polynomial degree velocity:                3
   Polynomial degree pressure:                Mixed-order
   Convective term - Upwind factor:           1.0000e+00
@@ -302,9 +301,6 @@ Generating grid for 2-dimensional problem:
   Mapping degree:                            3
 
 Construct incompressible Navier-Stokes operator ...
-
-Discontinuous Galerkin finite element discretization:
-
 Velocity:
   degree of 1D polynomials:                  3
   number of dofs per cell:                   32
@@ -336,10 +332,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 6.04320e-13
+  Absolute error (L2-norm): 6.48213e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 1.17284e-11
+  Absolute error (L2-norm): 1.27638e-11
 
 
 
@@ -383,6 +379,7 @@ Spatial discretization:
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            4
+  Element type:                              L2 - Discontinuous Galerkin
   Polynomial degree velocity:                4
   Polynomial degree pressure:                Mixed-order
   Convective term - Upwind factor:           1.0000e+00
@@ -473,9 +470,6 @@ Generating grid for 2-dimensional problem:
   Mapping degree:                            4
 
 Construct incompressible Navier-Stokes operator ...
-
-Discontinuous Galerkin finite element discretization:
-
 Velocity:
   degree of 1D polynomials:                  4
   number of dofs per cell:                   50
@@ -507,10 +501,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 3.26383e-14
+  Absolute error (L2-norm): 2.65808e-14
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 8.78936e-13
+  Absolute error (L2-norm): 6.89331e-13
 
 
 
@@ -554,6 +548,7 @@ Spatial discretization:
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            5
+  Element type:                              L2 - Discontinuous Galerkin
   Polynomial degree velocity:                5
   Polynomial degree pressure:                Mixed-order
   Convective term - Upwind factor:           1.0000e+00
@@ -644,9 +639,6 @@ Generating grid for 2-dimensional problem:
   Mapping degree:                            5
 
 Construct incompressible Navier-Stokes operator ...
-
-Discontinuous Galerkin finite element discretization:
-
 Velocity:
   degree of 1D polynomials:                  5
   number of dofs per cell:                   72
@@ -678,7 +670,7 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 5.80612e-12
+  Absolute error (L2-norm): 1.28881e-11
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 1.47690e-10
+  Absolute error (L2-norm): 3.30618e-10

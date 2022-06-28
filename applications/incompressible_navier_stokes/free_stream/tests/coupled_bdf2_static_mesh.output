@@ -63,6 +63,7 @@ Spatial discretization:
   Global refinements:                        2
   Subdivisions hypercube:                    1
   Mapping degree:                            3
+  Element type:                              L2 - Discontinuous Galerkin
   Polynomial degree velocity:                3
   Polynomial degree pressure:                Mixed-order
   Convective term - Upwind factor:           1.0000e+00
@@ -148,9 +149,6 @@ Generating grid for 2-dimensional problem:
   Mapping degree:                            3
 
 Construct incompressible Navier-Stokes operator ...
-
-Discontinuous Galerkin finite element discretization:
-
 Velocity:
   degree of 1D polynomials:                  3
   number of dofs per cell:                   32
