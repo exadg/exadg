@@ -50,7 +50,7 @@ public:
 
     double perturbation = time_factor;
     perturbation *=
-      0.25 * delta_T * std::pow(std::sin(dealii::numbers::PI * p[0] / (length / 4.)), 2.0);
+      1.0 * delta_T * std::pow(std::sin(dealii::numbers::PI * p[0] / (length / 4.)), 2.0);
     if(dim == 3)
       perturbation *= std::pow(std::sin(dealii::numbers::PI * p[2] / (length / 4.)), 2.0);
 
