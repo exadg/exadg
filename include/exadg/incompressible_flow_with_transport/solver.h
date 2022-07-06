@@ -27,9 +27,6 @@
 
 // ExaDG
 
-// configuration
-#include <exadg/configuration/config.h>
-
 // driver
 #include <exadg/incompressible_flow_with_transport/driver.h>
 

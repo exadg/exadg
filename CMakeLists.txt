@@ -68,10 +68,6 @@ SET(TARGET_SRC
      include/exadg/functions_and_boundary_conditions/function_cached.cpp
      include/exadg/functions_and_boundary_conditions/linear_interpolation.cpp
      include/exadg/functions_and_boundary_conditions/interface_coupling.cpp
-     include/exadg/matrix_free/resolve_templates_float_2d.cpp
-     include/exadg/matrix_free/resolve_templates_float_3d.cpp
-     include/exadg/matrix_free/resolve_templates_double_2d.cpp
-     include/exadg/matrix_free/resolve_templates_double_3d.cpp
      include/exadg/solvers_and_preconditioners/preconditioners/enum_types.cpp
      include/exadg/solvers_and_preconditioners/solvers/enum_types.cpp
      include/exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.cpp
@@ -199,20 +195,6 @@ PROJECT(exadg)
 
 OPTION(PICKUP_TESTS "Pick up ExaDG tests." ON)
 OPTION(BUILD_SHARED_LIBS "Build shared library." ON)
-
-# Determine EXADG_DEGREE_MAX
-IF(DEGREE_MAX)
-    SET(EXADG_DEGREE_MAX ${DEGREE_MAX})
-    MESSAGE(STATUS "Use EXADG_DEGREE_MAX = " ${EXADG_DEGREE_MAX} ".")
-ELSE()
-    MESSAGE(STATUS "Use EXADG_DEGREE_MAX defined in exadg/include/exadg/configuration/config.h.in.")
-ENDIF()
-
-# Translate config.h.in into config.h
-CONFIGURE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/exadg/configuration/config.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/include/exadg/configuration/config.h
-    )
 
 ADD_LIBRARY(exadg ${TARGET_SRC})
 

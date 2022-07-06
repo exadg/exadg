@@ -37,7 +37,6 @@ FFTW=$WORKING_DIRECTORY/fftw/install
 LIKWID=$WORKING_DIRECTORY/likwid/install
 
 cmake \
-    -D DEGREE_MAX=15 \
     -D DEAL_II_DIR="$DEAL" \
     -D EXADG_WITH_FFTW=ON \
     -D FFTW_LIB="$FFTW/lib" \

@@ -26,7 +26,6 @@
 #include <deal.II/base/parameter_handler.h>
 
 // ExaDG
-#include <exadg/configuration/config.h>
 #include <exadg/fluid_structure_interaction/precice/driver.h>
 #include <exadg/fluid_structure_interaction/precice/driver_fluid.h>
 #include <exadg/fluid_structure_interaction/precice/driver_solid.h>
