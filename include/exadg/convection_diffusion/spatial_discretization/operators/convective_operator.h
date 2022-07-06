@@ -28,6 +28,8 @@
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/operator_base.h>
 
+#include <memory>
+
 namespace ExaDG
 {
 namespace ConvDiff

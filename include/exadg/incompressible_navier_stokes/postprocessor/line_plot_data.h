@@ -28,6 +28,8 @@
 // ExaDG
 #include <exadg/utilities/print_functions.h>
 
+#include <memory>
+
 namespace ExaDG
 {
 namespace IncNS
