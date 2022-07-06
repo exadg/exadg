@@ -287,7 +287,7 @@ MeanVelocityCalculator<dim, Number>::do_calculate_flow_rate_area(VectorType cons
     {
       integrator.reinit(face);
       integrator.read_dof_values(velocity);
-      integrator.evaluate(true, false);
+      integrator.evaluate(dealii::EvaluationFlags::values);
 
       scalar flow_rate_face = dealii::make_vectorized_array<Number>(0.0);
 
@@ -359,7 +359,7 @@ MeanVelocityCalculator<dim, Number>::local_calculate_flow_rate_volume(
   {
     integrator.reinit(cell);
     integrator.read_dof_values(src);
-    integrator.evaluate(true, false);
+    integrator.evaluate(dealii::EvaluationFlags::values);
 
     scalar flow_rate_vec = dealii::make_vectorized_array<Number>(0.);
 

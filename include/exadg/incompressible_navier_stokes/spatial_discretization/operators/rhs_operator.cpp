@@ -85,12 +85,12 @@ RHSOperator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const & matr
     if(data.kernel_data.boussinesq_term)
     {
       integrator_temperature.reinit(cell);
-      integrator_temperature.gather_evaluate(*temperature, true, false);
+      integrator_temperature.gather_evaluate(*temperature, dealii::EvaluationFlags::values);
     }
 
     do_cell_integral(integrator, integrator_temperature);
 
-    integrator.integrate_scatter(true, false, dst);
+    integrator.integrate_scatter(dealii::EvaluationFlags::values, dst);
   }
 }
 

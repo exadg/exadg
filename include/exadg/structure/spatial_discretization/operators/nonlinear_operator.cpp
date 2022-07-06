@@ -91,16 +91,20 @@ NonLinearOperator<dim, Number>::cell_loop_nonlinear(
                             this->operator_data.dof_index,
                             this->operator_data.quad_index);
 
+  auto const unsteady_flag = this->operator_data.unsteady ? dealii::EvaluationFlags::values :
+                                                            dealii::EvaluationFlags::nothing;
+
   for(auto cell = range.first; cell < range.second; ++cell)
   {
     reinit_cell_nonlinear(integrator, cell);
 
     integrator.read_dof_values_plain(src);
-    integrator.evaluate(this->operator_data.unsteady, true, false);
+
+    integrator.evaluate(unsteady_flag | dealii::EvaluationFlags::gradients);
 
     do_cell_integral_nonlinear(integrator);
 
-    integrator.integrate_scatter(this->operator_data.unsteady, true, dst);
+    integrator.integrate_scatter(unsteady_flag | dealii::EvaluationFlags::gradients, dst);
   }
 }
 
@@ -140,14 +144,12 @@ NonLinearOperator<dim, Number>::boundary_face_loop_nonlinear(
     if(this->operator_data.pull_back_traction)
     {
       this->integrator_m->read_dof_values_plain(src);
-      this->integrator_m->evaluate(false, true);
+      this->integrator_m->evaluate(dealii::EvaluationFlags::gradients);
     }
 
     do_boundary_integral_continuous(*this->integrator_m, matrix_free.get_boundary_id(face));
 
-    this->integrator_m->integrate_scatter(this->integrator_flags.face_integrate.value,
-                                          this->integrator_flags.face_integrate.gradient,
-                                          dst);
+    this->integrator_m->integrate_scatter(this->integrator_flags.face_integrate, dst);
   }
 }
 
@@ -222,7 +224,7 @@ NonLinearOperator<dim, Number>::reinit_cell(unsigned int const cell) const
   integrator_lin->reinit(cell);
 
   integrator_lin->read_dof_values_plain(displacement_lin);
-  integrator_lin->evaluate(false, true);
+  integrator_lin->evaluate(dealii::EvaluationFlags::gradients);
 }
 
 template<int dim, typename Number>

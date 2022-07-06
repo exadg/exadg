@@ -89,11 +89,11 @@ public:
   {
     IntegratorFlags flags;
 
-    flags.cell_evaluate  = CellFlags(false, true, false);
-    flags.cell_integrate = CellFlags(false, true, false);
+    flags.cell_evaluate  = dealii::EvaluationFlags::gradients;
+    flags.cell_integrate = dealii::EvaluationFlags::gradients;
 
-    flags.face_evaluate  = FaceFlags(true, true);
-    flags.face_integrate = FaceFlags(true, true);
+    flags.face_evaluate  = dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients;
+    flags.face_integrate = dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients;
 
     return flags;
   }

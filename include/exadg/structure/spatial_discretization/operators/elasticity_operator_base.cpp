@@ -41,12 +41,15 @@ ElasticityOperatorBase<dim, Number>::get_integrator_flags(bool const unsteady) c
 {
   IntegratorFlags flags;
 
-  flags.cell_evaluate  = CellFlags(unsteady, true, false);
-  flags.cell_integrate = CellFlags(unsteady, true, false);
+  auto const unsteady_flag = this->operator_data.unsteady ? dealii::EvaluationFlags::values :
+                                                            dealii::EvaluationFlags::nothing;
+
+  flags.cell_evaluate  = unsteady_flag | dealii::EvaluationFlags::gradients;
+  flags.cell_integrate = unsteady_flag | dealii::EvaluationFlags::gradients;
 
   // evaluation of Neumann BCs
-  flags.face_evaluate  = FaceFlags(false, false);
-  flags.face_integrate = FaceFlags(true, false);
+  flags.face_evaluate  = dealii::EvaluationFlags::nothing;
+  flags.face_integrate = dealii::EvaluationFlags::values;
 
   return flags;
 }

@@ -81,7 +81,7 @@ BodyForceOperator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const 
     if(data.pull_back_body_force)
     {
       integrator.read_dof_values_plain(src);
-      integrator.evaluate(false, true);
+      integrator.evaluate(dealii::EvaluationFlags::gradients);
     }
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
@@ -99,7 +99,7 @@ BodyForceOperator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const 
       integrator.submit_value(b, q);
     }
 
-    integrator.integrate(true, false);
+    integrator.integrate(dealii::EvaluationFlags::values);
     integrator.distribute_local_to_global(dst);
   }
 }

@@ -343,19 +343,19 @@ GradientOperator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const &
     if(data.integration_by_parts == true &&
        data.formulation == FormulationPressureGradientTerm::Weak)
     {
-      pressure.gather_evaluate(src, true, false);
+      pressure.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       do_cell_integral_weak(pressure, velocity);
 
-      velocity.integrate_scatter(false, true, dst);
+      velocity.integrate_scatter(dealii::EvaluationFlags::gradients, dst);
     }
     else
     {
-      pressure.gather_evaluate(src, false, true);
+      pressure.gather_evaluate(src, dealii::EvaluationFlags::gradients);
 
       do_cell_integral_strong(pressure, velocity);
 
-      velocity.integrate_scatter(true, false, dst);
+      velocity.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 }
@@ -383,13 +383,13 @@ GradientOperator<dim, Number>::face_loop(dealii::MatrixFree<dim, Number> const &
       pressure_m.reinit(face);
       pressure_p.reinit(face);
 
-      pressure_m.gather_evaluate(src, true, false);
-      pressure_p.gather_evaluate(src, true, false);
+      pressure_m.gather_evaluate(src, dealii::EvaluationFlags::values);
+      pressure_p.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       do_face_integral(pressure_m, pressure_p, velocity_m, velocity_p);
 
-      velocity_m.integrate_scatter(true, false, dst);
-      velocity_p.integrate_scatter(true, false, dst);
+      velocity_m.integrate_scatter(dealii::EvaluationFlags::values, dst);
+      velocity_p.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 }
@@ -412,14 +412,14 @@ GradientOperator<dim, Number>::boundary_face_loop_hom_operator(
       velocity.reinit(face);
       pressure.reinit(face);
 
-      pressure.gather_evaluate(src, true, false);
+      pressure.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       do_boundary_integral(pressure,
                            velocity,
                            OperatorType::homogeneous,
                            matrix_free.get_boundary_id(face));
 
-      velocity.integrate_scatter(true, false, dst);
+      velocity.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 }
@@ -442,14 +442,14 @@ GradientOperator<dim, Number>::boundary_face_loop_full_operator(
       velocity.reinit(face);
       pressure.reinit(face);
 
-      pressure.gather_evaluate(src, true, false);
+      pressure.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       do_boundary_integral(pressure,
                            velocity,
                            OperatorType::full,
                            matrix_free.get_boundary_id(face));
 
-      velocity.integrate_scatter(true, false, dst);
+      velocity.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 }
@@ -497,7 +497,7 @@ GradientOperator<dim, Number>::boundary_face_loop_inhom_operator(
                            OperatorType::inhomogeneous,
                            matrix_free.get_boundary_id(face));
 
-      velocity.integrate_scatter(true, false, dst);
+      velocity.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 }
@@ -523,7 +523,7 @@ GradientOperator<dim, Number>::boundary_face_loop_inhom_operator_bc_from_dof_vec
       pressure.reinit(face);
 
       pressure_ext.reinit(face);
-      pressure_ext.gather_evaluate(*pressure_bc, true, false);
+      pressure_ext.gather_evaluate(*pressure_bc, dealii::EvaluationFlags::values);
 
       do_boundary_integral_from_dof_vector(pressure,
                                            pressure_ext,
@@ -531,7 +531,7 @@ GradientOperator<dim, Number>::boundary_face_loop_inhom_operator_bc_from_dof_vec
                                            OperatorType::inhomogeneous,
                                            matrix_free.get_boundary_id(face));
 
-      velocity.integrate_scatter(true, false, dst);
+      velocity.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 }
@@ -555,15 +555,15 @@ GradientOperator<dim, Number>::boundary_face_loop_full_operator_bc_from_dof_vect
       velocity.reinit(face);
 
       pressure.reinit(face);
-      pressure.gather_evaluate(src, true, false);
+      pressure.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       pressure_ext.reinit(face);
-      pressure_ext.gather_evaluate(*pressure_bc, true, false);
+      pressure_ext.gather_evaluate(*pressure_bc, dealii::EvaluationFlags::values);
 
       do_boundary_integral_from_dof_vector(
         pressure, pressure_ext, velocity, OperatorType::full, matrix_free.get_boundary_id(face));
 
-      velocity.integrate_scatter(true, false, dst);
+      velocity.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 }

@@ -71,7 +71,7 @@ StreamfunctionCalculatorRHSOperator<dim, Number>::cell_loop(
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     integrator_vector.reinit(cell);
-    integrator_vector.gather_evaluate(src, true, false);
+    integrator_vector.gather_evaluate(src, dealii::EvaluationFlags::values);
 
     integrator_scalar.reinit(cell);
 
@@ -81,7 +81,7 @@ StreamfunctionCalculatorRHSOperator<dim, Number>::cell_loop(
       // in case of 2D problems
       integrator_scalar.submit_value(integrator_vector.get_value(q)[0], q);
     }
-    integrator_scalar.integrate_scatter(true, false, dst);
+    integrator_scalar.integrate_scatter(dealii::EvaluationFlags::values, dst);
   }
 }
 

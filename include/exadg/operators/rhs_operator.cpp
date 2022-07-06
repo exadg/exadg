@@ -69,7 +69,7 @@ RHSOperator<dim, Number, n_components>::do_cell_integral(IntegratorCell & integr
     integrator.submit_value(kernel.get_volume_flux(integrator, q, time), q);
   }
 
-  integrator.integrate(true, false);
+  integrator.integrate(dealii::EvaluationFlags::values);
 }
 
 template<int dim, typename Number, int n_components>

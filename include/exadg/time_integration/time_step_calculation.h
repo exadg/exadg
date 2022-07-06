@@ -271,7 +271,7 @@ calculate_time_step_cfl_local(
 
     fe_eval.reinit(cell);
     fe_eval.read_dof_values(velocity);
-    fe_eval.evaluate(true, false);
+    fe_eval.evaluate(dealii::EvaluationFlags::values);
 
     // loop over quadrature points
     for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
@@ -350,7 +350,7 @@ calculate_cfl(dealii::LinearAlgebra::distributed::Vector<value_type> &       cfl
   {
     fe_eval.reinit(cell);
     fe_eval.read_dof_values(velocity);
-    fe_eval.evaluate(true, false);
+    fe_eval.evaluate(dealii::EvaluationFlags::values);
 
     dealii::VectorizedArray<value_type> u_va =
       dealii::make_vectorized_array<value_type>(std::numeric_limits<value_type>::min());

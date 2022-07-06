@@ -44,16 +44,16 @@ ProjectionOperator<dim, Number>::initialize(
   }
 
   // mass operator
-  this->integrator_flags.cell_evaluate  = CellFlags(true, false, false);
-  this->integrator_flags.cell_integrate = CellFlags(true, false, false);
+  this->integrator_flags.cell_evaluate  = dealii::EvaluationFlags::values;
+  this->integrator_flags.cell_integrate = dealii::EvaluationFlags::values;
 
   // divergence penalty
   if(operator_data.use_divergence_penalty)
-    this->integrator_flags = this->integrator_flags || div_kernel->get_integrator_flags();
+    this->integrator_flags = this->integrator_flags | div_kernel->get_integrator_flags();
 
   // continuity penalty
   if(operator_data.use_continuity_penalty)
-    this->integrator_flags = this->integrator_flags || conti_kernel->get_integrator_flags();
+    this->integrator_flags = this->integrator_flags | conti_kernel->get_integrator_flags();
 }
 
 template<int dim, typename Number>
@@ -73,16 +73,16 @@ ProjectionOperator<dim, Number>::initialize(
   conti_kernel = conti_penalty_kernel;
 
   // mass operator
-  this->integrator_flags.cell_evaluate  = CellFlags(true, false, false);
-  this->integrator_flags.cell_integrate = CellFlags(true, false, false);
+  this->integrator_flags.cell_evaluate  = dealii::EvaluationFlags::values;
+  this->integrator_flags.cell_integrate = dealii::EvaluationFlags::values;
 
   // divergence penalty
   if(operator_data.use_divergence_penalty)
-    this->integrator_flags = this->integrator_flags || div_kernel->get_integrator_flags();
+    this->integrator_flags = this->integrator_flags | div_kernel->get_integrator_flags();
 
   // continuity penalty
   if(operator_data.use_continuity_penalty)
-    this->integrator_flags = this->integrator_flags || conti_kernel->get_integrator_flags();
+    this->integrator_flags = this->integrator_flags | conti_kernel->get_integrator_flags();
 }
 
 template<int dim, typename Number>

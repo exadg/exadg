@@ -216,7 +216,7 @@ private:
     {
       integrator.reinit(cell);
       integrator.read_dof_values(src);
-      integrator.evaluate(true, false);
+      integrator.evaluate(dealii::EvaluationFlags::values);
 
       dealii::VectorizedArray<Number> energy_vec = dealii::make_vectorized_array<Number>(0.);
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)

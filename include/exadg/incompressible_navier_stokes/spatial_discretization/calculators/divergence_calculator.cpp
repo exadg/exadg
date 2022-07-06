@@ -68,7 +68,7 @@ DivergenceCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> con
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     integrator_vector.reinit(cell);
-    integrator_vector.gather_evaluate(src, false, true);
+    integrator_vector.gather_evaluate(src, dealii::EvaluationFlags::gradients);
 
     integrator_scalar.reinit(cell);
 
@@ -78,7 +78,7 @@ DivergenceCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> con
       integrator_scalar.submit_value(div, q);
     }
 
-    integrator_scalar.integrate_scatter(true, false, dst);
+    integrator_scalar.integrate_scatter(dealii::EvaluationFlags::values, dst);
   }
 }
 

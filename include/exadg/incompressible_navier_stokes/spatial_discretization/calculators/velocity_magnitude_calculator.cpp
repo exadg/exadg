@@ -68,7 +68,7 @@ VelocityMagnitudeCalculator<dim, Number>::cell_loop(
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     integrator_vector.reinit(cell);
-    integrator_vector.gather_evaluate(src, true, false);
+    integrator_vector.gather_evaluate(src, dealii::EvaluationFlags::values);
 
     integrator_scalar.reinit(cell);
 
@@ -77,7 +77,7 @@ VelocityMagnitudeCalculator<dim, Number>::cell_loop(
       scalar magnitude = integrator_vector.get_value(q).norm();
       integrator_scalar.submit_value(magnitude, q);
     }
-    integrator_scalar.integrate_scatter(true, false, dst);
+    integrator_scalar.integrate_scatter(dealii::EvaluationFlags::values, dst);
   }
 }
 

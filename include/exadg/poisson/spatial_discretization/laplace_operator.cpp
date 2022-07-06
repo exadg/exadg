@@ -298,17 +298,13 @@ LaplaceOperator<dim, Number, n_components>::
 
     // deviating from the standard function boundary_face_loop_inhom_operator()
     // because the boundary condition comes from the vector src
-    this->integrator_m->gather_evaluate(src,
-                                        this->integrator_flags.face_evaluate.value,
-                                        this->integrator_flags.face_evaluate.gradient);
+    this->integrator_m->gather_evaluate(src, this->integrator_flags.face_evaluate);
 
     do_boundary_integral_dirichlet_bc_from_dof_vector(*this->integrator_m,
                                                       OperatorType::inhomogeneous,
                                                       matrix_free.get_boundary_id(face));
 
-    this->integrator_m->integrate_scatter(this->integrator_flags.face_integrate.value,
-                                          this->integrator_flags.face_integrate.gradient,
-                                          dst);
+    this->integrator_m->integrate_scatter(this->integrator_flags.face_integrate, dst);
   }
 }
 

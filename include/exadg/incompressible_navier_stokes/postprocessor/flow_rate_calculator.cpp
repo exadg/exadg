@@ -132,7 +132,7 @@ FlowRateCalculator<dim, Number>::do_calculate_flow_rates(
     {
       integrator.reinit(face);
       integrator.read_dof_values(velocity);
-      integrator.evaluate(true, false);
+      integrator.evaluate(dealii::EvaluationFlags::values);
 
       scalar flow_rate_face = dealii::make_vectorized_array<Number>(0.0);
 

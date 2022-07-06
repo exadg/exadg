@@ -309,19 +309,19 @@ DivergenceOperator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const
     if(data.integration_by_parts == true &&
        data.formulation == FormulationVelocityDivergenceTerm::Weak)
     {
-      velocity.gather_evaluate(src, true, false, false);
+      velocity.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       do_cell_integral_weak(pressure, velocity);
 
-      pressure.integrate_scatter(false, true, dst);
+      pressure.integrate_scatter(dealii::EvaluationFlags::gradients, dst);
     }
     else // integration_by_parts == false
     {
-      velocity.gather_evaluate(src, false, true, false);
+      velocity.gather_evaluate(src, dealii::EvaluationFlags::gradients);
 
       do_cell_integral_strong(pressure, velocity);
 
-      pressure.integrate_scatter(true, false, dst);
+      pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 }
@@ -349,13 +349,13 @@ DivergenceOperator<dim, Number>::face_loop(dealii::MatrixFree<dim, Number> const
       velocity_m.reinit(face);
       velocity_p.reinit(face);
 
-      velocity_m.gather_evaluate(src, true, false);
-      velocity_p.gather_evaluate(src, true, false);
+      velocity_m.gather_evaluate(src, dealii::EvaluationFlags::values);
+      velocity_p.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       do_face_integral(velocity_m, velocity_p, pressure_m, pressure_p);
 
-      pressure_m.integrate_scatter(true, false, dst);
-      pressure_p.integrate_scatter(true, false, dst);
+      pressure_m.integrate_scatter(dealii::EvaluationFlags::values, dst);
+      pressure_p.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 }
@@ -379,14 +379,14 @@ DivergenceOperator<dim, Number>::boundary_face_loop_hom_operator(
       pressure.reinit(face);
       velocity.reinit(face);
 
-      velocity.gather_evaluate(src, true, false);
+      velocity.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       do_boundary_integral(velocity,
                            pressure,
                            OperatorType::homogeneous,
                            matrix_free.get_boundary_id(face));
 
-      pressure.integrate_scatter(true, false, dst);
+      pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 }
@@ -410,14 +410,14 @@ DivergenceOperator<dim, Number>::boundary_face_loop_full_operator(
       pressure.reinit(face);
       velocity.reinit(face);
 
-      velocity.gather_evaluate(src, true, false);
+      velocity.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       do_boundary_integral(velocity,
                            pressure,
                            OperatorType::full,
                            matrix_free.get_boundary_id(face));
 
-      pressure.integrate_scatter(true, false, dst);
+      pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 }
@@ -464,7 +464,7 @@ DivergenceOperator<dim, Number>::boundary_face_loop_inhom_operator(
                            OperatorType::inhomogeneous,
                            matrix_free.get_boundary_id(face));
 
-      pressure.integrate_scatter(true, false, dst);
+      pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 }
@@ -488,7 +488,7 @@ DivergenceOperator<dim, Number>::boundary_face_loop_inhom_operator_bc_from_dof_v
       velocity.reinit(face);
 
       velocity_ext.reinit(face);
-      velocity_ext.gather_evaluate(*velocity_bc, true, false);
+      velocity_ext.gather_evaluate(*velocity_bc, dealii::EvaluationFlags::values);
 
       pressure.reinit(face);
 
@@ -498,7 +498,7 @@ DivergenceOperator<dim, Number>::boundary_face_loop_inhom_operator_bc_from_dof_v
                                            OperatorType::inhomogeneous,
                                            matrix_free.get_boundary_id(face));
 
-      pressure.integrate_scatter(true, false, dst);
+      pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 }

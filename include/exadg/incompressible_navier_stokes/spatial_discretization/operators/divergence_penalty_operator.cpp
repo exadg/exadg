@@ -62,13 +62,13 @@ DivergencePenaltyOperator<dim, Number>::cell_loop(
   for(unsigned int cell = range.first; cell < range.second; ++cell)
   {
     integrator.reinit(cell);
-    integrator.gather_evaluate(src, false, true);
+    integrator.gather_evaluate(src, dealii::EvaluationFlags::gradients);
 
     kernel->reinit_cell(integrator);
 
     do_cell_integral(integrator);
 
-    integrator.integrate_scatter(false, true, dst);
+    integrator.integrate_scatter(dealii::EvaluationFlags::gradients, dst);
   }
 }
 
