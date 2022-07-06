@@ -32,6 +32,8 @@
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/function_cached.h>
 
+#include <memory>
+
 namespace ExaDG
 {
 namespace ConvDiff

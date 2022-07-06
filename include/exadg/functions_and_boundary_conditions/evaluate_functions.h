@@ -31,6 +31,8 @@
 #include <exadg/functions_and_boundary_conditions/function_cached.h>
 #include <exadg/functions_and_boundary_conditions/function_with_normal.h>
 
+#include <memory>
+
 namespace ExaDG
 {
 template<int rank, int dim, typename Number>
