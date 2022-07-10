@@ -97,8 +97,6 @@ PostProcessor<dim, Number>::setup(Operator const & pde_operator)
                              pde_operator.get_dof_handler_p(),
                              *pde_operator.get_mapping(),
                              pp_data.line_plot_data);
-
-  base_operator = &pde_operator;
 }
 
 template<int dim, typename Number>
@@ -108,13 +106,6 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const & velocity,
                                               double const       time,
                                               int const          time_step_number)
 {
-  // We need to distribute the dofs for HDIV before computing the error since
-  // dealii::VectorTools::integrate_difference() does not take the periodic boundary
-  // constraints into account like MatrixFree does, hence reading the wrong value.
-  // distribute() updates the constrained values.
-  if(base_operator->get_spatial_discretization() == SpatialDiscretization::HDIV)
-    base_operator->get_constraint_u().distribute(const_cast<VectorType &>(velocity));
-
   /*
    *  write output
    */

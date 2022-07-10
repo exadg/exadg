@@ -855,13 +855,6 @@ SpatialOperatorBase<dim, Number>::get_viscosity() const
 }
 
 template<int dim, typename Number>
-SpatialDiscretization const &
-SpatialOperatorBase<dim, Number>::get_spatial_discretization() const
-{
-  return param.spatial_discretization;
-}
-
-template<int dim, typename Number>
 dealii::VectorizedArray<Number>
 SpatialOperatorBase<dim, Number>::get_viscosity_boundary_face(unsigned int const face,
                                                               unsigned int const q) const
@@ -1772,6 +1765,24 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
                     boundary_type == BoundaryTypeU::Symmetry,
                   dealii::ExcMessage("BoundaryTypeU not implemented."));
     }
+  }
+}
+
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::distribute_constraint_u(VectorType & velocity)
+{
+  if(param.spatial_discretization == SpatialDiscretization::HDIV)
+  {
+    constraint_u.distribute(velocity);
+  }
+  else if(param.spatial_discretization == SpatialDiscretization::L2)
+  {
+    // Do nothing
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 }
 

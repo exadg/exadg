@@ -191,9 +191,6 @@ public:
   double
   get_viscosity() const;
 
-  SpatialDiscretization const &
-  get_spatial_discretization() const;
-
   dealii::VectorizedArray<Number>
   get_viscosity_boundary_face(unsigned int const face, unsigned int const q) const;
 
@@ -414,6 +411,12 @@ public:
    */
   void
   set_grid_velocity(VectorType const & velocity);
+
+  /*
+   *  Calls constraint_u.distribute(u) and updates the constrained DoFs of the velocity field
+   */
+  void
+  distribute_constraint_u(VectorType & velocity);
 
 protected:
   /*
