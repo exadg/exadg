@@ -48,12 +48,12 @@ struct SpatialResolutionParameters
       prm.add_parameter("DegreeMin",
                         degree_min,
                         "Minimal polynomial degree of shape functions.",
-                        dealii::Patterns::Integer(),
+                        dealii::Patterns::Integer(1),
                         true);
       prm.add_parameter("DegreeMax",
                         degree_max,
                         "Maximal polynomial degree of shape functions.",
-                        dealii::Patterns::Integer(),
+                        dealii::Patterns::Integer(1),
                         true);
       prm.add_parameter("RefineSpaceMin",
                         refine_space_min,
@@ -134,7 +134,7 @@ struct ResolutionParameters
       prm.add_parameter("Degree",
                         degree,
                         "Polynomial degree of shape functions.",
-                        dealii::Patterns::Integer(),
+                        dealii::Patterns::Integer(1),
                         true);
       prm.add_parameter("RefineSpace",
                         refine_space,
