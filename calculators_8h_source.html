@@ -149,7 +149,7 @@ $(function() {
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>    {</div>
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>      integrator.reinit(cell);</div>
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>      integrator.read_dof_values(src);</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>      integrator.evaluate(<span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>      integrator.evaluate(dealii::EvaluationFlags::gradients);</div>
 <div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span> </div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>      <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> q = 0; q &lt; integrator.n_q_points; ++q)</div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>      {</div>
@@ -166,7 +166,7 @@ $(function() {
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>        integrator.submit_value(omega_vector, q);</div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>      }</div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>      integrator.integrate(<span class="keyword">true</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>      integrator.integrate(dealii::EvaluationFlags::values);</div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>      integrator.set_dof_values(dst);</div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    }</div>
 <div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  }</div>
@@ -225,7 +225,7 @@ $(function() {
 <div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>    {</div>
 <div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>      integrator_vector.reinit(cell);</div>
 <div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>      integrator_vector.read_dof_values(src);</div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>      integrator_vector.evaluate(<span class="keyword">false</span>, <span class="keyword">true</span>);</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>      integrator_vector.evaluate(dealii::EvaluationFlags::gradients);</div>
 <div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span> </div>
 <div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>      integrator_scalar.reinit(cell);</div>
 <div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span> </div>
@@ -235,7 +235,7 @@ $(function() {
 <div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>        integrator_scalar.submit_value(divergence, q);</div>
 <div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>      }</div>
 <div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span> </div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>      integrator_scalar.integrate(<span class="keyword">true</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>      integrator_scalar.integrate(dealii::EvaluationFlags::values);</div>
 <div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>      integrator_scalar.set_dof_values(dst);</div>
 <div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>    }</div>
 <div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>  }</div>
@@ -344,13 +344,13 @@ $(function() {
 <div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>      <span class="comment">// src-vector</span></div>
 <div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>      density.reinit(cell);</div>
 <div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>      density.read_dof_values(src);</div>
-<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>      density.evaluate(<span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>      density.evaluate(dealii::EvaluationFlags::values);</div>
 <div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>      momentum.reinit(cell);</div>
 <div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>      momentum.read_dof_values(src);</div>
-<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>      momentum.evaluate(<span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>      momentum.evaluate(dealii::EvaluationFlags::values);</div>
 <div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>      energy.reinit(cell);</div>
 <div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>      energy.read_dof_values(src);</div>
-<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>      energy.evaluate(<span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>      energy.evaluate(dealii::EvaluationFlags::values);</div>
 <div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span> </div>
 <div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>      <span class="comment">// dst-vector</span></div>
 <div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>      pressure.reinit(cell);</div>
@@ -371,7 +371,7 @@ $(function() {
 <div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>        pressure.submit_value(p, q);</div>
 <div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>      }</div>
 <div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span> </div>
-<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>      pressure.integrate(<span class="keyword">true</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>      pressure.integrate(dealii::EvaluationFlags::values);</div>
 <div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>      pressure.set_dof_values(dst);</div>
 <div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>    }</div>
 <div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>  }</div>
@@ -394,10 +394,10 @@ $(function() {
 <div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span>      <span class="comment">// src-vector</span></div>
 <div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>      density.reinit(cell);</div>
 <div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>      density.read_dof_values(src);</div>
-<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>      density.evaluate(<span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>      density.evaluate(dealii::EvaluationFlags::values);</div>
 <div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>      momentum.reinit(cell);</div>
 <div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>      momentum.read_dof_values(src);</div>
-<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>      momentum.evaluate(<span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>      momentum.evaluate(dealii::EvaluationFlags::values);</div>
 <div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span> </div>
 <div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>      <span class="comment">// dst-vector</span></div>
 <div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span>      velocity.reinit(cell);</div>
@@ -414,7 +414,7 @@ $(function() {
 <div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>        velocity.submit_value(u, q);</div>
 <div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span>      }</div>
 <div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span> </div>
-<div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span>      velocity.integrate(<span class="keyword">true</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span>      velocity.integrate(dealii::EvaluationFlags::values);</div>
 <div class="line"><a id="l00347" name="l00347"></a><span class="lineno">  347</span>      velocity.set_dof_values(dst);</div>
 <div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span>    }</div>
 <div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span>  }</div>
@@ -438,13 +438,13 @@ $(function() {
 <div class="line"><a id="l00367" name="l00367"></a><span class="lineno">  367</span>      <span class="comment">// src-vector</span></div>
 <div class="line"><a id="l00368" name="l00368"></a><span class="lineno">  368</span>      density.reinit(cell);</div>
 <div class="line"><a id="l00369" name="l00369"></a><span class="lineno">  369</span>      density.read_dof_values(src);</div>
-<div class="line"><a id="l00370" name="l00370"></a><span class="lineno">  370</span>      density.evaluate(<span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00370" name="l00370"></a><span class="lineno">  370</span>      density.evaluate(dealii::EvaluationFlags::values);</div>
 <div class="line"><a id="l00371" name="l00371"></a><span class="lineno">  371</span>      momentum.reinit(cell);</div>
 <div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span>      momentum.read_dof_values(src);</div>
-<div class="line"><a id="l00373" name="l00373"></a><span class="lineno">  373</span>      momentum.evaluate(<span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00373" name="l00373"></a><span class="lineno">  373</span>      momentum.evaluate(dealii::EvaluationFlags::values);</div>
 <div class="line"><a id="l00374" name="l00374"></a><span class="lineno">  374</span>      energy.reinit(cell);</div>
 <div class="line"><a id="l00375" name="l00375"></a><span class="lineno">  375</span>      energy.read_dof_values(src);</div>
-<div class="line"><a id="l00376" name="l00376"></a><span class="lineno">  376</span>      energy.evaluate(<span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00376" name="l00376"></a><span class="lineno">  376</span>      energy.evaluate(dealii::EvaluationFlags::values);</div>
 <div class="line"><a id="l00377" name="l00377"></a><span class="lineno">  377</span> </div>
 <div class="line"><a id="l00378" name="l00378"></a><span class="lineno">  378</span>      <span class="comment">// dst-vector</span></div>
 <div class="line"><a id="l00379" name="l00379"></a><span class="lineno">  379</span>      temperature.reinit(cell);</div>
@@ -467,7 +467,7 @@ $(function() {
 <div class="line"><a id="l00396" name="l00396"></a><span class="lineno">  396</span>        temperature.submit_value(T, q);</div>
 <div class="line"><a id="l00397" name="l00397"></a><span class="lineno">  397</span>      }</div>
 <div class="line"><a id="l00398" name="l00398"></a><span class="lineno">  398</span> </div>
-<div class="line"><a id="l00399" name="l00399"></a><span class="lineno">  399</span>      temperature.integrate(<span class="keyword">true</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00399" name="l00399"></a><span class="lineno">  399</span>      temperature.integrate(dealii::EvaluationFlags::values);</div>
 <div class="line"><a id="l00400" name="l00400"></a><span class="lineno">  400</span>      temperature.set_dof_values(dst);</div>
 <div class="line"><a id="l00401" name="l00401"></a><span class="lineno">  401</span>    }</div>
 <div class="line"><a id="l00402" name="l00402"></a><span class="lineno">  402</span>  }</div>

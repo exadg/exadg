@@ -194,8 +194,8 @@ $(function() {
 <div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span> </div>
 <div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>    <span class="comment">// no cell integrals</span></div>
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>    flags.face_evaluate  = <a class="code hl_struct" href="structExaDG_1_1FaceFlags.html">FaceFlags</a>(<span class="keyword">true</span>, <span class="keyword">false</span>);</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>    flags.face_integrate = <a class="code hl_struct" href="structExaDG_1_1FaceFlags.html">FaceFlags</a>(<span class="keyword">true</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>    flags.face_evaluate  = dealii::EvaluationFlags::values;</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>    flags.face_integrate = dealii::EvaluationFlags::values;</div>
 <div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span> </div>
 <div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>    <span class="keywordflow">return</span> flags;</div>
 <div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  }</div>
@@ -228,7 +228,7 @@ $(function() {
 <div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>    {</div>
 <div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>      integrator.reinit(cell);</div>
 <div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>      integrator.read_dof_values(velocity);</div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>      integrator.evaluate(<span class="keyword">true</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>      integrator.evaluate(dealii::EvaluationFlags::values);</div>
 <div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>      scalar volume      = dealii::make_vectorized_array&lt;Number&gt;(0.0);</div>
 <div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>      scalar norm_U_mean = dealii::make_vectorized_array&lt;Number&gt;(0.0);</div>
 <div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span> </div>
@@ -455,10 +455,9 @@ $(function() {
 <div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span><span class="comment">        */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1ContinuityPenaltyOperator_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1ContinuityPenaltyOperator.html">ExaDG::IncNS::ContinuityPenaltyOperator</a></div><div class="ttdef"><b>Definition:</b> continuity_penalty_operator.h:279</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1Operators_1_1ContinuityPenaltyKernel_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1Operators_1_1ContinuityPenaltyKernel.html">ExaDG::IncNS::Operators::ContinuityPenaltyKernel</a></div><div class="ttdef"><b>Definition:</b> continuity_penalty_operator.h:80</div></div>
-<div class="ttc" id="astructExaDG_1_1FaceFlags_html"><div class="ttname"><a href="structExaDG_1_1FaceFlags.html">ExaDG::FaceFlags</a></div><div class="ttdef"><b>Definition:</b> integrator_flags.h:50</div></div>
 <div class="ttc" id="astructExaDG_1_1IncNS_1_1ContinuityPenaltyData_html"><div class="ttname"><a href="structExaDG_1_1IncNS_1_1ContinuityPenaltyData.html">ExaDG::IncNS::ContinuityPenaltyData</a></div><div class="ttdef"><b>Definition:</b> continuity_penalty_operator.h:263</div></div>
 <div class="ttc" id="astructExaDG_1_1IncNS_1_1Operators_1_1ContinuityPenaltyKernelData_html"><div class="ttname"><a href="structExaDG_1_1IncNS_1_1Operators_1_1ContinuityPenaltyKernelData.html">ExaDG::IncNS::Operators::ContinuityPenaltyKernelData</a></div><div class="ttdef"><b>Definition:</b> continuity_penalty_operator.h:51</div></div>
-<div class="ttc" id="astructExaDG_1_1IntegratorFlags_html"><div class="ttname"><a href="structExaDG_1_1IntegratorFlags.html">ExaDG::IntegratorFlags</a></div><div class="ttdef"><b>Definition:</b> integrator_flags.h:76</div></div>
+<div class="ttc" id="astructExaDG_1_1IntegratorFlags_html"><div class="ttname"><a href="structExaDG_1_1IntegratorFlags.html">ExaDG::IntegratorFlags</a></div><div class="ttdef"><b>Definition:</b> integrator_flags.h:30</div></div>
 <div class="ttc" id="astructExaDG_1_1MappingFlags_html"><div class="ttname"><a href="structExaDG_1_1MappingFlags.html">ExaDG::MappingFlags</a></div><div class="ttdef"><b>Definition:</b> mapping_flags.h:31</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->

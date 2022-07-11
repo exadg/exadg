@@ -153,19 +153,19 @@ $(function() {
 <div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span><span class="keyword">  </span>{</div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    <a class="code hl_struct" href="structExaDG_1_1IntegratorFlags.html">IntegratorFlags</a> flags;</div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span> </div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    flags.cell_evaluate  = <a class="code hl_struct" href="structExaDG_1_1CellFlags.html">CellFlags</a>(<span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">false</span>);</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>    flags.cell_integrate = <a class="code hl_struct" href="structExaDG_1_1CellFlags.html">CellFlags</a>(<span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    flags.cell_evaluate  = dealii::EvaluationFlags::gradients;</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>    flags.cell_integrate = dealii::EvaluationFlags::gradients;</div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    <span class="keywordflow">if</span>(is_dg)</div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    {</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>      flags.face_evaluate  = <a class="code hl_struct" href="structExaDG_1_1FaceFlags.html">FaceFlags</a>(<span class="keyword">true</span>, <span class="keyword">true</span>);</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>      flags.face_integrate = <a class="code hl_struct" href="structExaDG_1_1FaceFlags.html">FaceFlags</a>(<span class="keyword">true</span>, <span class="keyword">true</span>);</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>      flags.face_evaluate  = dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients;</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>      flags.face_integrate = dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients;</div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>    }</div>
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    <span class="keywordflow">else</span></div>
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    {</div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>      <span class="comment">// evaluation of Neumann BCs for continuous elements</span></div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>      flags.face_evaluate  = <a class="code hl_struct" href="structExaDG_1_1FaceFlags.html">FaceFlags</a>(<span class="keyword">false</span>, <span class="keyword">false</span>);</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>      flags.face_integrate = <a class="code hl_struct" href="structExaDG_1_1FaceFlags.html">FaceFlags</a>(<span class="keyword">true</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>      flags.face_evaluate  = dealii::EvaluationFlags::nothing;</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>      flags.face_integrate = dealii::EvaluationFlags::values;</div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    }</div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span> </div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    <span class="keywordflow">return</span> flags;</div>
@@ -398,9 +398,7 @@ $(function() {
 <div class="ttc" id="aclassExaDG_1_1OperatorBase_html"><div class="ttname"><a href="classExaDG_1_1OperatorBase.html">ExaDG::OperatorBase</a></div><div class="ttdef"><b>Definition:</b> operator_base.h:90</div></div>
 <div class="ttc" id="aclassExaDG_1_1Poisson_1_1LaplaceOperator_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1LaplaceOperator.html">ExaDG::Poisson::LaplaceOperator</a></div><div class="ttdef"><b>Definition:</b> laplace_operator.h:209</div></div>
 <div class="ttc" id="aclassExaDG_1_1Poisson_1_1Operators_1_1LaplaceKernel_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1Operators_1_1LaplaceKernel.html">ExaDG::Poisson::Operators::LaplaceKernel</a></div><div class="ttdef"><b>Definition:</b> laplace_operator.h:47</div></div>
-<div class="ttc" id="astructExaDG_1_1CellFlags_html"><div class="ttname"><a href="structExaDG_1_1CellFlags.html">ExaDG::CellFlags</a></div><div class="ttdef"><b>Definition:</b> integrator_flags.h:28</div></div>
-<div class="ttc" id="astructExaDG_1_1FaceFlags_html"><div class="ttname"><a href="structExaDG_1_1FaceFlags.html">ExaDG::FaceFlags</a></div><div class="ttdef"><b>Definition:</b> integrator_flags.h:50</div></div>
-<div class="ttc" id="astructExaDG_1_1IntegratorFlags_html"><div class="ttname"><a href="structExaDG_1_1IntegratorFlags.html">ExaDG::IntegratorFlags</a></div><div class="ttdef"><b>Definition:</b> integrator_flags.h:76</div></div>
+<div class="ttc" id="astructExaDG_1_1IntegratorFlags_html"><div class="ttname"><a href="structExaDG_1_1IntegratorFlags.html">ExaDG::IntegratorFlags</a></div><div class="ttdef"><b>Definition:</b> integrator_flags.h:30</div></div>
 <div class="ttc" id="astructExaDG_1_1MappingFlags_html"><div class="ttname"><a href="structExaDG_1_1MappingFlags.html">ExaDG::MappingFlags</a></div><div class="ttdef"><b>Definition:</b> mapping_flags.h:31</div></div>
 <div class="ttc" id="astructExaDG_1_1OperatorBaseData_html"><div class="ttname"><a href="structExaDG_1_1OperatorBaseData.html">ExaDG::OperatorBaseData</a></div><div class="ttdef"><b>Definition:</b> operator_base.h:58</div></div>
 <div class="ttc" id="astructExaDG_1_1Poisson_1_1LaplaceOperatorData_html"><div class="ttname"><a href="structExaDG_1_1Poisson_1_1LaplaceOperatorData.html">ExaDG::Poisson::LaplaceOperatorData</a></div><div class="ttdef"><b>Definition:</b> laplace_operator.h:192</div></div>

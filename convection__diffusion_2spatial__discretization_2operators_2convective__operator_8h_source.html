@@ -189,21 +189,21 @@ $(function() {
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>    <span class="keywordflow">if</span>(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)</div>
 <div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    {</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>      flags.cell_evaluate  = <a class="code hl_struct" href="structExaDG_1_1CellFlags.html">CellFlags</a>(<span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>      flags.cell_integrate = <a class="code hl_struct" href="structExaDG_1_1CellFlags.html">CellFlags</a>(<span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>      flags.cell_evaluate  = dealii::EvaluationFlags::values;</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>      flags.cell_integrate = dealii::EvaluationFlags::gradients;</div>
 <div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>    }</div>
 <div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)</div>
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>    {</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>      flags.cell_evaluate  = <a class="code hl_struct" href="structExaDG_1_1CellFlags.html">CellFlags</a>(<span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">false</span>);</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>      flags.cell_integrate = <a class="code hl_struct" href="structExaDG_1_1CellFlags.html">CellFlags</a>(<span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>      flags.cell_evaluate  = dealii::EvaluationFlags::gradients;</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>      flags.cell_integrate = dealii::EvaluationFlags::values;</div>
 <div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>    }</div>
 <div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>    <span class="keywordflow">else</span></div>
 <div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>    {</div>
 <div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>      AssertThrow(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;Not implemented.&quot;</span>));</div>
 <div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>    }</div>
 <div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span> </div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>    flags.face_evaluate  = <a class="code hl_struct" href="structExaDG_1_1FaceFlags.html">FaceFlags</a>(<span class="keyword">true</span>, <span class="keyword">false</span>);</div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>    flags.face_integrate = <a class="code hl_struct" href="structExaDG_1_1FaceFlags.html">FaceFlags</a>(<span class="keyword">true</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>    flags.face_evaluate  = dealii::EvaluationFlags::values;</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>    flags.face_integrate = dealii::EvaluationFlags::values;</div>
 <div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span> </div>
 <div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>    <span class="keywordflow">return</span> flags;</div>
 <div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>  }</div>
@@ -257,7 +257,7 @@ $(function() {
 <div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>    <span class="keywordflow">if</span>(data.velocity_type == TypeVelocityField::DoFVector)</div>
 <div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>    {</div>
 <div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>      integrator_velocity-&gt;reinit(cell);</div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>      integrator_velocity-&gt;gather_evaluate(*velocity, <span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>      integrator_velocity-&gt;gather_evaluate(*velocity, dealii::EvaluationFlags::values);</div>
 <div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>    }</div>
 <div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>  }</div>
 <div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span> </div>
@@ -267,10 +267,10 @@ $(function() {
 <div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>    <span class="keywordflow">if</span>(data.velocity_type == TypeVelocityField::DoFVector)</div>
 <div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>    {</div>
 <div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>      integrator_velocity_m-&gt;reinit(face);</div>
-<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>      integrator_velocity_m-&gt;gather_evaluate(*velocity, <span class="keyword">true</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>      integrator_velocity_m-&gt;gather_evaluate(*velocity, dealii::EvaluationFlags::values);</div>
 <div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span> </div>
 <div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>      integrator_velocity_p-&gt;reinit(face);</div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>      integrator_velocity_p-&gt;gather_evaluate(*velocity, <span class="keyword">true</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>      integrator_velocity_p-&gt;gather_evaluate(*velocity, dealii::EvaluationFlags::values);</div>
 <div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>    }</div>
 <div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>  }</div>
 <div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span> </div>
@@ -280,7 +280,7 @@ $(function() {
 <div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>    <span class="keywordflow">if</span>(data.velocity_type == TypeVelocityField::DoFVector)</div>
 <div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>    {</div>
 <div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>      integrator_velocity_m-&gt;reinit(face);</div>
-<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>      integrator_velocity_m-&gt;gather_evaluate(*velocity, <span class="keyword">true</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>      integrator_velocity_m-&gt;gather_evaluate(*velocity, dealii::EvaluationFlags::values);</div>
 <div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>    }</div>
 <div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>  }</div>
 <div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span> </div>
@@ -292,14 +292,14 @@ $(function() {
 <div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>    <span class="keywordflow">if</span>(data.velocity_type == TypeVelocityField::DoFVector)</div>
 <div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>    {</div>
 <div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>      integrator_velocity_m-&gt;reinit(cell, face);</div>
-<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>      integrator_velocity_m-&gt;gather_evaluate(*velocity, <span class="keyword">true</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>      integrator_velocity_m-&gt;gather_evaluate(*velocity, dealii::EvaluationFlags::values);</div>
 <div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span> </div>
 <div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>      <span class="keywordflow">if</span>(boundary_id == dealii::numbers::internal_face_boundary_id) <span class="comment">// internal face</span></div>
 <div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>      {</div>
 <div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>        <span class="comment">// TODO: Matrix-free implementation in deal.II does currently not allow to access data of</span></div>
 <div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>        <span class="comment">// the neighboring element in case of cell-based face loops.</span></div>
 <div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>        <span class="comment">//      integrator_velocity_p-&gt;reinit(cell, face);</span></div>
-<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>        <span class="comment">//      integrator_velocity_p-&gt;gather_evaluate(*velocity, true, false);</span></div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>        <span class="comment">//      integrator_velocity_p-&gt;gather_evaluate(*velocity, dealii::EvaluationFlags::values);</span></div>
 <div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>      }</div>
 <div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>    }</div>
 <div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>  }</div>
@@ -699,12 +699,10 @@ $(function() {
 <div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1Operators_1_1ConvectiveKernel_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1Operators_1_1ConvectiveKernel.html">ExaDG::ConvDiff::Operators::ConvectiveKernel</a></div><div class="ttdef"><b>Definition:</b> convective_operator.h:68</div></div>
 <div class="ttc" id="aclassExaDG_1_1OperatorBase_html"><div class="ttname"><a href="classExaDG_1_1OperatorBase.html">ExaDG::OperatorBase</a></div><div class="ttdef"><b>Definition:</b> operator_base.h:90</div></div>
 <div class="ttc" id="aclassExaDG_1_1lazy__ptr_html"><div class="ttname"><a href="classExaDG_1_1lazy__ptr.html">ExaDG::lazy_ptr&lt; VectorType &gt;</a></div></div>
-<div class="ttc" id="astructExaDG_1_1CellFlags_html"><div class="ttname"><a href="structExaDG_1_1CellFlags.html">ExaDG::CellFlags</a></div><div class="ttdef"><b>Definition:</b> integrator_flags.h:28</div></div>
 <div class="ttc" id="astructExaDG_1_1ConvDiff_1_1ConvectiveOperatorData_html"><div class="ttname"><a href="structExaDG_1_1ConvDiff_1_1ConvectiveOperatorData.html">ExaDG::ConvDiff::ConvectiveOperatorData</a></div><div class="ttdef"><b>Definition:</b> convective_operator.h:541</div></div>
 <div class="ttc" id="astructExaDG_1_1ConvDiff_1_1Operators_1_1ConvectiveKernelData_html"><div class="ttname"><a href="structExaDG_1_1ConvDiff_1_1Operators_1_1ConvectiveKernelData.html">ExaDG::ConvDiff::Operators::ConvectiveKernelData</a></div><div class="ttdef"><b>Definition:</b> convective_operator.h:41</div></div>
-<div class="ttc" id="astructExaDG_1_1FaceFlags_html"><div class="ttname"><a href="structExaDG_1_1FaceFlags.html">ExaDG::FaceFlags</a></div><div class="ttdef"><b>Definition:</b> integrator_flags.h:50</div></div>
 <div class="ttc" id="astructExaDG_1_1FunctionEvaluator_html"><div class="ttname"><a href="structExaDG_1_1FunctionEvaluator.html">ExaDG::FunctionEvaluator</a></div><div class="ttdef"><b>Definition:</b> evaluate_functions.h:40</div></div>
-<div class="ttc" id="astructExaDG_1_1IntegratorFlags_html"><div class="ttname"><a href="structExaDG_1_1IntegratorFlags.html">ExaDG::IntegratorFlags</a></div><div class="ttdef"><b>Definition:</b> integrator_flags.h:76</div></div>
+<div class="ttc" id="astructExaDG_1_1IntegratorFlags_html"><div class="ttname"><a href="structExaDG_1_1IntegratorFlags.html">ExaDG::IntegratorFlags</a></div><div class="ttdef"><b>Definition:</b> integrator_flags.h:30</div></div>
 <div class="ttc" id="astructExaDG_1_1MappingFlags_html"><div class="ttname"><a href="structExaDG_1_1MappingFlags.html">ExaDG::MappingFlags</a></div><div class="ttdef"><b>Definition:</b> mapping_flags.h:31</div></div>
 <div class="ttc" id="astructExaDG_1_1OperatorBaseData_html"><div class="ttname"><a href="structExaDG_1_1OperatorBaseData.html">ExaDG::OperatorBaseData</a></div><div class="ttdef"><b>Definition:</b> operator_base.h:58</div></div>
 </div><!-- fragment --></div><!-- contents -->
