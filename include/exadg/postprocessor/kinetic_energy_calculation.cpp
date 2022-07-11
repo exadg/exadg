@@ -171,7 +171,7 @@ KineticEnergyCalculator<dim, Number>::cell_loop(
   {
     fe_eval.reinit(cell);
     fe_eval.read_dof_values(src);
-    fe_eval.evaluate(true, true);
+    fe_eval.evaluate(dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
 
     scalar volume_vec        = dealii::make_vectorized_array<Number>(0.);
     scalar energy_vec        = dealii::make_vectorized_array<Number>(0.);

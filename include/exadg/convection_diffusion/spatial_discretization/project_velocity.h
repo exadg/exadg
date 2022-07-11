@@ -87,7 +87,7 @@ private:
           q);
       }
 
-      integrator.integrate(true, false);
+      integrator.integrate(dealii::EvaluationFlags::values);
 
       integrator.distribute_local_to_global(dst);
     }

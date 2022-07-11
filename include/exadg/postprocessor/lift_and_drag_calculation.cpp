@@ -60,11 +60,11 @@ void
   {
     integrator_velocity.reinit(face);
     integrator_velocity.read_dof_values(velocity);
-    integrator_velocity.evaluate(false, true);
+    integrator_velocity.evaluate(dealii::EvaluationFlags::gradients);
 
     integrator_pressure.reinit(face);
     integrator_pressure.read_dof_values(pressure);
-    integrator_pressure.evaluate(true, false);
+    integrator_pressure.evaluate(dealii::EvaluationFlags::values);
 
     dealii::types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
 

@@ -64,7 +64,7 @@ MeanScalarCalculator<dim, Number>::calculate_mean_scalar(
     {
       integrator.reinit(face);
       integrator.read_dof_values(solution);
-      integrator.evaluate(true, false);
+      integrator.evaluate(dealii::EvaluationFlags::values);
 
       scalar mean_scalar_face = dealii::make_vectorized_array<Number>(0.0);
       scalar area_face        = dealii::make_vectorized_array<Number>(0.0);

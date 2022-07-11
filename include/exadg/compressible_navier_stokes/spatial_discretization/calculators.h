@@ -78,7 +78,7 @@ private:
     {
       integrator.reinit(cell);
       integrator.read_dof_values(src);
-      integrator.evaluate(false, true, false);
+      integrator.evaluate(dealii::EvaluationFlags::gradients);
 
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
@@ -95,7 +95,7 @@ private:
         integrator.submit_value(omega_vector, q);
       }
 
-      integrator.integrate(true, false);
+      integrator.integrate(dealii::EvaluationFlags::values);
       integrator.set_dof_values(dst);
     }
   }
@@ -154,7 +154,7 @@ private:
     {
       integrator_vector.reinit(cell);
       integrator_vector.read_dof_values(src);
-      integrator_vector.evaluate(false, true);
+      integrator_vector.evaluate(dealii::EvaluationFlags::gradients);
 
       integrator_scalar.reinit(cell);
 
@@ -164,7 +164,7 @@ private:
         integrator_scalar.submit_value(divergence, q);
       }
 
-      integrator_scalar.integrate(true, false);
+      integrator_scalar.integrate(dealii::EvaluationFlags::values);
       integrator_scalar.set_dof_values(dst);
     }
   }
@@ -273,13 +273,13 @@ private:
       // src-vector
       density.reinit(cell);
       density.read_dof_values(src);
-      density.evaluate(true, false, false);
+      density.evaluate(dealii::EvaluationFlags::values);
       momentum.reinit(cell);
       momentum.read_dof_values(src);
-      momentum.evaluate(true, false, false);
+      momentum.evaluate(dealii::EvaluationFlags::values);
       energy.reinit(cell);
       energy.read_dof_values(src);
-      energy.evaluate(true, false, false);
+      energy.evaluate(dealii::EvaluationFlags::values);
 
       // dst-vector
       pressure.reinit(cell);
@@ -300,7 +300,7 @@ private:
         pressure.submit_value(p, q);
       }
 
-      pressure.integrate(true, false);
+      pressure.integrate(dealii::EvaluationFlags::values);
       pressure.set_dof_values(dst);
     }
   }
@@ -323,10 +323,10 @@ private:
       // src-vector
       density.reinit(cell);
       density.read_dof_values(src);
-      density.evaluate(true, false, false);
+      density.evaluate(dealii::EvaluationFlags::values);
       momentum.reinit(cell);
       momentum.read_dof_values(src);
-      momentum.evaluate(true, false, false);
+      momentum.evaluate(dealii::EvaluationFlags::values);
 
       // dst-vector
       velocity.reinit(cell);
@@ -343,7 +343,7 @@ private:
         velocity.submit_value(u, q);
       }
 
-      velocity.integrate(true, false);
+      velocity.integrate(dealii::EvaluationFlags::values);
       velocity.set_dof_values(dst);
     }
   }
@@ -367,13 +367,13 @@ private:
       // src-vector
       density.reinit(cell);
       density.read_dof_values(src);
-      density.evaluate(true, false, false);
+      density.evaluate(dealii::EvaluationFlags::values);
       momentum.reinit(cell);
       momentum.read_dof_values(src);
-      momentum.evaluate(true, false, false);
+      momentum.evaluate(dealii::EvaluationFlags::values);
       energy.reinit(cell);
       energy.read_dof_values(src);
-      energy.evaluate(true, false, false);
+      energy.evaluate(dealii::EvaluationFlags::values);
 
       // dst-vector
       temperature.reinit(cell);
@@ -396,7 +396,7 @@ private:
         temperature.submit_value(T, q);
       }
 
-      temperature.integrate(true, false);
+      temperature.integrate(dealii::EvaluationFlags::values);
       temperature.set_dof_values(dst);
     }
   }

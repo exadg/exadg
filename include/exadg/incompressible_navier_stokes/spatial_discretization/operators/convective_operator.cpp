@@ -155,22 +155,18 @@ ConvectiveOperator<dim, Number>::cell_loop_nonlinear_operator(
 
     // Strictly speaking, the variable integrator_flags refers to the linearized operator, but
     // integrator_flags is also valid for the nonlinear operator.
-    integrator.gather_evaluate(src,
-                               this->integrator_flags.cell_evaluate.value,
-                               this->integrator_flags.cell_evaluate.gradient,
-                               this->integrator_flags.cell_evaluate.hessian);
+    integrator.gather_evaluate(src, this->integrator_flags.cell_evaluate);
 
     if(operator_data.kernel_data.ale)
     {
       integrator_grid_velocity.reinit(cell);
-      integrator_grid_velocity.gather_evaluate(kernel->get_grid_velocity(), true, false, false);
+      integrator_grid_velocity.gather_evaluate(kernel->get_grid_velocity(),
+                                               dealii::EvaluationFlags::values);
     }
 
     do_cell_integral_nonlinear_operator(integrator, integrator_grid_velocity);
 
-    integrator.integrate_scatter(this->integrator_flags.cell_integrate.value,
-                                 this->integrator_flags.cell_integrate.gradient,
-                                 dst);
+    integrator.integrate_scatter(this->integrator_flags.cell_integrate, dst);
   }
 }
 
@@ -203,29 +199,22 @@ ConvectiveOperator<dim, Number>::face_loop_nonlinear_operator(
 
     // Strictly speaking, the variable integrator_flags refers to the linearized operator, but
     // integrator_flags is also valid for the nonlinear operator.
-    integrator_m.gather_evaluate(src,
-                                 this->integrator_flags.face_evaluate.value,
-                                 this->integrator_flags.face_evaluate.gradient);
+    integrator_m.gather_evaluate(src, this->integrator_flags.face_evaluate);
 
-    integrator_p.gather_evaluate(src,
-                                 this->integrator_flags.face_evaluate.value,
-                                 this->integrator_flags.face_evaluate.gradient);
+    integrator_p.gather_evaluate(src, this->integrator_flags.face_evaluate);
 
     if(operator_data.kernel_data.ale)
     {
       integrator_grid_velocity.reinit(face);
-      integrator_grid_velocity.gather_evaluate(kernel->get_grid_velocity(), true, false);
+      integrator_grid_velocity.gather_evaluate(kernel->get_grid_velocity(),
+                                               dealii::EvaluationFlags::values);
     }
 
     do_face_integral_nonlinear_operator(integrator_m, integrator_p, integrator_grid_velocity);
 
-    integrator_m.integrate_scatter(this->integrator_flags.face_integrate.value,
-                                   this->integrator_flags.face_integrate.gradient,
-                                   dst);
+    integrator_m.integrate_scatter(this->integrator_flags.face_integrate, dst);
 
-    integrator_p.integrate_scatter(this->integrator_flags.face_integrate.value,
-                                   this->integrator_flags.face_integrate.gradient,
-                                   dst);
+    integrator_p.integrate_scatter(this->integrator_flags.face_integrate, dst);
   }
 }
 
@@ -253,23 +242,20 @@ ConvectiveOperator<dim, Number>::boundary_face_loop_nonlinear_operator(
 
     // Strictly speaking, the variable integrator_flags refers to the linearized operator, but
     // integrator_flags is also valid for the nonlinear operator.
-    integrator_m.gather_evaluate(src,
-                                 this->integrator_flags.face_evaluate.value,
-                                 this->integrator_flags.face_evaluate.gradient);
+    integrator_m.gather_evaluate(src, this->integrator_flags.face_evaluate);
 
     if(operator_data.kernel_data.ale)
     {
       integrator_grid_velocity.reinit(face);
-      integrator_grid_velocity.gather_evaluate(kernel->get_grid_velocity(), true, false);
+      integrator_grid_velocity.gather_evaluate(kernel->get_grid_velocity(),
+                                               dealii::EvaluationFlags::values);
     }
 
     do_boundary_integral_nonlinear_operator(integrator_m,
                                             integrator_grid_velocity,
                                             matrix_free.get_boundary_id(face));
 
-    integrator_m.integrate_scatter(this->integrator_flags.face_integrate.value,
-                                   this->integrator_flags.face_integrate.gradient,
-                                   dst);
+    integrator_m.integrate_scatter(this->integrator_flags.face_integrate, dst);
   }
 }
 

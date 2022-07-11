@@ -63,7 +63,7 @@ VorticityCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> cons
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     integrator.reinit(cell);
-    integrator.gather_evaluate(src, false, true, false);
+    integrator.gather_evaluate(src, dealii::EvaluationFlags::gradients);
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
@@ -82,7 +82,7 @@ VorticityCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> cons
       integrator.submit_value(omega_vector, q);
     }
 
-    integrator.integrate_scatter(true, false, dst);
+    integrator.integrate_scatter(dealii::EvaluationFlags::values, dst);
   }
 }
 

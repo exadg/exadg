@@ -108,8 +108,8 @@ public:
   {
     IntegratorFlags flags;
 
-    flags.cell_evaluate  = CellFlags(false, true, false);
-    flags.cell_integrate = CellFlags(false, true, false);
+    flags.cell_evaluate  = dealii::EvaluationFlags::gradients;
+    flags.cell_integrate = dealii::EvaluationFlags::gradients;
 
     // no face integrals
 
@@ -148,7 +148,7 @@ public:
       {
         integrator.reinit(cell);
         integrator.read_dof_values(velocity);
-        integrator.evaluate(true, false);
+        integrator.evaluate(dealii::EvaluationFlags::values);
 
         scalar volume      = dealii::make_vectorized_array<Number>(0.0);
         scalar norm_U_mean = dealii::make_vectorized_array<Number>(0.0);

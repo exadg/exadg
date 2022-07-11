@@ -1591,10 +1591,10 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
     if(boundary_type == BoundaryTypeU::DirichletCached)
     {
       integrator_u.reinit(face);
-      integrator_u.gather_evaluate(*velocity_ptr, false, true);
+      integrator_u.gather_evaluate(*velocity_ptr, dealii::EvaluationFlags::gradients);
 
       integrator_p.reinit(face);
-      integrator_p.gather_evaluate(*pressure_ptr, true, false);
+      integrator_p.gather_evaluate(*pressure_ptr, dealii::EvaluationFlags::values);
 
       for(unsigned int q = 0; q < integrator_u.n_q_points; ++q)
       {

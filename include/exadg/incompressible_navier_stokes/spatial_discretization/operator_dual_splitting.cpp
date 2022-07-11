@@ -298,7 +298,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_boundary_
                     dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
       }
     }
-    integrator.integrate(true, false);
+    integrator.integrate(dealii::EvaluationFlags::values);
     integrator.distribute_local_to_global(dst);
   }
 }
@@ -346,12 +346,14 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
     velocity.reinit(face);
-    velocity.gather_evaluate(src, true, true);
+    velocity.gather_evaluate(src,
+                             dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
 
     if(this->param.ale_formulation)
     {
       grid_velocity.reinit(face);
-      grid_velocity.gather_evaluate(this->convective_kernel->get_grid_velocity(), true, false);
+      grid_velocity.gather_evaluate(this->convective_kernel->get_grid_velocity(),
+                                    dealii::EvaluationFlags::values);
     }
 
     pressure.reinit(face);
@@ -410,7 +412,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
                     dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
       }
     }
-    pressure.integrate_scatter(true, false, dst);
+    pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
   }
 }
 
@@ -446,7 +448,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_numerical_time_derivative_
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
     integrator_velocity.reinit(face);
-    integrator_velocity.gather_evaluate(acceleration, true, false);
+    integrator_velocity.gather_evaluate(acceleration, dealii::EvaluationFlags::values);
 
     integrator_pressure.reinit(face);
 
@@ -476,7 +478,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_numerical_time_derivative_
       }
     }
 
-    integrator_pressure.integrate(true, false);
+    integrator_pressure.integrate(dealii::EvaluationFlags::values);
     integrator_pressure.distribute_local_to_global(dst);
   }
 }
@@ -547,7 +549,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_bounda
                     dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
       }
     }
-    integrator.integrate(true, false);
+    integrator.integrate(dealii::EvaluationFlags::values);
     integrator.distribute_local_to_global(dst);
   }
 }
@@ -584,12 +586,14 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_boundary_fa
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
     velocity.reinit(face);
-    velocity.gather_evaluate(src, true, true);
+    velocity.gather_evaluate(src,
+                             dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
 
     if(this->param.ale_formulation)
     {
       grid_velocity.reinit(face);
-      grid_velocity.gather_evaluate(this->convective_kernel->get_grid_velocity(), true, false);
+      grid_velocity.gather_evaluate(this->convective_kernel->get_grid_velocity(),
+                                    dealii::EvaluationFlags::values);
     }
 
     pressure.reinit(face);
@@ -641,7 +645,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_boundary_fa
       }
     }
 
-    pressure.integrate_scatter(true, false, dst);
+    pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
   }
 }
 
@@ -679,7 +683,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary_face(
     pressure.reinit(face);
 
     omega.reinit(face);
-    omega.gather_evaluate(src, false, true);
+    omega.gather_evaluate(src, dealii::EvaluationFlags::gradients);
 
     BoundaryTypeP boundary_type =
       this->boundary_descriptor->pressure->get_boundary_type(matrix_free.get_boundary_id(face));
@@ -710,7 +714,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary_face(
                     dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
       }
     }
-    pressure.integrate_scatter(true, false, dst);
+    pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
   }
 }
 

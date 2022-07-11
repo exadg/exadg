@@ -161,15 +161,15 @@ ContinuityPenaltyOperator<dim, Number>::face_loop(
     integrator_m.reinit(face);
     integrator_p.reinit(face);
 
-    integrator_m.gather_evaluate(src, true, false);
-    integrator_p.gather_evaluate(src, true, false);
+    integrator_m.gather_evaluate(src, dealii::EvaluationFlags::values);
+    integrator_p.gather_evaluate(src, dealii::EvaluationFlags::values);
 
     kernel->reinit_face(integrator_m, integrator_p);
 
     do_face_integral(integrator_m, integrator_p);
 
-    integrator_m.integrate_scatter(true, false, dst);
-    integrator_p.integrate_scatter(true, false, dst);
+    integrator_m.integrate_scatter(dealii::EvaluationFlags::values, dst);
+    integrator_p.integrate_scatter(dealii::EvaluationFlags::values, dst);
   }
 }
 
@@ -203,7 +203,7 @@ ContinuityPenaltyOperator<dim, Number>::boundary_face_loop_hom(
     {
       integrator_m.reinit(face);
 
-      integrator_m.gather_evaluate(src, true, false);
+      integrator_m.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       kernel->reinit_boundary_face(integrator_m);
 
@@ -211,7 +211,7 @@ ContinuityPenaltyOperator<dim, Number>::boundary_face_loop_hom(
                            OperatorType::homogeneous,
                            matrix_free.get_boundary_id(face));
 
-      integrator_m.integrate_scatter(true, false, dst);
+      integrator_m.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 }
@@ -232,13 +232,13 @@ ContinuityPenaltyOperator<dim, Number>::boundary_face_loop_full(
     {
       integrator_m.reinit(face);
 
-      integrator_m.gather_evaluate(src, true, false);
+      integrator_m.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       kernel->reinit_boundary_face(integrator_m);
 
       do_boundary_integral(integrator_m, OperatorType::full, matrix_free.get_boundary_id(face));
 
-      integrator_m.integrate_scatter(true, false, dst);
+      integrator_m.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 }
@@ -267,7 +267,7 @@ ContinuityPenaltyOperator<dim, Number>::boundary_face_loop_inhom(
                            OperatorType::inhomogeneous,
                            matrix_free.get_boundary_id(face));
 
-      integrator_m.integrate_scatter(true, false, dst);
+      integrator_m.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 }

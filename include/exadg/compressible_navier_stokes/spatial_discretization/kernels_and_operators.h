@@ -371,10 +371,10 @@ private:
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
       density.reinit(cell);
-      density.gather_evaluate(src, true, false);
+      density.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       momentum.reinit(cell);
-      momentum.gather_evaluate(src, true, false);
+      momentum.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       energy.reinit(cell);
 
@@ -387,9 +387,9 @@ private:
         energy.submit_value(std::get<2>(flux), q);
       }
 
-      density.integrate_scatter(true, false, dst);
-      momentum.integrate_scatter(true, false, dst);
-      energy.integrate_scatter(true, false, dst);
+      density.integrate_scatter(dealii::EvaluationFlags::values, dst);
+      momentum.integrate_scatter(dealii::EvaluationFlags::values, dst);
+      energy.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 
@@ -461,13 +461,13 @@ private:
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
       density.reinit(cell);
-      density.gather_evaluate(src, true, false);
+      density.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       momentum.reinit(cell);
-      momentum.gather_evaluate(src, true, false);
+      momentum.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       energy.reinit(cell);
-      energy.gather_evaluate(src, true, false);
+      energy.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       for(unsigned int q = 0; q < density.n_q_points; ++q)
       {
@@ -476,9 +476,9 @@ private:
         energy.submit_value(energy.get_value(q), q);
       }
 
-      density.integrate_scatter(true, false, dst);
-      momentum.integrate_scatter(true, false, dst);
-      energy.integrate_scatter(true, false, dst);
+      density.integrate_scatter(dealii::EvaluationFlags::values, dst);
+      momentum.integrate_scatter(dealii::EvaluationFlags::values, dst);
+      energy.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 
@@ -752,13 +752,13 @@ private:
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
       density.reinit(cell);
-      density.gather_evaluate(src, true, false);
+      density.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       momentum.reinit(cell);
-      momentum.gather_evaluate(src, true, false);
+      momentum.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       energy.reinit(cell);
-      energy.gather_evaluate(src, true, false);
+      energy.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       for(unsigned int q = 0; q < momentum.n_q_points; ++q)
       {
@@ -769,9 +769,9 @@ private:
         energy.submit_gradient(-std::get<2>(flux), q);
       }
 
-      density.integrate_scatter(false, true, dst);
-      momentum.integrate_scatter(false, true, dst);
-      energy.integrate_scatter(false, true, dst);
+      density.integrate_scatter(dealii::EvaluationFlags::gradients, dst);
+      momentum.integrate_scatter(dealii::EvaluationFlags::gradients, dst);
+      energy.integrate_scatter(dealii::EvaluationFlags::gradients, dst);
     }
   }
 
@@ -794,24 +794,24 @@ private:
     {
       // density
       density_m.reinit(face);
-      density_m.gather_evaluate(src, true, false);
+      density_m.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       density_p.reinit(face);
-      density_p.gather_evaluate(src, true, false);
+      density_p.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       // velocity
       momentum_m.reinit(face);
-      momentum_m.gather_evaluate(src, true, false);
+      momentum_m.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       momentum_p.reinit(face);
-      momentum_p.gather_evaluate(src, true, false);
+      momentum_p.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       // energy
       energy_m.reinit(face);
-      energy_m.gather_evaluate(src, true, false);
+      energy_m.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       energy_p.reinit(face);
-      energy_p.gather_evaluate(src, true, false);
+      energy_p.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       for(unsigned int q = 0; q < momentum_m.n_q_points; ++q)
       {
@@ -831,14 +831,14 @@ private:
         energy_p.submit_value(-std::get<2>(flux), q);
       }
 
-      density_m.integrate_scatter(true, false, dst);
-      density_p.integrate_scatter(true, false, dst);
+      density_m.integrate_scatter(dealii::EvaluationFlags::values, dst);
+      density_p.integrate_scatter(dealii::EvaluationFlags::values, dst);
 
-      momentum_m.integrate_scatter(true, false, dst);
-      momentum_p.integrate_scatter(true, false, dst);
+      momentum_m.integrate_scatter(dealii::EvaluationFlags::values, dst);
+      momentum_p.integrate_scatter(dealii::EvaluationFlags::values, dst);
 
-      energy_m.integrate_scatter(true, false, dst);
-      energy_p.integrate_scatter(true, false, dst);
+      energy_m.integrate_scatter(dealii::EvaluationFlags::values, dst);
+      energy_p.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 
@@ -855,13 +855,13 @@ private:
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
       density.reinit(face);
-      density.gather_evaluate(src, true, false);
+      density.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       momentum.reinit(face);
-      momentum.gather_evaluate(src, true, false);
+      momentum.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       energy.reinit(face);
-      energy.gather_evaluate(src, true, false);
+      energy.gather_evaluate(src, dealii::EvaluationFlags::values);
 
       dealii::types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
 
@@ -890,9 +890,9 @@ private:
         energy.submit_value(std::get<2>(flux), q);
       }
 
-      density.integrate_scatter(true, false, dst);
-      momentum.integrate_scatter(true, false, dst);
-      energy.integrate_scatter(true, false, dst);
+      density.integrate_scatter(dealii::EvaluationFlags::values, dst);
+      momentum.integrate_scatter(dealii::EvaluationFlags::values, dst);
+      energy.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 
@@ -1426,13 +1426,17 @@ private:
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
       density.reinit(cell);
-      density.gather_evaluate(src, true, true);
+      density.gather_evaluate(src,
+                              dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
 
       momentum.reinit(cell);
-      momentum.gather_evaluate(src, true, true);
+      momentum.gather_evaluate(src,
+                               dealii::EvaluationFlags::values |
+                                 dealii::EvaluationFlags::gradients);
 
       energy.reinit(cell);
-      energy.gather_evaluate(src, true, true);
+      energy.gather_evaluate(src,
+                             dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
 
       for(unsigned int q = 0; q < momentum.n_q_points; ++q)
       {
@@ -1442,8 +1446,8 @@ private:
         energy.submit_gradient(std::get<2>(flux), q);
       }
 
-      momentum.integrate_scatter(false, true, dst);
-      energy.integrate_scatter(false, true, dst);
+      momentum.integrate_scatter(dealii::EvaluationFlags::gradients, dst);
+      energy.integrate_scatter(dealii::EvaluationFlags::gradients, dst);
     }
   }
 
@@ -1466,24 +1470,36 @@ private:
     {
       // density
       density_m.reinit(face);
-      density_m.gather_evaluate(src, true, true);
+      density_m.gather_evaluate(src,
+                                dealii::EvaluationFlags::values |
+                                  dealii::EvaluationFlags::gradients);
 
       density_p.reinit(face);
-      density_p.gather_evaluate(src, true, true);
+      density_p.gather_evaluate(src,
+                                dealii::EvaluationFlags::values |
+                                  dealii::EvaluationFlags::gradients);
 
       // momentum
       momentum_m.reinit(face);
-      momentum_m.gather_evaluate(src, true, true);
+      momentum_m.gather_evaluate(src,
+                                 dealii::EvaluationFlags::values |
+                                   dealii::EvaluationFlags::gradients);
 
       momentum_p.reinit(face);
-      momentum_p.gather_evaluate(src, true, true);
+      momentum_p.gather_evaluate(src,
+                                 dealii::EvaluationFlags::values |
+                                   dealii::EvaluationFlags::gradients);
 
       // energy
       energy_m.reinit(face);
-      energy_m.gather_evaluate(src, true, true);
+      energy_m.gather_evaluate(src,
+                               dealii::EvaluationFlags::values |
+                                 dealii::EvaluationFlags::gradients);
 
       energy_p.reinit(face);
-      energy_p.gather_evaluate(src, true, true);
+      energy_p.gather_evaluate(src,
+                               dealii::EvaluationFlags::values |
+                                 dealii::EvaluationFlags::gradients);
 
       scalar tau_IP = get_penalty_parameter(density_m, density_p);
 
@@ -1516,14 +1532,22 @@ private:
         energy_p.submit_value(std::get<2>(gradient_flux), q);
       }
 
-      density_m.integrate_scatter(true, false, dst);
-      density_p.integrate_scatter(true, false, dst);
+      density_m.integrate_scatter(dealii::EvaluationFlags::values, dst);
+      density_p.integrate_scatter(dealii::EvaluationFlags::values, dst);
 
-      momentum_m.integrate_scatter(true, true, dst);
-      momentum_p.integrate_scatter(true, true, dst);
+      momentum_m.integrate_scatter(dealii::EvaluationFlags::values |
+                                     dealii::EvaluationFlags::gradients,
+                                   dst);
+      momentum_p.integrate_scatter(dealii::EvaluationFlags::values |
+                                     dealii::EvaluationFlags::gradients,
+                                   dst);
 
-      energy_m.integrate_scatter(true, true, dst);
-      energy_p.integrate_scatter(true, true, dst);
+      energy_m.integrate_scatter(dealii::EvaluationFlags::values |
+                                   dealii::EvaluationFlags::gradients,
+                                 dst);
+      energy_p.integrate_scatter(dealii::EvaluationFlags::values |
+                                   dealii::EvaluationFlags::gradients,
+                                 dst);
     }
   }
 
@@ -1540,13 +1564,17 @@ private:
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
       density.reinit(face);
-      density.gather_evaluate(src, true, true);
+      density.gather_evaluate(src,
+                              dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
 
       momentum.reinit(face);
-      momentum.gather_evaluate(src, true, true);
+      momentum.gather_evaluate(src,
+                               dealii::EvaluationFlags::values |
+                                 dealii::EvaluationFlags::gradients);
 
       energy.reinit(face);
-      energy.gather_evaluate(src, true, true);
+      energy.gather_evaluate(src,
+                             dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
 
       scalar tau_IP = get_penalty_parameter(density);
 
@@ -1592,9 +1620,12 @@ private:
         energy.submit_value(-std::get<2>(gradient_flux), q);
       }
 
-      density.integrate_scatter(true, false, dst);
-      momentum.integrate_scatter(true, true, dst);
-      energy.integrate_scatter(true, true, dst);
+      density.integrate_scatter(dealii::EvaluationFlags::values, dst);
+      momentum.integrate_scatter(dealii::EvaluationFlags::values |
+                                   dealii::EvaluationFlags::gradients,
+                                 dst);
+      energy.integrate_scatter(dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients,
+                               dst);
     }
   }
 
@@ -1711,13 +1742,17 @@ private:
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
       density.reinit(cell);
-      density.gather_evaluate(src, true, true);
+      density.gather_evaluate(src,
+                              dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
 
       momentum.reinit(cell);
-      momentum.gather_evaluate(src, true, true);
+      momentum.gather_evaluate(src,
+                               dealii::EvaluationFlags::values |
+                                 dealii::EvaluationFlags::gradients);
 
       energy.reinit(cell);
-      energy.gather_evaluate(src, true, true);
+      energy.gather_evaluate(src,
+                             dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
 
       for(unsigned int q = 0; q < momentum.n_q_points; ++q)
       {
@@ -1732,9 +1767,9 @@ private:
         energy.submit_gradient(-std::get<2>(conv_flux) + std::get<2>(visc_flux), q);
       }
 
-      density.integrate_scatter(false, true, dst);
-      momentum.integrate_scatter(false, true, dst);
-      energy.integrate_scatter(false, true, dst);
+      density.integrate_scatter(dealii::EvaluationFlags::gradients, dst);
+      momentum.integrate_scatter(dealii::EvaluationFlags::gradients, dst);
+      energy.integrate_scatter(dealii::EvaluationFlags::gradients, dst);
     }
   }
 
@@ -1755,24 +1790,36 @@ private:
     {
       // density
       density_m.reinit(face);
-      density_m.gather_evaluate(src, true, true);
+      density_m.gather_evaluate(src,
+                                dealii::EvaluationFlags::values |
+                                  dealii::EvaluationFlags::gradients);
 
       density_p.reinit(face);
-      density_p.gather_evaluate(src, true, true);
+      density_p.gather_evaluate(src,
+                                dealii::EvaluationFlags::values |
+                                  dealii::EvaluationFlags::gradients);
 
       // momentum
       momentum_m.reinit(face);
-      momentum_m.gather_evaluate(src, true, true);
+      momentum_m.gather_evaluate(src,
+                                 dealii::EvaluationFlags::values |
+                                   dealii::EvaluationFlags::gradients);
 
       momentum_p.reinit(face);
-      momentum_p.gather_evaluate(src, true, true);
+      momentum_p.gather_evaluate(src,
+                                 dealii::EvaluationFlags::values |
+                                   dealii::EvaluationFlags::gradients);
 
       // energy
       energy_m.reinit(face);
-      energy_m.gather_evaluate(src, true, true);
+      energy_m.gather_evaluate(src,
+                               dealii::EvaluationFlags::values |
+                                 dealii::EvaluationFlags::gradients);
 
       energy_p.reinit(face);
-      energy_p.gather_evaluate(src, true, true);
+      energy_p.gather_evaluate(src,
+                               dealii::EvaluationFlags::values |
+                                 dealii::EvaluationFlags::gradients);
 
       scalar tau_IP = viscous_operator->get_penalty_parameter(density_m, density_p);
 
@@ -1809,14 +1856,22 @@ private:
         energy_p.submit_gradient(std::get<5>(visc_value_flux), q);
       }
 
-      density_m.integrate_scatter(true, false, dst);
-      density_p.integrate_scatter(true, false, dst);
+      density_m.integrate_scatter(dealii::EvaluationFlags::values, dst);
+      density_p.integrate_scatter(dealii::EvaluationFlags::values, dst);
 
-      momentum_m.integrate_scatter(true, true, dst);
-      momentum_p.integrate_scatter(true, true, dst);
+      momentum_m.integrate_scatter(dealii::EvaluationFlags::values |
+                                     dealii::EvaluationFlags::gradients,
+                                   dst);
+      momentum_p.integrate_scatter(dealii::EvaluationFlags::values |
+                                     dealii::EvaluationFlags::gradients,
+                                   dst);
 
-      energy_m.integrate_scatter(true, true, dst);
-      energy_p.integrate_scatter(true, true, dst);
+      energy_m.integrate_scatter(dealii::EvaluationFlags::values |
+                                   dealii::EvaluationFlags::gradients,
+                                 dst);
+      energy_p.integrate_scatter(dealii::EvaluationFlags::values |
+                                   dealii::EvaluationFlags::gradients,
+                                 dst);
     }
   }
 
@@ -1833,13 +1888,17 @@ private:
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
       density.reinit(face);
-      density.gather_evaluate(src, true, true);
+      density.gather_evaluate(src,
+                              dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
 
       momentum.reinit(face);
-      momentum.gather_evaluate(src, true, true);
+      momentum.gather_evaluate(src,
+                               dealii::EvaluationFlags::values |
+                                 dealii::EvaluationFlags::gradients);
 
       energy.reinit(face);
-      energy.gather_evaluate(src, true, true);
+      energy.gather_evaluate(src,
+                             dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
 
       scalar tau_IP = viscous_operator->get_penalty_parameter(density);
 
@@ -1898,9 +1957,12 @@ private:
         energy.submit_gradient(std::get<2>(visc_value_flux), q);
       }
 
-      density.integrate_scatter(true, false, dst);
-      momentum.integrate_scatter(true, true, dst);
-      energy.integrate_scatter(true, true, dst);
+      density.integrate_scatter(dealii::EvaluationFlags::values, dst);
+      momentum.integrate_scatter(dealii::EvaluationFlags::values |
+                                   dealii::EvaluationFlags::gradients,
+                                 dst);
+      energy.integrate_scatter(dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients,
+                               dst);
     }
   }
 

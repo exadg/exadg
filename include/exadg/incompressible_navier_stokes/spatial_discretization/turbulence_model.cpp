@@ -76,7 +76,7 @@ TurbulenceModel<dim, Number>::cell_loop_set_coefficients(
     integrator.read_dof_values(src);
 
     // we only need the gradient
-    integrator.evaluate(false, true, false);
+    integrator.evaluate(dealii::EvaluationFlags::gradients);
 
     // get filter width for this cell
     scalar filter_width = integrator.read_cell_data(this->filter_width_vector);
@@ -124,8 +124,8 @@ TurbulenceModel<dim, Number>::face_loop_set_coefficients(
     integrator_p.read_dof_values(src);
 
     // we only need the gradient
-    integrator_m.evaluate(false, true);
-    integrator_p.evaluate(false, true);
+    integrator_m.evaluate(dealii::EvaluationFlags::gradients);
+    integrator_p.evaluate(dealii::EvaluationFlags::gradients);
 
     // get filter width for this cell and the neighbor
     scalar filter_width          = integrator_m.read_cell_data(this->filter_width_vector);
@@ -175,7 +175,7 @@ TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients(
     integrator.read_dof_values(src);
 
     // we only need the gradient
-    integrator.evaluate(false, true);
+    integrator.evaluate(dealii::EvaluationFlags::gradients);
 
     // get filter width for this cell
     scalar filter_width = integrator.read_cell_data(this->filter_width_vector);

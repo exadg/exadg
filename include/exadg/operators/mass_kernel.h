@@ -41,8 +41,8 @@ public:
   {
     IntegratorFlags flags;
 
-    flags.cell_evaluate  = CellFlags(true, false, false);
-    flags.cell_integrate = CellFlags(true, false, false);
+    flags.cell_evaluate  = dealii::EvaluationFlags::values;
+    flags.cell_integrate = dealii::EvaluationFlags::values;
 
     return flags;
   }

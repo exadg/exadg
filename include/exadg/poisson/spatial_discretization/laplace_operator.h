@@ -82,19 +82,19 @@ public:
   {
     IntegratorFlags flags;
 
-    flags.cell_evaluate  = CellFlags(false, true, false);
-    flags.cell_integrate = CellFlags(false, true, false);
+    flags.cell_evaluate  = dealii::EvaluationFlags::gradients;
+    flags.cell_integrate = dealii::EvaluationFlags::gradients;
 
     if(is_dg)
     {
-      flags.face_evaluate  = FaceFlags(true, true);
-      flags.face_integrate = FaceFlags(true, true);
+      flags.face_evaluate  = dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients;
+      flags.face_integrate = dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients;
     }
     else
     {
       // evaluation of Neumann BCs for continuous elements
-      flags.face_evaluate  = FaceFlags(false, false);
-      flags.face_integrate = FaceFlags(true, false);
+      flags.face_evaluate  = dealii::EvaluationFlags::nothing;
+      flags.face_integrate = dealii::EvaluationFlags::values;
     }
 
     return flags;

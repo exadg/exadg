@@ -117,7 +117,7 @@ DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div(
   {
     integrator.reinit(cell);
     integrator.read_dof_values(source);
-    integrator.evaluate(true, true);
+    integrator.evaluate(dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
 
     scalar div_vec = dealii::make_vectorized_array<Number>(0.);
     scalar ref_vec = dealii::make_vectorized_array<Number>(0.);
@@ -159,10 +159,10 @@ DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div_face(
   {
     integrator_m.reinit(face);
     integrator_m.read_dof_values(source);
-    integrator_m.evaluate(true, false);
+    integrator_m.evaluate(dealii::EvaluationFlags::values);
     integrator_p.reinit(face);
     integrator_p.read_dof_values(source);
-    integrator_p.evaluate(true, false);
+    integrator_p.evaluate(dealii::EvaluationFlags::values);
 
     scalar diff_mass_flux_vec = dealii::make_vectorized_array<Number>(0.);
     scalar mean_mass_flux_vec = dealii::make_vectorized_array<Number>(0.);

@@ -124,19 +124,19 @@ public:
 
     if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
     {
-      flags.cell_evaluate  = CellFlags(true, false, false);
-      flags.cell_integrate = CellFlags(false, true, false);
+      flags.cell_evaluate  = dealii::EvaluationFlags::values;
+      flags.cell_integrate = dealii::EvaluationFlags::gradients;
 
-      flags.face_evaluate  = FaceFlags(true, false);
-      flags.face_integrate = FaceFlags(true, false);
+      flags.face_evaluate  = dealii::EvaluationFlags::values;
+      flags.face_integrate = dealii::EvaluationFlags::values;
     }
     else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
     {
-      flags.cell_evaluate  = CellFlags(true, true, false);
-      flags.cell_integrate = CellFlags(true, false, false);
+      flags.cell_evaluate  = dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients;
+      flags.cell_integrate = dealii::EvaluationFlags::values;
 
-      flags.face_evaluate  = FaceFlags(true, false);
-      flags.face_integrate = FaceFlags(true, false);
+      flags.face_evaluate  = dealii::EvaluationFlags::values;
+      flags.face_integrate = dealii::EvaluationFlags::values;
     }
     else
     {
@@ -244,14 +244,16 @@ public:
 
     if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
     {
-      integrator_velocity->gather_evaluate(*velocity, true, false, false);
+      integrator_velocity->gather_evaluate(*velocity, dealii::EvaluationFlags::values);
     }
     else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
     {
-      integrator_velocity->gather_evaluate(*velocity, true, true, false);
+      integrator_velocity->gather_evaluate(*velocity,
+                                           dealii::EvaluationFlags::values |
+                                             dealii::EvaluationFlags::gradients);
 
       if(data.ale)
-        integrator_grid_velocity->gather_evaluate(grid_velocity, true, false, false);
+        integrator_grid_velocity->gather_evaluate(grid_velocity, dealii::EvaluationFlags::values);
     }
     else
     {
@@ -263,15 +265,16 @@ public:
   reinit_face(unsigned int const face) const
   {
     integrator_velocity_m->reinit(face);
-    integrator_velocity_m->gather_evaluate(*velocity, true, false);
+    integrator_velocity_m->gather_evaluate(*velocity, dealii::EvaluationFlags::values);
 
     integrator_velocity_p->reinit(face);
-    integrator_velocity_p->gather_evaluate(*velocity, true, false);
+    integrator_velocity_p->gather_evaluate(*velocity, dealii::EvaluationFlags::values);
 
     if(data.ale)
     {
       integrator_grid_velocity_face->reinit(face);
-      integrator_grid_velocity_face->gather_evaluate(grid_velocity, true, false);
+      integrator_grid_velocity_face->gather_evaluate(grid_velocity,
+                                                     dealii::EvaluationFlags::values);
     }
   }
 
@@ -279,12 +282,13 @@ public:
   reinit_boundary_face(unsigned int const face) const
   {
     integrator_velocity_m->reinit(face);
-    integrator_velocity_m->gather_evaluate(*velocity, true, false);
+    integrator_velocity_m->gather_evaluate(*velocity, dealii::EvaluationFlags::values);
 
     if(data.ale)
     {
       integrator_grid_velocity_face->reinit(face);
-      integrator_grid_velocity_face->gather_evaluate(grid_velocity, true, false);
+      integrator_grid_velocity_face->gather_evaluate(grid_velocity,
+                                                     dealii::EvaluationFlags::values);
     }
   }
 
@@ -294,12 +298,13 @@ public:
                          dealii::types::boundary_id const boundary_id) const
   {
     integrator_velocity_m->reinit(cell, face);
-    integrator_velocity_m->gather_evaluate(*velocity, true, false);
+    integrator_velocity_m->gather_evaluate(*velocity, dealii::EvaluationFlags::values);
 
     if(data.ale)
     {
       integrator_grid_velocity_face->reinit(cell, face);
-      integrator_grid_velocity_face->gather_evaluate(grid_velocity, true, false);
+      integrator_grid_velocity_face->gather_evaluate(grid_velocity,
+                                                     dealii::EvaluationFlags::values);
     }
 
     if(boundary_id == dealii::numbers::internal_face_boundary_id) // internal face
@@ -307,7 +312,7 @@ public:
       // TODO: Matrix-free implementation in deal.II does currently not allow to access data of
       // the neighboring element in case of cell-based face loops.
       //      integrator_velocity_p->reinit(cell, face);
-      //      integrator_velocity_p->gather_evaluate(velocity, true, false);
+      //      integrator_velocity_p->gather_evaluate(velocity,dealii::EvaluationFlags::values);
     }
   }
 

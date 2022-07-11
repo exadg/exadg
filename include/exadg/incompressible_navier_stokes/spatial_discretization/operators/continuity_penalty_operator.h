@@ -123,8 +123,8 @@ public:
 
     // no cell integrals
 
-    flags.face_evaluate  = FaceFlags(true, false);
-    flags.face_integrate = FaceFlags(true, false);
+    flags.face_evaluate  = dealii::EvaluationFlags::values;
+    flags.face_integrate = dealii::EvaluationFlags::values;
 
     return flags;
   }
@@ -157,7 +157,7 @@ public:
     {
       integrator.reinit(cell);
       integrator.read_dof_values(velocity);
-      integrator.evaluate(true, false);
+      integrator.evaluate(dealii::EvaluationFlags::values);
       scalar volume      = dealii::make_vectorized_array<Number>(0.0);
       scalar norm_U_mean = dealii::make_vectorized_array<Number>(0.0);
 

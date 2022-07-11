@@ -45,12 +45,12 @@ MomentumOperator<dim, Number>::initialize(
   }
 
   if(operator_data.unsteady_problem)
-    this->integrator_flags = this->integrator_flags || this->mass_kernel->get_integrator_flags();
+    this->integrator_flags = this->integrator_flags | this->mass_kernel->get_integrator_flags();
   if(operator_data.convective_problem)
     this->integrator_flags =
-      this->integrator_flags || this->convective_kernel->get_integrator_flags();
+      this->integrator_flags | this->convective_kernel->get_integrator_flags();
   if(operator_data.viscous_problem)
-    this->integrator_flags = this->integrator_flags || this->viscous_kernel->get_integrator_flags();
+    this->integrator_flags = this->integrator_flags | this->viscous_kernel->get_integrator_flags();
 }
 
 template<int dim, typename Number>
@@ -84,12 +84,12 @@ MomentumOperator<dim, Number>::initialize(
   this->viscous_kernel    = viscous_kernel;
 
   if(operator_data.unsteady_problem)
-    this->integrator_flags = this->integrator_flags || this->mass_kernel->get_integrator_flags();
+    this->integrator_flags = this->integrator_flags | this->mass_kernel->get_integrator_flags();
   if(operator_data.convective_problem)
     this->integrator_flags =
-      this->integrator_flags || this->convective_kernel->get_integrator_flags();
+      this->integrator_flags | this->convective_kernel->get_integrator_flags();
   if(operator_data.viscous_problem)
-    this->integrator_flags = this->integrator_flags || this->viscous_kernel->get_integrator_flags();
+    this->integrator_flags = this->integrator_flags | this->viscous_kernel->get_integrator_flags();
 }
 
 template<int dim, typename Number>
@@ -272,11 +272,11 @@ MomentumOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
     tensor gradient_flux;
 
     vector value;
-    if(this->integrator_flags.cell_evaluate.value)
+    if(this->integrator_flags.cell_evaluate & dealii::EvaluationFlags::values)
       value = integrator.get_value(q);
 
     tensor gradient;
-    if(this->integrator_flags.cell_evaluate.gradient)
+    if(this->integrator_flags.cell_evaluate & dealii::EvaluationFlags::gradients)
       gradient = integrator.get_gradient(q);
 
     if(operator_data.unsteady_problem)
@@ -310,10 +310,10 @@ MomentumOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
       gradient_flux += viscous_kernel->get_volume_flux(gradient, viscosity);
     }
 
-    if(this->integrator_flags.cell_integrate.value)
+    if(this->integrator_flags.cell_integrate & dealii::EvaluationFlags::values)
       integrator.submit_value(value_flux, q);
 
-    if(this->integrator_flags.cell_integrate.gradient)
+    if(this->integrator_flags.cell_integrate & dealii::EvaluationFlags::gradients)
       integrator.submit_gradient(gradient_flux, q);
   }
 }
