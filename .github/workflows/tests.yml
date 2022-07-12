@@ -40,3 +40,10 @@ jobs:
           cmake ../ -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           make -j${{ env.COMPILE_JOBS }}
           
+      - name: Test
+        if: matrix.build_type == 'Release'
+        run: |
+          export OMPI_ALLOW_RUN_AS_ROOT=1
+          export OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
+          cd build
+          ctest --output-on-failure
