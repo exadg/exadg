@@ -40,9 +40,6 @@ verify_calculation_of_diagonal(Operator &                                       
                                dealii::LinearAlgebra::distributed::Vector<value_type> & diagonal,
                                MPI_Comm const &                                         mpi_comm)
 {
-  AssertThrow(dealii::Utilities::MPI::n_mpi_processes(mpi_comm) == 1,
-              dealii::ExcMessage("Number of MPI processes has to be 1."));
-
   dealii::ConditionalOStream pcout(std::cout,
                                    dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);
   pcout << "Verify calculation of diagonal:" << std::endl;
@@ -61,14 +58,20 @@ verify_calculation_of_diagonal(Operator &                                       
    *  Set dof-value i to 1.0, calculate matrix-vector
    *  product and store row i of the result in diagonal_check.
    */
-  for(unsigned int i = 0; i < diagonal.locally_owned_size(); ++i)
+  for(unsigned int i = 0; i < diagonal_check.size(); ++i)
   {
-    src.local_element(i) = 1.0;
+    if(diagonal_check.in_local_range(i))
+    {
+      src(i) = 1.0;
+    }
 
     op.vmult(dst, src);
-    diagonal_check.local_element(i) = dst.local_element(i);
 
-    src.local_element(i) = 0.0;
+    if(diagonal_check.in_local_range(i))
+    {
+      diagonal_check(i) = dst(i);
+      src(i)            = 0.0;
+    }
   }
 
   value_type norm_diagonal       = diagonal.l2_norm();

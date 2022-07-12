@@ -248,7 +248,9 @@ OperatorBase<dim, Number, n_components>::calculate_inverse_diagonal(VectorType &
 {
   this->calculate_diagonal(diagonal);
 
-  //  verify_calculation_of_diagonal(*this,diagonal);
+  if(false)
+    verify_calculation_of_diagonal(
+      *this, diagonal, matrix_free->get_dof_handler(this->data.dof_index).get_communicator());
 
   invert_diagonal(diagonal);
 }
