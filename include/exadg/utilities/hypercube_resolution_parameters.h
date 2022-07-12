@@ -25,9 +25,6 @@
 // deal.II
 #include <deal.II/base/parameter_handler.h>
 
-// ExaDG
-#include <exadg/configuration/config.h>
-
 namespace ExaDG
 {
 /*
@@ -198,12 +195,12 @@ struct HypercubeResolutionParameters
       prm.add_parameter("DegreeMin",
                         degree_min,
                         "Minimal polynomial degree of shape functions.",
-                        dealii::Patterns::Integer(1,EXADG_DEGREE_MAX),
+                        dealii::Patterns::Integer(1),
                         true);
       prm.add_parameter("DegreeMax",
                         degree_max,
                         "Maximal polynomial degree of shape functions.",
-                        dealii::Patterns::Integer(1,EXADG_DEGREE_MAX),
+                        dealii::Patterns::Integer(1),
                         true);
       prm.add_parameter("RefineSpaceMin",
                         refine_space_min,

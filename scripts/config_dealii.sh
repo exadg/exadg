@@ -43,11 +43,16 @@ PETSC=$WORKING_DIRECTORY/petsc/petsc-3.14.5
 # hardware for compilation, e.g. "-march=haswell" or "-march=skylake-avx512"
 # in case of Intel Hardware.
 # For more details, see https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html.
+#
+# Furthermore, note that we tell deal.II to compile the tensor product
+# evaluators with highly efficient code paths for higher degrees than it
+# would normally do - here, we select degree 15. For degrees outside this
+# range, we will fail.
 
 cmake \
     -D CMAKE_BUILD_TYPE="DebugRelease" \
     -D CMAKE_C_FLAGS="-march=native -Wno-array-bounds" \
-    -D CMAKE_CXX_FLAGS="-std=c++17 -march=native -Wno-array-bounds -Wno-literal-suffix -pthread" \
+    -D CMAKE_CXX_FLAGS="-std=c++17 -march=native -Wno-array-bounds -Wno-literal-suffix -pthread -DFE_EVAL_FACTORY_DEGREE_MAX=15" \
     -D DEAL_II_CXX_FLAGS_RELEASE="-O3" \
     -D DEAL_II_CXX_FLAGS_DEBUG="-Og" \
     -D DEAL_II_WITH_MPI:BOOL="ON" \
