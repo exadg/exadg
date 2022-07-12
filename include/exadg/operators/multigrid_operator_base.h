@@ -36,6 +36,8 @@ class MultigridOperatorBase : public dealii::Subscriptor
 public:
   typedef Number                                             value_type;
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+  using CellMatrix  = dealii::LAPACKFullMatrix<Number>;
+  using BlockMatrix = std::vector<CellMatrix>;
 
   MultigridOperatorBase() : dealii::Subscriptor()
   {
@@ -82,10 +84,15 @@ public:
   calculate_inverse_diagonal(VectorType & inverse_diagonal_entries) const = 0;
 
   virtual void
-  update_block_diagonal_preconditioner() const = 0;
+  initialize_block_diagonal_preconditioner(BlockMatrix & block_matrix) const = 0;
 
   virtual void
-  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const = 0;
+  update_block_diagonal_preconditioner(BlockMatrix & block_matrix) const = 0;
+
+  virtual void
+  apply_inverse_block_diagonal(const BlockMatrix & block_matrix,
+                               VectorType &        dst,
+                               VectorType const &  src) const = 0;
 
 #ifdef DEAL_II_WITH_TRILINOS
   virtual void

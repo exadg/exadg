@@ -41,7 +41,6 @@ OperatorBase<dim, Number, n_components>::OperatorBase()
     is_dg(true),
     data(OperatorBaseData()),
     level(dealii::numbers::invalid_unsigned_int),
-    block_diagonal_preconditioner_is_initialized(false),
     n_mpi_processes(0)
 {
 }
@@ -459,25 +458,31 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
   }
 }
 
+
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::calculate_block_diagonal_matrices() const
+OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditioner(
+  BlockMatrix & matrices) const
 {
-  AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
-
-  // allocate memory only the first time
-  if(!block_diagonal_preconditioner_is_initialized ||
-     matrix_free->n_cell_batches() * vectorization_length != matrices.size())
+  if(data.implement_block_diagonal_preconditioner_matrix_free)
+  {
+    initialize_block_diagonal_preconditioner_matrix_free();
+  }
+  else // matrix-based variant
   {
     auto dofs =
       matrix_free->get_shape_info(this->data.dof_index).dofs_per_component_on_cell * n_components;
 
-    matrices.resize(matrix_free->n_cell_batches() * vectorization_length,
-                    dealii::LAPACKFullMatrix<Number>(dofs, dofs));
-
-    block_diagonal_preconditioner_is_initialized = true;
+    matrices.resize(matrix_free->n_cell_batches() * vectorization_length, CellMatrix(dofs, dofs));
   }
-  // else: reuse old memory
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::calculate_block_diagonal_matrices(
+  BlockMatrix & matrices) const
+{
+  AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
 
   // clear matrices
   initialize_block_jacobi_matrices_with_zero(matrices);
@@ -523,20 +528,51 @@ OperatorBase<dim, Number, n_components>::add_block_diagonal_matrices(BlockMatrix
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::apply_block_diagonal_matrix_based(
+  BlockMatrix &      matrices,
   VectorType &       dst,
   VectorType const & src) const
 {
   AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
-  AssertThrow(block_diagonal_preconditioner_is_initialized,
-              dealii::ExcMessage("Block Jacobi matrices have not been initialized!"));
 
-  matrix_free->cell_loop(&This::cell_loop_apply_block_diagonal_matrix_based, this, dst, src);
+  const auto cell_loop_apply_block_diagonal_matrix_based =
+    [&](const auto & matrix_free, auto & dst, const auto & src, const auto cell_range) {
+      (void)matrix_free;
+
+      unsigned int const dofs_per_cell = integrator->dofs_per_cell;
+
+      for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
+      {
+        this->reinit_cell(cell);
+
+        integrator->read_dof_values(src);
+
+        for(unsigned int v = 0; v < vectorization_length; ++v)
+        {
+          dealii::Vector<Number> src_vector(dofs_per_cell);
+          dealii::Vector<Number> dst_vector(dofs_per_cell);
+          for(unsigned int j = 0; j < dofs_per_cell; ++j)
+            src_vector(j) = integrator->begin_dof_values()[j][v];
+
+          // apply matrix
+          matrices[cell * vectorization_length + v].vmult(dst_vector, src_vector, false);
+
+          for(unsigned int j = 0; j < dofs_per_cell; ++j)
+            integrator->begin_dof_values()[j][v] = dst_vector(j);
+        }
+
+        integrator->set_dof_values(dst);
+      }
+    };
+
+  matrix_free->template cell_loop<VectorType, VectorType>(
+    cell_loop_apply_block_diagonal_matrix_based, dst, src);
 }
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::apply_inverse_block_diagonal(VectorType &       dst,
-                                                                      VectorType const & src) const
+OperatorBase<dim, Number, n_components>::apply_inverse_block_diagonal(const BlockMatrix & matrices,
+                                                                      VectorType &        dst,
+                                                                      VectorType const &  src) const
 {
   // matrix-free
   if(this->data.implement_block_diagonal_preconditioner_matrix_free)
@@ -550,24 +586,50 @@ OperatorBase<dim, Number, n_components>::apply_inverse_block_diagonal(VectorType
   {
     // Simply apply inverse of block matrices (using the LU factorization that has been computed
     // before).
-    apply_inverse_block_diagonal_matrix_based(dst, src);
+    apply_inverse_block_diagonal_matrix_based(matrices, dst, src);
   }
 }
 
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::apply_inverse_block_diagonal_matrix_based(
-  VectorType &       dst,
-  VectorType const & src) const
+  const BlockMatrix & matrices,
+  VectorType &        dst,
+  VectorType const &  src) const
 {
   AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
-  AssertThrow(block_diagonal_preconditioner_is_initialized,
-              dealii::ExcMessage("Block Jacobi matrices have not been initialized!"));
 
-  matrix_free->cell_loop(&This::cell_loop_apply_inverse_block_diagonal_matrix_based,
-                         this,
-                         dst,
-                         src);
+  const auto cell_loop_apply_inverse_block_diagonal_matrix_based =
+    [&](const auto & matrix_free, auto & dst, const auto & src, const auto cell_range) {
+      (void)matrix_free;
+
+      unsigned int const dofs_per_cell = integrator->dofs_per_cell;
+
+      for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
+      {
+        this->reinit_cell(cell);
+
+        integrator->read_dof_values(src);
+
+        for(unsigned int v = 0; v < vectorization_length; ++v)
+        {
+          dealii::Vector<Number> src_vector(dofs_per_cell);
+          for(unsigned int j = 0; j < dofs_per_cell; ++j)
+            src_vector(j) = integrator->begin_dof_values()[j][v];
+
+          // apply inverse matrix
+          matrices[cell * vectorization_length + v].solve(src_vector, false);
+
+          for(unsigned int j = 0; j < dofs_per_cell; ++j)
+            integrator->begin_dof_values()[j][v] = src_vector(j);
+        }
+
+        integrator->set_dof_values(dst);
+      }
+    };
+
+  matrix_free->template cell_loop<VectorType, VectorType>(
+    cell_loop_apply_inverse_block_diagonal_matrix_based, dst, src);
 }
 
 template<int dim, typename Number, int n_components>
@@ -669,31 +731,10 @@ OperatorBase<dim, Number, n_components>::apply_add_block_diagonal_elementwise(
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::update_block_diagonal_preconditioner() const
+OperatorBase<dim, Number, n_components>::update_block_diagonal_preconditioner(
+  BlockMatrix & matrices) const
 {
   AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
-
-  // initialization
-
-  if(!block_diagonal_preconditioner_is_initialized)
-  {
-    if(data.implement_block_diagonal_preconditioner_matrix_free)
-    {
-      initialize_block_diagonal_preconditioner_matrix_free();
-    }
-    else // matrix-based variant
-    {
-      // allocate memory only the first time
-      auto dofs =
-        matrix_free->get_shape_info(this->data.dof_index).dofs_per_component_on_cell * n_components;
-      matrices.resize(matrix_free->n_cell_batches() * vectorization_length,
-                      dealii::LAPACKFullMatrix<Number>(dofs, dofs));
-    }
-
-    block_diagonal_preconditioner_is_initialized = true;
-  }
-
-  // update
 
   // For the matrix-free variant there is nothing to do.
   // For the matrix-based variant we have to recompute the block matrices.
@@ -1403,77 +1444,6 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
       integrator->begin_dof_values()[j] = local_diag[j];
 
     integrator->distribute_local_to_global(dst);
-  }
-}
-
-template<int dim, typename Number, int n_components>
-void
-OperatorBase<dim, Number, n_components>::cell_loop_apply_inverse_block_diagonal_matrix_based(
-  dealii::MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                            dst,
-  VectorType const &                      src,
-  Range const &                           cell_range) const
-{
-  (void)matrix_free;
-
-  unsigned int const dofs_per_cell = integrator->dofs_per_cell;
-
-  for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
-  {
-    this->reinit_cell(cell);
-
-    integrator->read_dof_values(src);
-
-    for(unsigned int v = 0; v < vectorization_length; ++v)
-    {
-      dealii::Vector<Number> src_vector(dofs_per_cell);
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        src_vector(j) = integrator->begin_dof_values()[j][v];
-
-      // apply inverse matrix
-      matrices[cell * vectorization_length + v].solve(src_vector, false);
-
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        integrator->begin_dof_values()[j][v] = src_vector(j);
-    }
-
-    integrator->set_dof_values(dst);
-  }
-}
-
-template<int dim, typename Number, int n_components>
-void
-OperatorBase<dim, Number, n_components>::cell_loop_apply_block_diagonal_matrix_based(
-  dealii::MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                            dst,
-  VectorType const &                      src,
-  Range const &                           range) const
-{
-  (void)matrix_free;
-
-  unsigned int const dofs_per_cell = integrator->dofs_per_cell;
-
-  for(unsigned int cell = range.first; cell < range.second; ++cell)
-  {
-    this->reinit_cell(cell);
-
-    integrator->read_dof_values(src);
-
-    for(unsigned int v = 0; v < vectorization_length; ++v)
-    {
-      dealii::Vector<Number> src_vector(dofs_per_cell);
-      dealii::Vector<Number> dst_vector(dofs_per_cell);
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        src_vector(j) = integrator->begin_dof_values()[j][v];
-
-      // apply matrix
-      matrices[cell * vectorization_length + v].vmult(dst_vector, src_vector, false);
-
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        integrator->begin_dof_values()[j][v] = dst_vector(j);
-    }
-
-    integrator->set_dof_values(dst);
   }
 }
 

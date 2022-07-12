@@ -31,12 +31,15 @@ class BlockJacobiPreconditioner : public PreconditionerBase<typename Operator::v
 {
 public:
   typedef typename PreconditionerBase<typename Operator::value_type>::VectorType VectorType;
+  using CellMatrix  = dealii::LAPACKFullMatrix<typename Operator::value_type>;
+  using BlockMatrix = std::vector<CellMatrix>;
 
   BlockJacobiPreconditioner(Operator const & underlying_operator_in)
     : underlying_operator(underlying_operator_in)
   {
     // initialize block Jacobi
-    underlying_operator.update_block_diagonal_preconditioner();
+    underlying_operator.initialize_block_diagonal_preconditioner(block_matrix);
+    underlying_operator.update_block_diagonal_preconditioner(block_matrix);
   }
 
   /*
@@ -47,7 +50,7 @@ public:
   void
   update()
   {
-    underlying_operator.update_block_diagonal_preconditioner();
+    underlying_operator.update_block_diagonal_preconditioner(block_matrix);
   }
 
   /*
@@ -58,11 +61,12 @@ public:
   void
   vmult(VectorType & dst, VectorType const & src) const
   {
-    underlying_operator.apply_inverse_block_diagonal(dst, src);
+    underlying_operator.apply_inverse_block_diagonal(block_matrix, dst, src);
   }
 
 private:
   Operator const & underlying_operator;
+  BlockMatrix      block_matrix;
 };
 
 } // namespace ExaDG

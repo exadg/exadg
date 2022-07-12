@@ -33,6 +33,7 @@ public:
   typedef MultigridOperatorBase<dim, Number> Base;
   typedef typename Base::value_type          value_type;
   typedef typename Base::VectorType          VectorType;
+  typedef typename Base::BlockMatrix         BlockMatrix;
 
   MultigridOperator(std::shared_ptr<Operator> op) : pde_operator(op)
   {
@@ -123,15 +124,23 @@ public:
   }
 
   virtual void
-  update_block_diagonal_preconditioner() const
+  initialize_block_diagonal_preconditioner(BlockMatrix & block_matrix) const
   {
-    pde_operator->update_block_diagonal_preconditioner();
+    pde_operator->initialize_block_diagonal_preconditioner(block_matrix);
   }
 
   virtual void
-  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const
+  update_block_diagonal_preconditioner(BlockMatrix & block_matrix) const
   {
-    pde_operator->apply_inverse_block_diagonal(dst, src);
+    pde_operator->update_block_diagonal_preconditioner(block_matrix);
+  }
+
+  virtual void
+  apply_inverse_block_diagonal(const BlockMatrix & block_matrix,
+                               VectorType &        dst,
+                               VectorType const &  src) const
+  {
+    pde_operator->apply_inverse_block_diagonal(block_matrix, dst, src);
   }
 
 #ifdef DEAL_II_WITH_TRILINOS
