@@ -41,8 +41,8 @@ ElasticityOperatorBase<dim, Number>::get_integrator_flags(bool const unsteady) c
 {
   IntegratorFlags flags;
 
-  auto const unsteady_flag = this->operator_data.unsteady ? dealii::EvaluationFlags::values :
-                                                            dealii::EvaluationFlags::nothing;
+  auto const unsteady_flag =
+    unsteady ? dealii::EvaluationFlags::values : dealii::EvaluationFlags::nothing;
 
   flags.cell_evaluate  = unsteady_flag | dealii::EvaluationFlags::gradients;
   flags.cell_integrate = unsteady_flag | dealii::EvaluationFlags::gradients;
