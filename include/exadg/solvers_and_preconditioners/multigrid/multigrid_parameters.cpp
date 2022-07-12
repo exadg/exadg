@@ -46,6 +46,9 @@ enum_to_string(MultigridType const enum_type)
     case MultigridType::hcMG:
       string_type = "hc-MG";
       break;
+    case MultigridType::cMG:
+      string_type = "c-MG";
+      break;
     case MultigridType::pMG:
       string_type = "p-MG";
       break;
