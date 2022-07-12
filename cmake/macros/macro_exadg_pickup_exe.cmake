@@ -30,8 +30,15 @@ MACRO(EXADG_PICKUP_EXE FILE_NAME TARGET_NAME EXE_NAME)
     ADD_EXECUTABLE(${TARGET_NAME} ${FILE_NAME})
     DEAL_II_SETUP_TARGET(${TARGET_NAME})
     SET_TARGET_PROPERTIES(${TARGET_NAME} PROPERTIES OUTPUT_NAME ${EXE_NAME})
-    TARGET_LINK_LIBRARIES(${TARGET_NAME} exadg)
 
+    # internally we have to link against exadg, if someone links against the project
+    # we have to link against EXADG::exadg
+    IF (TARGET exadg)
+      TARGET_LINK_LIBRARIES(${TARGET_NAME} exadg)
+    ELSE()
+      TARGET_LINK_LIBRARIES(${TARGET_NAME} EXADG::exadg)
+    ENDIF()
+      
     IF(${EXADG_WITH_FFTW})
        TARGET_LINK_FFTW(${TARGET_NAME})
     ENDIF()
