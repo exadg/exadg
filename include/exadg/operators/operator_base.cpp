@@ -505,18 +505,22 @@ OperatorBase<dim, Number, n_components>::add_block_diagonal_matrices(BlockMatrix
     }
     else
     {
-      AssertThrow(
-        n_mpi_processes == 1,
-        dealii::ExcMessage(
-          "Block diagonal calculation with separate loops over cells and faces only works in serial. "
-          "Use cell based loops for parallel computations."));
-
       matrix_free->loop(&This::cell_loop_block_diagonal,
                         &This::face_loop_block_diagonal,
                         &This::boundary_face_loop_block_diagonal,
                         this,
                         matrices,
                         matrices);
+
+      face_loop_block_diagonal(
+        *matrix_free,
+        matrices,
+        matrices,
+        std::pair<unsigned int, unsigned int>(matrix_free->n_inner_face_batches() +
+                                                matrix_free->n_boundary_face_batches(),
+                                              matrix_free->n_inner_face_batches() +
+                                                matrix_free->n_boundary_face_batches() +
+                                                matrix_free->n_ghost_inner_face_batches()));
     }
   }
   else
@@ -1529,6 +1533,9 @@ OperatorBase<dim, Number, n_components>::face_loop_block_diagonal(
       for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
         unsigned int const cell = matrix_free.get_face_info(face).cells_exterior[v];
+        // early return if cell is not locally owned
+        if(cell / vectorization_length >= matrix_free.n_cell_batches())
+          continue;
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
           matrices[cell](i, j) += integrator_p->begin_dof_values()[i][v];
       }
