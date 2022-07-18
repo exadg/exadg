@@ -1333,7 +1333,7 @@ SpatialOperatorBase<dim, Number>::update_after_grid_motion()
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::set_grid_velocity(VectorType u_grid_in)
+SpatialOperatorBase<dim, Number>::set_grid_velocity(VectorType const & u_grid_in)
 {
   convective_kernel->set_grid_velocity_ptr(u_grid_in);
 }
