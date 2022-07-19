@@ -111,55 +111,58 @@ $(function() {
 <div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>                               dealii::LinearAlgebra::distributed::Vector&lt;value_type&gt; &amp; diagonal,</div>
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>                               MPI_Comm <span class="keyword">const</span> &amp;                                         mpi_comm)</div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>{</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  AssertThrow(dealii::Utilities::MPI::n_mpi_processes(mpi_comm) == 1,</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>              dealii::ExcMessage(<span class="stringliteral">&quot;Number of MPI processes has to be 1.&quot;</span>));</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  dealii::ConditionalOStream pcout(std::cout,</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>                                   dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  pcout &lt;&lt; <span class="stringliteral">&quot;Verify calculation of diagonal:&quot;</span> &lt;&lt; std::endl;</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="keyword">typedef</span> dealii::LinearAlgebra::distributed::Vector&lt;value_type&gt; VectorType;</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  VectorType diagonal_check(diagonal);</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  VectorType src(diagonal);</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  VectorType dst(diagonal);</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  diagonal_check = 0.0;</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  src            = 0.0;</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  dst            = 0.0;</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span><span class="comment">   *  Set dof-value i to 1.0, calculate matrix-vector</span></div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span><span class="comment">   *  product and store row i of the result in diagonal_check.</span></div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; diagonal.locally_owned_size(); ++i)</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  {</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    src.local_element(i) = 1.0;</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  dealii::ConditionalOStream pcout(std::cout,</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>                                   dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  pcout &lt;&lt; <span class="stringliteral">&quot;Verify calculation of diagonal:&quot;</span> &lt;&lt; std::endl;</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="keyword">typedef</span> dealii::LinearAlgebra::distributed::Vector&lt;value_type&gt; VectorType;</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  VectorType diagonal_check(diagonal);</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  VectorType src(diagonal);</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  VectorType dst(diagonal);</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  diagonal_check = 0.0;</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  src            = 0.0;</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  dst            = 0.0;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span><span class="comment">   *  Set dof-value i to 1.0, calculate matrix-vector</span></div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span><span class="comment">   *  product and store row i of the result in diagonal_check.</span></div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; diagonal_check.size(); ++i)</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  {</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    <span class="keywordflow">if</span>(diagonal_check.in_local_range(i))</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    {</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>      src(i) = 1.0;</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    }</div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>    op.vmult(dst, src);</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    diagonal_check.local_element(i) = dst.local_element(i);</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    src.local_element(i) = 0.0;</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  }</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  value_type norm_diagonal       = diagonal.l2_norm();</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  value_type norm_diagonal_check = diagonal_check.l2_norm();</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    <span class="keywordflow">if</span>(diagonal_check.in_local_range(i))</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    {</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>      diagonal_check(i) = dst(i);</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>      src(i)            = 0.0;</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    }</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  }</div>
 <div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span> </div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  pcout &lt;&lt; std::endl</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>        &lt;&lt; <span class="stringliteral">&quot;L2 norm diagonal - Variant 1: &quot;</span> &lt;&lt; std::setprecision(10) &lt;&lt; norm_diagonal &lt;&lt; std::endl;</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  pcout &lt;&lt; <span class="stringliteral">&quot;L2 norm diagonal - Variant 2: &quot;</span> &lt;&lt; std::setprecision(10) &lt;&lt; norm_diagonal_check</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>        &lt;&lt; std::endl;</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span> </div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  diagonal_check.add(-1.0, diagonal);</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  value_type norm_error = diagonal_check.l2_norm();</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  value_type norm_diagonal       = diagonal.l2_norm();</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  value_type norm_diagonal_check = diagonal_check.l2_norm();</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span> </div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  pcout &lt;&lt; std::endl</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>        &lt;&lt; <span class="stringliteral">&quot;L2 norm diagonal - Variant 1: &quot;</span> &lt;&lt; std::setprecision(10) &lt;&lt; norm_diagonal &lt;&lt; std::endl;</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  pcout &lt;&lt; <span class="stringliteral">&quot;L2 norm diagonal - Variant 2: &quot;</span> &lt;&lt; std::setprecision(10) &lt;&lt; norm_diagonal_check</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>        &lt;&lt; std::endl;</div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span> </div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  pcout &lt;&lt; <span class="stringliteral">&quot;L2 error diagonal: &quot;</span> &lt;&lt; std::setprecision(10) &lt;&lt; norm_error &lt;&lt; std::endl &lt;&lt; std::endl;</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>}</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  diagonal_check.add(-1.0, diagonal);</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  value_type norm_error = diagonal_check.l2_norm();</div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span> </div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  pcout &lt;&lt; <span class="stringliteral">&quot;L2 error diagonal: &quot;</span> &lt;&lt; std::setprecision(10) &lt;&lt; norm_error &lt;&lt; std::endl &lt;&lt; std::endl;</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>}</div>
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_SOLVERS_AND_PRECONDITIONERS_VERIFY_CALCULATION_OF_DIAGONAL_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_SOLVERS_AND_PRECONDITIONERS_VERIFY_CALCULATION_OF_DIAGONAL_H_ */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
