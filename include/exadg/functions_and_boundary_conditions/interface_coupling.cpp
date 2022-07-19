@@ -196,10 +196,10 @@ template class ContainerInterfaceData<2, 2, double>;
 template class ContainerInterfaceData<3, 1, double>;
 template class ContainerInterfaceData<3, 3, double>;
 
-template class InterfaceCoupling<2, 1, float>;
-template class InterfaceCoupling<2, 2, float>;
-template class InterfaceCoupling<3, 1, float>;
-template class InterfaceCoupling<3, 3, float>;
+// template class InterfaceCoupling<2, 1, float>;
+// template class InterfaceCoupling<2, 2, float>;
+// template class InterfaceCoupling<3, 1, float>;
+// template class InterfaceCoupling<3, 3, float>;
 
 template class InterfaceCoupling<2, 1, double>;
 template class InterfaceCoupling<2, 2, double>;
