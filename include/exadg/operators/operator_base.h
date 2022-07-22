@@ -140,7 +140,7 @@ public:
   bool
   operator_is_singular() const;
 
-  virtual void
+  void
   vmult(VectorType & dst, VectorType const & src) const;
 
   void
@@ -259,7 +259,7 @@ public:
   void
   calculate_diagonal(VectorType & diagonal) const;
 
-  virtual void
+  void
   add_diagonal(VectorType & diagonal) const;
 
   /*
