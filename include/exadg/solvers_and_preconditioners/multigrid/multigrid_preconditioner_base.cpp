@@ -1001,14 +1001,13 @@ void
 MultigridPreconditionerBase<dim, Number>::initialize_transfer_operators()
 {
   unsigned int const dof_index = 0;
-  this->do_initialize_transfer_operators(transfers, constraints, constrained_dofs, dof_index);
+  this->do_initialize_transfer_operators(transfers, constrained_dofs, dof_index);
 }
 
 template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::do_initialize_transfer_operators(
-  std::shared_ptr<MGTransfer<VectorTypeMG>> &                                          transfers,
-  dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> & constraints,
+  std::shared_ptr<MGTransfer<VectorTypeMG>> &                         transfers,
   dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> & constrained_dofs,
   unsigned int const                                                  dof_index)
 {
@@ -1017,7 +1016,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_transfer_operators(
   {
     auto tmp = std::make_shared<MGTransferGlobalCoarsening<dim, MultigridNumber, VectorTypeMG>>();
 
-    tmp->reinit(matrix_free_objects, constraints, dof_index);
+    tmp->reinit(matrix_free_objects, dof_index);
 
     transfers = tmp;
   }
@@ -1025,7 +1024,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_transfer_operators(
   {
     auto tmp = std::make_shared<MGTransferGlobalRefinement<dim, MultigridNumber, VectorTypeMG>>();
 
-    tmp->reinit(*mapping, matrix_free_objects, constraints, constrained_dofs, dof_index);
+    tmp->reinit(*mapping, matrix_free_objects, constrained_dofs, dof_index);
 
     transfers = tmp;
   }

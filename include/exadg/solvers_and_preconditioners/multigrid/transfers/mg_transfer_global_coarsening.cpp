@@ -47,9 +47,8 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::prolongate_and_add(
 template<int dim, typename Number, typename VectorType>
 void
 MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
-  dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> &   mg_matrixfree,
-  dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<Number>>> & mg_constraints,
-  unsigned int const                                                          dof_handler_index)
+  dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> & mg_matrixfree,
+  unsigned int const                                                        dof_handler_index)
 {
   std::vector<MGLevelInfo>            global_levels;
   std::vector<MGDoFHandlerIdentifier> p_levels;
@@ -91,20 +90,20 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
 
     if(coarse_level.h_level() != fine_level.h_level()) // h-transfer
     {
-      transfers[i].reinit_geometric_transfer(mg_matrixfree[i]->get_dof_handler(dof_handler_index),
-                                             mg_matrixfree[i - 1]->get_dof_handler(
-                                               dof_handler_index),
-                                             *mg_constraints[i],
-                                             *mg_constraints[i - 1]);
+      transfers[i].reinit_geometric_transfer(
+        mg_matrixfree[i]->get_dof_handler(dof_handler_index),
+        mg_matrixfree[i - 1]->get_dof_handler(dof_handler_index),
+        mg_matrixfree[i]->get_affine_constraints(dof_handler_index),
+        mg_matrixfree[i - 1]->get_affine_constraints(dof_handler_index));
     }
     else if(coarse_level.degree() != fine_level.degree() || // p-transfer
             coarse_level.is_dg() != fine_level.is_dg())     // c-transfer
     {
-      transfers[i].reinit_polynomial_transfer(mg_matrixfree[i]->get_dof_handler(dof_handler_index),
-                                              mg_matrixfree[i - 1]->get_dof_handler(
-                                                dof_handler_index),
-                                              *mg_constraints[i],
-                                              *mg_constraints[i - 1]);
+      transfers[i].reinit_polynomial_transfer(
+        mg_matrixfree[i]->get_dof_handler(dof_handler_index),
+        mg_matrixfree[i - 1]->get_dof_handler(dof_handler_index),
+        mg_matrixfree[i]->get_affine_constraints(dof_handler_index),
+        mg_matrixfree[i - 1]->get_affine_constraints(dof_handler_index));
     }
     else
     {
