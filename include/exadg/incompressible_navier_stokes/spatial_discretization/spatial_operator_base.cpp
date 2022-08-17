@@ -300,9 +300,10 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
       AssertThrow(
         false,
         dealii::ExcMessage(
-          "Dirichlet BCs are not properly implemented for HDIV. The BCs need to be strongly applied in order to obtain an exactly divergence-free solution."));
-      // We would like to do something similar to above. Probably with
-      // dealii::VectorTools::interpolate_boundary_values
+          "Dirichlet BCs are not properly implemented for HDIV. The normal component of the velocity field needs to be strongly applied."));
+      // We would like to do something similar to above. Probably would work with the same function
+      // i.e dealii::VectorTools::project_boundary_values_div_conforming(). Otherwise one might want
+      // to look into: dealii::VectorTools::interpolate_boundary_values
       // dealii::VectorTools::project_boundary_values
       // dealii::DoFTools::make_zero_boundary_constraints
     }
