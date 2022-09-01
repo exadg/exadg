@@ -228,7 +228,7 @@ Parameters::Parameters()
     exact_inversion_of_laplace_operator(false),
     solver_data_pressure_block(SolverData(1e4, 1.e-12, 1.e-6, 100)),
 
-    // Solving mass system (projection) if Matrix-free inverse mass operator is not avaliable.
+    // Only relevant for HDIV case.
     solver_data_mass(SolverData(1e3, 1.e-12, 1.e-6, 100)),
     preconditioner_mass(PreconditionerMass::PointJacobi)
 {
