@@ -30,12 +30,13 @@
 
 namespace ExaDG
 {
-template<typename Operator, typename VectorType>
+template<typename Operator, typename VectorType, typename PreconditionerType>
 class ChebyshevSmoother : public SmootherBase<VectorType>
 {
 public:
   typedef
-    typename dealii::PreconditionChebyshev<Operator, VectorType>::AdditionalData AdditionalData;
+    typename dealii::PreconditionChebyshev<Operator, VectorType, PreconditionerType>::AdditionalData
+      AdditionalData;
 
   ChebyshevSmoother()
   {
@@ -60,7 +61,7 @@ public:
   }
 
 private:
-  dealii::PreconditionChebyshev<Operator, VectorType> smoother_object;
+  dealii::PreconditionChebyshev<Operator, VectorType, PreconditionerType> smoother_object;
 };
 
 } // namespace ExaDG

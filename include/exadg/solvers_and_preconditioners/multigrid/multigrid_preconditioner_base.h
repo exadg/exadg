@@ -292,7 +292,10 @@ private:
   initialize_smoother(Operator & matrix, unsigned int level);
 
   void
-  initialize_chebyshev_smoother(Operator & matrix, unsigned int level);
+  initialize_chebyshev_smoother_point_jacobi(Operator & matrix, unsigned int const level);
+
+  void
+  initialize_chebyshev_smoother_block_jacobi(Operator & matrix, unsigned int const level);
 
   /*
    * Coarse grid solver.
