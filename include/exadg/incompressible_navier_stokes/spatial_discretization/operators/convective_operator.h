@@ -93,7 +93,7 @@ public:
 
     if(data.ale)
     {
-      matrix_free.initialize_dof_vector(grid_velocity, dof_index);
+      matrix_free.initialize_dof_vector(grid_velocity.own(), dof_index);
 
       AssertThrow(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation,
                   dealii::ExcMessage(
@@ -159,7 +159,7 @@ public:
   }
 
   void
-  set_velocity_copy(VectorType const & src) const
+  set_velocity_copy(VectorType const & src)
   {
     velocity.own() = src;
 
@@ -167,7 +167,7 @@ public:
   }
 
   void
-  set_velocity_ptr(VectorType const & src) const
+  set_velocity_ptr(VectorType const & src)
   {
     velocity.reset(src);
 
@@ -175,16 +175,17 @@ public:
   }
 
   void
-  set_grid_velocity_ptr(VectorType const & src) const
+  set_grid_velocity_ptr(VectorType const & src)
   {
-    grid_velocity = src;
-    grid_velocity.update_ghost_values();
+    grid_velocity.reset(src);
+
+    grid_velocity->update_ghost_values();
   }
 
   VectorType const &
   get_grid_velocity() const
   {
-    return grid_velocity;
+    return *grid_velocity;
   }
 
   inline DEAL_II_ALWAYS_INLINE //
@@ -253,7 +254,7 @@ public:
                                              dealii::EvaluationFlags::gradients);
 
       if(data.ale)
-        integrator_grid_velocity->gather_evaluate(grid_velocity, dealii::EvaluationFlags::values);
+        integrator_grid_velocity->gather_evaluate(*grid_velocity, dealii::EvaluationFlags::values);
     }
     else
     {
@@ -273,7 +274,7 @@ public:
     if(data.ale)
     {
       integrator_grid_velocity_face->reinit(face);
-      integrator_grid_velocity_face->gather_evaluate(grid_velocity,
+      integrator_grid_velocity_face->gather_evaluate(*grid_velocity,
                                                      dealii::EvaluationFlags::values);
     }
   }
@@ -287,7 +288,7 @@ public:
     if(data.ale)
     {
       integrator_grid_velocity_face->reinit(face);
-      integrator_grid_velocity_face->gather_evaluate(grid_velocity,
+      integrator_grid_velocity_face->gather_evaluate(*grid_velocity,
                                                      dealii::EvaluationFlags::values);
     }
   }
@@ -303,7 +304,7 @@ public:
     if(data.ale)
     {
       integrator_grid_velocity_face->reinit(cell, face);
-      integrator_grid_velocity_face->gather_evaluate(grid_velocity,
+      integrator_grid_velocity_face->gather_evaluate(*grid_velocity,
                                                      dealii::EvaluationFlags::values);
     }
 
@@ -813,8 +814,8 @@ public:
 private:
   ConvectiveKernelData data;
 
-  mutable lazy_ptr<VectorType> velocity;
-  mutable VectorType           grid_velocity;
+  lazy_ptr<VectorType> velocity;
+  lazy_ptr<VectorType> grid_velocity;
 
   std::shared_ptr<IntegratorCell> integrator_velocity;
   std::shared_ptr<IntegratorFace> integrator_velocity_m;

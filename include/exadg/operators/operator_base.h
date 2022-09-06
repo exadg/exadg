@@ -353,7 +353,7 @@ protected:
   /*
    * Matrix-free object.
    */
-  mutable lazy_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
+  lazy_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
 
   /*
    * Physical time (required for time-dependent problems).
@@ -363,7 +363,7 @@ protected:
   /*
    * Constraint matrix.
    */
-  mutable lazy_ptr<dealii::AffineConstraints<Number>> constraint;
+  lazy_ptr<dealii::AffineConstraints<Number>> constraint;
 
   mutable dealii::AffineConstraints<double> constraint_double;
 

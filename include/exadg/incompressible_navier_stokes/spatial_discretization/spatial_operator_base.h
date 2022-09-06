@@ -406,7 +406,7 @@ public:
    * Sets the grid velocity.
    */
   void
-  set_grid_velocity(VectorType velocity);
+  set_grid_velocity(VectorType const & velocity);
 
 protected:
   /*
