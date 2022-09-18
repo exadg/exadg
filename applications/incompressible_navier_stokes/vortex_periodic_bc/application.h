@@ -148,7 +148,7 @@ private:
     this->param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     this->param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     this->param.max_velocity                    = 1.0;
-    this->param.cfl                             = 0.1;
+    this->param.cfl                             = 0.4;
     this->param.adaptive_time_stepping          = false;
     this->param.cfl_exponent_fe_degree_velocity = 1.5;
     // this->param.time_step_size                  = 1.0e-7;
