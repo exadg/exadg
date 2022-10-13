@@ -280,7 +280,12 @@ public:
   // Grid data
   GridData grid;
 
-  // Polynomial degree of velocity shape functions
+  // type of spatial discretization approach
+  SpatialDiscretization spatial_discretization;
+
+  // Polynomial degree of velocity shape functions. In case of H-div Raviart-Thomas 'degree_u' is
+  // the polynomial degree in normal direction and (degree_u - 1) is the degree in tangential
+  // direction.
   unsigned int degree_u;
 
   // Polynomial degree of pressure shape functions
@@ -647,6 +652,21 @@ public:
   // solver data for Schur complement
   // (only relevant if exact_inversion_of_laplace_operator == true)
   SolverData solver_data_pressure_block;
+
+
+
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                            SOLVE MASS SYSTEM (projection)                          */
+  /*                                                                                    */
+  /**************************************************************************************/
+  // Used when matrix-free inverse mass operator is not avaliable, e.g in the case of HDIV.
+
+  // solver data for solving mass system
+  SolverData solver_data_mass;
+
+  // description: see enum declaration
+  PreconditionerMass preconditioner_mass;
 };
 
 } // namespace IncNS

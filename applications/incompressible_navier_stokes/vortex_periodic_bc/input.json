@@ -1,0 +1,25 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "3",
+        "DegreeMax": "3",
+        "RefineSpaceMin": "3",
+        "RefineSpaceMax": "3"
+    },
+    "TemporalResolution": {
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+        "MeshType": "Cartesian"
+    },
+    "Output": {
+        "OutputDirectory": "output/vortex_periodic/",
+        "OutputName": "vortex_periodic",
+        "WriteOutput": "true"
+    }
+}

@@ -303,6 +303,27 @@ enum_to_string(DegreePressure const enum_type)
 /**************************************************************************************/
 
 std::string
+enum_to_string(SpatialDiscretization const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    case SpatialDiscretization::L2:
+      string_type = "L2 - Discontinuous Galerkin";
+      break;
+    case SpatialDiscretization::HDIV:
+      string_type = "HDIV - Raviart-Thomas";
+      break;
+    default:
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      break;
+  }
+
+  return string_type;
+}
+
+std::string
 enum_to_string(TypeDirichletBCs const enum_type)
 {
   std::string string_type;
@@ -818,6 +839,27 @@ enum_to_string(SchurComplementPreconditioner const enum_type)
       break;
     case SchurComplementPreconditioner::PressureConvectionDiffusion:
       string_type = "PressureConvectionDiffusion";
+      break;
+    default:
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      break;
+  }
+
+  return string_type;
+}
+
+std::string
+enum_to_string(PreconditionerMass const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    case PreconditionerMass::None:
+      string_type = "None";
+      break;
+    case PreconditionerMass::PointJacobi:
+      string_type = "PointJacobi";
       break;
     default:
       AssertThrow(false, dealii::ExcMessage("Not implemented."));

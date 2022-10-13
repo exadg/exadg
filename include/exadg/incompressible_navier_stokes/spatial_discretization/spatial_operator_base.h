@@ -24,6 +24,7 @@
 
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/fe_raviart_thomas.h>
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/lac/la_parallel_block_vector.h>
 #include <deal.II/lac/la_parallel_vector.h>
@@ -163,7 +164,7 @@ public:
   std::shared_ptr<dealii::Mapping<dim> const>
   get_mapping() const;
 
-  dealii::FESystem<dim> const &
+  dealii::FiniteElement<dim> const &
   get_fe_u() const;
 
   dealii::FE_DGQ<dim> const &
@@ -180,6 +181,9 @@ public:
 
   dealii::AffineConstraints<Number> const &
   get_constraint_p() const;
+
+  dealii::AffineConstraints<Number> const &
+  get_constraint_u() const;
 
   dealii::types::global_dof_index
   get_number_of_dofs() const;
@@ -340,7 +344,7 @@ public:
                                     double const       time) const;
 
   // inverse velocity mass operator
-  void
+  unsigned int
   apply_inverse_mass_operator(VectorType & dst, VectorType const & src) const;
 
   /*
@@ -407,6 +411,12 @@ public:
    */
   void
   set_grid_velocity(VectorType const & velocity);
+
+  /*
+   *  Calls constraint_u.distribute(u) and updates the constrained DoFs of the velocity field
+   */
+  void
+  distribute_constraint_u(VectorType & velocity);
 
 protected:
   /*
@@ -476,9 +486,9 @@ private:
   /*
    * Basic finite element ingredients.
    */
-  std::shared_ptr<dealii::FESystem<dim>> fe_u;
-  dealii::FE_DGQ<dim>                    fe_p;
-  dealii::FE_DGQ<dim>                    fe_u_scalar;
+  std::shared_ptr<dealii::FiniteElement<dim>> fe_u;
+  dealii::FE_DGQ<dim>                         fe_p;
+  dealii::FE_DGQ<dim>                         fe_u_scalar;
 
   dealii::DoFHandler<dim> dof_handler_u;
   dealii::DoFHandler<dim> dof_handler_p;
@@ -538,10 +548,17 @@ protected:
   mutable MomentumOperator<dim, Number> momentum_operator;
 
   /*
-   * Inverse mass operator.
+   * Inverse mass operator (for L2 spaces)
    */
   InverseMassOperator<dim, dim, Number> inverse_mass_velocity;
   InverseMassOperator<dim, 1, Number>   inverse_mass_velocity_scalar;
+
+  /*
+   * solver for mass system (projection). Used when matrix-free inverse mass operator is not
+   * avaliable.
+   */
+  std::shared_ptr<PreconditionerBase<Number>>     mass_preconditioner;
+  std::shared_ptr<Krylov::SolverBase<VectorType>> mass_solver;
 
   /*
    * Projection operator.

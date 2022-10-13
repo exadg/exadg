@@ -463,6 +463,12 @@ TimeIntBDF<dim, Number>::postprocessing() const
     operator_base->move_grid_and_update_dependent_data_structures(this->get_time());
   }
 
+  // We need to distribute the dofs before computing the error since
+  // dealii::VectorTools::integrate_difference() does not take constraints into account
+  // like MatrixFree does, hence reading the wrong values. distribute_constraint_u()
+  // updates the constrained values for the velocity.
+  operator_base->distribute_constraint_u(const_cast<VectorType &>(get_velocity(0)));
+
   bool const standard = true;
   if(standard)
   {
