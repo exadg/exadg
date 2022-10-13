@@ -557,30 +557,32 @@ private:
 
     // write output for visualization of results
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output            = this->output_parameters.write;
-    pp_data.output_data.directory               = this->output_parameters.directory + "vtu/";
-    pp_data.output_data.filename                = this->output_parameters.filename + "_nozzle";
-    pp_data.output_data.start_time              = output_start_time_nozzle;
-    pp_data.output_data.interval_time           = output_interval_time;
-    pp_data.output_data.write_divergence        = true;
-    pp_data.output_data.write_processor_id      = true;
-    pp_data.output_data.mean_velocity.calculate = true;
-    pp_data.output_data.mean_velocity.sample_start_time      = sample_start_time;
-    pp_data.output_data.mean_velocity.sample_end_time        = sample_end_time;
-    pp_data.output_data.mean_velocity.sample_every_timesteps = 1;
-    pp_data.output_data.degree                               = this->param.degree_u;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = output_start_time_nozzle;
+    pp_data.output_data.time_control_data.trigger_interval = output_interval_time;
+    pp_data.output_data.directory                = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename                 = this->output_parameters.filename + "_nozzle";
+    pp_data.output_data.write_divergence         = true;
+    pp_data.output_data.write_processor_id       = true;
+    pp_data.output_data.mean_velocity.is_active  = true;
+    pp_data.output_data.mean_velocity.start_time = sample_start_time;
+    pp_data.output_data.mean_velocity.end_time   = sample_end_time;
+    pp_data.output_data.mean_velocity.trigger_every_time_steps = 1;
+    pp_data.output_data.degree                                 = this->param.degree_u;
 
     PostProcessorDataFDA<dim> pp_data_fda;
     pp_data_fda.pp_data = pp_data;
 
     // evaluation of quantities along lines
-    pp_data_fda.line_plot_data.line_data.directory       = this->output_parameters.directory;
-    pp_data_fda.line_plot_data.statistics_data.calculate = true;
-    pp_data_fda.line_plot_data.statistics_data.sample_start_time      = sample_start_time;
-    pp_data_fda.line_plot_data.statistics_data.sample_end_time        = end_time;
-    pp_data_fda.line_plot_data.statistics_data.sample_every_timesteps = sample_every_timesteps;
-    pp_data_fda.line_plot_data.statistics_data.write_output_every_timesteps =
-      sample_every_timesteps * 100;
+    pp_data_fda.line_plot_data.time_control_data_statistics.time_control_data.is_active = true;
+    pp_data_fda.line_plot_data.time_control_data_statistics.time_control_data.start_time =
+      sample_start_time;
+    pp_data_fda.line_plot_data.time_control_data_statistics.time_control_data.end_time = end_time;
+    pp_data_fda.line_plot_data.time_control_data_statistics.time_control_data
+      .trigger_every_time_steps = sample_every_timesteps;
+    pp_data_fda.line_plot_data.time_control_data_statistics
+      .write_preliminary_results_every_nth_time_step = sample_every_timesteps * 100;
+    pp_data_fda.line_plot_data.directory             = this->output_parameters.directory;
 
     // lines
     std::shared_ptr<LineCircumferentialAveraging<dim>> axial_profile, radial_profile_z1,
@@ -727,19 +729,19 @@ private:
     radial_profile_z12->name = "radial_profile_z12";
 
     // insert lines
-    pp_data_fda.line_plot_data.line_data.lines.push_back(axial_profile);
-    pp_data_fda.line_plot_data.line_data.lines.push_back(radial_profile_z1);
-    pp_data_fda.line_plot_data.line_data.lines.push_back(radial_profile_z2);
-    pp_data_fda.line_plot_data.line_data.lines.push_back(radial_profile_z3);
-    pp_data_fda.line_plot_data.line_data.lines.push_back(radial_profile_z4);
-    pp_data_fda.line_plot_data.line_data.lines.push_back(radial_profile_z5);
-    pp_data_fda.line_plot_data.line_data.lines.push_back(radial_profile_z6);
-    pp_data_fda.line_plot_data.line_data.lines.push_back(radial_profile_z7);
-    pp_data_fda.line_plot_data.line_data.lines.push_back(radial_profile_z8);
-    pp_data_fda.line_plot_data.line_data.lines.push_back(radial_profile_z9);
-    pp_data_fda.line_plot_data.line_data.lines.push_back(radial_profile_z10);
-    pp_data_fda.line_plot_data.line_data.lines.push_back(radial_profile_z11);
-    pp_data_fda.line_plot_data.line_data.lines.push_back(radial_profile_z12);
+    pp_data_fda.line_plot_data.lines.push_back(axial_profile);
+    pp_data_fda.line_plot_data.lines.push_back(radial_profile_z1);
+    pp_data_fda.line_plot_data.lines.push_back(radial_profile_z2);
+    pp_data_fda.line_plot_data.lines.push_back(radial_profile_z3);
+    pp_data_fda.line_plot_data.lines.push_back(radial_profile_z4);
+    pp_data_fda.line_plot_data.lines.push_back(radial_profile_z5);
+    pp_data_fda.line_plot_data.lines.push_back(radial_profile_z6);
+    pp_data_fda.line_plot_data.lines.push_back(radial_profile_z7);
+    pp_data_fda.line_plot_data.lines.push_back(radial_profile_z8);
+    pp_data_fda.line_plot_data.lines.push_back(radial_profile_z9);
+    pp_data_fda.line_plot_data.lines.push_back(radial_profile_z10);
+    pp_data_fda.line_plot_data.lines.push_back(radial_profile_z11);
+    pp_data_fda.line_plot_data.lines.push_back(radial_profile_z12);
 
     pp.reset(new PostProcessorFDA<dim, Number>(pp_data_fda,
                                                this->mpi_comm,
@@ -759,18 +761,18 @@ private:
 
     PostProcessorData<dim> pp_data;
     // write output for visualization of results
-    pp_data.output_data.write_output            = this->output_parameters.write;
-    pp_data.output_data.directory               = this->output_parameters.directory + "vtu/";
-    pp_data.output_data.filename                = this->output_parameters.filename + "_precursor";
-    pp_data.output_data.start_time              = output_start_time_precursor;
-    pp_data.output_data.interval_time           = output_interval_time;
-    pp_data.output_data.write_divergence        = true;
-    pp_data.output_data.write_processor_id      = true;
-    pp_data.output_data.mean_velocity.calculate = true;
-    pp_data.output_data.mean_velocity.sample_start_time      = sample_start_time;
-    pp_data.output_data.mean_velocity.sample_end_time        = sample_end_time;
-    pp_data.output_data.mean_velocity.sample_every_timesteps = 1;
-    pp_data.output_data.degree                               = this->param_pre.degree_u;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = output_start_time_precursor;
+    pp_data.output_data.time_control_data.trigger_interval = output_interval_time;
+    pp_data.output_data.directory                = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename                 = this->output_parameters.filename + "_precursor";
+    pp_data.output_data.write_divergence         = true;
+    pp_data.output_data.write_processor_id       = true;
+    pp_data.output_data.mean_velocity.is_active  = true;
+    pp_data.output_data.mean_velocity.start_time = sample_start_time;
+    pp_data.output_data.mean_velocity.end_time   = sample_end_time;
+    pp_data.output_data.mean_velocity.trigger_every_time_steps = 1;
+    pp_data.output_data.degree                                 = this->param_pre.degree_u;
 
     PostProcessorDataFDA<dim> pp_data_fda;
     pp_data_fda.pp_data = pp_data;

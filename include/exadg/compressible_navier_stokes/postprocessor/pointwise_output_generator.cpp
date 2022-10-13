@@ -43,7 +43,7 @@ PointwiseOutputData<dim>::print(dealii::ConditionalOStream & pcout) const
 {
   PointwiseOutputDataBase<dim>::print(pcout);
 
-  if(this->write_output && this->evaluation_points.size() > 0)
+  if(this->time_control_data.is_active && this->evaluation_points.size() > 0)
   {
     print_parameter(pcout, "Write rho", write_rho);
     print_parameter(pcout, "Write rho_u", write_rho_u);

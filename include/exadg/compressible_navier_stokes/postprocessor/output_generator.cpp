@@ -26,7 +26,6 @@
 #include <exadg/compressible_navier_stokes/postprocessor/output_generator.h>
 #include <exadg/postprocessor/write_output.h>
 #include <exadg/utilities/create_directories.h>
-#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -99,8 +98,7 @@ write_output(OutputData const &                              output_data,
 }
 
 template<int dim, typename Number>
-OutputGenerator<dim, Number>::OutputGenerator(MPI_Comm const & comm)
-  : mpi_comm(comm), output_counter(0), reset_counter(true)
+OutputGenerator<dim, Number>::OutputGenerator(MPI_Comm const & comm) : mpi_comm(comm)
 {
 }
 
@@ -114,10 +112,9 @@ OutputGenerator<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler_
   mapping     = &mapping_in;
   output_data = output_data_in;
 
-  // reset output counter
-  output_counter = output_data.start_counter;
+  time_control.setup(output_data_in.time_control_data);
 
-  if(output_data.write_output == true)
+  if(output_data_in.time_control_data.is_active)
   {
     create_directories(output_data.directory, mpi_comm);
 
@@ -140,10 +137,15 @@ OutputGenerator<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler_
                          output_data.degree,
                          output_data.directory,
                          output_data.filename,
-                         output_counter,
+                         time_control.get_counter(),
                          mpi_comm);
     }
 
+    // write grid
+    if(output_data.write_grid)
+    {
+      write_grid(dof_handler->get_triangulation(), output_data.directory, output_data.filename);
+    }
 
     // processor_id
     if(output_data.write_processor_id)
@@ -162,68 +164,20 @@ void
 OutputGenerator<dim, Number>::evaluate(
   VectorType const &                              solution_conserved,
   std::vector<SolutionField<dim, Number>> const & additional_fields,
-  double const &                                  time,
-  int const &                                     time_step_number)
+  double const                                    time,
+  bool const                                      unsteady)
 {
-  dealii::ConditionalOStream pcout(std::cout,
-                                   dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);
+  print_write_output_time(time, time_control.get_counter(), unsteady, mpi_comm);
 
-  if(output_data.write_output == true)
-  {
-    if(Utilities::is_unsteady_timestep(time_step_number))
-    {
-      // small number which is much smaller than the time step size
-      double const EPSILON = 1.0e-10;
-
-      // In the first time step, the current time might be larger than start_time. In that
-      // case, we first have to reset the counter in order to avoid that output is written every
-      // time step.
-      if(reset_counter)
-      {
-        if(time > output_data.start_time)
-        {
-          output_counter +=
-            int((time - output_data.start_time + EPSILON) / output_data.interval_time);
-        }
-        reset_counter = false;
-      }
-
-
-      if(time > (output_data.start_time + output_counter * output_data.interval_time - EPSILON))
-      {
-        pcout << std::endl
-              << "OUTPUT << Write data at time t = " << std::scientific << std::setprecision(4)
-              << time << std::endl;
-
-        write_output<dim, Number, VectorType>(output_data,
-                                              *dof_handler,
-                                              *mapping,
-                                              solution_conserved,
-                                              additional_fields,
-                                              output_counter,
-                                              mpi_comm);
-
-        ++output_counter;
-      }
-    }
-    else
-    {
-      pcout << std::endl
-            << "OUTPUT << Write " << (output_counter == 0 ? "initial" : "solution") << " data"
-            << std::endl;
-
-      write_output<dim, Number, VectorType>(output_data,
-                                            *dof_handler,
-                                            *mapping,
-                                            solution_conserved,
-                                            additional_fields,
-                                            output_counter,
-                                            mpi_comm);
-
-      ++output_counter;
-    }
-  }
+  write_output<dim, Number, VectorType>(output_data,
+                                        *dof_handler,
+                                        *mapping,
+                                        solution_conserved,
+                                        additional_fields,
+                                        time_control.get_counter(),
+                                        mpi_comm);
 }
+
 
 template class OutputGenerator<2, float>;
 template class OutputGenerator<2, double>;

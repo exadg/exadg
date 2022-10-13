@@ -314,27 +314,27 @@ private:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output     = this->output_parameters.write;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = start_time;
+    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
     pp_data.output_data.directory        = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename         = this->output_parameters.filename;
-    pp_data.output_data.start_time       = start_time;
-    pp_data.output_data.interval_time    = (end_time - start_time) / 20;
     pp_data.output_data.write_divergence = true;
     pp_data.output_data.degree           = this->param.degree_u;
 
     // calculation of velocity error
-    pp_data.error_data_u.analytical_solution_available = true;
+    pp_data.error_data_u.time_control_data.is_active        = true;
+    pp_data.error_data_u.time_control_data.start_time       = start_time;
+    pp_data.error_data_u.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
     pp_data.error_data_u.analytical_solution.reset(new AnalyticalSolutionVelocity<dim>(lambda));
-    pp_data.error_data_u.error_calc_start_time    = start_time;
-    pp_data.error_data_u.error_calc_interval_time = (end_time - start_time) / 20;
-    pp_data.error_data_u.name                     = "velocity";
+    pp_data.error_data_u.name = "velocity";
 
     // ... pressure error
-    pp_data.error_data_p.analytical_solution_available = true;
+    pp_data.error_data_p.time_control_data.is_active        = true;
+    pp_data.error_data_p.time_control_data.start_time       = start_time;
+    pp_data.error_data_p.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
     pp_data.error_data_p.analytical_solution.reset(new AnalyticalSolutionPressure<dim>(lambda));
-    pp_data.error_data_p.error_calc_start_time    = start_time;
-    pp_data.error_data_p.error_calc_interval_time = (end_time - start_time) / 20;
-    pp_data.error_data_p.name                     = "pressure";
+    pp_data.error_data_p.name = "pressure";
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));

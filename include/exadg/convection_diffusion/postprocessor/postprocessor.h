@@ -31,7 +31,6 @@
 #include <exadg/postprocessor/error_calculation.h>
 #include <exadg/postprocessor/output_data_base.h>
 #include <exadg/postprocessor/output_generator_scalar.h>
-#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -63,9 +62,9 @@ public:
   setup(Operator<dim, Number> const & pde_operator, dealii::Mapping<dim> const & mapping) override;
 
   void
-  do_postprocessing(VectorType const & solution,
-                    double const       time             = 0.0,
-                    int const          time_step_number = numbers::steady_timestep) override;
+  do_postprocessing(VectorType const &     solution,
+                    double const           time             = 0.0,
+                    types::time_step const time_step_number = numbers::steady_timestep) override;
 
 protected:
   MPI_Comm const mpi_comm;

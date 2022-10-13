@@ -442,11 +442,11 @@ private:
 
     PostProcessorData<dim> pp_data;
     // write output for visualization of results
-    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = start_time;
+    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 60.0;
     pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = this->output_parameters.filename;
-    pp_data.output_data.start_time         = start_time;
-    pp_data.output_data.interval_time      = (end_time - start_time) / 60;
     pp_data.output_data.write_divergence   = true;
     pp_data.output_data.write_q_criterion  = true;
     pp_data.output_data.write_boundary_IDs = true;
@@ -458,13 +458,16 @@ private:
     pp_data_bfs.pp_data = pp_data;
 
     // line plot data: calculate statistics along lines
-    pp_data_bfs.line_plot_data.line_data.directory       = this->output_parameters.directory;
-    pp_data_bfs.line_plot_data.statistics_data.calculate = true;
-    pp_data_bfs.line_plot_data.statistics_data.sample_start_time      = sample_start_time;
-    pp_data_bfs.line_plot_data.statistics_data.sample_end_time        = end_time;
-    pp_data_bfs.line_plot_data.statistics_data.sample_every_timesteps = sample_every_timesteps;
-    pp_data_bfs.line_plot_data.statistics_data.write_output_every_timesteps =
-      sample_every_timesteps * 10;
+
+    pp_data_bfs.turb_ch_data.time_control_data_statistics.time_control_data.is_active = true;
+    pp_data_bfs.turb_ch_data.time_control_data_statistics.time_control_data.start_time =
+      sample_start_time;
+    pp_data_bfs.turb_ch_data.time_control_data_statistics.time_control_data.end_time = end_time;
+    pp_data_bfs.turb_ch_data.time_control_data_statistics.time_control_data
+      .trigger_every_time_steps = sample_every_timesteps;
+    pp_data_bfs.turb_ch_data.time_control_data_statistics
+      .write_preliminary_results_every_nth_time_step = sample_every_timesteps * 10;
+    pp_data_bfs.line_plot_data.directory             = this->output_parameters.directory;
 
     // mean velocity
     std::shared_ptr<Quantity> quantity_velocity;
@@ -663,21 +666,21 @@ private:
     Cf->name     = "Cf";
 
     // insert lines
-    pp_data_bfs.line_plot_data.line_data.lines.push_back(vel_0);
-    pp_data_bfs.line_plot_data.line_data.lines.push_back(vel_1);
-    pp_data_bfs.line_plot_data.line_data.lines.push_back(vel_2);
-    pp_data_bfs.line_plot_data.line_data.lines.push_back(vel_3);
-    pp_data_bfs.line_plot_data.line_data.lines.push_back(vel_4);
-    pp_data_bfs.line_plot_data.line_data.lines.push_back(vel_5);
-    pp_data_bfs.line_plot_data.line_data.lines.push_back(vel_6);
-    pp_data_bfs.line_plot_data.line_data.lines.push_back(vel_7);
-    pp_data_bfs.line_plot_data.line_data.lines.push_back(vel_8);
-    pp_data_bfs.line_plot_data.line_data.lines.push_back(vel_9);
-    pp_data_bfs.line_plot_data.line_data.lines.push_back(vel_10);
-    pp_data_bfs.line_plot_data.line_data.lines.push_back(vel_11);
-    pp_data_bfs.line_plot_data.line_data.lines.push_back(Cp_1);
-    pp_data_bfs.line_plot_data.line_data.lines.push_back(Cp_2);
-    pp_data_bfs.line_plot_data.line_data.lines.push_back(Cf);
+    pp_data_bfs.line_plot_data.lines.push_back(vel_0);
+    pp_data_bfs.line_plot_data.lines.push_back(vel_1);
+    pp_data_bfs.line_plot_data.lines.push_back(vel_2);
+    pp_data_bfs.line_plot_data.lines.push_back(vel_3);
+    pp_data_bfs.line_plot_data.lines.push_back(vel_4);
+    pp_data_bfs.line_plot_data.lines.push_back(vel_5);
+    pp_data_bfs.line_plot_data.lines.push_back(vel_6);
+    pp_data_bfs.line_plot_data.lines.push_back(vel_7);
+    pp_data_bfs.line_plot_data.lines.push_back(vel_8);
+    pp_data_bfs.line_plot_data.lines.push_back(vel_9);
+    pp_data_bfs.line_plot_data.lines.push_back(vel_10);
+    pp_data_bfs.line_plot_data.lines.push_back(vel_11);
+    pp_data_bfs.line_plot_data.lines.push_back(Cp_1);
+    pp_data_bfs.line_plot_data.lines.push_back(Cp_2);
+    pp_data_bfs.line_plot_data.lines.push_back(Cf);
 
     pp.reset(new PostProcessorBFS<dim, Number>(pp_data_bfs, this->mpi_comm));
 
@@ -691,11 +694,11 @@ private:
 
     PostProcessorData<dim> pp_data;
     // write output for visualization of results
-    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = start_time;
+    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 60.0;
     pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = this->output_parameters.filename + "_precursor";
-    pp_data.output_data.start_time         = start_time;
-    pp_data.output_data.interval_time      = (end_time - start_time) / 60;
     pp_data.output_data.write_divergence   = true;
     pp_data.output_data.write_q_criterion  = true;
     pp_data.output_data.write_boundary_IDs = true;
@@ -707,14 +710,20 @@ private:
     pp_data_bfs.pp_data = pp_data;
 
     // turbulent channel statistics
-    pp_data_bfs.turb_ch_data.calculate              = true;
-    pp_data_bfs.turb_ch_data.cells_are_stretched    = Geometry::use_grid_stretching_in_y_direction;
-    pp_data_bfs.turb_ch_data.sample_start_time      = sample_start_time;
-    pp_data_bfs.turb_ch_data.sample_end_time        = end_time;
-    pp_data_bfs.turb_ch_data.sample_every_timesteps = sample_every_timesteps;
-    pp_data_bfs.turb_ch_data.viscosity              = viscosity;
-    pp_data_bfs.turb_ch_data.directory              = this->output_parameters.directory;
-    pp_data_bfs.turb_ch_data.filename = this->output_parameters.filename + "_precursor";
+    pp_data_bfs.turb_ch_data.time_control_data_statistics.time_control_data.is_active = true;
+    pp_data_bfs.turb_ch_data.time_control_data_statistics.time_control_data.start_time =
+      sample_start_time;
+    pp_data_bfs.turb_ch_data.time_control_data_statistics.time_control_data.end_time = end_time;
+    pp_data_bfs.turb_ch_data.time_control_data_statistics.time_control_data
+      .trigger_every_time_steps = sample_every_timesteps;
+    pp_data_bfs.turb_ch_data.time_control_data_statistics
+      .write_preliminary_results_every_nth_time_step = sample_every_timesteps * 100;
+
+
+    pp_data_bfs.turb_ch_data.cells_are_stretched = Geometry::use_grid_stretching_in_y_direction;
+    pp_data_bfs.turb_ch_data.viscosity           = viscosity;
+    pp_data_bfs.turb_ch_data.directory           = this->output_parameters.directory;
+    pp_data_bfs.turb_ch_data.filename            = this->output_parameters.filename + "_precursor";
 
     // use turbulent channel data to prescribe inflow velocity for BFS
     pp_data_bfs.inflow_data.write_inflow_data = true;

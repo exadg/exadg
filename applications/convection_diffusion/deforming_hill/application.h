@@ -171,18 +171,18 @@ private:
   create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output  = this->output_parameters.write;
-    pp_data.output_data.directory     = this->output_parameters.directory + "vtu/";
-    pp_data.output_data.filename      = this->output_parameters.filename;
-    pp_data.output_data.start_time    = start_time;
-    pp_data.output_data.interval_time = (end_time - start_time) / 20;
-    pp_data.output_data.degree        = this->param.degree;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = start_time;
+    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
+    pp_data.output_data.directory = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename  = this->output_parameters.filename;
+    pp_data.output_data.degree    = this->param.degree;
 
     // analytical solution only available at t = start_time and t = end_time
-    pp_data.error_data.analytical_solution_available = true;
+    pp_data.error_data.time_control_data.is_active        = true;
+    pp_data.error_data.time_control_data.start_time       = start_time;
+    pp_data.error_data.time_control_data.trigger_interval = (end_time - start_time);
     pp_data.error_data.analytical_solution.reset(new Solution<dim>(1));
-    pp_data.error_data.error_calc_start_time    = start_time;
-    pp_data.error_data.error_calc_interval_time = end_time - start_time;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));

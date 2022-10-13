@@ -28,7 +28,6 @@
 // ExaDG
 #include <exadg/postprocessor/error_calculation.h>
 #include <exadg/utilities/create_directories.h>
-#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -101,11 +100,7 @@ calculate_error(MPI_Comm const &                             mpi_comm,
 
 template<int dim, typename Number>
 ErrorCalculator<dim, Number>::ErrorCalculator(MPI_Comm const & comm)
-  : mpi_comm(comm),
-    error_counter(0),
-    reset_counter(true),
-    clear_files_L2(true),
-    clear_files_H1_seminorm(true)
+  : mpi_comm(comm), clear_files_L2(true), clear_files_H1_seminorm(true)
 {
 }
 
@@ -119,59 +114,38 @@ ErrorCalculator<dim, Number>::setup(dealii::DoFHandler<dim> const &   dof_handle
   mapping     = &mapping_in;
   error_data  = error_data_in;
 
-  if(error_data.analytical_solution_available && error_data.write_errors_to_file)
+  time_control.setup(error_data_in.time_control_data);
+
+  if(error_data.analytical_solution && error_data.write_errors_to_file)
     create_directories(error_data.directory, mpi_comm);
 }
 
 template<int dim, typename Number>
 void
 ErrorCalculator<dim, Number>::evaluate(VectorType const & solution,
-                                       double const &     time,
-                                       int const &        time_step_number)
+                                       double const       time,
+                                       bool const         unsteady)
 {
+  AssertThrow(error_data.analytical_solution,
+              dealii::ExcMessage("Function can only be called if analytical solution is given."));
+
   dealii::ConditionalOStream pcout(std::cout,
                                    dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);
 
-  if(error_data.analytical_solution_available)
+  if(unsteady)
   {
-    if(Utilities::is_unsteady_timestep(time_step_number))
-    {
-      // small number which is much smaller than the time step size
-      double const EPSILON = 1.0e-10;
-
-      // In the first time step, the current time might be larger than start_time. In that
-      // case, we first have to reset the counter in order to avoid that output is written every
-      // time step.
-      if(reset_counter)
-      {
-        error_counter += int((time - error_data.error_calc_start_time + EPSILON) /
-                             error_data.error_calc_interval_time);
-        reset_counter = false;
-      }
-
-      if((time > (error_data.error_calc_start_time +
-                  error_counter * error_data.error_calc_interval_time - EPSILON)))
-      {
-        pcout << std::endl
-              << "Calculate error for " << error_data.name << " at time t = " << std::scientific
-              << std::setprecision(4) << time << ":" << std::endl;
-
-        do_evaluate(solution, time);
-
-        ++error_counter;
-      }
-    }
-    else
-    {
-      pcout << std::endl
-            << "Calculate error for " << error_data.name << " for "
-            << (error_counter == 0 ? "initial" : "solution") << " data:" << std::endl;
-
-      do_evaluate(solution, time);
-
-      ++error_counter;
-    }
+    pcout << std::endl
+          << "Calculate error for " << error_data.name << " at time t = " << std::scientific
+          << std::setprecision(4) << time << ":" << std::endl;
   }
+  else
+  {
+    pcout << std::endl
+          << "Calculate error for " << error_data.name << " for "
+          << (time_control.get_counter() == 0 ? "initial" : "solution") << " data:" << std::endl;
+  }
+
+  do_evaluate(solution, time);
 }
 
 template<int dim, typename Number>

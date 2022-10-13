@@ -29,6 +29,7 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
+#include <exadg/postprocessor/time_control.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
@@ -37,12 +38,8 @@ template<int dim>
 struct ErrorCalculationData
 {
   ErrorCalculationData()
-    : analytical_solution_available(false),
-      calculate_relative_errors(true),
+    : calculate_relative_errors(true),
       calculate_H1_seminorm_error(false),
-      error_calc_start_time(std::numeric_limits<double>::max()),
-      error_calc_interval_time(std::numeric_limits<double>::max()),
-      calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
       write_errors_to_file(false),
       directory("output/"),
       name("all fields")
@@ -52,23 +49,18 @@ struct ErrorCalculationData
   void
   print(dealii::ConditionalOStream & pcout, bool unsteady)
   {
-    print_parameter(pcout, "Calculate error", analytical_solution_available);
-    if(analytical_solution_available == true && unsteady == true)
+    print_parameter(pcout, "Error calculation", unsteady == true && analytical_solution);
+    if(unsteady == true && time_control_data.is_active)
     {
+      print(pcout, unsteady, time_control_data);
       print_parameter(pcout, "Calculate relative errors", calculate_relative_errors);
       print_parameter(pcout, "Calculate H1-seminorm error", calculate_H1_seminorm_error);
-      print_parameter(pcout, "Error calculation start time", error_calc_start_time);
-      print_parameter(pcout, "Error calculation interval time", error_calc_interval_time);
-      print_parameter(pcout, "Calculate error every time steps", calculate_every_time_steps);
       print_parameter(pcout, "Write errors to file", write_errors_to_file);
       if(write_errors_to_file)
         print_parameter(pcout, "Directory", directory);
       print_parameter(pcout, "Name", name);
     }
   }
-
-  // to calculate the error an analytical solution to the problem has to be available
-  bool analytical_solution_available;
 
   std::shared_ptr<dealii::Function<dim>> analytical_solution;
 
@@ -80,14 +72,8 @@ struct ErrorCalculationData
   // user.
   bool calculate_H1_seminorm_error;
 
-  // before then no error calculation will be performed
-  double error_calc_start_time;
-
-  // specifies the time interval in which error calculation is performed
-  double error_calc_interval_time;
-
-  // calculate error every time steps
-  unsigned int calculate_every_time_steps;
+  // data used to control the output
+  TimeControlData time_control_data;
 
   // write errors to file?
   bool write_errors_to_file;
@@ -111,16 +97,15 @@ public:
         ErrorCalculationData<dim> const & error_data);
 
   void
-  evaluate(VectorType const & solution, double const & time, int const & time_step_number);
+  evaluate(VectorType const & solution, double const time, bool const unsteady);
+
+  TimeControl time_control;
 
 private:
   void
   do_evaluate(VectorType const & solution_vector, double const time);
 
   MPI_Comm const mpi_comm;
-
-  unsigned int error_counter;
-  bool         reset_counter;
 
   bool clear_files_L2, clear_files_H1_seminorm;
 

@@ -347,12 +347,12 @@ private:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output = this->output_parameters.write;
-    pp_data.output_data.directory    = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = start_time;
+    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
+    pp_data.output_data.directory = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename =
       this->output_parameters.filename + "_k" + std::to_string(this->param.degree_u);
-    pp_data.output_data.start_time       = start_time;
-    pp_data.output_data.interval_time    = (end_time - start_time) / 20;
     pp_data.output_data.write_divergence = true;
     pp_data.output_data.degree           = this->param.degree_u;
 
@@ -360,10 +360,11 @@ private:
     pp_data_os.pp_data = pp_data;
 
     // perturbation energy
-    pp_data_os.energy_data.calculate                  = true;
-    pp_data_os.energy_data.calculate_every_time_steps = 1;
-    pp_data_os.energy_data.directory                  = this->output_parameters.directory;
-    pp_data_os.energy_data.filename = this->output_parameters.filename + "_perturbation_energy" +
+    pp_data_os.energy_data.time_control_data.is_active                = true;
+    pp_data_os.energy_data.time_control_data.start_time               = start_time;
+    pp_data_os.energy_data.time_control_data.trigger_every_time_steps = 1;
+    pp_data_os.energy_data.directory = this->output_parameters.directory;
+    pp_data_os.energy_data.filename  = this->output_parameters.filename + "_perturbation_energy" +
                                       "_k" + std::to_string(this->param.degree_u);
     pp_data_os.energy_data.U_max   = MAX_VELOCITY;
     pp_data_os.energy_data.h       = H;

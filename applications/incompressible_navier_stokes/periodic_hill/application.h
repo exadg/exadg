@@ -327,11 +327,11 @@ private:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output              = this->output_parameters.write;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = start_time;
+    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
     pp_data.output_data.directory                 = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename                  = this->output_parameters.filename;
-    pp_data.output_data.start_time                = start_time;
-    pp_data.output_data.interval_time             = flow_through_time / 10.0;
     pp_data.output_data.write_velocity_magnitude  = true;
     pp_data.output_data.write_vorticity           = true;
     pp_data.output_data.write_vorticity_magnitude = true;
@@ -343,7 +343,7 @@ private:
     my_pp_data.pp_data = pp_data;
 
     // line plot data: calculate statistics along lines
-    my_pp_data.line_plot_data.line_data.directory = this->output_parameters.directory;
+    my_pp_data.line_plot_data.directory = this->output_parameters.directory;
 
     // mean velocity
     std::shared_ptr<Quantity> quantity_velocity;
@@ -452,22 +452,25 @@ private:
     vel_8->name = "x_8";
 
     // insert lines
-    my_pp_data.line_plot_data.line_data.lines.push_back(vel_0);
-    my_pp_data.line_plot_data.line_data.lines.push_back(vel_1);
-    my_pp_data.line_plot_data.line_data.lines.push_back(vel_2);
-    my_pp_data.line_plot_data.line_data.lines.push_back(vel_3);
-    my_pp_data.line_plot_data.line_data.lines.push_back(vel_4);
-    my_pp_data.line_plot_data.line_data.lines.push_back(vel_5);
-    my_pp_data.line_plot_data.line_data.lines.push_back(vel_6);
-    my_pp_data.line_plot_data.line_data.lines.push_back(vel_7);
-    my_pp_data.line_plot_data.line_data.lines.push_back(vel_8);
+    my_pp_data.line_plot_data.lines.push_back(vel_0);
+    my_pp_data.line_plot_data.lines.push_back(vel_1);
+    my_pp_data.line_plot_data.lines.push_back(vel_2);
+    my_pp_data.line_plot_data.lines.push_back(vel_3);
+    my_pp_data.line_plot_data.lines.push_back(vel_4);
+    my_pp_data.line_plot_data.lines.push_back(vel_5);
+    my_pp_data.line_plot_data.lines.push_back(vel_6);
+    my_pp_data.line_plot_data.lines.push_back(vel_7);
+    my_pp_data.line_plot_data.lines.push_back(vel_8);
 
-    my_pp_data.line_plot_data.statistics_data.calculate              = calculate_statistics;
-    my_pp_data.line_plot_data.statistics_data.sample_start_time      = sample_start_time;
-    my_pp_data.line_plot_data.statistics_data.sample_end_time        = end_time;
-    my_pp_data.line_plot_data.statistics_data.sample_every_timesteps = sample_every_timesteps;
-    my_pp_data.line_plot_data.statistics_data.write_output_every_timesteps =
-      sample_every_timesteps * 100;
+    my_pp_data.line_plot_data.time_control_data_statistics.time_control_data.is_active =
+      calculate_statistics;
+    my_pp_data.line_plot_data.time_control_data_statistics.time_control_data.start_time =
+      sample_start_time;
+    my_pp_data.line_plot_data.time_control_data_statistics.time_control_data.end_time = end_time;
+    my_pp_data.line_plot_data.time_control_data_statistics.time_control_data
+      .trigger_every_time_steps = sample_every_timesteps;
+    my_pp_data.line_plot_data.time_control_data_statistics
+      .write_preliminary_results_every_nth_time_step = sample_every_timesteps * 100;
 
     // calculation of flow rate (use volume-based computation)
     my_pp_data.mean_velocity_data.calculate = true;

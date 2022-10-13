@@ -24,6 +24,7 @@
 
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 #include <exadg/postprocessor/kinetic_energy_calculation.h>
+#include <exadg/postprocessor/time_control.h>
 
 namespace ExaDG
 {
@@ -49,13 +50,11 @@ public:
         KineticEnergyData const &               kinetic_energy_data_in);
 
   void
-  evaluate(VectorType const & velocity, double const & time, int const & time_step_number);
+  evaluate(VectorType const & velocity, double const time, bool const unsteady);
 
 private:
   void
-  calculate_detailed(VectorType const & velocity,
-                     double const       time,
-                     unsigned int const time_step_number);
+  calculate_detailed(VectorType const & velocity, double const time);
 
   dealii::SmartPointer<NavierStokesOperator const> navier_stokes_operator;
 };

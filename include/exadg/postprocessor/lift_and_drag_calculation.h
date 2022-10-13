@@ -22,15 +22,19 @@
 #ifndef INCLUDE_EXADG_POSTPROCESSOR_LIFT_AND_DRAG_CALCULATION_H_
 #define INCLUDE_EXADG_POSTPROCESSOR_LIFT_AND_DRAG_CALCULATION_H_
 
+// deal.ii
+#include <deal.II/base/conditional_ostream.h>
 #include <deal.II/matrix_free/matrix_free.h>
+
+// ExaDG
+#include <exadg/postprocessor/time_control.h>
 
 namespace ExaDG
 {
 struct LiftAndDragData
 {
   LiftAndDragData()
-    : calculate(false),
-      viscosity(1.0),
+    : viscosity(1.0),
       reference_value(1.0),
       directory("output/"),
       filename_lift("lift"),
@@ -39,9 +43,9 @@ struct LiftAndDragData
   }
 
   /*
-   *  active or not
+   *  Data to control output: Set is_active also in the unsteady case
    */
-  bool calculate;
+  TimeControlData time_control_data;
 
   /*
    *  Kinematic viscosity
@@ -65,8 +69,10 @@ struct LiftAndDragData
   std::string directory;
   std::string filename_lift;
   std::string filename_drag;
-};
 
+  void
+  print(dealii::ConditionalOStream & pcout, bool unsteady) const;
+};
 
 template<int dim, typename Number>
 class LiftAndDragCalculator
@@ -85,7 +91,9 @@ public:
         LiftAndDragData const &                 lift_and_drag_data_in);
 
   void
-  evaluate(VectorType const & velocity, VectorType const & pressure, Number const & time) const;
+  evaluate(VectorType const & velocity, VectorType const & pressure, double const time) const;
+
+  TimeControl time_control;
 
 private:
   MPI_Comm const mpi_comm;

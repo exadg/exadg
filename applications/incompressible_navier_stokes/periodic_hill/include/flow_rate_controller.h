@@ -52,9 +52,7 @@ public:
   }
 
   void
-  update_body_force(double const       flow_rate_in,
-                    double const       time,
-                    unsigned int const time_step_number)
+  update_body_force(double const flow_rate_in, double const time, int const time_step_number)
   {
     flow_rate = flow_rate_in;
     time_step = time - time_old;

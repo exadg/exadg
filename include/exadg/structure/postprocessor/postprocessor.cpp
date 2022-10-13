@@ -47,19 +47,21 @@ PostProcessor<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler,
 
 template<int dim, typename Number>
 void
-PostProcessor<dim, Number>::do_postprocessing(VectorType const & solution,
-                                              double const       time,
-                                              int const          time_step_number)
+PostProcessor<dim, Number>::do_postprocessing(VectorType const &     solution,
+                                              double const           time,
+                                              types::time_step const time_step_number)
 {
   /*
    *  write output
    */
-  output_generator.evaluate(solution, time, time_step_number);
+  if(output_generator.time_control.needs_evaluation(time, time_step_number))
+    output_generator.evaluate(solution, time, Utilities::is_unsteady_timestep(time_step_number));
 
   /*
    *  calculate error
    */
-  error_calculator.evaluate(solution, time, time_step_number);
+  if(error_calculator.time_control.needs_evaluation(time, time_step_number))
+    error_calculator.evaluate(solution, time, Utilities::is_unsteady_timestep(time_step_number));
 }
 
 template class PostProcessor<2, float>;

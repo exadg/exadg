@@ -28,6 +28,7 @@
 #include <deal.II/matrix_free/matrix_free.h>
 
 // ExaDG
+#include <exadg/postprocessor/time_control.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
@@ -38,12 +39,8 @@ class DealSpectrumWrapper;
 struct KineticEnergySpectrumData
 {
   KineticEnergySpectrumData()
-    : calculate(false),
-      write_raw_data_to_files(false),
+    : write_raw_data_to_files(false),
       do_fftw(true),
-      start_time(0.0),
-      calculate_every_time_steps(-1),
-      calculate_every_time_interval(-1.0),
       directory("output/"),
       filename("energy_spectrum"),
       clear_file(true),
@@ -57,18 +54,16 @@ struct KineticEnergySpectrumData
   }
 
   void
-  print(dealii::ConditionalOStream & pcout)
+  print(dealii::ConditionalOStream & pcout) const
   {
-    if(calculate == true)
+    if(time_control_data.is_active)
     {
+      // only implemented for unsteady problem
+      time_control_data.print(pcout, true /*unsteady*/);
+
       pcout << std::endl << "  Calculate kinetic energy spectrum:" << std::endl;
       print_parameter(pcout, "Write raw data to files", write_raw_data_to_files);
       print_parameter(pcout, "Do FFTW", do_fftw);
-      print_parameter(pcout, "Start time", start_time);
-      if(calculate_every_time_steps >= 0)
-        print_parameter(pcout, "Calculate every timesteps", calculate_every_time_steps);
-      if(calculate_every_time_interval >= 0.0)
-        print_parameter(pcout, "Calculate every time interval", calculate_every_time_interval);
       print_parameter(pcout, "Directory of output files", directory);
       print_parameter(pcout, "Filename", filename);
       print_parameter(pcout, "Clear file", clear_file);
@@ -85,12 +80,10 @@ struct KineticEnergySpectrumData
     }
   }
 
-  bool   calculate;
-  bool   write_raw_data_to_files;
-  bool   do_fftw;
-  double start_time;
-  int    calculate_every_time_steps;
-  double calculate_every_time_interval;
+  TimeControlData time_control_data;
+
+  bool write_raw_data_to_files;
+  bool do_fftw;
 
   // these parameters are only relevant if do_fftw = true
   std::string directory;
@@ -122,12 +115,11 @@ public:
         KineticEnergySpectrumData const &       data_in);
 
   void
-  evaluate(VectorType const & velocity, double const & time, int const & time_step_number);
+  evaluate(VectorType const & velocity, double const time, bool const unsteady);
+
+  TimeControl time_control;
 
 private:
-  bool
-  needs_to_be_evaluated(double const time, unsigned int const time_step_number);
-
   void
   do_evaluate(VectorType const & velocity, double const time);
 
@@ -135,8 +127,6 @@ private:
 
   bool                      clear_files;
   KineticEnergySpectrumData data;
-  unsigned int              counter;
-  bool                      reset_counter;
   unsigned int const        precision = 12;
 
   std::shared_ptr<DealSpectrumWrapper> deal_spectrum_wrapper;

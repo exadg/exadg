@@ -28,6 +28,7 @@
 // ExaDG
 #include <exadg/incompressible_navier_stokes/spatial_discretization/curl_compute.h>
 #include <exadg/matrix_free/integrators.h>
+#include <exadg/postprocessor/time_control.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
@@ -35,9 +36,7 @@ namespace ExaDG
 struct KineticEnergyData
 {
   KineticEnergyData()
-    : calculate(false),
-      evaluate_individual_terms(false),
-      calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
+    : evaluate_individual_terms(false),
       viscosity(1.0),
       directory("output/"),
       filename("kinetic_energy"),
@@ -48,28 +47,25 @@ struct KineticEnergyData
   void
   print(dealii::ConditionalOStream & pcout)
   {
-    if(calculate == true)
+    if(time_control_data.is_active)
     {
       pcout << std::endl << "  Calculate kinetic energy:" << std::endl;
 
-      print_parameter(pcout, "Calculate energy", calculate);
+      // only implemented for unsteady problem
+      time_control_data.print(pcout, true /*unsteady*/);
+
       print_parameter(pcout, "Evaluate individual terms", evaluate_individual_terms);
-      print_parameter(pcout, "Calculate every timesteps", calculate_every_time_steps);
       print_parameter(pcout, "Directory of output files", directory);
       print_parameter(pcout, "Filename", filename);
       print_parameter(pcout, "Clear file", clear_file);
     }
   }
 
-  // calculate kinetic energy (dissipation)?
-  bool calculate;
+  TimeControlData time_control_data;
 
   // perform detailed analysis and evaluate contribution of individual terms (e.g., convective term,
   // viscous term) to overall kinetic energy dissipation?
   bool evaluate_individual_terms;
-
-  // calculate every ... time steps
-  unsigned int calculate_every_time_steps;
 
   // kinematic viscosity
   double viscosity;
@@ -101,13 +97,13 @@ public:
         KineticEnergyData const &               kinetic_energy_data_in);
 
   void
-  evaluate(VectorType const & velocity, double const & time, int const & time_step_number);
+  evaluate(VectorType const & velocity, double const time, bool const unsteady);
+
+  TimeControl time_control;
 
 protected:
   void
-  calculate_basic(VectorType const & velocity,
-                  double const       time,
-                  unsigned int const time_step_number);
+  calculate_basic(VectorType const & velocity, double const time);
 
   /*
    *  This function calculates the kinetic energy

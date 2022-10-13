@@ -25,7 +25,6 @@
 // ExaDG
 #include <exadg/postprocessor/kinetic_energy_calculation.h>
 #include <exadg/utilities/create_directories.h>
-#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -47,47 +46,43 @@ KineticEnergyCalculator<dim, Number>::setup(dealii::MatrixFree<dim, Number> cons
   quad_index  = quad_index_in;
   data        = kinetic_energy_data_in;
 
+  time_control.setup(kinetic_energy_data_in.time_control_data);
+
   clear_files = data.clear_file;
 
-  if(data.calculate)
+  if(data.time_control_data.is_active)
     create_directories(data.directory, mpi_comm);
 }
 
 template<int dim, typename Number>
 void
 KineticEnergyCalculator<dim, Number>::evaluate(VectorType const & velocity,
-                                               double const &     time,
-                                               int const &        time_step_number)
+                                               double const       time,
+                                               bool const         unsteady)
 {
-  if(data.calculate)
-  {
-    AssertThrow(Utilities::is_unsteady_timestep(time_step_number),
-                dealii::ExcMessage(
-                  "This postprocessing tool can only be used for unsteady problems."));
+  AssertThrow(unsteady,
+              dealii::ExcMessage(
+                "This postprocessing tool can only be used for unsteady problems."));
 
-    AssertThrow(data.evaluate_individual_terms == false,
-                dealii::ExcMessage("Not implemented in this class."));
+  AssertThrow(data.evaluate_individual_terms == false,
+              dealii::ExcMessage("Not implemented in this class."));
 
-    calculate_basic(velocity, time, time_step_number);
-  }
+  calculate_basic(velocity, time);
 }
 
 template<int dim, typename Number>
 void
 KineticEnergyCalculator<dim, Number>::calculate_basic(VectorType const & velocity,
-                                                      double const       time,
-                                                      unsigned int const time_step_number)
+                                                      double const       time)
 {
-  if((time_step_number - 1) % data.calculate_every_time_steps == 0)
+  Number kinetic_energy = 0.0, enstrophy = 0.0, dissipation = 0.0, max_vorticity = 0.0;
+
+  integrate(*matrix_free, velocity, kinetic_energy, enstrophy, dissipation, max_vorticity);
+
+  // write output file
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
-    Number kinetic_energy = 0.0, enstrophy = 0.0, dissipation = 0.0, max_vorticity = 0.0;
-
-    integrate(*matrix_free, velocity, kinetic_energy, enstrophy, dissipation, max_vorticity);
-
-    // write output file
-    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-    {
-      // clang-format off
+    // clang-format off
       std::ostringstream filename;
       filename << data.directory + data.filename;
 
@@ -118,8 +113,7 @@ KineticEnergyCalculator<dim, Number>::calculate_basic(VectorType const & velocit
         << std::setw(precision + 8) << enstrophy
         << std::setw(precision + 8) << max_vorticity
         << std::endl;
-      // clang-format on
-    }
+    // clang-format on
   }
 }
 

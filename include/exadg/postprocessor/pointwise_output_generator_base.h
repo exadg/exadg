@@ -41,6 +41,7 @@
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
+#include <exadg/postprocessor/time_control.h>
 #include <exadg/utilities/extract_component_from_tensors.h>
 
 namespace ExaDG
@@ -52,15 +53,12 @@ struct PointwiseOutputDataBase
 
   PointwiseOutputDataBase();
 
-  bool        write_output;
+  TimeControlData time_control_data;
+
   std::string directory;
   std::string filename;
 
   bool update_points_before_evaluation;
-
-  double start_time;
-  double end_time;
-  double interval_time;
 
   std::vector<dealii::Point<dim>> evaluation_points;
 
@@ -76,7 +74,9 @@ public:
   using point_value_type = typename PointwiseOutputDataBase<dim>::point_value_type;
 
   void
-  evaluate(VectorType const & solution, double const & time, int const & time_step_number);
+  evaluate(VectorType const & solution, double const time, bool const unsteady);
+
+  TimeControl time_control;
 
 protected:
   PointwiseOutputGeneratorBase(MPI_Comm const & comm);
@@ -146,8 +146,6 @@ private:
   write_component(std::string const & name, dealii::Vector<Number> const & componentwise_result);
 
   MPI_Comm const mpi_comm;
-  unsigned int   counter;
-  bool           reset_counter;
 
   dealii::SmartPointer<dealii::DoFHandler<dim> const>                 dof_handler;
   dealii::SmartPointer<dealii::Mapping<dim> const>                    mapping;
@@ -155,6 +153,7 @@ private:
   dealii::Vector<Number>                                              componentwise_result;
   unsigned int                                                        n_out_samples;
   std::shared_ptr<dealii::Utilities::MPI::RemotePointEvaluation<dim>> remote_evaluator;
+  bool                                                                first_evaluation;
 
   std::map<std::string, unsigned int> name_to_components;
 

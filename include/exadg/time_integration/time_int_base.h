@@ -36,6 +36,7 @@
 // ExaDG
 #include <exadg/time_integration/restart.h>
 #include <exadg/time_integration/restart_data.h>
+#include <exadg/utilities/numbers.h>
 #include <exadg/utilities/timer_tree.h>
 
 
@@ -176,7 +177,7 @@ protected:
   /*
    * Get the current time step number.
    */
-  unsigned int
+  types::time_step
   get_time_step_number() const;
 
   /*
@@ -228,7 +229,7 @@ protected:
   /*
    * The number of the current time step starting with time_step_number = 1.
    */
-  unsigned int time_step_number;
+  types::time_step time_step_number;
 
   /*
    * Maximum number of time steps.

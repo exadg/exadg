@@ -26,20 +26,13 @@
 // ExaDG
 #include <exadg/postprocessor/pointwise_output_generator_base.h>
 #include <exadg/utilities/create_directories.h>
-#include <exadg/utilities/numbers.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
 {
 template<int dim>
 PointwiseOutputDataBase<dim>::PointwiseOutputDataBase()
-  : write_output(false),
-    directory("output/"),
-    filename("name"),
-    update_points_before_evaluation(false),
-    start_time(std::numeric_limits<double>::max()),
-    end_time(std::numeric_limits<double>::max()),
-    interval_time(std::numeric_limits<double>::max())
+  : directory("output/"), filename("name"), update_points_before_evaluation(false)
 {
 }
 
@@ -47,18 +40,16 @@ template<int dim>
 void
 PointwiseOutputDataBase<dim>::print(dealii::ConditionalOStream & pcout) const
 {
-  ExaDG::print_parameter(pcout, "PointwiseOutput", write_output && evaluation_points.size() > 0);
-
-  if(write_output && evaluation_points.size() > 0)
+  if(time_control_data.is_active && evaluation_points.size() > 0)
   {
-    ExaDG::print_parameter(pcout, "Output directory", directory);
-    ExaDG::print_parameter(pcout, "Name of output file", filename);
-    ExaDG::print_parameter(pcout, "Output start time", start_time);
-    ExaDG::print_parameter(pcout, "Output end time", end_time);
-    ExaDG::print_parameter(pcout, "Output interval time", interval_time);
-    ExaDG::print_parameter(pcout,
-                           "Update Points before evaluation",
-                           update_points_before_evaluation);
+    pcout << std::endl << "Pointwise output" << std::endl;
+
+    // this class makes only sense for the unsteady case
+    time_control_data.print(pcout, true /*unsteady*/);
+
+    print_parameter(pcout, "Output directory", directory);
+    print_parameter(pcout, "Name of output file", filename);
+    print_parameter(pcout, "Update Points before evaluation", update_points_before_evaluation);
   }
 }
 
@@ -68,52 +59,29 @@ template class PointwiseOutputDataBase<3>;
 template<int dim, typename Number>
 void
 PointwiseOutputGeneratorBase<dim, Number>::evaluate(VectorType const & solution,
-                                                    double const &     time,
-                                                    int const &        time_step_number)
+                                                    double const       time,
+                                                    bool const         unsteady)
 {
-  if(pointwise_output_data.write_output && pointwise_output_data.evaluation_points.size() > 0)
+  AssertThrow(unsteady, dealii::ExcMessage("Only implemented for the unsteady case."));
+
+  if(first_evaluation)
   {
-    if(Utilities::is_unsteady_timestep(time_step_number))
-    {
-      // small number which is much smaller than the time step size
-      double const EPSILON = 1.0e-10;
-
-      // In the first time step, the current time might be larger than start_time. In that
-      // case, we first have to reset the counter in order to avoid that output is written every
-      // time step.
-      if(reset_counter)
-      {
-        counter += int((time - pointwise_output_data.start_time + EPSILON) /
-                       pointwise_output_data.interval_time);
-        reset_counter = false;
-      }
-
-
-      if((time > (pointwise_output_data.start_time + counter * pointwise_output_data.interval_time -
-                  EPSILON)) &&
-         time < pointwise_output_data.end_time + EPSILON)
-      {
-        if(pointwise_output_data.update_points_before_evaluation)
-          reinit_remote_evaluator();
-
-        write_time(time);
-        do_evaluate(solution);
-
-        ++counter;
-      }
-    }
-    else
-    {
-      write_time(time);
-      do_evaluate(solution);
-      ++counter;
-    }
+    first_evaluation = false;
+    AssertThrow(time_control.get_counter() == 0,
+                dealii::ExcMessage(
+                  "Only implemented in the case that the simulation is not restarted"));
   }
+
+  if(pointwise_output_data.update_points_before_evaluation)
+    reinit_remote_evaluator();
+
+  write_time(time);
+  do_evaluate(solution);
 }
 
 template<int dim, typename Number>
 PointwiseOutputGeneratorBase<dim, Number>::PointwiseOutputGeneratorBase(MPI_Comm const & comm)
-  : mpi_comm(comm), counter(0), reset_counter(true)
+  : mpi_comm(comm), first_evaluation(true)
 {
 }
 
@@ -127,7 +95,18 @@ PointwiseOutputGeneratorBase<dim, Number>::setup_base(
 #ifdef DEAL_II_WITH_HDF5
   pointwise_output_data = pointwise_output_data_in;
 
-  if(pointwise_output_data.write_output && pointwise_output_data.evaluation_points.size() > 0)
+  AssertThrow(
+    (get_unsteady_evaluation_type(pointwise_output_data_in.time_control_data) ==
+     TimeControlData::UnsteadyEvalType::Interval) ||
+      (get_unsteady_evaluation_type(pointwise_output_data_in.time_control_data) ==
+       TimeControlData::UnsteadyEvalType::None),
+    dealii::ExcMessage(
+      "This module can currently only be used with time TimeControlData::UnsteadyEvalType::Interval"));
+
+  time_control.setup(pointwise_output_data_in.time_control_data);
+
+  if(pointwise_output_data.time_control_data.is_active &&
+     pointwise_output_data.evaluation_points.size() > 0)
   {
     dof_handler = &dof_handler_in;
     mapping     = &mapping_in;
@@ -136,9 +115,10 @@ PointwiseOutputGeneratorBase<dim, Number>::setup_base(
     componentwise_result.reinit(pointwise_output_data.evaluation_points.size());
 
     // number of samples to write into file
-    n_out_samples = 1 + static_cast<unsigned int>(std::ceil(
-                          (pointwise_output_data.end_time - pointwise_output_data.start_time) /
-                          pointwise_output_data.interval_time));
+    n_out_samples = 1 + static_cast<unsigned int>(
+                          std::ceil((pointwise_output_data.time_control_data.end_time -
+                                     pointwise_output_data.time_control_data.start_time) /
+                                    pointwise_output_data.time_control_data.trigger_interval));
 
     setup_remote_evaluator();
 
@@ -277,7 +257,7 @@ PointwiseOutputGeneratorBase<dim, Number>::write_time(double time)
 #ifdef DEAL_II_WITH_HDF5
   auto dataset = hdf5_file->open_dataset("PhysicalInformation/Time");
 
-  std::vector<hsize_t> hyperslab_offset = {0, counter};
+  std::vector<hsize_t> hyperslab_offset = {0, time_control.get_counter()};
 
   if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
@@ -304,7 +284,7 @@ PointwiseOutputGeneratorBase<dim, Number>::write_component(
 #ifdef DEAL_II_WITH_HDF5
   auto dataset = hdf5_file->open_dataset("PhysicalInformation/" + name);
 
-  std::vector<hsize_t> hyperslab_offset = {0, counter};
+  std::vector<hsize_t> hyperslab_offset = {0, time_control.get_counter()};
   std::vector<hsize_t> hyperslab_dim    = {pointwise_output_data.evaluation_points.size(), 1};
 
   if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)

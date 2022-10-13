@@ -44,11 +44,9 @@ StatisticsManager<dim, Number>::StatisticsManager(
     mapping(mapping_in),
     mpi_comm(dof_handler_velocity.get_communicator()),
     number_of_samples(0),
-    write_final_output(true),
     data(TurbulentChannelData())
 {
 }
-
 
 template<int dim, typename Number>
 void
@@ -57,7 +55,13 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
 {
   data = data_in;
 
-  if(data.calculate)
+  AssertThrow(Utilities::is_valid_timestep(
+                data_in.time_control_data_statistics.write_preliminary_results_every_nth_time_step),
+              dealii::ExcMessage("write_preliminary_results_every_nth_time_step has to be set."));
+
+  time_control_statistics.setup(data_in.time_control_data_statistics);
+
+  if(data_in.time_control_data_statistics.time_control_data.is_active)
   {
     // note: this code only works on structured meshes where the faces in
     // y-direction are faces 2 and 3
@@ -291,116 +295,20 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
 
 template<int dim, typename Number>
 void
-StatisticsManager<dim, Number>::evaluate(VectorType const &   velocity,
-                                         double const &       time,
-                                         unsigned int const & time_step_number)
+StatisticsManager<dim, Number>::evaluate(VectorType const & velocity, bool const unsteady)
 {
-  if(data.calculate)
-  {
-    std::string filename = data.directory + data.filename;
+  AssertThrow(unsteady, dealii::ExcMessage("Only implemented for unsteady simulation."));
 
-    // EPSILON: small number which is much smaller than the time step size
-    double const EPSILON = 1.0e-10;
-    if((time > data.sample_start_time - EPSILON) && (time < data.sample_end_time + EPSILON) &&
-       (time_step_number % data.sample_every_timesteps == 0))
-    {
-      // evaluate statistics
-      this->evaluate(velocity);
-
-      // write intermediate output
-      if(time_step_number % (data.sample_every_timesteps * 100) == 0)
-      {
-        this->write_output(filename, data.viscosity, data.density);
-      }
-    }
-
-    // write final output
-    if((time > data.sample_end_time - EPSILON) && write_final_output)
-    {
-      this->write_output(filename, data.viscosity, data.density);
-
-      write_final_output = false;
-    }
-  }
-}
-
-
-template<int dim, typename Number>
-void
-StatisticsManager<dim, Number>::evaluate(VectorType const & velocity)
-{
-  std::vector<VectorType const *> vecs;
-  vecs.push_back(&velocity);
-  do_evaluate(vecs);
-}
-
-
-
-template<int dim, typename Number>
-void
-StatisticsManager<dim, Number>::evaluate(std::vector<VectorType> const & velocity)
-{
-  std::vector<VectorType const *> vecs;
-  for(unsigned int i = 0; i < velocity.size(); ++i)
-    vecs.push_back(&velocity[i]);
-  do_evaluate(vecs);
+  // evaluate statistics
+  this->evaluate_statistics(velocity);
 }
 
 template<int dim, typename Number>
 void
-StatisticsManager<dim, Number>::write_output(std::string const filename,
-                                             double const      dynamic_viscosity,
-                                             double const      density)
+StatisticsManager<dim, Number>::write_output()
 {
-  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-  {
-    // tau_w = mu * d<u>/dy = mu * (<u>(y2)-<u>(y1))/(y2-y1), where mu = rho * nu
-    double tau_w = dynamic_viscosity * ((vel_glob[0].at(1) - vel_glob[0].at(0)) /
-                                        (double)number_of_samples / (y_glob.at(1) - y_glob.at(0)));
-
-    // Re_tau = u_tau * delta / nu = sqrt(tau_w/rho) * delta / (mu/rho), where delta = 1
-    double Re_tau = sqrt(tau_w / density) / (dynamic_viscosity / density);
-
-    std::ofstream f;
-    f.open((filename + ".flow_statistics").c_str(), std::ios::trunc);
-
-    // clang-format off
-    f << std::scientific << std::setprecision(7)
-      << "Statistics of turbulent channel flow" << std::endl << std::endl
-      << "number of samples:             N = " << number_of_samples << std::endl
-      << "friction Reynolds number: Re_tau = " << Re_tau << std::endl
-      << "wall shear stress:         tau_w = " << tau_w << std::endl << std::endl;
-
-    f << "  y              u              v              w            "
-      << "  rms(u')        rms(v')        rms(w')        u'v'         " << std::endl;
-    // clang-format on
-
-    for(unsigned int idx = 0; idx < y_glob.size(); idx++)
-    {
-      // clang-format off
-
-      // y-values
-      f << std::scientific << std::setprecision(7) << std::setw(15) << y_glob.at(idx);
-
-      // mean velocity <u_i>, i=1,...,d
-      f << std::setw(15) << vel_glob[0].at(idx) / (double)number_of_samples  /* <u_1> */
-        << std::setw(15) << vel_glob[1].at(idx) / (double)number_of_samples  /* <u_2> */
-        << std::setw(15) << vel_glob[2].at(idx) / (double)number_of_samples; /* <u_3> */
-
-      // rms values: sqrt( <u_i'²> ) = sqrt( <u_i²> - <u_i>² ) where <u_i> = 0 for i=2,3
-      double mean_u1 = vel_glob[0].at(idx) / (double)number_of_samples;
-      f << std::setw(15) << std::sqrt(std::abs((velsq_glob[0].at(idx) / (double)(number_of_samples)-mean_u1 * mean_u1))) /* rms(u_1) */
-        << std::setw(15) << sqrt(velsq_glob[1].at(idx) / (double)(number_of_samples))                                    /* rms(u_2) */
-        << std::setw(15) << sqrt(velsq_glob[2].at(idx) / (double)(number_of_samples));                                   /* rms(u_3) */
-
-      // <u'v'> = <u*v>
-      f << std::setw(15) << (veluv_glob.at(idx)) / (double)(number_of_samples) << std::endl;
-
-      // clang-format on
-    }
-
-    f.close();
-  }
+  std::string filename = data.directory + data.filename;
+  this->do_write_output(filename, data.viscosity, data.density);
 }
 
 template<int dim, typename Number>
@@ -418,6 +326,24 @@ StatisticsManager<dim, Number>::reset()
   number_of_samples = 0;
 }
 
+template<int dim, typename Number>
+void
+StatisticsManager<dim, Number>::evaluate_statistics(VectorType const & velocity)
+{
+  std::vector<VectorType const *> vecs;
+  vecs.push_back(&velocity);
+  do_evaluate(vecs);
+}
+
+template<int dim, typename Number>
+void
+StatisticsManager<dim, Number>::evaluate_statistics(std::vector<VectorType> const & velocity)
+{
+  std::vector<VectorType const *> vecs;
+  for(unsigned int i = 0; i < velocity.size(); ++i)
+    vecs.push_back(&velocity[i]);
+  do_evaluate(vecs);
+}
 
 /*
  *  This function calculates the following statistical quantities of the flow ...
@@ -631,6 +557,62 @@ StatisticsManager<dim, Number>::do_evaluate(const std::vector<VectorType const *
   number_of_samples++;
 }
 
+template<int dim, typename Number>
+void
+StatisticsManager<dim, Number>::do_write_output(std::string const filename,
+                                                double const      dynamic_viscosity,
+                                                double const      density)
+{
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  {
+    // tau_w = mu * d<u>/dy = mu * (<u>(y2)-<u>(y1))/(y2-y1), where mu = rho * nu
+    double tau_w = dynamic_viscosity * ((vel_glob[0].at(1) - vel_glob[0].at(0)) /
+                                        (double)number_of_samples / (y_glob.at(1) - y_glob.at(0)));
+
+    // Re_tau = u_tau * delta / nu = sqrt(tau_w/rho) * delta / (mu/rho), where delta = 1
+    double Re_tau = sqrt(tau_w / density) / (dynamic_viscosity / density);
+
+    std::ofstream f;
+    f.open((filename + ".flow_statistics").c_str(), std::ios::trunc);
+
+    // clang-format off
+    f << std::scientific << std::setprecision(7)
+      << "Statistics of turbulent channel flow" << std::endl << std::endl
+      << "number of samples:             N = " << number_of_samples << std::endl
+      << "friction Reynolds number: Re_tau = " << Re_tau << std::endl
+      << "wall shear stress:         tau_w = " << tau_w << std::endl << std::endl;
+
+    f << "  y              u              v              w            "
+      << "  rms(u')        rms(v')        rms(w')        u'v'         " << std::endl;
+    // clang-format on
+
+    for(unsigned int idx = 0; idx < y_glob.size(); idx++)
+    {
+      // clang-format off
+
+      // y-values
+      f << std::scientific << std::setprecision(7) << std::setw(15) << y_glob.at(idx);
+
+      // mean velocity <u_i>, i=1,...,d
+      f << std::setw(15) << vel_glob[0].at(idx) / (double)number_of_samples  /* <u_1> */
+        << std::setw(15) << vel_glob[1].at(idx) / (double)number_of_samples  /* <u_2> */
+        << std::setw(15) << vel_glob[2].at(idx) / (double)number_of_samples; /* <u_3> */
+
+      // rms values: sqrt( <u_i'²> ) = sqrt( <u_i²> - <u_i>² ) where <u_i> = 0 for i=2,3
+      double mean_u1 = vel_glob[0].at(idx) / (double)number_of_samples;
+      f << std::setw(15) << std::sqrt(std::abs((velsq_glob[0].at(idx) / (double)(number_of_samples)-mean_u1 * mean_u1))) /* rms(u_1) */
+        << std::setw(15) << sqrt(velsq_glob[1].at(idx) / (double)(number_of_samples))                                    /* rms(u_2) */
+        << std::setw(15) << sqrt(velsq_glob[2].at(idx) / (double)(number_of_samples));                                   /* rms(u_3) */
+
+      // <u'v'> = <u*v>
+      f << std::setw(15) << (veluv_glob.at(idx)) / (double)(number_of_samples) << std::endl;
+
+      // clang-format on
+    }
+
+    f.close();
+  }
+}
 
 template class StatisticsManager<2, float>;
 template class StatisticsManager<3, float>;

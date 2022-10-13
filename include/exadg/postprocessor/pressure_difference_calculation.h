@@ -23,24 +23,28 @@
 #define INCLUDE_EXADG_POSTPROCESSOR_PRESSURE_DIFFERENCE_CALCULATION_H_
 
 // deal.II
+#include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/point.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/lac/la_parallel_vector.h>
+
+// ExaDG
+#include <exadg/postprocessor/time_control.h>
 
 namespace ExaDG
 {
 template<int dim>
 struct PressureDifferenceData
 {
-  PressureDifferenceData() : calculate(false), directory("output/"), filename("pressure_difference")
+  PressureDifferenceData() : directory("output/"), filename("pressure_difference")
   {
   }
 
   /*
-   *  active or not
+   *  Data to control output: Set is_active also in the unsteady case
    */
-  bool calculate;
+  TimeControlData time_control_data;
 
   /*
    *  Points:
@@ -54,6 +58,9 @@ struct PressureDifferenceData
    */
   std::string directory;
   std::string filename;
+
+  void
+  print(dealii::ConditionalOStream & pcout, bool const unsteady) const;
 };
 
 template<int dim, typename Number>
@@ -70,7 +77,9 @@ public:
         PressureDifferenceData<dim> const & pressure_difference_data_in);
 
   void
-  evaluate(VectorType const & pressure, double const & time) const;
+  evaluate(VectorType const & pressure, double const time) const;
+
+  TimeControl time_control;
 
 private:
   MPI_Comm const mpi_comm;

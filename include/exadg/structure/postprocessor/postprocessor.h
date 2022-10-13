@@ -30,7 +30,6 @@
 #include <exadg/postprocessor/output_data_base.h>
 #include <exadg/structure/postprocessor/output_generator.h>
 #include <exadg/structure/postprocessor/postprocessor_base.h>
-#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -56,9 +55,9 @@ public:
   setup(dealii::DoFHandler<dim> const & dof_handler, dealii::Mapping<dim> const & mapping);
 
   void
-  do_postprocessing(VectorType const & solution,
-                    double const       time             = 0.0,
-                    int const          time_step_number = numbers::steady_timestep);
+  do_postprocessing(VectorType const &     solution,
+                    double const           time             = 0.0,
+                    types::time_step const time_step_number = numbers::steady_timestep);
 
 private:
   PostProcessorData<dim> pp_data;

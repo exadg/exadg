@@ -27,6 +27,7 @@
 
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
+#include <deal.II/base/mpi.h>
 
 namespace ExaDG
 {
@@ -106,6 +107,27 @@ inline std::string
 print_horizontal_line()
 {
   return "________________________________________________________________________________";
+}
+
+inline void
+print_write_output_time(double const       time,
+                        unsigned int const counter,
+                        bool const         unsteady,
+                        MPI_Comm const &   mpi_comm)
+{
+  dealii::ConditionalOStream pcout(std::cout,
+                                   dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);
+  if(unsteady)
+  {
+    pcout << std::endl
+          << "OUTPUT << Write data at time t = " << std::scientific << std::setprecision(4) << time
+          << std::endl;
+  }
+  else
+  {
+    pcout << std::endl
+          << "OUTPUT << Write " << (counter == 0 ? "initial" : "solution") << " data" << std::endl;
+  }
 }
 
 } // namespace ExaDG

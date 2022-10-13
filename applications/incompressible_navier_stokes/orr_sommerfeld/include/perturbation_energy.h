@@ -27,8 +27,8 @@
 
 // ExaDG
 #include <exadg/matrix_free/integrators.h>
+#include <exadg/postprocessor/time_control.h>
 #include <exadg/utilities/create_directories.h>
-#include <exadg/utilities/numbers.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
@@ -38,24 +38,19 @@ namespace IncNS
 struct PerturbationEnergyData
 {
   PerturbationEnergyData()
-    : calculate(false),
-      calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
-      directory("output/"),
-      filename("orr_sommerfeld"),
-      omega_i(0.0),
-      h(1.0),
-      U_max(1.0)
+    : directory("output/"), filename("orr_sommerfeld"), omega_i(0.0), h(1.0), U_max(1.0)
   {
   }
 
   void
   print(dealii::ConditionalOStream & pcout)
   {
-    if(calculate == true)
+    if(time_control_data.is_active)
     {
       pcout << "  Calculate perturbation energy:" << std::endl;
-      print_parameter(pcout, "Calculate perturbation energy", calculate);
-      print_parameter(pcout, "Calculate every time steps", calculate_every_time_steps);
+      // only implemented for unsteady case
+      time_control_data.print(pcout, true /*unsteady*/);
+
       print_parameter(pcout, "Directory", directory);
       print_parameter(pcout, "Filename", filename);
       print_parameter(pcout, "Amplification omega_i", omega_i);
@@ -64,13 +59,13 @@ struct PerturbationEnergyData
     }
   }
 
-  bool         calculate;
-  unsigned int calculate_every_time_steps;
-  std::string  directory;
-  std::string  filename;
-  double       omega_i;
-  double       h;
-  double       U_max;
+  TimeControlData time_control_data;
+
+  std::string directory;
+  std::string filename;
+  double      omega_i;
+  double      h;
+  double      U_max;
 };
 
 /*
@@ -109,81 +104,71 @@ public:
     quad_index  = quad_index_in;
     data        = data_in;
 
-    if(data.calculate)
+    time_control.setup(data.time_control_data);
+
+    if(data.time_control_data.is_active)
       create_directories(data.directory, mpi_comm);
   }
 
   void
-  evaluate(VectorType const & velocity, double const & time, int const & time_step_number)
+  evaluate(VectorType const & velocity, double const time, bool const unsteady)
   {
-    if(data.calculate)
-    {
-      if(Utilities::is_unsteady_timestep(time_step_number))
-      {
-        do_evaluate(velocity, time, time_step_number);
-      }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage(
-                      "Calculation of perturbation energy for "
-                      "Orr-Sommerfeld problem only makes sense for unsteady problems."));
-      }
-    }
+    AssertThrow(unsteady,
+                dealii::ExcMessage(
+                  "Calculation of perturbation energy for "
+                  "Orr-Sommerfeld problem only makes sense for unsteady problems."));
+    do_evaluate(velocity, time);
   }
 
 private:
   void
-  do_evaluate(VectorType const & velocity, double const time, unsigned int const time_step_number)
+  do_evaluate(VectorType const & velocity, double const time)
   {
-    if((time_step_number - 1) % data.calculate_every_time_steps == 0)
+    Number perturbation_energy = 0.0;
+
+    integrate(*matrix_free, velocity, perturbation_energy);
+
+    if(!initial_perturbation_energy_has_been_calculated)
     {
-      Number perturbation_energy = 0.0;
+      initial_perturbation_energy = perturbation_energy;
 
-      integrate(*matrix_free, velocity, perturbation_energy);
+      initial_perturbation_energy_has_been_calculated = true;
+    }
 
-      if(!initial_perturbation_energy_has_been_calculated)
-      {
-        initial_perturbation_energy = perturbation_energy;
-
-        initial_perturbation_energy_has_been_calculated = true;
-      }
-
-      // write output file
-      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      {
-        // clang-format off
+    // write output file
+    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+    {
+      // clang-format off
         unsigned int l = matrix_free->get_dof_handler(dof_index)
                            .get_triangulation().n_global_levels() - 1;
-        // clang-format on
+      // clang-format on
 
-        std::string filename =
-          data.directory + data.filename + "_l" + dealii::Utilities::int_to_string(l);
+      std::string filename =
+        data.directory + data.filename + "_l" + dealii::Utilities::int_to_string(l);
 
-        std::ofstream f;
-        if(clear_files == true)
-        {
-          f.open(filename.c_str(), std::ios::trunc);
-          f << "Perturbation energy: E = (1,(u-u_base)^2)_Omega" << std::endl
-            << "Error:               e = |exp(2*omega_i*t) - E(t)/E(0)|" << std::endl;
+      std::ofstream f;
+      if(clear_files == true)
+      {
+        f.open(filename.c_str(), std::ios::trunc);
+        f << "Perturbation energy: E = (1,(u-u_base)^2)_Omega" << std::endl
+          << "Error:               e = |exp(2*omega_i*t) - E(t)/E(0)|" << std::endl;
 
-          f << std::endl << "  Time                energy              error" << std::endl;
+        f << std::endl << "  Time                energy              error" << std::endl;
 
-          clear_files = false;
-        }
-        else
-        {
-          f.open(filename.c_str(), std::ios::app);
-        }
-
-        Number const rel   = perturbation_energy / initial_perturbation_energy;
-        Number const error = std::abs(std::exp(2 * data.omega_i * time) - rel);
-
-        unsigned int const precision = 12;
-        f << std::scientific << std::setprecision(precision) << std::setw(precision + 8) << time
-          << std::setw(precision + 8) << perturbation_energy << std::setw(precision + 8) << error
-          << std::endl;
+        clear_files = false;
       }
+      else
+      {
+        f.open(filename.c_str(), std::ios::app);
+      }
+
+      Number const rel   = perturbation_energy / initial_perturbation_energy;
+      Number const error = std::abs(std::exp(2 * data.omega_i * time) - rel);
+
+      unsigned int const precision = 12;
+      f << std::scientific << std::setprecision(precision) << std::setw(precision + 8) << time
+        << std::setw(precision + 8) << perturbation_energy << std::setw(precision + 8) << error
+        << std::endl;
     }
   }
 
@@ -241,6 +226,8 @@ private:
       }
     }
   }
+
+  TimeControl time_control;
 
   MPI_Comm const mpi_comm;
 
