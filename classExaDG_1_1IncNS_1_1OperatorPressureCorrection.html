@@ -192,9 +192,9 @@ unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_inde
 <tr class="memitem:a5747176a032f109c35ef037f2060871a inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a5747176a032f109c35ef037f2060871a" name="a5747176a032f109c35ef037f2060871a"></a>
 std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_mapping</b> () const</td></tr>
 <tr class="separator:a5747176a032f109c35ef037f2060871a inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4dc81ef8cd1a3bbe3d4321b021250e6b inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a4dc81ef8cd1a3bbe3d4321b021250e6b" name="a4dc81ef8cd1a3bbe3d4321b021250e6b"></a>
-dealii::FESystem&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_fe_u</b> () const</td></tr>
-<tr class="separator:a4dc81ef8cd1a3bbe3d4321b021250e6b inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a289c62242276e230c4e2ee09bd2d9cf8 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a289c62242276e230c4e2ee09bd2d9cf8" name="a289c62242276e230c4e2ee09bd2d9cf8"></a>
+dealii::FiniteElement&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_fe_u</b> () const</td></tr>
+<tr class="separator:a289c62242276e230c4e2ee09bd2d9cf8 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aee284207524ae556542a0cc9c7063a20 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="aee284207524ae556542a0cc9c7063a20" name="aee284207524ae556542a0cc9c7063a20"></a>
 dealii::FE_DGQ&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_fe_p</b> () const</td></tr>
 <tr class="separator:aee284207524ae556542a0cc9c7063a20 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -210,6 +210,9 @@ dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" v
 <tr class="memitem:adf4411e0c99e75d1a09904d4d5ee1d91 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="adf4411e0c99e75d1a09904d4d5ee1d91" name="adf4411e0c99e75d1a09904d4d5ee1d91"></a>
 dealii::AffineConstraints&lt; Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_constraint_p</b> () const</td></tr>
 <tr class="separator:adf4411e0c99e75d1a09904d4d5ee1d91 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9ba935e53492b08fbe88c4fce36da9d9 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a9ba935e53492b08fbe88c4fce36da9d9" name="a9ba935e53492b08fbe88c4fce36da9d9"></a>
+dealii::AffineConstraints&lt; Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_constraint_u</b> () const</td></tr>
+<tr class="separator:a9ba935e53492b08fbe88c4fce36da9d9 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a363b6a19d43aa353410e18cbc1cd3634 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a363b6a19d43aa353410e18cbc1cd3634" name="a363b6a19d43aa353410e18cbc1cd3634"></a>
 dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>get_number_of_dofs</b> () const</td></tr>
 <tr class="separator:a363b6a19d43aa353410e18cbc1cd3634 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -303,9 +306,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_pressure_gra
 <tr class="memitem:aeebd1ec67303ef80d6969bf4944e01d7 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="aeebd1ec67303ef80d6969bf4944e01d7" name="aeebd1ec67303ef80d6969bf4944e01d7"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_velocity_divergence_term</b> (VectorType &amp;dst, VectorType const &amp;src, double const time) const</td></tr>
 <tr class="separator:aeebd1ec67303ef80d6969bf4944e01d7 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4ccce32e9edc31f7d62de2dac2d0c9f0 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a4ccce32e9edc31f7d62de2dac2d0c9f0" name="a4ccce32e9edc31f7d62de2dac2d0c9f0"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_inverse_mass_operator</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:a4ccce32e9edc31f7d62de2dac2d0c9f0 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa59ed11089bd48caa511344dfb22aebc inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="aa59ed11089bd48caa511344dfb22aebc" name="aa59ed11089bd48caa511344dfb22aebc"></a>
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>apply_inverse_mass_operator</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
+<tr class="separator:aa59ed11089bd48caa511344dfb22aebc inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1a0bd85d074ac0c5a7265fb017d4380b inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a1a0bd85d074ac0c5a7265fb017d4380b" name="a1a0bd85d074ac0c5a7265fb017d4380b"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update_turbulence_model</b> (VectorType const &amp;velocity)</td></tr>
 <tr class="separator:a1a0bd85d074ac0c5a7265fb017d4380b inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -345,6 +348,9 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update_after_
 <tr class="memitem:adc26e0bc5f2465cd8a1f5cea06e6ef21 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="adc26e0bc5f2465cd8a1f5cea06e6ef21" name="adc26e0bc5f2465cd8a1f5cea06e6ef21"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_grid_velocity</b> (VectorType const &amp;velocity)</td></tr>
 <tr class="separator:adc26e0bc5f2465cd8a1f5cea06e6ef21 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeb8100c790030eecb4fc06e4caa287c3 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="aeb8100c790030eecb4fc06e4caa287c3" name="aeb8100c790030eecb4fc06e4caa287c3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>distribute_constraint_u</b> (VectorType &amp;velocity)</td></tr>
+<tr class="separator:aeb8100c790030eecb4fc06e4caa287c3 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
@@ -519,6 +525,12 @@ std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1Operators_1_1Cont
 <tr class="memitem:a8c81ecf505e793dec7b2dbefe977f0f2 inherit pro_attribs_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a8c81ecf505e793dec7b2dbefe977f0f2" name="a8c81ecf505e793dec7b2dbefe977f0f2"></a>
 <a class="el" href="classExaDG_1_1InverseMassOperator.html">InverseMassOperator</a>&lt; dim, 1, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>inverse_mass_velocity_scalar</b></td></tr>
 <tr class="separator:a8c81ecf505e793dec7b2dbefe977f0f2 inherit pro_attribs_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7643929c18cc99d4490741e4a12b02ae inherit pro_attribs_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a7643929c18cc99d4490741e4a12b02ae" name="a7643929c18cc99d4490741e4a12b02ae"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">PreconditionerBase</a>&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>mass_preconditioner</b></td></tr>
+<tr class="separator:a7643929c18cc99d4490741e4a12b02ae inherit pro_attribs_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adacd27f6c3632c608a91d20aa39d4ee2 inherit pro_attribs_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="adacd27f6c3632c608a91d20aa39d4ee2" name="adacd27f6c3632c608a91d20aa39d4ee2"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Krylov_1_1SolverBase.html">Krylov::SolverBase</a>&lt; VectorType &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>mass_solver</b></td></tr>
+<tr class="separator:adacd27f6c3632c608a91d20aa39d4ee2 inherit pro_attribs_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4108fd3f96fef6c7464b8131e0898449 inherit pro_attribs_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a4108fd3f96fef6c7464b8131e0898449" name="a4108fd3f96fef6c7464b8131e0898449"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1ProjectionOperator.html">ProjOperator</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>projection_operator</b></td></tr>
 <tr class="separator:a4108fd3f96fef6c7464b8131e0898449 inherit pro_attribs_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
