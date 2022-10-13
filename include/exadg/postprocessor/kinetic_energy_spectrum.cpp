@@ -26,6 +26,7 @@
 #include <exadg/postprocessor/kinetic_energy_spectrum.h>
 #include <exadg/postprocessor/mirror_dof_vector_taylor_green.h>
 #include <exadg/utilities/create_directories.h>
+#include <exadg/utilities/numbers.h>
 
 #ifdef EXADG_WITH_FFTW
 // deal.II
@@ -38,6 +39,7 @@
 #  include <exadg/postprocessor/spectral_analysis/setup.h>
 #  include <exadg/postprocessor/spectral_analysis/spectrum.h>
 #  include <exadg/postprocessor/spectral_analysis/timer.h>
+
 
 namespace ExaDG
 {
@@ -410,7 +412,7 @@ KineticEnergySpectrumCalculator<dim, Number>::evaluate(VectorType const & veloci
 {
   if(data.calculate == true)
   {
-    if(time_step_number >= 0) // unsteady problem
+    if(Utilities::is_unsteady_timestep(time_step_number))
     {
       if(needs_to_be_evaluated(time, time_step_number))
       {
@@ -438,7 +440,7 @@ KineticEnergySpectrumCalculator<dim, Number>::evaluate(VectorType const & veloci
         }
       }
     }
-    else // steady problem (time_step_number = -1)
+    else
     {
       AssertThrow(
         false,

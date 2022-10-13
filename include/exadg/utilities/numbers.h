@@ -19,38 +19,24 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_INTERFACE_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_INTERFACE_H_
-
-#include <deal.II/lac/la_parallel_vector.h>
-#include <exadg/utilities/numbers.h>
+#ifndef INCLUDE_EXADG_UTILITIES_NUMBERS_H_
+#define INCLUDE_EXADG_UTILITIES_NUMBERS_H_
 
 namespace ExaDG
 {
-namespace IncNS
+namespace numbers
 {
-template<typename Number>
-class PostProcessorInterface
+unsigned int const steady_timestep = -1;
+}
+
+namespace Utilities
 {
-protected:
-  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
-
-public:
-  virtual ~PostProcessorInterface()
-  {
-  }
-
-  /*
-   * This function has to be called to apply the postprocessing tools.
-   */
-  virtual void
-  do_postprocessing(VectorType const & velocity,
-                    VectorType const & pressure,
-                    double const       time             = 0.0,
-                    int const          time_step_number = numbers::steady_timestep) = 0;
-};
-
-} // namespace IncNS
+inline bool
+is_unsteady_timestep(unsigned int const timestep)
+{
+  return (timestep != numbers::steady_timestep);
+}
+} // namespace Utilities
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_INTERFACE_H_ */
+#endif /*INCLUDE_EXADG_UTILITIES_NUMBERS_H_*/

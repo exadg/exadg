@@ -25,6 +25,7 @@
 // ExaDG
 #include <exadg/postprocessor/kinetic_energy_calculation.h>
 #include <exadg/utilities/create_directories.h>
+#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -60,7 +61,7 @@ KineticEnergyCalculator<dim, Number>::evaluate(VectorType const & velocity,
 {
   if(data.calculate)
   {
-    AssertThrow(time_step_number >= 0,
+    AssertThrow(Utilities::is_unsteady_timestep(time_step_number),
                 dealii::ExcMessage(
                   "This postprocessing tool can only be used for unsteady problems."));
 

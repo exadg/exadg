@@ -25,6 +25,7 @@
 // ExaDG
 #include <exadg/incompressible_navier_stokes/postprocessor/divergence_and_mass_error.h>
 #include <exadg/utilities/create_directories.h>
+#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -69,9 +70,9 @@ DivergenceAndMassErrorCalculator<dim, Number>::evaluate(VectorType const & veloc
 {
   if(data.calculate)
   {
-    if(time_step_number >= 0) // unsteady problem
+    if(Utilities::is_unsteady_timestep(time_step_number))
       analyze_div_and_mass_error_unsteady(velocity, time, time_step_number);
-    else // steady problem (time_step_number = -1)
+    else
       analyze_div_and_mass_error_steady(velocity);
   }
 }
@@ -206,6 +207,9 @@ DivergenceAndMassErrorCalculator<dim, Number>::analyze_div_and_mass_error_unstea
   double const       time,
   unsigned int const time_step_number)
 {
+  AssertThrow(Utilities::is_unsteady_timestep(time_step_number),
+              dealii::ExcMessage("Can not be used in steady problem."));
+
   if(time > data.start_time - 1.e-10)
   {
     Number div_error = 1.0, div_error_reference = 1.0, mass_error = 1.0, mass_error_reference = 1.0;

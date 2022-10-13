@@ -27,6 +27,7 @@
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/matrix_free.h>
+#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -45,7 +46,7 @@ public:
   virtual void
   do_postprocessing(VectorType const & solution,
                     double const       time             = 0.0,
-                    int const          time_step_number = -1) = 0;
+                    int const          time_step_number = numbers::steady_timestep) = 0;
 };
 
 template<int dim, typename Number>

@@ -28,6 +28,7 @@
 // ExaDG
 #include <exadg/postprocessor/error_calculation.h>
 #include <exadg/utilities/create_directories.h>
+#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -133,7 +134,7 @@ ErrorCalculator<dim, Number>::evaluate(VectorType const & solution,
 
   if(error_data.analytical_solution_available)
   {
-    if(time_step_number >= 0) // unsteady problem
+    if(Utilities::is_unsteady_timestep(time_step_number))
     {
       // small number which is much smaller than the time step size
       double const EPSILON = 1.0e-10;
@@ -160,7 +161,7 @@ ErrorCalculator<dim, Number>::evaluate(VectorType const & solution,
         ++error_counter;
       }
     }
-    else // steady problem (time_step_number = -1)
+    else
     {
       pcout << std::endl
             << "Calculate error for " << error_data.name << " for "
