@@ -110,6 +110,7 @@ SET(TARGET_SRC
      include/exadg/convection_diffusion/time_integration/driver_steady_problems.cpp
      include/exadg/convection_diffusion/postprocessor/postprocessor.cpp
      include/exadg/postprocessor/output_generator_scalar.cpp
+     include/exadg/postprocessor/pointwise_output_generator_base.cpp
      include/exadg/convection_diffusion/driver.cpp
      # incompressible Navier-Stokes equations
      include/exadg/incompressible_navier_stokes/user_interface/parameters.cpp
@@ -162,6 +163,7 @@ SET(TARGET_SRC
      include/exadg/compressible_navier_stokes/spatial_discretization/interface.cpp
      include/exadg/compressible_navier_stokes/spatial_discretization/operator.cpp
      include/exadg/compressible_navier_stokes/postprocessor/output_generator.cpp
+     include/exadg/compressible_navier_stokes/postprocessor/pointwise_output_generator.cpp
      include/exadg/compressible_navier_stokes/postprocessor/postprocessor.cpp
      include/exadg/compressible_navier_stokes/driver.cpp
      # elasticity

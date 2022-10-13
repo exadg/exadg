@@ -23,6 +23,7 @@
 #define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_
 
 #include <exadg/compressible_navier_stokes/postprocessor/output_generator.h>
+#include <exadg/compressible_navier_stokes/postprocessor/pointwise_output_generator.h>
 #include <exadg/compressible_navier_stokes/postprocessor/postprocessor_base.h>
 #include <exadg/postprocessor/error_calculation.h>
 #include <exadg/postprocessor/kinetic_energy_calculation.h>
@@ -45,6 +46,7 @@ struct PostProcessorData
   bool calculate_pressure;
 
   OutputData                  output_data;
+  PointwiseOutputData<dim>    pointwise_output_data;
   ErrorCalculationData<dim>   error_data;
   LiftAndDragData             lift_and_drag_data;
   PressureDifferenceData<dim> pressure_difference_data;
@@ -94,6 +96,7 @@ private:
   dealii::SmartPointer<Operator<dim, Number> const> navier_stokes_operator;
 
   OutputGenerator<dim, Number>                 output_generator;
+  PointwiseOutputGenerator<dim, Number>        pointwise_output_generator;
   ErrorCalculator<dim, Number>                 error_calculator;
   LiftAndDragCalculator<dim, Number>           lift_and_drag_calculator;
   PressureDifferenceCalculator<dim, Number>    pressure_difference_calculator;

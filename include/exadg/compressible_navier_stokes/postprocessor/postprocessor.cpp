@@ -32,6 +32,7 @@ PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & postpro
   : mpi_comm(comm),
     pp_data(postprocessor_data),
     output_generator(comm),
+    pointwise_output_generator(comm),
     error_calculator(comm),
     lift_and_drag_calculator(comm),
     pressure_difference_calculator(comm),
@@ -56,6 +57,10 @@ PostProcessor<dim, Number>::setup(Operator<dim, Number> const & pde_operator)
   output_generator.setup(pde_operator.get_dof_handler(),
                          pde_operator.get_mapping(),
                          pp_data.output_data);
+
+  pointwise_output_generator.setup(pde_operator.get_dof_handler(),
+                                   pde_operator.get_mapping(),
+                                   pp_data.pointwise_output_data);
 
   error_calculator.setup(pde_operator.get_dof_handler(),
                          pde_operator.get_mapping(),
@@ -98,6 +103,10 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const & solution,
    */
   output_generator.evaluate(solution, additional_fields, time, time_step_number);
 
+  /*
+   *  write pointwise output
+   */
+  pointwise_output_generator.evaluate(solution, time, time_step_number);
   /*
    *  calculate error
    */
