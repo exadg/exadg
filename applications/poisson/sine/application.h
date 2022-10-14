@@ -28,6 +28,14 @@ namespace ExaDG
 {
 namespace Poisson
 {
+enum class GridType
+{
+  Hypercube,
+  Simplex
+};
+
+GridType GRID_TYPE = GridType::Hypercube;
+
 double const FREQUENCY            = 3.0 * dealii::numbers::PI;
 bool const   USE_NEUMANN_BOUNDARY = true;
 
@@ -183,10 +191,25 @@ private:
     // choose a coarse grid with at least 2^dim elements to obtain a non-trivial coarse grid problem
     unsigned int n_cells_1d =
       std::max((unsigned int)2, this->param.grid.n_subdivisions_1d_hypercube);
-    dealii::GridGenerator::subdivided_hyper_cube(*this->grid->triangulation,
-                                                 n_cells_1d,
-                                                 left,
-                                                 right);
+
+    if(GRID_TYPE == GridType::Hypercube)
+    {
+      dealii::GridGenerator::subdivided_hyper_cube(*this->grid->triangulation,
+                                                   n_cells_1d,
+                                                   left,
+                                                   right);
+    }
+    else if(GRID_TYPE == GridType::Simplex)
+    {
+      dealii::GridGenerator::subdivided_hyper_cube_with_simplices(*this->grid->triangulation,
+                                                                  n_cells_1d,
+                                                                  left,
+                                                                  right);
+    }
+    else
+    {
+      AssertThrow(false, ExcNotImplemented());
+    }
 
     if(mesh_type == MeshType::Cartesian)
     {
