@@ -99,14 +99,14 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a24f618b41f355f49c6a532c40bb6d3b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aea3d349dc445ab22bf078c0a7e128f01"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessor.html#aea3d349dc445ab22bf078c0a7e128f01">setup</a> (<a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">Operator</a>&lt; dim, Number &gt; const &amp;pde_operator, dealii::Mapping&lt; dim &gt; const &amp;mapping) override</td></tr>
 <tr class="separator:aea3d349dc445ab22bf078c0a7e128f01"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4bce5ecd0eedd3a310d910a1ad9ee52e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessor.html#a4bce5ecd0eedd3a310d910a1ad9ee52e">do_postprocessing</a> (VectorType const &amp;solution, double const time=0.0, int const time_step_number=-1) override</td></tr>
-<tr class="separator:a4bce5ecd0eedd3a310d910a1ad9ee52e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae123f46a97e8246d0f6fb5a834a984a7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessor.html#ae123f46a97e8246d0f6fb5a834a984a7">do_postprocessing</a> (VectorType const &amp;solution, double const time=0.0, int const time_step_number=numbers::steady_timestep) override</td></tr>
+<tr class="separator:ae123f46a97e8246d0f6fb5a834a984a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af2acbfcb7df0bdd2b3159fcf66830050"><td class="memItemLeft" align="right" valign="top"><a id="af2acbfcb7df0bdd2b3159fcf66830050" name="af2acbfcb7df0bdd2b3159fcf66830050"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (<a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">Operator</a>&lt; dim, Number &gt; const &amp;pde_operator, dealii::Mapping&lt; dim &gt; const &amp;mapping)=0</td></tr>
 <tr class="separator:af2acbfcb7df0bdd2b3159fcf66830050"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a568ccb390db3d42dbf45b1c6090c2926"><td class="memItemLeft" align="right" valign="top"><a id="a568ccb390db3d42dbf45b1c6090c2926" name="a568ccb390db3d42dbf45b1c6090c2926"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_postprocessing</b> (VectorType const &amp;solution, double const time=0.0, int const time_step_number=-1)=0</td></tr>
-<tr class="separator:a568ccb390db3d42dbf45b1c6090c2926"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8381ee2d3ce75e9e1e28794ac1143eef"><td class="memItemLeft" align="right" valign="top"><a id="a8381ee2d3ce75e9e1e28794ac1143eef" name="a8381ee2d3ce75e9e1e28794ac1143eef"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_postprocessing</b> (VectorType const &amp;solution, double const time=0.0, int const time_step_number=numbers::steady_timestep)=0</td></tr>
+<tr class="separator:a8381ee2d3ce75e9e1e28794ac1143eef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-types" name="pro-types"></a>
 Protected Types</h2></td></tr>
@@ -135,8 +135,8 @@ typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td
 <tr class="separator:a703a4d1f29e24192d5d04d7c8863466e inherit pub_types_classExaDG_1_1ConvDiff_1_1PostProcessorInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a4bce5ecd0eedd3a310d910a1ad9ee52e" name="a4bce5ecd0eedd3a310d910a1ad9ee52e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4bce5ecd0eedd3a310d910a1ad9ee52e">&#9670;&#160;</a></span>do_postprocessing()</h2>
+<a id="ae123f46a97e8246d0f6fb5a834a984a7" name="ae123f46a97e8246d0f6fb5a834a984a7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae123f46a97e8246d0f6fb5a834a984a7">&#9670;&#160;</a></span>do_postprocessing()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -162,7 +162,7 @@ template&lt;int dim, typename Number &gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int const&#160;</td>
-          <td class="paramname"><em>time_step_number</em> = <code>-1</code>&#160;</td>
+          <td class="paramname"><em>time_step_number</em> = <code>numbers::steady_timestep</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
