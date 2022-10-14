@@ -211,7 +211,8 @@ Operator<dim, n_components, Number>::fill_matrix_free_data(
   if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
     matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1), get_quad_name());
   else if(this->grid->triangulation->all_reference_cells_are_simplex())
-    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(param.degree + 1), get_quad_name());
+    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(param.degree + 1),
+                                       get_quad_name());
   else
     AssertThrow(false, ExcNotImplemented());
 
@@ -227,7 +228,7 @@ Operator<dim, n_components, Number>::fill_matrix_free_data(
      not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
     AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
-        ExcNotImplemented());
+                ExcNotImplemented());
 
     matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree + 1),
                                        get_quad_gauss_lobatto_name());
@@ -246,7 +247,7 @@ Operator<dim, n_components, Number>::setup_operators()
      not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
     AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
-        ExcNotImplemented());
+                ExcNotImplemented());
 
     laplace_operator_data.quad_index_gauss_lobatto = get_quad_index_gauss_lobatto();
   }
@@ -314,21 +315,21 @@ Operator<dim, n_components, Number>::setup_solver()
   else if(param.preconditioner == Poisson::Preconditioner::PointJacobi)
   {
     AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
-        ExcNotImplemented());
+                ExcNotImplemented());
 
     preconditioner = std::make_shared<JacobiPreconditioner<Laplace>>(laplace_operator);
   }
   else if(param.preconditioner == Poisson::Preconditioner::BlockJacobi)
   {
     AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
-        ExcNotImplemented());
+                ExcNotImplemented());
 
     preconditioner = std::make_shared<BlockJacobiPreconditioner<Laplace>>(laplace_operator);
   }
   else if(param.preconditioner == Poisson::Preconditioner::Multigrid)
   {
     AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
-        ExcNotImplemented());
+                ExcNotImplemented());
 
     MultigridData mg_data;
     mg_data = param.multigrid_data;

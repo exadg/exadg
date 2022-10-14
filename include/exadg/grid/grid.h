@@ -35,7 +35,6 @@
 
 namespace ExaDG
 {
-
 template<int dim>
 class Grid
 {
