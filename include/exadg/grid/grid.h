@@ -35,49 +35,8 @@
 
 namespace ExaDG
 {
-using namespace dealii;
 
-// helper functions since some functionality is not available in dealii release 9.3
 template<int dim>
-bool
-all_reference_cells_are_simplices(Triangulation<dim> const & tria)
-{
-#if DEAL_II_VERSION_GTE(10, 0, 0)
-  return tria.all_reference_cells_are_simplex();
-#else
-  Assert(tria.get_reference_cells().size() > 0,
-         ExcMessage("You can't ask about the kinds of reference "
-                    "cells used by this triangulation if the "
-                    "triangulation doesn't yet have any cells in it."));
-  return (tria.get_reference_cells().size() == 1 && tria.get_reference_cells()[0].is_simplex());
-#endif
-}
-
-struct GridData
-{
-  GridData()
-    : triangulation_type(TriangulationType::Distributed),
-      n_refine_global(0),
-      n_subdivisions_1d_hypercube(1),
-      mapping_degree(1)
-  {
-  }
-
-  TriangulationType triangulation_type;
-
-  unsigned int n_refine_global;
-
-  // only relevant for hypercube geometry/mesh
-  unsigned int n_subdivisions_1d_hypercube;
-
-  unsigned int mapping_degree;
-
-  // TODO: path to a grid file
-  // std::string grid_file;
-};
-
-template<int dim, typename Number>
->>>>>>> fix issue with dealii version 9.3
 class Grid
 {
 public:
