@@ -30,6 +30,7 @@
 #include <exadg/postprocessor/error_calculation.h>
 #include <exadg/postprocessor/output_data_base.h>
 #include <exadg/postprocessor/output_generator_scalar.h>
+#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -63,7 +64,7 @@ public:
   void
   do_postprocessing(VectorType const & solution,
                     double const       time             = 0.0,
-                    int const          time_step_number = -1) override;
+                    int const          time_step_number = numbers::steady_timestep) override;
 
 protected:
   MPI_Comm const mpi_comm;

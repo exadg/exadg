@@ -24,6 +24,7 @@
 
 // ExaDG
 #include <exadg/incompressible_navier_stokes/postprocessor/kinetic_energy_dissipation_detailed.h>
+#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -57,7 +58,7 @@ KineticEnergyCalculatorDetailed<dim, Number>::evaluate(VectorType const & veloci
 {
   if(this->data.calculate == true)
   {
-    AssertThrow(time_step_number >= 0,
+    AssertThrow(Utilities::is_unsteady_timestep(time_step_number),
                 dealii::ExcMessage(
                   "This postprocessing tool can only be used for unsteady problems."));
 

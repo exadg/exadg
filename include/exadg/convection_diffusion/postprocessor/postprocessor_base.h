@@ -30,6 +30,7 @@
 
 // ExaDG
 #include <exadg/convection_diffusion/user_interface/analytical_solution.h>
+#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -51,7 +52,7 @@ public:
   virtual void
   do_postprocessing(VectorType const & solution,
                     double const       time             = 0.0,
-                    int const          time_step_number = -1) = 0;
+                    int const          time_step_number = numbers::steady_timestep) = 0;
 };
 
 template<int dim, typename Number>

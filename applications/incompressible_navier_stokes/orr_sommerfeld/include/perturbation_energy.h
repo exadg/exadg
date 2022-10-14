@@ -28,6 +28,7 @@
 // ExaDG
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/utilities/create_directories.h>
+#include <exadg/utilities/numbers.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
@@ -117,11 +118,11 @@ public:
   {
     if(data.calculate)
     {
-      if(time_step_number >= 0) // unsteady problem
+      if(Utilities::is_unsteady_timestep(time_step_number))
       {
         do_evaluate(velocity, time, time_step_number);
       }
-      else // steady problem (time_step_number = -1)
+      else
       {
         AssertThrow(false,
                     dealii::ExcMessage(

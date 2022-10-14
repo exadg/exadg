@@ -26,6 +26,7 @@
 // ExaDG
 #include <exadg/postprocessor/pointwise_output_generator_base.h>
 #include <exadg/utilities/create_directories.h>
+#include <exadg/utilities/numbers.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
@@ -72,7 +73,7 @@ PointwiseOutputGeneratorBase<dim, Number>::evaluate(VectorType const & solution,
 {
   if(pointwise_output_data.write_output && pointwise_output_data.evaluation_points.size() > 0)
   {
-    if(time_step_number >= 0) // unsteady problem
+    if(Utilities::is_unsteady_timestep(time_step_number))
     {
       // small number which is much smaller than the time step size
       double const EPSILON = 1.0e-10;
@@ -101,7 +102,7 @@ PointwiseOutputGeneratorBase<dim, Number>::evaluate(VectorType const & solution,
         ++counter;
       }
     }
-    else // steady problem (time_step_number = -1)
+    else
     {
       write_time(time);
       do_evaluate(solution);

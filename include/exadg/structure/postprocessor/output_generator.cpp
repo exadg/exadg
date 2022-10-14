@@ -28,6 +28,7 @@
 #include <exadg/postprocessor/write_output.h>
 #include <exadg/structure/postprocessor/output_generator.h>
 #include <exadg/utilities/create_directories.h>
+#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -129,7 +130,7 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & solution,
 
   if(output_data.write_output == true)
   {
-    if(time_step_number >= 0) // unsteady problem
+    if(Utilities::is_unsteady_timestep(time_step_number))
     {
       // small number which is much smaller than the time step size
       double const EPSILON = 1.0e-10;
@@ -154,7 +155,7 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & solution,
         ++output_counter;
       }
     }
-    else // steady problem (time_step_number = -1)
+    else
     {
       pcout << std::endl
             << "OUTPUT << Write " << (output_counter == 0 ? "initial" : "solution") << " data"

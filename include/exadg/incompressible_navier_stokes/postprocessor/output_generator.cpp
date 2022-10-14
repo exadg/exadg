@@ -30,6 +30,7 @@
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 #include <exadg/postprocessor/write_output.h>
 #include <exadg/utilities/create_directories.h>
+#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -194,7 +195,7 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & velocity,
     dealii::ConditionalOStream pcout(std::cout,
                                      dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);
 
-    if(time_step_number >= 0) // unsteady problem
+    if(Utilities::is_unsteady_timestep(time_step_number))
     {
       // small number which is much smaller than the time step size
       double const EPSILON = 1.0e-10;
@@ -233,7 +234,7 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & velocity,
         ++output_counter;
       }
     }
-    else // steady problem (time_step_number = -1)
+    else
     {
       pcout << std::endl
             << "OUTPUT << Write " << (output_counter == 0 ? "initial" : "solution") << " data"
@@ -434,9 +435,9 @@ OutputGenerator<dim, Number>::calculate_additional_fields(VectorType const & vel
 
     if(output_data.mean_velocity.calculate == true)
     {
-      if(time_step_number >= 0) // unsteady problems
+      if(Utilities::is_unsteady_timestep(time_step_number))
         compute_mean_velocity(mean_velocity, velocity, time, time_step_number);
-      else // time_step_number < 0 -> steady problems
+      else
         AssertThrow(
           false, dealii::ExcMessage("Mean velocity can only be computed for unsteady problems."));
     }
