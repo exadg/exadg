@@ -131,7 +131,8 @@ Operator<dim, n_components, Number>::distribute_dofs()
   dof_handler.distribute_dofs(*fe);
 
   // TODO: might need adjustments for simplices
-  dof_handler.distribute_mg_dofs();
+  if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+    dof_handler.distribute_mg_dofs();
 
   // affine constraints only relevant for continuous FE discretization
   if(param.spatial_discretization == SpatialDiscretization::CG)
