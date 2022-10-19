@@ -35,6 +35,7 @@
 #include <exadg/poisson/user_interface/boundary_descriptor.h>
 #include <exadg/poisson/user_interface/field_functions.h>
 #include <exadg/poisson/user_interface/parameters.h>
+#include <exadg/utilities/exceptions.h>
 #include <exadg/utilities/output_parameters.h>
 #include <exadg/utilities/resolution_parameters.h>
 

@@ -22,6 +22,7 @@
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_q.h>
+#include <deal.II/fe/fe_simplex_p.h>
 #include <deal.II/fe/fe_system.h>
 #ifdef DEAL_II_WITH_PETSC
 #  include <deal.II/lac/petsc_vector.h>
@@ -75,20 +76,52 @@ Operator<dim, n_components, Number>::distribute_dofs()
   if(n_components == 1)
   {
     if(param.spatial_discretization == SpatialDiscretization::DG)
-      fe = std::make_shared<dealii::FE_DGQ<dim>>(param.degree);
+    {
+      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+        fe = std::make_shared<dealii::FE_DGQ<dim>>(param.degree);
+      else if(this->grid->triangulation->all_reference_cells_are_simplex())
+        fe = std::make_shared<dealii::FE_SimplexDGP<dim>>(param.degree);
+      else
+        AssertThrow(false, ExcNotImplemented());
+    }
     else if(param.spatial_discretization == SpatialDiscretization::CG)
-      fe = std::make_shared<dealii::FE_Q<dim>>(param.degree);
+    {
+      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+        fe = std::make_shared<dealii::FE_Q<dim>>(param.degree);
+      else if(this->grid->triangulation->all_reference_cells_are_simplex())
+        fe = std::make_shared<dealii::FE_SimplexP<dim>>(param.degree);
+      else
+        AssertThrow(false, ExcNotImplemented());
+    }
     else
+    {
       AssertThrow(false, ExcNotImplemented());
+    }
   }
   else if(n_components == dim)
   {
     if(param.spatial_discretization == SpatialDiscretization::DG)
-      fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_DGQ<dim>(param.degree), dim);
+    {
+      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+        fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_DGQ<dim>(param.degree), dim);
+      else if(this->grid->triangulation->all_reference_cells_are_simplex())
+        fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_SimplexDGP<dim>(param.degree), dim);
+      else
+        AssertThrow(false, ExcNotImplemented());
+    }
     else if(param.spatial_discretization == SpatialDiscretization::CG)
-      fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_Q<dim>(param.degree), dim);
+    {
+      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+        fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_Q<dim>(param.degree), dim);
+      else if(this->grid->triangulation->all_reference_cells_are_simplex())
+        fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_SimplexP<dim>(param.degree), dim);
+      else
+        AssertThrow(false, ExcNotImplemented());
+    }
     else
+    {
       AssertThrow(false, dealii::ExcMessage("not implemented."));
+    }
   }
   else
   {
@@ -96,6 +129,10 @@ Operator<dim, n_components, Number>::distribute_dofs()
   }
 
   dof_handler.distribute_dofs(*fe);
+
+  // TODO: might need adjustments for simplices
+  if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+    dof_handler.distribute_mg_dofs();
 
   // affine constraints only relevant for continuous FE discretization
   if(param.spatial_discretization == SpatialDiscretization::CG)
@@ -171,7 +208,14 @@ Operator<dim, n_components, Number>::fill_matrix_free_data(
 
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
   matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
-  matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1), get_quad_name());
+
+  if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+    matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1), get_quad_name());
+  else if(this->grid->triangulation->all_reference_cells_are_simplex())
+    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(param.degree + 1),
+                                       get_quad_name());
+  else
+    AssertThrow(false, ExcNotImplemented());
 
   // Create a Gauss-Lobatto quadrature rule for DirichletCached boundary conditions.
   // These quadrature points coincide with the nodes of the discretization, so that
@@ -184,6 +228,9 @@ Operator<dim, n_components, Number>::fill_matrix_free_data(
   if(param.spatial_discretization == SpatialDiscretization::CG &&
      not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
+    AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
+                ExcNotImplemented());
+
     matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree + 1),
                                        get_quad_gauss_lobatto_name());
   }
@@ -199,7 +246,12 @@ Operator<dim, n_components, Number>::setup_operators()
   laplace_operator_data.quad_index = get_quad_index();
   if(param.spatial_discretization == SpatialDiscretization::CG &&
      not(boundary_descriptor->dirichlet_cached_bc.empty()))
+  {
+    AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
+                ExcNotImplemented());
+
     laplace_operator_data.quad_index_gauss_lobatto = get_quad_index_gauss_lobatto();
+  }
   laplace_operator_data.bc                    = boundary_descriptor;
   laplace_operator_data.use_cell_based_loops  = param.enable_cell_based_face_loops;
   laplace_operator_data.kernel_data.IP_factor = param.IP_factor;
@@ -257,16 +309,29 @@ Operator<dim, n_components, Number>::setup_solver()
   pcout << std::endl << "Setup Poisson solver ..." << std::endl;
 
   // initialize preconditioner
-  if(param.preconditioner == Poisson::Preconditioner::PointJacobi)
+  if(param.preconditioner == Poisson::Preconditioner::None)
   {
+    // do nothing
+  }
+  else if(param.preconditioner == Poisson::Preconditioner::PointJacobi)
+  {
+    AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
+                ExcNotImplemented());
+
     preconditioner = std::make_shared<JacobiPreconditioner<Laplace>>(laplace_operator);
   }
   else if(param.preconditioner == Poisson::Preconditioner::BlockJacobi)
   {
+    AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
+                ExcNotImplemented());
+
     preconditioner = std::make_shared<BlockJacobiPreconditioner<Laplace>>(laplace_operator);
   }
   else if(param.preconditioner == Poisson::Preconditioner::Multigrid)
   {
+    AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
+                ExcNotImplemented());
+
     MultigridData mg_data;
     mg_data = param.multigrid_data;
 
@@ -303,11 +368,7 @@ Operator<dim, n_components, Number>::setup_solver()
   }
   else
   {
-    AssertThrow(param.preconditioner == Poisson::Preconditioner::None ||
-                  param.preconditioner == Poisson::Preconditioner::PointJacobi ||
-                  param.preconditioner == Poisson::Preconditioner::BlockJacobi ||
-                  param.preconditioner == Poisson::Preconditioner::Multigrid,
-                dealii::ExcMessage("Specified preconditioner is not implemented!"));
+    AssertThrow(false, dealii::ExcMessage("Specified preconditioner is not implemented!"));
   }
 
   if(param.solver == Poisson::Solver::CG)

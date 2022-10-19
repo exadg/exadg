@@ -300,6 +300,7 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data_factory(
                                             unrolled_local_data.data());
 #else
         (void)active_faces;
+        (void)write_data_id;
 #endif
       }
       else
