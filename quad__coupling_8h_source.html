@@ -342,35 +342,36 @@ $(function() {
 <div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>                                            unrolled_local_data.data());</div>
 <div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span><span class="preprocessor">#else</span></div>
 <div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span>        (void)active_faces;</div>
-<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>      }</div>
-<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>      <span class="keywordflow">else</span></div>
-<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>      {</div>
-<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span><span class="preprocessor">#ifdef EXADG_WITH_PRECICE</span></div>
-<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>        this-&gt;precice-&gt;writeBlockScalarData(write_data_id,</div>
-<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>                                            active_faces,</div>
-<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span>                                            index-&gt;data(),</div>
-<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span>                                            &amp;local_data[0]);</div>
-<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>      }</div>
-<div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>    }</div>
-<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span>  }</div>
-<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>}</div>
-<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span> </div>
+<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>        (void)write_data_id;</div>
+<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>      }</div>
+<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>      <span class="keywordflow">else</span></div>
+<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>      {</div>
+<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span><span class="preprocessor">#ifdef EXADG_WITH_PRECICE</span></div>
+<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>        this-&gt;precice-&gt;writeBlockScalarData(write_data_id,</div>
+<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span>                                            active_faces,</div>
+<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span>                                            index-&gt;data(),</div>
+<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>                                            &amp;local_data[0]);</div>
+<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>      }</div>
+<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span>    }</div>
+<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>  }</div>
+<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>}</div>
 <div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span> </div>
 <div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span> </div>
-<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keywordtype">int</span> data_dim, <span class="keyword">typename</span> VectorizedArrayType&gt;</div>
-<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>std::string</div>
-<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>QuadCoupling&lt;dim, data_dim, VectorizedArrayType&gt;::get_surface_type()<span class="keyword"> const</span></div>
-<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span><span class="keyword"></span>{</div>
-<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>  <span class="keywordflow">return</span> <span class="stringliteral">&quot;quadrature points using matrix-free quad index &quot;</span> +</div>
-<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>         dealii::Utilities::to_string(mf_quad_index);</div>
-<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>}</div>
-<div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span> </div>
-<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>} <span class="comment">// namespace preCICE</span></div>
-<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span> </div>
-<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span> </div>
+<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keywordtype">int</span> data_dim, <span class="keyword">typename</span> VectorizedArrayType&gt;</div>
+<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>std::string</div>
+<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span>QuadCoupling&lt;dim, data_dim, VectorizedArrayType&gt;::get_surface_type()<span class="keyword"> const</span></div>
+<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span><span class="keyword"></span>{</div>
+<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>  <span class="keywordflow">return</span> <span class="stringliteral">&quot;quadrature points using matrix-free quad index &quot;</span> +</div>
+<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>         dealii::Utilities::to_string(mf_quad_index);</div>
+<div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>}</div>
+<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span> </div>
+<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>} <span class="comment">// namespace preCICE</span></div>
+<div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span> </div>
+<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span><span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclassExaDG_1_1preCICE_1_1CouplingBase_html"><div class="ttname"><a href="classExaDG_1_1preCICE_1_1CouplingBase.html">ExaDG::preCICE::CouplingBase</a></div><div class="ttdef"><b>Definition:</b> coupling_base.h:66</div></div>
 <div class="ttc" id="aclassExaDG_1_1preCICE_1_1CouplingBase_html_a36e684b3ced1553f0017f75f42737fdb"><div class="ttname"><a href="classExaDG_1_1preCICE_1_1CouplingBase.html#a36e684b3ced1553f0017f75f42737fdb">ExaDG::preCICE::CouplingBase::mesh_name</a></div><div class="ttdeci">std::string const mesh_name</div><div class="ttdoc">public precice solverinterface</div><div class="ttdef"><b>Definition:</b> coupling_base.h:152</div></div>
 <div class="ttc" id="aclassExaDG_1_1preCICE_1_1CouplingBase_html_a78ce70584dbfb2bf4ce7b9f01c7f759c"><div class="ttname"><a href="classExaDG_1_1preCICE_1_1CouplingBase.html#a78ce70584dbfb2bf4ce7b9f01c7f759c">ExaDG::preCICE::CouplingBase::FEFaceIntegrator</a></div><div class="ttdeci">FaceIntegrator&lt; dim, data_dim, double, VectorizedArrayType &gt; FEFaceIntegrator</div><div class="ttdoc">Alias for the face integrator.</div><div class="ttdef"><b>Definition:</b> coupling_base.h:78</div></div>

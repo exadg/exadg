@@ -284,24 +284,26 @@ $(function() {
 <div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>    {</div>
 <div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>      this-&gt;precice-&gt;writeScalarData(write_data_id, coupling_nodes_ids[i], write_data[0]);</div>
 <div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>    }</div>
-<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>  }</div>
-<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>}</div>
-<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span> </div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span> </div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span><span class="preprocessor">#else</span></div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>    (void)write_data_id;</div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>  }</div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>}</div>
 <div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span> </div>
-<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keywordtype">int</span> data_dim, <span class="keyword">typename</span> VectorizedArrayType&gt;</div>
-<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>std::string</div>
-<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span><a class="code hl_class" href="classExaDG_1_1preCICE_1_1DoFCoupling.html">DoFCoupling&lt;dim, data_dim, VectorizedArrayType&gt;::get_surface_type</a>()<span class="keyword"> const</span></div>
-<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span><span class="keyword"></span>{</div>
-<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>  <span class="keywordflow">return</span> <span class="stringliteral">&quot;DoF support points using matrix-free dof index &quot;</span> +</div>
-<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>         dealii::Utilities::to_string(mf_dof_index);</div>
-<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>}</div>
-<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span> </div>
-<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>} <span class="comment">// namespace preCICE</span></div>
-<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span> </div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span> </div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span> </div>
+<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keywordtype">int</span> data_dim, <span class="keyword">typename</span> VectorizedArrayType&gt;</div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>std::string</div>
+<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span><a class="code hl_class" href="classExaDG_1_1preCICE_1_1DoFCoupling.html">DoFCoupling&lt;dim, data_dim, VectorizedArrayType&gt;::get_surface_type</a>()<span class="keyword"> const</span></div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span><span class="keyword"></span>{</div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  <span class="keywordflow">return</span> <span class="stringliteral">&quot;DoF support points using matrix-free dof index &quot;</span> +</div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>         dealii::Utilities::to_string(mf_dof_index);</div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>}</div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span> </div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>} <span class="comment">// namespace preCICE</span></div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span> </div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span><span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclassExaDG_1_1preCICE_1_1CouplingBase_html"><div class="ttname"><a href="classExaDG_1_1preCICE_1_1CouplingBase.html">ExaDG::preCICE::CouplingBase</a></div><div class="ttdef"><b>Definition:</b> coupling_base.h:66</div></div>
 <div class="ttc" id="aclassExaDG_1_1preCICE_1_1CouplingBase_html_a36e684b3ced1553f0017f75f42737fdb"><div class="ttname"><a href="classExaDG_1_1preCICE_1_1CouplingBase.html#a36e684b3ced1553f0017f75f42737fdb">ExaDG::preCICE::CouplingBase::mesh_name</a></div><div class="ttdeci">std::string const mesh_name</div><div class="ttdoc">public precice solverinterface</div><div class="ttdef"><b>Definition:</b> coupling_base.h:152</div></div>
 <div class="ttc" id="aclassExaDG_1_1preCICE_1_1DoFCoupling_html"><div class="ttname"><a href="classExaDG_1_1preCICE_1_1DoFCoupling.html">ExaDG::preCICE::DoFCoupling</a></div><div class="ttdef"><b>Definition:</b> dof_coupling.h:44</div></div>
