@@ -28,14 +28,6 @@ namespace ExaDG
 {
 namespace Poisson
 {
-enum class GridType
-{
-  Hypercube,
-  Simplex
-};
-
-GridType GRID_TYPE = GridType::Hypercube;
-
 double const FREQUENCY            = 3.0 * dealii::numbers::PI;
 bool const   USE_NEUMANN_BOUNDARY = true;
 
@@ -160,6 +152,7 @@ private:
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type = TriangulationType::Distributed;
     this->param.grid.mapping_degree     = 3;
+    this->param.grid.element_type       = ElementType::Hypercube;
     this->param.spatial_discretization  = SpatialDiscretization::DG;
     this->param.IP_factor               = 1.0e0;
 
@@ -192,14 +185,14 @@ private:
     unsigned int n_cells_1d =
       std::max((unsigned int)2, this->param.grid.n_subdivisions_1d_hypercube);
 
-    if(GRID_TYPE == GridType::Hypercube)
+    if(this->param.grid.element_type == ElementType::Hypercube)
     {
       dealii::GridGenerator::subdivided_hyper_cube(*this->grid->triangulation,
                                                    n_cells_1d,
                                                    left,
                                                    right);
     }
-    else if(GRID_TYPE == GridType::Simplex)
+    else if(this->param.grid.element_type == ElementType::Simplex)
     {
       dealii::GridGenerator::subdivided_hyper_cube_with_simplices(*this->grid->triangulation,
                                                                   n_cells_1d,
@@ -287,7 +280,10 @@ private:
     pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = this->output_parameters.filename;
     pp_data.output_data.write_higher_order = true;
-    pp_data.output_data.degree             = this->param.degree;
+    if(this->param.grid.element_type == ElementType::Simplex and dim == 3)
+      AssertThrow(pp_data.output_data.write_higher_order == false,
+                  dealii::ExcMessage("Can't use higher order output with 3D Simplices."));
+    pp_data.output_data.degree = this->param.degree;
 
     pp_data.error_data.analytical_solution_available = true;
     pp_data.error_data.analytical_solution.reset(new Solution<dim>());
