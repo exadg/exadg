@@ -185,24 +185,23 @@ private:
     unsigned int n_cells_1d =
       std::max((unsigned int)2, this->param.grid.n_subdivisions_1d_hypercube);
 
-    if(this->param.grid.element_type == ElementType::Hypercube)
+    auto const lambda_create_coarse_triangulation = [&](dealii::Triangulation<dim, dim> & tria)
     {
-      dealii::GridGenerator::subdivided_hyper_cube(*this->grid->triangulation,
-                                                   n_cells_1d,
-                                                   left,
-                                                   right);
-    }
-    else if(this->param.grid.element_type == ElementType::Simplex)
-    {
-      dealii::GridGenerator::subdivided_hyper_cube_with_simplices(*this->grid->triangulation,
-                                                                  n_cells_1d,
-                                                                  left,
-                                                                  right);
-    }
-    else
-    {
-      AssertThrow(false, ExcNotImplemented());
-    }
+      if(this->param.grid.element_type == ElementType::Hypercube)
+      {
+        dealii::GridGenerator::subdivided_hyper_cube(tria, n_cells_1d, left, right);
+      }
+      else if(this->param.grid.element_type == ElementType::Simplex)
+      {
+        dealii::GridGenerator::subdivided_hyper_cube_with_simplices(tria, n_cells_1d, left, right);
+      }
+      else
+      {
+        AssertThrow(false, ExcNotImplemented());
+      }
+    };
+
+    this->grid->create_triangulation(this->param.grid, lambda_create_coarse_triangulation);
 
     if(mesh_type == MeshType::Cartesian)
     {
@@ -250,8 +249,6 @@ private:
         }
       }
     }
-
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
 
