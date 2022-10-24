@@ -105,8 +105,14 @@ MultigridPreconditioner<dim, Number, n_components>::fill_matrix_free_data(
 
   matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "laplace_dof_handler");
   matrix_free_data.insert_constraint(&(*this->constraints[level]), "laplace_dof_handler");
-  matrix_free_data.insert_quadrature(dealii::QGauss<1>(this->level_info[level].degree() + 1),
-                                     "laplace_quadrature");
+
+  if(this->dof_handlers[level]->get_triangulation().all_reference_cells_are_hyper_cube())
+    matrix_free_data.insert_quadrature(dealii::QGauss<1>(this->level_info[level].degree() + 1),
+                                       "laplace_quadrature");
+  else if(this->dof_handlers[level]->get_triangulation().all_reference_cells_are_simplex())
+    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(this->level_info[level].degree() +
+                                                                1),
+                                       "laplace_quadrature");
 }
 
 template<int dim, typename Number, int n_components>

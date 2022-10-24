@@ -150,21 +150,23 @@ private:
     this->param.right_hand_side = true;
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.grid.mapping_degree     = 3;
-    this->param.grid.element_type       = ElementType::Hypercube;
-    this->param.spatial_discretization  = SpatialDiscretization::DG;
-    this->param.IP_factor               = 1.0e0;
+    this->param.grid.triangulation_type           = TriangulationType::FullyDistributed;
+    this->param.grid.mapping_degree               = 2;
+    this->param.grid.element_type                 = ElementType::Simplex;
+    this->param.grid.create_coarse_triangulations = true;
+    this->param.spatial_discretization            = SpatialDiscretization::DG;
+    this->param.IP_factor                         = 1.0e0;
 
     // SOLVER
-    this->param.solver                      = Solver::CG;
-    this->param.solver_data.abs_tol         = 1.e-20;
-    this->param.solver_data.rel_tol         = 1.e-10;
-    this->param.solver_data.max_iter        = 1e4;
-    this->param.compute_performance_metrics = true;
-    this->param.preconditioner              = Preconditioner::Multigrid;
-    this->param.multigrid_data.type         = MultigridType::cphMG;
-    this->param.multigrid_data.p_sequence   = PSequenceType::Bisect;
+    this->param.solver                               = Solver::CG;
+    this->param.solver_data.abs_tol                  = 1.e-20;
+    this->param.solver_data.rel_tol                  = 1.e-10;
+    this->param.solver_data.max_iter                 = 1e4;
+    this->param.compute_performance_metrics          = true;
+    this->param.preconditioner                       = Preconditioner::Multigrid;
+    this->param.multigrid_data.type                  = MultigridType::cphMG;
+    this->param.multigrid_data.p_sequence            = PSequenceType::Bisect;
+    this->param.multigrid_data.use_global_coarsening = true;
     // MG smoother
     this->param.multigrid_data.smoother_data.smoother        = MultigridSmoother::Chebyshev;
     this->param.multigrid_data.smoother_data.iterations      = 5;
@@ -185,24 +187,24 @@ private:
     unsigned int n_cells_1d =
       std::max((unsigned int)2, this->param.grid.n_subdivisions_1d_hypercube);
 
-    if(this->param.grid.element_type == ElementType::Hypercube)
-    {
-      dealii::GridGenerator::subdivided_hyper_cube(*this->grid->triangulation,
-                                                   n_cells_1d,
-                                                   left,
-                                                   right);
-    }
-    else if(this->param.grid.element_type == ElementType::Simplex)
-    {
-      dealii::GridGenerator::subdivided_hyper_cube_with_simplices(*this->grid->triangulation,
-                                                                  n_cells_1d,
-                                                                  left,
-                                                                  right);
-    }
-    else
-    {
-      AssertThrow(false, ExcNotImplemented());
-    }
+    auto const lambda_create_coarse_triangulation = [&](dealii::Triangulation<dim, dim> & tria) {
+      if(this->param.grid.element_type == ElementType::Hypercube)
+      {
+        dealii::GridGenerator::subdivided_hyper_cube(tria, n_cells_1d, left, right);
+      }
+      else if(this->param.grid.element_type == ElementType::Simplex)
+      {
+        dealii::GridGenerator::subdivided_hyper_cube_with_simplices(tria, n_cells_1d, left, right);
+      }
+      else
+      {
+        AssertThrow(false, ExcNotImplemented());
+      }
+    };
+
+    this->grid->create_triangulation(this->param.grid,
+                                     lambda_create_coarse_triangulation,
+                                     this->param.grid.n_refine_global);
 
     if(mesh_type == MeshType::Cartesian)
     {
@@ -250,8 +252,6 @@ private:
         }
       }
     }
-
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
 
@@ -279,7 +279,7 @@ private:
     pp_data.output_data.time_control_data.is_active = this->output_parameters.write;
     pp_data.output_data.directory                   = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename                    = this->output_parameters.filename;
-    pp_data.output_data.write_higher_order          = true;
+    pp_data.output_data.write_higher_order          = false;
     pp_data.output_data.degree                      = this->param.degree;
 
     pp_data.error_data.time_control_data.is_active = true;
