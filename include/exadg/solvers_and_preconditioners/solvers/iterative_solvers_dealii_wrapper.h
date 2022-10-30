@@ -155,7 +155,8 @@ public:
   std::shared_ptr<TimerTree>
   get_timings() const override
   {
-    this->timer_tree->insert({"SolverCG"}, preconditioner.get_timings());
+    if(solver_data.use_preconditioner)
+      this->timer_tree->insert({"SolverCG"}, preconditioner.get_timings());
 
     return this->timer_tree;
   }
