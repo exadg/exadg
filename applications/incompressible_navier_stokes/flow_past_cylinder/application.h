@@ -330,7 +330,9 @@ private:
       create_coarse_grid<dim>(tria, this->grid->periodic_faces, cylinder_type_string);
     };
 
-    this->grid->create_triangulation(this->param.grid, lambda_create_coarse_triangulation);
+    this->grid->create_triangulation(this->param.grid,
+                                     lambda_create_coarse_triangulation,
+                                     this->param.grid.n_refine_global);
   }
 
   void

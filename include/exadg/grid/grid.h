@@ -93,23 +93,13 @@ public:
   create_triangulation(
     GridData const &                                          data,
     std::function<void(dealii::Triangulation<dim> &)> const & create_coarse_triangulation,
+    unsigned int const                                        global_refinements,
     std::vector<unsigned int> const & vector_local_refinements = std::vector<unsigned int>())
   {
     do_create_triangulation(data,
                             create_coarse_triangulation,
-                            true /* do refine */,
+                            global_refinements,
                             vector_local_refinements);
-  }
-
-  void
-  create_but_do_not_refine_triangulation(
-    GridData const &                                          data,
-    std::function<void(dealii::Triangulation<dim> &)> const & create_fine_triangulation)
-  {
-    do_create_triangulation(data,
-                            create_fine_triangulation,
-                            false /* do not refine */,
-                            std::vector<unsigned int>() /* no local refinements */);
   }
 
   /**
@@ -132,7 +122,7 @@ private:
   do_create_triangulation(
     GridData const &                                          data,
     std::function<void(dealii::Triangulation<dim> &)> const & create_triangulation,
-    bool const                                                perform_refinements,
+    unsigned int const                                        global_refinements,
     std::vector<unsigned int> const &                         vector_local_refinements)
   {
     if(data.triangulation_type == TriangulationType::Serial or
@@ -140,26 +130,22 @@ private:
     {
       create_triangulation(*triangulation);
 
-      if(perform_refinements)
-      {
-        if(vector_local_refinements.size() > 0)
-          refine_local(*triangulation, vector_local_refinements);
+      if(vector_local_refinements.size() > 0)
+        refine_local(*triangulation, vector_local_refinements);
 
-        triangulation->refine_global(data.n_refine_global);
-      }
+      if(global_refinements > 0)
+        triangulation->refine_global(global_refinements);
     }
     else if(data.triangulation_type == TriangulationType::FullyDistributed)
     {
       auto const serial_grid_generator = [&](dealii::Triangulation<dim, dim> & tria_serial) {
         create_triangulation(tria_serial);
 
-        if(perform_refinements)
-        {
-          if(vector_local_refinements.size() > 0)
-            refine_local(tria_serial, vector_local_refinements);
+        if(vector_local_refinements.size() > 0)
+          refine_local(tria_serial, vector_local_refinements);
 
-          tria_serial.refine_global(data.n_refine_global);
-        }
+        if(global_refinements > 0)
+          tria_serial.refine_global(global_refinements);
       };
 
       auto const serial_grid_partitioner = [&](dealii::Triangulation<dim, dim> & tria_serial,
