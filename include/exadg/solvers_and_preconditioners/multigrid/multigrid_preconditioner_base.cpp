@@ -362,22 +362,6 @@ private:
   mutable std::vector<unsigned int> n_mpi_processes_per_level;
 };
 
-/**
- * Similar to dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence
- * with the difference that the (coarse-grid) p:d:T is converted to a p:f:T
- * right away.
- */
-template<int dim, int spacedim>
-std::vector<std::shared_ptr<dealii::Triangulation<dim, spacedim> const>>
-create_geometric_coarsening_sequence(
-  dealii::Triangulation<dim, spacedim> const & fine_triangulation_in)
-{
-  return dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
-    fine_triangulation_in,
-    BalancedGranularityPartitionPolicy<dim>(
-      dealii::Utilities::MPI::n_mpi_processes(fine_triangulation_in.get_communicator())));
-}
-
 template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_coarse_grid_triangulations(
@@ -400,7 +384,11 @@ MultigridPreconditionerBase<dim, Number>::initialize_coarse_grid_triangulations(
           "without refinements, a dealii::parallel::distributed::Triangulation, or a "
           "MultigridType without h-transfer."));
 
-      coarse_grid_triangulations = create_geometric_coarsening_sequence(*tria);
+      coarse_grid_triangulations =
+        dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
+          *tria,
+          BalancedGranularityPartitionPolicy<dim>(
+            dealii::Utilities::MPI::n_mpi_processes(tria->get_communicator())));
     }
   }
 }
@@ -423,14 +411,12 @@ MultigridPreconditionerBase<dim, Number>::initialize_mapping()
                                          mapping_q_cache,
                                          coarse_grid_triangulations);
     }
-    else // global refinement
+    else // local smoothing multigrid implementation
     {
-      mapping_global_refinement =
+      mapping_dof_vector =
         std::make_shared<MappingDoFVector<dim, Number>>(mapping_q_cache->get_degree());
 
-      MappingTools::initialize_multigrid(mapping_global_refinement,
-                                         mapping_q_cache,
-                                         *triangulation);
+      MappingTools::initialize_multigrid(mapping_dof_vector, mapping_q_cache, *triangulation);
     }
   }
 }
@@ -451,12 +437,12 @@ MultigridPreconditionerBase<dim, Number>::get_mapping(unsigned int const h_level
 
       return *(coarse_grid_mappings[h_level]);
     }
-    else // global refinement
+    else // local smoothing multigrid implementation
     {
-      AssertThrow(mapping_global_refinement.get() != 0,
-                  dealii::ExcMessage("mapping_global_refinement is not initialized correctly."));
+      AssertThrow(mapping_dof_vector.get() != 0,
+                  dealii::ExcMessage("mapping_dof_vector is not initialized correctly."));
 
-      return *mapping_global_refinement;
+      return *mapping_dof_vector;
     }
   }
   else

@@ -100,12 +100,23 @@ public:
                             create_coarse_triangulation,
                             global_refinements,
                             vector_local_refinements);
+
+    if(data.create_coarse_triangulations)
+    {
+      // TODO
+      // construct all the coarser triangulations
+    }
   }
 
   /**
    * dealii::Triangulation.
    */
   std::shared_ptr<dealii::Triangulation<dim>> triangulation;
+
+  /**
+   * a vector of coarse triangulations required for global coarsening multigrid
+   */
+  std::vector<std::shared_ptr<dealii::Triangulation<dim>>> coarse_triangulations;
 
   /**
    * dealii::GridTools::PeriodicFacePair's.

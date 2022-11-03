@@ -52,6 +52,27 @@ enum_to_string(TriangulationType const enum_type)
 }
 
 std::string
+enum_to_string(ElementType const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    case ElementType::Hypercube:
+      string_type = "Hypercube";
+      break;
+    case ElementType::Simplex:
+      string_type = "Simplex";
+      break;
+    default:
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      break;
+  }
+
+  return string_type;
+}
+
+std::string
 enum_to_string(PartitioningType const enum_type)
 {
   std::string string_type;

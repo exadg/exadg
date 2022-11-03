@@ -328,9 +328,9 @@ private:
   // and the fine level mapping as the last element of the vector.
   std::vector<std::shared_ptr<MappingDoFVector<dim, Number>>> coarse_grid_mappings;
 
-  // Only relevant for global refinement and in case that a mapping of type MappingDoFVector is
+  // Only relevant for local-smoothing-multigrid and in case that a mapping of type MappingQCache is
   // used.
-  std::shared_ptr<MappingDoFVector<dim, Number>> mapping_global_refinement;
+  std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector;
 
   dealii::MGLevelObject<std::shared_ptr<Smoother>> smoothers;
 
