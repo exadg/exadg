@@ -28,6 +28,7 @@
 #include <deal.II/multigrid/mg_constrained_dofs.h>
 
 // ExaDG
+#include <exadg/grid/grid.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/multigrid_operator_base.h>
 #include <exadg/solvers_and_preconditioners/multigrid/levels_hybrid_multigrid.h>
@@ -233,11 +234,12 @@ private:
   void
   check_levels(std::vector<MGLevelInfo> const & level_info);
 
-  /*
-   * Coarse grid triangulations in case of global coarsening transfer type.
-   */
-  void
-  initialize_coarse_grid_triangulations(dealii::Triangulation<dim> const * tria);
+  // TODO grid
+  //  /*
+  //   * Coarse grid triangulations in case of global coarsening transfer type.
+  //   */
+  //  void
+  //  initialize_coarse_grid_triangulations(dealii::Triangulation<dim> const * tria);
 
   /*
    * Returns the correct mapping depending on the multigrid transfer type and the current h-level.
@@ -315,11 +317,15 @@ private:
 
   MultigridData data;
 
-  dealii::Triangulation<dim> const * triangulation;
+  std::shared_ptr<Grid<dim> const> grid;
 
-  // Only relevant for global coarsening, where this vector contains coarse level triangulations,
-  // and the fine level triangulation as the last element of the vector.
-  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> coarse_grid_triangulations;
+  // TODO shift this to the Grid class
+  //  dealii::Triangulation<dim> const * triangulation;
+  //
+  //  // Only relevant for global coarsening, where this vector contains coarse level
+  //  triangulations,
+  //  // and the fine level triangulation as the last element of the vector.
+  //  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> coarse_grid_triangulations;
 
   // In case of global coarsening, this is the mapping associated to the fine level triangulation.
   std::shared_ptr<dealii::Mapping<dim> const> mapping;

@@ -24,11 +24,13 @@
 
 // deal.II
 #include <deal.II/distributed/fully_distributed_tria.h>
+#include <deal.II/distributed/repartitioning_policy_tools.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/fe/fe_simplex_p.h>
 #include <deal.II/fe/mapping_fe.h>
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/grid/grid_tools.h>
+#include <deal.II/multigrid/mg_transfer_global_coarsening.h>
 
 // ExaDG
 #include <exadg/grid/enum_types.h>
@@ -37,6 +39,50 @@
 
 namespace ExaDG
 {
+/**
+ * A class to use for the deal.II coarsening functionality, where we try to
+ * balance the mesh coarsening with a minimum granularity and the number of
+ * partitions on coarser levels.
+ */
+template<int dim, int spacedim = dim>
+class BalancedGranularityPartitionPolicy
+  : public dealii::RepartitioningPolicyTools::Base<dim, spacedim>
+{
+public:
+  BalancedGranularityPartitionPolicy(unsigned int const n_mpi_processes)
+    : n_mpi_processes_per_level{n_mpi_processes}
+  {
+  }
+
+  virtual dealii::LinearAlgebra::distributed::Vector<double>
+  partition(dealii::Triangulation<dim, spacedim> const & tria_coarse_in) const override
+  {
+    dealii::types::global_cell_index const n_cells = tria_coarse_in.n_global_active_cells();
+
+    // TODO: We hard-code a grain-size limit of 200 cells per processor
+    // (assuming linear finite elements and typical behavior of
+    // supercomputers). In case we have fewer cells on the fine level, we do
+    // not immediately go to 200 cells per rank, but limit the growth by a
+    // factor of 8, which limits makes sure that we do not create too many
+    // messages for individual MPI processes.
+    unsigned int const grain_size_limit =
+      std::min<unsigned int>(200, 8 * n_cells / n_mpi_processes_per_level.back() + 1);
+
+    dealii::RepartitioningPolicyTools::MinimalGranularityPolicy<dim, spacedim> partitioning_policy(
+      grain_size_limit);
+    dealii::LinearAlgebra::distributed::Vector<double> const partitions =
+      partitioning_policy.partition(tria_coarse_in);
+
+    // The vector 'partitions' contains the partition numbers. To get the
+    // number of partitions, we take the infinity norm.
+    n_mpi_processes_per_level.push_back(static_cast<unsigned int>(partitions.linfty_norm()) + 1);
+    return partitions;
+  }
+
+private:
+  mutable std::vector<unsigned int> n_mpi_processes_per_level;
+};
+
 template<int dim>
 class Grid
 {
@@ -103,9 +149,47 @@ public:
 
     if(data.create_coarse_triangulations)
     {
-      // TODO
-      // construct all the coarser triangulations
+      // in case of a serial or distributed triangulation, deal.II can automatically generate the
+      // coarse grid triangulations
+      if(data.triangulation_type == TriangulationType::Serial or
+         data.triangulation_type == TriangulationType::Distributed)
+      {
+        coarse_triangulations =
+          dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
+            *triangulation,
+            BalancedGranularityPartitionPolicy<dim>(
+              dealii::Utilities::MPI::n_mpi_processes(triangulation->get_communicator())));
+      }
+      else if(data.triangulation_type ==
+              TriangulationType::FullyDistributed) // we need to generate the coarse triangulations
+                                                   // explicitly
+      {
+        // TODO
+        // construct all the coarser triangulations
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("Invalid parameter triangulation_type."));
+      }
     }
+  }
+
+  std::shared_ptr<dealii::Triangulation<dim> const>
+  get_triangulation() const
+  {
+    return triangulation;
+  }
+
+  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const &
+  get_coarse_triangulations() const
+  {
+    return coarse_triangulations;
+  }
+
+  std::shared_ptr<dealii::Mapping<dim> const>
+  get_mapping() const
+  {
+    return mapping;
   }
 
   /**
@@ -116,7 +200,7 @@ public:
   /**
    * a vector of coarse triangulations required for global coarsening multigrid
    */
-  std::vector<std::shared_ptr<dealii::Triangulation<dim>>> coarse_triangulations;
+  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> coarse_triangulations;
 
   /**
    * dealii::GridTools::PeriodicFacePair's.

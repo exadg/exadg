@@ -379,9 +379,9 @@ initialize_multigrid(std::shared_ptr<MappingDoFVector<dim, Number>>      mapping
 template<int dim, typename Number>
 void
 initialize_multigrid(
-  std::vector<std::shared_ptr<MappingDoFVector<dim, Number>>> &    coarse_grid_mappings,
-  std::shared_ptr<dealii::MappingQCache<dim> const> &              mapping_q_cache,
-  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> & coarse_grid_triangulations)
+  std::vector<std::shared_ptr<MappingDoFVector<dim, Number>>> &          coarse_grid_mappings,
+  std::shared_ptr<dealii::MappingQCache<dim> const> &                    mapping_q_cache,
+  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_grid_triangulations)
 {
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
