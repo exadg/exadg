@@ -144,6 +144,11 @@ public:
     unsigned int const                                        global_refinements,
     std::vector<unsigned int> const & vector_local_refinements = std::vector<unsigned int>())
   {
+    do_create_triangulation(data,
+                            create_coarse_triangulation,
+                            global_refinements,
+                            vector_local_refinements);
+
     // coarse triangulations need to be created for global coarsening multigrid
     if(data.create_coarse_triangulations)
     {
@@ -152,12 +157,6 @@ public:
       {
         // in case of a serial or distributed triangulation, deal.II can automatically generate the
         // coarse grid triangulations
-
-        do_create_triangulation(data,
-                                create_coarse_triangulation,
-                                global_refinements,
-                                vector_local_refinements);
-
         coarse_triangulations =
           dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
             *triangulation,
@@ -177,13 +176,6 @@ public:
       {
         AssertThrow(false, dealii::ExcMessage("Invalid parameter triangulation_type."));
       }
-    }
-    else
-    {
-      do_create_triangulation(data,
-                              create_coarse_triangulation,
-                              global_refinements,
-                              vector_local_refinements);
     }
   }
 
