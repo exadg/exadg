@@ -185,8 +185,7 @@ private:
     unsigned int n_cells_1d =
       std::max((unsigned int)2, this->param.grid.n_subdivisions_1d_hypercube);
 
-    auto const lambda_create_coarse_triangulation = [&](dealii::Triangulation<dim, dim> & tria)
-    {
+    auto const lambda_create_coarse_triangulation = [&](dealii::Triangulation<dim, dim> & tria) {
       if(this->param.grid.element_type == ElementType::Hypercube)
       {
         dealii::GridGenerator::subdivided_hyper_cube(tria, n_cells_1d, left, right);
@@ -201,7 +200,9 @@ private:
       }
     };
 
-    this->grid->create_triangulation(this->param.grid, lambda_create_coarse_triangulation);
+    this->grid->create_triangulation(this->param.grid,
+                                     lambda_create_coarse_triangulation,
+                                     this->param.grid.n_refine_global);
 
     if(mesh_type == MeshType::Cartesian)
     {
