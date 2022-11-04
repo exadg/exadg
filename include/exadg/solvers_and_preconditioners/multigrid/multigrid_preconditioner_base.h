@@ -28,6 +28,7 @@
 #include <deal.II/multigrid/mg_constrained_dofs.h>
 
 // ExaDG
+#include <exadg/grid/grid.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/multigrid_operator_base.h>
 #include <exadg/solvers_and_preconditioners/multigrid/levels_hybrid_multigrid.h>
@@ -93,13 +94,15 @@ public:
    * Initialization function.
    */
   void
-  initialize(MultigridData const &                       data,
-             dealii::Triangulation<dim> const *          tria,
-             dealii::FiniteElement<dim> const &          fe,
-             std::shared_ptr<dealii::Mapping<dim> const> mapping,
-             bool const                                  operator_is_singular,
-             Map const &                                 dirichlet_bc,
-             PeriodicFacePairs const &                   periodic_face_pairs);
+  initialize(
+    MultigridData const &                                                  data,
+    dealii::Triangulation<dim> const *                                     tria,
+    std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations,
+    dealii::FiniteElement<dim> const &                                     fe,
+    std::shared_ptr<dealii::Mapping<dim> const>                            mapping,
+    bool const                                                             operator_is_singular,
+    Map const &                                                            dirichlet_bc,
+    PeriodicFacePairs const &                                              periodic_face_pairs);
 
   /*
    * This function applies the multigrid preconditioner dst = P^{-1} src.
@@ -234,12 +237,6 @@ private:
   check_levels(std::vector<MGLevelInfo> const & level_info);
 
   /*
-   * Coarse grid triangulations in case of global coarsening transfer type.
-   */
-  void
-  initialize_coarse_grid_triangulations(dealii::Triangulation<dim> const * tria);
-
-  /*
    * Returns the correct mapping depending on the multigrid transfer type and the current h-level.
    */
   dealii::Mapping<dim> const &
@@ -319,7 +316,7 @@ private:
 
   // Only relevant for global coarsening, where this vector contains coarse level triangulations,
   // and the fine level triangulation as the last element of the vector.
-  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> coarse_grid_triangulations;
+  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> coarse_triangulations;
 
   // In case of global coarsening, this is the mapping associated to the fine level triangulation.
   std::shared_ptr<dealii::Mapping<dim> const> mapping;
@@ -328,9 +325,9 @@ private:
   // and the fine level mapping as the last element of the vector.
   std::vector<std::shared_ptr<MappingDoFVector<dim, Number>>> coarse_grid_mappings;
 
-  // Only relevant for global refinement and in case that a mapping of type MappingDoFVector is
+  // Only relevant for local-smoothing-multigrid and in case that a mapping of type MappingQCache is
   // used.
-  std::shared_ptr<MappingDoFVector<dim, Number>> mapping_global_refinement;
+  std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector;
 
   dealii::MGLevelObject<std::shared_ptr<Smoother>> smoothers;
 

@@ -175,6 +175,7 @@ OperatorProjectionMethods<dim, Number>::initialize_preconditioner_pressure_poiss
     auto & dof_handler = this->get_dof_handler_p();
     mg_preconditioner->initialize(mg_data,
                                   &dof_handler.get_triangulation(),
+                                  this->grid->get_coarse_triangulations(),
                                   dof_handler.get_fe(),
                                   this->get_mapping(),
                                   laplace_operator.get_data(),

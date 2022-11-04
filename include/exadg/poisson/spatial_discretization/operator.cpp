@@ -359,6 +359,7 @@ Operator<dim, n_components, Number>::setup_solver()
 
     mg_preconditioner->initialize(mg_data,
                                   &dof_handler.get_triangulation(),
+                                  grid->get_coarse_triangulations(),
                                   dof_handler.get_fe(),
                                   grid->mapping,
                                   laplace_operator.get_data(),

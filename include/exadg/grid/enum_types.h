@@ -46,6 +46,18 @@ std::string
 enum_to_string(TriangulationType const enum_type);
 
 /*
+ * Element type
+ */
+enum class ElementType
+{
+  Hypercube,
+  Simplex
+};
+
+std::string
+enum_to_string(ElementType const enum_type);
+
+/*
  * Partitioning type (relevant for fully-distributed triangulation)
  */
 enum class PartitioningType

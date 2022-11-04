@@ -22,26 +22,22 @@
 #ifndef INCLUDE_EXADG_GRID_GRID_DATA_H_
 #define INCLUDE_EXADG_GRID_GRID_DATA_H_
 
+// ExaDG
 #include <exadg/grid/enum_types.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
 {
-enum class ElementType
-{
-  Hypercube,
-  Simplex
-};
-
 struct GridData
 {
   GridData()
     : triangulation_type(TriangulationType::Distributed),
+      element_type(ElementType::Hypercube),
       partitioning_type(PartitioningType::Metis),
       n_refine_global(0),
       n_subdivisions_1d_hypercube(1),
-      mapping_degree(1),
-      element_type(ElementType::Hypercube)
+      create_coarse_triangulations(false),
+      mapping_degree(1)
   {
   }
 
@@ -54,6 +50,9 @@ struct GridData
   print(dealii::ConditionalOStream const & pcout) const
   {
     print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
+
+    // TODO: causes tests to fail introduce as a separate PR
+    // print_parameter(pcout, "Element type", enum_to_string(element_type));
 
     if(triangulation_type == TriangulationType::FullyDistributed)
       print_parameter(pcout,
@@ -69,6 +68,8 @@ struct GridData
 
   TriangulationType triangulation_type;
 
+  ElementType element_type;
+
   PartitioningType partitioning_type;
 
   unsigned int n_refine_global;
@@ -76,9 +77,11 @@ struct GridData
   // only relevant for hypercube geometry/mesh
   unsigned int n_subdivisions_1d_hypercube;
 
-  unsigned int mapping_degree;
+  // this parameter needs to be activated to use global-coarsening multigrid
+  // (which needs all the coarser triangulations)
+  bool create_coarse_triangulations;
 
-  ElementType element_type;
+  unsigned int mapping_degree;
 
   // TODO: path to a grid file
   // std::string grid_file;

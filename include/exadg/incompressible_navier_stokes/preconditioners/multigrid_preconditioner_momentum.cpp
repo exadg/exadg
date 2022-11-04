@@ -37,15 +37,16 @@ MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & c
 template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize(
-  MultigridData const &                       mg_data,
-  dealii::Triangulation<dim> const *          tria,
-  dealii::FiniteElement<dim> const &          fe,
-  std::shared_ptr<dealii::Mapping<dim> const> mapping,
-  PDEOperator const &                         pde_operator,
-  MultigridOperatorType const &               mg_operator_type,
-  bool const                                  mesh_is_moving,
-  Map const &                                 dirichlet_bc,
-  PeriodicFacePairs const &                   periodic_face_pairs)
+  MultigridData const &                                                  mg_data,
+  dealii::Triangulation<dim> const *                                     tria,
+  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations,
+  dealii::FiniteElement<dim> const &                                     fe,
+  std::shared_ptr<dealii::Mapping<dim> const>                            mapping,
+  PDEOperator const &                                                    pde_operator,
+  MultigridOperatorType const &                                          mg_operator_type,
+  bool const                                                             mesh_is_moving,
+  Map const &                                                            dirichlet_bc,
+  PeriodicFacePairs const &                                              periodic_face_pairs)
 {
   this->pde_operator = &pde_operator;
 
@@ -78,8 +79,14 @@ MultigridPreconditioner<dim, Number>::initialize(
     AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
-  Base::initialize(
-    mg_data, tria, fe, mapping, false /*operator_is_singular*/, dirichlet_bc, periodic_face_pairs);
+  Base::initialize(mg_data,
+                   tria,
+                   coarse_triangulations,
+                   fe,
+                   mapping,
+                   false /*operator_is_singular*/,
+                   dirichlet_bc,
+                   periodic_face_pairs);
 }
 
 
