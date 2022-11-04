@@ -25,6 +25,8 @@
 // deal.II
 #include <deal.II/distributed/fully_distributed_tria.h>
 #include <deal.II/distributed/tria.h>
+#include <deal.II/fe/fe_simplex_p.h>
+#include <deal.II/fe/mapping_fe.h>
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/grid/grid_tools.h>
 
@@ -72,8 +74,19 @@ public:
     }
 
     // mapping
-    // TODO SIMPLEX: this will not work in case of simplex meshes (-> use MappingFE)
-    mapping = std::make_shared<dealii::MappingQ<dim>>(data.mapping_degree);
+    if(data.element_type == ElementType::Hypercube)
+    {
+      mapping = std::make_shared<dealii::MappingQ<dim>>(data.mapping_degree);
+    }
+    else if(data.element_type == ElementType::Simplex)
+    {
+      mapping =
+        std::make_shared<dealii::MappingFE<dim>>(dealii::FE_SimplexP<dim>(data.mapping_degree));
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Invalid parameter element_type."));
+    }
   }
 
   void

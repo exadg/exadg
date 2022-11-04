@@ -27,6 +27,12 @@
 
 namespace ExaDG
 {
+enum class ElementType
+{
+  Hypercube,
+  Simplex
+};
+
 struct GridData
 {
   GridData()
@@ -34,7 +40,8 @@ struct GridData
       partitioning_type(PartitioningType::Metis),
       n_refine_global(0),
       n_subdivisions_1d_hypercube(1),
-      mapping_degree(1)
+      mapping_degree(1),
+      element_type(ElementType::Hypercube)
   {
   }
 
@@ -70,6 +77,8 @@ struct GridData
   unsigned int n_subdivisions_1d_hypercube;
 
   unsigned int mapping_degree;
+
+  ElementType element_type;
 
   // TODO: path to a grid file
   // std::string grid_file;
