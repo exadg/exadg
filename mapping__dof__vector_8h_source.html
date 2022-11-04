@@ -414,9 +414,9 @@ $(function() {
 <div class="line"><a id="l00379" name="l00379"></a><span class="lineno">  379</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
 <div class="line"><a id="l00380" name="l00380"></a><span class="lineno">  380</span><span class="keywordtype">void</span></div>
 <div class="line"><a id="l00381" name="l00381"></a><span class="lineno">  381</span>initialize_multigrid(</div>
-<div class="line"><a id="l00382" name="l00382"></a><span class="lineno">  382</span>  std::vector&lt;std::shared_ptr&lt;MappingDoFVector&lt;dim, Number&gt;&gt;&gt; &amp;    coarse_grid_mappings,</div>
-<div class="line"><a id="l00383" name="l00383"></a><span class="lineno">  383</span>  std::shared_ptr&lt;dealii::MappingQCache&lt;dim&gt; <span class="keyword">const</span>&gt; &amp;              mapping_q_cache,</div>
-<div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span>  std::vector&lt;std::shared_ptr&lt;dealii::Triangulation&lt;dim&gt; <span class="keyword">const</span>&gt;&gt; &amp; coarse_grid_triangulations)</div>
+<div class="line"><a id="l00382" name="l00382"></a><span class="lineno">  382</span>  std::vector&lt;std::shared_ptr&lt;MappingDoFVector&lt;dim, Number&gt;&gt;&gt; &amp;          coarse_grid_mappings,</div>
+<div class="line"><a id="l00383" name="l00383"></a><span class="lineno">  383</span>  std::shared_ptr&lt;dealii::MappingQCache&lt;dim&gt; <span class="keyword">const</span>&gt; &amp;                    mapping_q_cache,</div>
+<div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span>  std::vector&lt;std::shared_ptr&lt;dealii::Triangulation&lt;dim&gt; <span class="keyword">const</span>&gt;&gt; <span class="keyword">const</span> &amp; coarse_grid_triangulations)</div>
 <div class="line"><a id="l00385" name="l00385"></a><span class="lineno">  385</span>{</div>
 <div class="line"><a id="l00386" name="l00386"></a><span class="lineno">  386</span>  <span class="keyword">typedef</span> dealii::LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
 <div class="line"><a id="l00387" name="l00387"></a><span class="lineno">  387</span> </div>

@@ -92,17 +92,25 @@ typedef std::vector&lt; dealii::GridTools::PeriodicFacePair&lt; typename dealii:
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ab5cc5b9f96815723cc3605265ee069cb"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#ab5cc5b9f96815723cc3605265ee069cb">Grid</a> (<a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;data, MPI_Comm const &amp;mpi_comm)</td></tr>
 <tr class="separator:ab5cc5b9f96815723cc3605265ee069cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a79e18f8a26438fd9ccee0b8be6c8d927"><td class="memItemLeft" align="right" valign="top"><a id="a79e18f8a26438fd9ccee0b8be6c8d927" name="a79e18f8a26438fd9ccee0b8be6c8d927"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>create_triangulation</b> (<a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;data, std::function&lt; void(dealii::Triangulation&lt; dim &gt; &amp;)&gt; const &amp;create_coarse_triangulation, std::vector&lt; unsigned int &gt; const &amp;vector_local_refinements=std::vector&lt; unsigned int &gt;())</td></tr>
-<tr class="separator:a79e18f8a26438fd9ccee0b8be6c8d927"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a394c8c82f9b479b303f7b24e5f89fd15"><td class="memItemLeft" align="right" valign="top"><a id="a394c8c82f9b479b303f7b24e5f89fd15" name="a394c8c82f9b479b303f7b24e5f89fd15"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>create_but_do_not_refine_triangulation</b> (<a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;data, std::function&lt; void(dealii::Triangulation&lt; dim &gt; &amp;)&gt; const &amp;create_fine_triangulation)</td></tr>
-<tr class="separator:a394c8c82f9b479b303f7b24e5f89fd15"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a25184dabba533c700f37c98eed20f684"><td class="memItemLeft" align="right" valign="top"><a id="a25184dabba533c700f37c98eed20f684" name="a25184dabba533c700f37c98eed20f684"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>create_triangulation</b> (<a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;data, std::function&lt; void(dealii::Triangulation&lt; dim &gt; &amp;)&gt; const &amp;create_coarse_triangulation, unsigned int const global_refinements, std::vector&lt; unsigned int &gt; const &amp;vector_local_refinements=std::vector&lt; unsigned int &gt;())</td></tr>
+<tr class="separator:a25184dabba533c700f37c98eed20f684"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af27c7b5f4d3bd2a81a213f9cf7d5ddfd"><td class="memItemLeft" align="right" valign="top"><a id="af27c7b5f4d3bd2a81a213f9cf7d5ddfd" name="af27c7b5f4d3bd2a81a213f9cf7d5ddfd"></a>
+std::shared_ptr&lt; dealii::Triangulation&lt; dim &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_triangulation</b> () const</td></tr>
+<tr class="separator:af27c7b5f4d3bd2a81a213f9cf7d5ddfd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8967928e0c5db9ec4454e9cc572837e8"><td class="memItemLeft" align="right" valign="top"><a id="a8967928e0c5db9ec4454e9cc572837e8" name="a8967928e0c5db9ec4454e9cc572837e8"></a>
+std::vector&lt; std::shared_ptr&lt; dealii::Triangulation&lt; dim &gt; const &gt; &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_coarse_triangulations</b> () const</td></tr>
+<tr class="separator:a8967928e0c5db9ec4454e9cc572837e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6a4a1c53c8a865f50b435338f3198740"><td class="memItemLeft" align="right" valign="top"><a id="a6a4a1c53c8a865f50b435338f3198740" name="a6a4a1c53c8a865f50b435338f3198740"></a>
+std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_mapping</b> () const</td></tr>
+<tr class="separator:a6a4a1c53c8a865f50b435338f3198740"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a5655b41ce6108b3c3e50a5eb7fb2bcf5"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; dealii::Triangulation&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#a5655b41ce6108b3c3e50a5eb7fb2bcf5">triangulation</a></td></tr>
 <tr class="separator:a5655b41ce6108b3c3e50a5eb7fb2bcf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adb00c7653c234f42a17eb41b48587acf"><td class="memItemLeft" align="right" valign="top">std::vector&lt; std::shared_ptr&lt; dealii::Triangulation&lt; dim &gt; const  &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#adb00c7653c234f42a17eb41b48587acf">coarse_triangulations</a></td></tr>
+<tr class="separator:adb00c7653c234f42a17eb41b48587acf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7150098ee6126c7c3b8e4645b3ab59a1"><td class="memItemLeft" align="right" valign="top">PeriodicFaces&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#a7150098ee6126c7c3b8e4645b3ab59a1">periodic_faces</a></td></tr>
 <tr class="separator:a7150098ee6126c7c3b8e4645b3ab59a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4d54c3a7e8c952ba484c9635cdc8d48d"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#a4d54c3a7e8c952ba484c9635cdc8d48d">mapping</a></td></tr>
@@ -149,6 +157,23 @@ template&lt;int dim&gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
+<a id="adb00c7653c234f42a17eb41b48587acf" name="adb00c7653c234f42a17eb41b48587acf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adb00c7653c234f42a17eb41b48587acf">&#9670;&#160;</a></span>coarse_triangulations</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;std::shared_ptr&lt;dealii::Triangulation&lt;dim&gt; const&gt; &gt; <a class="el" href="classExaDG_1_1Grid.html">ExaDG::Grid</a>&lt; dim &gt;::coarse_triangulations</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >a vector of coarse triangulations required for global coarsening multigrid </p>
+
+</div>
+</div>
 <a id="a4d54c3a7e8c952ba484c9635cdc8d48d" name="a4d54c3a7e8c952ba484c9635cdc8d48d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4d54c3a7e8c952ba484c9635cdc8d48d">&#9670;&#160;</a></span>mapping</h2>
 
