@@ -34,6 +34,8 @@ INCLUDE_DIRECTORIES(
 
 SET( SOURCE_FILES
      moving_mesh.cpp
+     particles.cpp
+     global_coarsening.cpp
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )
