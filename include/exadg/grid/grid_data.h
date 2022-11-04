@@ -51,7 +51,8 @@ struct GridData
   {
     print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
 
-    print_parameter(pcout, "Element type", enum_to_string(element_type));
+    // TODO: causes tests to fail introduce as a separate PR
+    // print_parameter(pcout, "Element type", enum_to_string(element_type));
 
     if(triangulation_type == TriangulationType::FullyDistributed)
       print_parameter(pcout,
