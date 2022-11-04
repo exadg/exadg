@@ -94,13 +94,15 @@ public:
    * Initialization function.
    */
   void
-  initialize(MultigridData const &                       data,
-             dealii::Triangulation<dim> const *          tria,
-             dealii::FiniteElement<dim> const &          fe,
-             std::shared_ptr<dealii::Mapping<dim> const> mapping,
-             bool const                                  operator_is_singular,
-             Map const &                                 dirichlet_bc,
-             PeriodicFacePairs const &                   periodic_face_pairs);
+  initialize(
+    MultigridData const &                                                  data,
+    dealii::Triangulation<dim> const *                                     tria,
+    std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations,
+    dealii::FiniteElement<dim> const &                                     fe,
+    std::shared_ptr<dealii::Mapping<dim> const>                            mapping,
+    bool const                                                             operator_is_singular,
+    Map const &                                                            dirichlet_bc,
+    PeriodicFacePairs const &                                              periodic_face_pairs);
 
   /*
    * This function applies the multigrid preconditioner dst = P^{-1} src.
@@ -234,13 +236,6 @@ private:
   void
   check_levels(std::vector<MGLevelInfo> const & level_info);
 
-  // TODO grid
-  //  /*
-  //   * Coarse grid triangulations in case of global coarsening transfer type.
-  //   */
-  //  void
-  //  initialize_coarse_grid_triangulations(dealii::Triangulation<dim> const * tria);
-
   /*
    * Returns the correct mapping depending on the multigrid transfer type and the current h-level.
    */
@@ -317,15 +312,11 @@ private:
 
   MultigridData data;
 
-  std::shared_ptr<Grid<dim> const> grid;
+  dealii::Triangulation<dim> const * triangulation;
 
-  // TODO shift this to the Grid class
-  //  dealii::Triangulation<dim> const * triangulation;
-  //
-  //  // Only relevant for global coarsening, where this vector contains coarse level
-  //  triangulations,
-  //  // and the fine level triangulation as the last element of the vector.
-  //  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> coarse_grid_triangulations;
+  // Only relevant for global coarsening, where this vector contains coarse level triangulations,
+  // and the fine level triangulation as the last element of the vector.
+  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> coarse_triangulations;
 
   // In case of global coarsening, this is the mapping associated to the fine level triangulation.
   std::shared_ptr<dealii::Mapping<dim> const> mapping;

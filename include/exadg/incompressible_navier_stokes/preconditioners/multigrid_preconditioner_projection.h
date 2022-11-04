@@ -57,14 +57,16 @@ public:
   MultigridPreconditionerProjection(MPI_Comm const & mpi_comm);
 
   void
-  initialize(MultigridData const &                       mg_data,
-             dealii::Triangulation<dim> const *          tria,
-             dealii::FiniteElement<dim> const &          fe,
-             std::shared_ptr<dealii::Mapping<dim> const> mapping,
-             PDEOperator const &                         pde_operator,
-             bool const                                  mesh_is_moving,
-             Map const &                                 dirichlet_bc,
-             PeriodicFacePairs const &                   periodic_face_pairs);
+  initialize(
+    MultigridData const &                                                  mg_data,
+    dealii::Triangulation<dim> const *                                     tria,
+    std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations,
+    dealii::FiniteElement<dim> const &                                     fe,
+    std::shared_ptr<dealii::Mapping<dim> const>                            mapping,
+    PDEOperator const &                                                    pde_operator,
+    bool const                                                             mesh_is_moving,
+    Map const &                                                            dirichlet_bc,
+    PeriodicFacePairs const &                                              periodic_face_pairs);
 
   /*
    * This function updates the multigrid preconditioner.

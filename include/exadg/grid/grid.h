@@ -24,7 +24,6 @@
 
 // deal.II
 #include <deal.II/distributed/fully_distributed_tria.h>
-#include <deal.II/distributed/repartitioning_policy_tools.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/fe/fe_simplex_p.h>
 #include <deal.II/fe/mapping_fe.h>
@@ -54,6 +53,8 @@ public:
     : n_mpi_processes_per_level{n_mpi_processes}
   {
   }
+
+  virtual ~BalancedGranularityPartitionPolicy(){};
 
   virtual dealii::LinearAlgebra::distributed::Vector<double>
   partition(dealii::Triangulation<dim, spacedim> const & tria_coarse_in) const override

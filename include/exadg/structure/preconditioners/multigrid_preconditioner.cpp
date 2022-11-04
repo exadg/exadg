@@ -34,14 +34,15 @@ MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & m
 template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize(
-  MultigridData const &                       mg_data,
-  dealii::Triangulation<dim> const *          tria,
-  dealii::FiniteElement<dim> const &          fe,
-  std::shared_ptr<dealii::Mapping<dim> const> mapping,
-  ElasticityOperatorBase<dim, Number> const & pde_operator,
-  bool const                                  nonlinear_operator,
-  Map const &                                 dirichlet_bc,
-  PeriodicFacePairs const &                   periodic_face_pairs)
+  MultigridData const &                                                  mg_data,
+  dealii::Triangulation<dim> const *                                     tria,
+  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations,
+  dealii::FiniteElement<dim> const &                                     fe,
+  std::shared_ptr<dealii::Mapping<dim> const>                            mapping,
+  ElasticityOperatorBase<dim, Number> const &                            pde_operator,
+  bool const                                                             nonlinear_operator,
+  Map const &                                                            dirichlet_bc,
+  PeriodicFacePairs const &                                              periodic_face_pairs)
 {
   this->pde_operator = &pde_operator;
 
@@ -49,8 +50,14 @@ MultigridPreconditioner<dim, Number>::initialize(
 
   this->nonlinear = nonlinear_operator;
 
-  Base::initialize(
-    mg_data, tria, fe, mapping, false /*operator_is_singular*/, dirichlet_bc, periodic_face_pairs);
+  Base::initialize(mg_data,
+                   tria,
+                   coarse_triangulations,
+                   fe,
+                   mapping,
+                   false /*operator_is_singular*/,
+                   dirichlet_bc,
+                   periodic_face_pairs);
 }
 
 template<int dim, typename Number>
