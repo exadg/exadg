@@ -86,8 +86,6 @@ public:
   double const start_time = 0.0;
   double const end_time   = 100.;
 
-  unsigned int refine_level = 0;
-
   // solver tolerances
   double const ABS_TOL = 1.e-12;
   double const REL_TOL = 1.e-4;
@@ -269,8 +267,6 @@ public:
   void
   create_grid() final
   {
-    this->refine_level = this->param.grid.n_refine_global;
-
     auto const lambda_create_coarse_triangulation = [&](dealii::Triangulation<dim, dim> & tria) {
       create_sphere_grid<dim>(tria, this->param.grid.n_refine_global);
     };
@@ -317,7 +313,7 @@ public:
     PostProcessorData<dim> pp_data;
 
     std::string name = this->output_parameters.filename + "_l" +
-                       std::to_string(this->refine_level) + "_k" +
+                       std::to_string(this->param.grid.n_refine_global) + "_k" +
                        std::to_string(this->param.degree_u);
 
     // write output for visualization of results
