@@ -324,8 +324,6 @@ private:
   void
   create_grid() final
   {
-    this->refine_level = this->param.grid.n_refine_global;
-
     auto const lambda_create_coarse_triangulation = [&](dealii::Triangulation<dim, dim> & tria) {
       create_coarse_grid<dim>(tria, this->grid->periodic_faces, cylinder_type_string);
     };
@@ -376,7 +374,7 @@ private:
     PostProcessorData<dim> pp_data;
 
     std::string name = this->output_parameters.filename + "_l" +
-                       std::to_string(this->refine_level) + "_k" +
+                       std::to_string(this->param.grid.n_refine_global) + "_k" +
                        std::to_string(this->param.degree_u);
 
     // write output for visualization of results
@@ -504,8 +502,6 @@ private:
   // in order to not stop pseudo-timestepping approach before having converged
   double const start_time = 0.0;
   double const end_time   = (test_case == 1) ? 1000.0 : 8.0;
-
-  unsigned int refine_level = 0;
 
   // superimpose random perturbations at inflow
   bool const use_perturbation = false;
