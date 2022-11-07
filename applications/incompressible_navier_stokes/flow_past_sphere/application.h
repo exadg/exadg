@@ -49,22 +49,6 @@ public:
   }
 };
 
-template<int dim>
-class PressureBC_dudt : public Function<dim>
-{
-public:
-  PressureBC_dudt() : Function<dim>(dim, 0.0)
-  {
-  }
-
-  virtual double
-  value(Point<dim> const &, unsigned int const = 0) const final
-  {
-    return 0.;
-  }
-};
-
-
 
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
@@ -112,7 +96,7 @@ public:
   double const REL_TOL_LINEAR = 1.e-2;
 
   void
-  set_parameters(unsigned int const degree) final
+  set_parameters() final
   {
     // MATHEMATICAL MODEL
     this->param.problem_type                = ProblemType::Unsteady;
@@ -132,14 +116,12 @@ public:
     this->param.solver_type                     = SolverType::Unsteady;
     this->param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
     this->param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
-    this->param.time_integrator_oif             = TimeIntegratorOIF::ExplRK2Stage2;
     this->param.order_time_integrator           = 2;
     this->param.start_with_low_order            = true;
     this->param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     this->param.adaptive_time_stepping          = true;
     this->param.max_velocity                    = 1.;
     this->param.cfl                             = cfl_number;
-    this->param.cfl_oif                         = this->param.cfl;
     this->param.cfl_exponent_fe_degree_velocity = 1.5;
     this->param.time_step_size                  = 1.0e-3;
     this->param.time_step_size_max              = 1.0e-2;
@@ -155,10 +137,9 @@ public:
     this->param.rel_tol_steady = 1.e-8;
 
     // SPATIAL DISCRETIZATION
-    this->param.triangulation_type = TriangulationType::Distributed;
-    this->param.degree_u           = degree;
-    this->param.degree_p           = DegreePressure::MixedOrder;
-    this->param.mapping            = MappingType::Isoparametric;
+    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.mapping_degree     = this->param.degree_u;
+    this->param.degree_p                = DegreePressure::MixedOrder;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -182,9 +163,6 @@ public:
     this->param.quad_rule_linearization = QuadratureRuleLinearization::Overintegration32k;
 
     // PROJECTION METHODS
-
-    // formulation
-    this->param.store_previous_boundary_values = true;
 
     // pressure Poisson equation
     this->param.solver_pressure_poisson              = SolverPressurePoisson::CG;
@@ -288,43 +266,18 @@ public:
   }
 
 
-  std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) final
+  void
+  create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+    this->refine_level = this->param.grid.n_refine_global;
 
-    this->refine_level = grid_data.n_refine_global;
+    auto const lambda_create_coarse_triangulation = [&](dealii::Triangulation<dim, dim> & tria) {
+      create_sphere_grid<dim>(tria, this->param.grid.n_refine_global);
+    };
 
-    if(auto tria_fully_dist =
-         dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*grid->triangulation))
-    {
-      auto const construction_data =
-        TriangulationDescription::Utilities::create_description_from_triangulation_in_groups<dim,
-                                                                                             dim>(
-          [&](dealii::Triangulation<dim, dim> & tria) mutable {
-            create_sphere_grid<dim>(tria, grid_data.n_refine_global);
-          },
-          [](dealii::Triangulation<dim, dim> & tria,
-             const MPI_Comm                    comm,
-             unsigned int const /* group_size */) {
-            GridTools::partition_triangulation(Utilities::MPI::n_mpi_processes(comm), tria);
-          },
-          tria_fully_dist->get_communicator(),
-          1 /* group size */);
-      tria_fully_dist->create_triangulation(construction_data);
-    }
-    else if(auto tria =
-              dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*grid->triangulation))
-    {
-      create_sphere_grid<dim>(*tria, grid_data.n_refine_global);
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Unknown triangulation!"));
-    }
-
-    return grid;
+    this->grid->create_triangulation(this->param.grid,
+                                     lambda_create_coarse_triangulation,
+                                     0 /* no more refinements here */);
   }
 
   void
@@ -342,9 +295,9 @@ public:
       pair(2, new Functions::ZeroFunction<dim>(dim)));
 
     // fill boundary descriptor pressure
-    this->boundary_descriptor->pressure->neumann_bc.insert(pair(1, new PressureBC_dudt<dim>()));
-    this->boundary_descriptor->pressure->neumann_bc.insert(pair(3, new PressureBC_dudt<dim>()));
-    this->boundary_descriptor->pressure->neumann_bc.insert(pair(0, new PressureBC_dudt<dim>()));
+    this->boundary_descriptor->pressure->neumann_bc.insert(1);
+    this->boundary_descriptor->pressure->neumann_bc.insert(3);
+    this->boundary_descriptor->pressure->neumann_bc.insert(0);
     this->boundary_descriptor->pressure->dirichlet_bc.insert(
       pair(2, new Functions::ZeroFunction<dim>(1)));
   }
@@ -363,12 +316,13 @@ public:
   {
     PostProcessorData<dim> pp_data;
 
-    std::string name = this->output_name + "_l" + std::to_string(this->refine_level) + "_k" +
+    std::string name = this->output_parameters.filename + "_l" +
+                       std::to_string(this->refine_level) + "_k" +
                        std::to_string(this->param.degree_u);
 
     // write output for visualization of results
-    pp_data.output_data.write_output       = this->write_output;
-    pp_data.output_data.directory          = this->output_directory + "vtu/";
+    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = name;
     pp_data.output_data.start_time         = start_time;
     pp_data.output_data.interval_time      = (end_time - start_time) / 50;
@@ -391,7 +345,7 @@ public:
     // surface for calculation of lift and drag coefficients has boundary_ID = 2
     pp_data.lift_and_drag_data.boundary_IDs.insert(3);
 
-    pp_data.lift_and_drag_data.directory     = this->output_directory;
+    pp_data.lift_and_drag_data.directory     = this->output_parameters.directory;
     pp_data.lift_and_drag_data.filename_lift = name + "_lift";
     pp_data.lift_and_drag_data.filename_drag = name + "_drag";
 
@@ -403,7 +357,7 @@ public:
     pp_data.pressure_difference_data.point_1 = point_1;
     pp_data.pressure_difference_data.point_2 = point_2;
 
-    pp_data.pressure_difference_data.directory = this->output_directory;
+    pp_data.pressure_difference_data.directory = this->output_parameters.directory;
     pp_data.pressure_difference_data.filename  = name + "_pressure_difference";
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
