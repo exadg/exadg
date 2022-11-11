@@ -170,6 +170,17 @@ test(const unsigned int n_local_refinements)
                 refinement_state[cell->level()][cell->global_level_cell_index()];
           }
         }
+        else if(parent_cell->is_locally_owned_on_level() == true)
+        {
+          // cell has been visited already -> nothing to do
+          if(refinement_state_temp[parent_cell->level()][parent_cell->global_level_cell_index()] !=
+             0.0)
+            continue;
+
+          // if no: copy old state
+          refinement_state_temp[parent_cell->level()][parent_cell->global_level_cell_index()] =
+            refinement_state[parent_cell->level()][parent_cell->global_level_cell_index()];
+        }
 
     for(unsigned int l = 0; l < refinement_state.size() - ll; ++l)
     {
