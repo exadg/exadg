@@ -51,8 +51,8 @@ PointwiseOutputData<dim>::print(dealii::ConditionalOStream & pcout) const
   }
 }
 
-template class PointwiseOutputData<2>;
-template class PointwiseOutputData<3>;
+template struct PointwiseOutputData<2>;
+template struct PointwiseOutputData<3>;
 
 template<int dim, typename Number>
 PointwiseOutputGenerator<dim, Number>::PointwiseOutputGenerator(MPI_Comm const & comm)

@@ -39,7 +39,7 @@ print_mesh(const Triangulation<dim> &                                      tria,
         break;
 
       if(cell->is_locally_owned_on_level() &&
-         refinement_state[cell->level()][cell->global_level_cell_index()])
+         static_cast<bool>(refinement_state[cell->level()][cell->global_level_cell_index()]))
         return cell;
     }
 
@@ -54,7 +54,7 @@ print_mesh(const Triangulation<dim> &                                      tria,
       return cell;
 
     if(cell->is_locally_owned_on_level() &&
-       refinement_state[cell->level()][cell->global_level_cell_index()])
+       static_cast<bool>(refinement_state[cell->level()][cell->global_level_cell_index()]))
       return cell;
 
     return next_cell(tria, cell);

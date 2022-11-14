@@ -53,8 +53,8 @@ PointwiseOutputDataBase<dim>::print(dealii::ConditionalOStream & pcout) const
   }
 }
 
-template class PointwiseOutputDataBase<2>;
-template class PointwiseOutputDataBase<3>;
+template struct PointwiseOutputDataBase<2>;
+template struct PointwiseOutputDataBase<3>;
 
 template<int dim, typename Number>
 void

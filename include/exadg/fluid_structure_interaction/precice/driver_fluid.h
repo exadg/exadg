@@ -157,7 +157,7 @@ public:
 
 
   void
-  setup()
+  setup() override
   {
     dealii::Timer timer;
     timer.restart();
