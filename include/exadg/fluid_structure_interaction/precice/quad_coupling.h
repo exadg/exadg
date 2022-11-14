@@ -144,7 +144,7 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
     return;
 
   // Initial guess: half of the boundary is part of the coupling surface
-  coupling_nodes_ids.reserve(this->matrix_free->n_boundary_face_batches() * 0.5);
+  coupling_nodes_ids.reserve(this->matrix_free->n_boundary_face_batches() / 2);
 
   // Set up data structures
   FEFaceIntegrator phi(*this->matrix_free, true, mf_dof_index, mf_quad_index);
