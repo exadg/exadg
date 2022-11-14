@@ -69,13 +69,14 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>ExaDG</b></li><li class="navelem"><a class="el" href="classExaDG_1_1LiftAndDragCalculator.html">LiftAndDragCalculator</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><a class="el" href="classExaDG_1_1LiftAndDragCalculator.html">LiftAndDragCalculator</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="classExaDG_1_1LiftAndDragCalculator-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">ExaDG::LiftAndDragCalculator&lt; dim, Number &gt; Class Template Reference</div></div>
 </div><!--header-->
@@ -95,9 +96,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a03aaffcb86387a442ce1fe1850e9e094"><td class="memItemLeft" align="right" valign="top"><a id="a03aaffcb86387a442ce1fe1850e9e094" name="a03aaffcb86387a442ce1fe1850e9e094"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler_velocity_in, dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, unsigned int const dof_index_velocity_in, unsigned int const dof_index_pressure_in, unsigned int const quad_index_in, <a class="el" href="structExaDG_1_1LiftAndDragData.html">LiftAndDragData</a> const &amp;lift_and_drag_data_in)</td></tr>
 <tr class="separator:a03aaffcb86387a442ce1fe1850e9e094"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae1ad68b091523ee303db91948ed64006"><td class="memItemLeft" align="right" valign="top"><a id="ae1ad68b091523ee303db91948ed64006" name="ae1ad68b091523ee303db91948ed64006"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;velocity, VectorType const &amp;pressure, Number const &amp;time) const</td></tr>
-<tr class="separator:ae1ad68b091523ee303db91948ed64006"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad59fe334976e6e991e8026ef85fb7852"><td class="memItemLeft" align="right" valign="top"><a id="ad59fe334976e6e991e8026ef85fb7852" name="ad59fe334976e6e991e8026ef85fb7852"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;velocity, VectorType const &amp;pressure, double const time) const</td></tr>
+<tr class="separator:ad59fe334976e6e991e8026ef85fb7852"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a084d4386efb4caa0219b49686e2a84f6"><td class="memItemLeft" align="right" valign="top"><a id="a084d4386efb4caa0219b49686e2a84f6" name="a084d4386efb4caa0219b49686e2a84f6"></a>
+<a class="el" href="classExaDG_1_1TimeControl.html">TimeControl</a>&#160;</td><td class="memItemRight" valign="bottom"><b>time_control</b></td></tr>
+<tr class="separator:a084d4386efb4caa0219b49686e2a84f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/exadg/postprocessor/<a class="el" href="lift__and__drag__calculation_8h_source.html">lift_and_drag_calculation.h</a></li>

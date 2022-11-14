@@ -69,13 +69,14 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>ExaDG</b></li><li class="navelem"><b>IncNS</b></li><li class="navelem"><a class="el" href="classExaDG_1_1IncNS_1_1LinePlotCalculatorStatistics.html">LinePlotCalculatorStatistics</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><b>IncNS</b></li><li class="navelem"><a class="el" href="classExaDG_1_1IncNS_1_1LinePlotCalculatorStatistics.html">LinePlotCalculatorStatistics</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="classExaDG_1_1IncNS_1_1LinePlotCalculatorStatistics-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">ExaDG::IncNS::LinePlotCalculatorStatistics&lt; dim, Number &gt; Class Template Reference</div></div>
 </div><!--header-->
@@ -95,12 +96,21 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ac035fa2a31cee36a29434a0402a6dd14"><td class="memItemLeft" align="right" valign="top"><a id="ac035fa2a31cee36a29434a0402a6dd14" name="ac035fa2a31cee36a29434a0402a6dd14"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>LinePlotCalculatorStatistics</b> (dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler_velocity_in, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler_pressure_in, dealii::Mapping&lt; dim &gt; const &amp;mapping_in, MPI_Comm const &amp;mpi_comm_in)</td></tr>
 <tr class="separator:ac035fa2a31cee36a29434a0402a6dd14"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a50128de71573ac0702dadd537dab8046"><td class="memItemLeft" align="right" valign="top"><a id="a50128de71573ac0702dadd537dab8046" name="a50128de71573ac0702dadd537dab8046"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (<a class="el" href="structExaDG_1_1IncNS_1_1LinePlotDataStatistics.html">LinePlotDataStatistics</a>&lt; dim &gt; const &amp;line_plot_data_in)</td></tr>
-<tr class="separator:a50128de71573ac0702dadd537dab8046"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a29c7a6716b52a466dcc4ccf9f1246916"><td class="memItemLeft" align="right" valign="top"><a id="a29c7a6716b52a466dcc4ccf9f1246916" name="a29c7a6716b52a466dcc4ccf9f1246916"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;velocity, VectorType const &amp;pressure, double const &amp;time, unsigned int const &amp;time_step_number)</td></tr>
-<tr class="separator:a29c7a6716b52a466dcc4ccf9f1246916"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6a0e794c0d72c72e1c450c432b454efa"><td class="memItemLeft" align="right" valign="top"><a id="a6a0e794c0d72c72e1c450c432b454efa" name="a6a0e794c0d72c72e1c450c432b454efa"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (<a class="el" href="structExaDG_1_1IncNS_1_1LinePlotDataStatistics.html">LinePlotDataStatistics</a>&lt; dim &gt; const &amp;data_in)</td></tr>
+<tr class="separator:a6a0e794c0d72c72e1c450c432b454efa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3b981665332b637fa7855fce88a43b6f"><td class="memItemLeft" align="right" valign="top"><a id="a3b981665332b637fa7855fce88a43b6f" name="a3b981665332b637fa7855fce88a43b6f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;velocity, VectorType const &amp;pressure)</td></tr>
+<tr class="separator:a3b981665332b637fa7855fce88a43b6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af7870340643b127a91f09d154aeb123f"><td class="memItemLeft" align="right" valign="top"><a id="af7870340643b127a91f09d154aeb123f" name="af7870340643b127a91f09d154aeb123f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>write_output</b> () const</td></tr>
+<tr class="separator:af7870340643b127a91f09d154aeb123f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a17f321acc652504220ac2423f7085a80"><td class="memItemLeft" align="right" valign="top"><a id="a17f321acc652504220ac2423f7085a80" name="a17f321acc652504220ac2423f7085a80"></a>
+<a class="el" href="classExaDG_1_1TimeControlStatistics.html">TimeControlStatistics</a>&#160;</td><td class="memItemRight" valign="bottom"><b>time_control_statistics</b></td></tr>
+<tr class="separator:a17f321acc652504220ac2423f7085a80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/exadg/incompressible_navier_stokes/postprocessor/<a class="el" href="line__plot__calculation__statistics_8h_source.html">line_plot_calculation_statistics.h</a></li>

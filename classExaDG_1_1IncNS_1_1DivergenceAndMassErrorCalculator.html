@@ -69,13 +69,14 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>ExaDG</b></li><li class="navelem"><b>IncNS</b></li><li class="navelem"><a class="el" href="classExaDG_1_1IncNS_1_1DivergenceAndMassErrorCalculator.html">DivergenceAndMassErrorCalculator</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><b>IncNS</b></li><li class="navelem"><a class="el" href="classExaDG_1_1IncNS_1_1DivergenceAndMassErrorCalculator.html">DivergenceAndMassErrorCalculator</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="classExaDG_1_1IncNS_1_1DivergenceAndMassErrorCalculator-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">ExaDG::IncNS::DivergenceAndMassErrorCalculator&lt; dim, Number &gt; Class Template Reference</div></div>
 </div><!--header-->
@@ -110,9 +111,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a9d1e5c7e051fc1733ca9e620faa17418"><td class="memItemLeft" align="right" valign="top"><a id="a9d1e5c7e051fc1733ca9e620faa17418" name="a9d1e5c7e051fc1733ca9e620faa17418"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, unsigned int const dof_index_in, unsigned int const quad_index_in, <a class="el" href="structExaDG_1_1IncNS_1_1MassConservationData.html">MassConservationData</a> const &amp;data_in)</td></tr>
 <tr class="separator:a9d1e5c7e051fc1733ca9e620faa17418"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad4ae3bd947e4076b85e17f75ee1bdf21"><td class="memItemLeft" align="right" valign="top"><a id="ad4ae3bd947e4076b85e17f75ee1bdf21" name="ad4ae3bd947e4076b85e17f75ee1bdf21"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;velocity, double const &amp;time, int const &amp;time_step_number)</td></tr>
-<tr class="separator:ad4ae3bd947e4076b85e17f75ee1bdf21"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a91c66bb478a52ea9f6df836e26b2e7a6"><td class="memItemLeft" align="right" valign="top"><a id="a91c66bb478a52ea9f6df836e26b2e7a6" name="a91c66bb478a52ea9f6df836e26b2e7a6"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;velocity, double const time, bool const unsteady)</td></tr>
+<tr class="separator:a91c66bb478a52ea9f6df836e26b2e7a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a07a54cb4cf56275d49f42596cf6cf3d0"><td class="memItemLeft" align="right" valign="top"><a id="a07a54cb4cf56275d49f42596cf6cf3d0" name="a07a54cb4cf56275d49f42596cf6cf3d0"></a>
+<a class="el" href="classExaDG_1_1TimeControl.html">TimeControl</a>&#160;</td><td class="memItemRight" valign="bottom"><b>time_control</b></td></tr>
+<tr class="separator:a07a54cb4cf56275d49f42596cf6cf3d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/exadg/incompressible_navier_stokes/postprocessor/<a class="el" href="divergence__and__mass__error_8h_source.html">divergence_and_mass_error.h</a></li>

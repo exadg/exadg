@@ -25,9 +25,8 @@ var searchData=
   ['spatialresolutionparameters_22',['SpatialResolutionParameters',['../structExaDG_1_1SpatialResolutionParameters.html',1,'ExaDG']]],
   ['spectralanalysis_23',['SpectralAnalysis',['../classdealspectrum_1_1SpectralAnalysis.html',1,'dealspectrum']]],
   ['ssprk_24',['SSPRK',['../classExaDG_1_1SSPRK.html',1,'ExaDG']]],
-  ['statisticsdata_25',['StatisticsData',['../structExaDG_1_1IncNS_1_1StatisticsData.html',1,'ExaDG::IncNS']]],
-  ['statisticsmanager_26',['StatisticsManager',['../classExaDG_1_1StatisticsManager.html',1,'ExaDG']]],
-  ['streamfunctioncalculatorrhsoperator_27',['StreamfunctionCalculatorRHSOperator',['../classExaDG_1_1IncNS_1_1StreamfunctionCalculatorRHSOperator.html',1,'ExaDG::IncNS']]],
-  ['stvenantkirchhoff_28',['StVenantKirchhoff',['../classExaDG_1_1Structure_1_1StVenantKirchhoff.html',1,'ExaDG::Structure']]],
-  ['stvenantkirchhoffdata_29',['StVenantKirchhoffData',['../structExaDG_1_1Structure_1_1StVenantKirchhoffData.html',1,'ExaDG::Structure']]]
+  ['statisticsmanager_25',['StatisticsManager',['../classExaDG_1_1StatisticsManager.html',1,'ExaDG']]],
+  ['streamfunctioncalculatorrhsoperator_26',['StreamfunctionCalculatorRHSOperator',['../classExaDG_1_1IncNS_1_1StreamfunctionCalculatorRHSOperator.html',1,'ExaDG::IncNS']]],
+  ['stvenantkirchhoff_27',['StVenantKirchhoff',['../classExaDG_1_1Structure_1_1StVenantKirchhoff.html',1,'ExaDG::Structure']]],
+  ['stvenantkirchhoffdata_28',['StVenantKirchhoffData',['../structExaDG_1_1Structure_1_1StVenantKirchhoffData.html',1,'ExaDG::Structure']]]
 ];

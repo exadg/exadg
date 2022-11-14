@@ -102,52 +102,52 @@ $(function() {
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h&gt;</span></div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;exadg/postprocessor/kinetic_energy_calculation.h&gt;</span></div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="keyword">namespace </span>ExaDG</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>{</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="keyword">namespace </span>IncNS</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>{</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno"><a class="line" href="classExaDG_1_1IncNS_1_1KineticEnergyCalculatorDetailed.html">   33</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1IncNS_1_1KineticEnergyCalculatorDetailed.html">KineticEnergyCalculatorDetailed</a> : <span class="keyword">public</span> <a class="code hl_class" href="classExaDG_1_1KineticEnergyCalculator.html">KineticEnergyCalculator</a>&lt;dim, Number&gt;</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>{</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="keyword">typedef</span> dealii::LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1KineticEnergyCalculator.html">KineticEnergyCalculator&lt;dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1KineticEnergyCalculator.html">Base</a>;</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">SpatialOperatorBase&lt;dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">NavierStokesOperator</a>;</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1KineticEnergyCalculatorDetailed.html">KineticEnergyCalculatorDetailed</a>(MPI_Comm <span class="keyword">const</span> &amp; comm);</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  setup(<a class="code hl_class" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">NavierStokesOperator</a> <span class="keyword">const</span> &amp;            navier_stokes_operator_in,</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>        dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free_in,</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                      dof_index_in,</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                      quad_index_in,</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>        <a class="code hl_struct" href="structExaDG_1_1KineticEnergyData.html">KineticEnergyData</a> <span class="keyword">const</span> &amp;               kinetic_energy_data_in);</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  evaluate(VectorType <span class="keyword">const</span> &amp; velocity, <span class="keywordtype">double</span> <span class="keyword">const</span> &amp; time, <span class="keywordtype">int</span> <span class="keyword">const</span> &amp; time_step_number);</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  calculate_detailed(VectorType <span class="keyword">const</span> &amp; velocity,</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>                     <span class="keywordtype">double</span> <span class="keyword">const</span>       time,</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>                     <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> time_step_number);</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  dealii::SmartPointer&lt;NavierStokesOperator const&gt; navier_stokes_operator;</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>};</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>} <span class="comment">// namespace IncNS</span></div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &lt;exadg/postprocessor/time_control.h&gt;</span></div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespaceExaDG.html">ExaDG</a></div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>{</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="keyword">namespace </span>IncNS</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>{</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno"><a class="line" href="classExaDG_1_1IncNS_1_1KineticEnergyCalculatorDetailed.html">   34</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1IncNS_1_1KineticEnergyCalculatorDetailed.html">KineticEnergyCalculatorDetailed</a> : <span class="keyword">public</span> <a class="code hl_class" href="classExaDG_1_1KineticEnergyCalculator.html">KineticEnergyCalculator</a>&lt;dim, Number&gt;</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>{</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keyword">typedef</span> dealii::LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1KineticEnergyCalculator.html">KineticEnergyCalculator&lt;dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1KineticEnergyCalculator.html">Base</a>;</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">SpatialOperatorBase&lt;dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">NavierStokesOperator</a>;</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1KineticEnergyCalculatorDetailed.html">KineticEnergyCalculatorDetailed</a>(MPI_Comm <span class="keyword">const</span> &amp; comm);</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  setup(<a class="code hl_class" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">NavierStokesOperator</a> <span class="keyword">const</span> &amp;            navier_stokes_operator_in,</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>        dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free_in,</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                      dof_index_in,</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                      quad_index_in,</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>        <a class="code hl_struct" href="structExaDG_1_1KineticEnergyData.html">KineticEnergyData</a> <span class="keyword">const</span> &amp;               kinetic_energy_data_in);</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  evaluate(VectorType <span class="keyword">const</span> &amp; velocity, <span class="keywordtype">double</span> <span class="keyword">const</span> time, <span class="keywordtype">bool</span> <span class="keyword">const</span> unsteady);</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  calculate_detailed(VectorType <span class="keyword">const</span> &amp; velocity, <span class="keywordtype">double</span> <span class="keyword">const</span> time);</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  dealii::SmartPointer&lt;NavierStokesOperator const&gt; navier_stokes_operator;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>};</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>} <span class="comment">// namespace IncNS</span></div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_KINETIC_ENERGY_DISSIPATION_DETAILED_H_ \</span></div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span><span class="comment">        */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1IncNS_1_1KineticEnergyCalculatorDetailed_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1KineticEnergyCalculatorDetailed.html">ExaDG::IncNS::KineticEnergyCalculatorDetailed</a></div><div class="ttdef"><b>Definition:</b> kinetic_energy_dissipation_detailed.h:34</div></div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_KINETIC_ENERGY_DISSIPATION_DETAILED_H_ \</span></div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span><span class="comment">        */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1IncNS_1_1KineticEnergyCalculatorDetailed_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1KineticEnergyCalculatorDetailed.html">ExaDG::IncNS::KineticEnergyCalculatorDetailed</a></div><div class="ttdef"><b>Definition:</b> kinetic_energy_dissipation_detailed.h:35</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1SpatialOperatorBase_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">ExaDG::IncNS::SpatialOperatorBase</a></div><div class="ttdef"><b>Definition:</b> spatial_operator_base.h:70</div></div>
-<div class="ttc" id="aclassExaDG_1_1KineticEnergyCalculator_html"><div class="ttname"><a href="classExaDG_1_1KineticEnergyCalculator.html">ExaDG::KineticEnergyCalculator</a></div><div class="ttdef"><b>Definition:</b> kinetic_energy_calculation.h:85</div></div>
-<div class="ttc" id="astructExaDG_1_1KineticEnergyData_html"><div class="ttname"><a href="structExaDG_1_1KineticEnergyData.html">ExaDG::KineticEnergyData</a></div><div class="ttdef"><b>Definition:</b> kinetic_energy_calculation.h:36</div></div>
+<div class="ttc" id="aclassExaDG_1_1KineticEnergyCalculator_html"><div class="ttname"><a href="classExaDG_1_1KineticEnergyCalculator.html">ExaDG::KineticEnergyCalculator</a></div><div class="ttdef"><b>Definition:</b> kinetic_energy_calculation.h:81</div></div>
+<div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition:</b> driver.cpp:33</div></div>
+<div class="ttc" id="astructExaDG_1_1KineticEnergyData_html"><div class="ttname"><a href="structExaDG_1_1KineticEnergyData.html">ExaDG::KineticEnergyData</a></div><div class="ttdef"><b>Definition:</b> kinetic_energy_calculation.h:37</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

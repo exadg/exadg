@@ -69,7 +69,7 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>ExaDG</b></li><li class="navelem"><b>IncNS</b></li><li class="navelem"><a class="el" href="classExaDG_1_1IncNS_1_1PostProcessor.html">PostProcessor</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><b>IncNS</b></li><li class="navelem"><a class="el" href="classExaDG_1_1IncNS_1_1PostProcessor.html">PostProcessor</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -97,6 +97,9 @@ Public Types</h2></td></tr>
 <tr class="memitem:aa0a28309ea584cf0643559b6952caaa5"><td class="memItemLeft" align="right" valign="top"><a id="aa0a28309ea584cf0643559b6952caaa5" name="aa0a28309ea584cf0643559b6952caaa5"></a>
 typedef <a class="el" href="classExaDG_1_1IncNS_1_1PostProcessorBase.html">PostProcessorBase</a>&lt; dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Base</b></td></tr>
 <tr class="separator:aa0a28309ea584cf0643559b6952caaa5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a65341cb290906ac50e11e15bc0f074c9"><td class="memItemLeft" align="right" valign="top"><a id="a65341cb290906ac50e11e15bc0f074c9" name="a65341cb290906ac50e11e15bc0f074c9"></a>
+typedef <a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">SpatialOperatorBase</a>&lt; dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>NavierStokesOperator</b></td></tr>
+<tr class="separator:a65341cb290906ac50e11e15bc0f074c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a985e8d02aa6755971b35abf7eaeecb64"><td class="memItemLeft" align="right" valign="top"><a id="a985e8d02aa6755971b35abf7eaeecb64" name="a985e8d02aa6755971b35abf7eaeecb64"></a>
 typedef Base::VectorType&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
 <tr class="separator:a985e8d02aa6755971b35abf7eaeecb64"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -111,14 +114,14 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a5671cf38dcd7bc7714e6c0d220bc93a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a59ad63979c1955cb84a99805a1eb4805"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1PostProcessor.html#a59ad63979c1955cb84a99805a1eb4805">setup</a> (<a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">Operator</a> const &amp;pde_operator) override</td></tr>
 <tr class="separator:a59ad63979c1955cb84a99805a1eb4805"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af9c51fdaafb6732a5b105f4a5c25ed72"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1PostProcessor.html#af9c51fdaafb6732a5b105f4a5c25ed72">do_postprocessing</a> (VectorType const &amp;velocity, VectorType const &amp;pressure, double const time=0.0, int const time_step_number=numbers::steady_timestep) override</td></tr>
-<tr class="separator:af9c51fdaafb6732a5b105f4a5c25ed72"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1cc6ec3a09d5e6c2750d35c64be866ea"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1PostProcessor.html#a1cc6ec3a09d5e6c2750d35c64be866ea">do_postprocessing</a> (VectorType const &amp;velocity, VectorType const &amp;pressure, double const time=0.0, types::time_step const time_step_number=numbers::steady_timestep) override</td></tr>
+<tr class="separator:a1cc6ec3a09d5e6c2750d35c64be866ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9027c3e64cb9a7a412924a0976657bb7"><td class="memItemLeft" align="right" valign="top"><a id="a9027c3e64cb9a7a412924a0976657bb7" name="a9027c3e64cb9a7a412924a0976657bb7"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (<a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">Operator</a> const &amp;pde_operator)=0</td></tr>
 <tr class="separator:a9027c3e64cb9a7a412924a0976657bb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4a67524513007fea77ee77f451f83129"><td class="memItemLeft" align="right" valign="top"><a id="a4a67524513007fea77ee77f451f83129" name="a4a67524513007fea77ee77f451f83129"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_postprocessing</b> (VectorType const &amp;velocity, VectorType const &amp;pressure, double const time=0.0, int const time_step_number=numbers::steady_timestep)=0</td></tr>
-<tr class="separator:a4a67524513007fea77ee77f451f83129"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad6fbd5317ce5489964f3f0257807e611"><td class="memItemLeft" align="right" valign="top"><a id="ad6fbd5317ce5489964f3f0257807e611" name="ad6fbd5317ce5489964f3f0257807e611"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_postprocessing</b> (VectorType const &amp;velocity, VectorType const &amp;pressure, double const time=0.0, types::time_step const time_step_number=numbers::steady_timestep)=0</td></tr>
+<tr class="separator:ad6fbd5317ce5489964f3f0257807e611"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
@@ -141,8 +144,8 @@ typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td
 <tr class="separator:a5e7e0a2271f6a6bd491f6941ff370d04 inherit pro_types_classExaDG_1_1IncNS_1_1PostProcessorInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="af9c51fdaafb6732a5b105f4a5c25ed72" name="af9c51fdaafb6732a5b105f4a5c25ed72"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af9c51fdaafb6732a5b105f4a5c25ed72">&#9670;&#160;</a></span>do_postprocessing()</h2>
+<a id="a1cc6ec3a09d5e6c2750d35c64be866ea" name="a1cc6ec3a09d5e6c2750d35c64be866ea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1cc6ec3a09d5e6c2750d35c64be866ea">&#9670;&#160;</a></span>do_postprocessing()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -173,7 +176,7 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">int const&#160;</td>
+          <td class="paramtype">types::time_step const&#160;</td>
           <td class="paramname"><em>time_step_number</em> = <code>numbers::steady_timestep</code>&#160;</td>
         </tr>
         <tr>

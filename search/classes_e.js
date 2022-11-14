@@ -19,7 +19,6 @@ var searchData=
   ['operatorprojectionmethods_3c_20dim_2c_20double_20_3e_16',['OperatorProjectionMethods&lt; dim, double &gt;',['../classExaDG_1_1IncNS_1_1OperatorProjectionMethods.html',1,'ExaDG::IncNS']]],
   ['outputdata_17',['OutputData',['../structExaDG_1_1CompNS_1_1OutputData.html',1,'ExaDG::CompNS::OutputData'],['../structExaDG_1_1IncNS_1_1OutputData.html',1,'ExaDG::IncNS::OutputData']]],
   ['outputdatabase_18',['OutputDataBase',['../structExaDG_1_1OutputDataBase.html',1,'ExaDG']]],
-  ['outputdatameanvelocity_19',['OutputDataMeanVelocity',['../structExaDG_1_1IncNS_1_1OutputDataMeanVelocity.html',1,'ExaDG::IncNS']]],
-  ['outputgenerator_20',['OutputGenerator',['../classExaDG_1_1CompNS_1_1OutputGenerator.html',1,'ExaDG::CompNS::OutputGenerator&lt; dim, Number &gt;'],['../classExaDG_1_1IncNS_1_1OutputGenerator.html',1,'ExaDG::IncNS::OutputGenerator&lt; dim, Number &gt;'],['../classExaDG_1_1OutputGenerator.html',1,'ExaDG::OutputGenerator&lt; dim, Number &gt;'],['../classExaDG_1_1Structure_1_1OutputGenerator.html',1,'ExaDG::Structure::OutputGenerator&lt; dim, Number &gt;']]],
-  ['outputparameters_21',['OutputParameters',['../structExaDG_1_1OutputParameters.html',1,'ExaDG']]]
+  ['outputgenerator_19',['OutputGenerator',['../classExaDG_1_1CompNS_1_1OutputGenerator.html',1,'ExaDG::CompNS::OutputGenerator&lt; dim, Number &gt;'],['../classExaDG_1_1IncNS_1_1OutputGenerator.html',1,'ExaDG::IncNS::OutputGenerator&lt; dim, Number &gt;'],['../classExaDG_1_1OutputGenerator.html',1,'ExaDG::OutputGenerator&lt; dim, Number &gt;'],['../classExaDG_1_1Structure_1_1OutputGenerator.html',1,'ExaDG::Structure::OutputGenerator&lt; dim, Number &gt;']]],
+  ['outputparameters_20',['OutputParameters',['../structExaDG_1_1OutputParameters.html',1,'ExaDG']]]
 ];

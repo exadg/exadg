@@ -27,7 +27,7 @@ var searchData=
   ['lineplotcalculatorstatistics_24',['LinePlotCalculatorStatistics',['../classExaDG_1_1IncNS_1_1LinePlotCalculatorStatistics.html',1,'ExaDG::IncNS']]],
   ['lineplotcalculatorstatisticshomogeneous_25',['LinePlotCalculatorStatisticsHomogeneous',['../classExaDG_1_1IncNS_1_1LinePlotCalculatorStatisticsHomogeneous.html',1,'ExaDG::IncNS']]],
   ['lineplotdata_26',['LinePlotData',['../structExaDG_1_1IncNS_1_1LinePlotData.html',1,'ExaDG::IncNS']]],
-  ['lineplotdatainstantaneous_27',['LinePlotDataInstantaneous',['../structExaDG_1_1IncNS_1_1LinePlotDataInstantaneous.html',1,'ExaDG::IncNS']]],
+  ['lineplotdatabase_27',['LinePlotDataBase',['../structExaDG_1_1IncNS_1_1LinePlotDataBase.html',1,'ExaDG::IncNS']]],
   ['lineplotdatastatistics_28',['LinePlotDataStatistics',['../structExaDG_1_1IncNS_1_1LinePlotDataStatistics.html',1,'ExaDG::IncNS']]],
   ['lowstoragerk3stage4reg2c_29',['LowStorageRK3Stage4Reg2C',['../classExaDG_1_1LowStorageRK3Stage4Reg2C.html',1,'ExaDG']]],
   ['lowstoragerk4stage5reg2c_30',['LowStorageRK4Stage5Reg2C',['../classExaDG_1_1LowStorageRK4Stage5Reg2C.html',1,'ExaDG']]],

@@ -69,13 +69,14 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>ExaDG</b></li><li class="navelem"><a class="el" href="classExaDG_1_1KineticEnergyCalculator.html">KineticEnergyCalculator</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><a class="el" href="classExaDG_1_1KineticEnergyCalculator.html">KineticEnergyCalculator</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="#pro-methods">Protected Member Functions</a> &#124;
 <a href="#pro-attribs">Protected Attributes</a> &#124;
@@ -116,9 +117,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a9fbb46a47efe07be532552ff62eb3e24"><td class="memItemLeft" align="right" valign="top"><a id="a9fbb46a47efe07be532552ff62eb3e24" name="a9fbb46a47efe07be532552ff62eb3e24"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, unsigned int const dof_index_in, unsigned int const quad_index_in, <a class="el" href="structExaDG_1_1KineticEnergyData.html">KineticEnergyData</a> const &amp;kinetic_energy_data_in)</td></tr>
 <tr class="separator:a9fbb46a47efe07be532552ff62eb3e24"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad8ab6560164e361c48eb740f0b87a60e"><td class="memItemLeft" align="right" valign="top"><a id="ad8ab6560164e361c48eb740f0b87a60e" name="ad8ab6560164e361c48eb740f0b87a60e"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;velocity, double const &amp;time, int const &amp;time_step_number)</td></tr>
-<tr class="separator:ad8ab6560164e361c48eb740f0b87a60e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a15041e11f6caa4ad38168281f3dc6afd"><td class="memItemLeft" align="right" valign="top"><a id="a15041e11f6caa4ad38168281f3dc6afd" name="a15041e11f6caa4ad38168281f3dc6afd"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;velocity, double const time, bool const unsteady)</td></tr>
+<tr class="separator:a15041e11f6caa4ad38168281f3dc6afd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:abcb36f152ea42862985a6f846c20e4a1"><td class="memItemLeft" align="right" valign="top"><a id="abcb36f152ea42862985a6f846c20e4a1" name="abcb36f152ea42862985a6f846c20e4a1"></a>
+<a class="el" href="classExaDG_1_1TimeControl.html">TimeControl</a>&#160;</td><td class="memItemRight" valign="bottom"><b>time_control</b></td></tr>
+<tr class="separator:abcb36f152ea42862985a6f846c20e4a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
@@ -128,9 +135,9 @@ static unsigned int const&#160;</td><td class="memItemRight" valign="bottom"><b>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
-<tr class="memitem:a3d1b850dffaf5b645e8cf102087ef272"><td class="memItemLeft" align="right" valign="top"><a id="a3d1b850dffaf5b645e8cf102087ef272" name="a3d1b850dffaf5b645e8cf102087ef272"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_basic</b> (VectorType const &amp;velocity, double const time, unsigned int const time_step_number)</td></tr>
-<tr class="separator:a3d1b850dffaf5b645e8cf102087ef272"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a87c7d8508431b60059b7c8a3532d87eb"><td class="memItemLeft" align="right" valign="top"><a id="a87c7d8508431b60059b7c8a3532d87eb" name="a87c7d8508431b60059b7c8a3532d87eb"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_basic</b> (VectorType const &amp;velocity, double const time)</td></tr>
+<tr class="separator:a87c7d8508431b60059b7c8a3532d87eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae517b578a84ca684d3301cff9443f508"><td class="memItemLeft" align="right" valign="top"><a id="ae517b578a84ca684d3301cff9443f508" name="ae517b578a84ca684d3301cff9443f508"></a>
 Number&#160;</td><td class="memItemRight" valign="bottom"><b>integrate</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_data, VectorType const &amp;velocity, Number &amp;energy, Number &amp;enstrophy, Number &amp;dissipation, Number &amp;max_vorticity)</td></tr>
 <tr class="separator:ae517b578a84ca684d3301cff9443f508"><td class="memSeparator" colspan="2">&#160;</td></tr>

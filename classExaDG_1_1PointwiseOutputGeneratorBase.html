@@ -69,13 +69,14 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>ExaDG</b></li><li class="navelem"><a class="el" href="classExaDG_1_1PointwiseOutputGeneratorBase.html">PointwiseOutputGeneratorBase</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><a class="el" href="classExaDG_1_1PointwiseOutputGeneratorBase.html">PointwiseOutputGeneratorBase</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pro-methods">Protected Member Functions</a> &#124;
 <a href="classExaDG_1_1PointwiseOutputGeneratorBase-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">ExaDG::PointwiseOutputGeneratorBase&lt; dim, Number &gt; Class Template Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div></div>
@@ -102,9 +103,15 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>point_value_type</b>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a0a129d4d1f5176ad992fbe5179875c75"><td class="memItemLeft" align="right" valign="top"><a id="a0a129d4d1f5176ad992fbe5179875c75" name="a0a129d4d1f5176ad992fbe5179875c75"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;solution, double const &amp;time, int const &amp;time_step_number)</td></tr>
-<tr class="separator:a0a129d4d1f5176ad992fbe5179875c75"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a12c2eb9e79cb6688613913a99e218a0c"><td class="memItemLeft" align="right" valign="top"><a id="a12c2eb9e79cb6688613913a99e218a0c" name="a12c2eb9e79cb6688613913a99e218a0c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;solution, double const time, bool const unsteady)</td></tr>
+<tr class="separator:a12c2eb9e79cb6688613913a99e218a0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:adc0a2aaa4d80ad5350882a1e46b5cf6f"><td class="memItemLeft" align="right" valign="top"><a id="adc0a2aaa4d80ad5350882a1e46b5cf6f" name="adc0a2aaa4d80ad5350882a1e46b5cf6f"></a>
+<a class="el" href="classExaDG_1_1TimeControl.html">TimeControl</a>&#160;</td><td class="memItemRight" valign="bottom"><b>time_control</b></td></tr>
+<tr class="separator:adc0a2aaa4d80ad5350882a1e46b5cf6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>

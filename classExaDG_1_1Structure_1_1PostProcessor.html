@@ -69,7 +69,7 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>ExaDG</b></li><li class="navelem"><b>Structure</b></li><li class="navelem"><a class="el" href="classExaDG_1_1Structure_1_1PostProcessor.html">PostProcessor</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><b>Structure</b></li><li class="navelem"><a class="el" href="classExaDG_1_1Structure_1_1PostProcessor.html">PostProcessor</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -97,11 +97,11 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a2fb730d2648e679464dc401e4624a901"><td class="memItemLeft" align="right" valign="top"><a id="a2fb730d2648e679464dc401e4624a901" name="a2fb730d2648e679464dc401e4624a901"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler, dealii::Mapping&lt; dim &gt; const &amp;mapping)</td></tr>
 <tr class="separator:a2fb730d2648e679464dc401e4624a901"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0c2ee12f0495630b27246e18b5b17f3a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1PostProcessor.html#a0c2ee12f0495630b27246e18b5b17f3a">do_postprocessing</a> (VectorType const &amp;solution, double const time=0.0, int const time_step_number=numbers::steady_timestep)</td></tr>
-<tr class="separator:a0c2ee12f0495630b27246e18b5b17f3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae1b8a7dfb4d4a6d25e7d6a5e5dd8d4ee"><td class="memItemLeft" align="right" valign="top"><a id="ae1b8a7dfb4d4a6d25e7d6a5e5dd8d4ee" name="ae1b8a7dfb4d4a6d25e7d6a5e5dd8d4ee"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_postprocessing</b> (VectorType const &amp;solution, double const time=0.0, int const time_step_number=numbers::steady_timestep)=0</td></tr>
-<tr class="separator:ae1b8a7dfb4d4a6d25e7d6a5e5dd8d4ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3b6c34218d1b864c28f6ae4b6b61ab08"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1PostProcessor.html#a3b6c34218d1b864c28f6ae4b6b61ab08">do_postprocessing</a> (VectorType const &amp;solution, double const time=0.0, types::time_step const time_step_number=numbers::steady_timestep)</td></tr>
+<tr class="separator:a3b6c34218d1b864c28f6ae4b6b61ab08"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04f2b6f5cb6bcf918dd05e4d63316711"><td class="memItemLeft" align="right" valign="top"><a id="a04f2b6f5cb6bcf918dd05e4d63316711" name="a04f2b6f5cb6bcf918dd05e4d63316711"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_postprocessing</b> (VectorType const &amp;solution, double const time=0.0, types::time_step const time_step_number=numbers::steady_timestep)=0</td></tr>
+<tr class="separator:a04f2b6f5cb6bcf918dd05e4d63316711"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
@@ -111,8 +111,8 @@ typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td
 <tr class="separator:a73a2208193c8761add381f1aec82892d inherit pro_types_classExaDG_1_1Structure_1_1PostProcessorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a0c2ee12f0495630b27246e18b5b17f3a" name="a0c2ee12f0495630b27246e18b5b17f3a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0c2ee12f0495630b27246e18b5b17f3a">&#9670;&#160;</a></span>do_postprocessing()</h2>
+<a id="a3b6c34218d1b864c28f6ae4b6b61ab08" name="a3b6c34218d1b864c28f6ae4b6b61ab08"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3b6c34218d1b864c28f6ae4b6b61ab08">&#9670;&#160;</a></span>do_postprocessing()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -137,7 +137,7 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">int const&#160;</td>
+          <td class="paramtype">types::time_step const&#160;</td>
           <td class="paramname"><em>time_step_number</em> = <code>numbers::steady_timestep</code>&#160;</td>
         </tr>
         <tr>

@@ -119,42 +119,42 @@ $(function() {
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="preprocessor">#include &lt;deal.II/numerics/vector_tools.h&gt;</span></div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="comment">// ExaDG</span></div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="preprocessor">#include &lt;exadg/utilities/extract_component_from_tensors.h&gt;</span></div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="keyword">namespace </span>ExaDG</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>{</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim&gt;</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno"><a class="line" href="structExaDG_1_1PointwiseOutputDataBase.html">   49</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structExaDG_1_1PointwiseOutputDataBase.html">PointwiseOutputDataBase</a></div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>{</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keyword">using </span>point_value_type = <span class="keyword">typename</span> dealii::Point&lt;dim&gt;::value_type;</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <a class="code hl_struct" href="structExaDG_1_1PointwiseOutputDataBase.html">PointwiseOutputDataBase</a>();</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keywordtype">bool</span>        write_output;</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  std::string directory;</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  std::string filename;</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keywordtype">bool</span> update_points_before_evaluation;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="preprocessor">#include &lt;exadg/postprocessor/time_control.h&gt;</span></div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span><span class="preprocessor">#include &lt;exadg/utilities/extract_component_from_tensors.h&gt;</span></div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespaceExaDG.html">ExaDG</a></div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>{</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim&gt;</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno"><a class="line" href="structExaDG_1_1PointwiseOutputDataBase.html">   50</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structExaDG_1_1PointwiseOutputDataBase.html">PointwiseOutputDataBase</a></div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>{</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keyword">using </span>point_value_type = <span class="keyword">typename</span> dealii::Point&lt;dim&gt;::value_type;</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <a class="code hl_struct" href="structExaDG_1_1PointwiseOutputDataBase.html">PointwiseOutputDataBase</a>();</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <a class="code hl_struct" href="structExaDG_1_1TimeControlData.html">TimeControlData</a> time_control_data;</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  std::string directory;</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  std::string filename;</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keywordtype">double</span> start_time;</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  <span class="keywordtype">double</span> end_time;</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keywordtype">double</span> interval_time;</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keywordtype">bool</span> update_points_before_evaluation;</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  std::vector&lt;dealii::Point&lt;dim&gt;&gt; evaluation_points;</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  std::vector&lt;dealii::Point&lt;dim&gt;&gt; evaluation_points;</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  print(dealii::ConditionalOStream &amp; pcout) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>};</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno"><a class="line" href="classExaDG_1_1PointwiseOutputGeneratorBase.html">   72</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1PointwiseOutputGeneratorBase.html">PointwiseOutputGeneratorBase</a></div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>{</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keyword">using </span>VectorType       = dealii::LinearAlgebra::distributed::Vector&lt;Number&gt;;</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <span class="keyword">using </span>point_value_type = <span class="keyword">typename</span> PointwiseOutputDataBase&lt;dim&gt;::point_value_type;</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span> </div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  evaluate(VectorType <span class="keyword">const</span> &amp; solution, <span class="keywordtype">double</span> <span class="keyword">const</span> &amp; time, <span class="keywordtype">int</span> <span class="keyword">const</span> &amp; time_step_number);</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  print(dealii::ConditionalOStream &amp; pcout) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>};</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno"><a class="line" href="classExaDG_1_1PointwiseOutputGeneratorBase.html">   70</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1PointwiseOutputGeneratorBase.html">PointwiseOutputGeneratorBase</a></div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>{</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  <span class="keyword">using </span>VectorType       = dealii::LinearAlgebra::distributed::Vector&lt;Number&gt;;</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  <span class="keyword">using </span>point_value_type = <span class="keyword">typename</span> PointwiseOutputDataBase&lt;dim&gt;::point_value_type;</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  evaluate(VectorType <span class="keyword">const</span> &amp; solution, <span class="keywordtype">double</span> <span class="keyword">const</span> time, <span class="keywordtype">bool</span> <span class="keyword">const</span> unsteady);</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span> </div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <a class="code hl_class" href="classExaDG_1_1TimeControl.html">TimeControl</a> time_control;</div>
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span> </div>
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span><span class="keyword">protected</span>:</div>
 <div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  <a class="code hl_class" href="classExaDG_1_1PointwiseOutputGeneratorBase.html">PointwiseOutputGeneratorBase</a>(MPI_Comm <span class="keyword">const</span> &amp; comm);</div>
@@ -178,7 +178,7 @@ $(function() {
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> components = name_to_components.at(name);</div>
 <div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> comp = 0; comp &lt; components; ++comp)</div>
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    {</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>      extract_component_from_tensors(componentwise_result, values, first_component + comp);</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>      <a class="code hl_function" href="namespaceExaDG.html#a6e2a55562723b53f986666ed277cf29e">extract_component_from_tensors</a>(componentwise_result, values, first_component + comp);</div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>      write_component((components == 1) ? name : name + std::to_string(comp), componentwise_result);</div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    }</div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  }</div>
@@ -224,28 +224,31 @@ $(function() {
 <div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>  write_component(std::string <span class="keyword">const</span> &amp; name, dealii::Vector&lt;Number&gt; <span class="keyword">const</span> &amp; componentwise_result);</div>
 <div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span> </div>
 <div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>   counter;</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  <span class="keywordtype">bool</span>           reset_counter;</div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span> </div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  dealii::SmartPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt;                 dof_handler;</div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  dealii::SmartPointer&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;                    mapping;</div>
-<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  <a class="code hl_struct" href="structExaDG_1_1PointwiseOutputDataBase.html">PointwiseOutputDataBase&lt;dim&gt;</a>                                        pointwise_output_data;</div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  dealii::Vector&lt;Number&gt;                                              componentwise_result;</div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>                                                        n_out_samples;</div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>  std::shared_ptr&lt;dealii::Utilities::MPI::RemotePointEvaluation&lt;dim&gt;&gt; remote_evaluator;</div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span> </div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>  std::map&lt;std::string, unsigned int&gt; name_to_components;</div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span> </div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span><span class="preprocessor">#ifdef DEAL_II_WITH_HDF5</span></div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>  std::unique_ptr&lt;dealii::HDF5::File&gt; hdf5_file;</div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>};</div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span> </div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span> </div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_BASE_H_*/</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1PointwiseOutputGeneratorBase_html"><div class="ttname"><a href="classExaDG_1_1PointwiseOutputGeneratorBase.html">ExaDG::PointwiseOutputGeneratorBase</a></div><div class="ttdef"><b>Definition:</b> pointwise_output_generator_base.h:73</div></div>
-<div class="ttc" id="astructExaDG_1_1PointwiseOutputDataBase_html"><div class="ttname"><a href="structExaDG_1_1PointwiseOutputDataBase.html">ExaDG::PointwiseOutputDataBase</a></div><div class="ttdef"><b>Definition:</b> pointwise_output_generator_base.h:50</div></div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span> </div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  dealii::SmartPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt;                 dof_handler;</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>  dealii::SmartPointer&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;                    mapping;</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  <a class="code hl_struct" href="structExaDG_1_1PointwiseOutputDataBase.html">PointwiseOutputDataBase&lt;dim&gt;</a>                                        pointwise_output_data;</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  dealii::Vector&lt;Number&gt;                                              componentwise_result;</div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>                                                        n_out_samples;</div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  std::shared_ptr&lt;dealii::Utilities::MPI::RemotePointEvaluation&lt;dim&gt;&gt; remote_evaluator;</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  <span class="keywordtype">bool</span>                                                                first_evaluation;</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span> </div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  std::map&lt;std::string, unsigned int&gt; name_to_components;</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span> </div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span><span class="preprocessor">#ifdef DEAL_II_WITH_HDF5</span></div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>  std::unique_ptr&lt;dealii::HDF5::File&gt; hdf5_file;</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>};</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span> </div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span> </div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_BASE_H_*/</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1PointwiseOutputGeneratorBase_html"><div class="ttname"><a href="classExaDG_1_1PointwiseOutputGeneratorBase.html">ExaDG::PointwiseOutputGeneratorBase</a></div><div class="ttdef"><b>Definition:</b> pointwise_output_generator_base.h:71</div></div>
+<div class="ttc" id="aclassExaDG_1_1TimeControl_html"><div class="ttname"><a href="classExaDG_1_1TimeControl.html">ExaDG::TimeControl</a></div><div class="ttdef"><b>Definition:</b> time_control.h:64</div></div>
+<div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition:</b> driver.cpp:33</div></div>
+<div class="ttc" id="anamespaceExaDG_html_a6e2a55562723b53f986666ed277cf29e"><div class="ttname"><a href="namespaceExaDG.html#a6e2a55562723b53f986666ed277cf29e">ExaDG::extract_component_from_tensors</a></div><div class="ttdeci">void extract_component_from_tensors(dealii::Vector&lt; Number &gt; &amp;dst, std::vector&lt; dealii::Tensor&lt; n_components1, n_components2, Number &gt; &gt; const &amp;values, unsigned int const comp1, unsigned int const comp2)</div><div class="ttdef"><b>Definition:</b> extract_component_from_tensors.h:39</div></div>
+<div class="ttc" id="astructExaDG_1_1PointwiseOutputDataBase_html"><div class="ttname"><a href="structExaDG_1_1PointwiseOutputDataBase.html">ExaDG::PointwiseOutputDataBase</a></div><div class="ttdef"><b>Definition:</b> pointwise_output_generator_base.h:51</div></div>
+<div class="ttc" id="astructExaDG_1_1TimeControlData_html"><div class="ttname"><a href="structExaDG_1_1TimeControlData.html">ExaDG::TimeControlData</a></div><div class="ttdef"><b>Definition:</b> time_control.h:40</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

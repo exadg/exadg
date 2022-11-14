@@ -69,7 +69,7 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>ExaDG</b></li><li class="navelem"><b>CompNS</b></li><li class="navelem"><a class="el" href="classExaDG_1_1CompNS_1_1PostProcessor.html">PostProcessor</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><b>CompNS</b></li><li class="navelem"><a class="el" href="classExaDG_1_1CompNS_1_1PostProcessor.html">PostProcessor</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -109,14 +109,14 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a6c3f82312e54c42bfdff14e1ac68f99b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a803778a5d25cb728e12b008c962948f4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1CompNS_1_1PostProcessor.html#a803778a5d25cb728e12b008c962948f4">setup</a> (<a class="el" href="classExaDG_1_1CompNS_1_1Operator.html">Operator</a>&lt; dim, Number &gt; const &amp;pde_operator) override</td></tr>
 <tr class="separator:a803778a5d25cb728e12b008c962948f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2f69322fd4fac0d2d7417510e8b05264"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1CompNS_1_1PostProcessor.html#a2f69322fd4fac0d2d7417510e8b05264">do_postprocessing</a> (VectorType const &amp;solution, double const time, int const time_step_number) override</td></tr>
-<tr class="separator:a2f69322fd4fac0d2d7417510e8b05264"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7f38c770505b5ef4a4c68cc99e3faa2c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1CompNS_1_1PostProcessor.html#a7f38c770505b5ef4a4c68cc99e3faa2c">do_postprocessing</a> (VectorType const &amp;solution, double const time, types::time_step const time_step_number) override</td></tr>
+<tr class="separator:a7f38c770505b5ef4a4c68cc99e3faa2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a20f29fdef832d4e648962674eb6ad44c"><td class="memItemLeft" align="right" valign="top"><a id="a20f29fdef832d4e648962674eb6ad44c" name="a20f29fdef832d4e648962674eb6ad44c"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (<a class="el" href="classExaDG_1_1CompNS_1_1Operator.html">Operator</a>&lt; dim, Number &gt; const &amp;pde_operator)=0</td></tr>
 <tr class="separator:a20f29fdef832d4e648962674eb6ad44c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6838d11fb1969dedf0d95f0039ddfb86"><td class="memItemLeft" align="right" valign="top"><a id="a6838d11fb1969dedf0d95f0039ddfb86" name="a6838d11fb1969dedf0d95f0039ddfb86"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_postprocessing</b> (VectorType const &amp;solution, double const time, int const time_step_number)=0</td></tr>
-<tr class="separator:a6838d11fb1969dedf0d95f0039ddfb86"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a305f0148ab433cddc8a2b4fe4a28f259"><td class="memItemLeft" align="right" valign="top"><a id="a305f0148ab433cddc8a2b4fe4a28f259" name="a305f0148ab433cddc8a2b4fe4a28f259"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_postprocessing</b> (VectorType const &amp;solution, double const time, types::time_step const time_step_number)=0</td></tr>
+<tr class="separator:a305f0148ab433cddc8a2b4fe4a28f259"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
@@ -140,8 +140,8 @@ std::vector&lt; <a class="el" href="classExaDG_1_1SolutionField.html">SolutionFi
 <tr class="separator:a5cab5b860e16d0316231eec1f31e4142"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a2f69322fd4fac0d2d7417510e8b05264" name="a2f69322fd4fac0d2d7417510e8b05264"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2f69322fd4fac0d2d7417510e8b05264">&#9670;&#160;</a></span>do_postprocessing()</h2>
+<a id="a7f38c770505b5ef4a4c68cc99e3faa2c" name="a7f38c770505b5ef4a4c68cc99e3faa2c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7f38c770505b5ef4a4c68cc99e3faa2c">&#9670;&#160;</a></span>do_postprocessing()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -166,7 +166,7 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">int const&#160;</td>
+          <td class="paramtype">types::time_step const&#160;</td>
           <td class="paramname"><em>time_step_number</em>&#160;</td>
         </tr>
         <tr>

@@ -69,13 +69,14 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>ExaDG</b></li><li class="navelem"><b>Structure</b></li><li class="navelem"><a class="el" href="classExaDG_1_1Structure_1_1OutputGenerator.html">OutputGenerator</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><b>Structure</b></li><li class="navelem"><a class="el" href="classExaDG_1_1Structure_1_1OutputGenerator.html">OutputGenerator</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="classExaDG_1_1Structure_1_1OutputGenerator-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">ExaDG::Structure::OutputGenerator&lt; dim, Number &gt; Class Template Reference</div></div>
 </div><!--header-->
@@ -95,9 +96,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a0759f8a9ea1f93fbb8e39893b981fdf1"><td class="memItemLeft" align="right" valign="top"><a id="a0759f8a9ea1f93fbb8e39893b981fdf1" name="a0759f8a9ea1f93fbb8e39893b981fdf1"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler, dealii::Mapping&lt; dim &gt; const &amp;mapping, <a class="el" href="structExaDG_1_1OutputDataBase.html">OutputDataBase</a> const &amp;output_data)</td></tr>
 <tr class="separator:a0759f8a9ea1f93fbb8e39893b981fdf1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a19e18e0a7aa1406345c8e534f520204c"><td class="memItemLeft" align="right" valign="top"><a id="a19e18e0a7aa1406345c8e534f520204c" name="a19e18e0a7aa1406345c8e534f520204c"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;solution, double const &amp;time, int const &amp;time_step_number)</td></tr>
-<tr class="separator:a19e18e0a7aa1406345c8e534f520204c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0c85e6feb0a8800b15caf2f3abd7c2a1"><td class="memItemLeft" align="right" valign="top"><a id="a0c85e6feb0a8800b15caf2f3abd7c2a1" name="a0c85e6feb0a8800b15caf2f3abd7c2a1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;solution, double const time, bool const unsteady)</td></tr>
+<tr class="separator:a0c85e6feb0a8800b15caf2f3abd7c2a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:ac6da31b613749e1c832cac0592e3bcca"><td class="memItemLeft" align="right" valign="top"><a id="ac6da31b613749e1c832cac0592e3bcca" name="ac6da31b613749e1c832cac0592e3bcca"></a>
+<a class="el" href="classExaDG_1_1TimeControl.html">TimeControl</a>&#160;</td><td class="memItemRight" valign="bottom"><b>time_control</b></td></tr>
+<tr class="separator:ac6da31b613749e1c832cac0592e3bcca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/exadg/structure/postprocessor/<a class="el" href="structure_2postprocessor_2output__generator_8h_source.html">output_generator.h</a></li>

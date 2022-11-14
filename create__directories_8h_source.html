@@ -103,10 +103,10 @@ $(function() {
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="comment">// C/C++</span></div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;filesystem&gt;</span></div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="keyword">namespace </span>ExaDG</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespaceExaDG.html">ExaDG</a></div>
 <div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>{</div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="keyword">inline</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>create_directories(std::string <span class="keyword">const</span> &amp; directory, MPI_Comm <span class="keyword">const</span> &amp; mpi_comm)</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno"><a class="line" href="namespaceExaDG.html#ae37213007b3d71515b9d35a598e17e22">   35</a></span><a class="code hl_function" href="namespaceExaDG.html#ae37213007b3d71515b9d35a598e17e22">create_directories</a>(std::string <span class="keyword">const</span> &amp; directory, MPI_Comm <span class="keyword">const</span> &amp; mpi_comm)</div>
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>{</div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keywordflow">if</span>(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)</div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>    std::filesystem::create_directories(directory);</div>
@@ -119,6 +119,8 @@ $(function() {
 <div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_UTILITIES_CREATE_DIRECTORIES_H_ */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition:</b> driver.cpp:33</div></div>
+<div class="ttc" id="anamespaceExaDG_html_ae37213007b3d71515b9d35a598e17e22"><div class="ttname"><a href="namespaceExaDG.html#ae37213007b3d71515b9d35a598e17e22">ExaDG::create_directories</a></div><div class="ttdeci">void create_directories(std::string const &amp;directory, MPI_Comm const &amp;mpi_comm)</div><div class="ttdef"><b>Definition:</b> create_directories.h:35</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.5"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::IncNS::OutputDataMeanVelocity Struct Reference</title>
+<title>ExaDG: ExaDG::TimeControlDataStatistics Struct Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -69,41 +69,36 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>ExaDG</b></li><li class="navelem"><b>IncNS</b></li><li class="navelem"><a class="el" href="structExaDG_1_1IncNS_1_1OutputDataMeanVelocity.html">OutputDataMeanVelocity</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><a class="el" href="structExaDG_1_1TimeControlDataStatistics.html">TimeControlDataStatistics</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
-<a href="structExaDG_1_1IncNS_1_1OutputDataMeanVelocity-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::IncNS::OutputDataMeanVelocity Struct Reference</div></div>
+<a href="structExaDG_1_1TimeControlDataStatistics-members.html">List of all members</a>  </div>
+  <div class="headertitle"><div class="title">ExaDG::TimeControlDataStatistics Struct Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a23d777e29420114f81377bbd8147a81a"><td class="memItemLeft" align="right" valign="top"><a id="a23d777e29420114f81377bbd8147a81a" name="a23d777e29420114f81377bbd8147a81a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>print</b> (dealii::ConditionalOStream &amp;pcout, bool unsteady)</td></tr>
-<tr class="separator:a23d777e29420114f81377bbd8147a81a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a37ba4314713a6ed0864ef15daa92a984"><td class="memItemLeft" align="right" valign="top"><a id="a37ba4314713a6ed0864ef15daa92a984" name="a37ba4314713a6ed0864ef15daa92a984"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>print</b> (dealii::ConditionalOStream &amp;pcout, bool const unsteady) const</td></tr>
+<tr class="separator:a37ba4314713a6ed0864ef15daa92a984"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:ae4de4353e0347ed526fa559d15e99d6e"><td class="memItemLeft" align="right" valign="top"><a id="ae4de4353e0347ed526fa559d15e99d6e" name="ae4de4353e0347ed526fa559d15e99d6e"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>calculate</b></td></tr>
-<tr class="separator:ae4de4353e0347ed526fa559d15e99d6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4156822054f45bfac3e6554592b671ab"><td class="memItemLeft" align="right" valign="top"><a id="a4156822054f45bfac3e6554592b671ab" name="a4156822054f45bfac3e6554592b671ab"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>sample_start_time</b></td></tr>
-<tr class="separator:a4156822054f45bfac3e6554592b671ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4eff79f50ac165e770b671db66ac6ee3"><td class="memItemLeft" align="right" valign="top"><a id="a4eff79f50ac165e770b671db66ac6ee3" name="a4eff79f50ac165e770b671db66ac6ee3"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>sample_end_time</b></td></tr>
-<tr class="separator:a4eff79f50ac165e770b671db66ac6ee3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a93ddd2476b6b0df0bab6de9f6e3ce723"><td class="memItemLeft" align="right" valign="top"><a id="a93ddd2476b6b0df0bab6de9f6e3ce723" name="a93ddd2476b6b0df0bab6de9f6e3ce723"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>sample_every_timesteps</b></td></tr>
-<tr class="separator:a93ddd2476b6b0df0bab6de9f6e3ce723"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5fbb14313cc5879830683a20cb013cd4"><td class="memItemLeft" align="right" valign="top"><a id="a5fbb14313cc5879830683a20cb013cd4" name="a5fbb14313cc5879830683a20cb013cd4"></a>
+types::time_step&#160;</td><td class="memItemRight" valign="bottom"><b>write_preliminary_results_every_nth_time_step</b></td></tr>
+<tr class="separator:a5fbb14313cc5879830683a20cb013cd4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a97a24fa1e35f0dde54634a6cf8a5fd81"><td class="memItemLeft" align="right" valign="top"><a id="a97a24fa1e35f0dde54634a6cf8a5fd81" name="a97a24fa1e35f0dde54634a6cf8a5fd81"></a>
+<a class="el" href="structExaDG_1_1TimeControlData.html">TimeControlData</a>&#160;</td><td class="memItemRight" valign="bottom"><b>time_control_data</b></td></tr>
+<tr class="separator:a97a24fa1e35f0dde54634a6cf8a5fd81"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<hr/>The documentation for this struct was generated from the following file:<ul>
-<li>include/exadg/incompressible_navier_stokes/postprocessor/<a class="el" href="incompressible__navier__stokes_2postprocessor_2output__generator_8h_source.html">output_generator.h</a></li>
+<hr/>The documentation for this struct was generated from the following files:<ul>
+<li>include/exadg/postprocessor/<a class="el" href="time__control__statistics_8h_source.html">time_control_statistics.h</a></li>
+<li>include/exadg/postprocessor/time_control_statistics.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
