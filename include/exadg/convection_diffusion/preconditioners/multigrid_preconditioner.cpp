@@ -243,7 +243,6 @@ MultigridPreconditioner<dim, Number>::initialize_transfer_operators()
   {
     unsigned int const dof_index = 1;
     this->do_initialize_transfer_operators(transfers_velocity,
-                                           constraints_velocity,
                                            constrained_dofs_velocity,
                                            dof_index);
   }

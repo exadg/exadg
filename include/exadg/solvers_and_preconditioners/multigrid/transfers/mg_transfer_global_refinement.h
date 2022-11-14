@@ -44,9 +44,8 @@ public:
   }
 
   void
-  reinit(dealii::Mapping<dim> const &                                                mapping,
-         dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> &   mg_matrixfree,
-         dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<Number>>> & mg_constraints,
+  reinit(dealii::Mapping<dim> const &                                              mapping,
+         dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> & mg_matrixfree,
          dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> & mg_constrained_dofs,
          unsigned int const                                                  dof_handler_index = 0);
 

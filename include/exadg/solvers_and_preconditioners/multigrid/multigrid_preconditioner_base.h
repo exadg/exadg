@@ -202,9 +202,7 @@ protected:
 
   void
   do_initialize_transfer_operators(
-    std::shared_ptr<MGTransfer<VectorTypeMG>> & transfers,
-    dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> &
-                                                                        constraints,
+    std::shared_ptr<MGTransfer<VectorTypeMG>> &                         transfers,
     dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> & constrained_dofs,
     unsigned int const                                                  dof_index);
 

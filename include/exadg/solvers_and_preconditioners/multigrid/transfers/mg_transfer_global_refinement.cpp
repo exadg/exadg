@@ -30,11 +30,10 @@ namespace ExaDG
 template<int dim, typename Number, typename VectorType>
 void
 MGTransferGlobalRefinement<dim, Number, VectorType>::reinit(
-  dealii::Mapping<dim> const &                                                mapping,
-  dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> &   mg_matrixfree,
-  dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<Number>>> & mg_constraints,
-  dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> &         mg_constrained_dofs,
-  unsigned int const                                                          dof_handler_index)
+  dealii::Mapping<dim> const &                                              mapping,
+  dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> & mg_matrixfree,
+  dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> &       mg_constrained_dofs,
+  unsigned int const                                                        dof_handler_index)
 {
   std::vector<MGLevelInfo>            global_levels;
   std::vector<MGDoFHandlerIdentifier> p_levels;
@@ -146,25 +145,27 @@ MGTransferGlobalRefinement<dim, Number, VectorType>::reinit(
     {
       if(n_components == 1)
       {
-        temp = std::make_shared<MGTransferC<dim, Number, VectorType, 1>>(mapping,
-                                                                         *mg_matrixfree[i],
-                                                                         *mg_matrixfree[i - 1],
-                                                                         *mg_constraints[i],
-                                                                         *mg_constraints[i - 1],
-                                                                         fine_level.h_level(),
-                                                                         coarse_level.degree(),
-                                                                         dof_handler_index);
+        temp = std::make_shared<MGTransferC<dim, Number, VectorType, 1>>(
+          mapping,
+          *mg_matrixfree[i],
+          *mg_matrixfree[i - 1],
+          mg_matrixfree[i]->get_affine_constraints(dof_handler_index),
+          mg_matrixfree[i - 1]->get_affine_constraints(dof_handler_index),
+          fine_level.h_level(),
+          coarse_level.degree(),
+          dof_handler_index);
       }
       else if(n_components == dim)
       {
-        temp = std::make_shared<MGTransferC<dim, Number, VectorType, dim>>(mapping,
-                                                                           *mg_matrixfree[i],
-                                                                           *mg_matrixfree[i - 1],
-                                                                           *mg_constraints[i],
-                                                                           *mg_constraints[i - 1],
-                                                                           fine_level.h_level(),
-                                                                           coarse_level.degree(),
-                                                                           dof_handler_index);
+        temp = std::make_shared<MGTransferC<dim, Number, VectorType, dim>>(
+          mapping,
+          *mg_matrixfree[i],
+          *mg_matrixfree[i - 1],
+          mg_matrixfree[i]->get_affine_constraints(dof_handler_index),
+          mg_matrixfree[i - 1]->get_affine_constraints(dof_handler_index),
+          fine_level.h_level(),
+          coarse_level.degree(),
+          dof_handler_index);
       }
       else
       {
