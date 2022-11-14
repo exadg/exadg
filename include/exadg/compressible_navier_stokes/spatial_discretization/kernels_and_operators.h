@@ -919,6 +919,7 @@ struct ViscousOperatorData
   ViscousOperatorData()
     : dof_index(0),
       quad_index(0),
+      quad_index_standard(dealii::numbers::invalid_unsigned_int),
       IP_factor(1.0),
       dynamic_viscosity(1.0),
       reference_density(1.0),
@@ -930,6 +931,7 @@ struct ViscousOperatorData
 
   unsigned int dof_index;
   unsigned int quad_index;
+  unsigned int quad_index_standard;
 
   double IP_factor;
 
@@ -984,7 +986,7 @@ public:
     IP::calculate_penalty_parameter<dim, Number>(array_penalty_parameter,
                                                  *matrix_free,
                                                  data.dof_index,
-                                                 data.quad_index);
+                                                 data.quad_index_standard);
   }
 
   void
