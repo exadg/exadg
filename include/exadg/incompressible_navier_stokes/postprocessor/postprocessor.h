@@ -95,28 +95,25 @@ private:
                         bool const         unsteady);
 
   void
-  calculate_additional_vectors(VectorType const &     velocity,
-                               double const           time,
-                               types::time_step const time_step_number);
+  reinit_additional_fields(VectorType const & velocity);
 
   PostProcessorData<dim> pp_data;
 
   dealii::SmartPointer<NavierStokesOperator const> navier_stokes_operator;
 
-
   // DoF vectors for derived quantities
-  VectorType vorticity;
-  VectorType divergence;
-  VectorType velocity_magnitude;
-  VectorType vorticity_magnitude;
-  VectorType streamfunction;
-  VectorType q_criterion;
-  VectorType cfl_vector;
+  SolutionField<dim, Number> vorticity;
+  SolutionField<dim, Number> divergence;
+  SolutionField<dim, Number> velocity_magnitude;
+  SolutionField<dim, Number> vorticity_magnitude;
+  SolutionField<dim, Number> streamfunction;
+  SolutionField<dim, Number> q_criterion;
+  SolutionField<dim, Number> cfl_vector;
 
-  TimeControl time_control_mean_velocity;
-  VectorType  mean_velocity; // velocity field averaged over time
+  TimeControl                time_control_mean_velocity;
+  SolutionField<dim, Number> mean_velocity; // velocity field averaged over time
 
-  std::vector<SolutionField<dim, Number>> additional_fields;
+  std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> additional_fields_vtu;
 
   // write output for visualization of results (e.g., using paraview)
   OutputGenerator<dim, Number> output_generator;

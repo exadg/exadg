@@ -252,7 +252,8 @@ public:
     if(statistics_turb_ch->time_control_statistics.time_control.needs_evaluation(time,
                                                                                  time_step_number))
     {
-      statistics_turb_ch->evaluate(this->velocity,
+      statistics_turb_ch->evaluate(evaluate_get(this->velocity,
+                                                Utilities::is_unsteady_timestep(time_step_number)),
                                    Utilities::is_unsteady_timestep(time_step_number));
     }
 
@@ -412,9 +413,8 @@ private:
     pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
     pp_data.output_data.time_control_data.start_time       = START_TIME;
     pp_data.output_data.time_control_data.trigger_interval = 1.0;
-    pp_data.output_data.directory = this->output_parameters.directory + "vtu/";
-    pp_data.output_data.filename  = this->output_parameters.filename;
-    pp_data.calculate_velocity = true; // activate this for kinetic energy calculations (see below)
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename;
     pp_data.output_data.write_pressure     = true;
     pp_data.output_data.write_velocity     = true;
     pp_data.output_data.write_temperature  = true;

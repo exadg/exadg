@@ -33,13 +33,14 @@ namespace CompNS
 {
 template<int dim, typename Number, typename VectorType>
 void
-write_output(OutputData const &                              output_data,
-             dealii::DoFHandler<dim> const &                 dof_handler,
-             dealii::Mapping<dim> const &                    mapping,
-             VectorType const &                              solution_conserved,
-             std::vector<SolutionField<dim, Number>> const & additional_fields,
-             unsigned int const                              output_counter,
-             MPI_Comm const &                                mpi_comm)
+write_output(
+  OutputData const &                                                    output_data,
+  dealii::DoFHandler<dim> const &                                       dof_handler,
+  dealii::Mapping<dim> const &                                          mapping,
+  VectorType const &                                                    solution_conserved,
+  std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
+  unsigned int const                                                    output_counter,
+  MPI_Comm const &                                                      mpi_comm)
 {
   std::string folder = output_data.directory, file = output_data.filename;
 
@@ -68,23 +69,25 @@ write_output(OutputData const &                              output_data,
                            solution_component_interpretation);
 
   // additional solution fields
-  for(typename std::vector<SolutionField<dim, Number>>::const_iterator it =
-        additional_fields.begin();
-      it != additional_fields.end();
-      ++it)
+  for(auto & additional_field : additional_fields)
   {
-    if(it->type == SolutionFieldType::scalar)
+    if(additional_field->get_type() == SolutionFieldType::scalar)
     {
-      data_out.add_data_vector(*it->dof_handler, *it->vector, it->name);
+      data_out.add_data_vector(additional_field->get_dof_handler(),
+                               additional_field->get_vector(),
+                               additional_field->get_name());
     }
-    else if(it->type == SolutionFieldType::vector)
+    else if(additional_field->get_type() == SolutionFieldType::vector)
     {
-      std::vector<std::string> names(dim, it->name);
+      std::vector<std::string> names(dim, additional_field->get_name());
       std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
         component_interpretation(dim,
                                  dealii::DataComponentInterpretation::component_is_part_of_vector);
 
-      data_out.add_data_vector(*it->dof_handler, *it->vector, names, component_interpretation);
+      data_out.add_data_vector(additional_field->get_dof_handler(),
+                               additional_field->get_vector(),
+                               names,
+                               component_interpretation);
     }
     else
     {
@@ -162,10 +165,10 @@ OutputGenerator<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler_
 template<int dim, typename Number>
 void
 OutputGenerator<dim, Number>::evaluate(
-  VectorType const &                              solution_conserved,
-  std::vector<SolutionField<dim, Number>> const & additional_fields,
-  double const                                    time,
-  bool const                                      unsteady)
+  VectorType const &                                                    solution_conserved,
+  std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
+  double const                                                          time,
+  bool const                                                            unsteady)
 {
   print_write_output_time(time, time_control.get_counter(), unsteady, mpi_comm);
 
