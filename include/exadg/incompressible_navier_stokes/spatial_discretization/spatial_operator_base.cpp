@@ -525,8 +525,9 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
 
   data.bc = boundary_descriptor->velocity;
 
-  data.dof_index  = get_dof_index_velocity();
-  data.quad_index = get_quad_index_velocity_linearized();
+  data.dof_index           = get_dof_index_velocity();
+  data.quad_index          = get_quad_index_velocity_linearized();
+  data.quad_index_standard = get_quad_index_velocity_linear();
 
   data.use_cell_based_loops = param.use_cell_based_face_loops;
   data.implement_block_diagonal_preconditioner_matrix_free =

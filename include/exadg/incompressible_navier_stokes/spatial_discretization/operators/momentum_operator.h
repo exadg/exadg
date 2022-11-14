@@ -32,6 +32,8 @@ struct MomentumOperatorData : public OperatorBaseData
   Operators::ConvectiveKernelData convective_kernel_data;
   Operators::ViscousKernelData    viscous_kernel_data;
 
+  unsigned int quad_index_standard;
+
   std::shared_ptr<BoundaryDescriptorU<dim> const> bc;
 };
 

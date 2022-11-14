@@ -62,7 +62,7 @@ CombinedOperator<dim, Number>::initialize(
     diffusive_kernel->reinit(matrix_free,
                              data.diffusive_kernel_data,
                              data.dof_index,
-                             data.quad_index);
+                             data.quad_index_standard);
   }
 
   // integrator flags
@@ -123,7 +123,7 @@ CombinedOperator<dim, Number>::update_after_grid_motion()
   if(operator_data.diffusive_problem)
     diffusive_kernel->calculate_penalty_parameter(*this->matrix_free,
                                                   operator_data.dof_index,
-                                                  operator_data.quad_index);
+                                                  operator_data.quad_index_standard);
 }
 
 template<int dim, typename Number>

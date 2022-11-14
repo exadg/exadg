@@ -63,7 +63,7 @@ calculate_penalty_parameter(
   if(auto * tria = dynamic_cast<dealii::parallel::TriangulationBase<dim> const *>(
        &matrix_free.get_dof_handler(dof_index).get_triangulation()))
   {
-    if(level == numbers::invalid_unsigned_int)
+    if(level == dealii::numbers::invalid_unsigned_int)
       surface_areas.reinit(tria->global_active_cell_index_partitioner().lock());
     else
       surface_areas.reinit(tria->global_level_cell_index_partitioner(level).lock());
@@ -119,7 +119,7 @@ calculate_penalty_parameter(
     }
   }
 
-  surface_areas.compress(VectorOperation::add);
+  surface_areas.compress(dealii::VectorOperation::add);
   surface_areas.update_ghost_values();
 
   // As a second step, we use a CellInterator to compute the volume and then

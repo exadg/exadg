@@ -704,8 +704,9 @@ OperatorCoupled<dim, Number>::setup_pressure_convection_diffusion_operator()
 
   // combined convection-diffusion operator
   ConvDiff::CombinedOperatorData<dim> operator_data;
-  operator_data.dof_index  = this->get_dof_index_pressure();
-  operator_data.quad_index = this->get_quad_index_pressure();
+  operator_data.dof_index           = this->get_dof_index_pressure();
+  operator_data.quad_index          = this->get_quad_index_pressure();
+  operator_data.quad_index_standard = this->get_quad_index_pressure();
 
   operator_data.bc                   = boundary_descriptor;
   operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;

@@ -276,6 +276,7 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> ma
       (param.use_overintegration && combined_operator_data.convective_problem) ?
         get_quad_index_overintegration() :
         get_quad_index();
+    combined_operator_data.quad_index_standard = get_quad_index();
 
     combined_operator.initialize(*matrix_free,
                                  affine_constraints,
