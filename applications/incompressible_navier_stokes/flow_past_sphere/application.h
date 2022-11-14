@@ -279,7 +279,7 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
     // fill boundary descriptor velocity
     this->boundary_descriptor->velocity->dirichlet_bc.insert(pair(1, new InflowBC<dim>()));
@@ -317,11 +317,11 @@ public:
                        std::to_string(this->param.degree_u);
 
     // write output for visualization of results
-    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = start_time;
+    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 50.0;
     pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = name;
-    pp_data.output_data.start_time         = start_time;
-    pp_data.output_data.interval_time      = (end_time - start_time) / 50;
     pp_data.output_data.write_divergence   = true;
     pp_data.output_data.write_higher_order = true;
     pp_data.output_data.write_vorticity    = true;
@@ -333,8 +333,10 @@ public:
     pp_data.output_data.degree             = this->param.degree_u;
 
     // lift and drag
-    pp_data.lift_and_drag_data.calculate = true;
-    pp_data.lift_and_drag_data.viscosity = viscosity;
+    pp_data.lift_and_drag_data.time_control_data.is_active                = true;
+    pp_data.lift_and_drag_data.time_control_data.trigger_every_time_steps = 1;
+    pp_data.lift_and_drag_data.time_control_data.start_time               = start_time;
+    pp_data.lift_and_drag_data.viscosity                                  = viscosity;
 
     pp_data.lift_and_drag_data.reference_value = 1.0 / 2.0;
 
@@ -346,7 +348,9 @@ public:
     pp_data.lift_and_drag_data.filename_drag = name + "_drag";
 
     // pressure difference
-    pp_data.pressure_difference_data.calculate = true;
+    pp_data.pressure_difference_data.time_control_data.is_active                = true;
+    pp_data.pressure_difference_data.time_control_data.trigger_every_time_steps = 1;
+    pp_data.pressure_difference_data.time_control_data.start_time               = start_time;
     Point<dim> point_1, point_2;
     point_1[0]                               = -radius;
     point_2[0]                               = radius;

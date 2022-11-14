@@ -68,9 +68,9 @@ public:
   setup(Operator<dim, Number> const & pde_operator) override;
 
   void
-  do_postprocessing(VectorType const & solution,
-                    double const       time,
-                    int const          time_step_number) override;
+  do_postprocessing(VectorType const &     solution,
+                    double const           time,
+                    types::time_step const time_step_number) override;
 
 protected:
   // DoF vectors for derived quantities: (p, u, T)

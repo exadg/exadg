@@ -22,6 +22,7 @@
 #ifndef INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_DATA_BASE_H_
 #define INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_DATA_BASE_H_
 
+#include <exadg/postprocessor/time_control.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
@@ -29,12 +30,8 @@ namespace ExaDG
 struct OutputDataBase
 {
   OutputDataBase()
-    : write_output(false),
-      start_counter(0),
-      directory("output/"),
+    : directory("output/"),
       filename("name"),
-      start_time(std::numeric_limits<double>::max()),
-      interval_time(std::numeric_limits<double>::max()),
       write_surface_mesh(false),
       write_boundary_IDs(false),
       write_grid(false),
@@ -47,20 +44,12 @@ struct OutputDataBase
   void
   print(dealii::ConditionalOStream & pcout, bool unsteady)
   {
-    // output for visualization of results
-    print_parameter(pcout, "Write output", write_output);
-
-    if(write_output == true)
+    if(time_control_data.is_active)
     {
-      print_parameter(pcout, "Output counter start", start_counter);
+      time_control_data.print(pcout, unsteady);
+
       print_parameter(pcout, "Output directory", directory);
       print_parameter(pcout, "Name of output files", filename);
-
-      if(unsteady == true)
-      {
-        print_parameter(pcout, "Output start time", start_time);
-        print_parameter(pcout, "Output interval time", interval_time);
-      }
 
       print_parameter(pcout, "Write surface mesh", write_surface_mesh);
       print_parameter(pcout, "Write boundary IDs", write_boundary_IDs);
@@ -72,22 +61,13 @@ struct OutputDataBase
     }
   }
 
-  // set write_output = true in order to write files for visualization
-  bool write_output;
-
-  unsigned int start_counter;
+  TimeControlData time_control_data;
 
   // output directory
   std::string directory;
 
   // name of generated output files
   std::string filename;
-
-  // before then no output will be written
-  double start_time;
-
-  // specifies the time interval in which output is written
-  double interval_time;
 
   // this variable decides whether the surface mesh is written separately
   bool write_surface_mesh;

@@ -312,13 +312,13 @@ private:
   create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output       = this->output_parameters.write;
-    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
-    pp_data.output_data.filename           = this->output_parameters.filename;
-    pp_data.output_data.write_higher_order = true;
-    pp_data.output_data.degree             = this->param.degree;
+    pp_data.output_data.time_control_data.is_active = this->output_parameters.write;
+    pp_data.output_data.directory                   = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename                    = this->output_parameters.filename;
+    pp_data.output_data.write_higher_order          = true;
+    pp_data.output_data.degree                      = this->param.degree;
 
-    pp_data.error_data.analytical_solution_available = true;
+    pp_data.error_data.time_control_data.is_active = true;
     pp_data.error_data.analytical_solution.reset(new Solution<dim>());
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;

@@ -21,6 +21,7 @@
 
 #include <exadg/compressible_navier_stokes/postprocessor/postprocessor.h>
 #include <exadg/compressible_navier_stokes/spatial_discretization/operator.h>
+#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -89,9 +90,9 @@ PostProcessor<dim, Number>::setup(Operator<dim, Number> const & pde_operator)
 
 template<int dim, typename Number>
 void
-PostProcessor<dim, Number>::do_postprocessing(VectorType const & solution,
-                                              double const       time,
-                                              int const          time_step_number)
+PostProcessor<dim, Number>::do_postprocessing(VectorType const &     solution,
+                                              double const           time,
+                                              types::time_step const time_step_number)
 {
   /*
    * calculate derived quantities such as velocity, pressure, etc.
@@ -101,36 +102,60 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const & solution,
   /*
    *  write output
    */
-  output_generator.evaluate(solution, additional_fields, time, time_step_number);
+  if(output_generator.time_control.needs_evaluation(time, time_step_number))
+  {
+    output_generator.evaluate(solution,
+                              additional_fields,
+                              time,
+                              Utilities::is_unsteady_timestep(time_step_number));
+  }
 
   /*
    *  write pointwise output
    */
-  pointwise_output_generator.evaluate(solution, time, time_step_number);
+  if(pointwise_output_generator.time_control.needs_evaluation(time, time_step_number))
+  {
+    pointwise_output_generator.evaluate(solution,
+                                        time,
+                                        Utilities::is_unsteady_timestep(time_step_number));
+  }
   /*
    *  calculate error
    */
-  error_calculator.evaluate(solution, time, time_step_number);
+  if(error_calculator.time_control.needs_evaluation(time, time_step_number))
+    error_calculator.evaluate(solution, time, Utilities::is_unsteady_timestep(time_step_number));
 
   /*
    *  calculation of lift and drag coefficients
    */
-  lift_and_drag_calculator.evaluate(velocity, pressure, time);
+  if(lift_and_drag_calculator.time_control.needs_evaluation(time, time_step_number))
+    lift_and_drag_calculator.evaluate(velocity, pressure, time);
 
   /*
    *  calculation of pressure difference
    */
-  pressure_difference_calculator.evaluate(pressure, time);
+  if(pressure_difference_calculator.time_control.needs_evaluation(time, time_step_number))
+    pressure_difference_calculator.evaluate(pressure, time);
 
   /*
    *  calculation of kinetic energy
    */
-  kinetic_energy_calculator.evaluate(velocity, time, time_step_number);
+  if(kinetic_energy_calculator.time_control.needs_evaluation(time, time_step_number))
+  {
+    kinetic_energy_calculator.evaluate(velocity,
+                                       time,
+                                       Utilities::is_unsteady_timestep(time_step_number));
+  }
 
   /*
    *  calculation of kinetic energy spectrum
    */
-  kinetic_energy_spectrum_calculator.evaluate(velocity, time, time_step_number);
+  if(kinetic_energy_spectrum_calculator.time_control.needs_evaluation(time, time_step_number))
+  {
+    kinetic_energy_spectrum_calculator.evaluate(velocity,
+                                                time,
+                                                Utilities::is_unsteady_timestep(time_step_number));
+  }
 }
 
 template<int dim, typename Number>
@@ -206,31 +231,37 @@ template<int dim, typename Number>
 void
 PostProcessor<dim, Number>::calculate_additional_vectors(VectorType const & solution)
 {
-  if((pp_data.output_data.write_output == true && pp_data.output_data.write_pressure == true) ||
+  if((pp_data.output_data.time_control_data.is_active == true &&
+      pp_data.output_data.write_pressure == true) ||
      pp_data.calculate_pressure == true)
   {
     navier_stokes_operator->compute_pressure(pressure, solution);
   }
 
-  if((pp_data.output_data.write_output == true && pp_data.output_data.write_velocity == true) ||
-     (pp_data.output_data.write_output == true && pp_data.output_data.write_vorticity == true) ||
-     (pp_data.output_data.write_output == true && pp_data.output_data.write_divergence == true) ||
+  if((pp_data.output_data.time_control_data.is_active == true &&
+      pp_data.output_data.write_velocity == true) ||
+     (pp_data.output_data.time_control_data.is_active == true &&
+      pp_data.output_data.write_vorticity == true) ||
+     (pp_data.output_data.time_control_data.is_active == true &&
+      pp_data.output_data.write_divergence == true) ||
      pp_data.calculate_velocity == true)
   {
     navier_stokes_operator->compute_velocity(velocity, solution);
   }
 
-  if(pp_data.output_data.write_output == true && pp_data.output_data.write_temperature == true)
+  if(pp_data.output_data.time_control_data.is_active &&
+     pp_data.output_data.write_temperature == true)
   {
     navier_stokes_operator->compute_temperature(temperature, solution);
   }
 
-  if(pp_data.output_data.write_output == true && pp_data.output_data.write_vorticity == true)
+  if(pp_data.output_data.time_control_data.is_active && pp_data.output_data.write_vorticity == true)
   {
     navier_stokes_operator->compute_vorticity(vorticity, velocity);
   }
 
-  if(pp_data.output_data.write_output == true && pp_data.output_data.write_divergence == true)
+  if(pp_data.output_data.time_control_data.is_active == true &&
+     pp_data.output_data.write_divergence == true)
   {
     navier_stokes_operator->compute_divergence(divergence, velocity);
   }

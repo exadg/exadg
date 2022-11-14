@@ -29,6 +29,7 @@
 #include <deal.II/base/conditional_ostream.h>
 
 // ExaDG
+#include <exadg/utilities/numbers.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
@@ -55,9 +56,9 @@ struct SolverInfoData
   }
 
   bool
-  check_for_output(double const       wall_time,
-                   double const       time,
-                   unsigned int const time_step_number) const
+  check_for_output(double const           wall_time,
+                   double const           time,
+                   types::time_step const time_step_number) const
   {
     // After a restart, the counter is reset to 1, but time = current_time - start time != 0 after a
     // restart. Hence, we have to explicitly reset the counter in that case. There is nothing to do
@@ -81,7 +82,7 @@ struct SolverInfoData
   }
 
   bool
-  write(double const wall_time, double const time, unsigned int const time_step_number) const
+  write(double const wall_time, double const time, types::time_step const time_step_number) const
   {
     if(time_step_number > old_time_step_number)
     {

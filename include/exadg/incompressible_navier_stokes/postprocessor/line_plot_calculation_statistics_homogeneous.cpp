@@ -54,26 +54,31 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
 {
   data = data_in;
 
-  if(data.statistics_data.calculate)
+  AssertThrow(Utilities::is_valid_timestep(
+                data_in.time_control_data_statistics.write_preliminary_results_every_nth_time_step),
+              dealii::ExcMessage("write_preliminary_results_every_nth_time_step has to be set."));
+  time_control_statistics.setup(data_in.time_control_data_statistics);
+
+  if(data_in.time_control_data_statistics.time_control_data.is_active)
   {
     AssertThrow(dim == 3, dealii::ExcMessage("Not implemented."));
 
-    AssertThrow(data.line_data.lines.size() > 0, dealii::ExcMessage("Empty data"));
+    AssertThrow(data.lines.size() > 0, dealii::ExcMessage("Empty data"));
 
-    global_points.resize(data.line_data.lines.size());
-    cells_and_ref_points_velocity.resize(data.line_data.lines.size());
-    cells_and_ref_points_pressure.resize(data.line_data.lines.size());
-    cells_and_ref_points_ref_pressure.resize(data.line_data.lines.size());
+    global_points.resize(data.lines.size());
+    cells_and_ref_points_velocity.resize(data.lines.size());
+    cells_and_ref_points_pressure.resize(data.lines.size());
+    cells_and_ref_points_ref_pressure.resize(data.lines.size());
 
-    velocity_global.resize(data.line_data.lines.size());
-    wall_shear_global.resize(data.line_data.lines.size());
-    reynolds_global.resize(data.line_data.lines.size());
-    pressure_global.resize(data.line_data.lines.size());
-    reference_pressure_global.resize(data.line_data.lines.size());
+    velocity_global.resize(data.lines.size());
+    wall_shear_global.resize(data.lines.size());
+    reynolds_global.resize(data.lines.size());
+    pressure_global.resize(data.lines.size());
+    reference_pressure_global.resize(data.lines.size());
 
     // make sure that line type is correct
     std::shared_ptr<LineHomogeneousAveraging<dim>> line_hom =
-      std::dynamic_pointer_cast<LineHomogeneousAveraging<dim>>(data.line_data.lines[0]);
+      std::dynamic_pointer_cast<LineHomogeneousAveraging<dim>>(data.lines[0]);
     AssertThrow(line_hom.get() != 0,
                 dealii::ExcMessage("Invalid line type, expected LineHomogeneousAveraging<dim>"));
     averaging_direction = line_hom->averaging_direction;
@@ -82,9 +87,8 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
                 dealii::ExcMessage("Take the average either in x, y or z-direction"));
 
     unsigned int line_iterator = 0;
-    for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line =
-          data.line_data.lines.begin();
-        line != data.line_data.lines.end();
+    for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line = data.lines.begin();
+        line != data.lines.end();
         ++line, ++line_iterator)
     {
       // make sure that line type is correct
@@ -126,9 +130,8 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
       if(cell->is_locally_owned())
       {
         line_iterator = 0;
-        for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line =
-              data.line_data.lines.begin();
-            line != data.line_data.lines.end();
+        for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line = data.lines.begin();
+            line != data.lines.end();
             ++line, ++line_iterator)
         {
           AssertThrow((*line)->quantities.size() > 0,
@@ -202,9 +205,8 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
       if(cell->is_locally_owned())
       {
         line_iterator = 0;
-        for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line =
-              data.line_data.lines.begin();
-            line != data.line_data.lines.end();
+        for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line = data.lines.begin();
+            line != data.lines.end();
             ++line, ++line_iterator)
         {
           for(typename std::vector<std::shared_ptr<Quantity>>::iterator quantity =
@@ -314,44 +316,23 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
       }
     }
 
-    create_directories(data.line_data.directory, mpi_comm);
+    create_directories(data.directory, mpi_comm);
   }
 }
 
 template<int dim, typename Number>
 void
-LinePlotCalculatorStatisticsHomogeneous<dim, Number>::evaluate(
-  VectorType const &   velocity,
-  VectorType const &   pressure,
-  double const &       time,
-  unsigned int const & time_step_number)
+LinePlotCalculatorStatisticsHomogeneous<dim, Number>::evaluate(VectorType const & velocity,
+                                                               VectorType const & pressure)
 {
-  if(data.statistics_data.calculate)
-  {
-    // EPSILON: small number which is much smaller than the time step size
-    double const EPSILON = 1.0e-10;
+  do_evaluate(velocity, pressure);
+}
 
-    if((time > data.statistics_data.sample_start_time - EPSILON) &&
-       (time < data.statistics_data.sample_end_time + EPSILON) &&
-       (time_step_number % data.statistics_data.sample_every_timesteps == 0))
-    {
-      // evaluate statistics
-      do_evaluate(velocity, pressure);
-
-      // write intermediate output
-      if(time_step_number % data.statistics_data.write_output_every_timesteps == 0)
-      {
-        do_write_output();
-      }
-    }
-
-    // write final output
-    if((time > data.statistics_data.sample_end_time - EPSILON) && write_final_output)
-    {
-      do_write_output();
-      write_final_output = false;
-    }
-  }
+template<int dim, typename Number>
+void
+LinePlotCalculatorStatisticsHomogeneous<dim, Number>::write_output() const
+{
+  do_write_output();
 }
 
 template<int dim, typename Number>
@@ -373,9 +354,8 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate(VectorType con
 
   // Iterator for lines
   unsigned int line_iterator = 0;
-  for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line =
-        data.line_data.lines.begin();
-      line != data.line_data.lines.end();
+  for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line = data.lines.begin();
+      line != data.lines.end();
       ++line, ++line_iterator)
   {
     bool evaluate_velocity = false;
@@ -737,18 +717,17 @@ template<int dim, typename Number>
 void
 LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_write_output() const
 {
-  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0 && data.statistics_data.calculate)
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
-    unsigned int const precision = data.line_data.precision;
+    unsigned int const precision = data.precision;
 
     // Iterator for lines
     unsigned int line_iterator = 0;
-    for(typename std::vector<std::shared_ptr<Line<dim>>>::const_iterator line =
-          data.line_data.lines.begin();
-        line != data.line_data.lines.end();
+    for(typename std::vector<std::shared_ptr<Line<dim>>>::const_iterator line = data.lines.begin();
+        line != data.lines.end();
         ++line, ++line_iterator)
     {
-      std::string filename_prefix = data.line_data.directory + (*line)->name;
+      std::string filename_prefix = data.directory + (*line)->name;
 
       for(typename std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
             (*line)->quantities.begin();

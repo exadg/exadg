@@ -24,7 +24,6 @@
 
 // ExaDG
 #include <exadg/incompressible_navier_stokes/postprocessor/kinetic_energy_dissipation_detailed.h>
-#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -53,50 +52,43 @@ KineticEnergyCalculatorDetailed<dim, Number>::setup(
 template<int dim, typename Number>
 void
 KineticEnergyCalculatorDetailed<dim, Number>::evaluate(VectorType const & velocity,
-                                                       double const &     time,
-                                                       int const &        time_step_number)
+                                                       double const       time,
+                                                       bool const         unsteady)
 {
-  if(this->data.calculate == true)
-  {
-    AssertThrow(Utilities::is_unsteady_timestep(time_step_number),
-                dealii::ExcMessage(
-                  "This postprocessing tool can only be used for unsteady problems."));
+  AssertThrow(unsteady,
+              dealii::ExcMessage(
+                "This postprocessing tool can only be used for unsteady problems."));
 
-    if(this->data.evaluate_individual_terms)
-      calculate_detailed(velocity, time, time_step_number);
-    else
-      this->calculate_basic(velocity, time, time_step_number);
-  }
+  if(this->data.evaluate_individual_terms)
+    calculate_detailed(velocity, time);
+  else
+    this->calculate_basic(velocity, time);
 }
 
 template<int dim, typename Number>
 void
-KineticEnergyCalculatorDetailed<dim, Number>::calculate_detailed(
-  VectorType const & velocity,
-  double const       time,
-  unsigned int const time_step_number)
+KineticEnergyCalculatorDetailed<dim, Number>::calculate_detailed(VectorType const & velocity,
+                                                                 double const       time)
 {
-  if((time_step_number - 1) % this->data.calculate_every_time_steps == 0)
+  Number kinetic_energy = 0.0, enstrophy = 0.0, dissipation = 0.0, max_vorticity = 0.0;
+
+  Number volume = this->integrate(
+    *this->matrix_free, velocity, kinetic_energy, enstrophy, dissipation, max_vorticity);
+
+  AssertThrow(navier_stokes_operator != nullptr, dealii::ExcMessage("Invalid pointer."));
+  Number dissipation_convective =
+    navier_stokes_operator->calculate_dissipation_convective_term(velocity, time) / volume;
+  Number dissipation_viscous =
+    navier_stokes_operator->calculate_dissipation_viscous_term(velocity) / volume;
+  Number dissipation_divergence =
+    navier_stokes_operator->calculate_dissipation_divergence_term(velocity) / volume;
+  Number dissipation_continuity =
+    navier_stokes_operator->calculate_dissipation_continuity_term(velocity) / volume;
+
+  // write output file
+  if(dealii::Utilities::MPI::this_mpi_process(this->mpi_comm) == 0)
   {
-    Number kinetic_energy = 0.0, enstrophy = 0.0, dissipation = 0.0, max_vorticity = 0.0;
-
-    Number volume = this->integrate(
-      *this->matrix_free, velocity, kinetic_energy, enstrophy, dissipation, max_vorticity);
-
-    AssertThrow(navier_stokes_operator != nullptr, dealii::ExcMessage("Invalid pointer."));
-    Number dissipation_convective =
-      navier_stokes_operator->calculate_dissipation_convective_term(velocity, time) / volume;
-    Number dissipation_viscous =
-      navier_stokes_operator->calculate_dissipation_viscous_term(velocity) / volume;
-    Number dissipation_divergence =
-      navier_stokes_operator->calculate_dissipation_divergence_term(velocity) / volume;
-    Number dissipation_continuity =
-      navier_stokes_operator->calculate_dissipation_continuity_term(velocity) / volume;
-
-    // write output file
-    if(dealii::Utilities::MPI::this_mpi_process(this->mpi_comm) == 0)
-    {
-      // clang-format off
+    // clang-format off
       std::ostringstream filename;
       filename << this->data.filename;
 
@@ -135,8 +127,7 @@ KineticEnergyCalculatorDetailed<dim, Number>::calculate_detailed(
         << std::setw(precision + 8) << dissipation_divergence
         << std::setw(precision + 8) << dissipation_continuity
         << std::endl;
-      // clang-format on
-    }
+    // clang-format on
   }
 }
 

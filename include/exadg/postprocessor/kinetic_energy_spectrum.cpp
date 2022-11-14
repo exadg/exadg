@@ -26,7 +26,6 @@
 #include <exadg/postprocessor/kinetic_energy_spectrum.h>
 #include <exadg/postprocessor/mirror_dof_vector_taylor_green.h>
 #include <exadg/utilities/create_directories.h>
-#include <exadg/utilities/numbers.h>
 
 #ifdef EXADG_WITH_FFTW
 // deal.II
@@ -334,7 +333,7 @@ namespace ExaDG
 {
 template<int dim, typename Number>
 KineticEnergySpectrumCalculator<dim, Number>::KineticEnergySpectrumCalculator(MPI_Comm const & comm)
-  : mpi_comm(comm), clear_files(true), counter(0), reset_counter(true)
+  : mpi_comm(comm), clear_files(true)
 {
 }
 
@@ -350,7 +349,9 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
 
   clear_files = data.clear_file;
 
-  if(data.calculate)
+  time_control.setup(data_in.time_control_data);
+
+  if(data_in.time_control_data.is_active)
   {
     if(data.write_raw_data_to_files)
     {
@@ -407,98 +408,40 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
 template<int dim, typename Number>
 void
 KineticEnergySpectrumCalculator<dim, Number>::evaluate(VectorType const & velocity,
-                                                       double const &     time,
-                                                       int const &        time_step_number)
+                                                       double const       time,
+                                                       bool const         unsteady)
 {
-  if(data.calculate == true)
+  if(unsteady)
   {
-    if(Utilities::is_unsteady_timestep(time_step_number))
+    if(data.exploit_symmetry)
     {
-      if(needs_to_be_evaluated(time, time_step_number))
-      {
-        if(data.exploit_symmetry)
-        {
-          unsigned int n_cells_1d =
-            data.n_cells_1d_coarse_grid * dealii::Utilities::pow(2, data.refine_level);
+      unsigned int n_cells_1d =
+        data.n_cells_1d_coarse_grid * dealii::Utilities::pow(2, data.refine_level);
 
-          velocity_full = std::make_shared<VectorType>();
-          initialize_dof_vector(*velocity_full, *dof_handler_full);
+      velocity_full = std::make_shared<VectorType>();
+      initialize_dof_vector(*velocity_full, *dof_handler_full);
 
-          apply_taylor_green_symmetry(*dof_handler,
-                                      *dof_handler_full,
-                                      n_cells_1d,
-                                      data.length_symmetric_domain /
-                                        static_cast<double>(n_cells_1d),
-                                      velocity,
-                                      *velocity_full);
+      apply_taylor_green_symmetry(*dof_handler,
+                                  *dof_handler_full,
+                                  n_cells_1d,
+                                  data.length_symmetric_domain / static_cast<double>(n_cells_1d),
+                                  velocity,
+                                  *velocity_full);
 
-          do_evaluate(*velocity_full, time);
-        }
-        else
-        {
-          do_evaluate(velocity, time);
-        }
-      }
+      do_evaluate(*velocity_full, time);
     }
     else
     {
-      AssertThrow(
-        false,
-        dealii::ExcMessage(
-          "Calculation of kinetic energy spectrum only implemented for unsteady problems."));
+      do_evaluate(velocity, time);
     }
-  }
-}
-
-template<int dim, typename Number>
-bool
-KineticEnergySpectrumCalculator<dim, Number>::needs_to_be_evaluated(
-  double const       time,
-  unsigned int const time_step_number)
-{
-  bool evaluate = false;
-
-  if(data.calculate_every_time_steps > 0)
-  {
-    if(time > data.start_time && (time_step_number - 1) % data.calculate_every_time_steps == 0)
-    {
-      evaluate = true;
-    }
-
-    AssertThrow(data.calculate_every_time_interval < 0.0,
-                dealii::ExcMessage("Input parameters are in conflict."));
-  }
-  else if(data.calculate_every_time_interval > 0.0)
-  {
-    // small number which is much smaller than the time step size
-    double const EPSILON = 1.0e-10;
-
-    // The current time might be larger than start_time. In that case, we first have to
-    // reset the counter in order to avoid that output is written every time step.
-    if(reset_counter)
-    {
-      counter += int((time - data.start_time + EPSILON) / data.calculate_every_time_interval);
-      reset_counter = false;
-    }
-
-    if((time > (data.start_time + counter * data.calculate_every_time_interval - EPSILON)))
-    {
-      evaluate = true;
-      ++counter;
-    }
-
-    AssertThrow(data.calculate_every_time_steps < 0,
-                dealii::ExcMessage("Input parameters are in conflict."));
   }
   else
   {
-    AssertThrow(false,
-                dealii::ExcMessage(
-                  "Invalid parameters specified. Use either "
-                  "calculate_every_time_interval > 0.0 or calculate_every_time_steps > 0."));
+    AssertThrow(
+      false,
+      dealii::ExcMessage(
+        "Calculation of kinetic energy spectrum only implemented for unsteady problems."));
   }
-
-  return evaluate;
 }
 
 template<int dim, typename Number>
@@ -509,7 +452,8 @@ KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & vel
   // extract beginning of vector...
   Number const * temp = velocity.begin();
 
-  std::string const file_name = data.filename + "_" + dealii::Utilities::int_to_string(counter, 4);
+  std::string const file_name =
+    data.filename + "_" + dealii::Utilities::int_to_string(time_control.get_counter(), 4);
 
   deal_spectrum_wrapper->execute((double *)temp, file_name, time);
 

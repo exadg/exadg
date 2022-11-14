@@ -21,8 +21,6 @@
 
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
 
-#include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
-
 namespace ExaDG
 {
 namespace IncNS
@@ -53,8 +51,13 @@ template<int dim, typename Number>
 void
 PostProcessor<dim, Number>::setup(Operator const & pde_operator)
 {
-  output_generator.setup(pde_operator,
-                         pde_operator.get_dof_handler_u(),
+  navier_stokes_operator = &pde_operator;
+
+  time_control_mean_velocity.setup(pp_data.output_data.mean_velocity);
+
+  initialize_additional_vectors();
+
+  output_generator.setup(pde_operator.get_dof_handler_u(),
                          pde_operator.get_dof_handler_p(),
                          *pde_operator.get_mapping(),
                          pp_data.output_data);
@@ -101,52 +104,278 @@ PostProcessor<dim, Number>::setup(Operator const & pde_operator)
 
 template<int dim, typename Number>
 void
-PostProcessor<dim, Number>::do_postprocessing(VectorType const & velocity,
-                                              VectorType const & pressure,
-                                              double const       time,
-                                              int const          time_step_number)
+PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
+                                              VectorType const &     pressure,
+                                              double const           time,
+                                              types::time_step const time_step_number)
 {
+  // TODO: NOTE THAT CALLING THE FUNCTION HERE RESULTS IN SLOWER CODE. THIS IS REPORTED AN RESOLVED
+  // IN PR #245. SO WE SHOULD ONLY MERGE THIS PR IF ALSO #245 IS READY
+  /*
+   * calculate derived quantities such as vorticity, divergence, etc.
+   */
+  calculate_additional_vectors(velocity, time, time_step_number);
+
   /*
    *  write output
    */
-  output_generator.evaluate(velocity, pressure, time, time_step_number);
+  if(output_generator.time_control.needs_evaluation(time, time_step_number))
+  {
+    output_generator.evaluate(velocity,
+                              pressure,
+                              additional_fields,
+                              time,
+                              Utilities::is_unsteady_timestep(time_step_number));
+  }
 
   /*
    *  calculate error
    */
-  error_calculator_u.evaluate(velocity, time, time_step_number);
-  error_calculator_p.evaluate(pressure, time, time_step_number);
+  if(error_calculator_u.time_control.needs_evaluation(time, time_step_number))
+    error_calculator_u.evaluate(velocity, time, Utilities::is_unsteady_timestep(time_step_number));
+  if(error_calculator_p.time_control.needs_evaluation(time, time_step_number))
+    error_calculator_p.evaluate(pressure, time, Utilities::is_unsteady_timestep(time_step_number));
 
   /*
    *  calculation of lift and drag coefficients
    */
-  lift_and_drag_calculator.evaluate(velocity, pressure, time);
+  if(lift_and_drag_calculator.time_control.needs_evaluation(time, time_step_number))
+    lift_and_drag_calculator.evaluate(velocity, pressure, time);
 
   /*
    *  calculation of pressure difference
    */
-  pressure_difference_calculator.evaluate(pressure, time);
+  if(pressure_difference_calculator.time_control.needs_evaluation(time, time_step_number))
+    pressure_difference_calculator.evaluate(pressure, time);
 
   /*
    *  Analysis of divergence and mass error
    */
-  div_and_mass_error_calculator.evaluate(velocity, time, time_step_number);
+  if(div_and_mass_error_calculator.time_control.needs_evaluation(time, time_step_number))
+  {
+    div_and_mass_error_calculator.evaluate(velocity,
+                                           time,
+                                           Utilities::is_unsteady_timestep(time_step_number));
+  }
 
   /*
    *  calculation of kinetic energy
    */
-  kinetic_energy_calculator.evaluate(velocity, time, time_step_number);
+  if(kinetic_energy_calculator.time_control.needs_evaluation(time, time_step_number))
+  {
+    kinetic_energy_calculator.evaluate(velocity,
+                                       time,
+                                       Utilities::is_unsteady_timestep(time_step_number));
+  }
 
   /*
    *  calculation of kinetic energy spectrum
    */
-  kinetic_energy_spectrum_calculator.evaluate(velocity, time, time_step_number);
+  if(kinetic_energy_spectrum_calculator.time_control.needs_evaluation(time, time_step_number))
+  {
+    kinetic_energy_spectrum_calculator.evaluate(velocity,
+                                                time,
+                                                Utilities::is_unsteady_timestep(time_step_number));
+  }
 
   /*
    *  Evaluate fields along lines
    */
-  line_plot_calculator.evaluate(velocity, pressure);
+  if(line_plot_calculator.time_control.needs_evaluation(time, time_step_number))
+    line_plot_calculator.evaluate(velocity, pressure);
 }
+
+template<int dim, typename Number>
+void
+PostProcessor<dim, Number>::initialize_additional_vectors()
+{
+  // vorticity
+  if(pp_data.output_data.write_vorticity || pp_data.output_data.write_streamfunction ||
+     pp_data.output_data.write_vorticity_magnitude)
+  {
+    navier_stokes_operator->initialize_vector_velocity(vorticity);
+
+    SolutionField<dim, Number> sol;
+    sol.type        = SolutionFieldType::vector;
+    sol.name        = "vorticity";
+    sol.dof_handler = &navier_stokes_operator->get_dof_handler_u();
+    sol.vector      = &vorticity;
+    this->additional_fields.push_back(sol);
+  }
+
+  // divergence
+  if(pp_data.output_data.write_divergence == true)
+  {
+    navier_stokes_operator->initialize_vector_velocity_scalar(divergence);
+
+    SolutionField<dim, Number> sol;
+    sol.type        = SolutionFieldType::scalar;
+    sol.name        = "div_u";
+    sol.dof_handler = &navier_stokes_operator->get_dof_handler_u_scalar();
+    sol.vector      = &divergence;
+    this->additional_fields.push_back(sol);
+  }
+
+  // velocity magnitude
+  if(pp_data.output_data.write_velocity_magnitude == true)
+  {
+    navier_stokes_operator->initialize_vector_velocity_scalar(velocity_magnitude);
+
+    SolutionField<dim, Number> sol;
+    sol.type        = SolutionFieldType::scalar;
+    sol.name        = "velocity_magnitude";
+    sol.dof_handler = &navier_stokes_operator->get_dof_handler_u_scalar();
+    sol.vector      = &velocity_magnitude;
+    this->additional_fields.push_back(sol);
+  }
+
+  // vorticity magnitude
+  if(pp_data.output_data.write_vorticity_magnitude == true)
+  {
+    navier_stokes_operator->initialize_vector_velocity_scalar(vorticity_magnitude);
+
+    SolutionField<dim, Number> sol;
+    sol.type        = SolutionFieldType::scalar;
+    sol.name        = "vorticity_magnitude";
+    sol.dof_handler = &navier_stokes_operator->get_dof_handler_u_scalar();
+    sol.vector      = &vorticity_magnitude;
+    this->additional_fields.push_back(sol);
+  }
+
+
+  // streamfunction
+  if(pp_data.output_data.write_streamfunction == true)
+  {
+    navier_stokes_operator->initialize_vector_velocity_scalar(streamfunction);
+
+    SolutionField<dim, Number> sol;
+    sol.type        = SolutionFieldType::scalar;
+    sol.name        = "streamfunction";
+    sol.dof_handler = &navier_stokes_operator->get_dof_handler_u_scalar();
+    sol.vector      = &streamfunction;
+    this->additional_fields.push_back(sol);
+  }
+
+  // q criterion
+  if(pp_data.output_data.write_q_criterion == true)
+  {
+    navier_stokes_operator->initialize_vector_velocity_scalar(q_criterion);
+
+    SolutionField<dim, Number> sol;
+    sol.type        = SolutionFieldType::scalar;
+    sol.name        = "q_criterion";
+    sol.dof_handler = &navier_stokes_operator->get_dof_handler_u_scalar();
+    sol.vector      = &q_criterion;
+    this->additional_fields.push_back(sol);
+  }
+
+  // mean velocity
+  if(pp_data.output_data.mean_velocity.is_active == true)
+  {
+    navier_stokes_operator->initialize_vector_velocity(mean_velocity);
+
+    SolutionField<dim, Number> sol;
+    sol.type        = SolutionFieldType::vector;
+    sol.name        = "mean_velocity";
+    sol.dof_handler = &navier_stokes_operator->get_dof_handler_u();
+    sol.vector      = &mean_velocity;
+    this->additional_fields.push_back(sol);
+  }
+
+  // cfl
+  if(pp_data.output_data.write_cfl)
+  {
+    SolutionField<dim, Number> sol;
+    sol.type   = SolutionFieldType::cellwise;
+    sol.name   = "cfl_relative";
+    sol.vector = &cfl_vector;
+    this->additional_fields.push_back(sol);
+  }
+}
+
+template<int dim, typename Number>
+void
+PostProcessor<dim, Number>::compute_mean_velocity(VectorType &       mean_velocity,
+                                                  VectorType const & velocity,
+                                                  bool const         unsteady)
+{
+  AssertThrow(unsteady,
+              dealii::ExcMessage(
+                "Calculating mean velocity does not make sense for steady problems."));
+
+  unsigned int const counter = time_control_mean_velocity.get_counter();
+  mean_velocity.sadd((double)counter, 1.0, velocity);
+  mean_velocity *= 1. / (double)(counter + 1);
+}
+
+template<int dim, typename Number>
+void
+PostProcessor<dim, Number>::calculate_additional_vectors(VectorType const &     velocity,
+                                                         double const           time,
+                                                         types::time_step const time_step_number)
+{
+  bool vorticity_is_up_to_date = false;
+  if(pp_data.output_data.write_vorticity || pp_data.output_data.write_streamfunction ||
+     pp_data.output_data.write_vorticity_magnitude)
+  {
+    navier_stokes_operator->compute_vorticity(vorticity, velocity);
+    vorticity_is_up_to_date = true;
+  }
+
+  if(pp_data.output_data.write_divergence == true)
+  {
+    navier_stokes_operator->compute_divergence(divergence, velocity);
+  }
+
+  if(pp_data.output_data.write_velocity_magnitude == true)
+  {
+    navier_stokes_operator->compute_velocity_magnitude(velocity_magnitude, velocity);
+  }
+
+  if(pp_data.output_data.write_vorticity_magnitude == true)
+  {
+    AssertThrow(vorticity_is_up_to_date == true,
+                dealii::ExcMessage(
+                  "Vorticity vector needs to be updated to compute its magnitude."));
+
+    navier_stokes_operator->compute_vorticity_magnitude(vorticity_magnitude, vorticity);
+  }
+
+  if(pp_data.output_data.write_streamfunction == true)
+  {
+    AssertThrow(vorticity_is_up_to_date == true,
+                dealii::ExcMessage(
+                  "Vorticity vector needs to be updated to compute its magnitude."));
+
+    navier_stokes_operator->compute_streamfunction(streamfunction, vorticity);
+  }
+
+  if(pp_data.output_data.write_q_criterion == true)
+  {
+    navier_stokes_operator->compute_q_criterion(q_criterion, velocity);
+  }
+
+  if(pp_data.output_data.mean_velocity.is_active == true)
+  {
+    if(time_control_mean_velocity.needs_evaluation(time, time_step_number))
+    {
+      compute_mean_velocity(mean_velocity,
+                            velocity,
+                            Utilities::is_unsteady_timestep(time_step_number));
+    }
+  }
+
+  if(pp_data.output_data.write_cfl)
+  {
+    // This time step size corresponds to CFL = 1.
+    auto const time_step_size = navier_stokes_operator->calculate_time_step_cfl(velocity);
+
+    // The computed cell-vector of CFL values contains relative CFL numbers with a value of
+    // CFL = 1 in the most critical cell and CFL < 1 in other cells.
+    navier_stokes_operator->calculate_cfl_from_time_step(cfl_vector, velocity, time_step_size);
+  }
+}
+
 
 template class PostProcessor<2, float>;
 template class PostProcessor<2, double>;

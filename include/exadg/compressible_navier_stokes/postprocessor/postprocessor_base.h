@@ -28,6 +28,9 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/matrix_free.h>
 
+// ExaDG
+#include <exadg/utilities/numbers.h>
+
 namespace ExaDG
 {
 namespace CompNS
@@ -43,7 +46,9 @@ public:
   }
 
   virtual void
-  do_postprocessing(VectorType const & solution, double const time, int const time_step_number) = 0;
+  do_postprocessing(VectorType const &     solution,
+                    double const           time,
+                    types::time_step const time_step_number) = 0;
 };
 
 // forward declaration

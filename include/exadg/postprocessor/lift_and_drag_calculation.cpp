@@ -26,6 +26,7 @@
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/postprocessor/lift_and_drag_calculation.h>
 #include <exadg/utilities/create_directories.h>
+#include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
 {
@@ -33,13 +34,13 @@ template<int dim, typename Number>
 void
   calculate_lift_and_drag_force(dealii::Tensor<1, dim, Number> &             Force,
                                 dealii::MatrixFree<dim, Number> const &      matrix_free,
-                                unsigned int const &                         dof_index_velocity,
-                                unsigned int const &                         quad_index_velocity,
-                                unsigned int const &                         dof_index_pressure,
+                                unsigned int const                           dof_index_velocity,
+                                unsigned int const                           quad_index_velocity,
+                                unsigned int const                           dof_index_pressure,
                                 std::set<dealii::types::boundary_id> const & boundary_IDs,
                                 dealii::LinearAlgebra::distributed::Vector<Number> const & velocity,
                                 dealii::LinearAlgebra::distributed::Vector<Number> const & pressure,
-                                double const &   viscosity,
+                                double const     viscosity,
                                 MPI_Comm const & mpi_comm)
 {
   FaceIntegrator<dim, dim, Number> integrator_velocity(matrix_free,
@@ -101,6 +102,27 @@ void
   Force = dealii::Utilities::MPI::sum(Force, mpi_comm);
 }
 
+void
+LiftAndDragData::print(dealii::ConditionalOStream & pcout, bool const unsteady) const
+{
+  if(boundary_IDs.size() > 0 && (time_control_data.is_active))
+  {
+    pcout << std::endl << "Lift and drag calculation" << std::endl;
+
+    time_control_data.print(pcout, unsteady);
+
+    for(auto const & bnd_id : boundary_IDs)
+      print_parameter(pcout, "Using boundary ID ", bnd_id);
+    print_parameter(pcout, "Reference value", reference_value);
+    print_parameter(pcout, "Kinematic viscosity", viscosity);
+
+    print_parameter(pcout, "Directory", directory);
+    print_parameter(pcout, "Filename Lift", filename_lift);
+    print_parameter(pcout, "Filename Drag", filename_drag);
+  }
+}
+
+
 template<int dim, typename Number>
 LiftAndDragCalculator<dim, Number>::LiftAndDragCalculator(MPI_Comm const & comm)
   : mpi_comm(comm),
@@ -132,7 +154,9 @@ LiftAndDragCalculator<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_ha
   quad_index           = quad_index_in;
   data                 = data_in;
 
-  if(data.calculate)
+  time_control.setup(data_in.time_control_data);
+
+  if(data_in.boundary_IDs.size() > 0)
     create_directories(data.directory, mpi_comm);
 }
 
@@ -140,9 +164,9 @@ template<int dim, typename Number>
 void
 LiftAndDragCalculator<dim, Number>::evaluate(VectorType const & velocity,
                                              VectorType const & pressure,
-                                             Number const &     time) const
+                                             double const       time) const
 {
-  if(data.calculate)
+  if(data.boundary_IDs.size() > 0)
   {
     dealii::Tensor<1, dim, Number> Force;
 

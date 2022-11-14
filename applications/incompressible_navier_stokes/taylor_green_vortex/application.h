@@ -441,11 +441,11 @@ private:
                        std::to_string(this->param.degree_u);
 
     // write output for visualization of results
-    pp_data.output_data.write_output              = this->output_parameters.write;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = start_time;
+    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
     pp_data.output_data.directory                 = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename                  = name;
-    pp_data.output_data.start_time                = start_time;
-    pp_data.output_data.interval_time             = (end_time - start_time) / 20;
     pp_data.output_data.write_vorticity           = true;
     pp_data.output_data.write_divergence          = true;
     pp_data.output_data.write_velocity_magnitude  = true;
@@ -456,28 +456,31 @@ private:
     pp_data.output_data.degree                    = this->param.degree_u;
 
     // calculate div and mass error
-    pp_data.mass_data.calculate               = false;
-    pp_data.mass_data.start_time              = 0.0;
-    pp_data.mass_data.sample_every_time_steps = 1e2;
-    pp_data.mass_data.directory               = this->output_parameters.directory;
-    pp_data.mass_data.filename                = name;
-    pp_data.mass_data.reference_length_scale  = 1.0;
+    pp_data.mass_data.time_control_data.is_active                = false;
+    pp_data.mass_data.time_control_data.start_time               = 0.0;
+    pp_data.mass_data.time_control_data.trigger_every_time_steps = 1e2;
+    pp_data.mass_data.directory              = this->output_parameters.directory;
+    pp_data.mass_data.filename               = name;
+    pp_data.mass_data.reference_length_scale = 1.0;
 
     // kinetic energy
-    pp_data.kinetic_energy_data.calculate                  = true;
-    pp_data.kinetic_energy_data.evaluate_individual_terms  = false;
-    pp_data.kinetic_energy_data.calculate_every_time_steps = 1;
-    pp_data.kinetic_energy_data.viscosity                  = viscosity;
-    pp_data.kinetic_energy_data.directory                  = this->output_parameters.directory;
-    pp_data.kinetic_energy_data.filename                   = name;
-    pp_data.kinetic_energy_data.clear_file                 = !read_restart;
+    pp_data.kinetic_energy_data.time_control_data.is_active                = true;
+    pp_data.kinetic_energy_data.time_control_data.trigger_every_time_steps = 1;
+    pp_data.kinetic_energy_data.time_control_data.start_time               = start_time;
+
+    pp_data.kinetic_energy_data.evaluate_individual_terms = false;
+    pp_data.kinetic_energy_data.viscosity                 = viscosity;
+    pp_data.kinetic_energy_data.directory                 = this->output_parameters.directory;
+    pp_data.kinetic_energy_data.filename                  = name;
+    pp_data.kinetic_energy_data.clear_file                = !read_restart;
 
     // kinetic energy spectrum
-    bool const do_fftw_during_simulation                               = true;
-    pp_data.kinetic_energy_spectrum_data.calculate                     = true;
-    pp_data.kinetic_energy_spectrum_data.do_fftw                       = do_fftw_during_simulation;
-    pp_data.kinetic_energy_spectrum_data.write_raw_data_to_files       = !do_fftw_during_simulation;
-    pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
+    bool const do_fftw_during_simulation                                    = true;
+    pp_data.kinetic_energy_spectrum_data.time_control_data.is_active        = true;
+    pp_data.kinetic_energy_spectrum_data.time_control_data.trigger_interval = 0.5;
+    pp_data.kinetic_energy_spectrum_data.time_control_data.start_time       = start_time;
+    pp_data.kinetic_energy_spectrum_data.do_fftw                 = do_fftw_during_simulation;
+    pp_data.kinetic_energy_spectrum_data.write_raw_data_to_files = !do_fftw_during_simulation;
     pp_data.kinetic_energy_spectrum_data.directory = this->output_parameters.directory;
     pp_data.kinetic_energy_spectrum_data.filename  = name + "_energy_spectrum";
     pp_data.kinetic_energy_spectrum_data.degree    = this->param.degree_u;

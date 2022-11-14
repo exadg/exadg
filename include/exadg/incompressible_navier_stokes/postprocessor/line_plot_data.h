@@ -26,6 +26,7 @@
 #include <deal.II/base/point.h>
 
 // ExaDG
+#include <exadg/postprocessor/time_control_statistics.h>
 #include <exadg/utilities/print_functions.h>
 
 #include <memory>
@@ -43,6 +44,28 @@ enum class QuantityType
   ReynoldsStresses,
   PressureCoefficient
 };
+
+inline std::string
+enum_to_string(QuantityType const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    // clang-format off
+    case QuantityType::Undefined:           string_type = "Undefined";           break;
+    case QuantityType::Velocity:            string_type = "Velocity";            break;
+    case QuantityType::Pressure:            string_type = "Pressure";            break;
+    case QuantityType::SkinFriction:        string_type = "SkinFriction";        break;
+    case QuantityType::ReynoldsStresses:    string_type = "ReynoldsStresses";    break;
+    case QuantityType::PressureCoefficient: string_type = "PressureCoefficient"; break;
+
+    default:AssertThrow(false, dealii::ExcMessage("Not implemented."));          break;
+      // clang-format on
+  }
+
+  return string_type;
+}
 
 struct Quantity
 {
@@ -170,60 +193,21 @@ struct LineHomogeneousAveraging : Line<dim>
   unsigned int averaging_direction; // x = 0, y = 1, z = 2
 };
 
-struct StatisticsData
-{
-  StatisticsData()
-    : calculate(false),
-      sample_start_time(0.0),
-      sample_end_time(1.0),
-      sample_every_timesteps(1),
-      write_output_every_timesteps(100)
-  {
-  }
-
-  void
-  print(dealii::ConditionalOStream & pcout)
-  {
-    if(calculate)
-    {
-      pcout << "  Statistics data:" << std::endl;
-      print_parameter(pcout, "Calculate statistics", calculate);
-      print_parameter(pcout, "Sample start time", sample_start_time);
-      print_parameter(pcout, "Sample end time", sample_end_time);
-      print_parameter(pcout, "Sample every timesteps", sample_every_timesteps);
-      print_parameter(pcout, "Write output every timesteps", write_output_every_timesteps);
-    }
-  }
-
-  // active or not
-  bool calculate;
-
-  // start time for sampling
-  double sample_start_time;
-
-  // end time for sampling
-  double sample_end_time;
-
-  // perform sampling every ... timesteps
-  unsigned int sample_every_timesteps;
-
-  // write output every ... timesteps
-  unsigned int write_output_every_timesteps;
-};
-
-
 template<int dim>
-struct LinePlotData
+struct LinePlotDataBase
 {
-  LinePlotData() : directory("output/"), precision(10)
-
+  LinePlotDataBase() : directory("output/"), precision(10)
   {
   }
 
   void
-  print(dealii::ConditionalOStream &)
+  print_base(dealii::ConditionalOStream & pcout)
   {
-    // TODO: add output for basic line plot data
+    pcout << "  Line plot data:" << std::endl;
+    print_parameter(pcout, "Directory", directory);
+    print_parameter(pcout, "Precision", precision);
+    print_parameter(pcout, "Line", lines.name);
+    print_parameter(pcout, "  Quantity", enum_to_string(lines.quantity));
   }
 
   /*
@@ -242,54 +226,41 @@ struct LinePlotData
   std::vector<std::shared_ptr<Line<dim>>> lines;
 };
 
-template<int dim>
-struct LinePlotDataInstantaneous
-{
-  LinePlotDataInstantaneous() : calculate(false)
 
-  {
-  }
+template<int dim>
+struct LinePlotData : public LinePlotDataBase<dim>
+{
+  TimeControlData time_control_data;
 
   void
   print(dealii::ConditionalOStream & pcout)
   {
-    line_data.print(pcout);
-  }
-
-  LinePlotData<dim> line_data;
-
-  /*
-   *  activates line plot calculation
-   */
-  bool calculate;
-};
-
-template<int dim>
-struct LinePlotDataStatistics
-{
-  LinePlotDataStatistics()
-  {
-  }
-
-  void
-  print(dealii::ConditionalOStream & pcout)
-  {
-    line_data.print(pcout);
-
-    if(statistics_data.calculate)
+    if(time_control_data.is_active)
     {
-      statistics_data.print(pcout);
+      this->print_base();
+      // only makes sense in unsteady case
+      time_control_data.print(pcout, true);
     }
   }
-
-  LinePlotData<dim> line_data;
-
-  /*
-   *  Statistics data (only relevant if statistics have to
-   *  evaluated but not for instantaneous results)
-   */
-  StatisticsData statistics_data;
 };
+
+template<int dim>
+struct LinePlotDataStatistics : public LinePlotDataBase<dim>
+{
+  TimeControlDataStatistics time_control_data_statistics;
+
+  void
+  print(dealii::ConditionalOStream & pcout)
+  {
+    if(time_control_data_statistics.time_control_data.is_active)
+    {
+      this->print_base();
+      // only makes sense in unsteady case
+      time_control_data_statistics.print(pcout, true);
+    }
+  }
+};
+
 
 } // namespace IncNS
 } // namespace ExaDG

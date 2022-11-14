@@ -32,6 +32,7 @@
 
 // ExaDG
 #include <exadg/incompressible_navier_stokes/postprocessor/line_plot_data.h>
+#include <exadg/postprocessor/time_control.h>
 
 namespace ExaDG
 {
@@ -67,10 +68,12 @@ public:
   setup(LinePlotDataStatistics<dim> const & data_in);
 
   void
-  evaluate(VectorType const &   velocity,
-           VectorType const &   pressure,
-           double const &       time,
-           unsigned int const & time_step_number);
+  evaluate(VectorType const & velocity, VectorType const & pressure);
+
+  void
+  write_output() const;
+
+  TimeControlStatistics time_control_statistics;
 
 private:
   void

@@ -93,7 +93,7 @@ public:
     }
 
     // evaluation of results along lines
-    if(pp_data_fda.line_plot_data.statistics_data.calculate)
+    if(pp_data_fda.line_plot_data.time_control_data_statistics.time_control_data.is_active)
     {
       line_plot_calculator_statistics.reset(
         new LinePlotCalculatorStatistics<dim, Number>(pde_operator.get_dof_handler_u(),
@@ -106,10 +106,10 @@ public:
   }
 
   void
-  do_postprocessing(VectorType const & velocity,
-                    VectorType const & pressure,
-                    double const       time,
-                    int const          time_step_number)
+  do_postprocessing(VectorType const &     velocity,
+                    VectorType const &     pressure,
+                    double const           time,
+                    types::time_step const time_step_number)
   {
     Base::do_postprocessing(velocity, pressure, time, time_step_number);
 
@@ -141,9 +141,16 @@ public:
     }
 
     // evaluation of results along lines
-    if(pp_data_fda.line_plot_data.statistics_data.calculate)
+    if(line_plot_calculator_statistics->time_control_statistics.time_control.needs_evaluation(
+         time, time_step_number))
     {
-      line_plot_calculator_statistics->evaluate(velocity, pressure, time, time_step_number);
+      line_plot_calculator_statistics->evaluate(velocity, pressure);
+    }
+
+    if(line_plot_calculator_statistics->time_control_statistics.write_preliminary_results(
+         time, time_step_number))
+    {
+      line_plot_calculator_statistics->write_output();
     }
   }
 

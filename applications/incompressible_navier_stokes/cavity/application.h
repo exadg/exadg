@@ -262,11 +262,11 @@ private:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output         = this->output_parameters.write;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = start_time;
+    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 100.0;
     pp_data.output_data.directory            = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename             = this->output_parameters.filename;
-    pp_data.output_data.start_time           = start_time;
-    pp_data.output_data.interval_time        = (end_time - start_time) / 100;
     pp_data.output_data.write_divergence     = true;
     pp_data.output_data.write_vorticity      = true;
     pp_data.output_data.write_streamfunction = true; // false;
@@ -277,8 +277,10 @@ private:
     if(dim == 2)
     {
       // line plot data
-      pp_data.line_plot_data.calculate           = false;
-      pp_data.line_plot_data.line_data.directory = this->output_parameters.directory;
+      pp_data.line_plot_data.time_control_data.is_active                = false;
+      pp_data.line_plot_data.time_control_data.start_time               = start_time;
+      pp_data.line_plot_data.time_control_data.trigger_every_time_steps = 1;
+      pp_data.line_plot_data.directory = this->output_parameters.directory;
 
       // which quantities
       std::shared_ptr<Quantity> quantity_u;
@@ -299,7 +301,7 @@ private:
       vert_line->n_points = 100001; // 2001;
       vert_line->quantities.push_back(quantity_u);
       vert_line->quantities.push_back(quantity_p);
-      pp_data.line_plot_data.line_data.lines.push_back(vert_line);
+      pp_data.line_plot_data.lines.push_back(vert_line);
 
       // horizontal line
       hor_line.reset(new Line<dim>());
@@ -309,7 +311,7 @@ private:
       hor_line->n_points = 10001; // 2001;
       hor_line->quantities.push_back(quantity_u);
       hor_line->quantities.push_back(quantity_p);
-      pp_data.line_plot_data.line_data.lines.push_back(hor_line);
+      pp_data.line_plot_data.lines.push_back(hor_line);
     }
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;

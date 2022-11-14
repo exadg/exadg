@@ -27,11 +27,11 @@
 #include <exadg/incompressible_navier_stokes/postprocessor/line_plot_calculation.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/output_generator.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor_base.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 #include <exadg/postprocessor/error_calculation.h>
 #include <exadg/postprocessor/kinetic_energy_spectrum.h>
 #include <exadg/postprocessor/lift_and_drag_calculation.h>
 #include <exadg/postprocessor/pressure_difference_calculation.h>
-#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -44,15 +44,15 @@ struct PostProcessorData
   {
   }
 
-  OutputData                     output_data;
-  ErrorCalculationData<dim>      error_data_u;
-  ErrorCalculationData<dim>      error_data_p;
-  LiftAndDragData                lift_and_drag_data;
-  PressureDifferenceData<dim>    pressure_difference_data;
-  MassConservationData           mass_data;
-  KineticEnergyData              kinetic_energy_data;
-  KineticEnergySpectrumData      kinetic_energy_spectrum_data;
-  LinePlotDataInstantaneous<dim> line_plot_data;
+  OutputData                  output_data;
+  ErrorCalculationData<dim>   error_data_u;
+  ErrorCalculationData<dim>   error_data_p;
+  LiftAndDragData             lift_and_drag_data;
+  PressureDifferenceData<dim> pressure_difference_data;
+  MassConservationData        mass_data;
+  KineticEnergyData           kinetic_energy_data;
+  KineticEnergySpectrumData   kinetic_energy_spectrum_data;
+  LinePlotData<dim>           line_plot_data;
 };
 
 template<int dim, typename Number>
@@ -60,6 +60,8 @@ class PostProcessor : public PostProcessorBase<dim, Number>
 {
 public:
   typedef PostProcessorBase<dim, Number> Base;
+
+  typedef SpatialOperatorBase<dim, Number> NavierStokesOperator;
 
   typedef typename Base::VectorType VectorType;
 
@@ -73,16 +75,48 @@ public:
   setup(Operator const & pde_operator) override;
 
   void
-  do_postprocessing(VectorType const & velocity,
-                    VectorType const & pressure,
-                    double const       time             = 0.0,
-                    int const          time_step_number = numbers::steady_timestep) override;
+  do_postprocessing(VectorType const &     velocity,
+                    VectorType const &     pressure,
+                    double const           time             = 0.0,
+                    types::time_step const time_step_number = numbers::steady_timestep) override;
 
 protected:
   MPI_Comm const mpi_comm;
 
 private:
+  void
+  initialize_additional_vectors();
+
+  // TODO: FOR A MODULAR DESIGN THERE SHOULD PROBALY BE A CLASS CALLED MEAN_VECTOR_CALCULATION IN
+  // WHICH RELEVANT SAMPLES CAN JUST BE SUBMITTED.
+  void
+  compute_mean_velocity(VectorType &       mean_velocity,
+                        VectorType const & velocity,
+                        bool const         unsteady);
+
+  void
+  calculate_additional_vectors(VectorType const &     velocity,
+                               double const           time,
+                               types::time_step const time_step_number);
+
   PostProcessorData<dim> pp_data;
+
+  dealii::SmartPointer<NavierStokesOperator const> navier_stokes_operator;
+
+
+  // DoF vectors for derived quantities
+  VectorType vorticity;
+  VectorType divergence;
+  VectorType velocity_magnitude;
+  VectorType vorticity_magnitude;
+  VectorType streamfunction;
+  VectorType q_criterion;
+  VectorType cfl_vector;
+
+  TimeControl time_control_mean_velocity;
+  VectorType  mean_velocity; // velocity field averaged over time
+
+  std::vector<SolutionField<dim, Number>> additional_fields;
 
   // write output for visualization of results (e.g., using paraview)
   OutputGenerator<dim, Number> output_generator;
@@ -111,6 +145,7 @@ private:
   // evaluate quantities along lines through the domain
   LinePlotCalculator<dim, Number> line_plot_calculator;
 };
+
 
 
 } // namespace IncNS

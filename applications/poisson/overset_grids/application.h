@@ -117,11 +117,11 @@ public:
   create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output       = this->output_parameters.write;
-    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
-    pp_data.output_data.filename           = this->output_parameters.filename;
-    pp_data.output_data.write_higher_order = true;
-    pp_data.output_data.degree             = this->param.degree;
+    pp_data.output_data.time_control_data.is_active = this->output_parameters.write;
+    pp_data.output_data.directory                   = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename                    = this->output_parameters.filename;
+    pp_data.output_data.write_higher_order          = true;
+    pp_data.output_data.degree                      = this->param.degree;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
@@ -223,11 +223,11 @@ private:
   create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output       = this->output_parameters.write;
-    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
-    pp_data.output_data.filename           = this->output_parameters.filename + "_second";
-    pp_data.output_data.write_higher_order = true;
-    pp_data.output_data.degree             = this->param.degree;
+    pp_data.output_data.time_control_data.is_active = this->output_parameters.write;
+    pp_data.output_data.directory                   = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename                    = this->output_parameters.filename + "_second";
+    pp_data.output_data.write_higher_order          = true;
+    pp_data.output_data.degree                      = this->param.degree;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));

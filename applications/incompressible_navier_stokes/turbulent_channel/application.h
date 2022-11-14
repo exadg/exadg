@@ -24,6 +24,7 @@
 
 // ExaDG
 #include <exadg/postprocessor/statistics_manager.h>
+#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -217,14 +218,24 @@ public:
   }
 
   void
-  do_postprocessing(VectorType const & velocity,
-                    VectorType const & pressure,
-                    double const       time,
-                    int const          time_step_number)
+  do_postprocessing(VectorType const &     velocity,
+                    VectorType const &     pressure,
+                    double const           time,
+                    types::time_step const time_step_number)
   {
     Base::do_postprocessing(velocity, pressure, time, time_step_number);
 
-    statistics_turb_ch->evaluate(velocity, time, time_step_number);
+    if(statistics_turb_ch->time_control_statistics.time_control.needs_evaluation(time,
+                                                                                 time_step_number))
+    {
+      statistics_turb_ch->evaluate(velocity, Utilities::is_unsteady_timestep(time_step_number));
+    }
+
+    if(statistics_turb_ch->time_control_statistics.write_preliminary_results(time,
+                                                                             time_step_number))
+    {
+      statistics_turb_ch->write_output();
+    }
   }
 
   TurbulentChannelData                            turb_ch_data;
@@ -458,34 +469,40 @@ private:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = START_TIME;
+    pp_data.output_data.time_control_data.trigger_interval = 1.0 * CHARACTERISTIC_TIME;
     pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = this->output_parameters.filename;
-    pp_data.output_data.start_time         = START_TIME;
-    pp_data.output_data.interval_time      = 1.0 * CHARACTERISTIC_TIME;
     pp_data.output_data.degree             = this->param.degree_u;
     pp_data.output_data.write_higher_order = false;
 
     // calculate div and mass error
-    pp_data.mass_data.calculate               = false; // true;
-    pp_data.mass_data.start_time              = START_TIME;
-    pp_data.mass_data.sample_every_time_steps = 1e0;
-    pp_data.mass_data.directory               = this->output_parameters.directory;
-    pp_data.mass_data.filename                = this->output_parameters.filename;
-    pp_data.mass_data.reference_length_scale  = 1.0;
+    pp_data.mass_data.time_control_data.is_active                = false; // true;
+    pp_data.mass_data.time_control_data.start_time               = START_TIME;
+    pp_data.mass_data.time_control_data.trigger_every_time_steps = 1e0;
+    pp_data.mass_data.directory              = this->output_parameters.directory;
+    pp_data.mass_data.filename               = this->output_parameters.filename;
+    pp_data.mass_data.reference_length_scale = 1.0;
 
     MyPostProcessorData<dim> pp_data_turb_ch;
     pp_data_turb_ch.pp_data = pp_data;
 
     // turbulent channel statistics
-    pp_data_turb_ch.turb_ch_data.calculate              = true;
-    pp_data_turb_ch.turb_ch_data.cells_are_stretched    = true;
-    pp_data_turb_ch.turb_ch_data.sample_start_time      = SAMPLE_START_TIME;
-    pp_data_turb_ch.turb_ch_data.sample_end_time        = SAMPLE_END_TIME;
-    pp_data_turb_ch.turb_ch_data.sample_every_timesteps = SAMPLE_EVERY_TIME_STEPS;
-    pp_data_turb_ch.turb_ch_data.viscosity              = VISCOSITY;
-    pp_data_turb_ch.turb_ch_data.directory              = this->output_parameters.directory;
-    pp_data_turb_ch.turb_ch_data.filename               = this->output_parameters.filename;
+    pp_data_turb_ch.turb_ch_data.time_control_data_statistics.time_control_data.is_active = true;
+    pp_data_turb_ch.turb_ch_data.time_control_data_statistics.time_control_data.start_time =
+      SAMPLE_START_TIME;
+    pp_data_turb_ch.turb_ch_data.time_control_data_statistics.time_control_data.end_time =
+      SAMPLE_END_TIME;
+    pp_data_turb_ch.turb_ch_data.time_control_data_statistics.time_control_data
+      .trigger_every_time_steps = SAMPLE_EVERY_TIME_STEPS;
+    pp_data_turb_ch.turb_ch_data.time_control_data_statistics
+      .write_preliminary_results_every_nth_time_step = SAMPLE_EVERY_TIME_STEPS * 100;
+
+    pp_data_turb_ch.turb_ch_data.cells_are_stretched = true;
+    pp_data_turb_ch.turb_ch_data.viscosity           = VISCOSITY;
+    pp_data_turb_ch.turb_ch_data.directory           = this->output_parameters.directory;
+    pp_data_turb_ch.turb_ch_data.filename            = this->output_parameters.filename;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new MyPostProcessor<dim, Number>(pp_data_turb_ch, this->mpi_comm));

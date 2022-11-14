@@ -27,6 +27,7 @@
 
 // ExaDG
 #include <exadg/postprocessor/output_data_base.h>
+#include <exadg/postprocessor/time_control.h>
 
 namespace ExaDG
 {
@@ -46,13 +47,12 @@ public:
         OutputDataBase const &          output_data);
 
   void
-  evaluate(VectorType const & solution, double const & time, int const & time_step_number);
+  evaluate(VectorType const & solution, double const time, bool const unsteady);
+
+  TimeControl time_control;
 
 private:
   MPI_Comm const mpi_comm;
-
-  unsigned int output_counter;
-  bool         reset_counter;
 
   dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
   dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;

@@ -77,6 +77,8 @@ SET(TARGET_SRC
      include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_h.cpp
      include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_global_coarsening.cpp
      include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_global_refinement.cpp
+     include/exadg/postprocessor/time_control.cpp
+     include/exadg/postprocessor/time_control_statistics.cpp
      include/exadg/postprocessor/error_calculation.cpp
      include/exadg/postprocessor/mean_scalar_calculation.cpp
      include/exadg/postprocessor/lift_and_drag_calculation.cpp

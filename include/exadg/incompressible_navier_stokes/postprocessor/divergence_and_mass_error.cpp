@@ -25,7 +25,6 @@
 // ExaDG
 #include <exadg/incompressible_navier_stokes/postprocessor/divergence_and_mass_error.h>
 #include <exadg/utilities/create_directories.h>
-#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -58,23 +57,22 @@ DivergenceAndMassErrorCalculator<dim, Number>::setup(
   quad_index  = quad_index_in;
   data        = data_in;
 
-  if(data.calculate)
+  time_control.setup(data_in.time_control_data);
+
+  if(data.time_control_data.is_active)
     create_directories(data.directory, mpi_comm);
 }
 
 template<int dim, typename Number>
 void
 DivergenceAndMassErrorCalculator<dim, Number>::evaluate(VectorType const & velocity,
-                                                        double const &     time,
-                                                        int const &        time_step_number)
+                                                        double const       time,
+                                                        const bool         unsteady)
 {
-  if(data.calculate)
-  {
-    if(Utilities::is_unsteady_timestep(time_step_number))
-      analyze_div_and_mass_error_unsteady(velocity, time, time_step_number);
-    else
-      analyze_div_and_mass_error_steady(velocity);
-  }
+  if(unsteady)
+    analyze_div_and_mass_error_unsteady(velocity, time);
+  else
+    analyze_div_and_mass_error_steady(velocity);
 }
 
 template<int dim, typename Number>
@@ -204,81 +202,71 @@ template<int dim, typename Number>
 void
 DivergenceAndMassErrorCalculator<dim, Number>::analyze_div_and_mass_error_unsteady(
   VectorType const & velocity,
-  double const       time,
-  unsigned int const time_step_number)
+  double const       time)
 {
-  AssertThrow(Utilities::is_unsteady_timestep(time_step_number),
-              dealii::ExcMessage("Can not be used in steady problem."));
+  Number div_error = 1.0, div_error_reference = 1.0, mass_error = 1.0, mass_error_reference = 1.0;
 
-  if(time > data.start_time - 1.e-10)
+  // calculate divergence and mass error
+  do_evaluate(
+    *matrix_free, velocity, div_error, div_error_reference, mass_error, mass_error_reference);
+
+  Number div_error_normalized  = div_error / div_error_reference;
+  Number mass_error_normalized = 1.0;
+  if(mass_error_reference > 1.e-12)
+    mass_error_normalized = mass_error / mass_error_reference;
+  else
+    mass_error_normalized = mass_error;
+
+  // write output file
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
-    Number div_error = 1.0, div_error_reference = 1.0, mass_error = 1.0, mass_error_reference = 1.0;
+    std::string filename = data.directory + data.filename + ".div_mass_error_timeseries";
 
-    // calculate divergence and mass error
-    do_evaluate(
-      *matrix_free, velocity, div_error, div_error_reference, mass_error, mass_error_reference);
+    std::ofstream f;
+    if(clear_files_mass_error == true)
+    {
+      f.open(filename.c_str(), std::ios::trunc);
+      f << "Error incompressibility constraint:" << std::endl
+        << std::endl
+        << "  (1,|divu|)_Omega/(1,1)_Omega" << std::endl
+        << std::endl
+        << "Error mass flux over interior element faces:" << std::endl
+        << std::endl
+        << "  (1,|(um - up)*n|)_dOmegaI / (1,|0.5(um + up)*n|)_dOmegaI" << std::endl
+        << std::endl
+        << "       t        |  divergence  |    mass       " << std::endl;
 
-    Number div_error_normalized  = div_error / div_error_reference;
-    Number mass_error_normalized = 1.0;
-    if(mass_error_reference > 1.e-12)
-      mass_error_normalized = mass_error / mass_error_reference;
+      clear_files_mass_error = false;
+    }
     else
-      mass_error_normalized = mass_error;
-
-    // write output file
-    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
-      std::string filename = data.directory + data.filename + ".div_mass_error_timeseries";
-
-      std::ofstream f;
-      if(clear_files_mass_error == true)
-      {
-        f.open(filename.c_str(), std::ios::trunc);
-        f << "Error incompressibility constraint:" << std::endl
-          << std::endl
-          << "  (1,|divu|)_Omega/(1,1)_Omega" << std::endl
-          << std::endl
-          << "Error mass flux over interior element faces:" << std::endl
-          << std::endl
-          << "  (1,|(um - up)*n|)_dOmegaI / (1,|0.5(um + up)*n|)_dOmegaI" << std::endl
-          << std::endl
-          << "       t        |  divergence  |    mass       " << std::endl;
-
-        clear_files_mass_error = false;
-      }
-      else
-      {
-        f.open(filename.c_str(), std::ios::app);
-      }
-
-      f << std::scientific << std::setprecision(7) << std::setw(15) << time << std::setw(15)
-        << div_error_normalized << std::setw(15) << mass_error_normalized << std::endl;
+      f.open(filename.c_str(), std::ios::app);
     }
 
-    if(time_step_number % data.sample_every_time_steps == 0)
-    {
-      // calculate average error
-      ++number_of_samples;
-      divergence_sample += div_error_normalized;
-      mass_sample += mass_error_normalized;
+    f << std::scientific << std::setprecision(7) << std::setw(15) << time << std::setw(15)
+      << div_error_normalized << std::setw(15) << mass_error_normalized << std::endl;
+  }
 
-      // write output file
-      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      {
-        std::string filename = data.directory + data.filename + ".div_mass_error_average";
+  // calculate average error
+  ++number_of_samples;
+  divergence_sample += div_error_normalized;
+  mass_sample += mass_error_normalized;
 
-        std::ofstream f;
+  // write output file
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  {
+    std::string filename = data.directory + data.filename + ".div_mass_error_average";
 
-        f.open(filename.c_str(), std::ios::trunc);
-        f << "Divergence and mass error (averaged over time)" << std::endl;
-        f << "Number of samples:   " << number_of_samples << std::endl;
-        f << "Mean error incompressibility constraint:   " << divergence_sample / number_of_samples
-          << std::endl;
-        f << "Mean error mass flux over interior element faces:  "
-          << mass_sample / number_of_samples << std::endl;
-        f.close();
-      }
-    }
+    std::ofstream f;
+
+    f.open(filename.c_str(), std::ios::trunc);
+    f << "Divergence and mass error (averaged over time)" << std::endl;
+    f << "Number of samples:   " << number_of_samples << std::endl;
+    f << "Mean error incompressibility constraint:   " << divergence_sample / number_of_samples
+      << std::endl;
+    f << "Mean error mass flux over interior element faces:  " << mass_sample / number_of_samples
+      << std::endl;
+    f.close();
   }
 }
 

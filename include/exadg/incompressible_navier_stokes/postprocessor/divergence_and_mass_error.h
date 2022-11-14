@@ -27,6 +27,7 @@
 
 // ExaDG
 #include <exadg/matrix_free/integrators.h>
+#include <exadg/postprocessor/time_control.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
@@ -35,35 +36,27 @@ namespace IncNS
 {
 struct MassConservationData
 {
-  MassConservationData()
-    : calculate(false),
-      start_time(std::numeric_limits<double>::max()),
-      sample_every_time_steps(std::numeric_limits<unsigned int>::max()),
-      directory("output/"),
-      filename("mass"),
-      reference_length_scale(1.0)
+  MassConservationData() : directory("output/"), filename("mass"), reference_length_scale(1.0)
   {
   }
 
   void
-  print(dealii::ConditionalOStream & pcout)
+  print(dealii::ConditionalOStream & pcout, const bool unsteady)
   {
-    if(calculate == true)
+    if(time_control_data.is_active)
     {
       pcout << "  Analysis of divergence and mass error:" << std::endl;
-      print_parameter(pcout, "Start time", start_time);
-      print_parameter(pcout, "Sample every timesteps", sample_every_time_steps);
+      time_control_data.print(pcout, unsteady);
       print_parameter(pcout, "Directory", directory);
       print_parameter(pcout, "Filename", filename);
     }
   }
 
-  bool         calculate;
-  double       start_time;
-  unsigned int sample_every_time_steps;
-  std::string  directory;
-  std::string  filename;
-  double       reference_length_scale;
+  TimeControlData time_control_data;
+
+  std::string directory;
+  std::string filename;
+  double      reference_length_scale;
 };
 
 template<int dim, typename Number>
@@ -89,7 +82,9 @@ public:
         MassConservationData const &            data_in);
 
   void
-  evaluate(VectorType const & velocity, double const & time, int const & time_step_number);
+  evaluate(VectorType const & velocity, double const time, bool const unsteady);
+
+  TimeControl time_control;
 
 private:
   /*
@@ -132,9 +127,7 @@ private:
                                   const std::pair<unsigned int, unsigned int> &);
 
   void
-  analyze_div_and_mass_error_unsteady(VectorType const & velocity,
-                                      double const       time,
-                                      unsigned int const time_step_number);
+  analyze_div_and_mass_error_unsteady(VectorType const & velocity, double const time);
 
   void
   analyze_div_and_mass_error_steady(VectorType const & velocity);

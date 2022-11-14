@@ -28,6 +28,7 @@
 // ExaDG
 #include <exadg/postprocessor/output_data_base.h>
 #include <exadg/postprocessor/solution_field.h>
+#include <exadg/postprocessor/time_control.h>
 
 namespace ExaDG
 {
@@ -94,14 +95,13 @@ public:
   void
   evaluate(VectorType const &                              solution_conserved,
            std::vector<SolutionField<dim, Number>> const & additional_fields,
-           double const &                                  time,
-           int const &                                     time_step_number);
+           double const                                    time,
+           bool const                                      unsteady);
+
+  TimeControl time_control;
 
 private:
   MPI_Comm const mpi_comm;
-
-  unsigned int output_counter;
-  bool         reset_counter;
 
   dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
   dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;

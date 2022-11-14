@@ -23,6 +23,7 @@
 #define APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TURBULENT_CHANNEL_H_
 
 #include <exadg/postprocessor/statistics_manager.h>
+#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -242,11 +243,24 @@ public:
   }
 
   void
-  do_postprocessing(VectorType const & solution, double const time, int const time_step_number)
+  do_postprocessing(VectorType const &     solution,
+                    double const           time,
+                    types::time_step const time_step_number)
   {
     Base::do_postprocessing(solution, time, time_step_number);
 
-    statistics_turb_ch->evaluate(this->velocity, time, time_step_number);
+    if(statistics_turb_ch->time_control_statistics.time_control.needs_evaluation(time,
+                                                                                 time_step_number))
+    {
+      statistics_turb_ch->evaluate(this->velocity,
+                                   Utilities::is_unsteady_timestep(time_step_number));
+    }
+
+    if(statistics_turb_ch->time_control_statistics.write_preliminary_results(time,
+                                                                             time_step_number))
+    {
+      statistics_turb_ch->write_output();
+    }
   }
 
   TurbulentChannelData                            turb_ch_data;
@@ -395,31 +409,33 @@ private:
   create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output = this->output_parameters.write;
-    pp_data.output_data.directory    = this->output_parameters.directory + "vtu/";
-    pp_data.output_data.filename     = this->output_parameters.filename;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = START_TIME;
+    pp_data.output_data.time_control_data.trigger_interval = 1.0;
+    pp_data.output_data.directory = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename  = this->output_parameters.filename;
     pp_data.calculate_velocity = true; // activate this for kinetic energy calculations (see below)
     pp_data.output_data.write_pressure     = true;
     pp_data.output_data.write_velocity     = true;
     pp_data.output_data.write_temperature  = true;
     pp_data.output_data.write_vorticity    = false;
     pp_data.output_data.write_divergence   = false;
-    pp_data.output_data.start_time         = START_TIME;
-    pp_data.output_data.interval_time      = 1.0;
     pp_data.output_data.degree             = this->param.degree;
     pp_data.output_data.write_higher_order = false;
 
     // write data to hdf5
-    pp_data.pointwise_output_data.write_output = false;
+    pp_data.pointwise_output_data.time_control_data.is_active  = true;
+    pp_data.pointwise_output_data.time_control_data.start_time = START_TIME;
+    pp_data.pointwise_output_data.time_control_data.end_time   = END_TIME;
+    pp_data.pointwise_output_data.time_control_data.trigger_interval =
+      (END_TIME - START_TIME) / 1000.0;
+
     pp_data.pointwise_output_data.directory =
       this->output_parameters.directory + "pointwise_output/";
-    pp_data.pointwise_output_data.filename      = this->output_parameters.filename;
-    pp_data.pointwise_output_data.start_time    = START_TIME;
-    pp_data.pointwise_output_data.end_time      = END_TIME;
-    pp_data.pointwise_output_data.interval_time = (END_TIME - START_TIME) / 1000.0;
-    pp_data.pointwise_output_data.write_rho     = true; // scalar
-    pp_data.pointwise_output_data.write_rho_u   = true; // vector
-    pp_data.pointwise_output_data.write_rho_E   = true; // scalar
+    pp_data.pointwise_output_data.filename    = this->output_parameters.filename;
+    pp_data.pointwise_output_data.write_rho   = true; // scalar
+    pp_data.pointwise_output_data.write_rho_u = true; // vector
+    pp_data.pointwise_output_data.write_rho_E = true; // scalar
     pp_data.pointwise_output_data.update_points_before_evaluation = false;
     if constexpr(dim == 2)
       pp_data.pointwise_output_data.evaluation_points.emplace_back(
@@ -432,15 +448,21 @@ private:
     pp_data_turb_ch.pp_data = pp_data;
 
     // turbulent channel statistics
-    pp_data_turb_ch.turb_ch_data.calculate              = true;
-    pp_data_turb_ch.turb_ch_data.cells_are_stretched    = true;
-    pp_data_turb_ch.turb_ch_data.sample_start_time      = SAMPLE_START_TIME;
-    pp_data_turb_ch.turb_ch_data.sample_end_time        = SAMPLE_END_TIME;
-    pp_data_turb_ch.turb_ch_data.sample_every_timesteps = 10;
-    pp_data_turb_ch.turb_ch_data.viscosity              = DYN_VISCOSITY;
-    pp_data_turb_ch.turb_ch_data.density                = RHO_0;
-    pp_data_turb_ch.turb_ch_data.directory              = this->output_parameters.directory;
-    pp_data_turb_ch.turb_ch_data.filename               = this->output_parameters.filename;
+    pp_data_turb_ch.turb_ch_data.time_control_data_statistics.time_control_data.is_active = true;
+    pp_data_turb_ch.turb_ch_data.time_control_data_statistics.time_control_data.start_time =
+      SAMPLE_START_TIME;
+    pp_data_turb_ch.turb_ch_data.time_control_data_statistics.time_control_data.end_time =
+      SAMPLE_END_TIME;
+    pp_data_turb_ch.turb_ch_data.time_control_data_statistics.time_control_data
+      .trigger_every_time_steps = 10;
+    pp_data_turb_ch.turb_ch_data.time_control_data_statistics
+      .write_preliminary_results_every_nth_time_step = 10 * 100;
+
+    pp_data_turb_ch.turb_ch_data.cells_are_stretched = true;
+    pp_data_turb_ch.turb_ch_data.viscosity           = DYN_VISCOSITY;
+    pp_data_turb_ch.turb_ch_data.density             = RHO_0;
+    pp_data_turb_ch.turb_ch_data.directory           = this->output_parameters.directory;
+    pp_data_turb_ch.turb_ch_data.filename            = this->output_parameters.filename;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new MyPostProcessor<dim, Number>(pp_data_turb_ch, this->mpi_comm));

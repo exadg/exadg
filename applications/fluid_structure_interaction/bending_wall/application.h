@@ -525,13 +525,13 @@ private:
     IncNS::PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output              = this->output_parameters.write;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = 0.0;
+    pp_data.output_data.time_control_data.trigger_interval = OUTPUT_INTERVAL_TIME;
     pp_data.output_data.directory                 = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename                  = this->output_parameters.filename + "_fluid";
     pp_data.output_data.write_boundary_IDs        = true;
     pp_data.output_data.write_surface_mesh        = true;
-    pp_data.output_data.start_time                = 0.0;
-    pp_data.output_data.interval_time             = OUTPUT_INTERVAL_TIME;
     pp_data.output_data.write_vorticity           = true;
     pp_data.output_data.write_divergence          = true;
     pp_data.output_data.write_velocity_magnitude  = true;
@@ -877,11 +877,11 @@ private:
     using namespace Structure;
 
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = 0.0;
+    pp_data.output_data.time_control_data.trigger_interval = OUTPUT_INTERVAL_TIME;
     pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = this->output_parameters.filename + "_structure";
-    pp_data.output_data.start_time         = 0.0;
-    pp_data.output_data.interval_time      = OUTPUT_INTERVAL_TIME;
     pp_data.output_data.write_higher_order = false;
     pp_data.output_data.degree             = this->param.degree;
 

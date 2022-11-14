@@ -47,14 +47,14 @@ public:
    *  in case of constant time step sizes.
    */
   void
-  update(unsigned int const time_step_number);
+  update(unsigned int const current_order);
 
   /*
    *  This function updates the time integrator constants of the BDF scheme
    *  in case of adaptive time step sizes.
    */
   void
-  update(unsigned int const time_step_number, std::vector<double> const & time_steps);
+  update(unsigned int const current_order, std::vector<double> const & time_steps);
 
   /*
    *  This function prints the time integrator constants

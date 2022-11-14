@@ -268,30 +268,33 @@ private:
   create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output = this->output_parameters.write;
-    pp_data.output_data.directory    = this->output_parameters.directory + "vtu/";
-    pp_data.output_data.filename     = this->output_parameters.filename;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = start_time;
+    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
+    pp_data.output_data.directory = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename  = this->output_parameters.filename;
     pp_data.calculate_velocity = true; // activate this for kinetic energy calculations (see below)
     pp_data.output_data.write_pressure    = true;
     pp_data.output_data.write_velocity    = true;
     pp_data.output_data.write_temperature = true;
     pp_data.output_data.write_vorticity   = true;
     pp_data.output_data.write_divergence  = true;
-    pp_data.output_data.start_time        = start_time;
-    pp_data.output_data.interval_time     = (end_time - start_time) / 20;
     pp_data.output_data.degree            = this->param.degree;
 
     // kinetic energy
-    pp_data.kinetic_energy_data.calculate                  = true;
-    pp_data.kinetic_energy_data.calculate_every_time_steps = 1;
-    pp_data.kinetic_energy_data.viscosity                  = DYN_VISCOSITY / RHO_0;
-    pp_data.kinetic_energy_data.directory                  = this->output_parameters.directory;
-    pp_data.kinetic_energy_data.filename                   = this->output_parameters.filename;
+    pp_data.kinetic_energy_data.time_control_data.is_active                = true;
+    pp_data.kinetic_energy_data.time_control_data.trigger_every_time_steps = 1;
+    pp_data.kinetic_energy_data.time_control_data.start_time               = start_time;
+    pp_data.kinetic_energy_data.viscosity                                  = DYN_VISCOSITY / RHO_0;
+    pp_data.kinetic_energy_data.directory = this->output_parameters.directory;
+    pp_data.kinetic_energy_data.filename  = this->output_parameters.filename;
 
     // kinetic energy spectrum
-    pp_data.kinetic_energy_spectrum_data.calculate                     = true;
-    pp_data.kinetic_energy_spectrum_data.calculate_every_time_steps    = -1;
-    pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
+    pp_data.kinetic_energy_spectrum_data.time_control_data.is_active        = true;
+    pp_data.kinetic_energy_spectrum_data.time_control_data.trigger_interval = 0.5;
+    pp_data.kinetic_energy_spectrum_data.time_control_data.start_time       = start_time;
+
+
     pp_data.kinetic_energy_spectrum_data.directory = this->output_parameters.directory;
     pp_data.kinetic_energy_spectrum_data.filename  = this->output_parameters.filename + "_spectrum";
     pp_data.kinetic_energy_spectrum_data.degree    = this->param.degree;

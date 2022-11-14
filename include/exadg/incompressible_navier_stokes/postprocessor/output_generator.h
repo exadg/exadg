@@ -24,45 +24,12 @@
 
 #include <exadg/postprocessor/output_data_base.h>
 #include <exadg/postprocessor/solution_field.h>
+#include <exadg/postprocessor/time_control.h>
 
 namespace ExaDG
 {
 namespace IncNS
 {
-/*
- *  Average velocity field over time for statistically steady, turbulent
- *  flow problems in order to visualize the time-averaged velocity field.
- *  Of course, this module can also be used for statistically unsteady problems,
- *  but in this case the mean velocity field is probably not meaningful.
- */
-struct OutputDataMeanVelocity
-{
-  OutputDataMeanVelocity()
-    : calculate(false), sample_start_time(0.0), sample_end_time(0.0), sample_every_timesteps(1)
-  {
-  }
-
-  void
-  print(dealii::ConditionalOStream & pcout, bool unsteady)
-  {
-    if(unsteady)
-    {
-      print_parameter(pcout, "Calculate mean velocity", calculate);
-      print_parameter(pcout, "  Sample start time", sample_start_time);
-      print_parameter(pcout, "  Sample end time", sample_end_time);
-      print_parameter(pcout, "  Sample every timesteps", sample_every_timesteps);
-    }
-  }
-
-  // calculate mean velocity field (for statistically steady, turbulent flows)
-  bool calculate;
-
-  // sampling information
-  double       sample_start_time;
-  double       sample_end_time;
-  unsigned int sample_every_timesteps;
-};
-
 struct OutputData : public OutputDataBase
 {
   OutputData()
@@ -72,7 +39,7 @@ struct OutputData : public OutputDataBase
       write_vorticity_magnitude(false),
       write_streamfunction(false),
       write_q_criterion(false),
-      mean_velocity(OutputDataMeanVelocity()),
+      mean_velocity(TimeControlData()),
       write_cfl(false),
       write_aspect_ratio(false)
   {
@@ -117,8 +84,12 @@ struct OutputData : public OutputDataBase
   // write Q criterion
   bool write_q_criterion;
 
-  // calculate mean velocity field (averaged over time)
-  OutputDataMeanVelocity mean_velocity;
+  //  Average velocity field over time for statistically steady, turbulent
+  //  flow problems in order to visualize the time-averaged velocity field.
+  //  Of course, this module can also be used for statistically unsteady problems,
+  //  but in this case the mean velocity field is probably not meaningful.
+  TimeControlData mean_velocity;
+
 
   // write cfl
   bool write_cfl;
@@ -136,62 +107,31 @@ class OutputGenerator
 public:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef SpatialOperatorBase<dim, Number> NavierStokesOperator;
-
   OutputGenerator(MPI_Comm const & comm);
 
   void
-  setup(NavierStokesOperator const &    navier_stokes_operator_in,
-        dealii::DoFHandler<dim> const & dof_handler_velocity_in,
+  setup(dealii::DoFHandler<dim> const & dof_handler_velocity_in,
         dealii::DoFHandler<dim> const & dof_handler_pressure_in,
         dealii::Mapping<dim> const &    mapping_in,
         OutputData const &              output_data_in);
 
   void
-  evaluate(VectorType const & velocity,
-           VectorType const & pressure,
-           double const &     time,
-           int const &        time_step_number);
+  evaluate(VectorType const &                              velocity,
+           VectorType const &                              pressure,
+           std::vector<SolutionField<dim, Number>> const & additional_fields,
+           double const                                    time,
+           bool const                                      unsteady);
+
+  TimeControl time_control;
 
 private:
-  void
-  initialize_additional_fields();
-
-  void
-  compute_mean_velocity(VectorType &       mean_velocity,
-                        VectorType const & velocity,
-                        double const       time,
-                        int const          time_step_number);
-
-  void
-  calculate_additional_fields(VectorType const & velocity,
-                              double const &     time,
-                              int const &        time_step_number);
-
   MPI_Comm const mpi_comm;
-
-  unsigned int output_counter;
-  bool         reset_counter;
 
   OutputData output_data;
 
   dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_velocity;
   dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_pressure;
   dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;
-  dealii::SmartPointer<NavierStokesOperator const>    navier_stokes_operator;
-
-  // additional fields
-  VectorType   vorticity;
-  VectorType   divergence;
-  VectorType   velocity_magnitude;
-  VectorType   vorticity_magnitude;
-  VectorType   streamfunction;
-  VectorType   q_criterion;
-  VectorType   mean_velocity; // velocity field averaged over time
-  VectorType   cfl_vector;
-  unsigned int counter_mean_velocity;
-
-  std::vector<SolutionField<dim, Number>> additional_fields;
 };
 
 } // namespace IncNS

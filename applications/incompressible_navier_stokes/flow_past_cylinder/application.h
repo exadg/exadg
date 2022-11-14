@@ -378,11 +378,11 @@ private:
                        std::to_string(this->param.degree_u);
 
     // write output for visualization of results
-    pp_data.output_data.write_output       = this->output_parameters.write;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = start_time;
+    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
     pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = name;
-    pp_data.output_data.start_time         = start_time;
-    pp_data.output_data.interval_time      = (end_time - start_time) / 20;
     pp_data.output_data.write_divergence   = true;
     pp_data.output_data.write_higher_order = false;
     pp_data.output_data.write_processor_id = true;
@@ -392,8 +392,10 @@ private:
     pp_data.output_data.degree             = this->param.degree_u;
 
     // lift and drag
-    pp_data.lift_and_drag_data.calculate = true;
-    pp_data.lift_and_drag_data.viscosity = viscosity;
+    pp_data.lift_and_drag_data.time_control_data.is_active                = true;
+    pp_data.lift_and_drag_data.time_control_data.trigger_every_time_steps = 1;
+    pp_data.lift_and_drag_data.time_control_data.start_time               = start_time;
+    pp_data.lift_and_drag_data.viscosity                                  = viscosity;
 
     double const U = Um * (dim == 2 ? 2. / 3. : 4. / 9.);
     if(dim == 2)
@@ -409,7 +411,9 @@ private:
     pp_data.lift_and_drag_data.filename_drag = name + "_drag";
 
     // pressure difference
-    pp_data.pressure_difference_data.calculate = true;
+    pp_data.pressure_difference_data.time_control_data.is_active                = true;
+    pp_data.pressure_difference_data.time_control_data.trigger_every_time_steps = 1;
+    pp_data.pressure_difference_data.time_control_data.start_time               = start_time;
     if(dim == 2)
     {
       dealii::Point<dim> point_1_2D((X_C - D / 2.0), Y_C), point_2_2D((X_C + D / 2.0), Y_C);

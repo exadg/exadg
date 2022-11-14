@@ -29,6 +29,7 @@
 #include <deal.II/base/conditional_ostream.h>
 
 // ExaDG
+#include <exadg/utilities/numbers.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
@@ -61,10 +62,10 @@ struct RestartData
   }
 
   bool
-  do_restart(double const       wall_time,
-             double const       time,
-             unsigned int const time_step_number,
-             bool const         reset_counter) const
+  do_restart(double const           wall_time,
+             double const           time,
+             types::time_step const time_step_number,
+             bool const             reset_counter) const
   {
     // After a restart, the counter is reset to 1, but time = current_time - start time != 0 after a
     // restart. Hence, we have to explicitly reset the counter in that case. There is nothing to do

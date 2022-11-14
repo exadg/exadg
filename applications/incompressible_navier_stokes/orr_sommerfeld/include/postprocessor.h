@@ -66,10 +66,10 @@ public:
   }
 
   void
-  do_postprocessing(VectorType const & velocity,
-                    VectorType const & pressure,
-                    double const       time,
-                    int const          time_step_number)
+  do_postprocessing(VectorType const &     velocity,
+                    VectorType const &     pressure,
+                    double const           time,
+                    types::time_step const time_step_number)
   {
     Base::do_postprocessing(velocity, pressure, time, time_step_number);
 

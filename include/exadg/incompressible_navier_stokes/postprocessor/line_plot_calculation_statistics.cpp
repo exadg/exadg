@@ -50,27 +50,30 @@ LinePlotCalculatorStatistics<dim, Number>::LinePlotCalculatorStatistics(
 
 template<int dim, typename Number>
 void
-LinePlotCalculatorStatistics<dim, Number>::setup(
-  LinePlotDataStatistics<dim> const & line_plot_data_in)
+LinePlotCalculatorStatistics<dim, Number>::setup(LinePlotDataStatistics<dim> const & data_in)
 {
   // initialize data
-  data = line_plot_data_in;
+  data = data_in;
 
-  if(data.statistics_data.calculate == true)
+  AssertThrow(Utilities::is_valid_timestep(
+                data_in.time_control_data_statistics.write_preliminary_results_every_nth_time_step),
+              dealii::ExcMessage("write_preliminary_results_every_nth_time_step has to be set."));
+  time_control_statistics.setup(data_in.time_control_data_statistics);
+
+  if(data_in.time_control_data_statistics.time_control_data.is_active)
   {
-    AssertThrow(data.line_data.lines.size() > 0, dealii::ExcMessage("Empty data"));
+    AssertThrow(data.lines.size() > 0, dealii::ExcMessage("Empty data"));
 
     // allocate data structures
-    velocity_global.resize(data.line_data.lines.size());
-    pressure_global.resize(data.line_data.lines.size());
-    global_points.resize(data.line_data.lines.size());
-    cells_global_velocity.resize(data.line_data.lines.size());
-    cells_global_pressure.resize(data.line_data.lines.size());
+    velocity_global.resize(data.lines.size());
+    pressure_global.resize(data.lines.size());
+    global_points.resize(data.lines.size());
+    cells_global_velocity.resize(data.lines.size());
+    cells_global_pressure.resize(data.lines.size());
 
     unsigned int line_iterator = 0;
-    for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line =
-          data.line_data.lines.begin();
-        line != data.line_data.lines.end();
+    for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line = data.lines.begin();
+        line != data.lines.end();
         ++line, ++line_iterator)
     {
       // Resize global variables for number of points on line
@@ -89,43 +92,23 @@ LinePlotCalculatorStatistics<dim, Number>::setup(
       cells_global_pressure[line_iterator].resize((*line)->n_points);
     }
 
-    create_directories(data.line_data.directory, mpi_comm);
+    create_directories(data.directory, mpi_comm);
   }
 }
 
 template<int dim, typename Number>
 void
-LinePlotCalculatorStatistics<dim, Number>::evaluate(VectorType const &   velocity,
-                                                    VectorType const &   pressure,
-                                                    double const &       time,
-                                                    unsigned int const & time_step_number)
+LinePlotCalculatorStatistics<dim, Number>::evaluate(VectorType const & velocity,
+                                                    VectorType const & pressure)
 {
-  if(data.statistics_data.calculate)
-  {
-    // EPSILON: small number which is much smaller than the time step size
-    double const EPSILON = 1.0e-10;
+  do_evaluate(velocity, pressure);
+}
 
-    if((time > data.statistics_data.sample_start_time - EPSILON) &&
-       (time < data.statistics_data.sample_end_time + EPSILON) &&
-       (time_step_number % data.statistics_data.sample_every_timesteps == 0))
-    {
-      // evaluate statistics
-      do_evaluate(velocity, pressure);
-
-      // write intermediate output
-      if(time_step_number % data.statistics_data.write_output_every_timesteps == 0)
-      {
-        do_write_output();
-      }
-    }
-
-    // write final output
-    if((time > data.statistics_data.sample_end_time - EPSILON) && write_final_output)
-    {
-      do_write_output();
-      write_final_output = false;
-    }
-  }
+template<int dim, typename Number>
+void
+LinePlotCalculatorStatistics<dim, Number>::write_output() const
+{
+  do_write_output();
 }
 
 template<int dim, typename Number>
@@ -135,9 +118,8 @@ LinePlotCalculatorStatistics<dim, Number>::initialize_cell_data(VectorType const
 {
   // Save data related to all adjacent cells for a given point along the line.
   unsigned int line_iterator = 0;
-  for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line =
-        data.line_data.lines.begin();
-      line != data.line_data.lines.end();
+  for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line = data.lines.begin();
+      line != data.lines.end();
       ++line, ++line_iterator)
   {
     // make sure that line type is correct
@@ -295,9 +277,8 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate(VectorType const & veloci
 
   // Iterator for lines
   unsigned int line_iterator = 0;
-  for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line =
-        data.line_data.lines.begin();
-      line != data.line_data.lines.end();
+  for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line = data.lines.begin();
+      line != data.lines.end();
       ++line, ++line_iterator)
   {
     bool evaluate_velocity = false;
@@ -510,19 +491,17 @@ template<int dim, typename Number>
 void
 LinePlotCalculatorStatistics<dim, Number>::do_write_output() const
 {
-  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0 &&
-     data.statistics_data.calculate == true)
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
-    unsigned int const precision = data.line_data.precision;
+    unsigned int const precision = data.precision;
 
     // Iterator for lines
     unsigned int line_iterator = 0;
-    for(typename std::vector<std::shared_ptr<Line<dim>>>::const_iterator line =
-          data.line_data.lines.begin();
-        line != data.line_data.lines.end();
+    for(typename std::vector<std::shared_ptr<Line<dim>>>::const_iterator line = data.lines.begin();
+        line != data.lines.end();
         ++line, ++line_iterator)
     {
-      std::string filename_prefix = data.line_data.directory + (*line)->name;
+      std::string filename_prefix = data.directory + (*line)->name;
 
       for(typename std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
             (*line)->quantities.begin();

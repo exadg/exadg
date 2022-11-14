@@ -19,38 +19,46 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_INTERFACE_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_INTERFACE_H_
+#ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_TIME_CONTROL_STATISTICS_H_
+#define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_TIME_CONTROL_STATISTICS_H_
 
-#include <deal.II/lac/la_parallel_vector.h>
-#include <exadg/utilities/numbers.h>
+// ExaDG
+#include <exadg/postprocessor/time_control.h>
 
 namespace ExaDG
 {
-namespace IncNS
+struct TimeControlDataStatistics
 {
-template<typename Number>
-class PostProcessorInterface
-{
-protected:
-  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+  TimeControlDataStatistics();
 
-public:
-  virtual ~PostProcessorInterface()
-  {
-  }
+  void
+  print(dealii::ConditionalOStream & pcout, bool const unsteady) const;
 
-  /*
-   * This function has to be called to apply the postprocessing tools.
-   */
-  virtual void
-  do_postprocessing(VectorType const &     velocity,
-                    VectorType const &     pressure,
-                    double const           time             = 0.0,
-                    types::time_step const time_step_number = numbers::steady_timestep) = 0;
+  types::time_step write_preliminary_results_every_nth_time_step;
+
+  TimeControlData time_control_data;
 };
 
-} // namespace IncNS
+
+class TimeControlStatistics
+{
+public:
+  TimeControlStatistics();
+
+  void
+  setup(TimeControlDataStatistics const & time_control_data_statistics_in);
+
+  bool
+  write_preliminary_results(double const time, types::time_step const time_step_number) const;
+
+  TimeControl time_control;
+
+private:
+  TimeControlDataStatistics time_control_data_statistics;
+  mutable bool              final_output_written;
+};
+
+
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_INTERFACE_H_ */
+#endif /*INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_TIME_CONTROL_STATISTICS_H_*/
