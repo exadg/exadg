@@ -74,14 +74,55 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
+<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="classExaDG_1_1SolutionField-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">ExaDG::SolutionField&lt; dim, Number &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
+<div class="dynheader">
+Inheritance diagram for ExaDG::SolutionField&lt; dim, Number &gt;:</div>
+<div class="dyncontent">
+ <div class="center">
+  <img src="classExaDG_1_1SolutionField.png" alt=""/>
+ </div></div>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:ab40c1c563156b09c9224107f6ccbedac"><td class="memItemLeft" align="right" valign="top"><a id="ab40c1c563156b09c9224107f6ccbedac" name="ab40c1c563156b09c9224107f6ccbedac"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b> = dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;</td></tr>
+<tr class="separator:ab40c1c563156b09c9224107f6ccbedac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a229f70d32f134f71f839acd3c022e069"><td class="memItemLeft" align="right" valign="top"><a id="a229f70d32f134f71f839acd3c022e069" name="a229f70d32f134f71f839acd3c022e069"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit</b> (VectorType const &amp;solution_in)</td></tr>
+<tr class="separator:a229f70d32f134f71f839acd3c022e069"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9fee9ebf1e2a7776a1909dee468796b1"><td class="memItemLeft" align="right" valign="top"><a id="a9fee9ebf1e2a7776a1909dee468796b1" name="a9fee9ebf1e2a7776a1909dee468796b1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> ()</td></tr>
+<tr class="separator:a9fee9ebf1e2a7776a1909dee468796b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a53028400eaa5c7b37b127ea61aaf27c9"><td class="memItemLeft" align="right" valign="top"><a id="a53028400eaa5c7b37b127ea61aaf27c9" name="a53028400eaa5c7b37b127ea61aaf27c9"></a>
+VectorType &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_vector_reference</b> ()</td></tr>
+<tr class="separator:a53028400eaa5c7b37b127ea61aaf27c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae7254ab22e2f654cd9fe730b2cc0497f"><td class="memItemLeft" align="right" valign="top"><a id="ae7254ab22e2f654cd9fe730b2cc0497f" name="ae7254ab22e2f654cd9fe730b2cc0497f"></a>
+VectorType const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_vector</b> () const</td></tr>
+<tr class="separator:ae7254ab22e2f654cd9fe730b2cc0497f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9a56c524e3f0781e6e304987bd63e8e1"><td class="memItemLeft" align="right" valign="top"><a id="a9a56c524e3f0781e6e304987bd63e8e1" name="a9a56c524e3f0781e6e304987bd63e8e1"></a>
+std::string const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_name</b> () const</td></tr>
+<tr class="separator:a9a56c524e3f0781e6e304987bd63e8e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7af286b9dcf82e44d49f6bc6e00862d8"><td class="memItemLeft" align="right" valign="top"><a id="a7af286b9dcf82e44d49f6bc6e00862d8" name="a7af286b9dcf82e44d49f6bc6e00862d8"></a>
+dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler</b> () const</td></tr>
+<tr class="separator:a7af286b9dcf82e44d49f6bc6e00862d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab6860828d0d3924c3d088d80fc64d7eb"><td class="memItemLeft" align="right" valign="top"><a id="ab6860828d0d3924c3d088d80fc64d7eb" name="ab6860828d0d3924c3d088d80fc64d7eb"></a>
+SolutionFieldType&#160;</td><td class="memItemRight" valign="bottom"><b>get_type</b> () const</td></tr>
+<tr class="separator:ab6860828d0d3924c3d088d80fc64d7eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
+<tr class="memitem:a66ec3abb7dbef20ca008d28654655902"><td class="memItemLeft" align="right" valign="top"><a id="a66ec3abb7dbef20ca008d28654655902" name="a66ec3abb7dbef20ca008d28654655902"></a>
+std::function&lt; void(VectorType &amp;, VectorType const &amp;)&gt;&#160;</td><td class="memItemRight" valign="bottom"><b>recompute_solution_field</b></td></tr>
+<tr class="separator:a66ec3abb7dbef20ca008d28654655902"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6a8c87e33d889efcbdc1119d6ccd92e9"><td class="memItemLeft" align="right" valign="top"><a id="a6a8c87e33d889efcbdc1119d6ccd92e9" name="a6a8c87e33d889efcbdc1119d6ccd92e9"></a>
 SolutionFieldType&#160;</td><td class="memItemRight" valign="bottom"><b>type</b></td></tr>
 <tr class="separator:a6a8c87e33d889efcbdc1119d6ccd92e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -91,9 +132,6 @@ std::string&#160;</td><td class="memItemRight" valign="bottom"><b>name</b></td><
 <tr class="memitem:a5793e0fa041cec527952e32c5e67e2d5"><td class="memItemLeft" align="right" valign="top"><a id="a5793e0fa041cec527952e32c5e67e2d5" name="a5793e0fa041cec527952e32c5e67e2d5"></a>
 dealii::DoFHandler&lt; dim &gt; const  *&#160;</td><td class="memItemRight" valign="bottom"><b>dof_handler</b></td></tr>
 <tr class="separator:a5793e0fa041cec527952e32c5e67e2d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8d9fc5cbd82196828a77e16eb3e8b9e7"><td class="memItemLeft" align="right" valign="top"><a id="a8d9fc5cbd82196828a77e16eb3e8b9e7" name="a8d9fc5cbd82196828a77e16eb3e8b9e7"></a>
-dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; const  *&#160;</td><td class="memItemRight" valign="bottom"><b>vector</b></td></tr>
-<tr class="separator:a8d9fc5cbd82196828a77e16eb3e8b9e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/postprocessor/<a class="el" href="solution__field_8h_source.html">solution_field.h</a></li>
