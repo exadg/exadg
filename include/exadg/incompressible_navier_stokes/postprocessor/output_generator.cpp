@@ -84,12 +84,12 @@ write_output(
     if(additional_field->get_type() == SolutionFieldType::scalar)
     {
       data_out.add_data_vector(additional_field->get_dof_handler(),
-                               additional_field->get_vector(),
+                               additional_field->get(),
                                additional_field->get_name());
     }
     else if(additional_field->get_type() == SolutionFieldType::cellwise)
     {
-      data_out.add_data_vector(additional_field->get_vector(), additional_field->get_name());
+      data_out.add_data_vector(additional_field->get(), additional_field->get_name());
     }
     else if(additional_field->get_type() == SolutionFieldType::vector)
     {
@@ -99,7 +99,7 @@ write_output(
                                  dealii::DataComponentInterpretation::component_is_part_of_vector);
 
       data_out.add_data_vector(additional_field->get_dof_handler(),
-                               additional_field->get_vector(),
+                               additional_field->get(),
                                names,
                                component_interpretation);
     }

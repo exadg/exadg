@@ -41,7 +41,7 @@ public:
   using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
 
   SolutionField()
-    : initialize_vector([](VectorType &) {}),
+    : initialize_vector([](std::shared_ptr<VectorType> &) {}),
       recompute_solution_field([](VectorType &, VectorType const &) {}),
       type(SolutionFieldType::scalar),
       name("solution"),
@@ -53,7 +53,8 @@ public:
 
   /**
    * This function initializes the DoF vector, the main data object of this class.
-   * This is done by using the lambda initialize_vector.
+   * This is done by using the lambda initialize_vector. The vector solution_vector
+   * may also point to external data.
    */
   void
   reinit()
@@ -62,29 +63,39 @@ public:
   }
 
   /**
-   * This function resets the source vector and thereby invalidates
-   * the solution vector.
+   * This function invalidates the solution vector.
    */
   void
-  reset_src_vector(VectorType const & src_vector_in)
+  invalidate()
   {
     is_available = false;
-    src_vector   = &src_vector_in;
   }
 
-  VectorType const &
-  get_vector() const
+  void
+  evaluate(VectorType const & src)
   {
     if(!is_available)
     {
-      recompute_solution_field(solution_vector, *src_vector);
+      recompute_solution_field(*solution_vector, src);
       is_available = true;
     }
+  }
 
+  VectorType const &
+  get() const
+  {
     AssertThrow(is_available,
                 dealii::ExcMessage("You are trying to access a Vector that is not available."));
 
-    return solution_vector;
+    return *solution_vector;
+  }
+
+  VectorType const &
+  evaluate_get(VectorType const & src)
+  {
+    evaluate(src);
+
+    return get();
   }
 
   std::string const &
@@ -106,7 +117,7 @@ public:
   }
 
   // TODO: these element variables should not be public but instead be passed to the reinit function
-  std::function<void(VectorType &)> initialize_vector;
+  std::function<void(std::shared_ptr<VectorType> &)> initialize_vector;
 
   std::function<void(VectorType &, VectorType const &)> recompute_solution_field;
 
@@ -117,9 +128,9 @@ public:
   dealii::DoFHandler<dim> const * dof_handler;
 
 private:
-  mutable bool       is_available;
-  mutable VectorType solution_vector;
-  VectorType const * src_vector;
+  mutable bool                        is_available;
+  mutable std::shared_ptr<VectorType> solution_vector;
+  VectorType const *                  src_vector;
 };
 
 } // namespace ExaDG

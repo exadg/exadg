@@ -55,7 +55,7 @@ PostProcessor<dim, Number>::setup(Operator const & pde_operator)
 
   time_control_mean_velocity.setup(pp_data.output_data.mean_velocity);
 
-  initialize_additional_vectors();
+  initialize_derived_fields();
 
   output_generator.setup(pde_operator.get_dof_handler_u(),
                          pde_operator.get_dof_handler_p(),
@@ -109,7 +109,7 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
                                               double const           time,
                                               types::time_step const time_step_number)
 {
-  reinit_additional_fields(velocity);
+  invalidate_derived_fields();
 
   /*
    *  compute mean velocity
@@ -120,7 +120,7 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
                 dealii::ExcMessage(
                   "Calculating mean velocity does not make sense for steady problems."));
 
-    compute_mean_velocity(mean_velocity_vector, velocity);
+    compute_mean_velocity(*mean_velocity_vector, velocity);
   }
 
 
@@ -129,6 +129,48 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
    */
   if(output_generator.time_control.needs_evaluation(time, time_step_number))
   {
+    std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> additional_fields_vtu;
+    if(pp_data.output_data.write_vorticity)
+    {
+      vorticity.evaluate(velocity);
+      additional_fields_vtu.push_back(&vorticity);
+
+      if(pp_data.output_data.write_vorticity_magnitude)
+      {
+        vorticity_magnitude.evaluate(vorticity.get());
+        additional_fields_vtu.push_back(&vorticity_magnitude);
+      }
+      if(pp_data.output_data.write_streamfunction)
+      {
+        streamfunction.evaluate(vorticity.get());
+        additional_fields_vtu.push_back(&streamfunction);
+      }
+    }
+    if(pp_data.output_data.write_divergence)
+    {
+      divergence.evaluate(velocity);
+      additional_fields_vtu.push_back(&divergence);
+    }
+    if(pp_data.output_data.write_velocity_magnitude)
+    {
+      velocity_magnitude.evaluate(velocity);
+      additional_fields_vtu.push_back(&velocity_magnitude);
+    }
+    if(pp_data.output_data.write_q_criterion)
+    {
+      q_criterion.evaluate(velocity);
+      additional_fields_vtu.push_back(&q_criterion);
+    }
+    if(pp_data.output_data.mean_velocity.is_active)
+    {
+      additional_fields_vtu.push_back(&mean_velocity);
+    }
+    if(pp_data.output_data.write_cfl)
+    {
+      cfl_vector.evaluate(velocity);
+      additional_fields_vtu.push_back(&cfl_vector);
+    }
+
     output_generator.evaluate(velocity,
                               pressure,
                               additional_fields_vtu,
@@ -195,7 +237,7 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
 
 template<int dim, typename Number>
 void
-PostProcessor<dim, Number>::initialize_additional_vectors()
+PostProcessor<dim, Number>::initialize_derived_fields()
 {
   // vorticity
   if(pp_data.output_data.write_vorticity || pp_data.output_data.write_streamfunction ||
@@ -204,8 +246,9 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     vorticity.type              = SolutionFieldType::vector;
     vorticity.name              = "vorticity";
     vorticity.dof_handler       = &navier_stokes_operator->get_dof_handler_u();
-    vorticity.initialize_vector = [&](VectorType & dst) {
-      navier_stokes_operator->initialize_vector_velocity(dst);
+    vorticity.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
+      dst = std::make_shared<VectorType>();
+      navier_stokes_operator->initialize_vector_velocity(*dst);
     };
     vorticity.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
       navier_stokes_operator->compute_vorticity(dst, src);
@@ -213,7 +256,46 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
 
     vorticity.reinit();
 
-    this->additional_fields_vtu.push_back(&vorticity);
+    // vorticity magnitude
+    if(pp_data.output_data.write_vorticity_magnitude)
+    {
+      AssertThrow(pp_data.output_data.write_vorticity == true,
+                  dealii::ExcMessage("You need to activate write_vorticity."));
+
+      vorticity_magnitude.type              = SolutionFieldType::scalar;
+      vorticity_magnitude.name              = "vorticity_magnitude";
+      vorticity_magnitude.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
+      vorticity_magnitude.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
+        dst = std::make_shared<VectorType>();
+        navier_stokes_operator->initialize_vector_velocity_scalar(*dst);
+      };
+      vorticity_magnitude.recompute_solution_field = [&](VectorType & dst, const VectorType & src) {
+        navier_stokes_operator->compute_vorticity_magnitude(dst, src);
+      };
+
+      vorticity_magnitude.reinit();
+    }
+
+
+    // streamfunction
+    if(pp_data.output_data.write_streamfunction)
+    {
+      AssertThrow(pp_data.output_data.write_vorticity == true,
+                  dealii::ExcMessage("You need to activate write_vorticity."));
+
+      streamfunction.type              = SolutionFieldType::scalar;
+      streamfunction.name              = "streamfunction";
+      streamfunction.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
+      streamfunction.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
+        dst = std::make_shared<VectorType>();
+        navier_stokes_operator->initialize_vector_velocity_scalar(*dst);
+      };
+      streamfunction.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
+        navier_stokes_operator->compute_streamfunction(dst, src);
+      };
+
+      streamfunction.reinit();
+    }
   }
 
   // divergence
@@ -222,16 +304,15 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     divergence.type              = SolutionFieldType::vector;
     divergence.name              = "div_u";
     divergence.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
-    divergence.initialize_vector = [&](VectorType & dst) {
-      navier_stokes_operator->initialize_vector_velocity_scalar(dst);
+    divergence.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
+      dst = std::make_shared<VectorType>();
+      navier_stokes_operator->initialize_vector_velocity_scalar(*dst);
     };
     divergence.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
       navier_stokes_operator->compute_divergence(dst, src);
     };
 
     divergence.reinit();
-
-    this->additional_fields_vtu.push_back(&divergence);
   }
 
   // velocity magnitude
@@ -240,53 +321,15 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     velocity_magnitude.type              = SolutionFieldType::scalar;
     velocity_magnitude.name              = "velocity_magnitude";
     velocity_magnitude.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
-    velocity_magnitude.initialize_vector = [&](VectorType & dst) {
-      navier_stokes_operator->initialize_vector_velocity_scalar(dst);
+    velocity_magnitude.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
+      dst = std::make_shared<VectorType>();
+      navier_stokes_operator->initialize_vector_velocity_scalar(*dst);
     };
     velocity_magnitude.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
       navier_stokes_operator->compute_velocity_magnitude(dst, src);
     };
 
     velocity_magnitude.reinit();
-
-    this->additional_fields_vtu.push_back(&velocity_magnitude);
-  }
-
-  // vorticity magnitude
-  if(pp_data.output_data.write_vorticity_magnitude)
-  {
-    vorticity_magnitude.type              = SolutionFieldType::scalar;
-    vorticity_magnitude.name              = "vorticity_magnitude";
-    vorticity_magnitude.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
-    vorticity_magnitude.initialize_vector = [&](VectorType & dst) {
-      navier_stokes_operator->initialize_vector_velocity_scalar(dst);
-    };
-    vorticity_magnitude.recompute_solution_field = [&](VectorType & dst, VectorType const &) {
-      navier_stokes_operator->compute_vorticity_magnitude(dst, vorticity.get_vector());
-    };
-
-    vorticity_magnitude.reinit();
-
-    this->additional_fields_vtu.push_back(&vorticity_magnitude);
-  }
-
-
-  // streamfunction
-  if(pp_data.output_data.write_streamfunction)
-  {
-    streamfunction.type              = SolutionFieldType::scalar;
-    streamfunction.name              = "streamfunction";
-    streamfunction.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
-    streamfunction.initialize_vector = [&](VectorType & dst) {
-      navier_stokes_operator->initialize_vector_velocity_scalar(dst);
-    };
-    streamfunction.recompute_solution_field = [&](VectorType & dst, VectorType const &) {
-      navier_stokes_operator->compute_streamfunction(dst, vorticity.get_vector());
-    };
-
-    streamfunction.reinit();
-
-    this->additional_fields_vtu.push_back(&streamfunction);
   }
 
   // q criterion
@@ -295,43 +338,41 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     q_criterion.type              = SolutionFieldType::scalar;
     q_criterion.name              = "q_criterion";
     q_criterion.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
-    q_criterion.initialize_vector = [&](VectorType & dst) {
-      navier_stokes_operator->initialize_vector_velocity_scalar(dst);
+    q_criterion.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
+      dst = std::make_shared<VectorType>();
+      navier_stokes_operator->initialize_vector_velocity_scalar(*dst);
     };
     q_criterion.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
       navier_stokes_operator->compute_q_criterion(dst, src);
     };
 
     q_criterion.reinit();
-
-    this->additional_fields_vtu.push_back(&q_criterion);
   }
 
   // mean velocity
   if(pp_data.output_data.mean_velocity.is_active)
   {
+    mean_velocity_vector = std::make_shared<VectorType>();
+    navier_stokes_operator->initialize_vector_velocity(*mean_velocity_vector);
+
     mean_velocity.type              = SolutionFieldType::vector;
     mean_velocity.name              = "mean_velocity";
     mean_velocity.dof_handler       = &navier_stokes_operator->get_dof_handler_u();
-    mean_velocity.initialize_vector = [&](VectorType & dst) {
-      navier_stokes_operator->initialize_vector_velocity(dst);
+    mean_velocity.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
+      dst = mean_velocity_vector;
     };
-    mean_velocity.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
-      dst = src;
-    };
-
-    navier_stokes_operator->initialize_vector_velocity(mean_velocity_vector);
 
     mean_velocity.reinit();
-
-    this->additional_fields_vtu.push_back(&mean_velocity);
   }
 
   // cfl
   if(pp_data.output_data.write_cfl)
   {
-    cfl_vector.type                     = SolutionFieldType::cellwise;
-    cfl_vector.name                     = "cfl_relative";
+    cfl_vector.type              = SolutionFieldType::cellwise;
+    cfl_vector.name              = "cfl_relative";
+    cfl_vector.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
+      dst = std::make_shared<VectorType>();
+    };
     cfl_vector.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
       // This time step size corresponds to CFL = 1.
       auto const time_step_size = navier_stokes_operator->calculate_time_step_cfl(src);
@@ -341,8 +382,6 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     };
 
     cfl_vector.reinit();
-
-    this->additional_fields_vtu.push_back(&cfl_vector);
   }
 }
 
@@ -358,16 +397,16 @@ PostProcessor<dim, Number>::compute_mean_velocity(VectorType &       mean_veloci
 
 template<int dim, typename Number>
 void
-PostProcessor<dim, Number>::reinit_additional_fields(VectorType const & velocity)
+PostProcessor<dim, Number>::invalidate_derived_fields()
 {
-  vorticity.reset_src_vector(velocity);
-  divergence.reset_src_vector(velocity);
-  velocity_magnitude.reset_src_vector(velocity);
-  vorticity_magnitude.reset_src_vector(velocity);
-  streamfunction.reset_src_vector(velocity);
-  q_criterion.reset_src_vector(velocity);
-  cfl_vector.reset_src_vector(velocity);
-  mean_velocity.reset_src_vector(velocity);
+  vorticity.invalidate();
+  divergence.invalidate();
+  velocity_magnitude.invalidate();
+  vorticity_magnitude.invalidate();
+  streamfunction.invalidate();
+  q_criterion.invalidate();
+  cfl_vector.invalidate();
+  mean_velocity.invalidate();
 }
 
 template class PostProcessor<2, float>;

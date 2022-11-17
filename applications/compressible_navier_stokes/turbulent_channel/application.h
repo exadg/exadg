@@ -252,7 +252,7 @@ public:
     if(statistics_turb_ch->time_control_statistics.time_control.needs_evaluation(time,
                                                                                  time_step_number))
     {
-      statistics_turb_ch->evaluate(this->velocity.get_vector(),
+      statistics_turb_ch->evaluate(this->velocity.evaluate_get(solution),
                                    Utilities::is_unsteady_timestep(time_step_number));
     }
 

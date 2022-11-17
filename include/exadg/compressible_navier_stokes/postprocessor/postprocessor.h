@@ -72,14 +72,12 @@ protected:
   SolutionField<dim, Number> vorticity;
   SolutionField<dim, Number> divergence;
 
-  std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> additional_fields_vtu;
-
 private:
   void
-  initialize_additional_vectors();
+  initialize_derived_fields();
 
   void
-  reinit_additional_fields(VectorType const & solution);
+  invalidate_derived_fields();
 
   MPI_Comm const mpi_comm;
 

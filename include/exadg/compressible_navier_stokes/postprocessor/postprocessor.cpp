@@ -53,7 +53,7 @@ PostProcessor<dim, Number>::setup(Operator<dim, Number> const & pde_operator)
 {
   navier_stokes_operator = &pde_operator;
 
-  initialize_additional_vectors();
+  initialize_derived_fields();
 
   output_generator.setup(pde_operator.get_dof_handler(),
                          pde_operator.get_mapping(),
@@ -94,13 +94,42 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     solution,
                                               double const           time,
                                               types::time_step const time_step_number)
 {
-  reinit_additional_fields(solution);
+  invalidate_derived_fields();
 
   /*
    *  write output
    */
   if(output_generator.time_control.needs_evaluation(time, time_step_number))
   {
+    std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> additional_fields_vtu;
+
+    if(pp_data.output_data.write_pressure)
+    {
+      pressure.evaluate(solution);
+      additional_fields_vtu.push_back(&pressure);
+    }
+    if(pp_data.output_data.write_velocity)
+    {
+      velocity.evaluate(solution);
+      additional_fields_vtu.push_back(&velocity);
+
+      if(pp_data.output_data.write_vorticity)
+      {
+        vorticity.evaluate(velocity.get());
+        additional_fields_vtu.push_back(&vorticity);
+      }
+      if(pp_data.output_data.write_divergence)
+      {
+        divergence.evaluate(velocity.get());
+        additional_fields_vtu.push_back(&divergence);
+      }
+    }
+    if(pp_data.output_data.write_temperature)
+    {
+      temperature.evaluate(solution);
+      additional_fields_vtu.push_back(&temperature);
+    }
+
     output_generator.evaluate(solution,
                               additional_fields_vtu,
                               time,
@@ -126,20 +155,22 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     solution,
    *  calculation of lift and drag coefficients
    */
   if(lift_and_drag_calculator.time_control.needs_evaluation(time, time_step_number))
-    lift_and_drag_calculator.evaluate(velocity.get_vector(), pressure.get_vector(), time);
+    lift_and_drag_calculator.evaluate(velocity.evaluate_get(solution),
+                                      pressure.evaluate_get(solution),
+                                      time);
 
   /*
    *  calculation of pressure difference
    */
   if(pressure_difference_calculator.time_control.needs_evaluation(time, time_step_number))
-    pressure_difference_calculator.evaluate(pressure.get_vector(), time);
+    pressure_difference_calculator.evaluate(pressure.evaluate_get(solution), time);
 
   /*
    *  calculation of kinetic energy
    */
   if(kinetic_energy_calculator.time_control.needs_evaluation(time, time_step_number))
   {
-    kinetic_energy_calculator.evaluate(velocity.get_vector(),
+    kinetic_energy_calculator.evaluate(velocity.evaluate_get(solution),
                                        time,
                                        Utilities::is_unsteady_timestep(time_step_number));
   }
@@ -149,7 +180,7 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     solution,
    */
   if(kinetic_energy_spectrum_calculator.time_control.needs_evaluation(time, time_step_number))
   {
-    kinetic_energy_spectrum_calculator.evaluate(velocity.get_vector(),
+    kinetic_energy_spectrum_calculator.evaluate(velocity.evaluate_get(solution),
                                                 time,
                                                 Utilities::is_unsteady_timestep(time_step_number));
   }
@@ -157,7 +188,7 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     solution,
 
 template<int dim, typename Number>
 void
-PostProcessor<dim, Number>::initialize_additional_vectors()
+PostProcessor<dim, Number>::initialize_derived_fields()
 {
   if(pp_data.output_data.write_pressure || pp_data.lift_and_drag_data.time_control_data.is_active ||
      pp_data.pressure_difference_data.time_control_data.is_active)
@@ -165,17 +196,15 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     pressure.type              = SolutionFieldType::scalar;
     pressure.name              = "pressure";
     pressure.dof_handler       = &navier_stokes_operator->get_dof_handler_scalar();
-    pressure.initialize_vector = [&](VectorType & dst) {
-      navier_stokes_operator->initialize_dof_vector_scalar(dst);
+    pressure.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
+      dst = std::make_shared<VectorType>();
+      navier_stokes_operator->initialize_dof_vector_scalar(*dst);
     };
     pressure.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
       navier_stokes_operator->compute_pressure(dst, src);
     };
 
     pressure.reinit();
-
-    if(pp_data.output_data.write_pressure)
-      additional_fields_vtu.push_back(&pressure);
   }
 
   // velocity
@@ -188,8 +217,9 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     velocity.type              = SolutionFieldType::vector;
     velocity.name              = "velocity";
     velocity.dof_handler       = &navier_stokes_operator->get_dof_handler_vector();
-    velocity.initialize_vector = [&](VectorType & dst) {
-      navier_stokes_operator->initialize_dof_vector_dim_components(dst);
+    velocity.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
+      dst = std::make_shared<VectorType>();
+      navier_stokes_operator->initialize_dof_vector_dim_components(*dst);
     };
     velocity.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
       navier_stokes_operator->compute_velocity(dst, src);
@@ -197,8 +227,45 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
 
     velocity.reinit();
 
-    if(pp_data.output_data.write_velocity)
-      additional_fields_vtu.push_back(&velocity);
+    // vorticity
+    if(pp_data.output_data.write_vorticity)
+    {
+      AssertThrow(pp_data.output_data.write_velocity == true,
+                  dealii::ExcMessage("You need to activate write_velocity."));
+
+      vorticity.type              = SolutionFieldType::vector;
+      vorticity.name              = "vorticity";
+      vorticity.dof_handler       = &navier_stokes_operator->get_dof_handler_vector();
+      vorticity.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
+        dst = std::make_shared<VectorType>();
+        navier_stokes_operator->initialize_dof_vector_dim_components(*dst);
+      };
+      vorticity.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
+        navier_stokes_operator->compute_vorticity(dst, src);
+      };
+
+      vorticity.reinit();
+    }
+
+    // divergence
+    if(pp_data.output_data.write_divergence)
+    {
+      AssertThrow(pp_data.output_data.write_velocity == true,
+                  dealii::ExcMessage("You need to activate write_velocity."));
+
+      divergence.type              = SolutionFieldType::scalar;
+      divergence.name              = "velocity_divergence";
+      divergence.dof_handler       = &navier_stokes_operator->get_dof_handler_scalar();
+      divergence.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
+        dst = std::make_shared<VectorType>();
+        navier_stokes_operator->initialize_dof_vector_scalar(*dst);
+      };
+      divergence.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
+        navier_stokes_operator->compute_divergence(dst, src);
+      };
+
+      divergence.reinit();
+    }
   }
 
   // temperature
@@ -207,64 +274,27 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     temperature.type              = SolutionFieldType::scalar;
     temperature.name              = "temperature";
     temperature.dof_handler       = &navier_stokes_operator->get_dof_handler_scalar();
-    temperature.initialize_vector = [&](VectorType & dst) {
-      navier_stokes_operator->initialize_dof_vector_scalar(dst);
+    temperature.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
+      dst = std::make_shared<VectorType>();
+      navier_stokes_operator->initialize_dof_vector_scalar(*dst);
     };
     temperature.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
       navier_stokes_operator->compute_temperature(dst, src);
     };
 
     temperature.reinit();
-
-    additional_fields_vtu.push_back(&temperature);
-  }
-
-  // vorticity
-  if(pp_data.output_data.write_vorticity)
-  {
-    vorticity.type              = SolutionFieldType::vector;
-    vorticity.name              = "vorticity";
-    vorticity.dof_handler       = &navier_stokes_operator->get_dof_handler_vector();
-    vorticity.initialize_vector = [&](VectorType & dst) {
-      navier_stokes_operator->initialize_dof_vector_dim_components(dst);
-    };
-    vorticity.recompute_solution_field = [&](VectorType & dst, VectorType const &) {
-      navier_stokes_operator->compute_vorticity(dst, velocity.get_vector());
-    };
-
-    vorticity.reinit();
-
-    additional_fields_vtu.push_back(&vorticity);
-  }
-
-  // divergence
-  if(pp_data.output_data.write_divergence)
-  {
-    divergence.type              = SolutionFieldType::scalar;
-    divergence.name              = "velocity_divergence";
-    divergence.dof_handler       = &navier_stokes_operator->get_dof_handler_scalar();
-    divergence.initialize_vector = [&](VectorType & dst) {
-      navier_stokes_operator->initialize_dof_vector_scalar(dst);
-    };
-    divergence.recompute_solution_field = [&](VectorType & dst, VectorType const &) {
-      navier_stokes_operator->compute_divergence(dst, velocity.get_vector());
-    };
-
-    divergence.reinit();
-
-    additional_fields_vtu.push_back(&divergence);
   }
 }
 
 template<int dim, typename Number>
 void
-PostProcessor<dim, Number>::reinit_additional_fields(VectorType const & solution)
+PostProcessor<dim, Number>::invalidate_derived_fields()
 {
-  pressure.reset_src_vector(solution);
-  velocity.reset_src_vector(solution);
-  temperature.reset_src_vector(solution);
-  vorticity.reset_src_vector(solution);
-  divergence.reset_src_vector(solution);
+  pressure.invalidate();
+  velocity.invalidate();
+  temperature.invalidate();
+  vorticity.invalidate();
+  divergence.invalidate();
 }
 
 template class PostProcessor<2, float>;
