@@ -116,8 +116,11 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
    */
   if(time_control_mean_velocity.needs_evaluation(time, time_step_number))
   {
-    if(time_control_mean_velocity.needs_evaluation(time, time_step_number))
-      mean_velocity.evaluate(Utilities::is_unsteady_timestep(time_step_number));
+    AssertThrow(Utilities::is_unsteady_timestep(time_step_number),
+                dealii::ExcMessage(
+                  "Calculating mean velocity does not make sense for steady problems."));
+
+    mean_velocity.evaluate();
   }
 
 
@@ -128,8 +131,7 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
   {
     output_generator.evaluate(velocity,
                               pressure,
-                              evaluate_get(additional_fields_vtu,
-                                           Utilities::is_unsteady_timestep(time_step_number)),
+                              evaluate_get(additional_fields_vtu),
                               time,
                               Utilities::is_unsteady_timestep(time_step_number));
   }
@@ -203,7 +205,7 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     vorticity.name        = "vorticity";
     vorticity.dof_handler = &navier_stokes_operator->get_dof_handler_u();
     navier_stokes_operator->initialize_vector_velocity(vorticity.get_vector_reference());
-    vorticity.recompute_solution_field = [&](VectorType & dst, VectorType const & src, bool const) {
+    vorticity.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
       navier_stokes_operator->compute_vorticity(dst, src);
     };
 
@@ -217,10 +219,9 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     divergence.name        = "div_u";
     divergence.dof_handler = &navier_stokes_operator->get_dof_handler_u_scalar();
     navier_stokes_operator->initialize_vector_velocity_scalar(divergence.get_vector_reference());
-    divergence.recompute_solution_field =
-      [&](VectorType & dst, VectorType const & src, bool const) {
-        navier_stokes_operator->compute_divergence(dst, src);
-      };
+    divergence.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
+      navier_stokes_operator->compute_divergence(dst, src);
+    };
 
     this->additional_fields_vtu.push_back(&divergence);
   }
@@ -233,10 +234,9 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     velocity_magnitude.dof_handler = &navier_stokes_operator->get_dof_handler_u_scalar();
     navier_stokes_operator->initialize_vector_velocity_scalar(
       velocity_magnitude.get_vector_reference());
-    velocity_magnitude.recompute_solution_field =
-      [&](VectorType & dst, VectorType const & src, bool const) {
-        navier_stokes_operator->compute_velocity_magnitude(dst, src);
-      };
+    velocity_magnitude.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
+      navier_stokes_operator->compute_velocity_magnitude(dst, src);
+    };
 
     this->additional_fields_vtu.push_back(&velocity_magnitude);
   }
@@ -249,10 +249,9 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     vorticity_magnitude.dof_handler = &navier_stokes_operator->get_dof_handler_u_scalar();
     navier_stokes_operator->initialize_vector_velocity_scalar(
       vorticity_magnitude.get_vector_reference());
-    vorticity_magnitude.recompute_solution_field =
-      [&](VectorType & dst, VectorType const &, bool const unsteady) {
-        navier_stokes_operator->compute_vorticity_magnitude(dst, evaluate_get(vorticity, unsteady));
-      };
+    vorticity_magnitude.recompute_solution_field = [&](VectorType & dst, VectorType const &) {
+      navier_stokes_operator->compute_vorticity_magnitude(dst, evaluate_get(vorticity));
+    };
 
     this->additional_fields_vtu.push_back(&vorticity_magnitude);
   }
@@ -266,10 +265,9 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     streamfunction.dof_handler = &navier_stokes_operator->get_dof_handler_u_scalar();
     navier_stokes_operator->initialize_vector_velocity_scalar(
       streamfunction.get_vector_reference());
-    streamfunction.recompute_solution_field =
-      [&](VectorType & dst, VectorType const &, bool const unsteady) {
-        navier_stokes_operator->compute_streamfunction(dst, evaluate_get(vorticity, unsteady));
-      };
+    streamfunction.recompute_solution_field = [&](VectorType & dst, VectorType const &) {
+      navier_stokes_operator->compute_streamfunction(dst, evaluate_get(vorticity));
+    };
 
     this->additional_fields_vtu.push_back(&streamfunction);
   }
@@ -281,10 +279,9 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     q_criterion.name        = "q_criterion";
     q_criterion.dof_handler = &navier_stokes_operator->get_dof_handler_u_scalar();
     navier_stokes_operator->initialize_vector_velocity_scalar(q_criterion.get_vector_reference());
-    q_criterion.recompute_solution_field =
-      [&](VectorType & dst, VectorType const & src, bool const) {
-        navier_stokes_operator->compute_q_criterion(dst, src);
-      };
+    q_criterion.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
+      navier_stokes_operator->compute_q_criterion(dst, src);
+    };
 
     this->additional_fields_vtu.push_back(&q_criterion);
   }
@@ -296,10 +293,9 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     mean_velocity.name        = "mean_velocity";
     mean_velocity.dof_handler = &navier_stokes_operator->get_dof_handler_u();
     navier_stokes_operator->initialize_vector_velocity(mean_velocity.get_vector_reference());
-    mean_velocity.recompute_solution_field =
-      [&](VectorType & dst, VectorType const & src, bool const unsteady) {
-        compute_mean_velocity(dst, src, unsteady);
-      };
+    mean_velocity.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
+      compute_mean_velocity(dst, src);
+    };
 
     this->additional_fields_vtu.push_back(&mean_velocity);
   }
@@ -307,16 +303,15 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
   // cfl
   if(pp_data.output_data.write_cfl)
   {
-    cfl_vector.type = SolutionFieldType::cellwise;
-    cfl_vector.name = "cfl_relative";
-    cfl_vector.recompute_solution_field =
-      [&](VectorType & dst, VectorType const & src, bool const) {
-        // This time step size corresponds to CFL = 1.
-        auto const time_step_size = navier_stokes_operator->calculate_time_step_cfl(src);
-        // The computed cell-vector of CFL values contains relative CFL numbers with a value of
-        // CFL = 1 in the most critical cell and CFL < 1 in other cells.
-        navier_stokes_operator->calculate_cfl_from_time_step(dst, src, time_step_size);
-      };
+    cfl_vector.type                     = SolutionFieldType::cellwise;
+    cfl_vector.name                     = "cfl_relative";
+    cfl_vector.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
+      // This time step size corresponds to CFL = 1.
+      auto const time_step_size = navier_stokes_operator->calculate_time_step_cfl(src);
+      // The computed cell-vector of CFL values contains relative CFL numbers with a value of
+      // CFL = 1 in the most critical cell and CFL < 1 in other cells.
+      navier_stokes_operator->calculate_cfl_from_time_step(dst, src, time_step_size);
+    };
 
     this->additional_fields_vtu.push_back(&cfl_vector);
   }
@@ -325,13 +320,8 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
 template<int dim, typename Number>
 void
 PostProcessor<dim, Number>::compute_mean_velocity(VectorType &       mean_velocity,
-                                                  VectorType const & velocity,
-                                                  bool const         unsteady)
+                                                  VectorType const & velocity)
 {
-  AssertThrow(unsteady,
-              dealii::ExcMessage(
-                "Calculating mean velocity does not make sense for steady problems."));
-
   unsigned int const counter = time_control_mean_velocity.get_counter();
   mean_velocity.sadd((double)counter, 1.0, velocity);
   mean_velocity *= 1. / (double)(counter + 1);

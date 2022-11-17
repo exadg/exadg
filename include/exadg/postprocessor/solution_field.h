@@ -41,7 +41,7 @@ public:
   using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
 
   SolutionField()
-    : recompute_solution_field([](VectorType &, VectorType const &, bool const) {}),
+    : recompute_solution_field([](VectorType &, VectorType const &) {}),
       type(SolutionFieldType::scalar),
       name("solution"),
       dof_handler(nullptr),
@@ -58,11 +58,11 @@ public:
   }
 
   void
-  evaluate(bool const unsteady)
+  evaluate()
   {
     if(!is_available)
     {
-      recompute_solution_field(vector, *solution, unsteady);
+      recompute_solution_field(vector, *solution);
       is_available = true;
     }
   }
@@ -100,7 +100,7 @@ public:
     return type;
   }
 
-  std::function<void(VectorType &, VectorType const &, bool const)> recompute_solution_field;
+  std::function<void(VectorType &, VectorType const &)> recompute_solution_field;
 
   SolutionFieldType type;
 
@@ -116,19 +116,18 @@ private:
 
 template<int dim, typename Number>
 std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const &
-evaluate_get(std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> & vec,
-             const bool                                                      unsteady)
+evaluate_get(std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> & vec)
 {
   for(auto & v : vec)
-    v->evaluate(unsteady);
+    v->evaluate();
   return vec;
 }
 
 template<int dim, typename Number>
 typename SolutionField<dim, Number>::VectorType const &
-evaluate_get(SolutionField<dim, Number> & sol, const bool unsteady)
+evaluate_get(SolutionField<dim, Number> & sol)
 {
-  sol.evaluate(unsteady);
+  sol.evaluate();
   return sol.get_vector();
 }
 

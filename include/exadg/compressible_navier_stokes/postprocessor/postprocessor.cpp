@@ -102,8 +102,7 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     solution,
   if(output_generator.time_control.needs_evaluation(time, time_step_number))
   {
     output_generator.evaluate(solution,
-                              evaluate_get(additional_fields_vtu,
-                                           Utilities::is_unsteady_timestep(time_step_number)),
+                              evaluate_get(additional_fields_vtu),
                               time,
                               Utilities::is_unsteady_timestep(time_step_number));
   }
@@ -127,27 +126,22 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     solution,
    *  calculation of lift and drag coefficients
    */
   if(lift_and_drag_calculator.time_control.needs_evaluation(time, time_step_number))
-    lift_and_drag_calculator.evaluate(
-      evaluate_get(velocity, Utilities::is_unsteady_timestep(time_step_number)),
-      evaluate_get(pressure, Utilities::is_unsteady_timestep(time_step_number)),
-      time);
+    lift_and_drag_calculator.evaluate(evaluate_get(velocity), evaluate_get(pressure), time);
 
   /*
    *  calculation of pressure difference
    */
   if(pressure_difference_calculator.time_control.needs_evaluation(time, time_step_number))
-    pressure_difference_calculator.evaluate(
-      evaluate_get(pressure, Utilities::is_unsteady_timestep(time_step_number)), time);
+    pressure_difference_calculator.evaluate(evaluate_get(pressure), time);
 
   /*
    *  calculation of kinetic energy
    */
   if(kinetic_energy_calculator.time_control.needs_evaluation(time, time_step_number))
   {
-    kinetic_energy_calculator.evaluate(
-      evaluate_get(velocity, Utilities::is_unsteady_timestep(time_step_number)),
-      time,
-      Utilities::is_unsteady_timestep(time_step_number));
+    kinetic_energy_calculator.evaluate(evaluate_get(velocity),
+                                       time,
+                                       Utilities::is_unsteady_timestep(time_step_number));
   }
 
   /*
@@ -155,10 +149,9 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     solution,
    */
   if(kinetic_energy_spectrum_calculator.time_control.needs_evaluation(time, time_step_number))
   {
-    kinetic_energy_spectrum_calculator.evaluate(
-      evaluate_get(velocity, Utilities::is_unsteady_timestep(time_step_number)),
-      time,
-      Utilities::is_unsteady_timestep(time_step_number));
+    kinetic_energy_spectrum_calculator.evaluate(evaluate_get(velocity),
+                                                time,
+                                                Utilities::is_unsteady_timestep(time_step_number));
   }
 }
 
@@ -173,7 +166,7 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     pressure.name        = "pressure";
     pressure.dof_handler = &navier_stokes_operator->get_dof_handler_scalar();
     navier_stokes_operator->initialize_dof_vector_scalar(pressure.get_vector_reference());
-    pressure.recompute_solution_field = [&](VectorType & dst, VectorType const & src, bool const) {
+    pressure.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
       navier_stokes_operator->compute_pressure(dst, src);
     };
 
@@ -192,7 +185,7 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     velocity.name        = "velocity";
     velocity.dof_handler = &navier_stokes_operator->get_dof_handler_vector();
     navier_stokes_operator->initialize_dof_vector_dim_components(velocity.get_vector_reference());
-    velocity.recompute_solution_field = [&](VectorType & dst, VectorType const & src, bool const) {
+    velocity.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
       navier_stokes_operator->compute_velocity(dst, src);
     };
 
@@ -207,10 +200,9 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     temperature.name        = "temperature";
     temperature.dof_handler = &navier_stokes_operator->get_dof_handler_scalar();
     navier_stokes_operator->initialize_dof_vector_scalar(temperature.get_vector_reference());
-    temperature.recompute_solution_field =
-      [&](VectorType & dst, VectorType const & src, bool const) {
-        navier_stokes_operator->compute_temperature(dst, src);
-      };
+    temperature.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
+      navier_stokes_operator->compute_temperature(dst, src);
+    };
 
     additional_fields_vtu.push_back(&temperature);
   }
@@ -222,7 +214,7 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     vorticity.name        = "vorticity";
     vorticity.dof_handler = &navier_stokes_operator->get_dof_handler_vector();
     navier_stokes_operator->initialize_dof_vector_dim_components(vorticity.get_vector_reference());
-    vorticity.recompute_solution_field = [&](VectorType & dst, VectorType const &, bool const) {
+    vorticity.recompute_solution_field = [&](VectorType & dst, VectorType const &) {
       navier_stokes_operator->compute_vorticity(dst, velocity.get_vector());
     };
 
@@ -236,7 +228,7 @@ PostProcessor<dim, Number>::initialize_additional_vectors()
     divergence.name        = "velocity_divergence";
     divergence.dof_handler = &navier_stokes_operator->get_dof_handler_scalar();
     navier_stokes_operator->initialize_dof_vector_scalar(divergence.get_vector_reference());
-    divergence.recompute_solution_field = [&](VectorType & dst, VectorType const &, bool const) {
+    divergence.recompute_solution_field = [&](VectorType & dst, VectorType const &) {
       navier_stokes_operator->compute_divergence(dst, velocity.get_vector());
     };
 
