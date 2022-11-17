@@ -38,13 +38,6 @@ namespace CompNS
 template<int dim>
 struct PostProcessorData
 {
-  PostProcessorData() : calculate_velocity(false), calculate_pressure(false)
-  {
-  }
-
-  bool calculate_velocity;
-  bool calculate_pressure;
-
   OutputData                  output_data;
   PointwiseOutputData<dim>    pointwise_output_data;
   ErrorCalculationData<dim>   error_data;
@@ -73,21 +66,20 @@ public:
                     types::time_step const time_step_number) override;
 
 protected:
-  // DoF vectors for derived quantities: (p, u, T)
-  VectorType pressure;
-  VectorType velocity;
-  VectorType temperature;
-  VectorType vorticity;
-  VectorType divergence;
+  SolutionField<dim, Number> pressure;
+  SolutionField<dim, Number> velocity;
+  SolutionField<dim, Number> temperature;
+  SolutionField<dim, Number> vorticity;
+  SolutionField<dim, Number> divergence;
 
-  std::vector<SolutionField<dim, Number>> additional_fields;
+  std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> additional_fields_vtu;
 
 private:
   void
   initialize_additional_vectors();
 
   void
-  calculate_additional_vectors(VectorType const & solution);
+  reinit_additional_fields(VectorType const & solution);
 
   MPI_Comm const mpi_comm;
 

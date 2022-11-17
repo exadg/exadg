@@ -35,13 +35,72 @@ enum class SolutionFieldType
 };
 
 template<int dim, typename Number>
-class SolutionField
+class SolutionField : public dealii::Subscriptor
 {
 public:
+  using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
+
   SolutionField()
-    : type(SolutionFieldType::scalar), name("solution"), dof_handler(nullptr), vector(nullptr)
+    : recompute_solution_field([](VectorType &, VectorType const &) {}),
+      type(SolutionFieldType::scalar),
+      name("solution"),
+      dof_handler(nullptr),
+      is_available(false),
+      solution(nullptr)
   {
   }
+
+  void
+  reinit(VectorType const & solution_in)
+  {
+    is_available = false;
+    solution     = &solution_in;
+  }
+
+  void
+  evaluate()
+  {
+    if(!is_available)
+    {
+      recompute_solution_field(vector, *solution);
+      is_available = true;
+    }
+  }
+
+  VectorType &
+  get_vector_reference()
+  {
+    return vector;
+  }
+
+  VectorType const &
+  get_vector() const
+  {
+    AssertThrow(is_available,
+                dealii::ExcMessage("You are trying to access a Vector that is not available."));
+
+    return vector;
+  }
+
+  std::string const &
+  get_name() const
+  {
+    return name;
+  }
+
+  dealii::DoFHandler<dim> const &
+  get_dof_handler() const
+  {
+    return *dof_handler;
+  }
+
+  SolutionFieldType
+  get_type() const
+  {
+    return type;
+  }
+
+  std::function<void(VectorType &, VectorType const &)> recompute_solution_field;
 
   SolutionFieldType type;
 
@@ -49,8 +108,28 @@ public:
 
   dealii::DoFHandler<dim> const * dof_handler;
 
-  dealii::LinearAlgebra::distributed::Vector<Number> const * vector;
+private:
+  bool               is_available;
+  VectorType         vector;
+  VectorType const * solution;
 };
+
+template<int dim, typename Number>
+std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const &
+evaluate_get(std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> & vec)
+{
+  for(auto & v : vec)
+    v->evaluate();
+  return vec;
+}
+
+template<int dim, typename Number>
+typename SolutionField<dim, Number>::VectorType const &
+evaluate_get(SolutionField<dim, Number> & sol)
+{
+  sol.evaluate();
+  return sol.get_vector();
+}
 
 } // namespace ExaDG
 

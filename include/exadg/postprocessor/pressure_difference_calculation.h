@@ -30,6 +30,7 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
+#include <exadg/postprocessor/solution_field.h>
 #include <exadg/postprocessor/time_control.h>
 
 namespace ExaDG
