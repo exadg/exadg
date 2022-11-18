@@ -41,7 +41,7 @@ public:
   using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
 
   SolutionField()
-    : initialize_vector([](std::shared_ptr<VectorType> &) {}),
+    : initialize_vector([](VectorType &) {}),
       recompute_solution_field([](VectorType &, VectorType const &) {}),
       type(SolutionFieldType::scalar),
       name("solution"),
@@ -75,7 +75,7 @@ public:
   {
     if(!is_available)
     {
-      recompute_solution_field(*solution_vector, src);
+      recompute_solution_field(solution_vector, src);
       is_available = true;
     }
   }
@@ -86,7 +86,7 @@ public:
     AssertThrow(is_available,
                 dealii::ExcMessage("You are trying to access a Vector that is invalid."));
 
-    return *solution_vector;
+    return solution_vector;
   }
 
   VectorType const &
@@ -116,7 +116,7 @@ public:
   }
 
   // TODO: these element variables should not be public but instead be passed to the reinit function
-  std::function<void(std::shared_ptr<VectorType> &)> initialize_vector;
+  std::function<void(VectorType &)> initialize_vector;
 
   std::function<void(VectorType &, VectorType const &)> recompute_solution_field;
 
@@ -127,8 +127,8 @@ public:
   dealii::DoFHandler<dim> const * dof_handler;
 
 private:
-  mutable bool                        is_available;
-  mutable std::shared_ptr<VectorType> solution_vector;
+  bool       is_available;
+  VectorType solution_vector;
 };
 
 } // namespace ExaDG

@@ -246,9 +246,8 @@ PostProcessor<dim, Number>::initialize_derived_fields()
     vorticity.type              = SolutionFieldType::vector;
     vorticity.name              = "vorticity";
     vorticity.dof_handler       = &navier_stokes_operator->get_dof_handler_u();
-    vorticity.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
-      dst = std::make_shared<VectorType>();
-      navier_stokes_operator->initialize_vector_velocity(*dst);
+    vorticity.initialize_vector = [&](VectorType & dst) {
+      navier_stokes_operator->initialize_vector_velocity(dst);
     };
     vorticity.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
       navier_stokes_operator->compute_vorticity(dst, src);
@@ -265,9 +264,8 @@ PostProcessor<dim, Number>::initialize_derived_fields()
       vorticity_magnitude.type              = SolutionFieldType::scalar;
       vorticity_magnitude.name              = "vorticity_magnitude";
       vorticity_magnitude.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
-      vorticity_magnitude.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
-        dst = std::make_shared<VectorType>();
-        navier_stokes_operator->initialize_vector_velocity_scalar(*dst);
+      vorticity_magnitude.initialize_vector = [&](VectorType & dst) {
+        navier_stokes_operator->initialize_vector_velocity_scalar(dst);
       };
       vorticity_magnitude.recompute_solution_field = [&](VectorType & dst, const VectorType & src) {
         navier_stokes_operator->compute_vorticity_magnitude(dst, src);
@@ -286,9 +284,8 @@ PostProcessor<dim, Number>::initialize_derived_fields()
       streamfunction.type              = SolutionFieldType::scalar;
       streamfunction.name              = "streamfunction";
       streamfunction.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
-      streamfunction.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
-        dst = std::make_shared<VectorType>();
-        navier_stokes_operator->initialize_vector_velocity_scalar(*dst);
+      streamfunction.initialize_vector = [&](VectorType & dst) {
+        navier_stokes_operator->initialize_vector_velocity_scalar(dst);
       };
       streamfunction.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
         navier_stokes_operator->compute_streamfunction(dst, src);
@@ -304,9 +301,8 @@ PostProcessor<dim, Number>::initialize_derived_fields()
     divergence.type              = SolutionFieldType::vector;
     divergence.name              = "div_u";
     divergence.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
-    divergence.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
-      dst = std::make_shared<VectorType>();
-      navier_stokes_operator->initialize_vector_velocity_scalar(*dst);
+    divergence.initialize_vector = [&](VectorType & dst) {
+      navier_stokes_operator->initialize_vector_velocity_scalar(dst);
     };
     divergence.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
       navier_stokes_operator->compute_divergence(dst, src);
@@ -321,9 +317,8 @@ PostProcessor<dim, Number>::initialize_derived_fields()
     velocity_magnitude.type              = SolutionFieldType::scalar;
     velocity_magnitude.name              = "velocity_magnitude";
     velocity_magnitude.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
-    velocity_magnitude.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
-      dst = std::make_shared<VectorType>();
-      navier_stokes_operator->initialize_vector_velocity_scalar(*dst);
+    velocity_magnitude.initialize_vector = [&](VectorType & dst) {
+      navier_stokes_operator->initialize_vector_velocity_scalar(dst);
     };
     velocity_magnitude.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
       navier_stokes_operator->compute_velocity_magnitude(dst, src);
@@ -338,9 +333,8 @@ PostProcessor<dim, Number>::initialize_derived_fields()
     q_criterion.type              = SolutionFieldType::scalar;
     q_criterion.name              = "q_criterion";
     q_criterion.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
-    q_criterion.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
-      dst = std::make_shared<VectorType>();
-      navier_stokes_operator->initialize_vector_velocity_scalar(*dst);
+    q_criterion.initialize_vector = [&](VectorType & dst) {
+      navier_stokes_operator->initialize_vector_velocity_scalar(dst);
     };
     q_criterion.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
       navier_stokes_operator->compute_q_criterion(dst, src);
@@ -355,9 +349,8 @@ PostProcessor<dim, Number>::initialize_derived_fields()
     mean_velocity.type              = SolutionFieldType::vector;
     mean_velocity.name              = "mean_velocity";
     mean_velocity.dof_handler       = &navier_stokes_operator->get_dof_handler_u();
-    mean_velocity.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
-      dst = std::make_shared<VectorType>();
-      navier_stokes_operator->initialize_vector_velocity(*dst);
+    mean_velocity.initialize_vector = [&](VectorType & dst) {
+      navier_stokes_operator->initialize_vector_velocity(dst);
     };
     mean_velocity.recompute_solution_field = [&](VectorType & dst, VectorType const & velocity) {
       unsigned int const counter = time_control_mean_velocity.get_counter();
@@ -371,11 +364,9 @@ PostProcessor<dim, Number>::initialize_derived_fields()
   // cfl
   if(pp_data.output_data.write_cfl)
   {
-    cfl_vector.type              = SolutionFieldType::cellwise;
-    cfl_vector.name              = "cfl_relative";
-    cfl_vector.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
-      dst = std::make_shared<VectorType>();
-    };
+    cfl_vector.type                     = SolutionFieldType::cellwise;
+    cfl_vector.name                     = "cfl_relative";
+    cfl_vector.initialize_vector        = [&](VectorType &) {};
     cfl_vector.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
       // This time step size corresponds to CFL = 1.
       auto const time_step_size = navier_stokes_operator->calculate_time_step_cfl(src);

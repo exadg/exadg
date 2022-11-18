@@ -196,9 +196,8 @@ PostProcessor<dim, Number>::initialize_derived_fields()
     pressure.type              = SolutionFieldType::scalar;
     pressure.name              = "pressure";
     pressure.dof_handler       = &navier_stokes_operator->get_dof_handler_scalar();
-    pressure.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
-      dst = std::make_shared<VectorType>();
-      navier_stokes_operator->initialize_dof_vector_scalar(*dst);
+    pressure.initialize_vector = [&](VectorType & dst) {
+      navier_stokes_operator->initialize_dof_vector_scalar(dst);
     };
     pressure.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
       navier_stokes_operator->compute_pressure(dst, src);
@@ -217,9 +216,8 @@ PostProcessor<dim, Number>::initialize_derived_fields()
     velocity.type              = SolutionFieldType::vector;
     velocity.name              = "velocity";
     velocity.dof_handler       = &navier_stokes_operator->get_dof_handler_vector();
-    velocity.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
-      dst = std::make_shared<VectorType>();
-      navier_stokes_operator->initialize_dof_vector_dim_components(*dst);
+    velocity.initialize_vector = [&](VectorType & dst) {
+      navier_stokes_operator->initialize_dof_vector_dim_components(dst);
     };
     velocity.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
       navier_stokes_operator->compute_velocity(dst, src);
@@ -236,9 +234,8 @@ PostProcessor<dim, Number>::initialize_derived_fields()
       vorticity.type              = SolutionFieldType::vector;
       vorticity.name              = "vorticity";
       vorticity.dof_handler       = &navier_stokes_operator->get_dof_handler_vector();
-      vorticity.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
-        dst = std::make_shared<VectorType>();
-        navier_stokes_operator->initialize_dof_vector_dim_components(*dst);
+      vorticity.initialize_vector = [&](VectorType & dst) {
+        navier_stokes_operator->initialize_dof_vector_dim_components(dst);
       };
       vorticity.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
         navier_stokes_operator->compute_vorticity(dst, src);
@@ -256,9 +253,8 @@ PostProcessor<dim, Number>::initialize_derived_fields()
       divergence.type              = SolutionFieldType::scalar;
       divergence.name              = "velocity_divergence";
       divergence.dof_handler       = &navier_stokes_operator->get_dof_handler_scalar();
-      divergence.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
-        dst = std::make_shared<VectorType>();
-        navier_stokes_operator->initialize_dof_vector_scalar(*dst);
+      divergence.initialize_vector = [&](VectorType & dst) {
+        navier_stokes_operator->initialize_dof_vector_scalar(dst);
       };
       divergence.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
         navier_stokes_operator->compute_divergence(dst, src);
@@ -274,9 +270,8 @@ PostProcessor<dim, Number>::initialize_derived_fields()
     temperature.type              = SolutionFieldType::scalar;
     temperature.name              = "temperature";
     temperature.dof_handler       = &navier_stokes_operator->get_dof_handler_scalar();
-    temperature.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
-      dst = std::make_shared<VectorType>();
-      navier_stokes_operator->initialize_dof_vector_scalar(*dst);
+    temperature.initialize_vector = [&](VectorType & dst) {
+      navier_stokes_operator->initialize_dof_vector_scalar(dst);
     };
     temperature.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
       navier_stokes_operator->compute_temperature(dst, src);
