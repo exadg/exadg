@@ -46,8 +46,7 @@ public:
       type(SolutionFieldType::scalar),
       name("solution"),
       dof_handler(nullptr),
-      is_available(false),
-      src_vector(nullptr)
+      is_available(false)
   {
   }
 
@@ -85,7 +84,7 @@ public:
   get() const
   {
     AssertThrow(is_available,
-                dealii::ExcMessage("You are trying to access a Vector that is not available."));
+                dealii::ExcMessage("You are trying to access a Vector that is invalid."));
 
     return *solution_vector;
   }
@@ -130,7 +129,6 @@ public:
 private:
   mutable bool                        is_available;
   mutable std::shared_ptr<VectorType> solution_vector;
-  VectorType const *                  src_vector;
 };
 
 } // namespace ExaDG
