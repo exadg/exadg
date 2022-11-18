@@ -120,7 +120,7 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
                 dealii::ExcMessage(
                   "Calculating mean velocity does not make sense for steady problems."));
 
-    compute_mean_velocity(*mean_velocity_vector, velocity);
+    mean_velocity.evaluate(velocity);
   }
 
 
@@ -352,14 +352,17 @@ PostProcessor<dim, Number>::initialize_derived_fields()
   // mean velocity
   if(pp_data.output_data.mean_velocity.is_active)
   {
-    mean_velocity_vector = std::make_shared<VectorType>();
-    navier_stokes_operator->initialize_vector_velocity(*mean_velocity_vector);
-
     mean_velocity.type              = SolutionFieldType::vector;
     mean_velocity.name              = "mean_velocity";
     mean_velocity.dof_handler       = &navier_stokes_operator->get_dof_handler_u();
     mean_velocity.initialize_vector = [&](std::shared_ptr<VectorType> & dst) {
-      dst = mean_velocity_vector;
+      dst = std::make_shared<VectorType>();
+      navier_stokes_operator->initialize_vector_velocity(*dst);
+    };
+    mean_velocity.recompute_solution_field = [&](VectorType & dst, VectorType const & velocity) {
+      unsigned int const counter = time_control_mean_velocity.get_counter();
+      dst.sadd((double)counter, 1.0, velocity);
+      dst *= 1. / (double)(counter + 1);
     };
 
     mean_velocity.reinit();
@@ -383,16 +386,6 @@ PostProcessor<dim, Number>::initialize_derived_fields()
 
     cfl_vector.reinit();
   }
-}
-
-template<int dim, typename Number>
-void
-PostProcessor<dim, Number>::compute_mean_velocity(VectorType &       mean_velocity,
-                                                  VectorType const & velocity)
-{
-  unsigned int const counter = time_control_mean_velocity.get_counter();
-  mean_velocity.sadd((double)counter, 1.0, velocity);
-  mean_velocity *= 1. / (double)(counter + 1);
 }
 
 template<int dim, typename Number>
