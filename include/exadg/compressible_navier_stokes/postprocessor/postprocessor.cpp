@@ -112,17 +112,16 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     solution,
     {
       velocity.evaluate(solution);
       additional_fields_vtu.push_back(&velocity);
-
-      if(pp_data.output_data.write_vorticity)
-      {
-        vorticity.evaluate(velocity.get());
-        additional_fields_vtu.push_back(&vorticity);
-      }
-      if(pp_data.output_data.write_divergence)
-      {
-        divergence.evaluate(velocity.get());
-        additional_fields_vtu.push_back(&divergence);
-      }
+    }
+    if(pp_data.output_data.write_vorticity)
+    {
+      vorticity.evaluate(velocity.evaluate_get(solution));
+      additional_fields_vtu.push_back(&vorticity);
+    }
+    if(pp_data.output_data.write_divergence)
+    {
+      divergence.evaluate(velocity.evaluate_get(solution));
+      additional_fields_vtu.push_back(&divergence);
     }
     if(pp_data.output_data.write_temperature)
     {
@@ -224,44 +223,44 @@ PostProcessor<dim, Number>::initialize_derived_fields()
     };
 
     velocity.reinit();
+  }
 
-    // vorticity
-    if(pp_data.output_data.write_vorticity)
-    {
-      AssertThrow(pp_data.output_data.write_velocity == true,
-                  dealii::ExcMessage("You need to activate write_velocity."));
+  // vorticity
+  if(pp_data.output_data.write_vorticity)
+  {
+    AssertThrow(pp_data.output_data.write_velocity == true,
+                dealii::ExcMessage("You need to activate write_velocity."));
 
-      vorticity.type              = SolutionFieldType::vector;
-      vorticity.name              = "vorticity";
-      vorticity.dof_handler       = &navier_stokes_operator->get_dof_handler_vector();
-      vorticity.initialize_vector = [&](VectorType & dst) {
-        navier_stokes_operator->initialize_dof_vector_dim_components(dst);
-      };
-      vorticity.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
-        navier_stokes_operator->compute_vorticity(dst, src);
-      };
+    vorticity.type              = SolutionFieldType::vector;
+    vorticity.name              = "vorticity";
+    vorticity.dof_handler       = &navier_stokes_operator->get_dof_handler_vector();
+    vorticity.initialize_vector = [&](VectorType & dst) {
+      navier_stokes_operator->initialize_dof_vector_dim_components(dst);
+    };
+    vorticity.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
+      navier_stokes_operator->compute_vorticity(dst, src);
+    };
 
-      vorticity.reinit();
-    }
+    vorticity.reinit();
+  }
 
-    // divergence
-    if(pp_data.output_data.write_divergence)
-    {
-      AssertThrow(pp_data.output_data.write_velocity == true,
-                  dealii::ExcMessage("You need to activate write_velocity."));
+  // divergence
+  if(pp_data.output_data.write_divergence)
+  {
+    AssertThrow(pp_data.output_data.write_velocity == true,
+                dealii::ExcMessage("You need to activate write_velocity."));
 
-      divergence.type              = SolutionFieldType::scalar;
-      divergence.name              = "velocity_divergence";
-      divergence.dof_handler       = &navier_stokes_operator->get_dof_handler_scalar();
-      divergence.initialize_vector = [&](VectorType & dst) {
-        navier_stokes_operator->initialize_dof_vector_scalar(dst);
-      };
-      divergence.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
-        navier_stokes_operator->compute_divergence(dst, src);
-      };
+    divergence.type              = SolutionFieldType::scalar;
+    divergence.name              = "velocity_divergence";
+    divergence.dof_handler       = &navier_stokes_operator->get_dof_handler_scalar();
+    divergence.initialize_vector = [&](VectorType & dst) {
+      navier_stokes_operator->initialize_dof_vector_scalar(dst);
+    };
+    divergence.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
+      navier_stokes_operator->compute_divergence(dst, src);
+    };
 
-      divergence.reinit();
-    }
+    divergence.reinit();
   }
 
   // temperature

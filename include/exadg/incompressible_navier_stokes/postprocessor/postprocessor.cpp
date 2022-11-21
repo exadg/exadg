@@ -134,17 +134,16 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
     {
       vorticity.evaluate(velocity);
       additional_fields_vtu.push_back(&vorticity);
-
-      if(pp_data.output_data.write_vorticity_magnitude)
-      {
-        vorticity_magnitude.evaluate(vorticity.get());
-        additional_fields_vtu.push_back(&vorticity_magnitude);
-      }
-      if(pp_data.output_data.write_streamfunction)
-      {
-        streamfunction.evaluate(vorticity.get());
-        additional_fields_vtu.push_back(&streamfunction);
-      }
+    }
+    if(pp_data.output_data.write_vorticity_magnitude)
+    {
+      vorticity_magnitude.evaluate(vorticity.evaluate_get(velocity));
+      additional_fields_vtu.push_back(&vorticity_magnitude);
+    }
+    if(pp_data.output_data.write_streamfunction)
+    {
+      streamfunction.evaluate(vorticity.evaluate_get(velocity));
+      additional_fields_vtu.push_back(&streamfunction);
     }
     if(pp_data.output_data.write_divergence)
     {
@@ -254,45 +253,45 @@ PostProcessor<dim, Number>::initialize_derived_fields()
     };
 
     vorticity.reinit();
+  }
 
-    // vorticity magnitude
-    if(pp_data.output_data.write_vorticity_magnitude)
-    {
-      AssertThrow(pp_data.output_data.write_vorticity == true,
-                  dealii::ExcMessage("You need to activate write_vorticity."));
+  // vorticity magnitude
+  if(pp_data.output_data.write_vorticity_magnitude)
+  {
+    AssertThrow(pp_data.output_data.write_vorticity == true,
+                dealii::ExcMessage("You need to activate write_vorticity."));
 
-      vorticity_magnitude.type              = SolutionFieldType::scalar;
-      vorticity_magnitude.name              = "vorticity_magnitude";
-      vorticity_magnitude.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
-      vorticity_magnitude.initialize_vector = [&](VectorType & dst) {
-        navier_stokes_operator->initialize_vector_velocity_scalar(dst);
-      };
-      vorticity_magnitude.recompute_solution_field = [&](VectorType & dst, const VectorType & src) {
-        navier_stokes_operator->compute_vorticity_magnitude(dst, src);
-      };
+    vorticity_magnitude.type              = SolutionFieldType::scalar;
+    vorticity_magnitude.name              = "vorticity_magnitude";
+    vorticity_magnitude.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
+    vorticity_magnitude.initialize_vector = [&](VectorType & dst) {
+      navier_stokes_operator->initialize_vector_velocity_scalar(dst);
+    };
+    vorticity_magnitude.recompute_solution_field = [&](VectorType & dst, const VectorType & src) {
+      navier_stokes_operator->compute_vorticity_magnitude(dst, src);
+    };
 
-      vorticity_magnitude.reinit();
-    }
+    vorticity_magnitude.reinit();
+  }
 
 
-    // streamfunction
-    if(pp_data.output_data.write_streamfunction)
-    {
-      AssertThrow(pp_data.output_data.write_vorticity == true,
-                  dealii::ExcMessage("You need to activate write_vorticity."));
+  // streamfunction
+  if(pp_data.output_data.write_streamfunction)
+  {
+    AssertThrow(pp_data.output_data.write_vorticity == true,
+                dealii::ExcMessage("You need to activate write_vorticity."));
 
-      streamfunction.type              = SolutionFieldType::scalar;
-      streamfunction.name              = "streamfunction";
-      streamfunction.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
-      streamfunction.initialize_vector = [&](VectorType & dst) {
-        navier_stokes_operator->initialize_vector_velocity_scalar(dst);
-      };
-      streamfunction.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
-        navier_stokes_operator->compute_streamfunction(dst, src);
-      };
+    streamfunction.type              = SolutionFieldType::scalar;
+    streamfunction.name              = "streamfunction";
+    streamfunction.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
+    streamfunction.initialize_vector = [&](VectorType & dst) {
+      navier_stokes_operator->initialize_vector_velocity_scalar(dst);
+    };
+    streamfunction.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
+      navier_stokes_operator->compute_streamfunction(dst, src);
+    };
 
-      streamfunction.reinit();
-    }
+    streamfunction.reinit();
   }
 
   // divergence
