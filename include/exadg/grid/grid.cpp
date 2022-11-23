@@ -127,11 +127,16 @@ Grid<dim>::create_triangulation(
   // coarse triangulations need to be created for global coarsening multigrid
   if(data.create_coarse_triangulations)
   {
-    if(data.triangulation_type == TriangulationType::Serial or
-       data.triangulation_type == TriangulationType::Distributed)
+    // in case of a serial or distributed triangulation, deal.II can automatically generate the
+    // coarse grid triangulations
+    if(data.triangulation_type == TriangulationType::Serial)
     {
-      // in case of a serial or distributed triangulation, deal.II can automatically generate the
-      // coarse grid triangulations
+      coarse_triangulations =
+        dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
+          *triangulation);
+    }
+    else if(data.triangulation_type == TriangulationType::Distributed)
+    {
       coarse_triangulations =
         dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
           *triangulation,
