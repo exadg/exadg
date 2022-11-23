@@ -24,6 +24,8 @@
 #include <deal.II/base/point.h>
 #include <deal.II/base/tensor.h>
 
+#include <vector>
+
 namespace ExaDG
 {
 template<int dim, typename Number>

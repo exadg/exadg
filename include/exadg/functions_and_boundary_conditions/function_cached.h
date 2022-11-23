@@ -24,7 +24,10 @@
 
 // deal.II
 #include <deal.II/base/tensor.h>
+
 #include <map>
+#include <tuple>
+#include <vector>
 
 namespace ExaDG
 {
