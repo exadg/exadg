@@ -27,6 +27,7 @@
 
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/function_cached.h>
+#include <exadg/utilities/n_components_to_rank.h>
 
 namespace ExaDG
 {
@@ -34,8 +35,7 @@ template<int rank, int dim, typename Number>
 class InterfaceCoupling
 {
 private:
-  static unsigned int const n_components =
-    (rank == 0) ? 1 : ((rank == 1) ? dim : dealii::numbers::invalid_unsigned_int);
+  static unsigned int const n_components = rank_to_n_components<rank, dim>();
 
   using quad_index = unsigned int;
 

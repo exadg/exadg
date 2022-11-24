@@ -22,8 +22,10 @@
 #ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_EXADG_COUPLING_H_
 #define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_EXADG_COUPLING_H_
 
+// ExaDG
 #include <exadg/fluid_structure_interaction/precice/coupling_base.h>
 #include <exadg/functions_and_boundary_conditions/interface_coupling.h>
+#include <exadg/utilities/n_components_to_rank.h>
 
 namespace ExaDG
 {
@@ -38,8 +40,7 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 class ExaDGCoupling : public CouplingBase<dim, data_dim, VectorizedArrayType>
 {
 public:
-  static unsigned int const rank =
-    (data_dim == 1) ? 0 : ((data_dim == dim) ? 1 : dealii::numbers::invalid_unsigned_int);
+  static unsigned int const rank = n_components_to_rank<data_dim, dim>();
 
   ExaDGCoupling(
     std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,

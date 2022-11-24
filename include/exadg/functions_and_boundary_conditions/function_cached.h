@@ -31,6 +31,7 @@
 
 // ExaDG
 #include <exadg/matrix_free/integrators.h>
+#include <exadg/utilities/n_components_to_rank.h>
 
 namespace ExaDG
 {
@@ -42,8 +43,7 @@ public:
   typedef dealii::Tensor<rank, dim, double> value_type;
 
 private:
-  static unsigned int const n_components =
-    (rank == 0) ? 1 : ((rank == 1) ? dim : dealii::numbers::invalid_unsigned_int);
+  static unsigned int const n_components = rank_to_n_components<rank, dim>();
 
   using SetBoundaryIDs = std::set<dealii::types::boundary_id>;
 

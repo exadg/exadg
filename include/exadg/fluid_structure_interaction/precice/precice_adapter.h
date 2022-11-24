@@ -36,6 +36,7 @@
 #include <exadg/fluid_structure_interaction/precice/dof_coupling.h>
 #include <exadg/fluid_structure_interaction/precice/exadg_coupling.h>
 #include <exadg/fluid_structure_interaction/precice/quad_coupling.h>
+#include <exadg/utilities/n_components_to_rank.h>
 
 // preCICE
 #ifdef EXADG_WITH_PRECICE
@@ -60,8 +61,7 @@ template<int dim,
 class Adapter
 {
 public:
-  static unsigned int const rank =
-    (data_dim == 1) ? 0 : ((data_dim == dim) ? 1 : dealii::numbers::invalid_unsigned_int);
+  static unsigned int const rank = n_components_to_rank<data_dim, dim>();
 
   using value_type = typename CouplingBase<dim, data_dim, VectorizedArrayType>::value_type;
   /**
