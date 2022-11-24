@@ -52,8 +52,7 @@ public:
 
   /**
    * This function initializes the DoF vector, the main data object of this class.
-   * This is done by using the lambda initialize_vector. The vector solution_vector
-   * may also point to external data.
+   * This is done by using the lambda initialize_vector.
    */
   void
   reinit()
