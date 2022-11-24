@@ -786,8 +786,10 @@ OperatorBase<dim, Number, n_components>::internal_init_system_matrix(
   else if(is_dg && !is_mg)
     dealii::DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
   else if(/*!is_dg &&*/ is_mg)
-    dealii::MGTools::make_sparsity_pattern<dim, dim, dealii::DynamicSparsityPattern, Number>(
-      dof_handler, dsp, this->level, *this->constraint);
+    dealii::MGTools::make_sparsity_pattern<dim, dim, Number>(dof_handler,
+                                                             dsp,
+                                                             this->level,
+                                                             *this->constraint);
   else /* if (!is_dg && !is_mg)*/
     dealii::DoFTools::make_sparsity_pattern(dof_handler, dsp, *this->constraint);
 
