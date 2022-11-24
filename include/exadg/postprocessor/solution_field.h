@@ -41,45 +41,59 @@ public:
   using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
 
   SolutionField()
-    : recompute_solution_field([](VectorType &, VectorType const &) {}),
+    : initialize_vector([](VectorType &) {}),
+      recompute_solution_field([](VectorType &, VectorType const &) {}),
       type(SolutionFieldType::scalar),
       name("solution"),
       dof_handler(nullptr),
-      is_available(false),
-      solution(nullptr)
+      is_available(false)
   {
   }
 
+  /**
+   * This function initializes the DoF vector, the main data object of this class.
+   * This is done by using the lambda initialize_vector.
+   */
   void
-  reinit(VectorType const & solution_in)
+  reinit()
+  {
+    initialize_vector(solution_vector);
+  }
+
+  /**
+   * This function invalidates the solution vector.
+   */
+  void
+  invalidate()
   {
     is_available = false;
-    solution     = &solution_in;
   }
 
   void
-  evaluate()
+  evaluate(VectorType const & src)
   {
     if(!is_available)
     {
-      recompute_solution_field(vector, *solution);
+      recompute_solution_field(solution_vector, src);
       is_available = true;
     }
   }
 
-  VectorType &
-  get_vector_reference()
+  VectorType const &
+  get() const
   {
-    return vector;
+    AssertThrow(is_available,
+                dealii::ExcMessage("You are trying to access a Vector that is invalid."));
+
+    return solution_vector;
   }
 
   VectorType const &
-  get_vector() const
+  evaluate_get(VectorType const & src)
   {
-    AssertThrow(is_available,
-                dealii::ExcMessage("You are trying to access a Vector that is not available."));
+    evaluate(src);
 
-    return vector;
+    return get();
   }
 
   std::string const &
@@ -100,6 +114,9 @@ public:
     return type;
   }
 
+  // TODO: these element variables should not be public but instead be passed to the reinit function
+  std::function<void(VectorType &)> initialize_vector;
+
   std::function<void(VectorType &, VectorType const &)> recompute_solution_field;
 
   SolutionFieldType type;
@@ -109,27 +126,9 @@ public:
   dealii::DoFHandler<dim> const * dof_handler;
 
 private:
-  bool               is_available;
-  VectorType         vector;
-  VectorType const * solution;
+  bool       is_available;
+  VectorType solution_vector;
 };
-
-template<int dim, typename Number>
-std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const &
-evaluate_get(std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> & vec)
-{
-  for(auto & v : vec)
-    v->evaluate();
-  return vec;
-}
-
-template<int dim, typename Number>
-typename SolutionField<dim, Number>::VectorType const &
-evaluate_get(SolutionField<dim, Number> & sol)
-{
-  sol.evaluate();
-  return sol.get_vector();
-}
 
 } // namespace ExaDG
 

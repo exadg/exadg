@@ -85,15 +85,10 @@ protected:
 
 private:
   void
-  initialize_additional_vectors();
-
-  // TODO: FOR A MODULAR DESIGN THERE SHOULD PROBALY BE A CLASS CALLED MEAN_VECTOR_CALCULATION IN
-  // WHICH RELEVANT SAMPLES CAN JUST BE SUBMITTED.
-  void
-  compute_mean_velocity(VectorType & mean_velocity, VectorType const & velocity);
+  initialize_derived_fields();
 
   void
-  reinit_additional_fields(VectorType const & velocity);
+  invalidate_derived_fields();
 
   PostProcessorData<dim> pp_data;
 
@@ -110,8 +105,6 @@ private:
 
   TimeControl                time_control_mean_velocity;
   SolutionField<dim, Number> mean_velocity; // velocity field averaged over time
-
-  std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> additional_fields_vtu;
 
   // write output for visualization of results (e.g., using paraview)
   OutputGenerator<dim, Number> output_generator;
