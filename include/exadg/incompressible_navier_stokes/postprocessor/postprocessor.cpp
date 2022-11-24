@@ -297,7 +297,7 @@ PostProcessor<dim, Number>::initialize_derived_fields()
   // divergence
   if(pp_data.output_data.write_divergence)
   {
-    divergence.type              = SolutionFieldType::vector;
+    divergence.type              = SolutionFieldType::scalar;
     divergence.name              = "div_u";
     divergence.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
     divergence.initialize_vector = [&](VectorType & dst) {
