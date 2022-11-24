@@ -96,18 +96,19 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b> = dea
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a229f70d32f134f71f839acd3c022e069"><td class="memItemLeft" align="right" valign="top"><a id="a229f70d32f134f71f839acd3c022e069" name="a229f70d32f134f71f839acd3c022e069"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit</b> (VectorType const &amp;solution_in)</td></tr>
-<tr class="separator:a229f70d32f134f71f839acd3c022e069"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9fee9ebf1e2a7776a1909dee468796b1"><td class="memItemLeft" align="right" valign="top"><a id="a9fee9ebf1e2a7776a1909dee468796b1" name="a9fee9ebf1e2a7776a1909dee468796b1"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> ()</td></tr>
-<tr class="separator:a9fee9ebf1e2a7776a1909dee468796b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a53028400eaa5c7b37b127ea61aaf27c9"><td class="memItemLeft" align="right" valign="top"><a id="a53028400eaa5c7b37b127ea61aaf27c9" name="a53028400eaa5c7b37b127ea61aaf27c9"></a>
-VectorType &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_vector_reference</b> ()</td></tr>
-<tr class="separator:a53028400eaa5c7b37b127ea61aaf27c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae7254ab22e2f654cd9fe730b2cc0497f"><td class="memItemLeft" align="right" valign="top"><a id="ae7254ab22e2f654cd9fe730b2cc0497f" name="ae7254ab22e2f654cd9fe730b2cc0497f"></a>
-VectorType const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_vector</b> () const</td></tr>
-<tr class="separator:ae7254ab22e2f654cd9fe730b2cc0497f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a11a769db2ab15d1be7a96acc1a2cd23b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1SolutionField.html#a11a769db2ab15d1be7a96acc1a2cd23b">reinit</a> ()</td></tr>
+<tr class="separator:a11a769db2ab15d1be7a96acc1a2cd23b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac3b6fbbb1b385fb0c26fd10326c118e4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1SolutionField.html#ac3b6fbbb1b385fb0c26fd10326c118e4">invalidate</a> ()</td></tr>
+<tr class="separator:ac3b6fbbb1b385fb0c26fd10326c118e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a524257255eff90db0fae89fb4db30907"><td class="memItemLeft" align="right" valign="top"><a id="a524257255eff90db0fae89fb4db30907" name="a524257255eff90db0fae89fb4db30907"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;src)</td></tr>
+<tr class="separator:a524257255eff90db0fae89fb4db30907"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac48910d0abf49ea2a6f2b8fb4361d63c"><td class="memItemLeft" align="right" valign="top"><a id="ac48910d0abf49ea2a6f2b8fb4361d63c" name="ac48910d0abf49ea2a6f2b8fb4361d63c"></a>
+VectorType const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get</b> () const</td></tr>
+<tr class="separator:ac48910d0abf49ea2a6f2b8fb4361d63c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a762a6102e6a10c3dc7b0579a36031145"><td class="memItemLeft" align="right" valign="top"><a id="a762a6102e6a10c3dc7b0579a36031145" name="a762a6102e6a10c3dc7b0579a36031145"></a>
+VectorType const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_get</b> (VectorType const &amp;src)</td></tr>
+<tr class="separator:a762a6102e6a10c3dc7b0579a36031145"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9a56c524e3f0781e6e304987bd63e8e1"><td class="memItemLeft" align="right" valign="top"><a id="a9a56c524e3f0781e6e304987bd63e8e1" name="a9a56c524e3f0781e6e304987bd63e8e1"></a>
 std::string const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_name</b> () const</td></tr>
 <tr class="separator:a9a56c524e3f0781e6e304987bd63e8e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -120,6 +121,9 @@ SolutionFieldType&#160;</td><td class="memItemRight" valign="bottom"><b>get_type
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
+<tr class="memitem:ae73d63dd11c3ba8516c7447cde6c7497"><td class="memItemLeft" align="right" valign="top"><a id="ae73d63dd11c3ba8516c7447cde6c7497" name="ae73d63dd11c3ba8516c7447cde6c7497"></a>
+std::function&lt; void(VectorType &amp;)&gt;&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_vector</b></td></tr>
+<tr class="separator:ae73d63dd11c3ba8516c7447cde6c7497"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a66ec3abb7dbef20ca008d28654655902"><td class="memItemLeft" align="right" valign="top"><a id="a66ec3abb7dbef20ca008d28654655902" name="a66ec3abb7dbef20ca008d28654655902"></a>
 std::function&lt; void(VectorType &amp;, VectorType const &amp;)&gt;&#160;</td><td class="memItemRight" valign="bottom"><b>recompute_solution_field</b></td></tr>
 <tr class="separator:a66ec3abb7dbef20ca008d28654655902"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -133,6 +137,63 @@ std::string&#160;</td><td class="memItemRight" valign="bottom"><b>name</b></td><
 dealii::DoFHandler&lt; dim &gt; const  *&#160;</td><td class="memItemRight" valign="bottom"><b>dof_handler</b></td></tr>
 <tr class="separator:a5793e0fa041cec527952e32c5e67e2d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="ac3b6fbbb1b385fb0c26fd10326c118e4" name="ac3b6fbbb1b385fb0c26fd10326c118e4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac3b6fbbb1b385fb0c26fd10326c118e4">&#9670;&#160;</a></span>invalidate()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1SolutionField.html">ExaDG::SolutionField</a>&lt; dim, Number &gt;::invalidate </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p >This function invalidates the solution vector. </p>
+
+</div>
+</div>
+<a id="a11a769db2ab15d1be7a96acc1a2cd23b" name="a11a769db2ab15d1be7a96acc1a2cd23b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a11a769db2ab15d1be7a96acc1a2cd23b">&#9670;&#160;</a></span>reinit()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1SolutionField.html">ExaDG::SolutionField</a>&lt; dim, Number &gt;::reinit </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p >This function initializes the DoF vector, the main data object of this class. This is done by using the lambda initialize_vector. </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/postprocessor/<a class="el" href="solution__field_8h_source.html">solution_field.h</a></li>
 </ul>
