@@ -27,67 +27,15 @@
 
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/function_cached.h>
-#include <exadg/matrix_free/integrators.h>
+#include <exadg/utilities/n_components_to_rank.h>
 
 namespace ExaDG
 {
-template<int dim, int n_components, typename Number>
-class ContainerInterfaceData
-{
-private:
-  static unsigned int const rank =
-    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : dealii::numbers::invalid_unsigned_int);
-
-  using MapBoundaryCondition =
-    std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<rank, dim, double>>>;
-
-  using quad_index = unsigned int;
-
-  using Id = std::tuple<unsigned int /*face*/, unsigned int /*q*/, unsigned int /*v*/>;
-
-  using MapVectorIndex = std::map<Id, dealii::types::global_dof_index>;
-
-  using ArrayQuadraturePoints = std::vector<dealii::Point<dim>>;
-
-  typedef typename FunctionCached<rank, dim, double>::value_type value_type;
-
-  using ArraySolutionValues = std::vector<value_type>;
-
-public:
-  ContainerInterfaceData();
-
-  void
-  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_,
-        unsigned int const                               dof_index_,
-        std::vector<quad_index> const &                  quad_indices_,
-        MapBoundaryCondition const &                     map_bc_);
-
-  std::vector<quad_index> const &
-  get_quad_indices();
-
-  ArrayQuadraturePoints &
-  get_array_q_points(quad_index const & q_index);
-
-  ArraySolutionValues &
-  get_array_solution(quad_index const & q_index);
-
-private:
-  std::vector<quad_index> quad_indices;
-
-  mutable std::map<quad_index, MapVectorIndex>        map_vector_index;
-  mutable std::map<quad_index, ArrayQuadraturePoints> map_q_points;
-  mutable std::map<quad_index, ArraySolutionValues>   map_solution;
-};
-
-template<int dim, int n_components, typename Number>
+template<int rank, int dim, typename Number>
 class InterfaceCoupling
 {
 private:
-  static unsigned int const rank =
-    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : dealii::numbers::invalid_unsigned_int);
-
-  using MapBoundaryCondition =
-    std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<rank, dim, double>>>;
+  static unsigned int const n_components = rank_to_n_components<rank, dim>();
 
   using quad_index = unsigned int;
 
@@ -107,11 +55,11 @@ public:
    * the search of points on the src side.
    */
   void
-  setup(std::shared_ptr<ContainerInterfaceData<dim, n_components, Number>> interface_data_dst_,
-        dealii::DoFHandler<dim> const &                                    dof_handler_src_,
-        dealii::Mapping<dim> const &                                       mapping_src_,
-        std::vector<bool> const &                                          marked_vertices_src_,
-        double const                                                       tolerance_);
+  setup(std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data_dst_,
+        dealii::DoFHandler<dim> const &                            dof_handler_src_,
+        dealii::Mapping<dim> const &                               mapping_src_,
+        std::vector<bool> const &                                  marked_vertices_src_,
+        double const                                               tolerance_);
 
   void
   update_data(VectorType const & dof_vector_src);
@@ -120,7 +68,7 @@ private:
   /*
    * dst-side
    */
-  std::shared_ptr<ContainerInterfaceData<dim, n_components, Number>> interface_data_dst;
+  std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data_dst;
 
   /*
    *  Evaluates solution on src-side in those points specified by dst-side

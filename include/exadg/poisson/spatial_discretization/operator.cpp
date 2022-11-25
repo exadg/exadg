@@ -277,8 +277,7 @@ Operator<dim, n_components, Number>::setup(
 
   if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
-    interface_data_dirichlet_cached =
-      std::make_shared<ContainerInterfaceData<dim, n_components, Number>>();
+    interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<rank, dim, double>>();
     std::vector<unsigned int> quad_indices;
     if(param.spatial_discretization == SpatialDiscretization::DG)
       quad_indices.emplace_back(get_quad_index());
@@ -287,10 +286,14 @@ Operator<dim, n_components, Number>::setup(
     else
       AssertThrow(false, dealii::ExcMessage("not implemented."));
 
-    interface_data_dirichlet_cached->setup(matrix_free,
-                                           get_dof_index(),
-                                           quad_indices,
-                                           boundary_descriptor->dirichlet_cached_bc);
+    std::set<dealii::types::boundary_id> bids;
+    for(auto const & bc : boundary_descriptor->dirichlet_cached_bc)
+      bids.insert(bc.first);
+
+    interface_data_dirichlet_cached->setup(matrix_free, get_dof_index(), quad_indices, bids);
+
+    for(auto const & bc : boundary_descriptor->dirichlet_cached_bc)
+      bc.second->set_data_pointer(interface_data_dirichlet_cached);
   }
 
   setup_operators();
@@ -634,7 +637,7 @@ Operator<dim, n_components, Number>::get_quad_index_gauss_lobatto() const
 }
 
 template<int dim, int n_components, typename Number>
-std::shared_ptr<ContainerInterfaceData<dim, n_components, Number>>
+std::shared_ptr<ContainerInterfaceData<Operator<dim, n_components, Number>::rank, dim, double>>
 Operator<dim, n_components, Number>::get_container_interface_data()
 {
   return interface_data_dirichlet_cached;

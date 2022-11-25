@@ -26,7 +26,6 @@
 #include <deal.II/fe/fe_system.h>
 
 // ExaDG
-#include <exadg/functions_and_boundary_conditions/interface_coupling.h>
 #include <exadg/grid/grid.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
@@ -292,10 +291,10 @@ public:
   get_number_of_dofs() const;
 
   // Multiphysics coupling via "Cached" boundary conditions
-  std::shared_ptr<ContainerInterfaceData<dim, dim, Number>>
+  std::shared_ptr<ContainerInterfaceData<1, dim, double>>
   get_container_interface_data_neumann();
 
-  std::shared_ptr<ContainerInterfaceData<dim, dim, Number>>
+  std::shared_ptr<ContainerInterfaceData<1, dim, double>>
   get_container_interface_data_dirichlet();
 
   // TODO: we currently need this function public for precice-based FSI
@@ -390,8 +389,8 @@ private:
   /*
    * Interface coupling
    */
-  std::shared_ptr<ContainerInterfaceData<dim, dim, Number>> interface_data_dirichlet_cached;
-  std::shared_ptr<ContainerInterfaceData<dim, dim, Number>> interface_data_neumann_cached;
+  std::shared_ptr<ContainerInterfaceData<1, dim, double>> interface_data_dirichlet_cached;
+  std::shared_ptr<ContainerInterfaceData<1, dim, double>> interface_data_neumann_cached;
 
   /*
    * Basic operators.

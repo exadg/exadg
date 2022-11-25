@@ -22,8 +22,10 @@
 #ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_EXADG_COUPLING_H_
 #define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_EXADG_COUPLING_H_
 
+// ExaDG
 #include <exadg/fluid_structure_interaction/precice/coupling_base.h>
 #include <exadg/functions_and_boundary_conditions/interface_coupling.h>
+#include <exadg/utilities/n_components_to_rank.h>
 
 namespace ExaDG
 {
@@ -38,13 +40,15 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 class ExaDGCoupling : public CouplingBase<dim, data_dim, VectorizedArrayType>
 {
 public:
+  static unsigned int const rank = n_components_to_rank<data_dim, dim>();
+
   ExaDGCoupling(
     std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
 #ifdef EXADG_WITH_PRECICE
     std::shared_ptr<precice::SolverInterface> precice,
 #endif
-    std::string const                                              mesh_name,
-    std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>> interface_data_,
+    std::string const                                          mesh_name,
+    std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data_,
     dealii::types::boundary_id const surface_id = dealii::numbers::invalid_unsigned_int);
 
   /**
@@ -71,7 +75,7 @@ public:
 
 private:
   /// Accessor for ExaDG data structures
-  std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>> interface_data;
+  std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data;
 
   /// The preCICE IDs
   std::vector<int> coupling_nodes_ids;
@@ -88,9 +92,9 @@ ExaDGCoupling<dim, data_dim, VectorizedArrayType>::ExaDGCoupling(
 #ifdef EXADG_WITH_PRECICE
   std::shared_ptr<precice::SolverInterface> precice,
 #endif
-  std::string const                                              mesh_name,
-  std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>> interface_data_,
-  dealii::types::boundary_id const                               surface_id)
+  std::string const                                          mesh_name,
+  std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data_,
+  dealii::types::boundary_id const                           surface_id)
   : CouplingBase<dim, data_dim, VectorizedArrayType>(data,
 #ifdef EXADG_WITH_PRECICE
                                                      precice,

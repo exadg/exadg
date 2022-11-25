@@ -36,6 +36,7 @@
 #include <exadg/fluid_structure_interaction/precice/dof_coupling.h>
 #include <exadg/fluid_structure_interaction/precice/exadg_coupling.h>
 #include <exadg/fluid_structure_interaction/precice/quad_coupling.h>
+#include <exadg/utilities/n_components_to_rank.h>
 
 // preCICE
 #ifdef EXADG_WITH_PRECICE
@@ -60,6 +61,8 @@ template<int dim,
 class Adapter
 {
 public:
+  static unsigned int const rank = n_components_to_rank<data_dim, dim>();
+
   using value_type = typename CouplingBase<dim, data_dim, VectorizedArrayType>::value_type;
   /**
    * @brief      Constructor, which sets up the precice Solverinterface
@@ -112,9 +115,9 @@ public:
 
   void
   add_read_surface(std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
-                   std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>> interface_data,
-                   std::string const &                                            mesh_name,
-                   std::vector<std::string> const &                               read_data_name);
+                   std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data,
+                   std::string const &                                        mesh_name,
+                   std::vector<std::string> const &                           read_data_name);
 
   /**
    * @brief      Advances preCICE after every timestep
@@ -292,7 +295,7 @@ template<int dim, int data_dim, typename VectorType, typename VectorizedArrayTyp
 void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_read_surface(
   std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
-  std::shared_ptr<ContainerInterfaceData<dim, data_dim, double>>              interface_data,
+  std::shared_ptr<ContainerInterfaceData<rank, dim, double>>                  interface_data,
   std::string const &                                                         mesh_name,
   std::vector<std::string> const &                                            read_data_names)
 {

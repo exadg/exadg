@@ -29,42 +29,154 @@
 #include <tuple>
 #include <vector>
 
+// ExaDG
+#include <exadg/matrix_free/integrators.h>
+#include <exadg/utilities/n_components_to_rank.h>
+
 namespace ExaDG
 {
-/*
- * Note:
- * The default argument "double" could be removed but this implies that all BoundaryDescriptors
- * that use FunctionCached require another template parameter "Number", which requires
- * changes of major parts of the code.
+/**
+ * A data structure storing quadrature point information for each quadrature point on boundary faces
+ * of a given set of boundary IDs. The type of data stored for each q-point is dealii::Tensor<rank,
+ * dim, number_type>.
  */
-template<int rank, int dim, typename Number = double>
-class FunctionCached
+template<int rank, int dim, typename number_type>
+class ContainerInterfaceData
 {
 public:
-  typedef dealii::Tensor<rank, dim, Number> value_type;
+  typedef dealii::Tensor<rank, dim, number_type> data_type;
 
 private:
+  static unsigned int const n_components = rank_to_n_components<rank, dim>();
+
+  using SetBoundaryIDs = std::set<dealii::types::boundary_id>;
+
+  using quad_index = unsigned int;
+
   using Id = std::tuple<unsigned int /*face*/, unsigned int /*q*/, unsigned int /*v*/>;
 
-  using MapVectorIndex      = std::map<Id, dealii::types::global_dof_index>;
-  using ArraySolutionValues = std::vector<value_type>;
+  using MapVectorIndex = std::map<Id, dealii::types::global_dof_index>;
+
+  using ArrayQuadraturePoints = std::vector<dealii::Point<dim>>;
+
+  using ArraySolutionValues = std::vector<data_type>;
+
+public:
+  ContainerInterfaceData();
+
+  template<typename Number>
+  void
+  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_,
+        unsigned int const                               dof_index_,
+        std::vector<quad_index> const &                  quad_indices_,
+        SetBoundaryIDs const &                           set_bids_)
+  {
+    quad_indices = quad_indices_;
+
+    for(auto q_index : quad_indices)
+    {
+      // initialize maps
+      map_vector_index.emplace(q_index, MapVectorIndex());
+      map_q_points.emplace(q_index, ArrayQuadraturePoints());
+      map_solution.emplace(q_index, ArraySolutionValues());
+
+      MapVectorIndex &        map_index          = map_vector_index.find(q_index)->second;
+      ArrayQuadraturePoints & array_q_points_dst = map_q_points.find(q_index)->second;
+      ArraySolutionValues &   array_solution_dst = map_solution.find(q_index)->second;
+
+      // create map "ID = {face, q, v} <-> vector_index" and fill array of quadrature points
+      for(unsigned int face = matrix_free_->n_inner_face_batches();
+          face < matrix_free_->n_inner_face_batches() + matrix_free_->n_boundary_face_batches();
+          ++face)
+      {
+        // only consider relevant boundary IDs
+        if(set_bids_.find(matrix_free_->get_boundary_id(face)) != set_bids_.end())
+        {
+          FaceIntegrator<dim, n_components, Number> integrator(*matrix_free_,
+                                                               true,
+                                                               dof_index_,
+                                                               q_index);
+          integrator.reinit(face);
+
+          for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+          {
+            dealii::Point<dim, dealii::VectorizedArray<Number>> q_points =
+              integrator.quadrature_point(q);
+
+            for(unsigned int v = 0; v < dealii::VectorizedArray<Number>::size(); ++v)
+            {
+              dealii::Point<dim> q_point;
+              for(unsigned int d = 0; d < dim; ++d)
+                q_point[d] = q_points[d][v];
+
+              Id                              id    = std::make_tuple(face, q, v);
+              dealii::types::global_dof_index index = array_q_points_dst.size();
+              map_index.emplace(id, index);
+              array_q_points_dst.push_back(q_point);
+            }
+          }
+        }
+      }
+
+      array_solution_dst.resize(array_q_points_dst.size(), data_type());
+    }
+  }
+
+  std::vector<quad_index> const &
+  get_quad_indices();
+
+  ArrayQuadraturePoints &
+  get_array_q_points(quad_index const & q_index);
+
+  ArraySolutionValues &
+  get_array_solution(quad_index const & q_index);
+
+  data_type
+  get_data(unsigned int const q_index,
+           unsigned int const face,
+           unsigned int const q,
+           unsigned int const v) const;
+
+private:
+  std::vector<quad_index> quad_indices;
+
+  mutable std::map<quad_index, MapVectorIndex>        map_vector_index;
+  mutable std::map<quad_index, ArrayQuadraturePoints> map_q_points;
+  mutable std::map<quad_index, ArraySolutionValues>   map_solution;
+};
+
+/*
+ * The only reason why we do not integrate ContainerInterfaceData directly into
+ * FunctionCached is that we want to use only one object of type
+ * ContainerInterfaceData for (potentially) many boundary IDs and, therefore,
+ * many objects of type FunctionCached.
+ */
+template<int rank, int dim>
+class FunctionCached
+{
+private:
+  typedef typename ContainerInterfaceData<rank, dim, double>::data_type data_type;
 
 public:
   FunctionCached();
 
-  value_type
+  // read data
+  inline data_type
   tensor_value(unsigned int const face,
                unsigned int const q,
                unsigned int const v,
-               unsigned int const quad_index) const;
+               unsigned int const quad_index) const
+  {
+    return interface_data->get_data(quad_index, face, q, v);
+  }
 
+  // initialize data pointer
   void
-  set_data_pointer(std::map<unsigned int, MapVectorIndex> const &      map_map_vector_index_,
-                   std::map<unsigned int, ArraySolutionValues> const & map_array_solution_);
+  set_data_pointer(
+    std::shared_ptr<ContainerInterfaceData<rank, dim, double>> const interface_data_);
 
 private:
-  std::map<unsigned int, MapVectorIndex> const *      map_map_vector_index;
-  std::map<unsigned int, ArraySolutionValues> const * map_array_solution;
+  std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data;
 };
 
 } // namespace ExaDG

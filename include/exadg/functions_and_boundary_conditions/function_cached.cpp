@@ -24,53 +24,75 @@
 
 namespace ExaDG
 {
-template<int rank, int dim, typename Number>
-FunctionCached<rank, dim, Number>::FunctionCached()
-  : map_map_vector_index(nullptr), map_array_solution(nullptr)
+template<int rank, int dim, typename number_type>
+ContainerInterfaceData<rank, dim, number_type>::ContainerInterfaceData()
 {
 }
 
-template<int rank, int dim, typename Number>
-typename FunctionCached<rank, dim, Number>::value_type
-FunctionCached<rank, dim, Number>::tensor_value(unsigned int const face,
-                                                unsigned int const q,
-                                                unsigned int const v,
-                                                unsigned int const quad_index) const
+template<int rank, int dim, typename number_type>
+typename ContainerInterfaceData<rank, dim, number_type>::data_type
+ContainerInterfaceData<rank, dim, number_type>::get_data(unsigned int const q_index,
+                                                         unsigned int const face,
+                                                         unsigned int const q,
+                                                         unsigned int const v) const
 {
-  Assert(map_map_vector_index != nullptr,
-         dealii::ExcMessage("Pointer global_map_vector_index is not initialized."));
-  Assert(map_map_vector_index->find(quad_index) != map_map_vector_index->end(),
-         dealii::ExcMessage("Specified quad_index does not exist in global_map_vector_index."));
+  Assert(map_vector_index.find(q_index) != map_vector_index.end(),
+         dealii::ExcMessage("Specified q_index does not exist in map_vector_index."));
 
-  Assert(map_array_solution != nullptr,
-         dealii::ExcMessage("Pointer map_array_solution is not initialized."));
-  Assert(map_array_solution->find(quad_index) != map_array_solution->end(),
-         dealii::ExcMessage("Specified quad_index does not exist in map_array_solution."));
-
-  MapVectorIndex const &      map_vector_index = map_map_vector_index->find(quad_index)->second;
-  ArraySolutionValues const & array_solution   = map_array_solution->find(quad_index)->second;
+  Assert(map_solution.find(q_index) != map_solution.end(),
+         dealii::ExcMessage("Specified q_index does not exist in map_solution."));
 
   Id                              id    = std::make_tuple(face, q, v);
-  dealii::types::global_dof_index index = map_vector_index.find(id)->second;
+  dealii::types::global_dof_index index = map_vector_index.find(q_index)->second.find(id)->second;
 
+  ArraySolutionValues const & array_solution = map_solution.find(q_index)->second;
   Assert(index < array_solution.size(), dealii::ExcMessage("Index exceeds dimensions of vector."));
 
   return array_solution[index];
 }
 
-template<int rank, int dim, typename Number>
-void
-FunctionCached<rank, dim, Number>::set_data_pointer(
-  std::map<unsigned int, MapVectorIndex> const &      map_map_vector_index_,
-  std::map<unsigned int, ArraySolutionValues> const & map_array_solution_)
+template<int rank, int dim, typename number_type>
+std::vector<typename ContainerInterfaceData<rank, dim, number_type>::quad_index> const &
+ContainerInterfaceData<rank, dim, number_type>::get_quad_indices()
 {
-  map_map_vector_index = &map_map_vector_index_;
-  map_array_solution   = &map_array_solution_;
+  return quad_indices;
 }
 
-template class FunctionCached<0, 2, double>;
-template class FunctionCached<0, 3, double>;
-template class FunctionCached<1, 2, double>;
-template class FunctionCached<1, 3, double>;
+template<int rank, int dim, typename number_type>
+typename ContainerInterfaceData<rank, dim, number_type>::ArrayQuadraturePoints &
+ContainerInterfaceData<rank, dim, number_type>::get_array_q_points(quad_index const & q_index)
+{
+  return map_q_points[q_index];
+}
+
+template<int rank, int dim, typename number_type>
+typename ContainerInterfaceData<rank, dim, number_type>::ArraySolutionValues &
+ContainerInterfaceData<rank, dim, number_type>::get_array_solution(quad_index const & q_index)
+{
+  return map_solution[q_index];
+}
+
+template<int rank, int dim>
+FunctionCached<rank, dim>::FunctionCached()
+{
+}
+
+template<int rank, int dim>
+void
+FunctionCached<rank, dim>::set_data_pointer(
+  std::shared_ptr<ContainerInterfaceData<rank, dim, double>> const interface_data_)
+{
+  interface_data = interface_data_;
+}
+
+template class ContainerInterfaceData<0, 2, double>;
+template class ContainerInterfaceData<1, 2, double>;
+template class ContainerInterfaceData<0, 3, double>;
+template class ContainerInterfaceData<1, 3, double>;
+
+template class FunctionCached<0, 2>;
+template class FunctionCached<0, 3>;
+template class FunctionCached<1, 2>;
+template class FunctionCached<1, 3>;
 
 } // namespace ExaDG

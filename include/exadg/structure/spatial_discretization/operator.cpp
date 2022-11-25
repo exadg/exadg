@@ -75,25 +75,35 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> ma
 
   if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
-    interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<dim, dim, Number>>();
+    interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<1, dim, double>>();
     std::vector<unsigned int> quad_indices;
     // Gauss-Lobatto quadrature rule for DirichletCached boundary conditions!
     quad_indices.emplace_back(get_quad_index_gauss_lobatto());
-    interface_data_dirichlet_cached->setup(matrix_free,
-                                           get_dof_index(),
-                                           quad_indices,
-                                           boundary_descriptor->dirichlet_cached_bc);
+
+    std::set<dealii::types::boundary_id> bids;
+    for(auto const & bc : boundary_descriptor->dirichlet_cached_bc)
+      bids.insert(bc.first);
+
+    interface_data_dirichlet_cached->setup(matrix_free, get_dof_index(), quad_indices, bids);
+
+    for(auto const & bc : boundary_descriptor->dirichlet_cached_bc)
+      bc.second->set_data_pointer(interface_data_dirichlet_cached);
   }
 
   if(not(boundary_descriptor->neumann_cached_bc.empty()))
   {
-    interface_data_neumann_cached = std::make_shared<ContainerInterfaceData<dim, dim, Number>>();
+    interface_data_neumann_cached = std::make_shared<ContainerInterfaceData<1, dim, double>>();
     std::vector<unsigned int> quad_indices;
     quad_indices.emplace_back(get_quad_index());
-    interface_data_neumann_cached->setup(matrix_free,
-                                         get_dof_index(),
-                                         quad_indices,
-                                         boundary_descriptor->neumann_cached_bc);
+
+    std::set<dealii::types::boundary_id> bids;
+    for(auto const & bc : boundary_descriptor->neumann_cached_bc)
+      bids.insert(bc.first);
+
+    interface_data_neumann_cached->setup(matrix_free, get_dof_index(), quad_indices, bids);
+
+    for(auto const & bc : boundary_descriptor->neumann_cached_bc)
+      bc.second->set_data_pointer(interface_data_neumann_cached);
   }
 
   setup_operators();
@@ -205,14 +215,14 @@ Operator<dim, Number>::get_quad_index_gauss_lobatto() const
 }
 
 template<int dim, typename Number>
-std::shared_ptr<ContainerInterfaceData<dim, dim, Number>>
+std::shared_ptr<ContainerInterfaceData<1, dim, double>>
 Operator<dim, Number>::get_container_interface_data_neumann()
 {
   return interface_data_neumann_cached;
 }
 
 template<int dim, typename Number>
-std::shared_ptr<ContainerInterfaceData<dim, dim, Number>>
+std::shared_ptr<ContainerInterfaceData<1, dim, double>>
 Operator<dim, Number>::get_container_interface_data_dirichlet()
 {
   return interface_data_dirichlet_cached;

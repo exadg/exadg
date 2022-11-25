@@ -31,7 +31,6 @@
 
 
 // ExaDG
-#include <exadg/functions_and_boundary_conditions/interface_coupling.h>
 #include <exadg/grid/grid.h>
 #include <exadg/grid/grid_motion_interface.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/divergence_calculator.h>
@@ -195,7 +194,7 @@ public:
   get_viscosity_boundary_face(unsigned int const face, unsigned int const q) const;
 
   // Multiphysics coupling via "Cached" boundary conditions
-  std::shared_ptr<ContainerInterfaceData<dim, dim, Number>>
+  std::shared_ptr<ContainerInterfaceData<1, dim, double>>
   get_container_interface_data();
 
   void
@@ -514,7 +513,7 @@ private:
   /*
    * Interface coupling
    */
-  std::shared_ptr<ContainerInterfaceData<dim, dim, Number>> interface_data_dirichlet_cached;
+  std::shared_ptr<ContainerInterfaceData<1, dim, double>> interface_data_dirichlet_cached;
 
 protected:
   /*

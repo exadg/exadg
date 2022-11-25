@@ -101,9 +101,9 @@ private:
   std::shared_ptr<SolverFluid<dim, Number>> fluid;
 
   // interface coupling
-  std::shared_ptr<InterfaceCoupling<dim, dim, Number>> structure_to_fluid;
-  std::shared_ptr<InterfaceCoupling<dim, dim, Number>> structure_to_ale;
-  std::shared_ptr<InterfaceCoupling<dim, dim, Number>> fluid_to_structure;
+  std::shared_ptr<InterfaceCoupling<1, dim, Number>> structure_to_fluid;
+  std::shared_ptr<InterfaceCoupling<1, dim, Number>> structure_to_ale;
+  std::shared_ptr<InterfaceCoupling<1, dim, Number>> fluid_to_structure;
 
   // Parameters for partitioned FSI schemes
   Parameters parameters;
