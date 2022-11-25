@@ -36,34 +36,86 @@
 namespace ExaDG
 {
 /**
- * A data structure storing quadrature point information for each quadrature point on boundary faces
- * of a given set of boundary IDs. The type of data stored for each q-point is dealii::Tensor<rank,
- * dim, number_type>.
+ * A data structure storing quadrature point information for each quadrature point, where the type
+ * of data stored for each q-point is dealii::Tensor<rank, dim, number_type>.
  */
 template<int rank, int dim, typename number_type>
-class ContainerInterfaceData
+class CouplingDataBase
 {
 public:
   typedef dealii::Tensor<rank, dim, number_type> data_type;
 
-private:
+protected:
   static unsigned int const n_components = rank_to_n_components<rank, dim>();
 
-  using SetBoundaryIDs = std::set<dealii::types::boundary_id>;
-
   using quad_index = unsigned int;
-
-  using Id = std::tuple<unsigned int /*face*/, unsigned int /*q*/, unsigned int /*v*/>;
-
-  using MapVectorIndex = std::map<Id, dealii::types::global_dof_index>;
 
   using ArrayQuadraturePoints = std::vector<dealii::Point<dim>>;
 
   using ArraySolutionValues = std::vector<data_type>;
 
 public:
-  ContainerInterfaceData();
+  std::vector<quad_index> const &
+  get_quad_indices()
+  {
+    return quad_indices;
+  }
 
+  ArrayQuadraturePoints &
+  get_array_q_points(quad_index const & q_index)
+  {
+    return map_q_points[q_index];
+  }
+
+  ArraySolutionValues &
+  get_array_solution(quad_index const & q_index)
+  {
+    return map_solution[q_index];
+  }
+
+protected:
+  std::vector<quad_index> quad_indices;
+
+  mutable std::map<quad_index, ArrayQuadraturePoints> map_q_points;
+  mutable std::map<quad_index, ArraySolutionValues>   map_solution;
+};
+
+/**
+ * For this derived class, quadrature points are given by all the quadrature points on the boundary
+ * faces of a mesh belonging to a given set of boundary IDs.
+ */
+template<int rank, int dim, typename number_type>
+class CouplingDataSurface : public CouplingDataBase<rank, dim, number_type>
+{
+public:
+  using data_type = typename CouplingDataBase<rank, dim, number_type>::data_type;
+
+private:
+  using quad_index = typename CouplingDataBase<rank, dim, number_type>::quad_index;
+
+  using ArrayQuadraturePoints =
+    typename CouplingDataBase<rank, dim, number_type>::ArrayQuadraturePoints;
+
+  using ArraySolutionValues =
+    typename CouplingDataBase<rank, dim, number_type>::ArraySolutionValues;
+
+  using SetBoundaryIDs = std::set<dealii::types::boundary_id>;
+
+  using Id = std::tuple<unsigned int /*face*/, unsigned int /*q*/, unsigned int /*v*/>;
+
+  using MapVectorIndex = std::map<Id, dealii::types::global_dof_index>;
+
+public:
+  CouplingDataSurface();
+
+  /**
+   * This function loops over the boundary faces of a triangulation using dealii::MatrixFree
+   * infrastructure. For those faces belonging to a specified set of boundary IDs, all quadrature
+   * points of that face are stored in global vector of quadrature points. Moreover, a map is
+   * constructed that uniquely maps the face, q-point, and vectorized array index to a global index
+   * used to access the global q-point and solution vectors. The solution vector is initialized
+   * according with default values according to the global number of q-points.
+   */
   template<typename Number>
   void
   setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_,
@@ -71,18 +123,18 @@ public:
         std::vector<quad_index> const &                  quad_indices_,
         SetBoundaryIDs const &                           set_bids_)
   {
-    quad_indices = quad_indices_;
+    this->quad_indices = quad_indices_;
 
-    for(auto q_index : quad_indices)
+    for(auto q_index : this->quad_indices)
     {
       // initialize maps
       map_vector_index.emplace(q_index, MapVectorIndex());
-      map_q_points.emplace(q_index, ArrayQuadraturePoints());
-      map_solution.emplace(q_index, ArraySolutionValues());
+      this->map_q_points.emplace(q_index, ArrayQuadraturePoints());
+      this->map_solution.emplace(q_index, ArraySolutionValues());
 
       MapVectorIndex &        map_index          = map_vector_index.find(q_index)->second;
-      ArrayQuadraturePoints & array_q_points_dst = map_q_points.find(q_index)->second;
-      ArraySolutionValues &   array_solution_dst = map_solution.find(q_index)->second;
+      ArrayQuadraturePoints & array_q_points_dst = this->map_q_points.find(q_index)->second;
+      ArraySolutionValues &   array_solution_dst = this->map_solution.find(q_index)->second;
 
       // create map "ID = {face, q, v} <-> vector_index" and fill array of quadrature points
       for(unsigned int face = matrix_free_->n_inner_face_batches();
@@ -92,10 +144,10 @@ public:
         // only consider relevant boundary IDs
         if(set_bids_.find(matrix_free_->get_boundary_id(face)) != set_bids_.end())
         {
-          FaceIntegrator<dim, n_components, Number> integrator(*matrix_free_,
-                                                               true,
-                                                               dof_index_,
-                                                               q_index);
+          FaceIntegrator<dim, this->n_components, Number> integrator(*matrix_free_,
+                                                                     true,
+                                                                     dof_index_,
+                                                                     q_index);
           integrator.reinit(face);
 
           for(unsigned int q = 0; q < integrator.n_q_points; ++q)
@@ -122,15 +174,10 @@ public:
     }
   }
 
-  std::vector<quad_index> const &
-  get_quad_indices();
-
-  ArrayQuadraturePoints &
-  get_array_q_points(quad_index const & q_index);
-
-  ArraySolutionValues &
-  get_array_solution(quad_index const & q_index);
-
+  /**
+   * This function returns the data item of the global vector of solution values given the
+   * identification parameters that uniquely define a quadrature point.
+   */
   data_type
   get_data(unsigned int const q_index,
            unsigned int const face,
@@ -138,11 +185,18 @@ public:
            unsigned int const v) const;
 
 private:
-  std::vector<quad_index> quad_indices;
+  mutable std::map<quad_index, MapVectorIndex> map_vector_index;
+};
 
-  mutable std::map<quad_index, MapVectorIndex>        map_vector_index;
-  mutable std::map<quad_index, ArrayQuadraturePoints> map_q_points;
-  mutable std::map<quad_index, ArraySolutionValues>   map_solution;
+/**
+ * For this derived class, quadrature points are given by all the quadrature points of a
+ * triangulation. Depending on the type of discretization approach, the quadrature points might be
+ * those inside cells/elements, but also those on the interior/boundary faces of a triangulation.
+ */
+template<int rank, int dim, typename number_type>
+class CouplingDataVolume : public CouplingDataBase<rank, dim, number_type>
+{
+  // TODO: fill this class
 };
 } // namespace ExaDG
 

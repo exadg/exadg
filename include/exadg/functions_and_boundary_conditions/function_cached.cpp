@@ -32,7 +32,7 @@ FunctionCached<rank, dim>::FunctionCached()
 template<int rank, int dim>
 void
 FunctionCached<rank, dim>::set_data_pointer(
-  std::shared_ptr<ContainerInterfaceData<rank, dim, double>> const interface_data_)
+  std::shared_ptr<CouplingDataSurface<rank, dim, double>> const interface_data_)
 {
   interface_data = interface_data_;
 }

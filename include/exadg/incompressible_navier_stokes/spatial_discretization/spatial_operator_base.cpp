@@ -179,7 +179,7 @@ SpatialOperatorBase<dim, Number>::setup(
   // initialize data container for DirichletCached boundary conditions
   if(not(boundary_descriptor->velocity->dirichlet_cached_bc.empty()))
   {
-    interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<1, dim, double>>();
+    interface_data_dirichlet_cached = std::make_shared<CouplingDataSurface<1, dim, double>>();
     std::vector<unsigned int> quad_indices;
     quad_indices.emplace_back(get_quad_index_velocity_linear());
     quad_indices.emplace_back(get_quad_index_velocity_nonlinear());
@@ -879,7 +879,7 @@ SpatialOperatorBase<dim, Number>::get_viscosity_boundary_face(unsigned int const
 }
 
 template<int dim, typename Number>
-std::shared_ptr<ContainerInterfaceData<1, dim, double>>
+std::shared_ptr<CouplingDataSurface<1, dim, double>>
 SpatialOperatorBase<dim, Number>::get_container_interface_data()
 {
   return interface_data_dirichlet_cached;
