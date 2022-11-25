@@ -161,11 +161,14 @@ public:
   FunctionCached();
 
   // read data
-  data_type
+  inline data_type
   tensor_value(unsigned int const face,
                unsigned int const q,
                unsigned int const v,
-               unsigned int const quad_index) const;
+               unsigned int const quad_index) const
+  {
+    return interface_data->get_data(quad_index, face, q, v);
+  }
 
   // initialize data pointer
   void

@@ -78,16 +78,6 @@ FunctionCached<rank, dim>::FunctionCached()
 }
 
 template<int rank, int dim>
-typename FunctionCached<rank, dim>::data_type
-FunctionCached<rank, dim>::tensor_value(unsigned int const face,
-                                        unsigned int const q,
-                                        unsigned int const v,
-                                        unsigned int const quad_index) const
-{
-  return interface_data->get_data(quad_index, face, q, v);
-}
-
-template<int rank, int dim>
 void
 FunctionCached<rank, dim>::set_data_pointer(
   std::shared_ptr<ContainerInterfaceData<rank, dim, double>> const interface_data_)
