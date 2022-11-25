@@ -66,6 +66,7 @@ SET(TARGET_SRC
      include/exadg/time_integration/enum_types.cpp
      include/exadg/grid/enum_types.cpp
      include/exadg/grid/grid.cpp
+     include/exadg/functions_and_boundary_conditions/container_interface_data.cpp
      include/exadg/functions_and_boundary_conditions/function_cached.cpp
      include/exadg/functions_and_boundary_conditions/linear_interpolation.cpp
      include/exadg/functions_and_boundary_conditions/interface_coupling.cpp
