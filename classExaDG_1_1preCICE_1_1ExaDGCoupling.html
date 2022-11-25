@@ -75,6 +75,7 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="classExaDG_1_1preCICE_1_1ExaDGCoupling-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">ExaDG::preCICE::ExaDGCoupling&lt; dim, data_dim, VectorizedArrayType &gt; Class Template Reference</div></div>
 </div><!--header-->
@@ -93,9 +94,9 @@ Inheritance diagram for ExaDG::preCICE::ExaDGCoupling&lt; dim, data_dim, Vectori
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ae8565369c6947eaa9b13a53eb1fed6d7"><td class="memItemLeft" align="right" valign="top"><a id="ae8565369c6947eaa9b13a53eb1fed6d7" name="ae8565369c6947eaa9b13a53eb1fed6d7"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>ExaDGCoupling</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, double, VectorizedArrayType &gt; const &gt; data, std::string const <a class="el" href="classExaDG_1_1preCICE_1_1CouplingBase.html#a36e684b3ced1553f0017f75f42737fdb">mesh_name</a>, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; dim, data_dim, double &gt; &gt; interface_data_, dealii::types::boundary_id const surface_id=dealii::numbers::invalid_unsigned_int)</td></tr>
-<tr class="separator:ae8565369c6947eaa9b13a53eb1fed6d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1df6c27de95edb9f6b6b56154dd81d36"><td class="memItemLeft" align="right" valign="top"><a id="a1df6c27de95edb9f6b6b56154dd81d36" name="a1df6c27de95edb9f6b6b56154dd81d36"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>ExaDGCoupling</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, double, VectorizedArrayType &gt; const &gt; data, std::string const <a class="el" href="classExaDG_1_1preCICE_1_1CouplingBase.html#a36e684b3ced1553f0017f75f42737fdb">mesh_name</a>, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; rank, dim, double &gt; &gt; interface_data_, dealii::types::boundary_id const surface_id=dealii::numbers::invalid_unsigned_int)</td></tr>
+<tr class="separator:a1df6c27de95edb9f6b6b56154dd81d36"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a656284c76c4c577c098f4c01eddf93a7"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1preCICE_1_1ExaDGCoupling.html#a656284c76c4c577c098f4c01eddf93a7">define_coupling_mesh</a> () override</td></tr>
 <tr class="memdesc:a656284c76c4c577c098f4c01eddf93a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">define_mesh_vertices Define a vertex coupling mesh for preCICE coupling the classical preCICE way  <a href="classExaDG_1_1preCICE_1_1ExaDGCoupling.html#a656284c76c4c577c098f4c01eddf93a7">More...</a><br /></td></tr>
 <tr class="separator:a656284c76c4c577c098f4c01eddf93a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -131,6 +132,12 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>read_block_da
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_write_data_type</b> (WriteDataType write_data_specification)</td></tr>
 <tr class="memdesc:aae21d6fc764dbd5051ec7c27cc38d11a inherit pub_methods_classExaDG_1_1preCICE_1_1CouplingBase"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the WriteDataType in this class which determines the location of the write data (e.g. DoFs) <br /></td></tr>
 <tr class="separator:aae21d6fc764dbd5051ec7c27cc38d11a inherit pub_methods_classExaDG_1_1preCICE_1_1CouplingBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:ad863c021e613e443741254e88a536a92"><td class="memItemLeft" align="right" valign="top"><a id="ad863c021e613e443741254e88a536a92" name="ad863c021e613e443741254e88a536a92"></a>
+static unsigned int const&#160;</td><td class="memItemRight" valign="bottom"><b>rank</b> = n_components_to_rank&lt;data_dim, dim&gt;()</td></tr>
+<tr class="separator:ad863c021e613e443741254e88a536a92"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>

@@ -76,6 +76,7 @@ $(function() {
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="classExaDG_1_1preCICE_1_1Adapter-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">ExaDG::preCICE::Adapter&lt; dim, data_dim, VectorType, VectorizedArrayType &gt; Class Template Reference</div></div>
 </div><!--header-->
@@ -101,9 +102,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aaae7ddc7f73789c4678943e1d8af3ded"><td class="memItemLeft" align="right" valign="top"><a id="aaae7ddc7f73789c4678943e1d8af3ded" name="aaae7ddc7f73789c4678943e1d8af3ded"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>add_write_surface</b> (dealii::types::boundary_id const surface_id, std::string const &amp;mesh_name, std::vector&lt; std::string &gt; const &amp;write_data_names, WriteDataType const write_data_type, std::shared_ptr&lt; dealii::MatrixFree&lt; dim, double, VectorizedArrayType &gt; const &gt; data, unsigned int const dof_index, unsigned int const write_quad_index)</td></tr>
 <tr class="separator:aaae7ddc7f73789c4678943e1d8af3ded"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a51c563ebc39ffe8544ddf55cb8b8b3c4"><td class="memItemLeft" align="right" valign="top"><a id="a51c563ebc39ffe8544ddf55cb8b8b3c4" name="a51c563ebc39ffe8544ddf55cb8b8b3c4"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>add_read_surface</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, double, VectorizedArrayType &gt; const &gt; data, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; dim, data_dim, double &gt; &gt; interface_data, std::string const &amp;mesh_name, std::vector&lt; std::string &gt; const &amp;read_data_name)</td></tr>
-<tr class="separator:a51c563ebc39ffe8544ddf55cb8b8b3c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5775a0eee7daa93d35f51e43f0f7b9d8"><td class="memItemLeft" align="right" valign="top"><a id="a5775a0eee7daa93d35f51e43f0f7b9d8" name="a5775a0eee7daa93d35f51e43f0f7b9d8"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>add_read_surface</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, double, VectorizedArrayType &gt; const &gt; data, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; rank, dim, double &gt; &gt; interface_data, std::string const &amp;mesh_name, std::vector&lt; std::string &gt; const &amp;read_data_name)</td></tr>
+<tr class="separator:a5775a0eee7daa93d35f51e43f0f7b9d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adbe8ebd71c3d1452576121eae1f02e3e"><td class="memItemLeft" align="right" valign="top"><a id="adbe8ebd71c3d1452576121eae1f02e3e" name="adbe8ebd71c3d1452576121eae1f02e3e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>advance</b> (double const computed_timestep_length)</td></tr>
 <tr class="memdesc:adbe8ebd71c3d1452576121eae1f02e3e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Advances preCICE after every timestep. <br /></td></tr>
@@ -126,6 +127,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>read_block_data</b> (
 <tr class="memitem:af2409b1817f17d6c7754664d3cd073c6"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1preCICE_1_1Adapter.html#af2409b1817f17d6c7754664d3cd073c6">is_time_window_complete</a> () const</td></tr>
 <tr class="memdesc:af2409b1817f17d6c7754664d3cd073c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">is_time_window_complete Calls the preCICE API function isTimeWindowComplete  <a href="classExaDG_1_1preCICE_1_1Adapter.html#af2409b1817f17d6c7754664d3cd073c6">More...</a><br /></td></tr>
 <tr class="separator:af2409b1817f17d6c7754664d3cd073c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a392e13e5f1240c772d1694a20f7bc982"><td class="memItemLeft" align="right" valign="top"><a id="a392e13e5f1240c772d1694a20f7bc982" name="a392e13e5f1240c772d1694a20f7bc982"></a>
+static unsigned int const&#160;</td><td class="memItemRight" valign="bottom"><b>rank</b> = n_components_to_rank&lt;data_dim, dim&gt;()</td></tr>
+<tr class="separator:a392e13e5f1240c772d1694a20f7bc982"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;int dim, int data_dim, typename VectorType, typename VectorizedArrayType = dealii::VectorizedArray&lt;double&gt;&gt;<br />

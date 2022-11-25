@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.5"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::ContainerInterfaceData&lt; dim, n_components, Number &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::ContainerInterfaceData&lt; rank, dim, number_type &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -74,30 +74,46 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classExaDG_1_1ContainerInterfaceData-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::ContainerInterfaceData&lt; dim, n_components, Number &gt; Class Template Reference</div></div>
+  <div class="headertitle"><div class="title">ExaDG::ContainerInterfaceData&lt; rank, dim, number_type &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p><code>#include &lt;<a class="el" href="function__cached_8h_source.html">function_cached.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a473e4d9f650e925da97cc1733bebbf4c"><td class="memItemLeft" align="right" valign="top"><a id="a473e4d9f650e925da97cc1733bebbf4c" name="a473e4d9f650e925da97cc1733bebbf4c"></a>
+typedef dealii::Tensor&lt; rank, dim, number_type &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>data_type</b></td></tr>
+<tr class="separator:a473e4d9f650e925da97cc1733bebbf4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a3f4f9a524f6763638b0562b131ec911d"><td class="memItemLeft" align="right" valign="top"><a id="a3f4f9a524f6763638b0562b131ec911d" name="a3f4f9a524f6763638b0562b131ec911d"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; &gt; matrix_free_, unsigned int const dof_index_, std::vector&lt; quad_index &gt; const &amp;quad_indices_, MapBoundaryCondition const &amp;map_bc_)</td></tr>
-<tr class="separator:a3f4f9a524f6763638b0562b131ec911d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a84f5caef9c875fe9478f10994a5ca784"><td class="memItemLeft" align="right" valign="top"><a id="a84f5caef9c875fe9478f10994a5ca784" name="a84f5caef9c875fe9478f10994a5ca784"></a>
+<tr class="memitem:ae54a050a771d91dce4ceeeca12a2533a"><td class="memTemplParams" colspan="2"><a id="ae54a050a771d91dce4ceeeca12a2533a" name="ae54a050a771d91dce4ceeeca12a2533a"></a>
+template&lt;typename Number &gt; </td></tr>
+<tr class="memitem:ae54a050a771d91dce4ceeeca12a2533a"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; &gt; matrix_free_, unsigned int const dof_index_, std::vector&lt; quad_index &gt; const &amp;quad_indices_, SetBoundaryIDs const &amp;set_bids_)</td></tr>
+<tr class="separator:ae54a050a771d91dce4ceeeca12a2533a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a22ec93a8f1c1f46183b0afc61b055531"><td class="memItemLeft" align="right" valign="top"><a id="a22ec93a8f1c1f46183b0afc61b055531" name="a22ec93a8f1c1f46183b0afc61b055531"></a>
 std::vector&lt; quad_index &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_indices</b> ()</td></tr>
-<tr class="separator:a84f5caef9c875fe9478f10994a5ca784"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acec322dab0438eebe1c055402365ee28"><td class="memItemLeft" align="right" valign="top"><a id="acec322dab0438eebe1c055402365ee28" name="acec322dab0438eebe1c055402365ee28"></a>
+<tr class="separator:a22ec93a8f1c1f46183b0afc61b055531"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acea54baf20dcdfe21c3fecc94148e55e"><td class="memItemLeft" align="right" valign="top"><a id="acea54baf20dcdfe21c3fecc94148e55e" name="acea54baf20dcdfe21c3fecc94148e55e"></a>
 ArrayQuadraturePoints &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_array_q_points</b> (quad_index const &amp;q_index)</td></tr>
-<tr class="separator:acec322dab0438eebe1c055402365ee28"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abf6fb0ec200624c475ef67c79954a90f"><td class="memItemLeft" align="right" valign="top"><a id="abf6fb0ec200624c475ef67c79954a90f" name="abf6fb0ec200624c475ef67c79954a90f"></a>
+<tr class="separator:acea54baf20dcdfe21c3fecc94148e55e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac5fe241f3d6a5ecdd2be5682cb209682"><td class="memItemLeft" align="right" valign="top"><a id="ac5fe241f3d6a5ecdd2be5682cb209682" name="ac5fe241f3d6a5ecdd2be5682cb209682"></a>
 ArraySolutionValues &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_array_solution</b> (quad_index const &amp;q_index)</td></tr>
-<tr class="separator:abf6fb0ec200624c475ef67c79954a90f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:ac5fe241f3d6a5ecdd2be5682cb209682"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af01bd1deafcee64c1047df44a30f6366"><td class="memItemLeft" align="right" valign="top"><a id="af01bd1deafcee64c1047df44a30f6366" name="af01bd1deafcee64c1047df44a30f6366"></a>
+data_type&#160;</td><td class="memItemRight" valign="bottom"><b>get_data</b> (unsigned int const q_index, unsigned int const face, unsigned int const q, unsigned int const v) const</td></tr>
+<tr class="separator:af01bd1deafcee64c1047df44a30f6366"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<hr/>The documentation for this class was generated from the following files:<ul>
-<li>include/exadg/functions_and_boundary_conditions/<a class="el" href="interface__coupling_8h_source.html">interface_coupling.h</a></li>
-<li>include/exadg/functions_and_boundary_conditions/interface_coupling.cpp</li>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><div class="compoundTemplParams">template&lt;int rank, int dim, typename number_type&gt;<br />
+class ExaDG::ContainerInterfaceData&lt; rank, dim, number_type &gt;</div><p >A data structure storing quadrature point information for each quadrature point on boundary faces of a given set of boundary IDs. The type of data stored for each q-point is dealii::Tensor&lt;rank, dim, number_type&gt;. </p>
+</div><hr/>The documentation for this class was generated from the following files:<ul>
+<li>include/exadg/functions_and_boundary_conditions/<a class="el" href="function__cached_8h_source.html">function_cached.h</a></li>
+<li>include/exadg/functions_and_boundary_conditions/function_cached.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
