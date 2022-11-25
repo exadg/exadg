@@ -82,6 +82,11 @@ public:
   get_mapping() const;
 
   /**
+   * dealii::Triangulation::MeshSmoothing
+   */
+  typename dealii::Triangulation<dim>::MeshSmoothing mesh_smoothing;
+
+  /**
    * dealii::Triangulation.
    */
   std::shared_ptr<dealii::Triangulation<dim>> triangulation;
