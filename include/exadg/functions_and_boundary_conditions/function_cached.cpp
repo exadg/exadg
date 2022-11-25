@@ -24,17 +24,17 @@
 
 namespace ExaDG
 {
-template<int rank, int dim>
-ContainerInterfaceData<rank, dim>::ContainerInterfaceData()
+template<int rank, int dim, typename number_type>
+ContainerInterfaceData<rank, dim, number_type>::ContainerInterfaceData()
 {
 }
 
-template<int rank, int dim>
-typename ContainerInterfaceData<rank, dim>::value_type
-ContainerInterfaceData<rank, dim>::get_data(unsigned int const q_index,
-                                            unsigned int const face,
-                                            unsigned int const q,
-                                            unsigned int const v) const
+template<int rank, int dim, typename number_type>
+typename ContainerInterfaceData<rank, dim, number_type>::data_type
+ContainerInterfaceData<rank, dim, number_type>::get_data(unsigned int const q_index,
+                                                         unsigned int const face,
+                                                         unsigned int const q,
+                                                         unsigned int const v) const
 {
   Assert(map_vector_index.find(q_index) != map_vector_index.end(),
          dealii::ExcMessage("Specified q_index does not exist in map_vector_index."));
@@ -51,23 +51,23 @@ ContainerInterfaceData<rank, dim>::get_data(unsigned int const q_index,
   return array_solution[index];
 }
 
-template<int rank, int dim>
-std::vector<typename ContainerInterfaceData<rank, dim>::quad_index> const &
-ContainerInterfaceData<rank, dim>::get_quad_indices()
+template<int rank, int dim, typename number_type>
+std::vector<typename ContainerInterfaceData<rank, dim, number_type>::quad_index> const &
+ContainerInterfaceData<rank, dim, number_type>::get_quad_indices()
 {
   return quad_indices;
 }
 
-template<int rank, int dim>
-typename ContainerInterfaceData<rank, dim>::ArrayQuadraturePoints &
-ContainerInterfaceData<rank, dim>::get_array_q_points(quad_index const & q_index)
+template<int rank, int dim, typename number_type>
+typename ContainerInterfaceData<rank, dim, number_type>::ArrayQuadraturePoints &
+ContainerInterfaceData<rank, dim, number_type>::get_array_q_points(quad_index const & q_index)
 {
   return map_q_points[q_index];
 }
 
-template<int rank, int dim>
-typename ContainerInterfaceData<rank, dim>::ArraySolutionValues &
-ContainerInterfaceData<rank, dim>::get_array_solution(quad_index const & q_index)
+template<int rank, int dim, typename number_type>
+typename ContainerInterfaceData<rank, dim, number_type>::ArraySolutionValues &
+ContainerInterfaceData<rank, dim, number_type>::get_array_solution(quad_index const & q_index)
 {
   return map_solution[q_index];
 }
@@ -78,7 +78,7 @@ FunctionCached<rank, dim>::FunctionCached()
 }
 
 template<int rank, int dim>
-typename FunctionCached<rank, dim>::value_type
+typename FunctionCached<rank, dim>::data_type
 FunctionCached<rank, dim>::tensor_value(unsigned int const face,
                                         unsigned int const q,
                                         unsigned int const v,
@@ -90,15 +90,15 @@ FunctionCached<rank, dim>::tensor_value(unsigned int const face,
 template<int rank, int dim>
 void
 FunctionCached<rank, dim>::set_data_pointer(
-  std::shared_ptr<ContainerInterfaceData<rank, dim>> const interface_data_)
+  std::shared_ptr<ContainerInterfaceData<rank, dim, double>> const interface_data_)
 {
   interface_data = interface_data_;
 }
 
-template class ContainerInterfaceData<0, 2>;
-template class ContainerInterfaceData<1, 2>;
-template class ContainerInterfaceData<0, 3>;
-template class ContainerInterfaceData<1, 3>;
+template class ContainerInterfaceData<0, 2, double>;
+template class ContainerInterfaceData<1, 2, double>;
+template class ContainerInterfaceData<0, 3, double>;
+template class ContainerInterfaceData<1, 3, double>;
 
 template class FunctionCached<0, 2>;
 template class FunctionCached<0, 3>;

@@ -55,11 +55,11 @@ public:
    * the search of points on the src side.
    */
   void
-  setup(std::shared_ptr<ContainerInterfaceData<rank, dim>> interface_data_dst_,
-        dealii::DoFHandler<dim> const &                    dof_handler_src_,
-        dealii::Mapping<dim> const &                       mapping_src_,
-        std::vector<bool> const &                          marked_vertices_src_,
-        double const                                       tolerance_);
+  setup(std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data_dst_,
+        dealii::DoFHandler<dim> const &                            dof_handler_src_,
+        dealii::Mapping<dim> const &                               mapping_src_,
+        std::vector<bool> const &                                  marked_vertices_src_,
+        double const                                               tolerance_);
 
   void
   update_data(VectorType const & dof_vector_src);
@@ -68,7 +68,7 @@ private:
   /*
    * dst-side
    */
-  std::shared_ptr<ContainerInterfaceData<rank, dim>> interface_data_dst;
+  std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data_dst;
 
   /*
    *  Evaluates solution on src-side in those points specified by dst-side

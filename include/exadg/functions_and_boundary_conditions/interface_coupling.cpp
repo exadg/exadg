@@ -32,11 +32,11 @@ InterfaceCoupling<rank, dim, Number>::InterfaceCoupling() : dof_handler_src(null
 template<int rank, int dim, typename Number>
 void
 InterfaceCoupling<rank, dim, Number>::setup(
-  std::shared_ptr<ContainerInterfaceData<rank, dim>> interface_data_dst_,
-  dealii::DoFHandler<dim> const &                    dof_handler_src_,
-  dealii::Mapping<dim> const &                       mapping_src_,
-  std::vector<bool> const &                          marked_vertices_src_,
-  double const                                       tolerance_)
+  std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data_dst_,
+  dealii::DoFHandler<dim> const &                            dof_handler_src_,
+  dealii::Mapping<dim> const &                               mapping_src_,
+  std::vector<bool> const &                                  marked_vertices_src_,
+  double const                                               tolerance_)
 {
   AssertThrow(interface_data_dst_.get(),
               dealii::ExcMessage("Received uninitialized variable. Aborting."));

@@ -35,12 +35,16 @@
 
 namespace ExaDG
 {
-template<int rank, int dim>
+/**
+ * A data structure storing quadrature point information for each quadrature point on boundary faces
+ * of a given set of boundary IDs. The type of data stored for each q-point is dealii::Tensor<rank,
+ * dim, number_type>.
+ */
+template<int rank, int dim, typename number_type>
 class ContainerInterfaceData
 {
 public:
-  // this is the underlying data type for FunctionCached.
-  typedef dealii::Tensor<rank, dim, double> value_type;
+  typedef dealii::Tensor<rank, dim, number_type> data_type;
 
 private:
   static unsigned int const n_components = rank_to_n_components<rank, dim>();
@@ -55,7 +59,7 @@ private:
 
   using ArrayQuadraturePoints = std::vector<dealii::Point<dim>>;
 
-  using ArraySolutionValues = std::vector<value_type>;
+  using ArraySolutionValues = std::vector<data_type>;
 
 public:
   ContainerInterfaceData();
@@ -114,7 +118,7 @@ public:
         }
       }
 
-      array_solution_dst.resize(array_q_points_dst.size(), value_type());
+      array_solution_dst.resize(array_q_points_dst.size(), data_type());
     }
   }
 
@@ -127,7 +131,7 @@ public:
   ArraySolutionValues &
   get_array_solution(quad_index const & q_index);
 
-  value_type
+  data_type
   get_data(unsigned int const q_index,
            unsigned int const face,
            unsigned int const q,
@@ -151,13 +155,13 @@ template<int rank, int dim>
 class FunctionCached
 {
 private:
-  typedef typename ContainerInterfaceData<rank, dim>::value_type value_type;
+  typedef typename ContainerInterfaceData<rank, dim, double>::data_type data_type;
 
 public:
   FunctionCached();
 
   // read data
-  value_type
+  data_type
   tensor_value(unsigned int const face,
                unsigned int const q,
                unsigned int const v,
@@ -165,10 +169,11 @@ public:
 
   // initialize data pointer
   void
-  set_data_pointer(std::shared_ptr<ContainerInterfaceData<rank, dim>> const interface_data_);
+  set_data_pointer(
+    std::shared_ptr<ContainerInterfaceData<rank, dim, double>> const interface_data_);
 
 private:
-  std::shared_ptr<ContainerInterfaceData<rank, dim>> interface_data;
+  std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data;
 };
 
 } // namespace ExaDG

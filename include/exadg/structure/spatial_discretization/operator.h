@@ -291,10 +291,10 @@ public:
   get_number_of_dofs() const;
 
   // Multiphysics coupling via "Cached" boundary conditions
-  std::shared_ptr<ContainerInterfaceData<1, dim>>
+  std::shared_ptr<ContainerInterfaceData<1, dim, double>>
   get_container_interface_data_neumann();
 
-  std::shared_ptr<ContainerInterfaceData<1, dim>>
+  std::shared_ptr<ContainerInterfaceData<1, dim, double>>
   get_container_interface_data_dirichlet();
 
   // TODO: we currently need this function public for precice-based FSI
@@ -389,8 +389,8 @@ private:
   /*
    * Interface coupling
    */
-  std::shared_ptr<ContainerInterfaceData<1, dim>> interface_data_dirichlet_cached;
-  std::shared_ptr<ContainerInterfaceData<1, dim>> interface_data_neumann_cached;
+  std::shared_ptr<ContainerInterfaceData<1, dim, double>> interface_data_dirichlet_cached;
+  std::shared_ptr<ContainerInterfaceData<1, dim, double>> interface_data_neumann_cached;
 
   /*
    * Basic operators.
