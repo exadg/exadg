@@ -26,7 +26,7 @@
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
-#include <exadg/functions_and_boundary_conditions/function_cached.h>
+#include <exadg/functions_and_boundary_conditions/container_interface_data.h>
 #include <exadg/utilities/n_components_to_rank.h>
 
 namespace ExaDG
