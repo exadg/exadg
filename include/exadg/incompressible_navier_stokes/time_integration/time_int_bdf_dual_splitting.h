@@ -103,7 +103,7 @@ private:
   initialize_current_solution() final;
 
   void
-  initialize_former_solutions() final;
+  initialize_former_multistep_dof_vectors() final;
 
   void
   initialize_velocity_dbc();
@@ -169,7 +169,7 @@ private:
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */>
     iterations_pressure;
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */>
-                                                                                 iterations_projection;
+    iterations_projection;
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations_viscous;
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations_penalty;
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations_mass;

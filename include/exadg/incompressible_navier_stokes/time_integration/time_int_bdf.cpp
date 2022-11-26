@@ -37,15 +37,15 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
   MPI_Comm const &                                mpi_comm_in,
   bool const                                      is_test_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
-  : TimeIntBDFBase<Number>(param_in.start_time,
-                           param_in.end_time,
-                           param_in.max_number_of_time_steps,
-                           param_in.order_time_integrator,
-                           param_in.start_with_low_order,
-                           param_in.adaptive_time_stepping,
-                           param_in.restart_data,
-                           mpi_comm_in,
-                           is_test_in),
+  : TimeIntBDFBase(param_in.start_time,
+                   param_in.end_time,
+                   param_in.max_number_of_time_steps,
+                   param_in.order_time_integrator,
+                   param_in.start_with_low_order,
+                   param_in.adaptive_time_stepping,
+                   param_in.restart_data,
+                   mpi_comm_in,
+                   is_test_in),
     param(param_in),
     refine_steps_time(param_in.n_refine_time),
     cfl(param.cfl / std::pow(2.0, refine_steps_time)),
@@ -153,11 +153,8 @@ TimeIntBDF<dim, Number>::ale_update()
   operator_base->fill_grid_coordinates_vector(grid_coordinates_np);
 
   // and update grid velocity using BDF time derivative
-  compute_bdf_time_derivative(grid_velocity,
-                              grid_coordinates_np,
-                              vec_grid_coordinates,
-                              this->bdf,
-                              this->get_time_step_size());
+  compute_bdf_time_derivative(
+    grid_velocity, grid_coordinates_np, vec_grid_coordinates, bdf, this->get_time_step_size());
 
   // and hand grid velocity over to spatial discretization
   operator_base->set_grid_velocity(grid_velocity);

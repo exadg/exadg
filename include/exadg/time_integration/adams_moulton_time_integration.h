@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_EXTRAPOLATION_SCHEME_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_EXTRAPOLATION_SCHEME_H_
+#ifndef INCLUDE_EXADG_TIME_INTEGRATION_ADAMS_MOULTON_TIME_INTEGRATION_H_
+#define INCLUDE_EXADG_TIME_INTEGRATION_ADAMS_MOULTON_TIME_INTEGRATION_H_
 
 // C/C++
 #include <vector>
@@ -30,23 +30,24 @@
 
 namespace ExaDG
 {
-class ExtrapolationConstants
+class AdamsMoultonTimeIntegratorConstants
 {
 public:
-  ExtrapolationConstants(unsigned int const order_extrapolation_scheme,
-                         bool const         start_with_low_order_method);
+  AdamsMoultonTimeIntegratorConstants(unsigned int const order_time_integrator,
+                                      bool const         start_with_low_order_method);
 
   double
-  get_beta(unsigned int const i) const;
+  get_gamma0() const;
 
-  unsigned int
-  get_order() const;
+  double
+  get_alpha(unsigned int const i) const;
+
 
   /*
-   *  This function updates the time integrator constants of the BDF scheme
+   *  This function updates the time integrator constants of the AM scheme
    */
   void
-  update(unsigned int const          current_order,
+  update(unsigned int const          time_step_number,
          std::vector<double> const & time_steps,
          bool const                  adaptive);
 
@@ -59,33 +60,29 @@ public:
 
 private:
   /*
-   *  This function calculates constants of extrapolation scheme
+   *  This function calculates the time integrator constants of the AM scheme
    *  in case of constant time step sizes.
    */
   void
   set_constant_time_step(unsigned int const current_order);
 
   /*
-   *  This function calculates constants of extrapolation scheme
+   *  This function calculates time integrator constants
    *  in case of varying time step sizes (adaptive time stepping).
    */
   void
   set_adaptive_time_step(unsigned int const current_order, std::vector<double> const & time_steps);
 
-  /*
-   *  order of extrapolation scheme
-   */
+  // order of time integrator
   unsigned int const order;
 
-  // use a low order scheme in the first time steps?
+  // use a low order time integration scheme to start the time integrator?
   bool const start_with_low_order;
 
-  /*
-   *  Constants of extrapolation scheme
-   */
-  std::vector<double> beta;
+  double              gamma0;
+  std::vector<double> alpha;
 };
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_EXTRAPOLATION_SCHEME_H_ */
+#endif /* INCLUDE_EXADG_TIME_INTEGRATION_ADAMS_MOULTON_TIME_INTEGRATION_H_ */

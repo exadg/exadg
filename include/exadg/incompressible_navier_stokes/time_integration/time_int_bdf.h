@@ -26,7 +26,7 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
-#include <exadg/time_integration/time_int_bdf_base.h>
+#include <exadg/time_integration/time_int_bdf_base_new.h>
 
 namespace ExaDG
 {
@@ -41,14 +41,12 @@ template<typename Number>
 class PostProcessorInterface;
 
 template<int dim, typename Number>
-class TimeIntBDF : public TimeIntBDFBase<Number>
+class TimeIntBDF : public TimeIntBDFBase
 {
 public:
-  typedef TimeIntBDFBase<Number>                                  Base;
-  typedef typename Base::VectorType                               VectorType;
-  typedef dealii::LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
-
-  typedef SpatialOperatorBase<dim, Number> OperatorBase;
+  using VectorType   = dealii::LinearAlgebra::distributed::Vector<Number>;
+  using Base         = TimeIntBDFBase;
+  using OperatorBase = SpatialOperatorBase<dim, Number>;
 
   TimeIntBDF(std::shared_ptr<OperatorBase>                   operator_in,
              Parameters const &                              param_in,
@@ -56,9 +54,7 @@ public:
              bool const                                      is_test_in,
              std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in);
 
-  virtual ~TimeIntBDF()
-  {
-  }
+  virtual ~TimeIntBDF() = default;
 
   virtual VectorType const &
   get_velocity() const = 0;
@@ -81,7 +77,7 @@ public:
                               std::vector<double> &             times) const;
 
   void
-  ale_update();
+  ale_update() final;
 
   void
   advance_one_timestep_partitioned_solve(bool const use_extrapolation);

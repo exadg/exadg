@@ -38,15 +38,15 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
   MPI_Comm const &                                mpi_comm_in,
   bool const                                      is_test_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
-  : TimeIntBDFBase<Number>(param_in.start_time,
-                           param_in.end_time,
-                           param_in.max_number_of_time_steps,
-                           param_in.order_time_integrator,
-                           param_in.start_with_low_order,
-                           param_in.adaptive_time_stepping,
-                           param_in.restart_data,
-                           mpi_comm_in,
-                           is_test_in),
+  : TimeIntBDFBase(param_in.start_time,
+                   param_in.end_time,
+                   param_in.max_number_of_time_steps,
+                   param_in.order_time_integrator,
+                   param_in.start_with_low_order,
+                   param_in.adaptive_time_stepping,
+                   param_in.restart_data,
+                   mpi_comm_in,
+                   is_test_in),
     pde_operator(operator_in),
     param(param_in),
     refine_steps_time(param_in.n_refine_time),
@@ -145,7 +145,7 @@ TimeIntBDF<dim, Number>::initialize_current_solution()
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::initialize_former_solutions()
+TimeIntBDF<dim, Number>::initialize_former_multistep_dof_vectors()
 {
   // Start with i=1 since we only want to initialize the solution at former instants of time.
   for(unsigned int i = 1; i < solution.size(); ++i)
@@ -341,11 +341,8 @@ TimeIntBDF<dim, Number>::ale_update()
   pde_operator->fill_grid_coordinates_vector(grid_coordinates_np);
 
   // and update grid velocity using BDF time derivative
-  compute_bdf_time_derivative(grid_velocity,
-                              grid_coordinates_np,
-                              vec_grid_coordinates,
-                              this->bdf,
-                              this->get_time_step_size());
+  compute_bdf_time_derivative(
+    grid_velocity, grid_coordinates_np, vec_grid_coordinates, bdf, this->get_time_step_size());
 }
 
 template<int dim, typename Number>
@@ -481,34 +478,33 @@ TimeIntBDF<dim, Number>::do_timestep_solve()
     }
 
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-      rhs_vector.add(-this->extra.get_beta(i), vec_convective_term[i]);
+      rhs_vector.add(-extra.get_beta(i), vec_convective_term[i]);
   }
 
   VectorType sum_alphai_ui(solution[0]);
-  sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), solution[0]);
+  sum_alphai_ui.equ(bdf.get_alpha(0) / this->get_time_step_size(), solution[0]);
   for(unsigned int i = 1; i < solution.size(); ++i)
-    sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), solution[i]);
+    sum_alphai_ui.add(bdf.get_alpha(i) / this->get_time_step_size(), solution[i]);
 
   // apply mass operator to sum_alphai_ui and add to rhs_vector
   pde_operator->apply_mass_operator_add(rhs_vector, sum_alphai_ui);
 
   // extrapolate old solution to obtain a good initial guess for the solver
-  solution_np.equ(this->extra.get_beta(0), solution[0]);
+  solution_np.equ(extra.get_beta(0), solution[0]);
   for(unsigned int i = 1; i < solution.size(); ++i)
-    solution_np.add(this->extra.get_beta(i), solution[i]);
+    solution_np.add(extra.get_beta(i), solution[i]);
 
   // solve the linear system of equations
   bool const update_preconditioner =
     this->param.update_preconditioner &&
     (this->time_step_number % this->param.update_preconditioner_every_time_steps == 0);
 
-  unsigned int const N_iter =
-    pde_operator->solve(solution_np,
-                        rhs_vector,
-                        update_preconditioner,
-                        this->bdf.get_gamma0() / this->get_time_step_size(),
-                        this->get_next_time(),
-                        &velocity_np);
+  unsigned int const N_iter = pde_operator->solve(solution_np,
+                                                  rhs_vector,
+                                                  update_preconditioner,
+                                                  bdf.get_gamma0() / this->get_time_step_size(),
+                                                  this->get_next_time(),
+                                                  &velocity_np);
 
   iterations.first += 1;
   iterations.second += N_iter;
@@ -593,15 +589,14 @@ void
 TimeIntBDF<dim, Number>::extrapolate_solution(VectorType & vector)
 {
   // make sure that the time integrator constants are up-to-date
-  this->update_time_integrator_constants();
+  update_time_integrator_constants();
 
-  vector.equ(this->extra.get_beta(0), this->solution[0]);
+  vector.equ(extra.get_beta(0), this->solution[0]);
   for(unsigned int i = 1; i < solution.size(); ++i)
-    vector.add(this->extra.get_beta(i), this->solution[i]);
+    vector.add(extra.get_beta(i), this->solution[i]);
 }
 
 // instantiations
-
 template class TimeIntBDF<2, float>;
 template class TimeIntBDF<2, double>;
 

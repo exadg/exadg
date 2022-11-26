@@ -65,18 +65,12 @@ TimeIntBDFPressureCorrection<dim, Number>::update_time_integrator_constants()
   // calculated in the second sub step)
   // -> use first order extrapolation in second time step, second order extrapolation in third time
   // step, etc.
-  if(this->adaptive_time_stepping == false)
-  {
-    // the "-1" indicates that the order of extrapolation of the pressure gradient is one order
-    // lower than the order of the BDF time integration scheme
-    extra_pressure_gradient.update(this->get_time_step_number() - 1);
-  }
-  else // adaptive time stepping
-  {
-    // the "-1" indicates that the order of extrapolation of the pressure gradient is one order
-    // lower than the order of the BDF time integration scheme
-    extra_pressure_gradient.update(this->get_time_step_number() - 1, this->get_time_step_vector());
-  }
+
+  // the "-1" indicates that the order of extrapolation of the pressure gradient is one order
+  // lower than the order of the BDF time integration scheme
+  extra_pressure_gradient.update(this->get_time_step_number() - 1,
+                                 this->get_time_step_vector(),
+                                 this->adaptive_time_stepping);
 
   // use this function to check the correctness of the time integrator constants
   //    std::cout << "Coefficients extrapolation scheme pressure: Time step = "
@@ -157,7 +151,7 @@ TimeIntBDFPressureCorrection<dim, Number>::initialize_current_solution()
 
 template<int dim, typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::initialize_former_solutions()
+TimeIntBDFPressureCorrection<dim, Number>::initialize_former_multistep_dof_vectors()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < velocity.size(); ++i)

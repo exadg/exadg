@@ -26,7 +26,7 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
-#include <exadg/time_integration/time_int_bdf_base.h>
+#include <exadg/time_integration/time_int_bdf_base_new.h>
 
 namespace ExaDG
 {
@@ -45,10 +45,10 @@ class PostProcessorInterface;
 namespace ConvDiff
 {
 template<int dim, typename Number>
-class TimeIntBDF : public TimeIntBDFBase<Number>
+class TimeIntBDF : public TimeIntBDFBase
 {
 public:
-  typedef typename TimeIntBDFBase<Number>::VectorType VectorType;
+  using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
 
   TimeIntBDF(std::shared_ptr<Operator<dim, Number>>          operator_in,
              Parameters const &                              param_in,
@@ -64,10 +64,10 @@ public:
   extrapolate_solution(VectorType & vector);
 
   void
-  ale_update();
+  ale_update() final;
 
   void
-  print_iterations() const;
+  print_iterations() const final;
 
 private:
   void
@@ -77,7 +77,7 @@ private:
   initialize_current_solution() final;
 
   void
-  initialize_former_solutions() final;
+  initialize_former_multistep_dof_vectors() final;
 
   void
   initialize_vec_convective_term();
