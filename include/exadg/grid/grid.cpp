@@ -72,19 +72,10 @@ BalancedGranularityPartitionPolicy<dim, spacedim>::partition(
 template<int dim>
 Grid<dim>::Grid(const GridData & data, MPI_Comm const & mpi_comm)
 {
-  typename dealii::parallel::distributed::Triangulation<dim>::Settings distributed_settings;
-
   if(data.create_coarse_triangulations)
-  {
-    mesh_smoothing       = dealii::Triangulation<dim>::none;
-    distributed_settings = dealii::parallel::distributed::Triangulation<dim>::default_setting;
-  }
+    mesh_smoothing = dealii::Triangulation<dim>::none;
   else
-  {
     mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
-    distributed_settings =
-      dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy;
-  }
 
   // triangulation
   if(data.triangulation_type == TriangulationType::Serial)
@@ -94,6 +85,14 @@ Grid<dim>::Grid(const GridData & data, MPI_Comm const & mpi_comm)
   }
   else if(data.triangulation_type == TriangulationType::Distributed)
   {
+    typename dealii::parallel::distributed::Triangulation<dim>::Settings distributed_settings;
+
+    if(data.create_coarse_triangulations)
+      distributed_settings = dealii::parallel::distributed::Triangulation<dim>::default_setting;
+    else
+      distributed_settings =
+        dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy;
+
     triangulation =
       std::make_shared<dealii::parallel::distributed::Triangulation<dim>>(mpi_comm,
                                                                           mesh_smoothing,
