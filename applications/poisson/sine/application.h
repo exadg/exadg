@@ -174,11 +174,6 @@ private:
     this->param.multigrid_data.coarse_problem.preconditioner =
       MultigridCoarseGridPreconditioner::AMG;
     this->param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
-
-    AssertThrow(this->param.grid.create_coarse_triangulations ==
-                  this->param.multigrid_data.use_global_coarsening,
-                dealii::ExcMessage(
-                  "Can't use global_coarsening without activating create_coarse_triangulations"))
   }
 
   void
