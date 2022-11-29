@@ -72,18 +72,31 @@ BalancedGranularityPartitionPolicy<dim, spacedim>::partition(
 template<int dim>
 Grid<dim>::Grid(const GridData & data, MPI_Comm const & mpi_comm)
 {
+  if(data.create_coarse_triangulations)
+    mesh_smoothing = dealii::Triangulation<dim>::none;
+  else
+    mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
+
   // triangulation
   if(data.triangulation_type == TriangulationType::Serial)
   {
     AssertDimension(dealii::Utilities::MPI::n_mpi_processes(mpi_comm), 1);
-    triangulation = std::make_shared<dealii::Triangulation<dim>>();
+    triangulation = std::make_shared<dealii::Triangulation<dim>>(mesh_smoothing);
   }
   else if(data.triangulation_type == TriangulationType::Distributed)
   {
-    triangulation = std::make_shared<dealii::parallel::distributed::Triangulation<dim>>(
-      mpi_comm,
-      dealii::Triangulation<dim>::none,
-      dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy);
+    typename dealii::parallel::distributed::Triangulation<dim>::Settings distributed_settings;
+
+    if(data.create_coarse_triangulations)
+      distributed_settings = dealii::parallel::distributed::Triangulation<dim>::default_setting;
+    else
+      distributed_settings =
+        dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy;
+
+    triangulation =
+      std::make_shared<dealii::parallel::distributed::Triangulation<dim>>(mpi_comm,
+                                                                          mesh_smoothing,
+                                                                          distributed_settings);
   }
   else if(data.triangulation_type == TriangulationType::FullyDistributed)
   {
@@ -233,15 +246,22 @@ Grid<dim>::do_create_triangulation(
 
     unsigned int const group_size = 1;
 
+    typename dealii::TriangulationDescription::Settings triangulation_description_setting;
+
+    if(data.create_coarse_triangulations)
+      triangulation_description_setting = dealii::TriangulationDescription::default_setting;
+    else
+      triangulation_description_setting =
+        dealii::TriangulationDescription::construct_multigrid_hierarchy;
+
     // TODO SIMPLEX: this will not work in case of simplex meshes
     auto const description = dealii::TriangulationDescription::Utilities::
-      create_description_from_triangulation_in_groups<dim, dim>(
-        serial_grid_generator,
-        serial_grid_partitioner,
-        triangulation->get_communicator(),
-        group_size,
-        dealii::Triangulation<dim>::none,
-        dealii::TriangulationDescription::construct_multigrid_hierarchy);
+      create_description_from_triangulation_in_groups<dim, dim>(serial_grid_generator,
+                                                                serial_grid_partitioner,
+                                                                triangulation->get_communicator(),
+                                                                group_size,
+                                                                mesh_smoothing,
+                                                                triangulation_description_setting);
 
     triangulation->create_triangulation(description);
   }

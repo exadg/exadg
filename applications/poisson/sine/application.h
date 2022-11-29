@@ -280,10 +280,7 @@ private:
     pp_data.output_data.directory                   = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename                    = this->output_parameters.filename;
     pp_data.output_data.write_higher_order          = true;
-    if(this->param.grid.element_type == ElementType::Simplex and dim == 3)
-      AssertThrow(pp_data.output_data.write_higher_order == false,
-                  dealii::ExcMessage("Can't use higher order output with 3D Simplices."));
-    pp_data.output_data.degree = this->param.degree;
+    pp_data.output_data.degree                      = this->param.degree;
 
     pp_data.error_data.time_control_data.is_active = true;
     pp_data.error_data.analytical_solution.reset(new Solution<dim>());
@@ -291,6 +288,10 @@ private:
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
+
+    if(this->param.grid.element_type == ElementType::Simplex and dim == 3)
+      AssertThrow(pp_data.output_data.write_higher_order == false,
+                  dealii::ExcMessage("Can't use higher order output with 3D Simplices."));
 
     return pp;
   }
