@@ -91,11 +91,31 @@ struct BoundaryDescriptorU
   // Neumann: prescribe all components of the velocity gradient in normal direction
   std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> neumann_bc;
 
-  // Symmetry: For this boundary condition, the velocity normal to boundary is set to zero
-  // (u*n=0) as well as the normal velocity gradient in tangential directions
-  // (grad(u)*n - [(grad(u)*n)*n] n = 0). This is done automatically by the code. The user does not
-  // have to prescribe a boundary condition, simply use ZeroFunction<dim>, it is not relevant
-  // because this function will not be evaluated by the code.
+  // Symmetry: A boundary condition prescribing "symmetry" for planar surfaces. Using this boundary
+  // condition, the velocity normal to boundary is set to zero
+  //
+  //   u*n=0 (1)
+  //
+  // and the surface stress vector in tangential directions is set to zero
+  //
+  //   F(u)*n - [(F(u)*n)*n] n = 0 , (2a)
+  //
+  // where F(u) = grad(u) (Laplace formulation) or F(u) = grad(u) + grad(u)^T (divergence
+  // formulation). For both types of formulation of the viscous term, this implies that the
+  // gradient of tangential velocity components in the direction normal to the boundary is
+  // set to zero
+  //
+  //   grad(u)*n - [(grad(u)*n)*n] n = 0 . (2b)
+  //
+  // For the Laplace formulation, equation (2b) follows immediately from equation (2a). For
+  // the divergence formulation, one can show that the grad(u)^T terms in equation (2a) drop
+  // out if (u*n)=0 and if the normal vector is constant, i.e. for a planar surface
+  //
+  //   u*n=0, n=const => grad(u)^T*n - [(grad(u)^T*n)*n] n = 0 => (2a) implies (2b)
+  //
+  // Note that the user does not have to prescribe data for this symmetry boundary condition;
+  // so one can simply use ZeroFunction<dim> (the function is not relevant because it will not
+  // be evaluated by the code).
   std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> symmetry_bc;
 
   // add more types of boundary conditions
