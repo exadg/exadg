@@ -401,9 +401,8 @@ inline DEAL_II_ALWAYS_INLINE //
 
 // clang-format off
 /*
- *  These two functions calculates the velocity gradient in normal
- *  direction depending on the operator type, the type of the boundary face
- *  and the given boundary conditions.
+ *  This function calculates the exterior velocity gradient in normal direction depending
+ *  on the operator type, the type of the boundary face and the given boundary conditions.
  *
  *  The function argument normal_gradient_m has the meaning of F(u⁻)*n with
  *

@@ -431,7 +431,7 @@ public:
 
   // clang-format off
   /*
-   *  These two functions calculates the interor velocity gradient in normal
+   *  This function calculates the interior velocity gradient in normal
    *  direction depending on the operator type.
    *
    *  The variable normal_gradient_m has the meaning of F(u⁻)*n with
