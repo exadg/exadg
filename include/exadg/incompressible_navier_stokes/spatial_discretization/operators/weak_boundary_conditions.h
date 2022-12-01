@@ -401,9 +401,10 @@ inline DEAL_II_ALWAYS_INLINE //
 
 // clang-format off
 /*
- *  These two functions calculates the velocity gradient in normal
- *  direction depending on the operator type, the type of the boundary face
- *  and the given boundary conditions.
+ *  This function calculates the exterior velocity gradient in normal direction depending
+ *  on the operator type, the type of the boundary face and the given boundary conditions.
+ *
+ *  The function argument normal_gradient_m has the meaning of F(u⁻)*n with
  *
  *  Divergence formulation: F(u) = F_nu(u) / nu = ( grad(u) + grad(u)^T )
  *  Laplace formulation:    F(u) = F_nu(u) / nu =  grad(u)
@@ -421,9 +422,9 @@ inline DEAL_II_ALWAYS_INLINE //
  *                            +---------------------------------+---------------------------------------+----------------------------------------------------+
  *                            | Dirichlet boundaries            | Neumann boundaries                    | symmetry boundaries                                |
  *  +-------------------------+---------------------------------+---------------------------------------+----------------------------------------------------+
- *  | full operator           | {{F(u)}}*n = F(u⁻)*n            | {{F(u)}}*n = h                        | {{F(u)}}*n = 2*[(F(u⁻)*n)*n]n                      |
+ *  | full operator           | {{F(u)}}*n = F(u⁻)*n            | {{F(u)}}*n = h                        | {{F(u)}}*n = [(F(u⁻)*n)*n]n                        |
  *  +-------------------------+---------------------------------+---------------------------------------+----------------------------------------------------+
- *  | homogeneous operator    | {{F(u)}}*n = F(u⁻)*n            | {{F(u)}}*n = 0                        | {{F(u)}}*n = 2*[(F(u⁻)*n)*n]n                      |
+ *  | homogeneous operator    | {{F(u)}}*n = F(u⁻)*n            | {{F(u)}}*n = 0                        | {{F(u)}}*n = [(F(u⁻)*n)*n]n                        |
  *  +-------------------------+---------------------------------+---------------------------------------+----------------------------------------------------+
  *  | inhomogeneous operator  | {{F(u)}}*n = 0                  | {{F(u)}}*n = h                        | {{F(u)}}*n = 0                                     |
  *  +-------------------------+---------------------------------+---------------------------------------+----------------------------------------------------+
