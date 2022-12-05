@@ -151,16 +151,18 @@ public:
   void
   reinit_face(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const
   {
-    tau = std::max(integrator_m.read_cell_data(array_penalty_parameter),
-                   integrator_p.read_cell_data(array_penalty_parameter)) *
-          IP::get_penalty_factor<Number>(degree, data.IP_factor);
+    tau =
+      std::max(integrator_m.read_cell_data(array_penalty_parameter),
+               integrator_p.read_cell_data(array_penalty_parameter)) *
+      IP::get_penalty_factor<dim, Number>(degree, integrator_m.get_matrix_free(), data.IP_factor);
   }
 
   void
   reinit_boundary_face(IntegratorFace & integrator_m) const
   {
-    tau = integrator_m.read_cell_data(array_penalty_parameter) *
-          IP::get_penalty_factor<Number>(degree, data.IP_factor);
+    tau =
+      integrator_m.read_cell_data(array_penalty_parameter) *
+      IP::get_penalty_factor<dim, Number>(degree, integrator_m.get_matrix_free(), data.IP_factor);
   }
 
   void
@@ -170,14 +172,16 @@ public:
   {
     if(boundary_id == dealii::numbers::internal_face_boundary_id) // internal face
     {
-      tau = std::max(integrator_m.read_cell_data(array_penalty_parameter),
-                     integrator_p.read_cell_data(array_penalty_parameter)) *
-            IP::get_penalty_factor<Number>(degree, data.IP_factor);
+      tau =
+        std::max(integrator_m.read_cell_data(array_penalty_parameter),
+                 integrator_p.read_cell_data(array_penalty_parameter)) *
+        IP::get_penalty_factor<dim, Number>(degree, integrator_m.get_matrix_free(), data.IP_factor);
     }
     else // boundary face
     {
-      tau = integrator_m.read_cell_data(array_penalty_parameter) *
-            IP::get_penalty_factor<Number>(degree, data.IP_factor);
+      tau =
+        integrator_m.read_cell_data(array_penalty_parameter) *
+        IP::get_penalty_factor<dim, Number>(degree, integrator_m.get_matrix_free(), data.IP_factor);
     }
   }
 

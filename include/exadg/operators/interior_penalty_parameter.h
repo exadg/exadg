@@ -94,11 +94,16 @@ calculate_penalty_parameter(
  *  the shape functions and a specified penalty factor (scaling factor).
  */
 
-template<typename Number>
+template<int dim, typename Number>
 Number
-get_penalty_factor(unsigned int const degree, Number const factor = 1.0)
+get_penalty_factor(unsigned int const                      degree,
+                   dealii::MatrixFree<dim, Number> const & matrix_free,
+                   Number const                            factor = 1.0)
 {
-  return factor * (degree + 1.0) * (degree + 1.0);
+  if(matrix_free.get_dof_handler().get_triangulation().all_reference_cells_are_simplex())
+    return factor * (degree + 1.0) * (degree + dim) / dim;
+  else
+    return factor * (degree + 1.0) * (degree + 1.0);
 }
 
 } // namespace IP

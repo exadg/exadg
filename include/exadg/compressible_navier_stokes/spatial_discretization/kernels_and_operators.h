@@ -1012,9 +1012,10 @@ public:
     scalar
     get_penalty_parameter(FaceIntegratorScalar & fe_eval_m, FaceIntegratorScalar & fe_eval_p) const
   {
-    scalar tau = std::max(fe_eval_m.read_cell_data(array_penalty_parameter),
-                          fe_eval_p.read_cell_data(array_penalty_parameter)) *
-                 IP::get_penalty_factor<Number>(degree, data.IP_factor) * nu;
+    scalar tau =
+      std::max(fe_eval_m.read_cell_data(array_penalty_parameter),
+               fe_eval_p.read_cell_data(array_penalty_parameter)) *
+      IP::get_penalty_factor<dim, Number>(degree, fe_eval_m.get_matrix_free(), data.IP_factor) * nu;
 
     return tau;
   }
@@ -1023,8 +1024,9 @@ public:
     scalar
     get_penalty_parameter(FaceIntegratorScalar & fe_eval) const
   {
-    scalar tau = fe_eval.read_cell_data(array_penalty_parameter) *
-                 IP::get_penalty_factor<Number>(degree, data.IP_factor) * nu;
+    scalar tau =
+      fe_eval.read_cell_data(array_penalty_parameter) *
+      IP::get_penalty_factor<dim, Number>(degree, fe_eval.get_matrix_free(), data.IP_factor) * nu;
 
     return tau;
   }
