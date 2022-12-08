@@ -30,8 +30,15 @@ template<int dim>
 class DisplacementDBC : public dealii::Function<dim>
 {
 public:
-  DisplacementDBC(double const displacement, bool const unsteady, double const end_time)
-    : dealii::Function<dim>(dim), displacement(displacement), unsteady(unsteady), end_time(end_time)
+  DisplacementDBC(double const displacement,
+                  bool const   quasistatic_solver,
+                  bool const   unsteady,
+                  double const end_time)
+    : dealii::Function<dim>(dim),
+      displacement(displacement),
+      quasistatic(quasistatic_solver),
+      unsteady(unsteady),
+      end_time(end_time)
   {
   }
 
@@ -41,6 +48,8 @@ public:
     (void)p;
 
     double factor = 1.0;
+    if(quasistatic)
+      factor *= this->get_time();
 
     if(unsteady)
       factor = std::pow(std::sin(this->get_time() * 2.0 * dealii::numbers::PI / end_time), 2.0);
@@ -53,6 +62,7 @@ public:
 
 private:
   double const displacement;
+  bool const   quasistatic;
   bool const   unsteady;
   double const end_time;
 };
@@ -61,7 +71,8 @@ template<int dim>
 class VolumeForce : public dealii::Function<dim>
 {
 public:
-  VolumeForce(double volume_force) : dealii::Function<dim>(dim), volume_force(volume_force)
+  VolumeForce(double volume_force, bool quasistatic_solver)
+    : dealii::Function<dim>(dim), volume_force(volume_force), quasistatic(quasistatic_solver)
   {
   }
 
@@ -70,36 +81,48 @@ public:
   {
     (void)p;
 
+    double factor = 1.0;
+    if(quasistatic)
+      factor *= this->get_time();
+
     if(c == 0)
-      return volume_force; // volume force in x-direction
+      return volume_force * factor; // volume force in x-direction
     else
       return 0.0;
   }
 
 private:
   double const volume_force;
+  bool const   quasistatic;
 };
 
 template<int dim>
 class AreaForce : public dealii::Function<dim>
 {
 public:
-  AreaForce(double areaforce) : dealii::Function<dim>(dim), areaforce(areaforce)
+  AreaForce(double areaforce, bool const quasistatic_solver)
+    : dealii::Function<dim>(dim), areaforce(areaforce), quasistatic(quasistatic_solver)
   {
   }
-
-  double const areaforce;
 
   double
   value(dealii::Point<dim> const & p, unsigned int const c) const
   {
     (void)p;
 
+    double factor = 1.0;
+    if(quasistatic)
+      factor *= this->get_time();
+
     if(c == 0)
-      return areaforce; // area force  in x-direction
+      return areaforce * factor; // area force  in x-direction
     else
       return 0.0;
   }
+
+private:
+  double const areaforce;
+  bool const   quasistatic;
 };
 
 // analytical solution (if a Neumann BC is used at the right boundary)
@@ -304,6 +327,10 @@ private:
       this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, mask));
     }
 
+    bool quasistatic_solver = false;
+    if(this->param.problem_type == ProblemType::QuasiStatic)
+      quasistatic_solver = true;
+
     // right face
     if(boundary_type == "Dirichlet")
     {
@@ -317,7 +344,7 @@ private:
 
       bool const unsteady = (this->param.problem_type == ProblemType::Unsteady);
       this->boundary_descriptor->dirichlet_bc.insert(
-        pair(2, new DisplacementDBC<dim>(displacement, unsteady, end_time)));
+        pair(2, new DisplacementDBC<dim>(displacement, quasistatic_solver, unsteady, end_time)));
       this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(2, mask_right));
 
       if(dim == 2)
@@ -367,7 +394,8 @@ private:
     }
     else if(boundary_type == "Neumann")
     {
-      this->boundary_descriptor->neumann_bc.insert(pair(2, new AreaForce<dim>(area_force)));
+      this->boundary_descriptor->neumann_bc.insert(
+        pair(2, new AreaForce<dim>(area_force, quasistatic_solver)));
 
       if(dim == 2)
       {
@@ -411,8 +439,13 @@ private:
   void
   set_field_functions() final
   {
+    bool quasistatic_solver = false;
+    if(this->param.problem_type == ProblemType::QuasiStatic)
+      quasistatic_solver = true;
+
     if(use_volume_force)
-      this->field_functions->right_hand_side.reset(new VolumeForce<dim>(this->volume_force));
+      this->field_functions->right_hand_side.reset(
+        new VolumeForce<dim>(this->volume_force, quasistatic_solver));
     else
       this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
 
