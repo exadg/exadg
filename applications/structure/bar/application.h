@@ -262,6 +262,19 @@ private:
         {
           cell.face(face)->set_all_boundary_ids(2);
         }
+
+        // lower face
+        if(std::fabs(cell.face(face)->center()(1) - 0.0) < 1e-8)
+        {
+          cell.face(face)->set_all_boundary_ids(3);
+        }
+
+        // back face
+        if(dim == 3)
+          if(std::fabs(cell.face(face)->center()(2) - 0.0) < 1e-8)
+          {
+            cell.face(face)->set_all_boundary_ids(4);
+          }
       }
     }
 
@@ -279,28 +292,102 @@ private:
       pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // left face
-    std::vector<bool> mask = {true, false};
-    if(dim == 3)
     {
-      mask.resize(3);
-      mask[2] = true;
+      std::vector<bool> mask = {true, false};
+      if(dim == 3)
+      {
+        mask.resize(3);
+        mask[2] = false;
+      }
+      this->boundary_descriptor->dirichlet_bc.insert(
+        pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
+      this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, mask));
     }
-    this->boundary_descriptor->dirichlet_bc.insert(
-      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
-    this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, mask));
 
     // right face
     if(boundary_type == "Dirichlet")
     {
+      bool const        clamp_at_right_boundary = true;
+      std::vector<bool> mask_right              = {true, clamp_at_right_boundary};
+      if(dim == 3)
+      {
+        mask_right.resize(3);
+        mask_right[2] = clamp_at_right_boundary;
+      }
+
       bool const unsteady = (this->param.problem_type == ProblemType::Unsteady);
       this->boundary_descriptor->dirichlet_bc.insert(
         pair(2, new DisplacementDBC<dim>(displacement, unsteady, end_time)));
-      this->boundary_descriptor->dirichlet_bc_component_mask.insert(
-        pair_mask(2, dealii::ComponentMask()));
+      this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(2, mask_right));
+
+      if(dim == 2)
+      {
+        if(mask_right[1] == false)
+        {
+          this->boundary_descriptor->dirichlet_bc.insert(
+            pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
+          std::vector<bool> mask_y = {false, true};
+          this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(3, mask_y));
+        }
+        else
+        {
+          this->boundary_descriptor->neumann_bc.insert(
+            pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
+        }
+      }
+
+      if(dim == 3)
+      {
+        if(mask_right[1] == false)
+        {
+          this->boundary_descriptor->dirichlet_bc.insert(
+            pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
+          std::vector<bool> mask_y = {false, true, false};
+          this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(3, mask_y));
+        }
+        else
+        {
+          this->boundary_descriptor->neumann_bc.insert(
+            pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
+        }
+
+        if(mask_right[2] == false)
+        {
+          this->boundary_descriptor->dirichlet_bc.insert(
+            pair(4, new dealii::Functions::ZeroFunction<dim>(dim)));
+          std::vector<bool> mask_z = {false, false, true};
+          this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(4, mask_z));
+        }
+        else
+        {
+          this->boundary_descriptor->neumann_bc.insert(
+            pair(4, new dealii::Functions::ZeroFunction<dim>(dim)));
+        }
+      }
     }
     else if(boundary_type == "Neumann")
     {
       this->boundary_descriptor->neumann_bc.insert(pair(2, new AreaForce<dim>(area_force)));
+
+      if(dim == 2)
+      {
+        this->boundary_descriptor->dirichlet_bc.insert(
+          pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
+        std::vector<bool> mask_y = {false, true};
+        this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(3, mask_y));
+      }
+      if(dim == 3)
+      {
+        this->boundary_descriptor->dirichlet_bc.insert(
+          pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
+        std::vector<bool> mask_y = {false, true, false};
+        this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(3, mask_y));
+
+        this->boundary_descriptor->dirichlet_bc.insert(
+          pair(4, new dealii::Functions::ZeroFunction<dim>(dim)));
+        std::vector<bool> mask_z = {false, false, true};
+        this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(4, mask_z));
+      }
     }
     else
     {
