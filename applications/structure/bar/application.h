@@ -307,7 +307,7 @@ private:
     // right face
     if(boundary_type == "Dirichlet")
     {
-      bool const        clamp_at_right_boundary = false;
+      bool const        clamp_at_right_boundary = true;
       std::vector<bool> mask_right              = {true, clamp_at_right_boundary};
       if(dim == 3)
       {
