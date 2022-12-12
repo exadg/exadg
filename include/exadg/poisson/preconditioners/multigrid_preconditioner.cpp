@@ -111,7 +111,7 @@ MultigridPreconditioner<dim, Number, n_components>::fill_matrix_free_data(
                                        "laplace_quadrature");
   else if(this->dof_handlers[level]->get_triangulation().all_reference_cells_are_simplex())
     matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(this->level_info[level].degree() +
-                                                                1),
+                                                                  1),
                                        "laplace_quadrature");
 }
 

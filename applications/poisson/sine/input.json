@@ -7,7 +7,7 @@
     "Resolution": {
         "RunType": "RefineHAndP",
         "DegreeMin": "1",
-        "DegreeMax": "2",
+        "DegreeMax": "15",
         "RefineSpaceMin": "2",
         "RefineSpaceMax": "2",
         "DofsMin": "1000",

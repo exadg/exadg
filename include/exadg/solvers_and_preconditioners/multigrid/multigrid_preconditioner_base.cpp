@@ -453,11 +453,6 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
           dof_handler->distribute_dofs(
             dealii::FESystem<dim>(dealii::FE_SimplexP<dim>(level.degree()), fe.n_components()));
       }
-      else
-        AssertThrow(
-          false,
-          dealii::ExcMessage(
-            "Only simplex or hyper cube meshes allowed. Mixed meshes are also not allowed."));
 
       dof_handlers[i].reset(dof_handler);
 
@@ -565,7 +560,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_matrix_free()
   for(unsigned int level = coarse_level; level <= fine_level; level++)
   {
     matrix_free_data_objects[level] = std::make_shared<MatrixFreeData<dim, MultigridNumber>>();
-    //TODO: maybe change the following
+    // TODO: maybe change the following
     fill_matrix_free_data(*matrix_free_data_objects[level],
                           level,
                           data.use_global_coarsening ? dealii::numbers::invalid_unsigned_int :

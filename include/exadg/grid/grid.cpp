@@ -132,8 +132,10 @@ Grid<dim>::create_triangulation(
   const unsigned int                                        global_refinements,
   const std::vector<unsigned int> &                         vector_local_refinements)
 {
-  do_create_triangulation(
-    triangulation, data, create_coarse_triangulation, global_refinements, vector_local_refinements);
+  do_create_triangulation(data,
+                          create_coarse_triangulation,
+                          global_refinements,
+                          vector_local_refinements);
 
   // coarse triangulations need to be created for global coarsening multigrid
   if(data.create_coarse_triangulations)
@@ -142,8 +144,6 @@ Grid<dim>::create_triangulation(
     // coarse grid triangulations
     if(data.triangulation_type == TriangulationType::Serial)
     {
-      AssertThrow(triangulation->all_reference_cells_are_hyper_cube(), dealii::ExcNotImplemented());
-
       coarse_triangulations =
         dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
           *triangulation);
@@ -160,47 +160,10 @@ Grid<dim>::create_triangulation(
     {
       // we need to generate the coarse triangulations explicitly
 
-      // resize the empty coarse triangulations vector
-      coarse_triangulations = std::vector<std::shared_ptr<dealii::Triangulation<dim> const>>(
-        triangulation->n_global_levels());
+      // TODO
+      // construct all the coarser triangulations
 
-      unsigned int coarse_level = triangulation->n_global_levels() - 1;
-
-      // lambda function for creating and placing the coarse triangulations
-      auto const lambda_create_coarse_levels = [&](unsigned int              global_refinement,
-                                                   std::vector<unsigned int> refine_local) {
-        auto new_tria = std::make_shared<dealii::parallel::fullydistributed::Triangulation<dim>>(
-          triangulation->get_communicator());
-
-        do_create_triangulation(
-          new_tria, data, create_coarse_triangulation, global_refinement, refine_local);
-
-        coarse_triangulations[coarse_level] = new_tria;
-
-        coarse_level--;
-      };
-
-      // start with the finest level
-      std::vector<unsigned int> refine_local = vector_local_refinements;
-
-      // undo global refinements
-      for(int it = global_refinements; it >= 0; --it)
-      {
-        lambda_create_coarse_levels(it, refine_local);
-      }
-
-      // undo local refinements
-      while(refine_local != std::vector<unsigned int>(refine_local.size(), 0))
-      {
-        for(size_t material_id = 0; material_id < refine_local.size(); material_id++)
-        {
-          if(refine_local[material_id] > 0)
-          {
-            refine_local[material_id]--;
-          }
-        }
-        lambda_create_coarse_levels(0, refine_local);
-      }
+      AssertThrow(false, ExcNotImplemented());
     }
     else
     {
@@ -233,7 +196,6 @@ Grid<dim>::get_mapping() const
 template<int dim>
 void
 Grid<dim>::do_create_triangulation(
-  std::shared_ptr<dealii::Triangulation<dim>>               tria,
   const GridData &                                          data,
   const std::function<void(dealii::Triangulation<dim> &)> & create_triangulation,
   const unsigned int                                        global_refinements,
@@ -242,13 +204,13 @@ Grid<dim>::do_create_triangulation(
   if(data.triangulation_type == TriangulationType::Serial or
      data.triangulation_type == TriangulationType::Distributed)
   {
-    create_triangulation(*tria);
+    create_triangulation(*triangulation);
 
     if(vector_local_refinements.size() > 0)
-      refine_local(*tria, vector_local_refinements);
+      refine_local(*triangulation, vector_local_refinements);
 
     if(global_refinements > 0)
-      tria->refine_global(global_refinements);
+      triangulation->refine_global(global_refinements);
   }
   else if(data.triangulation_type == TriangulationType::FullyDistributed)
   {
@@ -296,12 +258,12 @@ Grid<dim>::do_create_triangulation(
     auto const description = dealii::TriangulationDescription::Utilities::
       create_description_from_triangulation_in_groups<dim, dim>(serial_grid_generator,
                                                                 serial_grid_partitioner,
-                                                                tria->get_communicator(),
+                                                                triangulation->get_communicator(),
                                                                 group_size,
                                                                 mesh_smoothing,
                                                                 triangulation_description_setting);
 
-    tria->create_triangulation(description);
+    triangulation->create_triangulation(description);
   }
   else
   {

@@ -109,7 +109,6 @@ public:
 private:
   void
   do_create_triangulation(
-    std::shared_ptr<dealii::Triangulation<dim>>               tria,
     GridData const &                                          data,
     std::function<void(dealii::Triangulation<dim> &)> const & create_triangulation,
     unsigned int const                                        global_refinements,

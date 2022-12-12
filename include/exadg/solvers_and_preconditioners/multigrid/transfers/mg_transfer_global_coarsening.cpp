@@ -64,7 +64,7 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
     auto const &       matrixfree = mg_matrixfree[global_level];
     auto const &       fe         = matrixfree->get_dof_handler(dof_handler_index).get_fe();
     bool const         is_dg      = fe.dofs_per_vertex == 0;
-    unsigned int const level = matrixfree->get_dof_handler().get_triangulation().n_global_levels();
+    unsigned int const level  = matrixfree->get_dof_handler().get_triangulation().n_global_levels();
     unsigned int const degree = fe.degree;
 
     global_levels.push_back(MGLevelInfo(level, degree, is_dg));
