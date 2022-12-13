@@ -113,6 +113,8 @@ MultigridPreconditioner<dim, Number, n_components>::fill_matrix_free_data(
     matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(this->level_info[level].degree() +
                                                                   1),
                                        "laplace_quadrature");
+  else
+    AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
 }
 
 template<int dim, typename Number, int n_components>

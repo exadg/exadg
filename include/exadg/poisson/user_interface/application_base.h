@@ -181,6 +181,8 @@ protected:
                                                              quad);
         pcout << std::endl << "Maximum aspect ratio (Jacobian) = " << AR << std::endl;
       }
+      else
+        AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
     }
   }
 

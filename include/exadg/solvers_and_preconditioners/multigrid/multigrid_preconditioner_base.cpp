@@ -453,6 +453,8 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
           dof_handler->distribute_dofs(
             dealii::FESystem<dim>(dealii::FE_SimplexP<dim>(level.degree()), fe.n_components()));
       }
+      else
+        AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
 
       dof_handlers[i].reset(dof_handler);
 
@@ -494,8 +496,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       // setup dof_handler: create dof_handler...
       auto dof_handler = new dealii::DoFHandler<dim>(*tria);
       // ... create FE and distribute it
-      // TODO: following if-else is not used becuade of the above
-      // AssertThrow(tria->all_reference_cells_are_hyper_cube(),(..))
+      // TODO: following if-else is not used becuade of the above Assert
       if(tria->all_reference_cells_are_hyper_cube())
       {
         if(level.is_dg)
@@ -514,6 +515,9 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
           dof_handler->distribute_dofs(
             dealii::FESystem<dim>(dealii::FE_SimplexP<dim>(level.degree), n_components));
       }
+      else
+        AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
+
       dof_handler->distribute_mg_dofs();
       // setup constrained dofs:
       auto constrained_dofs = new dealii::MGConstrainedDoFs();
@@ -560,7 +564,6 @@ MultigridPreconditionerBase<dim, Number>::initialize_matrix_free()
   for(unsigned int level = coarse_level; level <= fine_level; level++)
   {
     matrix_free_data_objects[level] = std::make_shared<MatrixFreeData<dim, MultigridNumber>>();
-    // TODO: maybe change the following
     fill_matrix_free_data(*matrix_free_data_objects[level],
                           level,
                           data.use_global_coarsening ? dealii::numbers::invalid_unsigned_int :
@@ -677,9 +680,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_affine_constraints(
                                                      affine_constraints);
   }
   else
-    AssertThrow(false,
-                dealii::ExcMessage(
-                  "Only simplex or hyper cube meshes allowed. Mixed meshes are also not allowed."));
+    AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
 
   affine_constraints.close();
 }
