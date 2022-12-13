@@ -90,8 +90,9 @@ calculate_penalty_parameter(
 
 /*
  *  This function returns the penalty factor of the interior penalty method
- *  for quadrilateral/hexahedral elements for a given polynomial degree of
- *  the shape functions and a specified penalty factor (scaling factor).
+ *  for quadrilateral/hexahedral or for triangular/tetrahedral elements for a given polynomial
+ *  degree of the shape functions, a specified penalty factor (scaling factor) and the dimension of
+ *  the problem.
  */
 
 template<int dim, typename Number>
@@ -100,6 +101,7 @@ get_penalty_factor(unsigned int const                      degree,
                    dealii::MatrixFree<dim, Number> const & matrix_free,
                    Number const                            factor = 1.0)
 {
+  // use penalty factor for simplex elements according to Shahbazi (2005)
   if(matrix_free.get_dof_handler().get_triangulation().all_reference_cells_are_simplex())
     return factor * (degree + 1.0) * (degree + dim) / dim;
   else
