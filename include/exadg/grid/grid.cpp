@@ -190,7 +190,7 @@ Grid<dim>::create_triangulation(
       }
 
       // undo local refinements
-      while(refine_local != std::vector<unsigned int>(refine_local.size(), 0))
+      while(*std::max_element(refine_local.begin(), refine_local.end()) != 0)
       {
         for(size_t material_id = 0; material_id < refine_local.size(); material_id++)
         {
