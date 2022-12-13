@@ -89,10 +89,10 @@ calculate_penalty_parameter(
 }
 
 /*
- *  This function returns the penalty factor of the interior penalty method
- *  for quadrilateral/hexahedral or for triangular/tetrahedral elements for a given polynomial
- *  degree of the shape functions, a specified penalty factor (scaling factor) and the dimension of
- *  the problem.
+ *  This function returns the penalty factor of the interior penalty method for
+ *  quadrilateral/hexahedral or for triangular/tetrahedral elements for a given
+ *  polynomial degree of the shape functions, a specified penalty factor
+ *  (scaling factor) and the dimension of the problem.
  */
 
 template<int dim, typename Number>
