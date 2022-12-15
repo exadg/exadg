@@ -646,25 +646,13 @@ MultigridPreconditionerBase<dim, Number>::initialize_affine_constraints(
     boundary_functions[it.first] = &zero_function;
   }
 
+  auto const & mapping_dummy =
+    dof_handler.get_fe().reference_cell().template get_default_linear_mapping<dim>();
 
-  if(triangulation->all_reference_cells_are_hyper_cube())
-  {
-    dealii::MappingQ<dim> mapping_dummy(1);
-    dealii::VectorTools::interpolate_boundary_values(mapping_dummy,
-                                                     dof_handler,
-                                                     boundary_functions,
-                                                     affine_constraints);
-  }
-  else if(triangulation->all_reference_cells_are_simplex())
-  {
-    dealii::MappingFE<dim> mapping_dummy(dealii::FE_SimplexP<dim>(1));
-    dealii::VectorTools::interpolate_boundary_values(mapping_dummy,
-                                                     dof_handler,
-                                                     boundary_functions,
-                                                     affine_constraints);
-  }
-  else
-    AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
+  dealii::VectorTools::interpolate_boundary_values(mapping_dummy,
+                                                   dof_handler,
+                                                   boundary_functions,
+                                                   affine_constraints);
 
   affine_constraints.close();
 }
