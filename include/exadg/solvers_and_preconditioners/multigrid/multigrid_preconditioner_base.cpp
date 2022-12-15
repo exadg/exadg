@@ -496,28 +496,12 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       // setup dof_handler: create dof_handler...
       auto dof_handler = new dealii::DoFHandler<dim>(*tria);
       // ... create FE and distribute it
-      // TODO: following if-else is not used becuade of the above Assert
-      if(tria->all_reference_cells_are_hyper_cube())
-      {
-        if(level.is_dg)
-          dof_handler->distribute_dofs(
-            dealii::FESystem<dim>(dealii::FE_DGQ<dim>(level.degree), n_components));
-        else
-          dof_handler->distribute_dofs(
-            dealii::FESystem<dim>(dealii::FE_Q<dim>(level.degree), n_components));
-      }
-      else if(tria->all_reference_cells_are_simplex())
-      {
-        if(level.is_dg)
-          dof_handler->distribute_dofs(
-            dealii::FESystem<dim>(dealii::FE_SimplexDGP<dim>(level.degree), n_components));
-        else
-          dof_handler->distribute_dofs(
-            dealii::FESystem<dim>(dealii::FE_SimplexP<dim>(level.degree), n_components));
-      }
+      if(level.is_dg)
+        dof_handler->distribute_dofs(
+          dealii::FESystem<dim>(dealii::FE_DGQ<dim>(level.degree), n_components));
       else
-        AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
-
+        dof_handler->distribute_dofs(
+          dealii::FESystem<dim>(dealii::FE_Q<dim>(level.degree), n_components));
       dof_handler->distribute_mg_dofs();
       // setup constrained dofs:
       auto constrained_dofs = new dealii::MGConstrainedDoFs();
