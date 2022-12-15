@@ -97,12 +97,10 @@ calculate_penalty_parameter(
 
 template<int dim, typename Number>
 Number
-get_penalty_factor(unsigned int const                      degree,
-                   dealii::MatrixFree<dim, Number> const & matrix_free,
-                   Number const                            factor = 1.0)
+get_penalty_factor(unsigned int const degree, bool const use_simplex, Number const factor = 1.0)
 {
   // use penalty factor for simplex elements according to Shahbazi (2005)
-  if(matrix_free.get_dof_handler().get_triangulation().all_reference_cells_are_simplex())
+  if(use_simplex)
     return factor * (degree + 1.0) * (degree + dim) / dim;
   else
     return factor * (degree + 1.0) * (degree + 1.0);
