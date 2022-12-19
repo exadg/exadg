@@ -90,11 +90,18 @@ template class MassOperator<2, 1, double>;
 template class MassOperator<3, 1, float>;
 template class MassOperator<3, 1, double>;
 
-// vector
+// dim components
 template class MassOperator<2, 2, float>;
 template class MassOperator<2, 2, double>;
 
 template class MassOperator<3, 3, float>;
 template class MassOperator<3, 3, double>;
+
+// dim + 1 components
+template class MassOperator<2, 3, float>;
+template class MassOperator<2, 3, double>;
+
+template class MassOperator<3, 4, float>;
+template class MassOperator<3, 4, double>;
 
 } // namespace ExaDG
