@@ -142,7 +142,11 @@ Grid<dim>::create_triangulation(
     // coarse grid triangulations
     if(data.triangulation_type == TriangulationType::Serial)
     {
-      AssertThrow(triangulation->all_reference_cells_are_hyper_cube(), dealii::ExcNotImplemented());
+      AssertThrow(
+        triangulation->all_reference_cells_are_hyper_cube(),
+        dealii::ExcMessage(
+          "Currently the create_geometric_coarsening_sequence function of dealii does not support "
+          "Simplex elements."));
 
       coarse_triangulations =
         dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
@@ -164,20 +168,21 @@ Grid<dim>::create_triangulation(
       coarse_triangulations = std::vector<std::shared_ptr<dealii::Triangulation<dim> const>>(
         triangulation->n_global_levels());
 
-      unsigned int coarse_level = triangulation->n_global_levels() - 1;
+      // we start with the finest level
+      unsigned int level = triangulation->n_global_levels() - 1;
 
       // lambda function for creating and placing the coarse triangulations
-      auto const lambda_create_coarse_levels = [&](unsigned int              global_refinement,
-                                                   std::vector<unsigned int> refine_local) {
-        auto new_tria = std::make_shared<dealii::parallel::fullydistributed::Triangulation<dim>>(
+      auto const lambda_create_level_triangulation = [&](unsigned int              refine_global,
+                                                         std::vector<unsigned int> refine_local) {
+        auto level_tria = std::make_shared<dealii::parallel::fullydistributed::Triangulation<dim>>(
           triangulation->get_communicator());
 
         do_create_triangulation(
-          new_tria, data, create_coarse_triangulation, global_refinement, refine_local);
+          level_tria, data, create_coarse_triangulation, refine_global, refine_local);
 
-        coarse_triangulations[coarse_level] = new_tria;
+        coarse_triangulations[level] = level_tria;
 
-        coarse_level--;
+        level--;
       };
 
       // start with the finest level
@@ -186,7 +191,7 @@ Grid<dim>::create_triangulation(
       // undo global refinements
       for(int it = global_refinements; it >= 0; --it)
       {
-        lambda_create_coarse_levels(it, refine_local);
+        lambda_create_level_triangulation(it, refine_local);
       }
 
       // undo local refinements
@@ -201,7 +206,7 @@ Grid<dim>::create_triangulation(
               refine_local[material_id]--;
             }
           }
-          lambda_create_coarse_levels(0, refine_local);
+          lambda_create_level_triangulation(0, refine_local);
         }
       }
     }
