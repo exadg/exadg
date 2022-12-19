@@ -189,9 +189,9 @@ Grid<dim>::create_triangulation(
       std::vector<unsigned int> refine_local = vector_local_refinements;
 
       // undo global refinements
-      for(int it = global_refinements; it >= 0; --it)
+      for(int refine_global = global_refinements; refine_global >= 0; --refine_global)
       {
-        lambda_create_level_triangulation(it, refine_local);
+        lambda_create_level_triangulation(refine_global, refine_local);
       }
 
       // undo local refinements
