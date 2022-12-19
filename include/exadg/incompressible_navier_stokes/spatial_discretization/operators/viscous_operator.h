@@ -54,13 +54,21 @@ private:
   typedef CellIntegrator<dim, dim, Number> IntegratorCell;
   typedef FaceIntegrator<dim, dim, Number> IntegratorFace;
 
-  bool
-  using_simplex(IntegratorFace & integrator) const
+  ElementType
+  get_element_type(IntegratorFace & integrator) const
   {
-    return integrator.get_matrix_free()
-      .get_dof_handler()
-      .get_triangulation()
-      .all_reference_cells_are_simplex();
+    if(integrator.get_matrix_free()
+         .get_dof_handler()
+         .get_triangulation()
+         .all_reference_cells_are_simplex())
+      return ElementType::Simplex;
+    else if(integrator.get_matrix_free()
+              .get_dof_handler()
+              .get_triangulation()
+              .all_reference_cells_are_hyper_cube())
+      return ElementType::Hypercube;
+    else
+      AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
   }
 
 public:
@@ -160,16 +168,18 @@ public:
   void
   reinit_face(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const
   {
-    tau = std::max(integrator_m.read_cell_data(array_penalty_parameter),
-                   integrator_p.read_cell_data(array_penalty_parameter)) *
-          IP::get_penalty_factor<dim, Number>(degree, using_simplex(integrator_m), data.IP_factor);
+    tau =
+      std::max(integrator_m.read_cell_data(array_penalty_parameter),
+               integrator_p.read_cell_data(array_penalty_parameter)) *
+      IP::get_penalty_factor<dim, Number>(degree, get_element_type(integrator_m), data.IP_factor);
   }
 
   void
   reinit_boundary_face(IntegratorFace & integrator_m) const
   {
-    tau = integrator_m.read_cell_data(array_penalty_parameter) *
-          IP::get_penalty_factor<dim, Number>(degree, using_simplex(integrator_m), data.IP_factor);
+    tau =
+      integrator_m.read_cell_data(array_penalty_parameter) *
+      IP::get_penalty_factor<dim, Number>(degree, get_element_type(integrator_m), data.IP_factor);
   }
 
   void
@@ -182,13 +192,13 @@ public:
       tau =
         std::max(integrator_m.read_cell_data(array_penalty_parameter),
                  integrator_p.read_cell_data(array_penalty_parameter)) *
-        IP::get_penalty_factor<dim, Number>(degree, using_simplex(integrator_m), data.IP_factor);
+        IP::get_penalty_factor<dim, Number>(degree, get_element_type(integrator_m), data.IP_factor);
     }
     else // boundary face
     {
       tau =
         integrator_m.read_cell_data(array_penalty_parameter) *
-        IP::get_penalty_factor<dim, Number>(degree, using_simplex(integrator_m), data.IP_factor);
+        IP::get_penalty_factor<dim, Number>(degree, get_element_type(integrator_m), data.IP_factor);
     }
   }
 
