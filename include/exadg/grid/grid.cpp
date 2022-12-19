@@ -132,6 +132,11 @@ Grid<dim>::create_triangulation(
   const unsigned int                                        global_refinements,
   const std::vector<unsigned int> &                         vector_local_refinements)
 {
+  if(data.element_type == ElementType::Simplex)
+    AssertThrow(vector_local_refinements.size() == 0,
+                dealii::ExcMessage(
+                  "Currently, local refinements are not supported for simplex meshes."));
+
   do_create_triangulation(data,
                           create_coarse_triangulation,
                           global_refinements,
