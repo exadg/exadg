@@ -30,6 +30,9 @@
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/utilities.h>
 
+// ExaDG
+#include <exadg/utilities/print_functions.h>
+
 namespace ExaDG
 {
 inline void
