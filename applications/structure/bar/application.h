@@ -227,9 +227,7 @@ private:
     this->param.grid.triangulation_type = TriangulationType::Distributed;
     this->param.grid.mapping_degree     = 1;
 
-    this->param.load_increment            = 0.1;
-    this->param.adjust_load_increment     = false;
-    this->param.desired_newton_iterations = 20;
+    this->param.load_increment = 0.1;
 
     this->param.newton_solver_data                   = Newton::SolverData(1e2, 1.e-8, 1.e-8);
     this->param.solver                               = Solver::FGMRES;
@@ -240,7 +238,7 @@ private:
     this->param.multigrid_data.coarse_problem.preconditioner =
       MultigridCoarseGridPreconditioner::AMG;
 
-    this->param.update_preconditioner                         = true;
+    this->param.update_preconditioner                         = false;
     this->param.update_preconditioner_every_time_steps        = 1;
     this->param.update_preconditioner_every_newton_iterations = 1;
   }

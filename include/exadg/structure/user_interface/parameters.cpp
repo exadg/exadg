@@ -55,8 +55,6 @@ Parameters::Parameters()
 
     // quasi-static solver
     load_increment(1.0),
-    adjust_load_increment(false),
-    desired_newton_iterations(10),
 
     // SPATIAL DISCRETIZATION
     grid(GridData()),
@@ -161,8 +159,6 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
   if(problem_type == ProblemType::QuasiStatic)
   {
     print_parameter(pcout, "load_increment", load_increment);
-    print_parameter(pcout, "Adjust load increment", adjust_load_increment);
-    print_parameter(pcout, "Desired Newton iterations", desired_newton_iterations);
   }
 
   if(problem_type == ProblemType::Unsteady)

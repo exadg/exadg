@@ -159,9 +159,7 @@ private:
     this->param.grid.triangulation_type = TriangulationType::Distributed;
     this->param.grid.mapping_degree     = 1;
 
-    this->param.load_increment            = 0.1;
-    this->param.adjust_load_increment     = true;
-    this->param.desired_newton_iterations = 20;
+    this->param.load_increment = 0.1;
 
     this->param.newton_solver_data                     = Newton::SolverData(1e3, 1.e-10, 1.e-6);
     this->param.solver                                 = Solver::FGMRES;

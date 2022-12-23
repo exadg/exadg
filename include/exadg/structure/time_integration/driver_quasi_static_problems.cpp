@@ -144,48 +144,38 @@ DriverQuasiStatic<dim, Number>::do_solve()
       ((this->step_number - 1) % this->param.update_preconditioner_every_time_steps == 0);
 
     // compute displacement for new load factor
-    if(param.adjust_load_increment)
+
+    // reduce load increment in factors of 2 until the current
+    // step can be solved successfully
+    bool         success        = false;
+    unsigned int re_try_counter = 0;
+    while(!success && re_try_counter < 10)
     {
-      // reduce load increment in factors of 2 until the current
-      // step can be solved successfully
-      bool         success        = false;
-      unsigned int re_try_counter = 0;
-      while(!success && re_try_counter < 10)
+      try
       {
-        try
-        {
-          // extrapolate solution
-          solution.add(load_increment / last_load_increment, displacement_increment);
+        // extrapolate solution
+        solution.add(load_increment / last_load_increment, displacement_increment);
 
-          iter    = solve_step(load_factor + load_increment, update_preconditioner);
-          success = true;
-        }
-        catch(...)
-        {
-          // undo changes in solution vector
-          solution = old_solution;
-          ++re_try_counter;
-
-          // reduce load increment by factor of 2
-          load_increment *= 0.5;
-          pcout << std::endl
-                << "Could not solve non-linear problem. Reduce load increment to " << load_increment
-                << std::flush;
-        }
+        iter    = solve_step(load_factor + load_increment, update_preconditioner);
+        success = true;
       }
+      catch(...)
+      {
+        // undo changes in solution vector
+        solution = old_solution;
+        ++re_try_counter;
 
-      AssertThrow(
-        success,
-        dealii::ExcMessage(
-          "Could not solve quasi static problem even after reducing the load increment."));
+        // reduce load increment by factor of 2
+        load_increment *= 0.5;
+        pcout << std::endl
+              << "Could not solve non-linear problem. Reduce load increment to " << load_increment
+              << std::flush;
+      }
     }
-    else
-    {
-      // extrapolate solution in case of constant load increments
-      solution.add(1.0, displacement_increment);
 
-      iter = solve_step(load_factor + load_increment, update_preconditioner);
-    }
+    AssertThrow(success,
+                dealii::ExcMessage(
+                  "Could not solve quasi static problem even after reducing the load increment."));
 
     // calculate increment as new_solution - old_solution
     displacement_increment = solution;
@@ -200,13 +190,8 @@ DriverQuasiStatic<dim, Number>::do_solve()
     load_factor += load_increment;
     ++step_number;
 
-    // adjust increment for next load step
-    if(param.adjust_load_increment)
-    {
-      if(std::get<0>(iter) > 0)
-        load_increment *=
-          std::pow((double)param.desired_newton_iterations / (double)std::get<0>(iter), 0.5);
-    }
+    // re-init increment for next load step
+    load_increment = param.load_increment;
 
     // make sure to hit maximum load exactly
     if(load_factor + load_increment >= 1.0)

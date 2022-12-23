@@ -160,14 +160,6 @@ public:
   // choose a value in [0,1] where 1 = maximum load (Neumann or Dirichlet)
   double load_increment;
 
-  // adjust load increment adaptively depending on the number of iterations needed to
-  // solve the system of equations
-  bool adjust_load_increment;
-
-  // in case of adaptively adjusting the load increment: specify a desired number of
-  // Newton iterations according to which the load increment will be adjusted
-  unsigned int desired_newton_iterations;
-
   /**************************************************************************************/
   /*                                                                                    */
   /*                              SPATIAL DISCRETIZATION                                */

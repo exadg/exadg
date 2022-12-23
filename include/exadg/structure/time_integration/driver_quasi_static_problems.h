@@ -110,8 +110,7 @@ private:
   VectorType displacement_increment;
 
   // For the purpose of extrapolating the displacements, we also need to store the
-  // load_increment of the last load step (in case we adjust the load increments
-  // dynamically during the simulation).
+  // load_increment of the last load step.
   double last_load_increment;
 
   unsigned int step_number;
