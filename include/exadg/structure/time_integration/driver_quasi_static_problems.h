@@ -84,7 +84,7 @@ private:
   output_solver_info_header(double const load_factor);
 
   std::tuple<unsigned int, unsigned int>
-  solve_step(double const load_factor);
+  solve_step(double const load_factor, bool const update_preconditioner);
 
   void
   postprocessing() const;
@@ -104,6 +104,15 @@ private:
   // vectors
   VectorType solution;
   VectorType rhs_vector;
+
+  // We need to store a vector in order to extrapolate the solution to the next
+  // load step and obtain an accurate initial guess for the Newton solver.
+  VectorType displacement_increment;
+
+  // For the purpose of extrapolating the displacements, we also need to store the
+  // load_increment of the last load step (in case we adjust the load increments
+  // dynamically during the simulation).
+  double last_load_increment;
 
   unsigned int step_number;
 
