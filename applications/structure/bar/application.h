@@ -209,7 +209,7 @@ private:
   void
   set_parameters() final
   {
-    this->param.problem_type         = ProblemType::Steady;
+    this->param.problem_type         = ProblemType::QuasiStatic; //Steady;
     this->param.body_force           = use_volume_force;
     this->param.large_deformation    = true;
     this->param.pull_back_body_force = false;
@@ -227,7 +227,7 @@ private:
     this->param.grid.triangulation_type = TriangulationType::Distributed;
     this->param.grid.mapping_degree     = 1;
 
-    this->param.load_increment            = 0.1;
+    this->param.load_increment            = 0.025;
     this->param.adjust_load_increment     = false;
     this->param.desired_newton_iterations = 20;
 
@@ -334,7 +334,7 @@ private:
     // right face
     if(boundary_type == "Dirichlet")
     {
-      bool const        clamp_at_right_boundary = true;
+      bool const        clamp_at_right_boundary = false;
       std::vector<bool> mask_right              = {true, clamp_at_right_boundary};
       if(dim == 3)
       {
