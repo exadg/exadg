@@ -59,12 +59,16 @@ private:
          .get_dof_handler()
          .get_triangulation()
          .all_reference_cells_are_simplex())
+    {
       return ElementType::Simplex;
+    }
     else if(integrator.get_matrix_free()
               .get_dof_handler()
               .get_triangulation()
               .all_reference_cells_are_hyper_cube())
+    {
       return ElementType::Hypercube;
+    }
     else
       AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
   }

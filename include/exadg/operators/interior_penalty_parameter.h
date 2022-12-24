@@ -104,15 +104,21 @@ Number
 get_penalty_factor(unsigned int const degree, ElementType element_type, Number const factor = 1.0)
 {
   if(element_type == ElementType::Simplex)
+  {
     // use penalty factor for simplex elements according to K. Shahbazi, An explicit expression for
     // the penalty parameter of the interior penalty method, Journal of Computational Physics 205,
     // 401–407, 2005.
     return factor * (degree + 1.0) * (degree + dim) / dim;
-  else
+  }
+  else if(element_type == ElementType::Hypercube)
+  {
     // use penalty factor for hypercube elements according to K. Hillewaert, Development of the
     // discontinuous Galerkin method for high-resolution, large scale CFD and acoustics in
     // industrial geometries, PhD thesis, Univ. de Louvain, 2013.
     return factor * (degree + 1.0) * (degree + 1.0);
+  }
+  else
+    AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
 }
 
 } // namespace IP
