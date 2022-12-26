@@ -22,6 +22,7 @@
 #ifndef APPLICATIONS_POISSON_TEST_CASES_SINE_H_
 #define APPLICATIONS_POISSON_TEST_CASES_SINE_H_
 
+#include <deal.II/grid/grid_in.h>
 #include <exadg/grid/deformed_cube_manifold.h>
 
 namespace ExaDG
@@ -275,6 +276,18 @@ private:
           AssertThrow(false, dealii::ExcMessage("not implemented."));
         }
       };
+
+    auto const lambda_read_external_coarse_grid = [&](dealii::Triangulation<dim, dim> & tria) {
+      dealii::GridIn<dim> grid_in;
+
+      grid_in.attach_triangulation(tria);
+
+      // this is a 3D Simplex grid
+      std::string input_file("applications/poisson/sine/external_grids/simplex_poisson.e");
+
+      grid_in.read_exodusii(input_file);
+    };
+
 
     GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
                                                               this->param.grid,
