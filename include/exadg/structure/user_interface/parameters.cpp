@@ -68,6 +68,7 @@ Parameters::Parameters()
     update_preconditioner(false),
     update_preconditioner_every_time_steps(1),
     update_preconditioner_every_newton_iterations(10),
+    update_preconditioner_once_newton_converged(false),
     multigrid_data(MultigridData())
 {
 }

@@ -190,12 +190,21 @@ public:
   // description: see enum declaration
   Preconditioner preconditioner;
 
-  // only relevant for nonlinear problems
+  // only relevant for nonlinear problems: update of preconditioner
+
+  // Should the preconditioner be updated at all (set to false to never update the
+  // preconditioner)?
   bool update_preconditioner;
-  // ... every time steps (or load steps for QuasiStatic problems)
+  // If the above option is set to true, one can specify in more detail when to update
+  // the preconditioner exactly:
+  // - every ... time steps (or load steps for QuasiStatic problems)
   unsigned int update_preconditioner_every_time_steps;
-  // ... every Newton iterations
+  // and within a time step or load step:
+  // - every ... Newton iterations (first update is invoked in the first Newton iteration)
   unsigned int update_preconditioner_every_newton_iterations;
+  // - or once the Newton solver converged successfully (this option is currently used
+  // in order to avoid invalid deformation states in non-converged Newton iterations)
+  bool update_preconditioner_once_newton_converged;
 
   // description: see declaration of MultigridData
   MultigridData multigrid_data;

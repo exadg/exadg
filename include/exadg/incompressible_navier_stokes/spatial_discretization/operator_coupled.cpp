@@ -263,8 +263,8 @@ OperatorCoupled<dim, Number>::solve_nonlinear_problem(BlockVectorType &  dst,
 
   // Solve nonlinear problem
   Newton::UpdateData update;
-  update.do_update             = update_preconditioner;
-  update.threshold_newton_iter = this->param.update_preconditioner_coupled_every_newton_iter;
+  update.do_update                = update_preconditioner;
+  update.update_every_newton_iter = this->param.update_preconditioner_coupled_every_newton_iter;
 
   auto const iter = newton_solver->solve(dst, update);
 

@@ -772,8 +772,9 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
 
   // call Newton solver
   Newton::UpdateData update;
-  update.do_update             = update_preconditioner;
-  update.threshold_newton_iter = param.update_preconditioner_every_newton_iterations;
+  update.do_update                = update_preconditioner;
+  update.update_every_newton_iter = param.update_preconditioner_every_newton_iterations;
+  update.update_once_converged    = param.update_preconditioner_once_newton_converged;
 
   // solve nonlinear problem
   auto const iter = newton_solver->solve(sol, update);

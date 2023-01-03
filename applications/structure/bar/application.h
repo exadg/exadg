@@ -229,18 +229,20 @@ private:
 
     this->param.load_increment = 0.1;
 
-    this->param.newton_solver_data                   = Newton::SolverData(1e2, 1.e-8, 1.e-8);
+    this->param.newton_solver_data                   = Newton::SolverData(1e1, 1.e-9, 1.e-9);
     this->param.solver                               = Solver::FGMRES;
-    this->param.solver_data                          = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    this->param.solver_data                          = SolverData(1e2, 1.e-12, 1.e-8, 100);
     this->param.preconditioner                       = Preconditioner::Multigrid;
     this->param.multigrid_data.type                  = MultigridType::phMG;
     this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
     this->param.multigrid_data.coarse_problem.preconditioner =
       MultigridCoarseGridPreconditioner::AMG;
 
-    this->param.update_preconditioner                         = false;
-    this->param.update_preconditioner_every_time_steps        = 1;
-    this->param.update_preconditioner_every_newton_iterations = 1;
+    this->param.update_preconditioner                  = true;
+    this->param.update_preconditioner_every_time_steps = 1;
+    this->param.update_preconditioner_every_newton_iterations =
+      this->param.newton_solver_data.max_iter;
+    this->param.update_preconditioner_once_newton_converged = true;
   }
 
   void
