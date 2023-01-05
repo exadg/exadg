@@ -169,9 +169,10 @@ Grid<dim>::create_triangulation(
         triangulation->n_global_levels());
 
       // we start with the finest level
-      unsigned int level = triangulation->n_global_levels() - 1;
+      unsigned int              level        = triangulation->n_global_levels() - 1;
+      std::vector<unsigned int> refine_local = vector_local_refinements;
 
-      // lambda function for creating and placing the coarse triangulations
+      // lambda function for creating the coarse triangulations
       auto const lambda_create_level_triangulation = [&](unsigned int              refine_global,
                                                          std::vector<unsigned int> refine_local) {
         auto level_tria = std::make_shared<dealii::parallel::fullydistributed::Triangulation<dim>>(
@@ -180,18 +181,16 @@ Grid<dim>::create_triangulation(
         do_create_triangulation(
           level_tria, data, create_coarse_triangulation, refine_global, refine_local);
 
-        coarse_triangulations[level] = level_tria;
-
-        level--;
+        return level_tria;
       };
-
-      // start with the finest level
-      std::vector<unsigned int> refine_local = vector_local_refinements;
 
       // undo global refinements
       for(int refine_global = global_refinements; refine_global >= 0; --refine_global)
       {
-        lambda_create_level_triangulation(refine_global, refine_local);
+        coarse_triangulations[level] =
+          lambda_create_level_triangulation(refine_global, refine_local);
+
+        level--;
       }
 
       // undo local refinements
@@ -206,7 +205,9 @@ Grid<dim>::create_triangulation(
               refine_local[material_id]--;
             }
           }
-          lambda_create_level_triangulation(0, refine_local);
+          coarse_triangulations[level] = lambda_create_level_triangulation(0, refine_local);
+
+          level--;
         }
       }
     }
