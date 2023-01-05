@@ -960,27 +960,6 @@ public:
   typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
   typedef dealii::Point<dim, dealii::VectorizedArray<Number>>     point;
 
-  ElementType
-  get_element_type(FaceIntegratorScalar & integrator) const
-  {
-    if(integrator.get_matrix_free()
-         .get_dof_handler()
-         .get_triangulation()
-         .all_reference_cells_are_simplex())
-    {
-      return ElementType::Simplex;
-    }
-    else if(integrator.get_matrix_free()
-              .get_dof_handler()
-              .get_triangulation()
-              .all_reference_cells_are_hyper_cube())
-    {
-      return ElementType::Hypercube;
-    }
-    else
-      AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
-  }
-
   ViscousOperator() : matrix_free(nullptr), degree(1)
   {
   }
@@ -1036,7 +1015,11 @@ public:
     scalar tau =
       std::max(fe_eval_m.read_cell_data(array_penalty_parameter),
                fe_eval_p.read_cell_data(array_penalty_parameter)) *
-      IP::get_penalty_factor<dim, Number>(degree, get_element_type(fe_eval_m), data.IP_factor) * nu;
+      IP::get_penalty_factor<dim, Number>(
+        degree,
+        get_element_type(fe_eval_m.get_matrix_free().get_dof_handler().get_triangulation()),
+        data.IP_factor) *
+      nu;
 
     return tau;
   }
@@ -1047,7 +1030,11 @@ public:
   {
     scalar tau =
       fe_eval.read_cell_data(array_penalty_parameter) *
-      IP::get_penalty_factor<dim, Number>(degree, get_element_type(fe_eval), data.IP_factor) * nu;
+      IP::get_penalty_factor<dim, Number>(
+        degree,
+        get_element_type(fe_eval.get_matrix_free().get_dof_handler().get_triangulation()),
+        data.IP_factor) *
+      nu;
 
     return tau;
   }
