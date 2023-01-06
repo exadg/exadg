@@ -1017,7 +1017,8 @@ public:
                fe_eval_p.read_cell_data(array_penalty_parameter)) *
       IP::get_penalty_factor<dim, Number>(
         degree,
-        get_element_type(fe_eval_m.get_matrix_free().get_dof_handler().get_triangulation()),
+        get_element_type(
+          fe_eval_m.get_matrix_free().get_dof_handler(data.dof_index).get_triangulation()),
         data.IP_factor) *
       nu;
 
@@ -1028,13 +1029,13 @@ public:
     scalar
     get_penalty_parameter(FaceIntegratorScalar & fe_eval) const
   {
-    scalar tau =
-      fe_eval.read_cell_data(array_penalty_parameter) *
-      IP::get_penalty_factor<dim, Number>(
-        degree,
-        get_element_type(fe_eval.get_matrix_free().get_dof_handler().get_triangulation()),
-        data.IP_factor) *
-      nu;
+    scalar tau = fe_eval.read_cell_data(array_penalty_parameter) *
+                 IP::get_penalty_factor<dim, Number>(
+                   degree,
+                   get_element_type(
+                     fe_eval.get_matrix_free().get_dof_handler(data.dof_index).get_triangulation()),
+                   data.IP_factor) *
+                 nu;
 
     return tau;
   }

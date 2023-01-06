@@ -36,11 +36,12 @@ namespace Operators
 {
 struct LaplaceKernelData
 {
-  LaplaceKernelData() : IP_factor(1.0)
+  LaplaceKernelData() : IP_factor(1.0), dof_index(0)
   {
   }
 
-  double IP_factor;
+  double       IP_factor;
+  unsigned int dof_index;
 };
 
 template<int dim, typename Number, int n_components = 1>
@@ -61,14 +62,15 @@ public:
   void
   reinit(dealii::MatrixFree<dim, Number> const & matrix_free,
          LaplaceKernelData const &               data_in,
-         unsigned int const                      dof_index)
+         unsigned int const                      dof_index_in)
   {
-    data = data_in;
+    data           = data_in;
+    data.dof_index = dof_index_in;
 
-    dealii::FiniteElement<dim> const & fe = matrix_free.get_dof_handler(dof_index).get_fe();
+    dealii::FiniteElement<dim> const & fe = matrix_free.get_dof_handler(data.dof_index).get_fe();
     degree                                = fe.degree;
 
-    calculate_penalty_parameter(matrix_free, dof_index);
+    calculate_penalty_parameter(matrix_free, data.dof_index);
   }
 
   void
@@ -131,7 +133,8 @@ public:
                    integrator_p.read_cell_data(array_penalty_parameter)) *
           IP::get_penalty_factor<dim, Number>(
             degree,
-            get_element_type(integrator_m.get_matrix_free().get_dof_handler().get_triangulation()),
+            get_element_type(
+              integrator_m.get_matrix_free().get_dof_handler(data.dof_index).get_triangulation()),
             data.IP_factor);
   }
 
@@ -141,7 +144,8 @@ public:
     tau = integrator_m.read_cell_data(array_penalty_parameter) *
           IP::get_penalty_factor<dim, Number>(
             degree,
-            get_element_type(integrator_m.get_matrix_free().get_dof_handler().get_triangulation()),
+            get_element_type(
+              integrator_m.get_matrix_free().get_dof_handler(data.dof_index).get_triangulation()),
             data.IP_factor);
   }
 
@@ -152,22 +156,22 @@ public:
   {
     if(boundary_id == dealii::numbers::internal_face_boundary_id) // internal face
     {
-      tau =
-        std::max(integrator_m.read_cell_data(array_penalty_parameter),
-                 integrator_p.read_cell_data(array_penalty_parameter)) *
-        IP::get_penalty_factor<dim, Number>(
-          degree,
-          get_element_type(integrator_m.get_matrix_free().get_dof_handler().get_triangulation()),
-          data.IP_factor);
+      tau = std::max(integrator_m.read_cell_data(array_penalty_parameter),
+                     integrator_p.read_cell_data(array_penalty_parameter)) *
+            IP::get_penalty_factor<dim, Number>(
+              degree,
+              get_element_type(
+                integrator_m.get_matrix_free().get_dof_handler(data.dof_index).get_triangulation()),
+              data.IP_factor);
     }
     else // boundary face
     {
-      tau =
-        integrator_m.read_cell_data(array_penalty_parameter) *
-        IP::get_penalty_factor<dim, Number>(
-          degree,
-          get_element_type(integrator_m.get_matrix_free().get_dof_handler().get_triangulation()),
-          data.IP_factor);
+      tau = integrator_m.read_cell_data(array_penalty_parameter) *
+            IP::get_penalty_factor<dim, Number>(
+              degree,
+              get_element_type(
+                integrator_m.get_matrix_free().get_dof_handler(data.dof_index).get_triangulation()),
+              data.IP_factor);
     }
   }
 

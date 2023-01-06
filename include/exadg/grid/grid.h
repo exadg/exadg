@@ -61,7 +61,7 @@ get_element_type(dealii::Triangulation<dim> const & tria)
   else if(tria.all_reference_cells_are_hyper_cube())
     return ElementType::Hypercube;
   else
-    AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
+    AssertThrow(false, dealii::ExcMessage("Invalid parameter element_type."));
 }
 
 template<int dim>
