@@ -132,10 +132,8 @@ Grid<dim>::create_triangulation(
   const unsigned int                                        global_refinements,
   const std::vector<unsigned int> &                         vector_local_refinements)
 {
-  do_create_triangulation(data,
-                          create_coarse_triangulation,
-                          global_refinements,
-                          vector_local_refinements);
+  do_create_triangulation(
+    triangulation, data, create_coarse_triangulation, global_refinements, vector_local_refinements);
 
   // coarse triangulations need to be created for global coarsening multigrid
   if(data.create_coarse_triangulations)
@@ -144,6 +142,12 @@ Grid<dim>::create_triangulation(
     // coarse grid triangulations
     if(data.triangulation_type == TriangulationType::Serial)
     {
+      AssertThrow(
+        triangulation->all_reference_cells_are_hyper_cube(),
+        dealii::ExcMessage(
+          "Currently the create_geometric_coarsening_sequence function of dealii does not support "
+          "Simplex elements."));
+
       coarse_triangulations =
         dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
           *triangulation);
@@ -160,10 +164,52 @@ Grid<dim>::create_triangulation(
     {
       // we need to generate the coarse triangulations explicitly
 
-      // TODO
-      // construct all the coarser triangulations
+      // lambda function for creating the coarse triangulations
+      auto const lambda_create_level_triangulation = [&](unsigned int              refine_global,
+                                                         std::vector<unsigned int> refine_local) {
+        auto level_tria = std::make_shared<dealii::parallel::fullydistributed::Triangulation<dim>>(
+          triangulation->get_communicator());
 
-      AssertThrow(false, ExcNotImplemented());
+        do_create_triangulation(
+          level_tria, data, create_coarse_triangulation, refine_global, refine_local);
+
+        return level_tria;
+      };
+
+      // resize the empty coarse triangulations vector
+      coarse_triangulations = std::vector<std::shared_ptr<dealii::Triangulation<dim> const>>(
+        triangulation->n_global_levels());
+
+      // we start with the finest level
+      unsigned int              level        = triangulation->n_global_levels() - 1;
+      std::vector<unsigned int> refine_local = vector_local_refinements;
+
+      // undo global refinements
+      for(int refine_global = global_refinements; refine_global >= 0; --refine_global)
+      {
+        coarse_triangulations[level] =
+          lambda_create_level_triangulation(refine_global, refine_local);
+
+        level--;
+      }
+
+      // undo local refinements
+      if(refine_local.size() > 0)
+      {
+        while(*std::max_element(refine_local.begin(), refine_local.end()) != 0)
+        {
+          for(size_t material_id = 0; material_id < refine_local.size(); material_id++)
+          {
+            if(refine_local[material_id] > 0)
+            {
+              refine_local[material_id]--;
+            }
+          }
+          coarse_triangulations[level] = lambda_create_level_triangulation(0, refine_local);
+
+          level--;
+        }
+      }
     }
     else
     {
@@ -196,6 +242,7 @@ Grid<dim>::get_mapping() const
 template<int dim>
 void
 Grid<dim>::do_create_triangulation(
+  std::shared_ptr<dealii::Triangulation<dim>>               tria,
   const GridData &                                          data,
   const std::function<void(dealii::Triangulation<dim> &)> & create_triangulation,
   const unsigned int                                        global_refinements,
@@ -204,13 +251,13 @@ Grid<dim>::do_create_triangulation(
   if(data.triangulation_type == TriangulationType::Serial or
      data.triangulation_type == TriangulationType::Distributed)
   {
-    create_triangulation(*triangulation);
+    create_triangulation(*tria);
 
     if(vector_local_refinements.size() > 0)
-      refine_local(*triangulation, vector_local_refinements);
+      refine_local(*tria, vector_local_refinements);
 
     if(global_refinements > 0)
-      triangulation->refine_global(global_refinements);
+      tria->refine_global(global_refinements);
   }
   else if(data.triangulation_type == TriangulationType::FullyDistributed)
   {
@@ -258,12 +305,12 @@ Grid<dim>::do_create_triangulation(
     auto const description = dealii::TriangulationDescription::Utilities::
       create_description_from_triangulation_in_groups<dim, dim>(serial_grid_generator,
                                                                 serial_grid_partitioner,
-                                                                triangulation->get_communicator(),
+                                                                tria->get_communicator(),
                                                                 group_size,
                                                                 mesh_smoothing,
                                                                 triangulation_description_setting);
 
-    triangulation->create_triangulation(description);
+    tria->create_triangulation(description);
   }
   else
   {
