@@ -164,14 +164,6 @@ Grid<dim>::create_triangulation(
     {
       // we need to generate the coarse triangulations explicitly
 
-      // resize the empty coarse triangulations vector
-      coarse_triangulations = std::vector<std::shared_ptr<dealii::Triangulation<dim> const>>(
-        triangulation->n_global_levels());
-
-      // we start with the finest level
-      unsigned int              level        = triangulation->n_global_levels() - 1;
-      std::vector<unsigned int> refine_local = vector_local_refinements;
-
       // lambda function for creating the coarse triangulations
       auto const lambda_create_level_triangulation = [&](unsigned int              refine_global,
                                                          std::vector<unsigned int> refine_local) {
@@ -183,6 +175,14 @@ Grid<dim>::create_triangulation(
 
         return level_tria;
       };
+
+      // resize the empty coarse triangulations vector
+      coarse_triangulations = std::vector<std::shared_ptr<dealii::Triangulation<dim> const>>(
+        triangulation->n_global_levels());
+
+      // we start with the finest level
+      unsigned int              level        = triangulation->n_global_levels() - 1;
+      std::vector<unsigned int> refine_local = vector_local_refinements;
 
       // undo global refinements
       for(int refine_global = global_refinements; refine_global >= 0; --refine_global)
