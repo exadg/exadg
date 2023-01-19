@@ -314,23 +314,14 @@ Operator<dim, n_components, Number>::setup_solver()
   }
   else if(param.preconditioner == Poisson::Preconditioner::PointJacobi)
   {
-    AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
-                ExcNotImplemented());
-
     preconditioner = std::make_shared<JacobiPreconditioner<Laplace>>(laplace_operator);
   }
   else if(param.preconditioner == Poisson::Preconditioner::BlockJacobi)
   {
-    AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
-                ExcNotImplemented());
-
     preconditioner = std::make_shared<BlockJacobiPreconditioner<Laplace>>(laplace_operator);
   }
   else if(param.preconditioner == Poisson::Preconditioner::Multigrid)
   {
-    AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
-                ExcNotImplemented());
-
     MultigridData mg_data;
     mg_data = param.multigrid_data;
 

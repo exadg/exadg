@@ -24,12 +24,14 @@
 #include <deal.II/distributed/repartitioning_policy_tools.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_q.h>
+#include <deal.II/fe/fe_simplex_p.h>
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
+#include <deal.II/fe/mapping_fe.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/matrix_free/categorization.h>
 #include <exadg/solvers_and_preconditioners/multigrid/coarse_grid_solvers.h>
@@ -433,12 +435,26 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
                                       *(dynamic_cast<dealii::Triangulation<dim> const *>(tria)) :
                                       *(coarse_triangulations[level.h_level()]));
 
-      if(level.is_dg())
-        dof_handler->distribute_dofs(
-          dealii::FESystem<dim>(dealii::FE_DGQ<dim>(level.degree()), fe.n_components()));
+      if(tria->all_reference_cells_are_hyper_cube())
+      {
+        if(level.is_dg())
+          dof_handler->distribute_dofs(
+            dealii::FESystem<dim>(dealii::FE_DGQ<dim>(level.degree()), fe.n_components()));
+        else
+          dof_handler->distribute_dofs(
+            dealii::FESystem<dim>(dealii::FE_Q<dim>(level.degree()), fe.n_components()));
+      }
+      else if(tria->all_reference_cells_are_simplex())
+      {
+        if(level.is_dg())
+          dof_handler->distribute_dofs(
+            dealii::FESystem<dim>(dealii::FE_SimplexDGP<dim>(level.degree()), fe.n_components()));
+        else
+          dof_handler->distribute_dofs(
+            dealii::FESystem<dim>(dealii::FE_SimplexP<dim>(level.degree()), fe.n_components()));
+      }
       else
-        dof_handler->distribute_dofs(
-          dealii::FESystem<dim>(dealii::FE_Q<dim>(level.degree()), fe.n_components()));
+        AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
 
       dof_handlers[i].reset(dof_handler);
 
@@ -630,11 +646,14 @@ MultigridPreconditionerBase<dim, Number>::initialize_affine_constraints(
     boundary_functions[it.first] = &zero_function;
   }
 
-  dealii::MappingQ<dim> mapping_dummy(1);
+  auto const & mapping_dummy =
+    dof_handler.get_fe().reference_cell().template get_default_linear_mapping<dim>();
+
   dealii::VectorTools::interpolate_boundary_values(mapping_dummy,
                                                    dof_handler,
                                                    boundary_functions,
                                                    affine_constraints);
+
   affine_constraints.close();
 }
 
