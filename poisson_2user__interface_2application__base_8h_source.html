@@ -243,49 +243,54 @@ $(function() {
 <div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>      <span class="keywordtype">double</span> AR = calculate_aspect_ratio_vertex_distance(*grid-&gt;triangulation, mpi_comm);</div>
 <div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>      pcout &lt;&lt; std::endl &lt;&lt; <span class="stringliteral">&quot;Maximum aspect ratio (vertex distance) = &quot;</span> &lt;&lt; AR &lt;&lt; std::endl;</div>
 <div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span> </div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>      dealii::QGauss&lt;dim&gt; quad(param.degree + 1);</div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>      AR =</div>
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>        dealii::GridTools::compute_maximum_aspect_ratio(*grid-&gt;mapping, *grid-&gt;triangulation, quad);</div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>      pcout &lt;&lt; std::endl &lt;&lt; <span class="stringliteral">&quot;Maximum aspect ratio (Jacobian) = &quot;</span> &lt;&lt; AR &lt;&lt; std::endl;</div>
-<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>    }</div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  }</div>
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span> </div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>  MPI_Comm <span class="keyword">const</span> &amp; mpi_comm;</div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span> </div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  dealii::ConditionalOStream pcout;</div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span> </div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>  <a class="code hl_class" href="classExaDG_1_1Poisson_1_1Parameters.html">Parameters</a> param;</div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span> </div>
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>  std::shared_ptr&lt;Grid&lt;dim&gt;&gt; grid;</div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span> </div>
-<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>  std::shared_ptr&lt;BoundaryDescriptor&lt;rank, dim&gt;&gt; boundary_descriptor;</div>
-<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>  std::shared_ptr&lt;FieldFunctions&lt;dim&gt;&gt;           field_functions;</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>      <span class="keyword">auto</span> <span class="keyword">const</span> reference_cells = grid-&gt;triangulation-&gt;get_reference_cells();</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>      AssertThrow(reference_cells.size() == 1, dealii::ExcMessage(<span class="stringliteral">&quot;No mixed meshes allowed&quot;</span>));</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span> </div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>      <span class="keyword">auto</span> <span class="keyword">const</span> quad =</div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>        reference_cells[0].template get_gauss_type_quadrature&lt;dim&gt;(param.degree + 1);</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span> </div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>      AR =</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>        dealii::GridTools::compute_maximum_aspect_ratio(*grid-&gt;mapping, *grid-&gt;triangulation, quad);</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>      pcout &lt;&lt; std::endl &lt;&lt; <span class="stringliteral">&quot;Maximum aspect ratio (Jacobian) = &quot;</span> &lt;&lt; AR &lt;&lt; std::endl;</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>    }</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>  }</div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span> </div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>  MPI_Comm <span class="keyword">const</span> &amp; mpi_comm;</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span> </div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>  dealii::ConditionalOStream pcout;</div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span> </div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>  <a class="code hl_class" href="classExaDG_1_1Poisson_1_1Parameters.html">Parameters</a> param;</div>
 <div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span> </div>
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>  std::string parameter_file;</div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>  std::shared_ptr&lt;Grid&lt;dim&gt;&gt; grid;</div>
 <div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span> </div>
-<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>  <a class="code hl_struct" href="structExaDG_1_1OutputParameters.html">OutputParameters</a> output_parameters;</div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span> </div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  <span class="keywordtype">bool</span> compute_aspect_ratio = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span> </div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>  set_parameters() = 0;</div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span> </div>
-<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>  create_grid() = 0;</div>
-<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span> </div>
-<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>  set_boundary_descriptor() = 0;</div>
-<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span> </div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>  set_field_functions() = 0;</div>
-<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>};</div>
-<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span> </div>
-<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>} <span class="comment">// namespace Poisson</span></div>
-<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span> </div>
-<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span> </div>
-<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_POISSON_USER_INTERFACE_APPLICATION_BASE_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>  std::shared_ptr&lt;BoundaryDescriptor&lt;rank, dim&gt;&gt; boundary_descriptor;</div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>  std::shared_ptr&lt;FieldFunctions&lt;dim&gt;&gt;           field_functions;</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span> </div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>  std::string parameter_file;</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span> </div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>  <a class="code hl_struct" href="structExaDG_1_1OutputParameters.html">OutputParameters</a> output_parameters;</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span> </div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>  <span class="keywordtype">bool</span> compute_aspect_ratio = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span> </div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  set_parameters() = 0;</div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span> </div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  create_grid() = 0;</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span> </div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>  set_boundary_descriptor() = 0;</div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span> </div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>  set_field_functions() = 0;</div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>};</div>
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span> </div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>} <span class="comment">// namespace Poisson</span></div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span> </div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span> </div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_POISSON_USER_INTERFACE_APPLICATION_BASE_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1Poisson_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1ApplicationBase.html">ExaDG::Poisson::ApplicationBase</a></div><div class="ttdef"><b>Definition:</b> application_base.h:48</div></div>
 <div class="ttc" id="aclassExaDG_1_1Poisson_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1Parameters.html">ExaDG::Poisson::Parameters</a></div><div class="ttdef"><b>Definition:</b> parameters.h:37</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition:</b> driver.cpp:33</div></div>
