@@ -32,8 +32,6 @@
 #  include <deal.II/base/hdf5.h>
 #endif
 
-#include <deal.II/lac/la_parallel_vector.h>
-
 #include <deal.II/distributed/tria.h>
 
 #include <deal.II/fe/mapping.h>
@@ -43,6 +41,7 @@
 // ExaDG
 #include <exadg/postprocessor/time_control.h>
 #include <exadg/utilities/extract_component_from_tensors.h>
+
 
 namespace ExaDG
 {
@@ -66,11 +65,12 @@ struct PointwiseOutputDataBase
   print(dealii::ConditionalOStream & pcout) const;
 };
 
-template<int dim, typename Number>
+template<int dim, typename VectorType>
 class PointwiseOutputGeneratorBase
 {
 public:
-  using VectorType       = dealii::LinearAlgebra::distributed::Vector<Number>;
+  using Number = typename VectorType::value_type;
+
   using point_value_type = typename PointwiseOutputDataBase<dim>::point_value_type;
 
   void
@@ -84,7 +84,7 @@ protected:
   virtual ~PointwiseOutputGeneratorBase() = default;
 
   void
-  setup_base(dealii::DoFHandler<dim> const &      dof_handler_in,
+  setup_base(dealii::Triangulation<dim> const &   triangulation_in,
              dealii::Mapping<dim> const &         mapping_in,
              PointwiseOutputDataBase<dim> const & pointwise_output_data_in);
 
@@ -105,13 +105,20 @@ protected:
     }
   }
 
+  void
+  write_quantity(std::string const & name, std::vector<Number> const & values)
+  {
+    write_component(name, values);
+  }
+
   template<int n_components>
   [[nodiscard]] std::vector<
     typename dealii::FEPointEvaluation<n_components, dim, dim, Number>::value_type>
-  compute_point_values(VectorType const & solution) const
+  compute_point_values(dealii::LinearAlgebra::distributed::Vector<Number> const & solution,
+                       dealii::DoFHandler<dim> const &                            dof_handler) const
   {
     return dealii::VectorTools::point_values<n_components>(*remote_evaluator,
-                                                           *dof_handler,
+                                                           dof_handler,
                                                            solution);
   }
 
@@ -142,12 +149,30 @@ private:
   void
   write_time(double time);
 
+  template<typename ComponentwiseContainerType>
   void
-  write_component(std::string const & name, dealii::Vector<Number> const & componentwise_result);
+  write_component(std::string const & name, ComponentwiseContainerType const & componentwise_result)
+  {
+#ifdef DEAL_II_WITH_HDF5
+    auto dataset = hdf5_file->open_dataset("PhysicalInformation/" + name);
+
+    std::vector<hsize_t> hyperslab_offset = {0, time_control.get_counter()};
+    std::vector<hsize_t> hyperslab_dim    = {pointwise_output_data.evaluation_points.size(), 1};
+
+    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+      dataset.write_hyperslab(componentwise_result, hyperslab_offset, hyperslab_dim);
+    else
+      dataset.template write_none<Number>();
+#else
+    (void)name;
+    (void)componentwise_result;
+    AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with HDF5!"));
+#endif
+  }
 
   MPI_Comm const mpi_comm;
 
-  dealii::SmartPointer<dealii::DoFHandler<dim> const>                 dof_handler;
+  dealii::SmartPointer<dealii::Triangulation<dim> const>              triangulation;
   dealii::SmartPointer<dealii::Mapping<dim> const>                    mapping;
   PointwiseOutputDataBase<dim>                                        pointwise_output_data;
   dealii::Vector<Number>                                              componentwise_result;
