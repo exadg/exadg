@@ -81,7 +81,7 @@ void
 NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & vector) const
 {
   // Only update linearized operator if deformation state is valid. It is better to continue
-  // with an old deformation state than within an invalid one.
+  // with an old deformation state in the linearized operator than with an invalid one.
   if(valid_deformation(vector))
   {
     displacement_lin = vector;
@@ -314,8 +314,6 @@ NonLinearOperator<dim, Number>::cell_loop_valid_deformation(
 
     integrator.evaluate(dealii::EvaluationFlags::gradients);
 
-    std::shared_ptr<Material<dim, Number>> material = this->material_handler.get_material();
-
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
@@ -327,7 +325,7 @@ NonLinearOperator<dim, Number>::cell_loop_valid_deformation(
       scalar const det_F = determinant(F);
       for(unsigned int v = 0; v < det_F.size(); ++v)
       {
-        // if deformation is invalid, add something to dst
+        // if deformation is invalid, add a positive value to dst
         if(det_F[v] < 0.0)
           dst.at(0) += 1.0;
       }
