@@ -56,7 +56,7 @@ DiffusiveOperator<dim, Number>::reinit_face(unsigned int const face) const
 {
   Base::reinit_face(face);
 
-  kernel->reinit_face(*this->integrator_m, *this->integrator_p);
+  kernel->reinit_face(*this->integrator_m, *this->integrator_p, operator_data.dof_index);
 }
 
 template<int dim, typename Number>
@@ -65,7 +65,7 @@ DiffusiveOperator<dim, Number>::reinit_boundary_face(unsigned int const face) co
 {
   Base::reinit_boundary_face(face);
 
-  kernel->reinit_boundary_face(*this->integrator_m);
+  kernel->reinit_boundary_face(*this->integrator_m, operator_data.dof_index);
 }
 
 template<int dim, typename Number>
@@ -77,7 +77,10 @@ DiffusiveOperator<dim, Number>::reinit_face_cell_based(
 {
   Base::reinit_face_cell_based(cell, face, boundary_id);
 
-  kernel->reinit_face_cell_based(boundary_id, *this->integrator_m, *this->integrator_p);
+  kernel->reinit_face_cell_based(boundary_id,
+                                 *this->integrator_m,
+                                 *this->integrator_p,
+                                 operator_data.dof_index);
 }
 
 template<int dim, typename Number>

@@ -230,7 +230,7 @@ MomentumOperator<dim, Number>::reinit_face(unsigned int const face) const
     convective_kernel->reinit_face(face);
 
   if(operator_data.viscous_problem)
-    viscous_kernel->reinit_face(*this->integrator_m, *this->integrator_p);
+    viscous_kernel->reinit_face(*this->integrator_m, *this->integrator_p, operator_data.dof_index);
 }
 
 template<int dim, typename Number>
@@ -243,7 +243,7 @@ MomentumOperator<dim, Number>::reinit_boundary_face(unsigned int const face) con
     convective_kernel->reinit_boundary_face(face);
 
   if(operator_data.viscous_problem)
-    viscous_kernel->reinit_boundary_face(*this->integrator_m);
+    viscous_kernel->reinit_boundary_face(*this->integrator_m, operator_data.dof_index);
 }
 
 template<int dim, typename Number>
@@ -259,7 +259,10 @@ MomentumOperator<dim, Number>::reinit_face_cell_based(
     convective_kernel->reinit_face_cell_based(cell, face, boundary_id);
 
   if(operator_data.viscous_problem)
-    viscous_kernel->reinit_face_cell_based(boundary_id, *this->integrator_m, *this->integrator_p);
+    viscous_kernel->reinit_face_cell_based(boundary_id,
+                                           *this->integrator_m,
+                                           *this->integrator_p,
+                                           operator_data.dof_index);
 }
 
 template<int dim, typename Number>

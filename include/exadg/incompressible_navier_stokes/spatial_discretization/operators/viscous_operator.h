@@ -30,8 +30,7 @@ struct ViscousKernelData
       penalty_term_div_formulation(PenaltyTermDivergenceFormulation::Symmetrized),
       IP_formulation(InteriorPenaltyFormulation::SIPG),
       viscosity_is_variable(false),
-      variable_normal_vector(false),
-      dof_index(0)
+      variable_normal_vector(false)
   {
   }
 
@@ -42,7 +41,6 @@ struct ViscousKernelData
   InteriorPenaltyFormulation       IP_formulation;
   bool                             viscosity_is_variable;
   bool                             variable_normal_vector;
-  unsigned int                     dof_index;
 };
 
 template<int dim, typename Number>
@@ -66,14 +64,12 @@ public:
          ViscousKernelData const &               data,
          unsigned int const                      dof_index)
   {
-    this->data           = data;
-    this->data.dof_index = dof_index;
+    this->data = data;
 
-    dealii::FiniteElement<dim> const & fe =
-      matrix_free.get_dof_handler(this->data.dof_index).get_fe();
-    degree = fe.degree;
+    dealii::FiniteElement<dim> const & fe = matrix_free.get_dof_handler(dof_index).get_fe();
+    degree                                = fe.degree;
 
-    calculate_penalty_parameter(matrix_free, this->data.dof_index);
+    calculate_penalty_parameter(matrix_free, dof_index);
 
     AssertThrow(data.viscosity >= 0.0, dealii::ExcMessage("Viscosity is not set!"));
 
@@ -153,32 +149,35 @@ public:
   }
 
   void
-  reinit_face(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const
+  reinit_face(IntegratorFace &   integrator_m,
+              IntegratorFace &   integrator_p,
+              unsigned int const dof_index) const
   {
     tau = std::max(integrator_m.read_cell_data(array_penalty_parameter),
                    integrator_p.read_cell_data(array_penalty_parameter)) *
           IP::get_penalty_factor<dim, Number>(
             degree,
             get_element_type(
-              integrator_m.get_matrix_free().get_dof_handler(data.dof_index).get_triangulation()),
+              integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
             data.IP_factor);
   }
 
   void
-  reinit_boundary_face(IntegratorFace & integrator_m) const
+  reinit_boundary_face(IntegratorFace & integrator_m, unsigned int const dof_index) const
   {
     tau = integrator_m.read_cell_data(array_penalty_parameter) *
           IP::get_penalty_factor<dim, Number>(
             degree,
             get_element_type(
-              integrator_m.get_matrix_free().get_dof_handler(data.dof_index).get_triangulation()),
+              integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
             data.IP_factor);
   }
 
   void
   reinit_face_cell_based(dealii::types::boundary_id const boundary_id,
                          IntegratorFace &                 integrator_m,
-                         IntegratorFace &                 integrator_p) const
+                         IntegratorFace &                 integrator_p,
+                         unsigned int const               dof_index) const
   {
     if(boundary_id == dealii::numbers::internal_face_boundary_id) // internal face
     {
@@ -187,7 +186,7 @@ public:
             IP::get_penalty_factor<dim, Number>(
               degree,
               get_element_type(
-                integrator_m.get_matrix_free().get_dof_handler(data.dof_index).get_triangulation()),
+                integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
               data.IP_factor);
     }
     else // boundary face
@@ -196,7 +195,7 @@ public:
             IP::get_penalty_factor<dim, Number>(
               degree,
               get_element_type(
-                integrator_m.get_matrix_free().get_dof_handler(data.dof_index).get_triangulation()),
+                integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
               data.IP_factor);
     }
   }
