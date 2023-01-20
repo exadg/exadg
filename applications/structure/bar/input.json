@@ -5,8 +5,8 @@
         "IsTest": "false"
     },
     "SpatialResolution": {
-        "DegreeMin": "2",
-        "DegreeMax": "2",
+        "DegreeMin": "4",
+        "DegreeMax": "4",
         "RefineSpaceMin": "1",
         "RefineSpaceMax": "1"
     },
@@ -21,7 +21,7 @@
         "UseVolumeForce": "false",
         "VolumeForce": "1.0",
         "BoundaryType": "Dirichlet",
-        "Displacement": "100.0",
+        "Displacement": "20.0",
         "Traction":	"0.0" 
     },
     "Output": {
