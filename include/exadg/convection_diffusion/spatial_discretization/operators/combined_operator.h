@@ -37,7 +37,8 @@ struct CombinedOperatorData : public OperatorBaseData
     : OperatorBaseData(),
       unsteady_problem(false),
       convective_problem(false),
-      diffusive_problem(false)
+      diffusive_problem(false),
+      quad_index_standard(dealii::numbers::invalid_unsigned_int)
   {
   }
 
@@ -47,6 +48,8 @@ struct CombinedOperatorData : public OperatorBaseData
 
   Operators::ConvectiveKernelData<dim> convective_kernel_data;
   Operators::DiffusiveKernelData       diffusive_kernel_data;
+
+  unsigned int quad_index_standard;
 
   std::shared_ptr<BoundaryDescriptor<dim> const> bc;
 };

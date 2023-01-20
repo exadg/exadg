@@ -504,6 +504,7 @@ Operator<dim, Number>::setup_operators()
   ViscousOperatorData<dim> viscous_operator_data;
   viscous_operator_data.dof_index             = get_dof_index_all();
   viscous_operator_data.quad_index            = get_quad_index_overintegration_vis();
+  viscous_operator_data.quad_index_standard   = get_quad_index_standard();
   viscous_operator_data.IP_factor             = param.IP_factor;
   viscous_operator_data.dynamic_viscosity     = param.dynamic_viscosity;
   viscous_operator_data.reference_density     = param.reference_density;

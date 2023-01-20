@@ -25,66 +25,118 @@
 #include <deal.II/base/aligned_vector.h>
 #include <deal.II/base/vectorization.h>
 #include <deal.II/fe/mapping.h>
-#include <deal.II/matrix_free/fe_evaluation.h>
 #include <deal.II/matrix_free/matrix_free.h>
+
+#include <exadg/matrix_free/integrators.h>
 
 namespace ExaDG
 {
 namespace IP // IP = interior penalty
 {
 /*
- *  This function calculates the penalty parameter of the interior
- *  penalty method for each cell.
+ *  This function calculates the penalty parameter of the interior penalty
+ *  method for each cell as the ratio between the surface area and the volume
+ *  of the cell. The algorithm separately runs through cells and faces with
+ *  CellIntegrator and FaceIntegrator objects to compute the respective values
+ *  and finally combines the result.
  */
 template<int dim, typename Number>
 void
 calculate_penalty_parameter(
   dealii::AlignedVector<dealii::VectorizedArray<Number>> & array_penalty_parameter,
   dealii::MatrixFree<dim, Number> const &                  matrix_free,
-  unsigned int const                                       dof_index = 0)
+  unsigned int const                                       dof_index,
+  unsigned int const                                       quad_index)
 {
-  unsigned int n_cells = matrix_free.n_cell_batches() + matrix_free.n_ghost_cell_batches();
-  array_penalty_parameter.resize(n_cells);
-
-  dealii::Mapping<dim> const &       mapping = *matrix_free.get_mapping_info().mapping;
-  dealii::FiniteElement<dim> const & fe      = matrix_free.get_dof_handler(dof_index).get_fe();
-  unsigned int const                 degree  = fe.degree;
-
-  dealii::QGauss<dim>   quadrature(degree + 1);
-  dealii::FEValues<dim> fe_values(mapping, fe, quadrature, dealii::update_JxW_values);
-
-  dealii::QGauss<dim - 1>   face_quadrature(degree + 1);
-  dealii::FEFaceValues<dim> fe_face_values(mapping, fe, face_quadrature, dealii::update_JxW_values);
-
-  for(unsigned int i = 0; i < n_cells; ++i)
+  // Start by first computing the surface areas of the cells. Since
+  // FaceIntegrator runs through all faces independently of cells, we need to
+  // add the values computed on faces to the respective one cell (boundary) or
+  // two cells (interior face). In the parallel case, we need to exchange
+  // information between the processes as each face is processed by exactly
+  // one process, but the area needs to be communicated to two cells. We do
+  // this by setting up a parallel vector using the partitioner of the cells
+  // in the mesh provided by deal.II's parallel triangulation classes (or
+  // simply all cells in serial) and running compress() +
+  // update_ghost_values() to communicate the information.
+  unsigned int const                                 level = matrix_free.get_mg_level();
+  dealii::LinearAlgebra::distributed::Vector<Number> surface_areas;
+  if(auto * tria = dynamic_cast<dealii::parallel::TriangulationBase<dim> const *>(
+       &matrix_free.get_dof_handler(dof_index).get_triangulation()))
   {
-    for(unsigned int v = 0; v < matrix_free.n_active_entries_per_cell_batch(i); ++v)
+    if(level == dealii::numbers::invalid_unsigned_int)
+      surface_areas.reinit(tria->global_active_cell_index_partitioner().lock());
+    else
+      surface_areas.reinit(tria->global_level_cell_index_partitioner(level).lock());
+  }
+  else
+  {
+    surface_areas.reinit(
+      matrix_free.get_dof_handler(dof_index).get_triangulation().n_active_cells());
+  }
+
+  // Lambda function to simplify access to cell index for the two cases of
+  // multigrid cells versus active cells
+  auto const get_cell_index =
+    [level](typename dealii::Triangulation<dim>::cell_iterator const & cell) {
+      if(level == dealii::numbers::invalid_unsigned_int)
+        return cell->global_active_cell_index();
+      else
+        return cell->global_level_cell_index();
+    };
+
+  FaceIntegrator<dim, 1, Number> face_integrator(matrix_free, true, dof_index, quad_index);
+
+  for(unsigned int face = 0;
+      face < matrix_free.n_inner_face_batches() + matrix_free.n_boundary_face_batches();
+      ++face)
+  {
+    face_integrator.reinit(face);
+    dealii::VectorizedArray<Number> face_area = 0.0;
+    for(unsigned int q = 0; q < face_integrator.n_q_points; ++q)
+      face_area += face_integrator.JxW(q);
+
+    bool const is_interior_face = face < matrix_free.n_inner_face_batches();
+
+    // For interior faces, the face area is weighted by a factor of 0.5
+    // according to the formula by "K. Hillewaert, Development of the
+    // Discontinuous Galerkin Method for High-Resolution, Large Scale CFD
+    // and Acoustics in Industrial Geometries, Ph.D. thesis, Univ. de
+    // Louvain, 2013."
+    if(is_interior_face)
+      face_area = face_area * 0.5;
+
+    // Write the result to the vector entry corresponding to the respective
+    // cell slot. For boundary faces, we write it to only one cell,
+    // otherwise to both adjacent cells of the face.
+    for(unsigned int v = 0; v < matrix_free.n_active_entries_per_face_batch(face); ++v)
     {
-      typename dealii::DoFHandler<dim>::cell_iterator cell =
-        matrix_free.get_cell_iterator(i, v, dof_index);
-      fe_values.reinit(cell);
+      surface_areas(get_cell_index(matrix_free.get_face_iterator(face, v, true).first)) +=
+        face_area[v];
 
-      // calculate cell volume
-      Number volume = 0;
-      for(unsigned int q = 0; q < quadrature.size(); ++q)
-      {
-        volume += fe_values.JxW(q);
-      }
-
-      // calculate surface area
-      Number surface_area = 0;
-      for(unsigned int const f : cell->face_indices())
-      {
-        fe_face_values.reinit(cell, f);
-        Number const factor = (cell->at_boundary(f) && !cell->has_periodic_neighbor(f)) ? 1. : 0.5;
-        for(unsigned int q = 0; q < face_quadrature.size(); ++q)
-        {
-          surface_area += fe_face_values.JxW(q) * factor;
-        }
-      }
-
-      array_penalty_parameter[i][v] = surface_area / volume;
+      if(is_interior_face)
+        surface_areas(get_cell_index(matrix_free.get_face_iterator(face, v, false).first)) +=
+          face_area[v];
     }
+  }
+
+  surface_areas.compress(dealii::VectorOperation::add);
+  surface_areas.update_ghost_values();
+
+  // As a second step, we use a CellInterator to compute the volume and then
+  // combine it with the surface areas computed before
+  unsigned int const n_cells = matrix_free.n_cell_batches() + matrix_free.n_ghost_cell_batches();
+  array_penalty_parameter.resize(n_cells);
+  CellIntegrator<dim, 1, Number> integrator(matrix_free, dof_index, quad_index);
+  for(unsigned int cell = 0; cell < n_cells; ++cell)
+  {
+    integrator.reinit(cell);
+    dealii::VectorizedArray<Number> volume = 0.0;
+    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      volume += integrator.JxW(q);
+
+    for(unsigned int v = 0; v < matrix_free.n_active_entries_per_cell_batch(cell); ++v)
+      array_penalty_parameter[cell][v] =
+        surface_areas(get_cell_index(matrix_free.get_cell_iterator(cell, v))) / volume[v];
   }
 }
 
@@ -93,7 +145,6 @@ calculate_penalty_parameter(
  *  for quadrilateral/hexahedral elements for a given polynomial degree of
  *  the shape functions and a specified penalty factor (scaling factor).
  */
-
 template<typename Number>
 Number
 get_penalty_factor(unsigned int const degree, Number const factor = 1.0)

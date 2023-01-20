@@ -193,7 +193,10 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> ma
     diffusive_kernel_data.diffusivity = param.diffusivity;
 
     diffusive_kernel = std::make_shared<Operators::DiffusiveKernel<dim, Number>>();
-    diffusive_kernel->reinit(*matrix_free, diffusive_kernel_data, get_dof_index());
+    diffusive_kernel->reinit(*matrix_free,
+                             diffusive_kernel_data,
+                             get_dof_index(),
+                             get_quad_index());
 
     DiffusiveOperatorData<dim> diffusive_operator_data;
     diffusive_operator_data.dof_index            = get_dof_index();
@@ -273,6 +276,7 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> ma
       (param.use_overintegration && combined_operator_data.convective_problem) ?
         get_quad_index_overintegration() :
         get_quad_index();
+    combined_operator_data.quad_index_standard = get_quad_index();
 
     combined_operator.initialize(*matrix_free,
                                  affine_constraints,
@@ -832,7 +836,7 @@ Operator<dim, Number>::update_after_grid_motion()
   // of elements
   if(param.diffusive_problem())
   {
-    diffusive_kernel->calculate_penalty_parameter(*matrix_free, get_dof_index());
+    diffusive_kernel->calculate_penalty_parameter(*matrix_free, get_dof_index(), get_quad_index());
   }
 }
 
