@@ -369,9 +369,9 @@ private:
   /*
    * Basic finite element ingredients.
    */
-  dealii::FESystem<dim>             fe;
-  dealii::DoFHandler<dim>           dof_handler;
-  dealii::AffineConstraints<Number> affine_constraints;
+  std::shared_ptr<dealii::FiniteElement<dim>> fe;
+  dealii::DoFHandler<dim>                     dof_handler;
+  dealii::AffineConstraints<Number>           affine_constraints;
   // constraints for mass operator (i.e., do not apply any constraints)
   dealii::AffineConstraints<Number> constraints_mass;
 
