@@ -129,9 +129,18 @@ DriverQuasiStatic<dim, Number>::do_solve()
   pcout << std::endl << "Solving quasi-static problem ..." << std::endl << std::flush;
 
   // perform time loop
-  double       load_factor    = 0.0;
-  double       load_increment = param.load_increment;
-  double const eps            = 1.e-10;
+  double load_factor    = 0.0;
+  double load_increment = param.load_increment;
+  // Step 0 is a pre step with a smaller load factor in order to make solving step 1 easier.
+  step_number = 0;
+  // In the first load step, we can not extrapolate the solution, so we solve the problem for a much
+  // smaller load factor and afterwards extrapolate the solution to the actual load factor in order
+  // to solve the first load step.
+  double const reduction_load_factor_step_0 = 0.01;
+  if(step_number == 0)
+    load_increment *= reduction_load_factor_step_0;
+
+  double const eps = 1.e-10;
   while(load_factor < 1.0 - eps)
   {
     std::tuple<unsigned int, unsigned int> iter;
@@ -189,14 +198,19 @@ DriverQuasiStatic<dim, Number>::do_solve()
     // increment load factor
     last_load_increment = load_increment;
     load_factor += load_increment;
-    ++step_number;
 
     // re-init increment for next load step
-    load_increment = param.load_increment;
+    if(step_number == 0)
+      load_increment = param.load_increment - last_load_increment;
+    else
+      load_increment = param.load_increment;
 
     // make sure to hit maximum load exactly
     if(load_factor + load_increment >= 1.0)
       load_increment = 1.0 - load_factor;
+
+    // finally, increment step number
+    ++step_number;
   }
 
   pcout << std::endl << "... done!" << std::endl;
