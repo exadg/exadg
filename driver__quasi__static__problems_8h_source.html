@@ -162,7 +162,7 @@ $(function() {
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  output_solver_info_header(<span class="keywordtype">double</span> <span class="keyword">const</span> load_factor);</div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  std::tuple&lt;unsigned int, unsigned int&gt;</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  solve_step(<span class="keywordtype">double</span> <span class="keyword">const</span> load_factor);</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  solve_step(<span class="keywordtype">double</span> <span class="keyword">const</span> load_factor, <span class="keywordtype">bool</span> <span class="keyword">const</span> update_preconditioner);</div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span> </div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  postprocessing() <span class="keyword">const</span>;</div>
@@ -183,20 +183,28 @@ $(function() {
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  VectorType solution;</div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  VectorType rhs_vector;</div>
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span> </div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> step_number;</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span> </div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  std::shared_ptr&lt;TimerTree&gt; timer_tree;</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  <span class="comment">// We need to store a vector in order to extrapolate the solution to the next</span></div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  <span class="comment">// load step and obtain an accurate initial guess for the Newton solver.</span></div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  VectorType displacement_increment;</div>
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span> </div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  std::pair&lt;</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="comment">/* calls */</span>,</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    std::tuple&lt;unsigned long long, unsigned long long&gt; <span class="comment">/* iteration counts {Newton, linear}*/</span>&gt;</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>    iterations;</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>};</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  <span class="comment">// For the purpose of extrapolating the displacements, we also need to store the</span></div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  <span class="comment">// load_increment of the last load step.</span></div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  <span class="keywordtype">double</span> last_load_increment;</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> step_number;</div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>} <span class="comment">// namespace Structure</span></div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  std::shared_ptr&lt;TimerTree&gt; timer_tree;</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span> </div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  std::pair&lt;</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="comment">/* calls */</span>,</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>    std::tuple&lt;unsigned long long, unsigned long long&gt; <span class="comment">/* iteration counts {Newton, linear}*/</span>&gt;</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>    iterations;</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>};</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>} <span class="comment">// namespace Structure</span></div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span> </div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span><span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1DriverQuasiStatic_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1DriverQuasiStatic.html">ExaDG::Structure::DriverQuasiStatic</a></div><div class="ttdef"><b>Definition:</b> driver_quasi_static_problems.h:50</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1Interface_1_1Operator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1Interface_1_1Operator.html">ExaDG::Structure::Interface::Operator</a></div><div class="ttdef"><b>Definition:</b> interface.h:35</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1Parameters.html">ExaDG::Structure::Parameters</a></div><div class="ttdef"><b>Definition:</b> parameters.h:41</div></div>
