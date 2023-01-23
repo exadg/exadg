@@ -38,6 +38,8 @@ Physical quantities:
 
 Spatial discretization:
   Triangulation type:                        Distributed
+  Element type                               Hypercube
+  Create coarse triangulations               false
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            2
@@ -207,6 +209,8 @@ Physical quantities:
 
 Spatial discretization:
   Triangulation type:                        Distributed
+  Element type                               Hypercube
+  Create coarse triangulations               false
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            3
@@ -376,6 +380,8 @@ Physical quantities:
 
 Spatial discretization:
   Triangulation type:                        Distributed
+  Element type                               Hypercube
+  Create coarse triangulations               false
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            4
@@ -545,6 +551,8 @@ Physical quantities:
 
 Spatial discretization:
   Triangulation type:                        Distributed
+  Element type                               Hypercube
+  Create coarse triangulations               false
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            5
