@@ -50,6 +50,7 @@ cmake \
     -D BUILD_SHARED_LIBS:BOOL=ON \
     -D MPI_INCLUDE_PATH:FILEPATH="$MPIDIR/include" \
     -D MPI_LIBRARY:FILEPATH="$MPIDIR" \
+    -D Gtest_SKIP_INSTALL:BOOL=TRUE \
     -D Trilinos_ASSERT_MISSING_PACKAGES=OFF \
     -D Trilinos_VERBOSE_CONFIGURE:BOOL=OFF \
     -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
@@ -102,8 +103,11 @@ cmake \
     -D Trilinos_ENABLE_Rythmos:BOOL=OFF \
     -D Trilinos_ENABLE_STK:BOOL=OFF \
     -D Trilinos_ENABLE_Sacado:BOOL=ON \
-    -D Trilinos_ENABLE_SEACASExodus:BOOL=OFF \
+    -D Trilinos_ENABLE_SEACAS:BOOL=ON \
+    -D Trilinos_ENABLE_SEACASExodus:BOOL=ON \
     -D Trilinos_ENABLE_SEACASNemesis:BOOL=OFF \
+    -D Trilinos_ENABLE_SEACASExo2mat:BOOL=OFF \
+    -D Trilinos_ENABLE_SEACASMat2exo:BOOL=OFF \
     -D Trilinos_ENABLE_Shards:BOOL=ON \
     -D Trilinos_ENABLE_Stokhos:BOOL=OFF \
     -D Trilinos_ENABLE_Stratimikos:BOOL=ON \
@@ -124,6 +128,7 @@ cmake \
     -D Teko_ENABLE_TESTS:BOOL=OFF \
     -D Trilinos_ENABLE_MueLu:BOOL=ON \
     -D Tpetra_INST_INT_LONG_LONG:BOOL=OFF \
+    -D Tpetra_INST_INT_LONG:BOOL=ON \
     -D MueLu_ENABLE_TESTS:BOOL=OFF \
     -D MueLu_ENABLE_EXAMPLES:BOOL=OFF \
     -D MueLu_ENABLE_Experimental:BOOL=ON \
@@ -139,10 +144,12 @@ cmake \
     -D TPL_ENABLE_ParMETIS:BOOL=OFF \
     -D TPL_ENABLE_Pthread:BOOL=ON \
     -D TPL_ENABLE_UMFPACK:BOOL=OFF \
-    -D TPL_ENABLE_Netcdf:BOOL=OFF \
+    -D TPL_ENABLE_Netcdf:BOOL=ON \
+    -D TPL_Netcdf_PARALLEL:BOOL=OFF \
     -D TPL_ENABLE_MATLAB:BOOL=OFF \
     -D TPL_ENABLE_SuperLU:BOOL=OFF \
     -D TPL_ENABLE_SuperLUDist:BOOL=OFF \
+    -D TPL_ENABLE_X11:BOOL=OFF \
     -D EpetraExt_BUILD_BDF:BOOL=ON \
     -D EpetraExt_BUILD_GRAPH_REORDERINGS:BOOL=ON \
     -D EpetraExt_ENABLE_HDF5:BOOL=OFF \
