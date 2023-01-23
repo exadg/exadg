@@ -224,16 +224,31 @@ private:
     this->param.spectral_radius                      = 0.8;
     this->param.solver_info_data.interval_time_steps = 2;
 
-    this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.grid.mapping_degree     = 1;
+    this->param.grid.mapping_degree = 1;
+    if(use_simplex_mesh)
+    {
+      this->param.grid.element_type                 = ElementType::Simplex;
+      this->param.grid.triangulation_type           = TriangulationType::FullyDistributed;
+      this->param.grid.create_coarse_triangulations = true;
+    }
+    else
+    {
+      this->param.grid.element_type                 = ElementType::Hypercube;
+      this->param.grid.triangulation_type           = TriangulationType::Distributed;
+      this->param.grid.create_coarse_triangulations = false;
+    }
 
     this->param.load_increment = 0.1;
 
-    this->param.newton_solver_data                   = Newton::SolverData(1e1, 1.e-9, 1.e-9);
-    this->param.solver                               = Solver::FGMRES;
-    this->param.solver_data                          = SolverData(1e2, 1.e-12, 1.e-8, 100);
-    this->param.preconditioner                       = Preconditioner::Multigrid;
-    this->param.multigrid_data.type                  = MultigridType::phMG;
+    this->param.newton_solver_data  = Newton::SolverData(1e2, 1.e-9, 1.e-9);
+    this->param.solver              = Solver::FGMRES;
+    this->param.solver_data         = SolverData(1e3, 1.e-12, 1.e-8, 100);
+    this->param.preconditioner      = Preconditioner::Multigrid;
+    this->param.multigrid_data.type = MultigridType::phMG;
+    if(use_simplex_mesh)
+      this->param.multigrid_data.use_global_coarsening = true;
+    else // for hypercube elements, we could also use global coarsening
+      this->param.multigrid_data.use_global_coarsening = false;
     this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
     this->param.multigrid_data.coarse_problem.preconditioner =
       MultigridCoarseGridPreconditioner::AMG;
@@ -248,60 +263,77 @@ private:
   void
   create_grid() final
   {
-    // left-bottom-front and right-top-back point
-    dealii::Point<dim> p1, p2;
+    auto const lambda_create_coarse_triangulation = [&](dealii::Triangulation<dim, dim> & tria) {
+      // left-bottom-front and right-top-back point
+      dealii::Point<dim> p1, p2;
 
-    for(unsigned d = 0; d < dim; d++)
-      p1[d] = 0.0;
+      for(unsigned d = 0; d < dim; d++)
+        p1[d] = 0.0;
 
-    p2[0] = this->length;
-    p2[1] = this->height;
-    if(dim == 3)
-      p2[2] = this->width;
+      p2[0] = this->length;
+      p2[1] = this->height;
+      if(dim == 3)
+        p2[2] = this->width;
 
-    std::vector<unsigned int> repetitions(dim);
-    repetitions[0] = this->repetitions0;
-    repetitions[1] = this->repetitions1;
-    if(dim == 3)
-      repetitions[2] = this->repetitions2;
+      std::vector<unsigned int> repetitions(dim);
+      repetitions[0] = this->repetitions0;
+      repetitions[1] = this->repetitions1;
+      if(dim == 3)
+        repetitions[2] = this->repetitions2;
 
-    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                                      repetitions,
-                                                      p1,
-                                                      p2);
-
-    for(auto cell : *this->grid->triangulation)
-    {
-      for(auto const & face : cell.face_indices())
+      if(this->param.grid.element_type == ElementType::Hypercube)
       {
-        // left face
-        if(std::fabs(cell.face(face)->center()(0) - 0.0) < 1e-8)
-        {
-          cell.face(face)->set_all_boundary_ids(1);
-        }
-
-        // right face
-        if(std::fabs(cell.face(face)->center()(0) - this->length) < 1e-8)
-        {
-          cell.face(face)->set_all_boundary_ids(2);
-        }
-
-        // lower face
-        if(std::fabs(cell.face(face)->center()(1) - 0.0) < 1e-8)
-        {
-          cell.face(face)->set_all_boundary_ids(3);
-        }
-
-        // back face
-        if(dim == 3)
-          if(std::fabs(cell.face(face)->center()(2) - 0.0) < 1e-8)
-          {
-            cell.face(face)->set_all_boundary_ids(4);
-          }
+        dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, p1, p2);
       }
-    }
+      else if(this->param.grid.element_type == ElementType::Simplex)
+      {
+        dealii::Triangulation<dim, dim> tria_hypercube;
+        dealii::GridGenerator::subdivided_hyper_rectangle(tria_hypercube, repetitions, p1, p2);
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        dealii::GridGenerator::convert_hypercube_to_simplex_mesh(tria_hypercube, tria);
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      }
+
+      for(auto cell : tria)
+      {
+        for(auto const & face : cell.face_indices())
+        {
+          // left face
+          if(std::fabs(cell.face(face)->center()(0) - 0.0) < 1e-8)
+          {
+            cell.face(face)->set_all_boundary_ids(1);
+          }
+
+          // right face
+          if(std::fabs(cell.face(face)->center()(0) - this->length) < 1e-8)
+          {
+            cell.face(face)->set_all_boundary_ids(2);
+          }
+
+          // lower face
+          if(std::fabs(cell.face(face)->center()(1) - 0.0) < 1e-8)
+          {
+            cell.face(face)->set_all_boundary_ids(3);
+          }
+
+          // back face
+          if(dim == 3)
+          {
+            if(std::fabs(cell.face(face)->center()(2) - 0.0) < 1e-8)
+            {
+              cell.face(face)->set_all_boundary_ids(4);
+            }
+          }
+        }
+      }
+    };
+
+    this->grid->create_triangulation(this->param.grid,
+                                     lambda_create_coarse_triangulation,
+                                     this->param.grid.n_refine_global);
   }
 
   void
@@ -491,6 +523,8 @@ private:
   }
 
   double length = 1.0, height = 1.0, width = 1.0;
+
+  bool const use_simplex_mesh = false;
 
   bool use_volume_force = true;
 
