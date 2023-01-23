@@ -331,9 +331,11 @@ private:
     this->param.preconditioner      = Preconditioner::Multigrid;
     this->param.multigrid_data.type = MultigridType::phMG;
 
-    this->param.update_preconditioner                         = true;
-    this->param.update_preconditioner_every_time_steps        = 1;
-    this->param.update_preconditioner_every_newton_iterations = 10;
+    this->param.update_preconditioner                  = true;
+    this->param.update_preconditioner_every_time_steps = 1;
+    this->param.update_preconditioner_every_newton_iterations =
+      this->param.newton_solver_data.max_iter;
+    this->param.update_preconditioner_once_newton_converged = true;
   }
 
   void

@@ -209,7 +209,7 @@ private:
   void
   set_parameters() final
   {
-    this->param.problem_type         = ProblemType::Steady;
+    this->param.problem_type         = ProblemType::QuasiStatic;
     this->param.body_force           = use_volume_force;
     this->param.large_deformation    = true;
     this->param.pull_back_body_force = false;
@@ -227,22 +227,22 @@ private:
     this->param.grid.triangulation_type = TriangulationType::Distributed;
     this->param.grid.mapping_degree     = 1;
 
-    this->param.load_increment            = 0.1;
-    this->param.adjust_load_increment     = false;
-    this->param.desired_newton_iterations = 20;
+    this->param.load_increment = 0.1;
 
-    this->param.newton_solver_data                   = Newton::SolverData(1e4, 1.e-10, 1.e-10);
+    this->param.newton_solver_data                   = Newton::SolverData(1e1, 1.e-9, 1.e-9);
     this->param.solver                               = Solver::FGMRES;
-    this->param.solver_data                          = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    this->param.solver_data                          = SolverData(1e2, 1.e-12, 1.e-8, 100);
     this->param.preconditioner                       = Preconditioner::Multigrid;
     this->param.multigrid_data.type                  = MultigridType::phMG;
     this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
     this->param.multigrid_data.coarse_problem.preconditioner =
       MultigridCoarseGridPreconditioner::AMG;
 
-    this->param.update_preconditioner                         = true;
-    this->param.update_preconditioner_every_time_steps        = 1;
-    this->param.update_preconditioner_every_newton_iterations = 1;
+    this->param.update_preconditioner                  = true;
+    this->param.update_preconditioner_every_time_steps = 1;
+    this->param.update_preconditioner_every_newton_iterations =
+      this->param.newton_solver_data.max_iter;
+    this->param.update_preconditioner_once_newton_converged = true;
   }
 
   void
@@ -334,7 +334,7 @@ private:
     // right face
     if(boundary_type == "Dirichlet")
     {
-      bool const        clamp_at_right_boundary = true;
+      bool const        clamp_at_right_boundary = false;
       std::vector<bool> mask_right              = {true, clamp_at_right_boundary};
       if(dim == 3)
       {
@@ -463,7 +463,7 @@ private:
     pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
     pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = this->output_parameters.filename;
-    pp_data.output_data.write_higher_order = false;
+    pp_data.output_data.write_higher_order = true;
     pp_data.output_data.degree             = this->param.degree;
 
     pp_data.error_data.time_control_data.is_active = true;

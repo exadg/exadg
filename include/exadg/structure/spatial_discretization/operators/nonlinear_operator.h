@@ -59,6 +59,12 @@ public:
   evaluate_nonlinear(VectorType & dst, VectorType const & src) const;
 
   /*
+   * Returns true if deformation state is valid.
+   */
+  bool
+  valid_deformation(VectorType const & displacement) const;
+
+  /*
    * Linearized operator:
    */
   void
@@ -170,6 +176,13 @@ private:
    */
   void
   do_cell_integral(IntegratorCell & integrator) const override;
+
+  void
+  cell_loop_valid_deformation(dealii::MatrixFree<dim, Number> const & matrix_free,
+                              Number &                                dst,
+                              VectorType const &                      src,
+                              Range const &                           range) const;
+
 
   mutable std::shared_ptr<IntegratorCell> integrator_lin;
   mutable VectorType                      displacement_lin;

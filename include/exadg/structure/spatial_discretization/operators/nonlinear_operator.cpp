@@ -55,11 +55,38 @@ NonLinearOperator<dim, Number>::evaluate_nonlinear(VectorType & dst, VectorType 
 }
 
 template<int dim, typename Number>
+bool
+NonLinearOperator<dim, Number>::valid_deformation(VectorType const & displacement) const
+{
+  Number dst = 0.0;
+
+  // dst has to remain zero for a valid deformation state
+  this->matrix_free->cell_loop(&This::cell_loop_valid_deformation,
+                               this,
+                               dst,
+                               displacement,
+                               false /* no zeroing of dst vector */);
+
+  // sum over all MPI processes
+  Number valid = 0.0;
+  valid        = dealii::Utilities::MPI::sum(
+    dst, this->matrix_free->get_dof_handler(this->get_dof_index()).get_communicator());
+
+  return (valid == 0.0);
+}
+
+
+template<int dim, typename Number>
 void
 NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & vector) const
 {
-  displacement_lin = vector;
-  displacement_lin.update_ghost_values();
+  // Only update linearized operator if deformation state is valid. It is better to continue
+  // with an old deformation state in the linearized operator than with an invalid one.
+  if(valid_deformation(vector))
+  {
+    displacement_lin = vector;
+    displacement_lin.update_ghost_values();
+  }
 }
 
 template<int dim, typename Number>
@@ -264,6 +291,45 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       integrator.submit_value(this->scaling_factor_mass * this->operator_data.density *
                                 integrator.get_value(q),
                               q);
+  }
+}
+
+template<int dim, typename Number>
+void
+NonLinearOperator<dim, Number>::cell_loop_valid_deformation(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  Number &                                dst,
+  VectorType const &                      src,
+  Range const &                           range) const
+{
+  IntegratorCell integrator(matrix_free,
+                            this->operator_data.dof_index,
+                            this->operator_data.quad_index);
+
+  for(auto cell = range.first; cell < range.second; ++cell)
+  {
+    reinit_cell_nonlinear(integrator, cell);
+
+    integrator.read_dof_values_plain(src);
+
+    integrator.evaluate(dealii::EvaluationFlags::gradients);
+
+    // loop over all quadrature points
+    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+    {
+      // material displacement gradient
+      tensor const Grad_d = integrator.get_gradient(q);
+
+      // material deformation gradient
+      tensor const F     = get_F<dim, Number>(Grad_d);
+      scalar const det_F = determinant(F);
+      for(unsigned int v = 0; v < det_F.size(); ++v)
+      {
+        // if deformation is invalid, add a positive value to dst
+        if(det_F[v] <= 0.0)
+          dst += 1.0;
+      }
+    }
   }
 }
 

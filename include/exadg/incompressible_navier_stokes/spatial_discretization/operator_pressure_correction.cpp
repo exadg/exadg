@@ -287,8 +287,8 @@ OperatorPressureCorrection<dim, Number>::solve_nonlinear_momentum_equation(
 
   // Solve nonlinear problem
   Newton::UpdateData update;
-  update.do_update             = update_preconditioner;
-  update.threshold_newton_iter = this->param.update_preconditioner_momentum_every_newton_iter;
+  update.do_update                = update_preconditioner;
+  update.update_every_newton_iter = this->param.update_preconditioner_momentum_every_newton_iter;
 
   std::tuple<unsigned int, unsigned int> iter = momentum_newton_solver->solve(dst, update);
 

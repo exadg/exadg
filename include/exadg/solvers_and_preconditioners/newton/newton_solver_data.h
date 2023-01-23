@@ -58,16 +58,13 @@ struct SolverData
 
 struct UpdateData
 {
-  UpdateData()
-    : do_update(true),
-      threshold_newton_iter(1),
-      threshold_linear_iter(std::numeric_limits<unsigned int>::max())
+  UpdateData() : do_update(true), update_every_newton_iter(1), update_once_converged(false)
   {
   }
 
   bool         do_update;
-  unsigned int threshold_newton_iter;
-  unsigned int threshold_linear_iter;
+  unsigned int update_every_newton_iter;
+  bool         update_once_converged;
 };
 } // namespace Newton
 } // namespace ExaDG

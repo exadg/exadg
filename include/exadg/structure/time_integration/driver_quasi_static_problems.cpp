@@ -42,6 +42,7 @@ DriverQuasiStatic<dim, Number>::DriverQuasiStatic(
     mpi_comm(mpi_comm_),
     is_test(is_test_),
     pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
+    last_load_increment(param.load_increment),
     step_number(1),
     timer_tree(new TimerTree()),
     iterations({0, {0, 0}})
@@ -128,61 +129,88 @@ DriverQuasiStatic<dim, Number>::do_solve()
   pcout << std::endl << "Solving quasi-static problem ..." << std::endl << std::flush;
 
   // perform time loop
-  double       load_factor    = 0.0;
-  double       load_increment = param.load_increment;
-  double const eps            = 1.e-10;
+  double load_factor    = 0.0;
+  double load_increment = param.load_increment;
+  // Step 0 is a pre step with a smaller load factor in order to make solving step 1 easier.
+  step_number = 0;
+  // In the first load step, we can not extrapolate the solution, so we solve the problem for a much
+  // smaller load factor and afterwards extrapolate the solution to the actual load factor in order
+  // to solve the first load step.
+  double const reduction_load_factor_step_0 = 0.01;
+  if(step_number == 0)
+    load_increment *= reduction_load_factor_step_0;
+
+  double const eps = 1.e-10;
   while(load_factor < 1.0 - eps)
   {
     std::tuple<unsigned int, unsigned int> iter;
 
+    // store old solution
+    VectorType old_solution = solution;
+
+    bool const update_preconditioner =
+      this->param.update_preconditioner and
+      ((this->step_number - 1) % this->param.update_preconditioner_every_time_steps == 0);
+
     // compute displacement for new load factor
-    if(param.adjust_load_increment)
+
+    // reduce load increment in factors of 2 until the current
+    // step can be solved successfully
+    bool         success        = false;
+    unsigned int re_try_counter = 0;
+    while(!success && re_try_counter < 10)
     {
-      // reduce load increment in factors of 2 until the current
-      // step can be solved successfully
-      bool         success        = false;
-      unsigned int re_try_counter = 0;
-      while(!success && re_try_counter < 10)
+      try
       {
-        try
-        {
-          iter    = solve_step(load_factor + load_increment);
-          success = true;
-          ++re_try_counter;
-        }
-        catch(...)
-        {
-          load_increment *= 0.5;
-          pcout << std::endl
-                << "Could not solve non-linear problem. Reduce load factor to "
-                << load_factor + load_increment << std::flush;
-        }
+        // extrapolate solution
+        solution.add(load_increment / last_load_increment, displacement_increment);
+
+        iter    = solve_step(load_factor + load_increment, update_preconditioner);
+        success = true;
+      }
+      catch(...)
+      {
+        // undo changes in solution vector
+        solution = old_solution;
+        ++re_try_counter;
+
+        // reduce load increment by factor of 2
+        load_increment *= 0.5;
+        pcout << std::endl
+              << "  Could not solve non-linear problem. Reduce load increment to " << load_increment
+              << "." << std::endl
+              << std::flush;
       }
     }
-    else
-    {
-      iter = solve_step(load_factor + load_increment);
-    }
+
+    AssertThrow(success,
+                dealii::ExcMessage(
+                  "Could not solve quasi static problem even after reducing the load increment."));
+
+    // calculate increment as new_solution - old_solution
+    displacement_increment = solution;
+    displacement_increment.add(-1.0, old_solution);
 
     iterations.first += 1;
     std::get<0>(iterations.second) += std::get<0>(iter);
     std::get<1>(iterations.second) += std::get<1>(iter);
 
     // increment load factor
+    last_load_increment = load_increment;
     load_factor += load_increment;
-    ++step_number;
 
-    // adjust increment for next load step
-    if(param.adjust_load_increment)
-    {
-      if(std::get<0>(iter) > 0)
-        load_increment *=
-          std::pow((double)param.desired_newton_iterations / (double)std::get<0>(iter), 0.5);
-    }
+    // re-init increment for next load step
+    if(step_number == 0)
+      load_increment = param.load_increment - last_load_increment;
+    else
+      load_increment = param.load_increment;
 
     // make sure to hit maximum load exactly
     if(load_factor + load_increment >= 1.0)
       load_increment = 1.0 - load_factor;
+
+    // finally, increment step number
+    ++step_number;
   }
 
   pcout << std::endl << "... done!" << std::endl;
@@ -194,11 +222,11 @@ template<int dim, typename Number>
 void
 DriverQuasiStatic<dim, Number>::initialize_vectors()
 {
-  // solution
   pde_operator->initialize_dof_vector(solution);
 
-  // rhs_vector
   pde_operator->initialize_dof_vector(rhs_vector);
+
+  pde_operator->initialize_dof_vector(displacement_increment);
 }
 
 template<int dim, typename Number>
@@ -222,19 +250,17 @@ DriverQuasiStatic<dim, Number>::output_solver_info_header(double const load_fact
 
 template<int dim, typename Number>
 std::tuple<unsigned int, unsigned int>
-DriverQuasiStatic<dim, Number>::solve_step(double const load_factor)
+DriverQuasiStatic<dim, Number>::solve_step(double const load_factor,
+                                           bool const   update_preconditioner)
 {
   dealii::Timer timer;
   timer.restart();
 
   output_solver_info_header(load_factor);
 
-  bool const update_preconditioner =
-    this->param.update_preconditioner &&
-    ((this->step_number - 1) % this->param.update_preconditioner_every_time_steps == 0);
-
   VectorType const const_vector; // will not be used
-  auto const       iter = pde_operator->solve_nonlinear(
+
+  auto const iter = pde_operator->solve_nonlinear(
     solution, const_vector, 0.0 /*no mass term*/, load_factor /* = time */, update_preconditioner);
 
   unsigned int const N_iter_nonlinear = std::get<0>(iter);
