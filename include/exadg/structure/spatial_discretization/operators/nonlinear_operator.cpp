@@ -58,7 +58,7 @@ template<int dim, typename Number>
 bool
 NonLinearOperator<dim, Number>::valid_deformation(VectorType const & displacement) const
 {
-  std::vector<Number> dst(1, 0.0);
+  Number dst = 0.0;
 
   // dst has to remain zero for a valid deformation state
   this->matrix_free->cell_loop(&This::cell_loop_valid_deformation,
@@ -70,7 +70,7 @@ NonLinearOperator<dim, Number>::valid_deformation(VectorType const & displacemen
   // sum over all MPI processes
   Number valid = 0.0;
   valid        = dealii::Utilities::MPI::sum(
-    dst.at(0), this->matrix_free->get_dof_handler(this->get_dof_index()).get_communicator());
+    dst, this->matrix_free->get_dof_handler(this->get_dof_index()).get_communicator());
 
   return (valid == 0.0);
 }
@@ -298,7 +298,7 @@ template<int dim, typename Number>
 void
 NonLinearOperator<dim, Number>::cell_loop_valid_deformation(
   dealii::MatrixFree<dim, Number> const & matrix_free,
-  std::vector<Number> &                   dst,
+  Number &                                dst,
   VectorType const &                      src,
   Range const &                           range) const
 {
@@ -326,8 +326,8 @@ NonLinearOperator<dim, Number>::cell_loop_valid_deformation(
       for(unsigned int v = 0; v < det_F.size(); ++v)
       {
         // if deformation is invalid, add a positive value to dst
-        if(det_F[v] < 0.0)
-          dst.at(0) += 1.0;
+        if(det_F[v] <= 0.0)
+          dst += 1.0;
       }
     }
   }

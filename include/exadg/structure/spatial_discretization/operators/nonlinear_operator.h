@@ -179,7 +179,7 @@ private:
 
   void
   cell_loop_valid_deformation(dealii::MatrixFree<dim, Number> const & matrix_free,
-                              std::vector<Number> &                   dst,
+                              Number &                                dst,
                               VectorType const &                      src,
                               Range const &                           range) const;
 

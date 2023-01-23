@@ -46,8 +46,7 @@ public:
     : solver_data(solver_data_in),
       nonlinear_operator(nonlinear_operator_in),
       linear_operator(linear_operator_in),
-      linear_solver(linear_solver_in),
-      linear_iterations_last(0)
+      linear_solver(linear_solver_in)
   {
   }
 
@@ -84,7 +83,7 @@ public:
         update.do_update and (newton_iterations % update.update_every_newton_iter == 0);
 
       // solve linear problem
-      linear_iterations_last = linear_solver.solve(increment, residual, update_now);
+      unsigned int const n_iter_linear = linear_solver.solve(increment, residual, update_now);
 
       // damped Newton scheme
       double             omega         = 1.0; // damping factor (begin with 1)
@@ -121,7 +120,7 @@ public:
 
       // increment iteration counter
       ++newton_iterations;
-      linear_iterations += linear_iterations_last;
+      linear_iterations += n_iter_linear;
     }
 
     AssertThrow(norm_r <= this->solver_data.abs_tol || norm_r / norm_r_0 <= solver_data.rel_tol,
@@ -150,8 +149,6 @@ private:
   NonlinearOperator & nonlinear_operator;
   LinearOperator &    linear_operator;
   LinearSolver &      linear_solver;
-
-  unsigned int linear_iterations_last;
 };
 
 } // namespace Newton
