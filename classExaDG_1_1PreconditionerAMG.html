@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.6"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::Structure::PreconditionerAMG&lt; Operator, Number &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::PreconditionerAMG&lt; Operator, Number &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -69,36 +69,38 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><b>Structure</b></li><li class="navelem"><a class="el" href="classExaDG_1_1Structure_1_1PreconditionerAMG.html">PreconditionerAMG</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><a class="el" href="classExaDG_1_1PreconditionerAMG.html">PreconditionerAMG</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="classExaDG_1_1Structure_1_1PreconditionerAMG-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::Structure::PreconditionerAMG&lt; Operator, Number &gt; Class Template Reference</div></div>
+<a href="classExaDG_1_1PreconditionerAMG-members.html">List of all members</a>  </div>
+  <div class="headertitle"><div class="title">ExaDG::PreconditionerAMG&lt; Operator, Number &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p><code>#include &lt;<a class="el" href="preconditioner__amg_8h_source.html">preconditioner_amg.h</a>&gt;</code></p>
 <div class="dynheader">
-Inheritance diagram for ExaDG::Structure::PreconditionerAMG&lt; Operator, Number &gt;:</div>
+Inheritance diagram for ExaDG::PreconditionerAMG&lt; Operator, Number &gt;:</div>
 <div class="dyncontent">
  <div class="center">
-  <img src="classExaDG_1_1Structure_1_1PreconditionerAMG.png" usemap="#ExaDG::Structure::PreconditionerAMG_3C_20Operator_2C_20Number_20_3E_map" alt=""/>
-  <map id="ExaDG::Structure::PreconditionerAMG_3C_20Operator_2C_20Number_20_3E_map" name="ExaDG::Structure::PreconditionerAMG_3C_20Operator_2C_20Number_20_3E_map">
-<area href="classExaDG_1_1PreconditionerBase.html" alt="ExaDG::PreconditionerBase&lt; Number &gt;" shape="rect" coords="0,0,355,24"/>
+  <img src="classExaDG_1_1PreconditionerAMG.png" usemap="#ExaDG::PreconditionerAMG_3C_20Operator_2C_20Number_20_3E_map" alt=""/>
+  <map id="ExaDG::PreconditionerAMG_3C_20Operator_2C_20Number_20_3E_map" name="ExaDG::PreconditionerAMG_3C_20Operator_2C_20Number_20_3E_map">
+<area href="classExaDG_1_1PreconditionerBase.html" alt="ExaDG::PreconditionerBase&lt; Number &gt;" shape="rect" coords="0,0,297,24"/>
   </map>
 </div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ae4892e3de213c90102dd6de38aa44564"><td class="memItemLeft" align="right" valign="top"><a id="ae4892e3de213c90102dd6de38aa44564" name="ae4892e3de213c90102dd6de38aa44564"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>PreconditionerAMG</b> (<a class="el" href="classExaDG_1_1Structure_1_1Operator.html">Operator</a> const &amp;pde_operator, <a class="el" href="structExaDG_1_1AMGData.html">AMGData</a> const &amp;data)</td></tr>
-<tr class="separator:ae4892e3de213c90102dd6de38aa44564"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1665ef22594e1f86434228e37a0e454e"><td class="memItemLeft" align="right" valign="top"><a id="a1665ef22594e1f86434228e37a0e454e" name="a1665ef22594e1f86434228e37a0e454e"></a>
+<tr class="memitem:a4bb6963e1d92701bebb810f431fefcf0"><td class="memItemLeft" align="right" valign="top"><a id="a4bb6963e1d92701bebb810f431fefcf0" name="a4bb6963e1d92701bebb810f431fefcf0"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>PreconditionerAMG</b> (Operator const &amp;pde_operator, <a class="el" href="structExaDG_1_1AMGData.html">AMGData</a> const &amp;data)</td></tr>
+<tr class="separator:a4bb6963e1d92701bebb810f431fefcf0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a33a1b660c29049e5897eb21e7f4e6a32"><td class="memItemLeft" align="right" valign="top"><a id="a33a1b660c29049e5897eb21e7f4e6a32" name="a33a1b660c29049e5897eb21e7f4e6a32"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:a1665ef22594e1f86434228e37a0e454e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab34fedd50a0b1dd21341acba07580b8f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1PreconditionerAMG.html#ab34fedd50a0b1dd21341acba07580b8f">update</a> ()</td></tr>
-<tr class="separator:ab34fedd50a0b1dd21341acba07580b8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a33a1b660c29049e5897eb21e7f4e6a32"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a14b8c401fa87badf4555135354d439ca"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1PreconditionerAMG.html#a14b8c401fa87badf4555135354d439ca">update</a> ()</td></tr>
+<tr class="separator:a14b8c401fa87badf4555135354d439ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1PreconditionerBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1PreconditionerBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1PreconditionerBase.html">ExaDG::PreconditionerBase&lt; Number &gt;</a></td></tr>
 <tr class="memitem:a74358c9117ee01847ccc3a368dfadf05 inherit pub_methods_classExaDG_1_1PreconditionerBase"><td class="memItemLeft" align="right" valign="top"><a id="a74358c9117ee01847ccc3a368dfadf05" name="a74358c9117ee01847ccc3a368dfadf05"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (VectorType &amp;dst, VectorType const &amp;src) const=0</td></tr>
@@ -117,20 +119,23 @@ Additional Inherited Members</h2></td></tr>
 typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
 <tr class="separator:a13d78c9f5110d1cb9b590ee0255c8aad inherit pub_types_classExaDG_1_1PreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="ab34fedd50a0b1dd21341acba07580b8f" name="ab34fedd50a0b1dd21341acba07580b8f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab34fedd50a0b1dd21341acba07580b8f">&#9670;&#160;</a></span>update()</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><div class="compoundTemplParams">template&lt;typename Operator, typename Number&gt;<br />
+class ExaDG::PreconditionerAMG&lt; Operator, Number &gt;</div><p>Implementation of AMG preconditioner unifying PreconditionerML and PreconditionerBoomerAMG. </p>
+</div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a14b8c401fa87badf4555135354d439ca" name="a14b8c401fa87badf4555135354d439ca"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a14b8c401fa87badf4555135354d439ca">&#9670;&#160;</a></span>update()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">Operator</a> , typename Number &gt; </div>
+template&lt;typename Operator , typename Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Structure_1_1PreconditionerAMG.html">ExaDG::Structure::PreconditionerAMG</a>&lt; <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">Operator</a>, Number &gt;::update </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1PreconditionerAMG.html">ExaDG::PreconditionerAMG</a>&lt; Operator, Number &gt;::update </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -148,7 +153,7 @@ template&lt;typename <a class="el" href="classExaDG_1_1Structure_1_1Operator.htm
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/exadg/structure/preconditioners/<a class="el" href="amg__preconditioner_8h_source.html">amg_preconditioner.h</a></li>
+<li>include/exadg/solvers_and_preconditioners/preconditioners/<a class="el" href="preconditioner__amg_8h_source.html">preconditioner_amg.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
