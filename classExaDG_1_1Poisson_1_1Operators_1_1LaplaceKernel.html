@@ -92,15 +92,15 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_penalty_par
 <tr class="memitem:abbe4c5da6b39b9c6ec74b6087fbb1e8a"><td class="memItemLeft" align="right" valign="top"><a id="abbe4c5da6b39b9c6ec74b6087fbb1e8a" name="abbe4c5da6b39b9c6ec74b6087fbb1e8a"></a>
 <a class="el" href="structExaDG_1_1IntegratorFlags.html">IntegratorFlags</a>&#160;</td><td class="memItemRight" valign="bottom"><b>get_integrator_flags</b> (bool const is_dg) const</td></tr>
 <tr class="separator:abbe4c5da6b39b9c6ec74b6087fbb1e8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4d35a53940adc08fe8fcc6e4d8e2f47c"><td class="memItemLeft" align="right" valign="top"><a id="a4d35a53940adc08fe8fcc6e4d8e2f47c" name="a4d35a53940adc08fe8fcc6e4d8e2f47c"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_face</b> (IntegratorFace &amp;integrator_m, IntegratorFace &amp;integrator_p) const</td></tr>
-<tr class="separator:a4d35a53940adc08fe8fcc6e4d8e2f47c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a686f41189a145d65e7f66e2b9489dcc4"><td class="memItemLeft" align="right" valign="top"><a id="a686f41189a145d65e7f66e2b9489dcc4" name="a686f41189a145d65e7f66e2b9489dcc4"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_boundary_face</b> (IntegratorFace &amp;integrator_m) const</td></tr>
-<tr class="separator:a686f41189a145d65e7f66e2b9489dcc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a932084759b31dc2feeacadfd272780d5"><td class="memItemLeft" align="right" valign="top"><a id="a932084759b31dc2feeacadfd272780d5" name="a932084759b31dc2feeacadfd272780d5"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_face_cell_based</b> (dealii::types::boundary_id const boundary_id, IntegratorFace &amp;integrator_m, IntegratorFace &amp;integrator_p) const</td></tr>
-<tr class="separator:a932084759b31dc2feeacadfd272780d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0dbd10e5410c8e4b24bd02eb08e48f2a"><td class="memItemLeft" align="right" valign="top"><a id="a0dbd10e5410c8e4b24bd02eb08e48f2a" name="a0dbd10e5410c8e4b24bd02eb08e48f2a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_face</b> (IntegratorFace &amp;integrator_m, IntegratorFace &amp;integrator_p, unsigned int const dof_index) const</td></tr>
+<tr class="separator:a0dbd10e5410c8e4b24bd02eb08e48f2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3d9227adddac1cebfcb4e1bb4277a583"><td class="memItemLeft" align="right" valign="top"><a id="a3d9227adddac1cebfcb4e1bb4277a583" name="a3d9227adddac1cebfcb4e1bb4277a583"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_boundary_face</b> (IntegratorFace &amp;integrator_m, unsigned int const dof_index) const</td></tr>
+<tr class="separator:a3d9227adddac1cebfcb4e1bb4277a583"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad7e9606fb8001281f54c93fdc5d11c2c"><td class="memItemLeft" align="right" valign="top"><a id="ad7e9606fb8001281f54c93fdc5d11c2c" name="ad7e9606fb8001281f54c93fdc5d11c2c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_face_cell_based</b> (dealii::types::boundary_id const boundary_id, IntegratorFace &amp;integrator_m, IntegratorFace &amp;integrator_p, unsigned int const dof_index) const</td></tr>
+<tr class="separator:ad7e9606fb8001281f54c93fdc5d11c2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8f51e06043532f18c8011b1a6c9f7b07"><td class="memTemplParams" colspan="2"><a id="a8f51e06043532f18c8011b1a6c9f7b07" name="a8f51e06043532f18c8011b1a6c9f7b07"></a>
 template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a8f51e06043532f18c8011b1a6c9f7b07"><td class="memTemplItemLeft" align="right" valign="top">DEAL_II_ALWAYS_INLINE T&#160;</td><td class="memTemplItemRight" valign="bottom"><b>calculate_gradient_flux</b> (T const &amp;value_m, T const &amp;value_p) const</td></tr>
