@@ -162,8 +162,6 @@ Operator<dim, n_components, Number>::distribute_dofs()
     affine_constraints.close();
   }
 
-  unsigned int const ndofs_per_cell = dealii::Utilities::pow(param.degree + 1, dim);
-
   pcout << std::endl;
 
   if(param.spatial_discretization == SpatialDiscretization::DG)
@@ -178,7 +176,7 @@ Operator<dim, n_components, Number>::distribute_dofs()
     AssertThrow(false, dealii::ExcMessage("Not implemented."));
 
   print_parameter(pcout, "degree of 1D polynomials", param.degree);
-  print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
+  print_parameter(pcout, "number of dofs per cell", fe->n_dofs_per_cell());
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
 }
 
