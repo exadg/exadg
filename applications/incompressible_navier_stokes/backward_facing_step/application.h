@@ -457,7 +457,6 @@ private:
     PostProcessorDataBFS<dim> pp_data_bfs;
     pp_data_bfs.pp_data = pp_data;
 
-    // line plot data: calculate statistics along lines
 
     pp_data_bfs.turb_ch_data.time_control_data_statistics.time_control_data.is_active = true;
     pp_data_bfs.turb_ch_data.time_control_data_statistics.time_control_data.start_time =
@@ -466,6 +465,17 @@ private:
     pp_data_bfs.turb_ch_data.time_control_data_statistics.time_control_data
       .trigger_every_time_steps = sample_every_timesteps;
     pp_data_bfs.turb_ch_data.time_control_data_statistics
+      .write_preliminary_results_every_nth_time_step = sample_every_timesteps * 10;
+
+
+    // line plot data: calculate statistics along lines
+    pp_data_bfs.line_plot_data.time_control_data_statistics.time_control_data.is_active = true;
+    pp_data_bfs.line_plot_data.time_control_data_statistics.time_control_data.start_time =
+      sample_start_time;
+    pp_data_bfs.line_plot_data.time_control_data_statistics.time_control_data.end_time = end_time;
+    pp_data_bfs.line_plot_data.time_control_data_statistics.time_control_data
+      .trigger_every_time_steps = sample_every_timesteps;
+    pp_data_bfs.line_plot_data.time_control_data_statistics
       .write_preliminary_results_every_nth_time_step = sample_every_timesteps * 10;
     pp_data_bfs.line_plot_data.directory             = this->output_parameters.directory;
 
