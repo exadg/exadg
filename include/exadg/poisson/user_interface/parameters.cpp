@@ -66,13 +66,6 @@ Parameters::check() const
   AssertThrow(solver != Solver::Undefined, dealii::ExcMessage("parameter must be defined."));
   AssertThrow(preconditioner != Preconditioner::Undefined,
               dealii::ExcMessage("parameter must be defined."));
-
-  if(preconditioner == Preconditioner::Multigrid and multigrid_data.use_global_coarsening == true)
-  {
-    AssertThrow(grid.create_coarse_triangulations == true,
-                dealii::ExcMessage(
-                  "This parameter needs to be true for global coarsening multigrid."));
-  }
 }
 
 void

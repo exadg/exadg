@@ -150,8 +150,11 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(dealii::Triangulatio
   else // h-MG is involved working on all mesh levels
   {
     if(data.use_global_coarsening)
-      AssertThrow(coarse_triangulations.size() > 0,
-                  dealii::ExcMessage("coarse_triangulations vector is not build correctly."));
+      AssertThrow(
+        coarse_triangulations.size() > 0,
+        dealii::ExcMessage(
+          "You are using global coarsening multigrid, but the vector coarse_triangulations is empty. "
+          "Most likely, you forgot to set the parameter GridData::create_coarse_triangulations."));
 
     unsigned int const n_h_levels =
       (data.use_global_coarsening ? coarse_triangulations.size() : tria->n_global_levels());
