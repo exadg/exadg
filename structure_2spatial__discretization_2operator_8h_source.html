@@ -447,9 +447,9 @@ $(function() {
 <div class="line"><a id="l00369" name="l00369"></a><span class="lineno">  369</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00370" name="l00370"></a><span class="lineno">  370</span><span class="comment">   * Basic finite element ingredients.</span></div>
 <div class="line"><a id="l00371" name="l00371"></a><span class="lineno">  371</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span>  dealii::FESystem&lt;dim&gt;             fe;</div>
-<div class="line"><a id="l00373" name="l00373"></a><span class="lineno">  373</span>  dealii::DoFHandler&lt;dim&gt;           dof_handler;</div>
-<div class="line"><a id="l00374" name="l00374"></a><span class="lineno">  374</span>  dealii::AffineConstraints&lt;Number&gt; affine_constraints;</div>
+<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span>  std::shared_ptr&lt;dealii::FiniteElement&lt;dim&gt;&gt; fe;</div>
+<div class="line"><a id="l00373" name="l00373"></a><span class="lineno">  373</span>  dealii::DoFHandler&lt;dim&gt;                     dof_handler;</div>
+<div class="line"><a id="l00374" name="l00374"></a><span class="lineno">  374</span>  dealii::AffineConstraints&lt;Number&gt;           affine_constraints;</div>
 <div class="line"><a id="l00375" name="l00375"></a><span class="lineno">  375</span>  <span class="comment">// constraints for mass operator (i.e., do not apply any constraints)</span></div>
 <div class="line"><a id="l00376" name="l00376"></a><span class="lineno">  376</span>  dealii::AffineConstraints&lt;Number&gt; constraints_mass;</div>
 <div class="line"><a id="l00377" name="l00377"></a><span class="lineno">  377</span> </div>
