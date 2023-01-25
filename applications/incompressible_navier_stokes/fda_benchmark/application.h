@@ -461,7 +461,7 @@ private:
     }
 
     dealii::GridTools::collect_periodic_faces(
-      *this->grid->triangulation, 0 + 10, 1 + 10, 2, this->grid_pre->periodic_faces);
+      *this->grid_pre->triangulation, 0 + 10, 1 + 10, 2, this->grid_pre->periodic_faces);
     this->grid_pre->triangulation->add_periodicity(this->grid_pre->periodic_faces);
 
     // perform global refinements
