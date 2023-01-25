@@ -53,6 +53,18 @@ private:
 };
 
 template<int dim>
+ElementType
+get_element_type(dealii::Triangulation<dim> const & tria)
+{
+  if(tria.all_reference_cells_are_simplex())
+    return ElementType::Simplex;
+  else if(tria.all_reference_cells_are_hyper_cube())
+    return ElementType::Hypercube;
+  else
+    AssertThrow(false, dealii::ExcMessage("Invalid parameter element_type."));
+}
+
+template<int dim>
 class Grid
 {
 public:

@@ -22,11 +22,15 @@
 #ifndef INCLUDE_EXADG_OPERATORS_INTERIOR_PENALTY_PARAMETER_H_
 #define INCLUDE_EXADG_OPERATORS_INTERIOR_PENALTY_PARAMETER_H_
 
+// deal.II
 #include <deal.II/base/aligned_vector.h>
 #include <deal.II/base/vectorization.h>
 #include <deal.II/fe/mapping.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
 #include <deal.II/matrix_free/matrix_free.h>
+
+// ExaDG
+#include <exadg/grid/enum_types.h>
 
 namespace ExaDG
 {
@@ -89,16 +93,32 @@ calculate_penalty_parameter(
 }
 
 /*
- *  This function returns the penalty factor of the interior penalty method
- *  for quadrilateral/hexahedral elements for a given polynomial degree of
- *  the shape functions and a specified penalty factor (scaling factor).
+ *  This function returns the penalty factor of the interior penalty method for
+ *  quadrilateral/hexahedral or for triangular/tetrahedral elements for a given
+ *  polynomial degree of the shape functions, a specified penalty factor
+ *  (scaling factor) and the dimension of the problem.
  */
 
-template<typename Number>
+template<int dim, typename Number>
 Number
-get_penalty_factor(unsigned int const degree, Number const factor = 1.0)
+get_penalty_factor(unsigned int const degree, ElementType element_type, Number const factor = 1.0)
 {
-  return factor * (degree + 1.0) * (degree + 1.0);
+  if(element_type == ElementType::Simplex)
+  {
+    // use penalty factor for simplex elements according to K. Shahbazi, An explicit expression for
+    // the penalty parameter of the interior penalty method, Journal of Computational Physics 205,
+    // 401–407, 2005.
+    return factor * (degree + 1.0) * (degree + dim) / dim;
+  }
+  else if(element_type == ElementType::Hypercube)
+  {
+    // use penalty factor for hypercube elements according to K. Hillewaert, Development of the
+    // discontinuous Galerkin method for high-resolution, large scale CFD and acoustics in
+    // industrial geometries, PhD thesis, Univ. de Louvain, 2013.
+    return factor * (degree + 1.0) * (degree + 1.0);
+  }
+  else
+    AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
 }
 
 } // namespace IP
