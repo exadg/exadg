@@ -45,8 +45,8 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -92,7 +92,7 @@ Construct elasticity operator ...
 Continuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  3
-  number of dofs per cell:                   16
+  number of dofs per cell:                   32
   number of dofs (total):                    98
 
 ... done!
@@ -168,8 +168,8 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -215,7 +215,7 @@ Construct elasticity operator ...
 Continuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  3
-  number of dofs per cell:                   16
+  number of dofs per cell:                   32
   number of dofs (total):                    98
 
 ... done!
@@ -291,8 +291,8 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -338,7 +338,7 @@ Construct elasticity operator ...
 Continuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  3
-  number of dofs per cell:                   16
+  number of dofs per cell:                   32
   number of dofs (total):                    98
 
 ... done!
@@ -414,8 +414,8 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -461,7 +461,7 @@ Construct elasticity operator ...
 Continuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  3
-  number of dofs per cell:                   16
+  number of dofs per cell:                   32
   number of dofs (total):                    98
 
 ... done!
@@ -537,8 +537,8 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -584,7 +584,7 @@ Construct elasticity operator ...
 Continuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  3
-  number of dofs per cell:                   16
+  number of dofs per cell:                   32
   number of dofs (total):                    98
 
 ... done!
@@ -660,8 +660,8 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -707,7 +707,7 @@ Construct elasticity operator ...
 Continuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  3
-  number of dofs per cell:                   16
+  number of dofs per cell:                   32
   number of dofs (total):                    98
 
 ... done!
@@ -783,8 +783,8 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -830,7 +830,7 @@ Construct elasticity operator ...
 Continuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  3
-  number of dofs per cell:                   16
+  number of dofs per cell:                   32
   number of dofs (total):                    98
 
 ... done!
@@ -906,8 +906,8 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -953,7 +953,7 @@ Construct elasticity operator ...
 Continuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  3
-  number of dofs per cell:                   16
+  number of dofs per cell:                   32
   number of dofs (total):                    98
 
 ... done!
@@ -1029,8 +1029,8 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -1076,7 +1076,7 @@ Construct elasticity operator ...
 Continuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  3
-  number of dofs per cell:                   16
+  number of dofs per cell:                   32
   number of dofs (total):                    98
 
 ... done!
