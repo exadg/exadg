@@ -329,7 +329,7 @@ public:
       }
 
       // Note that the preconditioner has already been updated
-      solver->solve(dst, src, false);
+      solver->solve(dst, src);
     }
   }
 

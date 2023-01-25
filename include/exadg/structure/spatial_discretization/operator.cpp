@@ -669,7 +669,7 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       accelerat
   }
 
   // invert mass operator to get acceleration
-  mass_solver->solve(acceleration, rhs, false);
+  mass_solver->solve(acceleration, rhs);
 }
 
 template<int dim, typename Number>
@@ -830,7 +830,7 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
   elasticity_operator_linear.set_constrained_values(rhs_mutable, time);
 
   // solve linear system of equations
-  unsigned int const iterations = linear_solver->solve(sol, rhs_mutable, false);
+  unsigned int const iterations = linear_solver->solve(sol, rhs_mutable);
 
   // This step should actually be optional: The constrained degrees of freedom of the
   // rhs vector contain the Dirichlet boundary values and the linear operator contains

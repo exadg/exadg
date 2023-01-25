@@ -256,7 +256,9 @@ OperatorPressureCorrection<dim, Number>::solve_linear_momentum_equation(
   // in this because because this function is only called if the convective term is not considered
   // in the momentum_operator (Stokes eq. or explicit treatment of convective term).
 
-  auto linear_iterations = momentum_linear_solver->solve(solution, rhs, update_preconditioner);
+  momentum_linear_solver->update_preconditioner(update_preconditioner);
+
+  auto linear_iterations = momentum_linear_solver->solve(solution, rhs);
 
   return linear_iterations;
 }

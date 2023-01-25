@@ -543,8 +543,7 @@ OperatorBase<dim, Number, n_components>::apply_inverse_block_diagonal(VectorType
   {
     // Solve elementwise block Jacobi problems iteratively using an elementwise solver vectorized
     // over several elements.
-    bool update_preconditioner = false;
-    elementwise_solver->solve(dst, src, update_preconditioner);
+    elementwise_solver->solve(dst, src);
   }
   else // matrix-based
   {

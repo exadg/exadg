@@ -847,7 +847,9 @@ Operator<dim, Number>::solve(VectorType &       sol,
 {
   update_conv_diff_operator(time, scaling_factor, velocity);
 
-  unsigned int const iterations = iterative_solver->solve(sol, rhs, update_preconditioner);
+  iterative_solver->update_preconditioner(update_preconditioner);
+
+  unsigned int const iterations = iterative_solver->solve(sol, rhs);
 
   return iterations;
 }
