@@ -162,7 +162,7 @@ Operator<dim, Number>::distribute_dofs()
         << std::endl;
 
   print_parameter(pcout, "degree of 1D polynomials", param.degree);
-  print_parameter(pcout, "number of dofs per cell", dealii::Utilities::pow(param.degree + 1, dim));
+  print_parameter(pcout, "number of dofs per cell", fe->n_dofs_per_cell());
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
 }
 
