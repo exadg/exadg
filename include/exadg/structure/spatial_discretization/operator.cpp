@@ -21,6 +21,7 @@
 
 // deal.II
 #include <deal.II/fe/fe_q.h>
+#include <deal.II/fe/fe_simplex_p.h>
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
@@ -29,6 +30,7 @@
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
 #include <exadg/structure/preconditioners/multigrid_preconditioner.h>
 #include <exadg/structure/spatial_discretization/operator.h>
+#include <exadg/utilities/exceptions.h>
 
 namespace ExaDG
 {
@@ -50,7 +52,6 @@ Operator<dim, Number>::Operator(
     material_descriptor(material_descriptor_in),
     param(param_in),
     field(field_in),
-    fe(dealii::FE_Q<dim>(param_in.degree), dim),
     dof_handler(*grid_in->triangulation),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
@@ -114,8 +115,16 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::distribute_dofs()
 {
+  // setup finite element
+  if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+    fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_Q<dim>(param.degree), dim);
+  else if(this->grid->triangulation->all_reference_cells_are_simplex())
+    fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_SimplexP<dim>(param.degree), dim);
+  else
+    AssertThrow(false, ExcNotImplemented());
+
   // enumerate degrees of freedom
-  dof_handler.distribute_dofs(fe);
+  dof_handler.distribute_dofs(*fe);
 
   // affine constraints
   affine_constraints.clear();
@@ -153,7 +162,7 @@ Operator<dim, Number>::distribute_dofs()
         << std::endl;
 
   print_parameter(pcout, "degree of 1D polynomials", param.degree);
-  print_parameter(pcout, "number of dofs per cell", dealii::Utilities::pow(param.degree + 1, dim));
+  print_parameter(pcout, "number of dofs per cell", fe->n_dofs_per_cell());
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
 }
 
@@ -250,7 +259,13 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   }
 
   // dealii::Quadrature
-  matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1), get_quad_name());
+  if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+    matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1), get_quad_name());
+  else if(this->grid->triangulation->all_reference_cells_are_simplex())
+    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(param.degree + 1),
+                                       get_quad_name());
+  else
+    AssertThrow(false, ExcNotImplemented());
 
   // Create a Gauss-Lobatto quadrature rule for DirichletCached boundary conditions.
   // These quadrature points coincide with the nodes of the discretization, so that
@@ -260,6 +275,9 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   // conditions.
   if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
+    AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
+                ExcNotImplemented());
+
     matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree + 1),
                                        get_quad_gauss_lobatto_name());
   }
@@ -273,7 +291,12 @@ Operator<dim, Number>::setup_operators()
   operator_data.dof_index  = get_dof_index();
   operator_data.quad_index = get_quad_index();
   if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
+  {
+    AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
+                ExcNotImplemented());
+
     operator_data.quad_index_gauss_lobatto = get_quad_index_gauss_lobatto();
+  }
   operator_data.bc                  = boundary_descriptor;
   operator_data.material_descriptor = material_descriptor;
   operator_data.n_q_points_1d       = param.degree + 1;

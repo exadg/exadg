@@ -72,10 +72,24 @@ BalancedGranularityPartitionPolicy<dim, spacedim>::partition(
 template<int dim>
 Grid<dim>::Grid(const GridData & data, MPI_Comm const & mpi_comm)
 {
-  if(data.create_coarse_triangulations)
+  if(data.element_type == ElementType::Simplex)
+  {
     mesh_smoothing = dealii::Triangulation<dim>::none;
+
+    // the option limit_level_difference_at_vertices (required for local smoothing multigrid) is not
+    // implemented for simplicial elements.
+  }
+  else if(data.element_type == ElementType::Hypercube)
+  {
+    if(data.create_coarse_triangulations) // global coarsening multigrid
+      mesh_smoothing = dealii::Triangulation<dim>::none;
+    else // required for local smoothing
+      mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
+  }
   else
-    mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
+  {
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
+  }
 
   // triangulation
   if(data.triangulation_type == TriangulationType::Serial)
@@ -154,6 +168,11 @@ Grid<dim>::create_triangulation(
     }
     else if(data.triangulation_type == TriangulationType::Distributed)
     {
+      AssertThrow(
+        triangulation->all_reference_cells_are_hyper_cube(),
+        dealii::ExcMessage(
+          "dealii::parallel::distributed::Triangulation does not support simplicial elements."));
+
       coarse_triangulations =
         dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
           *triangulation,
@@ -248,6 +267,14 @@ Grid<dim>::do_create_triangulation(
   const unsigned int                                        global_refinements,
   const std::vector<unsigned int> &                         vector_local_refinements)
 {
+  if(data.element_type == ElementType::Simplex)
+  {
+    AssertThrow(
+      vector_local_refinements.size() == 0,
+      dealii::ExcMessage(
+        "Currently, dealii triangulations composed of simplicial elements do not allow local refinements."));
+  }
+
   if(data.triangulation_type == TriangulationType::Serial or
      data.triangulation_type == TriangulationType::Distributed)
   {
@@ -293,15 +320,29 @@ Grid<dim>::do_create_triangulation(
 
     unsigned int const group_size = 1;
 
-    typename dealii::TriangulationDescription::Settings triangulation_description_setting;
+    typename dealii::TriangulationDescription::Settings triangulation_description_setting =
+      dealii::TriangulationDescription::default_setting;
 
-    if(data.create_coarse_triangulations)
+    if(data.element_type == ElementType::Simplex)
+    {
       triangulation_description_setting = dealii::TriangulationDescription::default_setting;
-    else
-      triangulation_description_setting =
-        dealii::TriangulationDescription::construct_multigrid_hierarchy;
 
-    // TODO SIMPLEX: this will not work in case of simplex meshes
+      // the option construct_multigrid_hierarchy (required for local smoothing multigrid) is not
+      // implemented for simplicial elements.
+    }
+    else if(data.element_type == ElementType::Hypercube)
+    {
+      if(data.create_coarse_triangulations) // global coarsening multigrid
+        triangulation_description_setting = dealii::TriangulationDescription::default_setting;
+      else // required for local smoothing
+        triangulation_description_setting =
+          dealii::TriangulationDescription::construct_multigrid_hierarchy;
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+    }
+
     auto const description = dealii::TriangulationDescription::Utilities::
       create_description_from_triangulation_in_groups<dim, dim>(serial_grid_generator,
                                                                 serial_grid_partitioner,
