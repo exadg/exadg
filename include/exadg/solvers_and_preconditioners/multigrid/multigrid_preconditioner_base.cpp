@@ -643,7 +643,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_affine_constraints(
   // deal.II to cover all boundaries at once
   dealii::Functions::ZeroFunction<dim, MultigridNumber> zero_function(
     dof_handler.get_fe().n_components());
-  ;
+
   std::map<dealii::types::boundary_id, dealii::Function<dim, MultigridNumber> const *>
     boundary_functions;
   for(auto & it : dirichlet_bc)
