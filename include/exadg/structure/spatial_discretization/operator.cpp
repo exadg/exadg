@@ -433,7 +433,7 @@ Operator<dim, Number>::initialize_preconditioner()
 
       mg_preconditioner->initialize(param.multigrid_data,
                                     &dof_handler.get_triangulation(),
-                                    grid->get_coarse_triangulations(),
+                                    grid->coarse_triangulations,
                                     dof_handler.get_fe(),
                                     grid->mapping,
                                     elasticity_operator_nonlinear,
@@ -466,7 +466,7 @@ Operator<dim, Number>::initialize_preconditioner()
 
       mg_preconditioner->initialize(param.multigrid_data,
                                     &dof_handler.get_triangulation(),
-                                    grid->get_coarse_triangulations(),
+                                    grid->coarse_triangulations,
                                     dof_handler.get_fe(),
                                     grid->mapping,
                                     elasticity_operator_linear,

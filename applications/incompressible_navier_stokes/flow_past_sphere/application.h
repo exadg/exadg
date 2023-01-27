@@ -269,13 +269,17 @@ public:
   void
   create_grid() final
   {
-    auto const lambda_create_coarse_triangulation = [&](dealii::Triangulation<dim, dim> & tria) {
-      create_sphere_grid<dim>(tria, this->param.grid.n_refine_global);
-    };
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> & tria,
+          unsigned int const                global_refinements,
+          std::vector<unsigned int> const & vector_local_refinements) {
+        (void)vector_local_refinements;
+        create_sphere_grid<dim>(tria, global_refinements);
+      };
 
-    this->grid->create_triangulation(this->param.grid,
-                                     lambda_create_coarse_triangulation,
-                                     0 /* no more refinements here */);
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->param.grid,
+                                                              lambda_create_triangulation);
   }
 
   void

@@ -263,77 +263,86 @@ private:
   void
   create_grid() final
   {
-    auto const lambda_create_coarse_triangulation = [&](dealii::Triangulation<dim, dim> & tria) {
-      // left-bottom-front and right-top-back point
-      dealii::Point<dim> p1, p2;
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> & tria,
+          unsigned int const                global_refinements,
+          std::vector<unsigned int> const & vector_local_refinements) {
+        // left-bottom-front and right-top-back point
+        dealii::Point<dim> p1, p2;
 
-      for(unsigned d = 0; d < dim; d++)
-        p1[d] = 0.0;
+        for(unsigned d = 0; d < dim; d++)
+          p1[d] = 0.0;
 
-      p2[0] = this->length;
-      p2[1] = this->height;
-      if(dim == 3)
-        p2[2] = this->width;
+        p2[0] = this->length;
+        p2[1] = this->height;
+        if(dim == 3)
+          p2[2] = this->width;
 
-      std::vector<unsigned int> repetitions(dim);
-      repetitions[0] = this->repetitions0;
-      repetitions[1] = this->repetitions1;
-      if(dim == 3)
-        repetitions[2] = this->repetitions2;
+        std::vector<unsigned int> repetitions(dim);
+        repetitions[0] = this->repetitions0;
+        repetitions[1] = this->repetitions1;
+        if(dim == 3)
+          repetitions[2] = this->repetitions2;
 
-      if(this->param.grid.element_type == ElementType::Hypercube)
-      {
-        dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, p1, p2);
-      }
-      else if(this->param.grid.element_type == ElementType::Simplex)
-      {
-        dealii::Triangulation<dim, dim> tria_hypercube;
-        dealii::GridGenerator::subdivided_hyper_rectangle(tria_hypercube, repetitions, p1, p2);
-
-        dealii::GridGenerator::convert_hypercube_to_simplex_mesh(tria_hypercube, tria);
-      }
-      else
-      {
-        AssertThrow(false, dealii::ExcMessage("Not implemented."));
-      }
-
-      for(auto cell : tria)
-      {
-        for(auto const & face : cell.face_indices())
+        if(this->param.grid.element_type == ElementType::Hypercube)
         {
-          // left face
-          if(std::fabs(cell.face(face)->center()(0) - 0.0) < 1e-8)
-          {
-            cell.face(face)->set_all_boundary_ids(1);
-          }
+          dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, p1, p2);
+        }
+        else if(this->param.grid.element_type == ElementType::Simplex)
+        {
+          dealii::Triangulation<dim, dim> tria_hypercube;
+          dealii::GridGenerator::subdivided_hyper_rectangle(tria_hypercube, repetitions, p1, p2);
 
-          // right face
-          if(std::fabs(cell.face(face)->center()(0) - this->length) < 1e-8)
-          {
-            cell.face(face)->set_all_boundary_ids(2);
-          }
+          dealii::GridGenerator::convert_hypercube_to_simplex_mesh(tria_hypercube, tria);
+        }
+        else
+        {
+          AssertThrow(false, dealii::ExcMessage("Not implemented."));
+        }
 
-          // lower face
-          if(std::fabs(cell.face(face)->center()(1) - 0.0) < 1e-8)
+        for(auto cell : tria)
+        {
+          for(auto const & face : cell.face_indices())
           {
-            cell.face(face)->set_all_boundary_ids(3);
-          }
-
-          // back face
-          if(dim == 3)
-          {
-            if(std::fabs(cell.face(face)->center()(2) - 0.0) < 1e-8)
+            // left face
+            if(std::fabs(cell.face(face)->center()(0) - 0.0) < 1e-8)
             {
-              cell.face(face)->set_all_boundary_ids(4);
+              cell.face(face)->set_all_boundary_ids(1);
+            }
+
+            // right face
+            if(std::fabs(cell.face(face)->center()(0) - this->length) < 1e-8)
+            {
+              cell.face(face)->set_all_boundary_ids(2);
+            }
+
+            // lower face
+            if(std::fabs(cell.face(face)->center()(1) - 0.0) < 1e-8)
+            {
+              cell.face(face)->set_all_boundary_ids(3);
+            }
+
+            // back face
+            if(dim == 3)
+            {
+              if(std::fabs(cell.face(face)->center()(2) - 0.0) < 1e-8)
+              {
+                cell.face(face)->set_all_boundary_ids(4);
+              }
             }
           }
         }
-      }
-    };
 
-    this->grid->create_triangulation(this->param.grid,
-                                     lambda_create_coarse_triangulation,
-                                     this->param.grid.n_refine_global);
+        if(vector_local_refinements.size() > 0)
+          refine_local(tria, vector_local_refinements);
+
+        if(global_refinements > 0)
+          tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->param.grid,
+                                                              lambda_create_triangulation);
   }
 
   void

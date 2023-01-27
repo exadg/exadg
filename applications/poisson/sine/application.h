@@ -195,77 +195,90 @@ private:
   void
   create_grid() final
   {
-    double const length = 1.0;
-    double const left = -length, right = length;
-    // choose a coarse grid with at least 2^dim elements to obtain a non-trivial coarse grid problem
-    unsigned int n_cells_1d =
-      std::max((unsigned int)2, this->param.grid.n_subdivisions_1d_hypercube);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> & tria,
+          unsigned int const                global_refinements,
+          std::vector<unsigned int> const & vector_local_refinements) {
+        double const length = 1.0;
+        double const left = -length, right = length;
+        // choose a coarse grid with at least 2^dim elements to obtain a non-trivial coarse grid
+        // problem
+        unsigned int const n_cells_1d =
+          std::max((unsigned int)2, this->param.grid.n_subdivisions_1d_hypercube);
 
-    auto const lambda_create_coarse_triangulation = [&](dealii::Triangulation<dim, dim> & tria) {
-      if(this->param.grid.element_type == ElementType::Hypercube)
-      {
-        dealii::GridGenerator::subdivided_hyper_cube(tria, n_cells_1d, left, right);
-      }
-      else if(this->param.grid.element_type == ElementType::Simplex)
-      {
-        dealii::GridGenerator::subdivided_hyper_cube_with_simplices(tria, n_cells_1d, left, right);
-      }
-      else
-      {
-        AssertThrow(false, ExcNotImplemented());
-      }
-    };
-
-    this->grid->create_triangulation(this->param.grid,
-                                     lambda_create_coarse_triangulation,
-                                     this->param.grid.n_refine_global);
-
-    if(mesh_type == MeshType::Cartesian)
-    {
-      // do nothing
-    }
-    else if(mesh_type == MeshType::Curvilinear)
-    {
-      double const              deformation = 0.15;
-      unsigned int const        frequency   = 2;
-      DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
-      this->grid->triangulation->set_all_manifold_ids(1);
-      this->grid->triangulation->set_manifold(1, manifold);
-
-      std::vector<bool> vertex_touched(this->grid->triangulation->n_vertices(), false);
-
-      for(auto cell : *this->grid->triangulation)
-      {
-        for(auto const & v : cell.vertex_indices())
+        if(this->param.grid.element_type == ElementType::Hypercube)
         {
-          if(vertex_touched[cell.vertex_index(v)] == false)
+          dealii::GridGenerator::subdivided_hyper_cube(tria, n_cells_1d, left, right);
+        }
+        else if(this->param.grid.element_type == ElementType::Simplex)
+        {
+          dealii::GridGenerator::subdivided_hyper_cube_with_simplices(tria,
+                                                                      n_cells_1d,
+                                                                      left,
+                                                                      right);
+        }
+        else
+        {
+          AssertThrow(false, ExcNotImplemented());
+        }
+
+        if(USE_NEUMANN_BOUNDARY)
+        {
+          for(auto cell : tria)
           {
-            dealii::Point<dim> & vertex          = cell.vertex(v);
-            dealii::Point<dim>   new_point       = manifold.push_forward(vertex);
-            vertex                               = new_point;
-            vertex_touched[cell.vertex_index(v)] = true;
+            for(auto const & f : cell.face_indices())
+            {
+              if(std::fabs(cell.face(f)->center()(0) - right) < 1e-12)
+              {
+                cell.face(f)->set_boundary_id(1);
+              }
+            }
           }
         }
-      }
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("not implemented."));
-    }
 
-    if(USE_NEUMANN_BOUNDARY)
-    {
-      for(auto cell : *this->grid->triangulation)
-      {
-        for(auto const & f : cell.face_indices())
+        if(vector_local_refinements.size() > 0)
+          refine_local(tria, vector_local_refinements);
+
+        if(global_refinements > 0)
+          tria.refine_global(global_refinements);
+
+        if(mesh_type == MeshType::Cartesian)
         {
-          if(std::fabs(cell.face(f)->center()(0) - right) < 1e-12)
+          // do nothing
+        }
+        else if(mesh_type == MeshType::Curvilinear)
+        {
+          double const              deformation = 0.15;
+          unsigned int const        frequency   = 2;
+          DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
+          tria.set_all_manifold_ids(1);
+          tria.set_manifold(1, manifold);
+
+          std::vector<bool> vertex_touched(tria.n_vertices(), false);
+
+          for(auto cell : tria)
           {
-            cell.face(f)->set_boundary_id(1);
+            for(auto const & v : cell.vertex_indices())
+            {
+              if(vertex_touched[cell.vertex_index(v)] == false)
+              {
+                dealii::Point<dim> & vertex          = cell.vertex(v);
+                dealii::Point<dim>   new_point       = manifold.push_forward(vertex);
+                vertex                               = new_point;
+                vertex_touched[cell.vertex_index(v)] = true;
+              }
+            }
           }
         }
-      }
-    }
+        else
+        {
+          AssertThrow(false, dealii::ExcMessage("not implemented."));
+        }
+      };
+
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->param.grid,
+                                                              lambda_create_triangulation);
   }
 
 

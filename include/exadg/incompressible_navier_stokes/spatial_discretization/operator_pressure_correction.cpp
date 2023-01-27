@@ -140,7 +140,7 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
 
     mg_preconditioner->initialize(this->param.multigrid_data_momentum,
                                   &this->get_dof_handler_u().get_triangulation(),
-                                  this->grid->get_coarse_triangulations(),
+                                  this->grid->coarse_triangulations,
                                   this->get_dof_handler_u().get_fe(),
                                   this->get_mapping(),
                                   this->momentum_operator,
