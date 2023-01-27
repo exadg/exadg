@@ -141,16 +141,19 @@ public:
     }
 
     // evaluation of results along lines
-    if(line_plot_calculator_statistics->time_control_statistics.time_control.needs_evaluation(
-         time, time_step_number))
+    if(line_plot_calculator_statistics)
     {
-      line_plot_calculator_statistics->evaluate(velocity, pressure);
-    }
+      if(line_plot_calculator_statistics->time_control_statistics.time_control.needs_evaluation(
+           time, time_step_number))
+      {
+        line_plot_calculator_statistics->evaluate(velocity, pressure);
+      }
 
-    if(line_plot_calculator_statistics->time_control_statistics.write_preliminary_results(
-         time, time_step_number))
-    {
-      line_plot_calculator_statistics->write_output();
+      if(line_plot_calculator_statistics->time_control_statistics.write_preliminary_results(
+           time, time_step_number))
+      {
+        line_plot_calculator_statistics->write_output();
+      }
     }
   }
 
