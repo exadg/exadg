@@ -107,16 +107,19 @@ public:
 
 
     // turbulent channel statistics
-    if(statistics_turb_ch->time_control_statistics.time_control.needs_evaluation(time,
-                                                                                 time_step_number))
+    if(statistics_turb_ch)
     {
-      statistics_turb_ch->evaluate(velocity, Utilities::is_unsteady_timestep(time_step_number));
-    }
+      if(statistics_turb_ch->time_control_statistics.time_control.needs_evaluation(
+           time, time_step_number))
+      {
+        statistics_turb_ch->evaluate(velocity, Utilities::is_unsteady_timestep(time_step_number));
+      }
 
-    if(statistics_turb_ch->time_control_statistics.write_preliminary_results(time,
-                                                                             time_step_number))
-    {
-      statistics_turb_ch->write_output();
+      if(statistics_turb_ch->time_control_statistics.write_preliminary_results(time,
+                                                                               time_step_number))
+      {
+        statistics_turb_ch->write_output();
+      }
     }
 
     // inflow data
@@ -124,16 +127,19 @@ public:
       inflow_data_calculator->calculate(velocity);
 
     // line plot statistics
-    if(line_plot_calculator_statistics->time_control_statistics.time_control.needs_evaluation(
-         time, time_step_number))
+    if(line_plot_calculator_statistics)
     {
-      line_plot_calculator_statistics->evaluate(velocity, pressure);
-    }
+      if(line_plot_calculator_statistics->time_control_statistics.time_control.needs_evaluation(
+           time, time_step_number))
+      {
+        line_plot_calculator_statistics->evaluate(velocity, pressure);
+      }
 
-    if(line_plot_calculator_statistics->time_control_statistics.write_preliminary_results(
-         time, time_step_number))
-    {
-      line_plot_calculator_statistics->write_output();
+      if(line_plot_calculator_statistics->time_control_statistics.write_preliminary_results(
+           time, time_step_number))
+      {
+        line_plot_calculator_statistics->write_output();
+      }
     }
   }
 
