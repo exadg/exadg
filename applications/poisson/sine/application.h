@@ -285,13 +285,17 @@ private:
       // this is a 3D Simplex grid
       std::string input_file("applications/poisson/sine/external_grids/simplex_poisson.e");
 
-      grid_in.read_exodusii(input_file);
+      grid_in.read_exodusii(this->input_parameters.input_grid_file);
     };
 
-
-    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+    if (this->input_parameters.read_external_grid){
+      GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
                                                               this->param.grid,
-                                                              lambda_create_triangulation);
+                                                              lambda_read_external_coarse_grid);}
+    else{
+      GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->param.grid,
+                                                              lambda_create_triangulation);}
   }
 
 
