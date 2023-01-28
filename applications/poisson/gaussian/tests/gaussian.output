@@ -26,8 +26,8 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        3
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -122,8 +122,8 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        3
   Subdivisions hypercube:                    1
   Mapping degree:                            2
@@ -218,8 +218,8 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        3
   Subdivisions hypercube:                    1
   Mapping degree:                            3
@@ -314,8 +314,8 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        3
   Subdivisions hypercube:                    1
   Mapping degree:                            4
@@ -410,8 +410,8 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        3
   Subdivisions hypercube:                    1
   Mapping degree:                            5
@@ -506,8 +506,8 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        3
   Subdivisions hypercube:                    1
   Mapping degree:                            6
@@ -602,8 +602,8 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        3
   Subdivisions hypercube:                    1
   Mapping degree:                            7
@@ -698,8 +698,8 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        3
   Subdivisions hypercube:                    1
   Mapping degree:                            8
@@ -794,8 +794,8 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        3
   Subdivisions hypercube:                    1
   Mapping degree:                            9
@@ -890,8 +890,8 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        3
   Subdivisions hypercube:                    1
   Mapping degree:                            10
@@ -986,8 +986,8 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        3
   Subdivisions hypercube:                    1
   Mapping degree:                            11
@@ -1082,8 +1082,8 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        3
   Subdivisions hypercube:                    1
   Mapping degree:                            12
@@ -1178,8 +1178,8 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        3
   Subdivisions hypercube:                    1
   Mapping degree:                            13
@@ -1274,8 +1274,8 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        3
   Subdivisions hypercube:                    1
   Mapping degree:                            14
@@ -1370,8 +1370,8 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        3
   Subdivisions hypercube:                    1
   Mapping degree:                            15

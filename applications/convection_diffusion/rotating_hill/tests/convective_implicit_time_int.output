@@ -48,8 +48,8 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Element type                               Hypercube
-  Create coarse triangulations               false
+  Element type:                              Hypercube
+  Create coarse triangulations:              false
   Global refinements:                        3
   Subdivisions hypercube:                    1
   Mapping degree:                            1
