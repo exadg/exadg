@@ -37,7 +37,6 @@
 #include <exadg/poisson/user_interface/field_functions.h>
 #include <exadg/poisson/user_interface/parameters.h>
 #include <exadg/utilities/exceptions.h>
-#include <exadg/utilities/input_parameters.h>
 #include <exadg/utilities/output_parameters.h>
 #include <exadg/utilities/resolution_parameters.h>
 
@@ -60,7 +59,7 @@ public:
   add_parameters(dealii::ParameterHandler & prm)
   {
     output_parameters.add_parameters(prm);
-    input_parameters.add_parameters(prm);
+    param.grid.add_parameters(prm);
   }
 
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
@@ -194,8 +193,6 @@ protected:
   std::string parameter_file;
 
   OutputParameters output_parameters;
-
-  InputParameters input_parameters;
 
   bool compute_aspect_ratio = false;
 

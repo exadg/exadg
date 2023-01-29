@@ -22,6 +22,9 @@
 #ifndef INCLUDE_EXADG_GRID_GRID_DATA_H_
 #define INCLUDE_EXADG_GRID_GRID_DATA_H_
 
+// deal.II
+#include <deal.II/base/parameter_handler.h>
+
 // ExaDG
 #include <exadg/grid/enum_types.h>
 #include <exadg/utilities/print_functions.h>
@@ -37,7 +40,8 @@ struct GridData
       n_refine_global(0),
       n_subdivisions_1d_hypercube(1),
       create_coarse_triangulations(false),
-      mapping_degree(1)
+      mapping_degree(1),
+      grid_file()
   {
   }
 
@@ -67,6 +71,16 @@ struct GridData
     print_parameter(pcout, "Mapping degree", mapping_degree);
   }
 
+  void
+  add_parameters(dealii::ParameterHandler & prm, std::string const & subsection_name = "Grid")
+  {
+    // clang-format off
+    prm.enter_subsection(subsection_name);
+      prm.add_parameter("GridFile", grid_file, "External input grid file.");
+    prm.leave_subsection();
+    // clang-format on
+  }
+
   TriangulationType triangulation_type;
 
   ElementType element_type;
@@ -84,8 +98,8 @@ struct GridData
 
   unsigned int mapping_degree;
 
-  // TODO: path to a grid file
-  // std::string grid_file;
+  // path to a grid file
+  std::string grid_file;
 };
 
 } // namespace ExaDG

@@ -277,15 +277,17 @@ private:
         }
       };
 
+
     auto const lambda_read_external_coarse_grid = [&](dealii::Triangulation<dim, dim> & tria) {
+      AssertThrow(!this->param.grid.grid_file.empty(),
+                  dealii::ExcMessage(
+                    "You are trying to read a grid file, but the the string is empty."));
+
       dealii::GridIn<dim> grid_in;
 
       grid_in.attach_triangulation(tria);
 
-      // this is a 3D Simplex grid
-      std::string input_file("applications/poisson/sine/external_grids/simplex_poisson.e");
-
-      grid_in.read_exodusii(this->input_parameters.input_grid_file);
+      grid_in.read_exodusii(this->param.grid.grid_file);
     };
 
     if (this->input_parameters.read_external_grid){
@@ -338,6 +340,8 @@ private:
 
     return pp;
   }
+
+  bool const read_external_grid = false;
 
   bool const use_simplex_mesh = false;
 
