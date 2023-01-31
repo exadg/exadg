@@ -287,7 +287,21 @@ private:
 
       grid_in.attach_triangulation(tria);
 
-      grid_in.read_exodusii(this->param.grid.grid_file);
+      std::string extension =
+        this->param.grid.grid_file.substr(this->param.grid.grid_file.find_last_of('.') + 1);
+
+      AssertThrow(!extension.empty(), dealii::ExcMessage("File extension was empty!"));
+
+      typename dealii::GridIn<dim>::Format format;
+      if(extension == "e" || extension == "exo")
+        format = dealii::GridIn<dim>::Format::exodusii;
+      else
+        format = grid_in.parse_format(extension);
+
+      // TODO: check if the exodusIIData is needed
+      // typename dealii::GridIn<dim>::ExodusIIData exodusIIData;
+
+      grid_in.read(this->param.grid.grid_file, format);
     };
 
     if (this->input_parameters.read_external_grid){
