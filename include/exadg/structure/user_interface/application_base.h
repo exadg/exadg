@@ -28,6 +28,7 @@
 
 // ExaDG
 #include <exadg/grid/grid.h>
+#include <exadg/grid/grid_utilities.h>
 #include <exadg/structure/material/library/st_venant_kirchhoff.h>
 #include <exadg/structure/postprocessor/postprocessor.h>
 #include <exadg/structure/user_interface/boundary_descriptor.h>

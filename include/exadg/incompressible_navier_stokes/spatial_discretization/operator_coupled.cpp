@@ -474,7 +474,7 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
 
   mg_preconditioner->initialize(this->param.multigrid_data_velocity_block,
                                 &this->get_dof_handler_u().get_triangulation(),
-                                this->grid->get_coarse_triangulations(),
+                                this->grid->coarse_triangulations,
                                 this->get_dof_handler_u().get_fe(),
                                 this->get_mapping(),
                                 this->momentum_operator,
@@ -601,7 +601,7 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complement()
   auto & dof_handler = this->get_dof_handler_p();
   mg_preconditioner->initialize(mg_data,
                                 &dof_handler.get_triangulation(),
-                                this->grid->get_coarse_triangulations(),
+                                this->grid->coarse_triangulations,
                                 dof_handler.get_fe(),
                                 this->get_mapping(),
                                 laplace_operator_data,

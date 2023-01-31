@@ -23,7 +23,8 @@
 #define INCLUDE_EXADG_GRID_GRID_H_
 
 // deal.II
-#include <deal.II/distributed/repartitioning_policy_tools.h>
+#include <deal.II/distributed/fully_distributed_tria.h>
+#include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
 
 // ExaDG
@@ -31,39 +32,29 @@
 
 namespace ExaDG
 {
-/**
- * A class to use for the deal.II coarsening functionality, where we try to
- * balance the mesh coarsening with a minimum granularity and the number of
- * partitions on coarser levels.
- */
-template<int dim, int spacedim = dim>
-class BalancedGranularityPartitionPolicy
-  : public dealii::RepartitioningPolicyTools::Base<dim, spacedim>
-{
-public:
-  BalancedGranularityPartitionPolicy(unsigned int const n_mpi_processes);
-
-  virtual ~BalancedGranularityPartitionPolicy(){};
-
-  virtual dealii::LinearAlgebra::distributed::Vector<double>
-  partition(dealii::Triangulation<dim, spacedim> const & tria_coarse_in) const override;
-
-private:
-  mutable std::vector<unsigned int> n_mpi_processes_per_level;
-};
-
 template<int dim>
 ElementType
 get_element_type(dealii::Triangulation<dim> const & tria)
 {
   if(tria.all_reference_cells_are_simplex())
+  {
     return ElementType::Simplex;
+  }
   else if(tria.all_reference_cells_are_hyper_cube())
+  {
     return ElementType::Hypercube;
+  }
   else
+  {
     AssertThrow(false, dealii::ExcMessage("Invalid parameter element_type."));
+    return ElementType::Hypercube;
+  }
 }
 
+/**
+ * A struct of dealii data structures occuring in close proximity to each other so that it makes
+ * sense to group them together to keep interfaces lean.
+ */
 template<int dim>
 class Grid
 {
@@ -76,22 +67,6 @@ public:
    * Constructor.
    */
   Grid(GridData const & data, MPI_Comm const & mpi_comm);
-
-  void
-  create_triangulation(
-    GridData const &                                          data,
-    std::function<void(dealii::Triangulation<dim> &)> const & create_coarse_triangulation,
-    unsigned int const                                        global_refinements,
-    std::vector<unsigned int> const & vector_local_refinements = std::vector<unsigned int>());
-
-  std::shared_ptr<dealii::Triangulation<dim> const>
-  get_triangulation() const;
-
-  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const &
-  get_coarse_triangulations() const;
-
-  std::shared_ptr<dealii::Mapping<dim> const>
-  get_mapping() const;
 
   /**
    * dealii::Triangulation::MeshSmoothing
@@ -117,15 +92,6 @@ public:
    * dealii::Mapping.
    */
   std::shared_ptr<dealii::Mapping<dim>> mapping;
-
-private:
-  void
-  do_create_triangulation(
-    std::shared_ptr<dealii::Triangulation<dim>>               tria,
-    GridData const &                                          data,
-    std::function<void(dealii::Triangulation<dim> &)> const & create_triangulation,
-    unsigned int const                                        global_refinements,
-    std::vector<unsigned int> const &                         vector_local_refinements);
 };
 
 } // namespace ExaDG

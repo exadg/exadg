@@ -470,7 +470,7 @@ Operator<dim, Number>::initialize_preconditioner()
 
     mg_preconditioner->initialize(mg_data,
                                   &dof_handler.get_triangulation(),
-                                  grid->get_coarse_triangulations(),
+                                  grid->coarse_triangulations,
                                   dof_handler.get_fe(),
                                   get_dynamic_mapping<dim, Number>(grid, grid_motion),
                                   combined_operator,

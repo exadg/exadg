@@ -1261,7 +1261,7 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
 
   mg_preconditioner->initialize(mg_data,
                                 &dof_handler_u_scalar.get_triangulation(),
-                                grid->get_coarse_triangulations(),
+                                grid->coarse_triangulations,
                                 dof_handler_u_scalar.get_fe(),
                                 get_dynamic_mapping<dim, Number>(grid, grid_motion),
                                 laplace_operator.get_data(),
@@ -1607,7 +1607,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       auto const & dof_handler = this->get_dof_handler_u();
       mg_preconditioner->initialize(this->param.multigrid_data_projection,
                                     &dof_handler.get_triangulation(),
-                                    grid->get_coarse_triangulations(),
+                                    grid->coarse_triangulations,
                                     dof_handler.get_fe(),
                                     this->get_mapping(),
                                     *this->projection_operator,
