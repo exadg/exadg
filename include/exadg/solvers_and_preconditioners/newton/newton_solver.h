@@ -131,9 +131,6 @@ public:
                   "Newton solver failed to solve nonlinear problem to given tolerance. "
                   "Maximum number of iterations exceeded!"));
 
-    // update linear operator and preconditioner once converged
-    // TODO: we currently re-solve the linear problem, which is actually un-necessary work
-    // given that we only want to update the operator/preconditioner
     if(update.do_update and update.update_once_converged)
     {
       // update linear operator (set linearization point)
