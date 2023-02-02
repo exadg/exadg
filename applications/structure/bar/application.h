@@ -300,6 +300,21 @@ private:
           AssertThrow(false, dealii::ExcMessage("Not implemented."));
         }
 
+        /*
+         * illustration of 2d geometry / boundary ids:
+         *
+         *                  bid = 0
+         *      ________________________________
+         *     |                                |
+         *     | bid = 1                        | bid = 2
+         *     |________________________________|
+         *
+         *                  bid = 3
+         *
+         * in the 3d case: face at z = 0 has bid = 4, the other face has bid = 0 (as the top face in
+         * the figure above).
+         *
+         */
         for(auto cell : tria)
         {
           for(auto const & face : cell.face_indices())
@@ -356,27 +371,25 @@ private:
       pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // left face
+    std::vector<bool> mask_left = {true, clamp_at_left_boundary};
+    if(dim == 3)
     {
-      std::vector<bool> mask = {true, false};
-      if(dim == 3)
-      {
-        mask.resize(3);
-        mask[2] = false;
-      }
-      this->boundary_descriptor->dirichlet_bc.insert(
-        pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
-      this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, mask));
+      mask_left.resize(3);
+      mask_left[2] = clamp_at_left_boundary;
     }
+    this->boundary_descriptor->dirichlet_bc.insert(
+      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, mask_left));
+
+    // right face: Dirichlet or Neumann BC
 
     bool quasistatic_solver = false;
     if(this->param.problem_type == ProblemType::QuasiStatic)
       quasistatic_solver = true;
 
-    // right face
     if(boundary_type == "Dirichlet")
     {
-      bool const        clamp_at_right_boundary = false;
-      std::vector<bool> mask_right              = {true, clamp_at_right_boundary};
+      std::vector<bool> mask_right = {true, clamp_at_right_boundary};
       if(dim == 3)
       {
         mask_right.resize(3);
@@ -387,57 +400,31 @@ private:
       this->boundary_descriptor->dirichlet_bc.insert(
         pair(2, new DisplacementDBC<dim>(displacement, quasistatic_solver, unsteady, end_time)));
       this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(2, mask_right));
-
-      if(dim == 2)
-      {
-        if(mask_right[1] == false)
-        {
-          this->boundary_descriptor->dirichlet_bc.insert(
-            pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
-          std::vector<bool> mask_y = {false, true};
-          this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(3, mask_y));
-        }
-        else
-        {
-          this->boundary_descriptor->neumann_bc.insert(
-            pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
-        }
-      }
-
-      if(dim == 3)
-      {
-        if(mask_right[1] == false)
-        {
-          this->boundary_descriptor->dirichlet_bc.insert(
-            pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
-          std::vector<bool> mask_y = {false, true, false};
-          this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(3, mask_y));
-        }
-        else
-        {
-          this->boundary_descriptor->neumann_bc.insert(
-            pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
-        }
-
-        if(mask_right[2] == false)
-        {
-          this->boundary_descriptor->dirichlet_bc.insert(
-            pair(4, new dealii::Functions::ZeroFunction<dim>(dim)));
-          std::vector<bool> mask_z = {false, false, true};
-          this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(4, mask_z));
-        }
-        else
-        {
-          this->boundary_descriptor->neumann_bc.insert(
-            pair(4, new dealii::Functions::ZeroFunction<dim>(dim)));
-        }
-      }
     }
     else if(boundary_type == "Neumann")
     {
       this->boundary_descriptor->neumann_bc.insert(
         pair(2, new AreaForce<dim>(area_force, quasistatic_solver)));
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
+    }
 
+    // lower/upper face (3d: front/back face)
+    if(clamp_at_left_boundary or clamp_at_right_boundary)
+    {
+      this->boundary_descriptor->neumann_bc.insert(
+        pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
+
+      if(dim == 3)
+      {
+        this->boundary_descriptor->neumann_bc.insert(
+          pair(4, new dealii::Functions::ZeroFunction<dim>(dim)));
+      }
+    }
+    else // we need to apply additional boundary conditions to suppress rigid body motion
+    {
       if(dim == 2)
       {
         this->boundary_descriptor->dirichlet_bc.insert(
@@ -457,10 +444,6 @@ private:
         std::vector<bool> mask_z = {false, false, true};
         this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(4, mask_z));
       }
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("not implemented."));
     }
   }
 
@@ -536,6 +519,9 @@ private:
   bool const use_simplex_mesh = false;
 
   bool use_volume_force = true;
+
+  bool const clamp_at_right_boundary = false;
+  bool const clamp_at_left_boundary  = false;
 
   double volume_force = 1.0;
 
