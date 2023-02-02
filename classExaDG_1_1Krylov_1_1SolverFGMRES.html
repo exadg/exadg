@@ -94,14 +94,19 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:affc056d367d960126d82cc218aabf699"><td class="memItemLeft" align="right" valign="top"><a id="affc056d367d960126d82cc218aabf699" name="affc056d367d960126d82cc218aabf699"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>SolverFGMRES</b> (Operator const &amp;underlying_operator_in, Preconditioner &amp;preconditioner_in, <a class="el" href="structExaDG_1_1Krylov_1_1SolverDataFGMRES.html">SolverDataFGMRES</a> const &amp;solver_data_in)</td></tr>
 <tr class="separator:affc056d367d960126d82cc218aabf699"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a59207d656f86a6614ebdcbb98704d21d"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Krylov_1_1SolverFGMRES.html#a59207d656f86a6614ebdcbb98704d21d">solve</a> (VectorType &amp;dst, VectorType const &amp;rhs, bool const update_preconditioner) const override</td></tr>
-<tr class="separator:a59207d656f86a6614ebdcbb98704d21d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a559f4cea0cf3dbf5b89ce13b88f9a902"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Krylov_1_1SolverFGMRES.html#a559f4cea0cf3dbf5b89ce13b88f9a902">update_preconditioner</a> (bool const update_preconditioner) const override</td></tr>
+<tr class="separator:a559f4cea0cf3dbf5b89ce13b88f9a902"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab8d39afa5b128522316802cb969ccfa1"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Krylov_1_1SolverFGMRES.html#ab8d39afa5b128522316802cb969ccfa1">solve</a> (VectorType &amp;dst, VectorType const &amp;rhs) const override</td></tr>
+<tr class="separator:ab8d39afa5b128522316802cb969ccfa1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ace121b5382df25d60db558f3f7de460a"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Krylov_1_1SolverFGMRES.html#ace121b5382df25d60db558f3f7de460a">get_timings</a> () const override</td></tr>
 <tr class="separator:ace121b5382df25d60db558f3f7de460a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1Krylov_1_1SolverBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1Krylov_1_1SolverBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1Krylov_1_1SolverBase.html">ExaDG::Krylov::SolverBase&lt; VectorType &gt;</a></td></tr>
-<tr class="memitem:a52650173d812add1347b2c14285a6b5b inherit pub_methods_classExaDG_1_1Krylov_1_1SolverBase"><td class="memItemLeft" align="right" valign="top"><a id="a52650173d812add1347b2c14285a6b5b" name="a52650173d812add1347b2c14285a6b5b"></a>
-virtual unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve</b> (VectorType &amp;dst, VectorType const &amp;rhs, bool const update_preconditioner) const =0</td></tr>
-<tr class="separator:a52650173d812add1347b2c14285a6b5b inherit pub_methods_classExaDG_1_1Krylov_1_1SolverBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ada0ff98445076cfbc31457dadfdcbbf5 inherit pub_methods_classExaDG_1_1Krylov_1_1SolverBase"><td class="memItemLeft" align="right" valign="top"><a id="ada0ff98445076cfbc31457dadfdcbbf5" name="ada0ff98445076cfbc31457dadfdcbbf5"></a>
+virtual unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve</b> (VectorType &amp;dst, VectorType const &amp;rhs) const =0</td></tr>
+<tr class="separator:ada0ff98445076cfbc31457dadfdcbbf5 inherit pub_methods_classExaDG_1_1Krylov_1_1SolverBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aac78604849fab7ae71bb1e2caf51d2f6 inherit pub_methods_classExaDG_1_1Krylov_1_1SolverBase"><td class="memItemLeft" align="right" valign="top"><a id="aac78604849fab7ae71bb1e2caf51d2f6" name="aac78604849fab7ae71bb1e2caf51d2f6"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update_preconditioner</b> (bool const update_preconditioner) const =0</td></tr>
+<tr class="separator:aac78604849fab7ae71bb1e2caf51d2f6 inherit pub_methods_classExaDG_1_1Krylov_1_1SolverBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6410b1ff58b8f88c51003623615e987c inherit pub_methods_classExaDG_1_1Krylov_1_1SolverBase"><td class="memTemplParams" colspan="2"><a id="a6410b1ff58b8f88c51003623615e987c" name="a6410b1ff58b8f88c51003623615e987c"></a>
 template&lt;typename Control &gt; </td></tr>
 <tr class="memitem:a6410b1ff58b8f88c51003623615e987c inherit pub_methods_classExaDG_1_1Krylov_1_1SolverBase"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>compute_performance_metrics</b> (Control const &amp;solver_control) const</td></tr>
@@ -163,8 +168,8 @@ template&lt;typename Operator , typename Preconditioner , typename VectorType &g
 
 </div>
 </div>
-<a id="a59207d656f86a6614ebdcbb98704d21d" name="a59207d656f86a6614ebdcbb98704d21d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a59207d656f86a6614ebdcbb98704d21d">&#9670;&#160;</a></span>solve()</h2>
+<a id="ab8d39afa5b128522316802cb969ccfa1" name="ab8d39afa5b128522316802cb969ccfa1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab8d39afa5b128522316802cb969ccfa1">&#9670;&#160;</a></span>solve()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -184,18 +189,42 @@ template&lt;typename Operator , typename Preconditioner , typename VectorType &g
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">VectorType const &amp;&#160;</td>
-          <td class="paramname"><em>rhs</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool const&#160;</td>
-          <td class="paramname"><em>update_preconditioner</em>&#160;</td>
+          <td class="paramname"><em>rhs</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
           <td>)</td>
           <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1Krylov_1_1SolverBase.html">ExaDG::Krylov::SolverBase&lt; VectorType &gt;</a>.</p>
+
+</div>
+</div>
+<a id="a559f4cea0cf3dbf5b89ce13b88f9a902" name="a559f4cea0cf3dbf5b89ce13b88f9a902"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a559f4cea0cf3dbf5b89ce13b88f9a902">&#9670;&#160;</a></span>update_preconditioner()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Operator , typename Preconditioner , typename VectorType &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1Krylov_1_1SolverFGMRES.html">ExaDG::Krylov::SolverFGMRES</a>&lt; Operator, Preconditioner, VectorType &gt;::update_preconditioner </td>
+          <td>(</td>
+          <td class="paramtype">bool const&#160;</td>
+          <td class="paramname"><em>update_preconditioner</em></td><td>)</td>
+          <td> const</td>
         </tr>
       </table>
   </td>
