@@ -278,40 +278,103 @@ private:
       };
 
 
-    auto const lambda_read_external_coarse_grid = [&](dealii::Triangulation<dim, dim> & tria) {
-      AssertThrow(!this->param.grid.grid_file.empty(),
-                  dealii::ExcMessage(
-                    "You are trying to read a grid file, but the the string is empty."));
+    auto const lambda_read_external_coarse_grid =
+      [&](dealii::Triangulation<dim, dim> & tria,
+          unsigned int const                global_refinements,
+          std::vector<unsigned int> const & vector_local_refinements) {
+        AssertThrow(!this->param.grid.grid_file.empty(),
+                    dealii::ExcMessage(
+                      "You are trying to read a grid file, but the the string is empty."));
 
-      dealii::GridIn<dim> grid_in;
+        dealii::GridIn<dim> grid_in;
 
-      grid_in.attach_triangulation(tria);
+        grid_in.attach_triangulation(tria);
 
-      std::string extension =
-        this->param.grid.grid_file.substr(this->param.grid.grid_file.find_last_of('.') + 1);
+        std::string extension =
+          this->param.grid.grid_file.substr(this->param.grid.grid_file.find_last_of('.') + 1);
 
-      AssertThrow(!extension.empty(), dealii::ExcMessage("File extension was empty!"));
+        AssertThrow(!extension.empty(), dealii::ExcMessage("File extension was empty!"));
 
-      typename dealii::GridIn<dim>::Format format;
-      if(extension == "e" || extension == "exo")
-        format = dealii::GridIn<dim>::Format::exodusii;
-      else
-        format = grid_in.parse_format(extension);
+        typename dealii::GridIn<dim>::Format format;
+        if(extension == "e" || extension == "exo")
+          format = dealii::GridIn<dim>::Format::exodusii;
+        else
+          format = grid_in.parse_format(extension);
 
-      // TODO: check if the exodusIIData is needed
-      // typename dealii::GridIn<dim>::ExodusIIData exodusIIData;
+        // TODO: check if the exodusIIData is needed
+        // typename dealii::GridIn<dim>::ExodusIIData exodusIIData;
 
-      grid_in.read(this->param.grid.grid_file, format);
-    };
+        grid_in.read(this->param.grid.grid_file, format);
 
-    if (this->input_parameters.read_external_grid){
+        double const length = 1.0;
+        double const left = -length, right = length;
+
+        if(USE_NEUMANN_BOUNDARY)
+        {
+          for(auto cell : tria)
+          {
+            for(auto const & f : cell.face_indices())
+            {
+              if(std::fabs(cell.face(f)->center()(0) - right) < 1e-12)
+              {
+                cell.face(f)->set_boundary_id(1);
+              }
+            }
+          }
+        }
+
+        if(vector_local_refinements.size() > 0)
+          refine_local(tria, vector_local_refinements);
+
+        if(global_refinements > 0)
+          tria.refine_global(global_refinements);
+
+        if(mesh_type == MeshType::Cartesian)
+        {
+          // do nothing
+        }
+        else if(mesh_type == MeshType::Curvilinear)
+        {
+          double const              deformation = 0.15;
+          unsigned int const        frequency   = 2;
+          DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
+          tria.set_all_manifold_ids(1);
+          tria.set_manifold(1, manifold);
+
+          std::vector<bool> vertex_touched(tria.n_vertices(), false);
+
+          for(auto cell : tria)
+          {
+            for(auto const & v : cell.vertex_indices())
+            {
+              if(vertex_touched[cell.vertex_index(v)] == false)
+              {
+                dealii::Point<dim> & vertex          = cell.vertex(v);
+                dealii::Point<dim>   new_point       = manifold.push_forward(vertex);
+                vertex                               = new_point;
+                vertex_touched[cell.vertex_index(v)] = true;
+              }
+            }
+          }
+        }
+        else
+        {
+          AssertThrow(false, dealii::ExcMessage("not implemented."));
+        }
+      };
+
+    if(read_external_grid)
+    {
       GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
-                                                              this->param.grid,
-                                                              lambda_read_external_coarse_grid);}
-    else{
+                                                                this->param.grid,
+                                                                lambda_read_external_coarse_grid);
+    }
+    else
+    {
       GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
-                                                              this->param.grid,
-                                                              lambda_create_triangulation);}
+                                                                this->param.grid,
+                                                                lambda_create_triangulation);
+    }
   }
 
 
