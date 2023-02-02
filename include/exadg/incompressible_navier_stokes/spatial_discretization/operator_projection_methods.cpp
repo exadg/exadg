@@ -284,8 +284,11 @@ OperatorProjectionMethods<dim, Number>::do_solve_pressure(VectorType &       dst
   //    = std::dynamic_pointer_cast<MultigridPoisson>(preconditioner_pressure_poisson);
   //  unsigned int n_iter = mg_preconditioner->solve(dst,src);
 
+  // update preconditioner
+  this->pressure_poisson_solver->update_preconditioner(update_preconditioner);
+
   // call pressure Poisson solver
-  unsigned int n_iter = this->pressure_poisson_solver->solve(dst, src, update_preconditioner);
+  unsigned int n_iter = this->pressure_poisson_solver->solve(dst, src);
 
   return n_iter;
 }

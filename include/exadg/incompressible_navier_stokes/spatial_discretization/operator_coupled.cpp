@@ -181,7 +181,9 @@ OperatorCoupled<dim, Number>::solve_linear_stokes_problem(BlockVectorType &     
   // Update linear operator
   linear_operator.update(time, scaling_factor_mass);
 
-  return linear_solver->solve(dst, src, update_preconditioner);
+  linear_solver->update_preconditioner(update_preconditioner);
+
+  return linear_solver->solve(dst, src);
 }
 
 template<int dim, typename Number>
@@ -1050,10 +1052,9 @@ OperatorCoupled<dim, Number>::apply_preconditioner_velocity_block(VectorType &  
 
       // iteratively solve momentum equation up to given tolerance
       dst = 0.0;
-      // Note that update of preconditioner is set to false here since the preconditioner has
-      // already been updated in the member function update() if desired.
-      unsigned int const iterations =
-        solver_velocity_block->solve(dst, src, /* update_preconditioner = */ false);
+      // Note that the preconditioner is not updated here since it has
+      // already been updated in the function update_block_preconditioner().
+      unsigned int const iterations = solver_velocity_block->solve(dst, src);
 
       // output
       bool const print_iterations = false;
@@ -1176,9 +1177,9 @@ OperatorCoupled<dim, Number>::apply_inverse_negative_laplace_operator(VectorType
     }
 
     dst = 0.0;
-    // Note that update of preconditioner is set to false here since the preconditioner has
+    // Note that the preconditioner is not updated here since it has
     // already been updated in the function update_block_preconditioner().
-    solver_pressure_block->solve(dst, *pointer_to_src, /* update_preconditioner = */ false);
+    solver_pressure_block->solve(dst, *pointer_to_src);
   }
 }
 

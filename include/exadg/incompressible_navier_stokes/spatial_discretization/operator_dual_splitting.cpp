@@ -754,7 +754,9 @@ OperatorDualSplitting<dim, Number>::solve_viscous(VectorType &       dst,
   // Update operator
   this->momentum_operator.set_scaling_factor_mass_operator(factor);
 
-  unsigned int n_iter = helmholtz_solver->solve(dst, src, update_preconditioner);
+  helmholtz_solver->update_preconditioner(update_preconditioner);
+
+  unsigned int n_iter = helmholtz_solver->solve(dst, src);
 
   return n_iter;
 }

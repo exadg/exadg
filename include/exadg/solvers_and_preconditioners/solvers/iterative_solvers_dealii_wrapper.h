@@ -45,11 +45,14 @@ public:
   }
 
   virtual unsigned int
-  solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const = 0;
+  solve(VectorType & dst, VectorType const & rhs) const = 0;
 
   virtual ~SolverBase()
   {
   }
+
+  virtual void
+  update_preconditioner(bool const update_preconditioner) const = 0;
 
   template<typename Control>
   void
@@ -116,8 +119,17 @@ public:
   {
   }
 
+  void
+  update_preconditioner(bool const update_preconditioner) const override
+  {
+    if(solver_data.use_preconditioner and update_preconditioner)
+    {
+      preconditioner.update();
+    }
+  }
+
   unsigned int
-  solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const override
+  solve(VectorType & dst, VectorType const & rhs) const override
   {
     dealii::Timer timer;
 
@@ -133,11 +145,6 @@ public:
     }
     else
     {
-      if(update_preconditioner == true)
-      {
-        preconditioner.update();
-      }
-
       solver.solve(underlying_operator, dst, rhs, preconditioner);
     }
 
@@ -225,8 +232,17 @@ public:
   {
   }
 
+  void
+  update_preconditioner(bool const update_preconditioner) const override
+  {
+    if(solver_data.use_preconditioner and update_preconditioner)
+    {
+      preconditioner.update();
+    }
+  }
+
   unsigned int
-  solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const override
+  solve(VectorType & dst, VectorType const & rhs) const override
   {
     dealii::Timer timer;
 
@@ -254,11 +270,6 @@ public:
     }
     else
     {
-      if(update_preconditioner == true)
-      {
-        preconditioner.update();
-      }
-
       solver.solve(this->underlying_operator, dst, rhs, this->preconditioner);
     }
 
@@ -326,8 +337,17 @@ public:
   {
   }
 
+  void
+  update_preconditioner(bool const update_preconditioner) const override
+  {
+    if(solver_data.use_preconditioner and update_preconditioner)
+    {
+      preconditioner.update();
+    }
+  }
+
   unsigned int
-  solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const override
+  solve(VectorType & dst, VectorType const & rhs) const override
   {
     dealii::Timer timer;
 
@@ -347,11 +367,6 @@ public:
     }
     else
     {
-      if(update_preconditioner == true)
-      {
-        preconditioner.update();
-      }
-
       solver.solve(underlying_operator, dst, rhs, preconditioner);
     }
 

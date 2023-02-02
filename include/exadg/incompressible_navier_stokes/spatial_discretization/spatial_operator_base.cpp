@@ -1279,7 +1279,7 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
                                                                                    solver_data);
 
   // solve Poisson problem
-  poisson_solver.solve(dst, rhs, /* update preconditioner = */ false);
+  poisson_solver.solve(dst, rhs);
 }
 
 template<int dim, typename Number>
@@ -1310,11 +1310,11 @@ SpatialOperatorBase<dim, Number>::apply_inverse_mass_operator(VectorType &      
     if(&dst == &src)
     {
       temp = src;
-      return mass_solver->solve(dst, temp, false);
+      return mass_solver->solve(dst, temp);
     }
     else
     {
-      return mass_solver->solve(dst, src, false);
+      return mass_solver->solve(dst, src);
     }
   }
   else
@@ -1713,7 +1713,9 @@ SpatialOperatorBase<dim, Number>::solve_projection(VectorType &       dst,
   Assert(projection_solver.get() != 0,
          dealii::ExcMessage("Projection solver has not been initialized."));
 
-  unsigned int n_iter = projection_solver->solve(dst, src, update_preconditioner);
+  projection_solver->update_preconditioner(update_preconditioner);
+
+  unsigned int n_iter = projection_solver->solve(dst, src);
 
   return n_iter;
 }

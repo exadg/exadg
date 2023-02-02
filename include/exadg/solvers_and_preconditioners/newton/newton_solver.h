@@ -75,15 +75,18 @@ public:
       // multiply by -1.0 since the linearized problem is "linear_operator * increment = - residual"
       residual *= -1.0;
 
-      // set linearization point
+      // update linear operator (set linearization point)
       linear_operator.set_solution_linearization(solution);
 
       // determine whether to update the operator/preconditioner of the linearized problem
       bool const update_now =
         update.do_update and (newton_iterations % update.update_every_newton_iter == 0);
 
+      // update the preconditioner
+      linear_solver.update_preconditioner(update_now);
+
       // solve linear problem
-      unsigned int const n_iter_linear = linear_solver.solve(increment, residual, update_now);
+      unsigned int const n_iter_linear = linear_solver.solve(increment, residual);
 
       // damped Newton scheme
       double             omega         = 1.0; // damping factor (begin with 1)
@@ -128,17 +131,12 @@ public:
                   "Newton solver failed to solve nonlinear problem to given tolerance. "
                   "Maximum number of iterations exceeded!"));
 
-    // update linear operator and preconditioner once converged
-    // TODO: we currently re-solve the linear problem, which is actually un-necessary work
-    // given that we only want to update the operator/preconditioner
     if(update.do_update and update.update_once_converged)
     {
-      increment = 0.0;
-      nonlinear_operator.evaluate_residual(residual, solution);
-      residual *= -1.0;
-      // set linearization point
+      // update linear operator (set linearization point)
       linear_operator.set_solution_linearization(solution);
-      linear_solver.solve(increment, residual, true /*update*/);
+      // update preconditioner
+      linear_solver.update_preconditioner(true);
     }
 
     return std::tuple<unsigned int, unsigned int>(newton_iterations, linear_iterations);

@@ -476,8 +476,7 @@ Operator<dim, n_components, Number>::solve(VectorType &       sol,
     laplace_operator.set_constrained_values(rhs_mutable, time);
   }
 
-  unsigned int iterations =
-    iterative_solver->solve(sol, rhs_mutable, /* update_preconditioner = */ false);
+  unsigned int iterations = iterative_solver->solve(sol, rhs_mutable);
 
   // This step should actually be optional: The constrained degrees of freedom of the
   // rhs vector contain the Dirichlet boundary values and the linear operator contains

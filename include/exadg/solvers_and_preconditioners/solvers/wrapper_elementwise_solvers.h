@@ -75,8 +75,16 @@ public:
   {
   }
 
+  void
+  update_preconditioner(bool const update_preconditioner) const override
+  {
+    (void)update_preconditioner;
+    AssertThrow(
+      false, dealii::ExcMessage("Should not arrive here. This function has not been implemented."));
+  }
+
   unsigned int
-  solve(VectorType & dst, VectorType const & src, bool const /* update_preconditioner */) const
+  solve(VectorType & dst, VectorType const & src) const override
   {
     dst = 0;
 
