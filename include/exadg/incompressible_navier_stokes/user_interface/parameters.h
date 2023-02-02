@@ -62,6 +62,9 @@ public:
   bool
   linear_problem_has_to_be_solved() const;
 
+  bool
+  use_global_coarsening() const;
+
   unsigned int
   get_degree_p(unsigned int const degree_u) const;
 
@@ -101,6 +104,28 @@ private:
 
   void
   print_parameters_coupled_solver(dealii::ConditionalOStream const & pcout) const;
+
+  // coupled solver
+  bool
+  use_global_coarsening_velocity_block() const;
+
+  bool
+  use_global_coarsening_pressure_block() const;
+
+
+  // penalty step (coupled solver or projection methods
+  bool
+  use_global_coarsening_penalty_step() const;
+
+  // projection methods
+  bool
+  use_global_coarsening_pressure_step() const;
+
+  bool
+  use_global_coarsening_viscous_step() const;
+
+  bool
+  use_global_coarsening_momentum_step() const;
 
 public:
   /**************************************************************************************/
@@ -170,7 +195,7 @@ public:
   // viscosity only, but for the calculation of the fluid stress for FSI problems)
   double density;
 
-  // Boussinesg term
+  // Boussinesq term
   double thermal_expansion_coefficient;
   double reference_temperature;
 

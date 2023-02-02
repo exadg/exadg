@@ -52,6 +52,9 @@ public:
   check() const;
 
   bool
+  use_global_coarsening() const;
+
+  bool
   linear_system_including_convective_term_has_to_be_solved() const;
 
   bool

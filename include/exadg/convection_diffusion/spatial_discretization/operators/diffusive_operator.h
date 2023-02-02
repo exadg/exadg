@@ -24,7 +24,7 @@
 
 #include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/convection_diffusion/user_interface/parameters.h>
-#include <exadg/grid/grid.h>
+#include <exadg/grid/grid_utilities.h>
 #include <exadg/operators/interior_penalty_parameter.h>
 #include <exadg/operators/operator_base.h>
 
@@ -125,7 +125,7 @@ public:
                    integrator_p.read_cell_data(array_penalty_parameter)) *
           IP::get_penalty_factor<dim, Number>(
             degree,
-            get_element_type(
+            GridUtilities::get_element_type(
               integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
             data.IP_factor);
   }
@@ -136,7 +136,7 @@ public:
     tau = integrator_m.read_cell_data(array_penalty_parameter) *
           IP::get_penalty_factor<dim, Number>(
             degree,
-            get_element_type(
+            GridUtilities::get_element_type(
               integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
             data.IP_factor);
   }
@@ -153,7 +153,7 @@ public:
                      integrator_p.read_cell_data(array_penalty_parameter)) *
             IP::get_penalty_factor<dim, Number>(
               degree,
-              get_element_type(
+              GridUtilities::get_element_type(
                 integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
               data.IP_factor);
     }
@@ -162,7 +162,7 @@ public:
       tau = integrator_m.read_cell_data(array_penalty_parameter) *
             IP::get_penalty_factor<dim, Number>(
               degree,
-              get_element_type(
+              GridUtilities::get_element_type(
                 integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
               data.IP_factor);
     }

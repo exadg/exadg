@@ -36,7 +36,6 @@ struct GridData
       partitioning_type(PartitioningType::Metis),
       n_refine_global(0),
       n_subdivisions_1d_hypercube(1),
-      create_coarse_triangulations(false),
       mapping_degree(1),
       file_name()
   {
@@ -54,12 +53,12 @@ struct GridData
 
     print_parameter(pcout, "Element type", enum_to_string(element_type));
 
-    print_parameter(pcout, "Create coarse triangulations", create_coarse_triangulations);
-
     if(triangulation_type == TriangulationType::FullyDistributed)
+    {
       print_parameter(pcout,
                       "Partitioning type (fully-distributed)",
                       enum_to_string(partitioning_type));
+    }
 
     print_parameter(pcout, "Global refinements", n_refine_global);
 
@@ -78,10 +77,6 @@ struct GridData
 
   // only relevant for hypercube geometry/mesh
   unsigned int n_subdivisions_1d_hypercube;
-
-  // this parameter needs to be activated to use global-coarsening multigrid
-  // (which needs all the coarser triangulations)
-  bool create_coarse_triangulations;
 
   unsigned int mapping_degree;
 

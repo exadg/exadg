@@ -68,6 +68,16 @@ Parameters::check() const
               dealii::ExcMessage("parameter must be defined."));
 }
 
+bool
+Parameters::use_global_coarsening() const
+{
+  if(preconditioner == Preconditioner::Multigrid and multigrid_data.use_global_coarsening and
+     multigrid_data.involves_h_transfer())
+    return true;
+  else
+    return false;
+}
+
 void
 Parameters::print(dealii::ConditionalOStream const & pcout, std::string const & name) const
 {

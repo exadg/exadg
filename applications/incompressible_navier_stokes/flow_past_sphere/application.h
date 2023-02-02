@@ -138,8 +138,6 @@ public:
     this->param.grid.triangulation_type = TriangulationType::Distributed;
     this->param.grid.mapping_degree     = this->param.degree_u;
     this->param.degree_p                = DegreePressure::MixedOrder;
-    // we need to create coarse triangulations since we use global coarsening multigrid
-    this->param.grid.create_coarse_triangulations = true;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -279,6 +277,7 @@ public:
 
     GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
                                                               this->param.grid,
+                                                              this->param.use_global_coarsening(),
                                                               lambda_create_triangulation);
   }
 

@@ -339,6 +339,7 @@ private:
 
     GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
                                                               this->param.grid,
+                                                              this->param.use_global_coarsening(),
                                                               lambda_create_triangulation);
   }
 

@@ -42,6 +42,9 @@ public:
   void
   check() const;
 
+  bool
+  use_global_coarsening() const;
+
   void
   print(dealii::ConditionalOStream const & pcout, std::string const & name) const;
 

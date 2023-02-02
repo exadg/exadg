@@ -153,17 +153,15 @@ private:
     this->param.grid.file_name = this->grid_parameters.file_name;
     if(use_simplex_mesh)
     {
-      this->param.grid.element_type                 = ElementType::Simplex;
-      this->param.grid.triangulation_type           = TriangulationType::FullyDistributed;
-      this->param.grid.create_coarse_triangulations = true;
-      this->param.grid.mapping_degree               = 2;
+      this->param.grid.element_type       = ElementType::Simplex;
+      this->param.grid.triangulation_type = TriangulationType::FullyDistributed;
+      this->param.grid.mapping_degree     = 2;
     }
     else
     {
-      this->param.grid.element_type                 = ElementType::Hypercube;
-      this->param.grid.triangulation_type           = TriangulationType::Distributed;
-      this->param.grid.create_coarse_triangulations = false;
-      this->param.grid.mapping_degree               = 3;
+      this->param.grid.element_type       = ElementType::Hypercube;
+      this->param.grid.triangulation_type = TriangulationType::Distributed;
+      this->param.grid.mapping_degree     = 3;
     }
 
     this->param.spatial_discretization = SpatialDiscretization::DG;
@@ -286,6 +284,7 @@ private:
 
     GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
                                                               this->param.grid,
+                                                              this->param.use_global_coarsening(),
                                                               lambda_create_triangulation);
   }
 
