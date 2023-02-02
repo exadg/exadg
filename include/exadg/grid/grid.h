@@ -52,7 +52,7 @@ get_element_type(dealii::Triangulation<dim> const & tria)
 }
 
 /**
- * A struct of dealii data structures occuring in close proximity to each other so that it makes
+ * A struct of dealii data structures occurring in close proximity to each other so that it makes
  * sense to group them together to keep interfaces lean.
  */
 template<int dim>
