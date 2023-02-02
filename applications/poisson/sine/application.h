@@ -208,7 +208,7 @@ private:
 
         if(read_external_grid)
         {
-          GridUtilities::read_external_triangulation<dim>(tria, this->param.grid.file_name);
+          GridUtilities::read_external_triangulation<dim>(tria, this->param.grid);
         }
         else
         {

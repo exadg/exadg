@@ -252,9 +252,9 @@ create_fine_and_coarse_triangulations(
  */
 template<int dim>
 inline void
-read_external_triangulation(dealii::Triangulation<dim, dim> & tria, std::string file_in)
+read_external_triangulation(dealii::Triangulation<dim, dim> & tria, GridData const & data)
 {
-  AssertThrow(!file_in.empty(),
+  AssertThrow(!data.file_name.empty(),
               dealii::ExcMessage(
                 "You are trying to read a grid file, but the string, which is supposed to contain"
                 " the file, is empty. Most likely, you forgot to specify the file location in the"
@@ -266,13 +266,12 @@ read_external_triangulation(dealii::Triangulation<dim, dim> & tria, std::string 
   grid_in.attach_triangulation(tria);
 
   // find the file extension from the given file_in string
-  std::string extension = file_in.substr(file_in.find_last_of('.') + 1);
+  std::string extension = data.file_name.substr(data.file_name.find_last_of('.') + 1);
 
   AssertThrow(!extension.empty(),
-              dealii::ExcMessage("You are trying to read a grid file, but the"
-                                 " file extension is empty. Check the input"
-                                 " file to make sure that the file extension"
-                                 " is correctly defined after a full stop."));
+              dealii::ExcMessage("You are trying to read a grid file, but the file extension is"
+                                 " empty. Check the input file to make sure that the file"
+                                 " extension is correctly defined after a full stop."));
 
   // decide the file format
   typename dealii::GridIn<dim>::Format format;
@@ -284,7 +283,14 @@ read_external_triangulation(dealii::Triangulation<dim, dim> & tria, std::string 
   // TODO: check if the exodusIIData is needed
   // typename dealii::GridIn<dim>::ExodusIIData exodusIIData;
 
-  grid_in.read(file_in, format);
+  grid_in.read(data.file_name, format);
+
+  AssertThrow(get_element_type(tria) == data.element_type,
+              dealii::ExcMessage("You are trying to read a grid file, but the element type of the"
+                                 " external grid file and the element type specified in the"
+                                 " application don't match. Most likely, you forgot to change the"
+                                 " element_type parameter of GridData to the desired element"
+                                 " type in the application."));
 }
 
 } // namespace GridUtilities
