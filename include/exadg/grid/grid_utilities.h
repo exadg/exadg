@@ -9,6 +9,7 @@
 #define INCLUDE_EXADG_GRID_GRID_UTILITIES_H_
 
 // deal.II
+#include <deal.II/grid/grid_in.h>
 #include <deal.II/multigrid/mg_transfer_global_coarsening.h>
 
 // ExaDG
@@ -243,6 +244,47 @@ create_fine_and_coarse_triangulations(
                                                 lambda_create_triangulation,
                                                 vector_local_refinements);
   }
+}
+
+/**
+ * This functions reads an external triangulation defined in the file "file_in" and stores it in
+ * the triangulation "tria".
+ */
+template<int dim>
+inline void
+read_external_triangulation(dealii::Triangulation<dim, dim> & tria, std::string file_in)
+{
+  AssertThrow(!file_in.empty(),
+              dealii::ExcMessage(
+                "You are trying to read a grid file, but the string, which is supposed to contain"
+                " the file, is empty. Most likely, you forgot to specify the file location in the"
+                " input file. The input file of the Poisson/sine application can be an example"
+                " showing how to set it correctly."));
+
+  dealii::GridIn<dim> grid_in;
+
+  grid_in.attach_triangulation(tria);
+
+  // find the file extension from the given file_in string
+  std::string extension = file_in.substr(file_in.find_last_of('.') + 1);
+
+  AssertThrow(!extension.empty(),
+              dealii::ExcMessage("You are trying to read a grid file, but the"
+                                 " file extension is empty. Check the input"
+                                 " file to make sure that the file extension"
+                                 " is correctly defined after a full stop."));
+
+  // decide the file format
+  typename dealii::GridIn<dim>::Format format;
+  if(extension == "e" || extension == "exo")
+    format = dealii::GridIn<dim>::Format::exodusii;
+  else
+    format = grid_in.parse_format(extension);
+
+  // TODO: check if the exodusIIData is needed
+  // typename dealii::GridIn<dim>::ExodusIIData exodusIIData;
+
+  grid_in.read(file_in, format);
 }
 
 } // namespace GridUtilities

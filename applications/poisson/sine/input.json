@@ -22,6 +22,6 @@
         "WriteOutput": "false"
     },
     "Grid": {
-        "GridFile": "applications/poisson/sine/external_grids/hypercube.e"
+        "FileName": "applications/poisson/sine/external_grids/hypercube.e"
     }
 }
