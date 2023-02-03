@@ -34,6 +34,7 @@ struct GridData
     : triangulation_type(TriangulationType::Distributed),
       element_type(ElementType::Hypercube),
       partitioning_type(PartitioningType::Metis),
+      multigrid(MultigridVariant::LocalSmoothing),
       n_refine_global(0),
       n_subdivisions_1d_hypercube(1),
       mapping_degree(1),
@@ -60,6 +61,8 @@ struct GridData
                       enum_to_string(partitioning_type));
     }
 
+    print_parameter(pcout, "Multigrid variant", enum_to_string(multigrid));
+
     print_parameter(pcout, "Global refinements", n_refine_global);
 
     print_parameter(pcout, "Subdivisions hypercube", n_subdivisions_1d_hypercube);
@@ -71,7 +74,10 @@ struct GridData
 
   ElementType element_type;
 
+  // only relevant for TriangulationType::FullyDistributed
   PartitioningType partitioning_type;
+
+  MultigridVariant multigrid;
 
   unsigned int n_refine_global;
 

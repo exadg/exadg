@@ -104,7 +104,7 @@ public:
     param.print(pcout, "List of parameters for structure:");
 
     // grid
-    grid = std::make_shared<Grid<dim>>(param.grid, param.use_global_coarsening(), mpi_comm);
+    grid = std::make_shared<Grid<dim>>(param.grid, param.involves_h_multigrid(), mpi_comm);
     create_grid();
     print_grid_info(pcout, *grid);
 
@@ -249,7 +249,7 @@ public:
                 dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
     // grid
-    grid = std::make_shared<Grid<dim>>(param.grid, param.use_global_coarsening(), mpi_comm);
+    grid = std::make_shared<Grid<dim>>(param.grid, param.involves_h_multigrid(), mpi_comm);
     create_grid();
     print_grid_info(pcout, *grid);
 
@@ -273,9 +273,9 @@ public:
       AssertThrow(ale_poisson_param.right_hand_side == false,
                   dealii::ExcMessage("Parameter does not make sense in context of FSI."));
       AssertThrow(
-        ale_poisson_param.use_global_coarsening() == param.use_global_coarsening(),
+        ale_poisson_param.grid.multigrid == param.grid.multigrid,
         dealii::ExcMessage(
-          "ALE and fluid use the same Grid, requiring the same settings in terms of global-coarsening multigrid."));
+          "ALE and fluid use the same Grid, requiring the same settings in terms of multigrid coarsening."));
 
       ale_poisson_param.print(pcout, "List of parameters for ALE solver (Poisson):");
 
@@ -296,9 +296,9 @@ public:
       AssertThrow(ale_elasticity_param.body_force == false,
                   dealii::ExcMessage("Parameter does not make sense in context of FSI."));
       AssertThrow(
-        ale_elasticity_param.use_global_coarsening() == param.use_global_coarsening(),
+        ale_poisson_param.grid.multigrid == param.grid.multigrid,
         dealii::ExcMessage(
-          "ALE and fluid use the same Grid, requiring the same settings in terms of global-coarsening multigrid."));
+          "ALE and fluid use the same Grid, requiring the same settings in terms of multigrid coarsening."));
 
       ale_elasticity_param.print(pcout, "List of parameters for ALE solver (elasticity):");
 

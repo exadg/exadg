@@ -1260,6 +1260,7 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
     std::dynamic_pointer_cast<MultigridPoisson>(preconditioner);
 
   mg_preconditioner->initialize(mg_data,
+                                param.grid.multigrid,
                                 &dof_handler_u_scalar.get_triangulation(),
                                 grid->coarse_triangulations,
                                 dof_handler_u_scalar.get_fe(),
@@ -1606,6 +1607,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
 
       auto const & dof_handler = this->get_dof_handler_u();
       mg_preconditioner->initialize(this->param.multigrid_data_projection,
+                                    this->param.grid.multigrid,
                                     &dof_handler.get_triangulation(),
                                     grid->coarse_triangulations,
                                     dof_handler.get_fe(),

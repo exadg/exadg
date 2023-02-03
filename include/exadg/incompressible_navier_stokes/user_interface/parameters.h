@@ -63,7 +63,7 @@ public:
   linear_problem_has_to_be_solved() const;
 
   bool
-  use_global_coarsening() const;
+  involves_h_multigrid() const;
 
   unsigned int
   get_degree_p(unsigned int const degree_u) const;
@@ -107,25 +107,25 @@ private:
 
   // coupled solver
   bool
-  use_global_coarsening_velocity_block() const;
+  involves_h_multigrid_velocity_block() const;
 
   bool
-  use_global_coarsening_pressure_block() const;
+  involves_h_multigrid_pressure_block() const;
 
 
   // penalty step (coupled solver or projection methods
   bool
-  use_global_coarsening_penalty_step() const;
+  involves_h_multigrid_penalty_step() const;
 
   // projection methods
   bool
-  use_global_coarsening_pressure_step() const;
+  involves_h_multigrid_pressure_step() const;
 
   bool
-  use_global_coarsening_viscous_step() const;
+  involves_h_multigrid_viscous_step() const;
 
   bool
-  use_global_coarsening_momentum_step() const;
+  involves_h_multigrid_momentum_step() const;
 
 public:
   /**************************************************************************************/

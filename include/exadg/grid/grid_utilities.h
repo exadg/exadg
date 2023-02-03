@@ -60,11 +60,11 @@ get_element_type(dealii::Triangulation<dim> const & tria)
 
 /**
  * Returns the type of dealii mesh smoothing depending on the element type and whether we use
- * global-coarsening vs. local-smoothing multigrid.
+ * local-smoothing multigrid.
  */
 template<int dim>
 typename dealii::Triangulation<dim>::MeshSmoothing
-get_mesh_smoothing(bool const use_global_coarsening_multigrid, ElementType const & element_type)
+get_mesh_smoothing(bool const use_local_smoothing_multigrid, ElementType const & element_type)
 {
   typename dealii::Triangulation<dim>::MeshSmoothing mesh_smoothing;
 
@@ -77,10 +77,10 @@ get_mesh_smoothing(bool const use_global_coarsening_multigrid, ElementType const
   }
   else if(element_type == ElementType::Hypercube)
   {
-    if(use_global_coarsening_multigrid) // global coarsening multigrid
-      mesh_smoothing = dealii::Triangulation<dim>::none;
-    else // required for local smoothing
+    if(use_local_smoothing_multigrid)
       mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
+    else
+      mesh_smoothing = dealii::Triangulation<dim>::none;
   }
   else
   {
@@ -103,7 +103,7 @@ inline void
 create_triangulation(
   std::shared_ptr<dealii::Triangulation<dim>>                    tria,
   GridData const &                                               data,
-  bool const                                                     use_global_coarsening_multigrid,
+  bool const                                                     involves_h_multigrid,
   std::function<void(dealii::Triangulation<dim> &,
                      unsigned int const,
                      std::vector<unsigned int> const &)> const & lambda_create_triangulation,
@@ -163,11 +163,11 @@ create_triangulation(
     }
     else if(data.element_type == ElementType::Hypercube)
     {
-      if(use_global_coarsening_multigrid) // global coarsening multigrid
-        triangulation_description_setting = dealii::TriangulationDescription::default_setting;
-      else // required for local smoothing
+      if(data.multigrid == MultigridVariant::LocalSmoothing and involves_h_multigrid)
         triangulation_description_setting =
           dealii::TriangulationDescription::construct_multigrid_hierarchy;
+      else
+        triangulation_description_setting = dealii::TriangulationDescription::default_setting;
     }
     else
     {
@@ -175,7 +175,9 @@ create_triangulation(
     }
 
     auto const mesh_smoothing =
-      GridUtilities::get_mesh_smoothing<dim>(use_global_coarsening_multigrid, data.element_type);
+      GridUtilities::get_mesh_smoothing<dim>(data.multigrid == MultigridVariant::LocalSmoothing and
+                                               involves_h_multigrid,
+                                             data.element_type);
 
     auto const description = dealii::TriangulationDescription::Utilities::
       create_description_from_triangulation_in_groups<dim, dim>(serial_grid_generator,
@@ -238,7 +240,7 @@ create_coarse_triangulations(
   else if(data.triangulation_type == TriangulationType::FullyDistributed)
   {
     auto const mesh_smoothing =
-      GridUtilities::get_mesh_smoothing<dim>(true /* use_global_coarsening_multigrid */,
+      GridUtilities::get_mesh_smoothing<dim>(false /* global-coarsening multigrid */,
                                              data.element_type);
 
     // resize the empty coarse triangulations vector
@@ -299,7 +301,7 @@ inline void
 create_fine_and_coarse_triangulations(
   Grid<dim> &                                                    grid,
   GridData const &                                               data,
-  bool const                                                     use_global_coarsening_multigrid,
+  bool const                                                     involves_h_multigrid,
   std::function<void(dealii::Triangulation<dim> &,
                      unsigned int const,
                      std::vector<unsigned int> const &)> const & lambda_create_triangulation,
@@ -307,13 +309,13 @@ create_fine_and_coarse_triangulations(
 {
   GridUtilities::create_triangulation(grid.triangulation,
                                       data,
-                                      use_global_coarsening_multigrid,
+                                      involves_h_multigrid,
                                       lambda_create_triangulation,
                                       data.n_refine_global,
                                       vector_local_refinements);
 
   // coarse triangulations need to be created for global coarsening multigrid
-  if(use_global_coarsening_multigrid)
+  if(data.multigrid == MultigridVariant::GlobalCoarsening and involves_h_multigrid)
   {
     GridUtilities::create_coarse_triangulations(*grid.triangulation,
                                                 grid.coarse_triangulations,

@@ -219,20 +219,20 @@ private:
 
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.multigrid          = MultigridVariant::GlobalCoarsening;
     this->param.grid.mapping_degree     = this->param.degree;
     this->param.spatial_discretization  = SpatialDiscretization::DG;
     this->param.IP_factor               = 1.0e0;
 
     // SOLVER
-    this->param.solver                               = Poisson::Solver::CG;
-    this->param.solver_data.abs_tol                  = 1.e-20;
-    this->param.solver_data.rel_tol                  = 1.e-10;
-    this->param.solver_data.max_iter                 = 1e4;
-    this->param.compute_performance_metrics          = true;
-    this->param.preconditioner                       = Preconditioner::Multigrid;
-    this->param.multigrid_data.type                  = MultigridType::cphMG;
-    this->param.multigrid_data.p_sequence            = PSequenceType::Bisect;
-    this->param.multigrid_data.use_global_coarsening = global_coarsening;
+    this->param.solver                      = Poisson::Solver::CG;
+    this->param.solver_data.abs_tol         = 1.e-20;
+    this->param.solver_data.rel_tol         = 1.e-10;
+    this->param.solver_data.max_iter        = 1e4;
+    this->param.compute_performance_metrics = true;
+    this->param.preconditioner              = Preconditioner::Multigrid;
+    this->param.multigrid_data.type         = MultigridType::cphMG;
+    this->param.multigrid_data.p_sequence   = PSequenceType::Bisect;
     // MG smoother
     this->param.multigrid_data.smoother_data.smoother   = MultigridSmoother::Chebyshev;
     this->param.multigrid_data.smoother_data.iterations = 5;

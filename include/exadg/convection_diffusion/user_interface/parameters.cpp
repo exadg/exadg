@@ -327,10 +327,10 @@ Parameters::check() const
 }
 
 bool
-Parameters::use_global_coarsening() const
+Parameters::involves_h_multigrid() const
 {
   if(linear_system_has_to_be_solved() and preconditioner == Preconditioner::Multigrid and
-     multigrid_data.use_global_coarsening and multigrid_data.involves_h_transfer())
+     multigrid_data.involves_h_transfer())
     return true;
   else
     return false;

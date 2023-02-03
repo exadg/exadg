@@ -34,12 +34,10 @@
 namespace ExaDG
 {
 template<int dim>
-Grid<dim>::Grid(GridData const & data,
-                bool const       use_global_coarsening_multigrid,
-                MPI_Comm const & mpi_comm)
+Grid<dim>::Grid(GridData const & data, bool const involves_h_multigrid, MPI_Comm const & mpi_comm)
 {
-  auto const mesh_smoothing =
-    GridUtilities::get_mesh_smoothing<dim>(use_global_coarsening_multigrid, data.element_type);
+  auto const mesh_smoothing = GridUtilities::get_mesh_smoothing<dim>(
+    data.multigrid == MultigridVariant::LocalSmoothing and involves_h_multigrid, data.element_type);
 
   // triangulation
   if(data.triangulation_type == TriangulationType::Serial)
@@ -51,11 +49,11 @@ Grid<dim>::Grid(GridData const & data,
   {
     typename dealii::parallel::distributed::Triangulation<dim>::Settings distributed_settings;
 
-    if(use_global_coarsening_multigrid)
-      distributed_settings = dealii::parallel::distributed::Triangulation<dim>::default_setting;
-    else
+    if(data.multigrid == MultigridVariant::LocalSmoothing and involves_h_multigrid)
       distributed_settings =
         dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy;
+    else
+      distributed_settings = dealii::parallel::distributed::Triangulation<dim>::default_setting;
 
     triangulation =
       std::make_shared<dealii::parallel::distributed::Triangulation<dim>>(mpi_comm,

@@ -43,7 +43,7 @@ public:
   check() const;
 
   bool
-  use_global_coarsening() const;
+  involves_h_multigrid() const;
 
   void
   print(dealii::ConditionalOStream const & pcout, std::string const & name) const;

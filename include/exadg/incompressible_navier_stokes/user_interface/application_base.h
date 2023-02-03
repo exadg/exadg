@@ -101,7 +101,7 @@ public:
     param.print(pcout, "List of parameters:");
 
     // grid
-    grid = std::make_shared<Grid<dim>>(param.grid, param.use_global_coarsening(), mpi_comm);
+    grid = std::make_shared<Grid<dim>>(param.grid, param.involves_h_multigrid(), mpi_comm);
     create_grid();
     print_grid_info(pcout, *grid);
 
@@ -326,9 +326,8 @@ public:
                 dealii::ExcMessage("start_with_low_order has to be true for two-domain solver."));
 
     // grid
-    grid_pre = std::make_shared<Grid<dim>>(param_pre.grid,
-                                           param_pre.use_global_coarsening(),
-                                           this->mpi_comm);
+    grid_pre =
+      std::make_shared<Grid<dim>>(param_pre.grid, param_pre.involves_h_multigrid(), this->mpi_comm);
     create_grid_precursor();
     print_grid_info(this->pcout, *grid_pre);
 

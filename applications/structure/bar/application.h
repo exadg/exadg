@@ -225,28 +225,25 @@ private:
     this->param.solver_info_data.interval_time_steps = 2;
 
     this->param.grid.mapping_degree = 1;
-    if(use_simplex_mesh)
+    this->param.grid.element_type   = ElementType::Hypercube; // Simplex;
+    if(this->param.grid.element_type == ElementType::Simplex)
     {
-      this->param.grid.element_type       = ElementType::Simplex;
       this->param.grid.triangulation_type = TriangulationType::FullyDistributed;
+      this->param.grid.multigrid          = MultigridVariant::GlobalCoarsening;
     }
-    else
+    else if(this->param.grid.element_type == ElementType::Hypercube)
     {
-      this->param.grid.element_type       = ElementType::Hypercube;
       this->param.grid.triangulation_type = TriangulationType::Distributed;
+      this->param.grid.multigrid          = MultigridVariant::LocalSmoothing;
     }
 
     this->param.load_increment = 0.1;
 
-    this->param.newton_solver_data  = Newton::SolverData(1e2, 1.e-9, 1.e-9);
-    this->param.solver              = Solver::FGMRES;
-    this->param.solver_data         = SolverData(1e3, 1.e-12, 1.e-8, 100);
-    this->param.preconditioner      = Preconditioner::Multigrid;
-    this->param.multigrid_data.type = MultigridType::phMG;
-    if(use_simplex_mesh)
-      this->param.multigrid_data.use_global_coarsening = true;
-    else // for hypercube elements, we could also use global coarsening
-      this->param.multigrid_data.use_global_coarsening = false;
+    this->param.newton_solver_data                   = Newton::SolverData(1e2, 1.e-9, 1.e-9);
+    this->param.solver                               = Solver::FGMRES;
+    this->param.solver_data                          = SolverData(1e3, 1.e-12, 1.e-8, 100);
+    this->param.preconditioner                       = Preconditioner::Multigrid;
+    this->param.multigrid_data.type                  = MultigridType::phMG;
     this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
     this->param.multigrid_data.coarse_problem.preconditioner =
       MultigridCoarseGridPreconditioner::AMG;
@@ -355,7 +352,7 @@ private:
 
     GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
                                                               this->param.grid,
-                                                              this->param.use_global_coarsening(),
+                                                              this->param.involves_h_multigrid(),
                                                               lambda_create_triangulation);
   }
 
@@ -514,8 +511,6 @@ private:
   }
 
   double length = 1.0, height = 1.0, width = 1.0;
-
-  bool const use_simplex_mesh = false;
 
   bool use_volume_force = true;
 

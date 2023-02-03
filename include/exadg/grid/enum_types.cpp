@@ -52,6 +52,30 @@ enum_to_string(TriangulationType const enum_type)
 }
 
 std::string
+enum_to_string(MultigridVariant const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    case MultigridVariant::None:
+      string_type = "None";
+      break;
+    case MultigridVariant::LocalSmoothing:
+      string_type = "LocalSmoothing";
+      break;
+    case MultigridVariant::GlobalCoarsening:
+      string_type = "GlobalCoarsening";
+      break;
+    default:
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      break;
+  }
+
+  return string_type;
+}
+
+std::string
 enum_to_string(ElementType const enum_type)
 {
   std::string string_type;

@@ -572,7 +572,7 @@ Parameters::linear_problem_has_to_be_solved() const
 }
 
 bool
-Parameters::use_global_coarsening() const
+Parameters::involves_h_multigrid() const
 {
   bool use_global_coarsening = false;
 
@@ -582,13 +582,13 @@ Parameters::use_global_coarsening() const
       temporal_discretization == TemporalDiscretization::BDFCoupledSolution))
   {
     // block preconditioner: velocity block
-    if(use_global_coarsening_velocity_block())
+    if(involves_h_multigrid_velocity_block())
     {
       use_global_coarsening = true;
     }
 
     // only those Schur complement preconditioners that involve multigrid
-    if(use_global_coarsening_pressure_block())
+    if(involves_h_multigrid_pressure_block())
     {
       use_global_coarsening = true;
     }
@@ -597,7 +597,7 @@ Parameters::use_global_coarsening() const
     if(apply_penalty_terms_in_postprocessing_step and
        (use_divergence_penalty or use_continuity_penalty))
     {
-      if(use_global_coarsening_penalty_step())
+      if(involves_h_multigrid_penalty_step())
       {
         use_global_coarsening = true;
       }
@@ -607,7 +607,7 @@ Parameters::use_global_coarsening() const
           temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
     // pressure step is the same for both time discretization schemes
-    if(use_global_coarsening_pressure_step())
+    if(involves_h_multigrid_pressure_step())
     {
       use_global_coarsening = true;
     }
@@ -615,7 +615,7 @@ Parameters::use_global_coarsening() const
     // penalty step is the same for both discretization schemes
     if(use_divergence_penalty or use_continuity_penalty)
     {
-      if(use_global_coarsening_penalty_step())
+      if(involves_h_multigrid_penalty_step())
       {
         use_global_coarsening = true;
       }
@@ -626,7 +626,7 @@ Parameters::use_global_coarsening() const
     {
       if(viscous_problem())
       {
-        if(use_global_coarsening_viscous_step())
+        if(involves_h_multigrid_viscous_step())
         {
           use_global_coarsening = true;
         }
@@ -639,7 +639,7 @@ Parameters::use_global_coarsening() const
       if(viscous_problem() or (convective_problem() and
                                treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
       {
-        if(use_global_coarsening_momentum_step())
+        if(involves_h_multigrid_momentum_step())
         {
           use_global_coarsening = true;
         }
@@ -1266,12 +1266,11 @@ Parameters::print_parameters_coupled_solver(dealii::ConditionalOStream const & p
 }
 
 bool
-Parameters::use_global_coarsening_velocity_block() const
+Parameters::involves_h_multigrid_velocity_block() const
 {
   bool use_global_coarsening = false;
 
   if(preconditioner_velocity_block == MomentumPreconditioner::Multigrid and
-     multigrid_data_velocity_block.use_global_coarsening and
      multigrid_data_velocity_block.involves_h_transfer())
   {
     use_global_coarsening = true;
@@ -1281,7 +1280,7 @@ Parameters::use_global_coarsening_velocity_block() const
 }
 
 bool
-Parameters::use_global_coarsening_pressure_block() const
+Parameters::involves_h_multigrid_pressure_block() const
 {
   bool use_global_coarsening = false;
 
@@ -1289,8 +1288,7 @@ Parameters::use_global_coarsening_pressure_block() const
      preconditioner_pressure_block == SchurComplementPreconditioner::CahouetChabard or
      preconditioner_pressure_block == SchurComplementPreconditioner::PressureConvectionDiffusion)
   {
-    if(multigrid_data_pressure_block.use_global_coarsening and
-       multigrid_data_pressure_block.involves_h_transfer())
+    if(multigrid_data_pressure_block.involves_h_transfer())
     {
       use_global_coarsening = true;
     }
@@ -1300,12 +1298,11 @@ Parameters::use_global_coarsening_pressure_block() const
 }
 
 bool
-Parameters::use_global_coarsening_penalty_step() const
+Parameters::involves_h_multigrid_penalty_step() const
 {
   bool use_global_coarsening = false;
 
   if(preconditioner_projection == PreconditionerProjection::Multigrid and
-     multigrid_data_projection.use_global_coarsening and
      multigrid_data_projection.involves_h_transfer())
   {
     use_global_coarsening = true;
@@ -1315,12 +1312,11 @@ Parameters::use_global_coarsening_penalty_step() const
 }
 
 bool
-Parameters::use_global_coarsening_pressure_step() const
+Parameters::involves_h_multigrid_pressure_step() const
 {
   bool use_global_coarsening = false;
 
   if(preconditioner_pressure_poisson == PreconditionerPressurePoisson::Multigrid and
-     multigrid_data_pressure_poisson.use_global_coarsening and
      multigrid_data_pressure_poisson.involves_h_transfer())
   {
     use_global_coarsening = true;
@@ -1330,12 +1326,12 @@ Parameters::use_global_coarsening_pressure_step() const
 }
 
 bool
-Parameters::use_global_coarsening_viscous_step() const
+Parameters::involves_h_multigrid_viscous_step() const
 {
   bool use_global_coarsening = false;
 
   if(preconditioner_viscous == PreconditionerViscous::Multigrid and
-     multigrid_data_viscous.use_global_coarsening and multigrid_data_viscous.involves_h_transfer())
+     multigrid_data_viscous.involves_h_transfer())
   {
     use_global_coarsening = true;
   }
@@ -1344,12 +1340,11 @@ Parameters::use_global_coarsening_viscous_step() const
 }
 
 bool
-Parameters::use_global_coarsening_momentum_step() const
+Parameters::involves_h_multigrid_momentum_step() const
 {
   bool use_global_coarsening = false;
 
   if(preconditioner_momentum == MomentumPreconditioner::Multigrid and
-     multigrid_data_momentum.use_global_coarsening and
      multigrid_data_momentum.involves_h_transfer())
   {
     use_global_coarsening = true;
