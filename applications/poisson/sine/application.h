@@ -150,6 +150,7 @@ private:
     this->param.right_hand_side = true;
 
     // SPATIAL DISCRETIZATION
+    this->param.grid.file_name = this->grid_parameters.file_name;
     if(use_simplex_mesh)
     {
       this->param.grid.element_type                 = ElementType::Simplex;

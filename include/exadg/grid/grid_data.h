@@ -22,9 +22,6 @@
 #ifndef INCLUDE_EXADG_GRID_GRID_DATA_H_
 #define INCLUDE_EXADG_GRID_GRID_DATA_H_
 
-// deal.II
-#include <deal.II/base/parameter_handler.h>
-
 // ExaDG
 #include <exadg/grid/enum_types.h>
 #include <exadg/utilities/print_functions.h>
@@ -71,16 +68,6 @@ struct GridData
     print_parameter(pcout, "Mapping degree", mapping_degree);
   }
 
-  void
-  add_parameters(dealii::ParameterHandler & prm, std::string const & subsection_name = "Grid")
-  {
-    // clang-format off
-    prm.enter_subsection(subsection_name);
-      prm.add_parameter("FileName", file_name, "External input grid file.");
-    prm.leave_subsection();
-    // clang-format on
-  }
-
   TriangulationType triangulation_type;
 
   ElementType element_type;
@@ -100,7 +87,7 @@ struct GridData
 
   // path to a grid file
   // the filename needs to include a proper filename ending/extension so that we can internally
-  // deduce the correct type of file format
+  // deduce the correct type of the file format
   std::string file_name;
 };
 
