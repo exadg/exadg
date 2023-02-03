@@ -2,7 +2,7 @@ FROM dealii/dealii:master-focal
 
 ARG branch_name
 
-RUN  git clone https://github.com/bergbauer/exadg \
+RUN  git clone https://github.com/exadg/exadg \
      && cd exadg \
      && git fetch origin \
      && git checkout $branch_name \
