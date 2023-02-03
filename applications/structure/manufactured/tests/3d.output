@@ -46,7 +46,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
-  Create coarse triangulations:              false
+  Multigrid variant:                         LocalSmoothing
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -68,7 +68,6 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
-  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -169,7 +168,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
-  Create coarse triangulations:              false
+  Multigrid variant:                         LocalSmoothing
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -191,7 +190,6 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
-  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -292,7 +290,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
-  Create coarse triangulations:              false
+  Multigrid variant:                         LocalSmoothing
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -314,7 +312,6 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
-  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -415,7 +412,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
-  Create coarse triangulations:              false
+  Multigrid variant:                         LocalSmoothing
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -437,7 +434,6 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
-  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -538,7 +534,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
-  Create coarse triangulations:              false
+  Multigrid variant:                         LocalSmoothing
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -560,7 +556,6 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
-  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -661,7 +656,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
-  Create coarse triangulations:              false
+  Multigrid variant:                         LocalSmoothing
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -683,7 +678,6 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
-  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -784,7 +778,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
-  Create coarse triangulations:              false
+  Multigrid variant:                         LocalSmoothing
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -806,7 +800,6 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
-  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -907,7 +900,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
-  Create coarse triangulations:              false
+  Multigrid variant:                         LocalSmoothing
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -929,7 +922,6 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
-  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -1030,7 +1022,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
-  Create coarse triangulations:              false
+  Multigrid variant:                         LocalSmoothing
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -1052,7 +1044,6 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
-  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
