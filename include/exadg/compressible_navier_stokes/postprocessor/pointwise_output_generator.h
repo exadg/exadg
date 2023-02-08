@@ -22,6 +22,8 @@
 #ifndef INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_H_
 #define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_H_
 
+#include <deal.II/lac/la_parallel_vector.h>
+
 #include <exadg/postprocessor/pointwise_output_generator_base.h>
 
 namespace ExaDG
@@ -42,10 +44,11 @@ struct PointwiseOutputData : public PointwiseOutputDataBase<dim>
 };
 
 template<int dim, typename Number>
-class PointwiseOutputGenerator : public PointwiseOutputGeneratorBase<dim, Number>
+class PointwiseOutputGenerator
+  : public PointwiseOutputGeneratorBase<dim, dealii::LinearAlgebra::distributed::Vector<Number>>
 {
 public:
-  using VectorType = typename PointwiseOutputGeneratorBase<dim, Number>::VectorType;
+  using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
 
   PointwiseOutputGenerator(MPI_Comm const & comm);
 
@@ -58,7 +61,8 @@ private:
   void
   do_evaluate(VectorType const & solution) final;
 
-  PointwiseOutputData<dim> pointwise_output_data;
+  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
+  PointwiseOutputData<dim>                            pointwise_output_data;
 };
 
 } // namespace CompNS

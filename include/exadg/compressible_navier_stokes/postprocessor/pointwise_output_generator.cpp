@@ -56,7 +56,7 @@ template struct PointwiseOutputData<3>;
 
 template<int dim, typename Number>
 PointwiseOutputGenerator<dim, Number>::PointwiseOutputGenerator(MPI_Comm const & comm)
-  : PointwiseOutputGeneratorBase<dim, Number>(comm)
+  : PointwiseOutputGeneratorBase<dim, VectorType>(comm)
 {
 }
 
@@ -67,8 +67,9 @@ PointwiseOutputGenerator<dim, Number>::setup(
   dealii::Mapping<dim> const &     mapping_in,
   PointwiseOutputData<dim> const & pointwise_output_data_in)
 {
-  this->setup_base(dof_handler_in, mapping_in, pointwise_output_data_in);
+  this->setup_base(dof_handler_in.get_triangulation(), mapping_in, pointwise_output_data_in);
 
+  dof_handler           = &dof_handler_in;
   pointwise_output_data = pointwise_output_data_in;
 
   if(pointwise_output_data.write_rho)
@@ -86,7 +87,7 @@ PointwiseOutputGenerator<dim, Number>::do_evaluate(VectorType const & solution)
   if(pointwise_output_data.write_rho || pointwise_output_data.write_rho_u ||
      pointwise_output_data.write_rho_E)
   {
-    auto const values = this->template compute_point_values<dim + 2>(solution);
+    auto const values = this->template compute_point_values<dim + 2>(solution, *dof_handler);
     if(pointwise_output_data.write_rho)
       this->write_quantity("Rho", values, 0);
     if(pointwise_output_data.write_rho_u)
