@@ -83,6 +83,7 @@ SET(TARGET_SRC
      include/exadg/postprocessor/time_control_statistics.cpp
      include/exadg/postprocessor/error_calculation.cpp
      include/exadg/postprocessor/mean_scalar_calculation.cpp
+     include/exadg/postprocessor/normal_flux_calculation.cpp
      include/exadg/postprocessor/lift_and_drag_calculation.cpp
      include/exadg/postprocessor/pressure_difference_calculation.cpp
      include/exadg/postprocessor/kinetic_energy_spectrum.cpp
