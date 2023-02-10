@@ -41,7 +41,7 @@ Number
 NormalFluxCalculator<dim, Number>::evaluate(VectorType const &                             solution,
                                             std::map<dealii::types::boundary_id, Number> & flux)
 {
-  // zero mean scalars since we sum into these variables
+  // zero values since we sum into these variables
   for(auto & iterator : flux)
   {
     iterator.second = 0.0;
