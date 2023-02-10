@@ -59,7 +59,7 @@ public:
   PostProcessor(PostProcessorData<dim> const & pp_data, MPI_Comm const & mpi_comm);
 
   void
-  setup(Operator<dim, Number> const & pde_operator, dealii::Mapping<dim> const & mapping) override;
+  setup(Operator<dim, Number> const & pde_operator) override;
 
   void
   do_postprocessing(VectorType const &     solution,

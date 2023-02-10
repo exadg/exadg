@@ -104,6 +104,9 @@ public:
   std::shared_ptr<TimerTree>
   get_timings() const;
 
+  std::shared_ptr<dealii::Mapping<dim> const>
+  get_mapping() const;
+
 #ifdef DEAL_II_WITH_TRILINOS
   void
   init_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix,

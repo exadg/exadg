@@ -26,9 +26,9 @@ namespace ExaDG
 {
 namespace Poisson
 {
-template<int dim, typename Number>
-PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & pp_data_in,
-                                          MPI_Comm const &               mpi_comm_in)
+template<int dim, int n_components, typename Number>
+PostProcessor<dim, n_components, Number>::PostProcessor(PostProcessorData<dim> const & pp_data_in,
+                                                        MPI_Comm const &               mpi_comm_in)
   : mpi_comm(mpi_comm_in),
     pp_data(pp_data_in),
     output_generator(mpi_comm_in),
@@ -36,21 +36,25 @@ PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & pp_data
 {
 }
 
-template<int dim, typename Number>
+template<int dim, int n_components, typename Number>
 void
-PostProcessor<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler,
-                                  dealii::Mapping<dim> const &    mapping)
+PostProcessor<dim, n_components, Number>::setup(
+  Operator<dim, n_components, Number> const & pde_operator)
 {
-  error_calculator.setup(dof_handler, mapping, pp_data.error_data);
+  error_calculator.setup(pde_operator.get_dof_handler(),
+                         *pde_operator.get_mapping(),
+                         pp_data.error_data);
 
-  output_generator.setup(dof_handler, mapping, pp_data.output_data);
+  output_generator.setup(pde_operator.get_dof_handler(),
+                         *pde_operator.get_mapping(),
+                         pp_data.output_data);
 }
 
-template<int dim, typename Number>
+template<int dim, int n_components, typename Number>
 void
-PostProcessor<dim, Number>::do_postprocessing(VectorType const &     solution,
-                                              double const           time,
-                                              types::time_step const time_step_number)
+PostProcessor<dim, n_components, Number>::do_postprocessing(VectorType const &     solution,
+                                                            double const           time,
+                                                            types::time_step const time_step_number)
 {
   if(error_calculator.time_control.needs_evaluation(time, time_step_number))
     error_calculator.evaluate(solution, time, Utilities::is_unsteady_timestep(time_step_number));
@@ -59,11 +63,15 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     solution,
     output_generator.evaluate(solution, time, Utilities::is_unsteady_timestep(time_step_number));
 }
 
-template class PostProcessor<2, float>;
-template class PostProcessor<3, float>;
+template class PostProcessor<2, 1, float>;
+template class PostProcessor<3, 1, float>;
+template class PostProcessor<2, 2, float>;
+template class PostProcessor<3, 3, float>;
 
-template class PostProcessor<2, double>;
-template class PostProcessor<3, double>;
+template class PostProcessor<2, 1, double>;
+template class PostProcessor<3, 1, double>;
+template class PostProcessor<2, 2, double>;
+template class PostProcessor<3, 3, double>;
 
 } // namespace Poisson
 } // namespace ExaDG

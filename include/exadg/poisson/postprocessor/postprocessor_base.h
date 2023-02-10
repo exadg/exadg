@@ -33,6 +33,9 @@ namespace ExaDG
 {
 namespace Poisson
 {
+template<int dim, int n_components, typename Number>
+class Operator;
+
 template<typename Number>
 class PostProcessorInterface
 {
@@ -49,7 +52,7 @@ public:
                     types::time_step const time_step_number = numbers::steady_timestep) = 0;
 };
 
-template<int dim, typename Number>
+template<int dim, int n_components, typename Number>
 class PostProcessorBase : public PostProcessorInterface<Number>
 {
 protected:
@@ -61,7 +64,7 @@ public:
   }
 
   virtual void
-  setup(dealii::DoFHandler<dim, dim> const & dof_handler, dealii::Mapping<dim> const & mapping) = 0;
+  setup(Operator<dim, n_components, Number> const & pde_operator) = 0;
 };
 
 } // namespace Poisson

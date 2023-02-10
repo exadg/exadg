@@ -67,7 +67,7 @@ public:
   }
 
   virtual void
-  setup(Operator<dim, Number> const & pde_operator, dealii::Mapping<dim> const & mapping) = 0;
+  setup(Operator<dim, Number> const & pde_operator) = 0;
 };
 
 } // namespace ConvDiff

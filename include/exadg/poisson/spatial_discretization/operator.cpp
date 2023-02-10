@@ -639,6 +639,13 @@ Operator<dim, n_components, Number>::get_timings() const
   return iterative_solver->get_timings();
 }
 
+template<int dim, int n_components, typename Number>
+std::shared_ptr<dealii::Mapping<dim> const>
+Operator<dim, n_components, Number>::get_mapping() const
+{
+  return grid->mapping;
+}
+
 template class Operator<2, 1, float>;
 template class Operator<2, 1, double>;
 template class Operator<2, 2, float>;

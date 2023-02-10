@@ -286,6 +286,9 @@ public:
   unsigned int
   get_quad_index() const;
 
+  std::shared_ptr<dealii::Mapping<dim> const>
+  get_mapping() const;
+
 private:
   /*
    * Calculates maximum velocity (required for global CFL criterion).

@@ -46,11 +46,11 @@ struct PostProcessorData
   ErrorCalculationData<dim> error_data;
 };
 
-template<int dim, typename Number>
-class PostProcessor : public PostProcessorBase<dim, Number>
+template<int dim, int n_components, typename Number>
+class PostProcessor : public PostProcessorBase<dim, n_components, Number>
 {
 protected:
-  typedef PostProcessorBase<dim, Number> Base;
+  typedef PostProcessorBase<dim, n_components, Number> Base;
 
   typedef typename Base::VectorType VectorType;
 
@@ -58,7 +58,7 @@ public:
   PostProcessor(PostProcessorData<dim> const & pp_data, MPI_Comm const & mpi_comm);
 
   void
-  setup(dealii::DoFHandler<dim> const & dof_handler, dealii::Mapping<dim> const & mapping) override;
+  setup(Operator<dim, n_components, Number> const & pde_operator) override;
 
   void
   do_postprocessing(VectorType const &     solution,

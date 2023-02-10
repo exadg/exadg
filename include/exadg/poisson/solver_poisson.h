@@ -68,12 +68,12 @@ public:
       pde_operator->setup_solver();
 
       postprocessor = application->create_postprocessor();
-      postprocessor->setup(pde_operator->get_dof_handler(), *application->get_grid()->mapping);
+      postprocessor->setup(*pde_operator);
     }
   }
 
-  std::shared_ptr<Operator<dim, n_components, Number>> pde_operator;
-  std::shared_ptr<PostProcessorBase<dim, Number>>      postprocessor;
+  std::shared_ptr<Operator<dim, n_components, Number>>          pde_operator;
+  std::shared_ptr<PostProcessorBase<dim, n_components, Number>> postprocessor;
 
 private:
   std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;

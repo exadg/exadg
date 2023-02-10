@@ -381,6 +381,14 @@ Operator<dim, Number>::get_quad_index_overintegration() const
 }
 
 template<int dim, typename Number>
+std::shared_ptr<dealii::Mapping<dim> const>
+Operator<dim, Number>::get_mapping() const
+{
+  return get_dynamic_mapping<dim, Number>(grid, grid_motion);
+}
+
+
+template<int dim, typename Number>
 void
 Operator<dim, Number>::setup_solver(double const scaling_factor_mass, VectorType const * velocity)
 {
@@ -473,7 +481,7 @@ Operator<dim, Number>::initialize_preconditioner()
                                   &dof_handler.get_triangulation(),
                                   grid->coarse_triangulations,
                                   dof_handler.get_fe(),
-                                  get_dynamic_mapping<dim, Number>(grid, grid_motion),
+                                  get_mapping(),
                                   combined_operator,
                                   param.mg_operator_type,
                                   param.ale_formulation,
@@ -814,7 +822,7 @@ void
 Operator<dim, Number>::move_grid_and_update_dependent_data_structures(double const & time)
 {
   grid_motion->update(time, false);
-  matrix_free->update_mapping(*get_dynamic_mapping<dim, Number>(grid, grid_motion));
+  matrix_free->update_mapping(*get_mapping());
   update_after_grid_motion();
 }
 
