@@ -247,8 +247,9 @@ create_fine_and_coarse_triangulations(
 }
 
 /**
- * This functions reads an external triangulation defined in the file "file_in" and stores it in
- * the triangulation "tria".
+ * This function reads an external triangulation. The path to the triangulation file should
+ * be defined in the input file and then stored in GridData. This function extracts it from
+ * GridData and stores it in the triangulation "tria".
  */
 template<int dim>
 inline void
@@ -257,15 +258,14 @@ read_external_triangulation(dealii::Triangulation<dim, dim> & tria, GridData con
   AssertThrow(!data.file_name.empty(),
               dealii::ExcMessage(
                 "You are trying to read a grid file, but the string, which is supposed to contain"
-                " the file, is empty. Most likely, you forgot to specify the file location in the"
-                " input file. The input file of the Poisson/sine application can be an example"
-                " showing how to set it correctly."));
+                " the file name, is empty. Most likely, you forgot to specify the file location in"
+                " the input file."));
 
   dealii::GridIn<dim> grid_in;
 
   grid_in.attach_triangulation(tria);
 
-  // find the file extension from the given file_in string
+  // find the file extension from the file name
   std::string extension = data.file_name.substr(data.file_name.find_last_of('.') + 1);
 
   AssertThrow(!extension.empty(),
@@ -287,10 +287,9 @@ read_external_triangulation(dealii::Triangulation<dim, dim> & tria, GridData con
 
   AssertThrow(get_element_type(tria) == data.element_type,
               dealii::ExcMessage("You are trying to read a grid file, but the element type of the"
-                                 " external grid file and the element type specified in the"
-                                 " application don't match. Most likely, you forgot to change the"
-                                 " element_type parameter of GridData to the desired element"
-                                 " type in the application."));
+                                 " external grid file and the element type specified in GridData"
+                                 " don't match. Most likely, you forgot to change the element_type"
+                                 " parameter of GridData to the desired element type."));
 }
 
 } // namespace GridUtilities

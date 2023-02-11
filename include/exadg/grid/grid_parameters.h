@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_GRID_PARAMETERS_H_
-#define INCLUDE_EXADG_UTILITIES_GRID_PARAMETERS_H_
+#ifndef EXADG_GRID_GRID_PARAMETERS_H
+#define EXADG_GRID_GRID_PARAMETERS_H
 
 // deal.II
 #include <deal.II/base/parameter_handler.h>
@@ -48,4 +48,4 @@ struct GridParameters
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_UTILITIES_GRID_PARAMETERS_H_ */
+#endif // EXADG_GRID_GRID_PARAMETERS_H
