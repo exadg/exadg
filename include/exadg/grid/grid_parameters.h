@@ -29,7 +29,7 @@ namespace ExaDG
 {
 struct GridParameters
 {
-  GridParameters() : file_name()
+  GridParameters()
   {
   }
 
