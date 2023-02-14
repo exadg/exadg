@@ -13,5 +13,6 @@ var searchData=
   ['gridmotionelasticity_10',['GridMotionElasticity',['../classExaDG_1_1GridMotionElasticity.html',1,'ExaDG']]],
   ['gridmotionfunction_11',['GridMotionFunction',['../classExaDG_1_1GridMotionFunction.html',1,'ExaDG']]],
   ['gridmotioninterface_12',['GridMotionInterface',['../classExaDG_1_1GridMotionInterface.html',1,'ExaDG']]],
-  ['gridmotionpoisson_13',['GridMotionPoisson',['../classExaDG_1_1GridMotionPoisson.html',1,'ExaDG']]]
+  ['gridmotionpoisson_13',['GridMotionPoisson',['../classExaDG_1_1GridMotionPoisson.html',1,'ExaDG']]],
+  ['gridparameters_14',['GridParameters',['../structExaDG_1_1GridParameters.html',1,'ExaDG']]]
 ];
