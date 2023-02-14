@@ -16,6 +16,9 @@
     "Application": {
         "MeshType": "Cartesian"
     },
+    "Grid": {
+        "FileName": "applications/poisson/sine/external_grids/hypercube.e"
+    },
     "Output": {
         "OutputDirectory": "output/poisson/sine/",
         "OutputName": "test",

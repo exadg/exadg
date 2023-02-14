@@ -37,7 +37,8 @@ struct GridData
       n_refine_global(0),
       n_subdivisions_1d_hypercube(1),
       create_coarse_triangulations(false),
-      mapping_degree(1)
+      mapping_degree(1),
+      file_name()
   {
   }
 
@@ -84,8 +85,10 @@ struct GridData
 
   unsigned int mapping_degree;
 
-  // TODO: path to a grid file
-  // std::string grid_file;
+  // path to a grid file
+  // the filename needs to include a proper filename ending/extension so that we can internally
+  // deduce the correct type of the file format
+  std::string file_name;
 };
 
 } // namespace ExaDG

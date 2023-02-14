@@ -9,6 +9,7 @@
 #define INCLUDE_EXADG_GRID_GRID_UTILITIES_H_
 
 // deal.II
+#include <deal.II/grid/grid_in.h>
 #include <deal.II/multigrid/mg_transfer_global_coarsening.h>
 
 // ExaDG
@@ -243,6 +244,49 @@ create_fine_and_coarse_triangulations(
                                                 lambda_create_triangulation,
                                                 vector_local_refinements);
   }
+}
+
+/**
+ * This function reads an external triangulation. The function takes GridData as an argument
+ * and stores the external triangulation in "tria".
+ */
+template<int dim>
+inline void
+read_external_triangulation(dealii::Triangulation<dim, dim> & tria, GridData const & data)
+{
+  AssertThrow(!data.file_name.empty(),
+              dealii::ExcMessage(
+                "You are trying to read a grid file, but the string, which is supposed to contain"
+                " the file name, is empty."));
+
+  dealii::GridIn<dim> grid_in;
+
+  grid_in.attach_triangulation(tria);
+
+  // find the file extension from the file name
+  std::string extension = data.file_name.substr(data.file_name.find_last_of('.') + 1);
+
+  AssertThrow(!extension.empty(),
+              dealii::ExcMessage("You are trying to read a grid file, but the file extension is"
+                                 " empty."));
+
+  // decide the file format
+  typename dealii::GridIn<dim>::Format format;
+  if(extension == "e" || extension == "exo")
+    format = dealii::GridIn<dim>::Format::exodusii;
+  else
+    format = grid_in.parse_format(extension);
+
+  // TODO: check if the exodusIIData is needed
+  // typename dealii::GridIn<dim>::ExodusIIData exodusIIData;
+
+  grid_in.read(data.file_name, format);
+
+  AssertThrow(get_element_type(tria) == data.element_type,
+              dealii::ExcMessage("You are trying to read a grid file, but the element type of the"
+                                 " external grid file and the element type specified in GridData"
+                                 " don't match. Most likely, you forgot to change the element_type"
+                                 " parameter of GridData to the desired element type."));
 }
 
 } // namespace GridUtilities

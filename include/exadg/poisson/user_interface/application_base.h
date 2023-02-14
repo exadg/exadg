@@ -31,6 +31,7 @@
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/grid/calculate_maximum_aspect_ratio.h>
 #include <exadg/grid/grid.h>
+#include <exadg/grid/grid_parameters.h>
 #include <exadg/grid/grid_utilities.h>
 #include <exadg/poisson/postprocessor/postprocessor.h>
 #include <exadg/poisson/user_interface/boundary_descriptor.h>
@@ -58,6 +59,7 @@ public:
   virtual void
   add_parameters(dealii::ParameterHandler & prm)
   {
+    grid_parameters.add_parameters(prm);
     output_parameters.add_parameters(prm);
   }
 
@@ -190,6 +192,8 @@ protected:
   std::shared_ptr<FieldFunctions<dim>>           field_functions;
 
   std::string parameter_file;
+
+  GridParameters grid_parameters;
 
   OutputParameters output_parameters;
 

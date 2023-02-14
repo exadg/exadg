@@ -150,6 +150,7 @@ private:
     this->param.right_hand_side = true;
 
     // SPATIAL DISCRETIZATION
+    this->param.grid.file_name = this->grid_parameters.file_name;
     if(use_simplex_mesh)
     {
       this->param.grid.element_type                 = ElementType::Simplex;
@@ -206,20 +207,27 @@ private:
         unsigned int const n_cells_1d =
           std::max((unsigned int)2, this->param.grid.n_subdivisions_1d_hypercube);
 
-        if(this->param.grid.element_type == ElementType::Hypercube)
+        if(read_external_grid)
         {
-          dealii::GridGenerator::subdivided_hyper_cube(tria, n_cells_1d, left, right);
-        }
-        else if(this->param.grid.element_type == ElementType::Simplex)
-        {
-          dealii::GridGenerator::subdivided_hyper_cube_with_simplices(tria,
-                                                                      n_cells_1d,
-                                                                      left,
-                                                                      right);
+          GridUtilities::read_external_triangulation<dim>(tria, this->param.grid);
         }
         else
         {
-          AssertThrow(false, ExcNotImplemented());
+          if(this->param.grid.element_type == ElementType::Hypercube)
+          {
+            dealii::GridGenerator::subdivided_hyper_cube(tria, n_cells_1d, left, right);
+          }
+          else if(this->param.grid.element_type == ElementType::Simplex)
+          {
+            dealii::GridGenerator::subdivided_hyper_cube_with_simplices(tria,
+                                                                        n_cells_1d,
+                                                                        left,
+                                                                        right);
+          }
+          else
+          {
+            AssertThrow(false, ExcNotImplemented());
+          }
         }
 
         if(USE_NEUMANN_BOUNDARY)
@@ -321,6 +329,8 @@ private:
 
     return pp;
   }
+
+  bool const read_external_grid = false;
 
   bool const use_simplex_mesh = false;
 
