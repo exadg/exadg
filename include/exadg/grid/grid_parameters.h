@@ -29,10 +29,6 @@ namespace ExaDG
 {
 struct GridParameters
 {
-  GridParameters()
-  {
-  }
-
   void
   add_parameters(dealii::ParameterHandler & prm, std::string const & subsection_name = "Grid")
   {

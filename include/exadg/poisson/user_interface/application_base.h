@@ -59,8 +59,8 @@ public:
   virtual void
   add_parameters(dealii::ParameterHandler & prm)
   {
-    output_parameters.add_parameters(prm);
     grid_parameters.add_parameters(prm);
+    output_parameters.add_parameters(prm);
   }
 
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm)

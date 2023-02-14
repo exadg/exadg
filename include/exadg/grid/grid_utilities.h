@@ -247,9 +247,8 @@ create_fine_and_coarse_triangulations(
 }
 
 /**
- * This function reads an external triangulation. The path to the triangulation file should
- * be defined in the input file and then stored in GridData. This function extracts it from
- * GridData and stores it in the triangulation "tria".
+ * This function reads an external triangulation. The triangulation is extracted from
+ * GridData and stored in the triangulation "tria".
  */
 template<int dim>
 inline void
@@ -258,8 +257,7 @@ read_external_triangulation(dealii::Triangulation<dim, dim> & tria, GridData con
   AssertThrow(!data.file_name.empty(),
               dealii::ExcMessage(
                 "You are trying to read a grid file, but the string, which is supposed to contain"
-                " the file name, is empty. Most likely, you forgot to specify the file location in"
-                " the input file."));
+                " the file name, is empty."));
 
   dealii::GridIn<dim> grid_in;
 
@@ -270,8 +268,7 @@ read_external_triangulation(dealii::Triangulation<dim, dim> & tria, GridData con
 
   AssertThrow(!extension.empty(),
               dealii::ExcMessage("You are trying to read a grid file, but the file extension is"
-                                 " empty. Check the input file to make sure that the file"
-                                 " extension is correctly defined after a full stop."));
+                                 " empty."));
 
   // decide the file format
   typename dealii::GridIn<dim>::Format format;
