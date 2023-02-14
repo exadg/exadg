@@ -247,8 +247,8 @@ create_fine_and_coarse_triangulations(
 }
 
 /**
- * This function reads an external triangulation. The triangulation is extracted from
- * GridData and stored in the triangulation "tria".
+ * This function reads an external triangulation. The function takes GridData as an argument
+ * and stores the external triangulation in "tria".
  */
 template<int dim>
 inline void
