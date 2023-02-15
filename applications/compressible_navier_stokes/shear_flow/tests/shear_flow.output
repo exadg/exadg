@@ -53,7 +53,6 @@ Spatial Discretization:
   Element type:                              Hypercube
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        1
-  Subdivisions hypercube:                    1
   Mapping degree:                            6
   Polynomial degree:                         6
   Quadrature rule convective term:           Standard

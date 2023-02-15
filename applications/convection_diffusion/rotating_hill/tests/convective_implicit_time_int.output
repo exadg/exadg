@@ -51,7 +51,6 @@ Spatial Discretization:
   Element type:                              Hypercube
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        3
-  Subdivisions hypercube:                    1
   Mapping degree:                            1
   Polynomial degree:                         4
   Numerical flux convective term:            LaxFriedrichsFlux

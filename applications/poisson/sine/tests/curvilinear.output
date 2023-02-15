@@ -29,7 +29,6 @@ Spatial Discretization:
   Element type:                              Hypercube
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        2
-  Subdivisions hypercube:                    1
   Mapping degree:                            3
   Element type:                              DG
   Polynomial degree:                         1
@@ -124,7 +123,6 @@ Spatial Discretization:
   Element type:                              Hypercube
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        2
-  Subdivisions hypercube:                    1
   Mapping degree:                            3
   Element type:                              DG
   Polynomial degree:                         2
@@ -219,7 +217,6 @@ Spatial Discretization:
   Element type:                              Hypercube
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        2
-  Subdivisions hypercube:                    1
   Mapping degree:                            3
   Element type:                              DG
   Polynomial degree:                         3
@@ -314,7 +311,6 @@ Spatial Discretization:
   Element type:                              Hypercube
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        2
-  Subdivisions hypercube:                    1
   Mapping degree:                            3
   Element type:                              DG
   Polynomial degree:                         4
@@ -409,7 +405,6 @@ Spatial Discretization:
   Element type:                              Hypercube
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        2
-  Subdivisions hypercube:                    1
   Mapping degree:                            3
   Element type:                              DG
   Polynomial degree:                         5
@@ -504,7 +499,6 @@ Spatial Discretization:
   Element type:                              Hypercube
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        2
-  Subdivisions hypercube:                    1
   Mapping degree:                            3
   Element type:                              DG
   Polynomial degree:                         6
@@ -599,7 +593,6 @@ Spatial Discretization:
   Element type:                              Hypercube
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        2
-  Subdivisions hypercube:                    1
   Mapping degree:                            3
   Element type:                              DG
   Polynomial degree:                         7

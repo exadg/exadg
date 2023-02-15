@@ -49,7 +49,6 @@ Spatial Discretization:
   Element type:                              Hypercube
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        4
-  Subdivisions hypercube:                    1
   Mapping degree:                            1
   Polynomial degree:                         5
   IP factor viscous term:                    1.0000e+00
