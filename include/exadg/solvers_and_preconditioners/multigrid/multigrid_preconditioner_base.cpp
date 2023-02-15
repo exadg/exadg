@@ -75,9 +75,6 @@ MultigridPreconditionerBase<dim, Number>::initialize(
 {
   this->data = data;
 
-  AssertThrow(multigrid_variant != MultigridVariant::None,
-              dealii::ExcMessage("Invalid parameter."));
-
   this->multigrid_variant = multigrid_variant;
 
   this->triangulation = tria;

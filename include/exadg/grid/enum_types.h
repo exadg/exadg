@@ -46,13 +46,10 @@ std::string
 enum_to_string(TriangulationType const enum_type);
 
 /*
- * deal.II provides different multigrid variants, which is to be specified by this parameter. If no
- * multigrid is involved, the option None should be used to avoid unnecessary setup of multigrid
- * data structures.
+ * deal.II provides different multigrid variants, which is to be specified by this parameter.
  */
 enum class MultigridVariant
 {
-  None,
   LocalSmoothing,
   GlobalCoarsening
 };

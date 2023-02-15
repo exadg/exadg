@@ -58,9 +58,6 @@ enum_to_string(MultigridVariant const enum_type)
 
   switch(enum_type)
   {
-    case MultigridVariant::None:
-      string_type = "None";
-      break;
     case MultigridVariant::LocalSmoothing:
       string_type = "LocalSmoothing";
       break;
