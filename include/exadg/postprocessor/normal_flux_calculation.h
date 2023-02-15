@@ -40,7 +40,7 @@ public:
                        unsigned int                            quad_index_in,
                        MPI_Comm const &                        mpi_comm_in);
 
-  Number
+  void
   evaluate(VectorType const & solution, std::map<dealii::types::boundary_id, Number> & flux);
 
 private:

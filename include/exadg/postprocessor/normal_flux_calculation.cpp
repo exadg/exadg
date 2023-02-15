@@ -37,7 +37,7 @@ NormalFluxCalculator<dim, Number>::NormalFluxCalculator(
 }
 
 template<int dim, typename Number>
-Number
+void
 NormalFluxCalculator<dim, Number>::evaluate(VectorType const &                             solution,
                                             std::map<dealii::types::boundary_id, Number> & flux)
 {
@@ -101,8 +101,6 @@ NormalFluxCalculator<dim, Number>::evaluate(VectorType const &                  
   {
     (iterator++)->second = flux_vector[counter];
   }
-
-  return 0;
 }
 
 template class NormalFluxCalculator<2, float>;
