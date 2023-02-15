@@ -28,6 +28,7 @@
 // ExaDG
 #include <exadg/poisson/postprocessor/postprocessor_base.h>
 #include <exadg/postprocessor/error_calculation.h>
+#include <exadg/postprocessor/normal_flux_calculation.h>
 #include <exadg/postprocessor/output_data_base.h>
 #include <exadg/postprocessor/output_generator_scalar.h>
 
@@ -44,6 +45,7 @@ struct PostProcessorData
 
   OutputDataBase            output_data;
   ErrorCalculationData<dim> error_data;
+  NormalFluxCalculatorData  normal_flux_data;
 };
 
 template<int dim, int n_components, typename Number>
@@ -73,6 +75,8 @@ private:
 
   OutputGenerator<dim, Number> output_generator;
   ErrorCalculator<dim, Number> error_calculator;
+
+  std::shared_ptr<NormalFluxCalculator<dim, Number>> normal_flux_calculator;
 };
 
 } // namespace Poisson

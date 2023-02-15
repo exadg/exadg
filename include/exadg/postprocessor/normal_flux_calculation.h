@@ -21,10 +21,25 @@
 #ifndef INCLUDE_EXADG_POSTPROCESSOR_NORMAL_FLUX_CALCULATION_H
 #define INCLUDE_EXADG_POSTPROCESSOR_NORMAL_FLUX_CALCULATION_H
 
+// ExaDG
 #include <exadg/matrix_free/integrators.h>
 
 namespace ExaDG
 {
+struct NormalFluxCalculatorData
+{
+  NormalFluxCalculatorData() : evaluate(false)
+  {
+  }
+
+  bool                                 evaluate;
+  std::set<dealii::types::boundary_id> boundary_ids;
+
+  // specify where to write output files
+  std::string directory;
+  std::string filename;
+};
+
 template<int dim, typename Number>
 class NormalFluxCalculator
 {
@@ -38,14 +53,21 @@ public:
   NormalFluxCalculator(dealii::MatrixFree<dim, Number> const & matrix_free_in,
                        unsigned int                            dof_index_in,
                        unsigned int                            quad_index_in,
+                       NormalFluxCalculatorData const &        data,
                        MPI_Comm const &                        mpi_comm_in);
 
   void
-  evaluate(VectorType const & solution, std::map<dealii::types::boundary_id, Number> & flux);
+  evaluate(VectorType const & solution, double const time, bool const unsteady);
 
 private:
   dealii::MatrixFree<dim, Number> const & matrix_free;
   unsigned int                            dof_index, quad_index;
+
+  NormalFluxCalculatorData data;
+
+  bool clear_files;
+
+  std::map<dealii::types::boundary_id, double> flux;
 
   MPI_Comm const mpi_comm;
 };

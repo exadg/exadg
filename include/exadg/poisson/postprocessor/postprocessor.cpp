@@ -48,6 +48,16 @@ PostProcessor<dim, n_components, Number>::setup(
   output_generator.setup(pde_operator.get_dof_handler(),
                          *pde_operator.get_mapping(),
                          pp_data.output_data);
+
+  if(pp_data.normal_flux_data.evaluate)
+  {
+    normal_flux_calculator =
+      std::make_shared<NormalFluxCalculator<dim, Number>>(pde_operator.get_matrix_free(),
+                                                          pde_operator.get_dof_index(),
+                                                          pde_operator.get_quad_index(),
+                                                          pp_data.normal_flux_data,
+                                                          mpi_comm);
+  }
 }
 
 template<int dim, int n_components, typename Number>
@@ -61,6 +71,11 @@ PostProcessor<dim, n_components, Number>::do_postprocessing(VectorType const &  
 
   if(output_generator.time_control.needs_evaluation(time, time_step_number))
     output_generator.evaluate(solution, time, Utilities::is_unsteady_timestep(time_step_number));
+
+  if(pp_data.normal_flux_data.evaluate)
+    normal_flux_calculator->evaluate(solution,
+                                     time,
+                                     Utilities::is_unsteady_timestep(time_step_number));
 }
 
 template class PostProcessor<2, 1, float>;

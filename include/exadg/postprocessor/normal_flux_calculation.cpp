@@ -19,7 +19,12 @@
  *  ______________________________________________________________________
  */
 
+// C/C++
+#include <fstream>
+
+// ExaDG
 #include <exadg/postprocessor/normal_flux_calculation.h>
+#include <exadg/utilities/create_directories.h>
 
 namespace ExaDG
 {
@@ -28,19 +33,31 @@ NormalFluxCalculator<dim, Number>::NormalFluxCalculator(
   dealii::MatrixFree<dim, Number> const & matrix_free_in,
   unsigned int const                      dof_index_in,
   unsigned int const                      quad_index_in,
+  NormalFluxCalculatorData const &        data_in,
   MPI_Comm const &                        mpi_comm_in)
   : matrix_free(matrix_free_in),
     dof_index(dof_index_in),
     quad_index(quad_index_in),
+    clear_files(true),
     mpi_comm(mpi_comm_in)
 {
+  data = data_in;
+
+  for(auto it : data.boundary_ids)
+    flux.insert(typename std::pair<dealii::types::boundary_id, double>(it, 0.0));
+
+  if(data.evaluate)
+    create_directories(data.directory, mpi_comm);
 }
 
 template<int dim, typename Number>
 void
-NormalFluxCalculator<dim, Number>::evaluate(VectorType const &                             solution,
-                                            std::map<dealii::types::boundary_id, Number> & flux)
+NormalFluxCalculator<dim, Number>::evaluate(VectorType const & solution,
+                                            double const       time,
+                                            bool const         unsteady)
 {
+  std::cout << "Evaluate_normal_flux" << std::endl;
+
   // zero values since we sum into these variables
   for(auto & iterator : flux)
   {
@@ -49,13 +66,13 @@ NormalFluxCalculator<dim, Number>::evaluate(VectorType const &                  
 
   FaceIntegratorScalar integrator(matrix_free, true, dof_index, quad_index);
 
-  std::map<dealii::types::boundary_id, Number> area(flux);
+  std::map<dealii::types::boundary_id, double> area(flux);
 
   for(unsigned int face = matrix_free.n_inner_face_batches();
       face < (matrix_free.n_inner_face_batches() + matrix_free.n_boundary_face_batches());
       face++)
   {
-    typename std::map<dealii::types::boundary_id, Number>::iterator it;
+    typename std::map<dealii::types::boundary_id, double>::iterator it;
     dealii::types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
 
     it = flux.find(boundary_id);
@@ -100,6 +117,56 @@ NormalFluxCalculator<dim, Number>::evaluate(VectorType const &                  
   for(unsigned int counter = 0; counter < flux.size(); ++counter)
   {
     (iterator++)->second = flux_vector[counter];
+  }
+
+  // write results to file
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  {
+    std::string filename = data.directory + data.filename;
+
+    unsigned int precision = 12;
+
+    std::ofstream f;
+    if(clear_files)
+    {
+      f.open(filename.c_str(), std::ios::trunc);
+
+      f << std::setw(precision + 8) << std::left << "Time t";
+
+      for(auto it : flux)
+      {
+        // clang-format off
+        f << std::setw(precision + 8) << std::left
+          << "Flux (bid = " + std::to_string(it.first) + ")";
+        // clang-format on
+      }
+
+      f << std::endl;
+
+      if(unsteady)
+        clear_files = false;
+    }
+    else
+    {
+      f.open(filename.c_str(), std::ios::app);
+    }
+
+    // clang-format off
+    f << std::scientific << std::setprecision(precision)
+      << std::setw(precision + 8) << std::left << time;
+    // clang-format on
+
+    for(auto it : flux)
+    {
+      // clang-format off
+      f << std::scientific << std::setprecision(precision)
+        << std::setw(precision + 8) << std::left << it.second;
+      // clang-format on
+    }
+
+    f << std::endl;
+
+    f.close();
   }
 }
 

@@ -492,6 +492,13 @@ Operator<dim, n_components, Number>::solve(VectorType &       sol,
 }
 
 template<int dim, int n_components, typename Number>
+dealii::MatrixFree<dim, Number> const &
+Operator<dim, n_components, Number>::get_matrix_free() const
+{
+  return *matrix_free;
+}
+
+template<int dim, int n_components, typename Number>
 dealii::DoFHandler<dim> const &
 Operator<dim, n_components, Number>::get_dof_handler() const
 {
