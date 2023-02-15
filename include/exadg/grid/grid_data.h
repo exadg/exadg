@@ -36,7 +36,6 @@ struct GridData
       partitioning_type(PartitioningType::Metis),
       multigrid(MultigridVariant::LocalSmoothing),
       n_refine_global(0),
-      n_subdivisions_1d_hypercube(1),
       mapping_degree(1),
       file_name()
   {
@@ -65,8 +64,6 @@ struct GridData
 
     print_parameter(pcout, "Global refinements", n_refine_global);
 
-    print_parameter(pcout, "Subdivisions hypercube", n_subdivisions_1d_hypercube);
-
     print_parameter(pcout, "Mapping degree", mapping_degree);
   }
 
@@ -80,9 +77,6 @@ struct GridData
   MultigridVariant multigrid;
 
   unsigned int n_refine_global;
-
-  // only relevant for hypercube geometry/mesh
-  unsigned int n_subdivisions_1d_hypercube;
 
   unsigned int mapping_degree;
 

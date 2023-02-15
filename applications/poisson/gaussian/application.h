@@ -249,7 +249,7 @@ private:
     double const length = 1.0;
     double const left = -length, right = length;
     dealii::GridGenerator::subdivided_hyper_cube(*this->grid->triangulation,
-                                                 this->param.grid.n_subdivisions_1d_hypercube,
+                                                 this->n_subdivisions_1d_hypercube,
                                                  left,
                                                  right);
 

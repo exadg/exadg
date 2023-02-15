@@ -54,7 +54,8 @@ public:
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
     : mpi_comm(comm),
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
-      parameter_file(parameter_file)
+      parameter_file(parameter_file),
+      n_subdivisions_1d_hypercube(1)
   {
   }
 
@@ -96,9 +97,9 @@ public:
                                   unsigned int const refine_space,
                                   unsigned int const n_subdivisions_1d_hypercube)
   {
-    this->param.degree                           = degree;
-    this->param.grid.n_refine_global             = refine_space;
-    this->param.grid.n_subdivisions_1d_hypercube = n_subdivisions_1d_hypercube;
+    this->param.degree                = degree;
+    this->param.grid.n_refine_global  = refine_space;
+    this->n_subdivisions_1d_hypercube = n_subdivisions_1d_hypercube;
   }
 
   void
@@ -166,6 +167,8 @@ protected:
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
 
   std::string parameter_file;
+
+  unsigned int n_subdivisions_1d_hypercube;
 
   OutputParameters output_parameters;
 

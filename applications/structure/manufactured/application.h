@@ -353,10 +353,10 @@ private:
       p2[2] = this->width;
 
     std::vector<unsigned int> repetitions(dim);
-    repetitions[0] = this->param.grid.n_subdivisions_1d_hypercube;
-    repetitions[1] = this->param.grid.n_subdivisions_1d_hypercube;
+    repetitions[0] = this->n_subdivisions_1d_hypercube;
+    repetitions[1] = this->n_subdivisions_1d_hypercube;
     if(dim == 3)
-      repetitions[2] = this->param.grid.n_subdivisions_1d_hypercube;
+      repetitions[2] = this->n_subdivisions_1d_hypercube;
 
     dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
                                                       repetitions,
