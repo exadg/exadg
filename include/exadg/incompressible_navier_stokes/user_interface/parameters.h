@@ -113,7 +113,7 @@ private:
   involves_h_multigrid_pressure_block() const;
 
 
-  // penalty step (coupled solver or projection methods
+  // penalty step (coupled solver or projection methods)
   bool
   involves_h_multigrid_penalty_step() const;
 
