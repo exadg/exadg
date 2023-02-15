@@ -26,9 +26,9 @@
 #
 #########################################################################
 
-cf=clang-format
+cf=$(pwd)'/contrib/utilities/programs/clang-6/bin/clang-format'
 
-# print which clang-forma is used
+# print which clang-format is used
 echo $cf
 
 # format header files

@@ -33,11 +33,10 @@ ShearRateCalculator<dim, Number>::ShearRateCalculator()
 
 template<int dim, typename Number>
 void
-ShearRateCalculator<dim, Number>::initialize(
-  dealii::MatrixFree<dim, Number> const & matrix_free_in,
-  unsigned int const                      dof_index_u_in,
-  unsigned int const                      dof_index_u_scalar_in,
-  unsigned int const                      quad_index_in)
+ShearRateCalculator<dim, Number>::initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+                                             unsigned int const                      dof_index_u_in,
+                                             unsigned int const dof_index_u_scalar_in,
+                                             unsigned int const quad_index_in)
 {
   matrix_free        = &matrix_free_in;
   dof_index_u        = dof_index_u_in;
@@ -47,8 +46,7 @@ ShearRateCalculator<dim, Number>::initialize(
 
 template<int dim, typename Number>
 void
-ShearRateCalculator<dim, Number>::compute_shear_rate(VectorType &       dst,
-                                                     VectorType const & src) const
+ShearRateCalculator<dim, Number>::compute_shear_rate(VectorType & dst, VectorType const & src) const
 {
   dst = 0;
 
@@ -60,7 +58,7 @@ void
 ShearRateCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
                                             VectorType &                            dst,
                                             VectorType const &                      src,
-                                            Range const &                           cell_range) const
+                                            Range const & cell_range) const
 {
   CellIntegratorVector integrator_vector(matrix_free, dof_index_u, quad_index);
   CellIntegratorScalar integrator_scalar(matrix_free, dof_index_u_scalar, quad_index);
@@ -75,7 +73,7 @@ ShearRateCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> cons
     for(unsigned int q = 0; q < integrator_scalar.n_q_points; q++)
     {
       dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> sym_grad_u =
-    	integrator_vector.get_symmetric_gradient(q);
+        integrator_vector.get_symmetric_gradient(q);
       scalar shear_rate = std::sqrt(0.5 * scalar_product(sym_grad_u, sym_grad_u));
 
       integrator_scalar.submit_value(shear_rate, q);
