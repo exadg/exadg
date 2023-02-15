@@ -47,7 +47,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
-  Create coarse triangulations:              false
+  Multigrid variant:                         LocalSmoothing
   Global refinements:                        4
   Subdivisions hypercube:                    1
   Mapping degree:                            1
@@ -146,10 +146,10 @@ Calculate error for all fields at time t = 4.0000e-01:
   Relative error (L2-norm): 5.31013e-11
 
 Calculate error for all fields at time t = 4.5000e-01:
-  Relative error (L2-norm): 5.31899e-11
+  Relative error (L2-norm): 5.31898e-11
 
 Calculate error for all fields at time t = 5.0000e-01:
-  Relative error (L2-norm): 5.32887e-11
+  Relative error (L2-norm): 5.32886e-11
 
 Calculate error for all fields at time t = 5.5000e-01:
   Relative error (L2-norm): 5.33977e-11
@@ -170,13 +170,13 @@ Calculate error for all fields at time t = 8.0000e-01:
   Relative error (L2-norm): 5.40935e-11
 
 Calculate error for all fields at time t = 8.5000e-01:
-  Relative error (L2-norm): 5.42622e-11
+  Relative error (L2-norm): 5.42623e-11
 
 Calculate error for all fields at time t = 9.0000e-01:
-  Relative error (L2-norm): 5.44405e-11
+  Relative error (L2-norm): 5.44406e-11
 
 Calculate error for all fields at time t = 9.5000e-01:
-  Relative error (L2-norm): 5.46285e-11
+  Relative error (L2-norm): 5.46287e-11
 
 Calculate error for all fields at time t = 1.0000e+00:
-  Relative error (L2-norm): 5.48259e-11
+  Relative error (L2-norm): 5.48262e-11

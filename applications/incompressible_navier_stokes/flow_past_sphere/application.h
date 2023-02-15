@@ -136,10 +136,9 @@ public:
 
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.multigrid          = MultigridVariant::GlobalCoarsening;
     this->param.grid.mapping_degree     = this->param.degree_u;
     this->param.degree_p                = DegreePressure::MixedOrder;
-    // we need to create coarse triangulations since we use global coarsening multigrid
-    this->param.grid.create_coarse_triangulations = true;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -169,8 +168,7 @@ public:
     this->param.solver_data_pressure_poisson         = SolverData(1000, ABS_TOL, REL_TOL, 30);
     this->param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
     this->param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
-    this->param.multigrid_data_pressure_poisson.p_sequence            = PSequenceType::Bisect;
-    this->param.multigrid_data_pressure_poisson.use_global_coarsening = true;
+    this->param.multigrid_data_pressure_poisson.p_sequence = PSequenceType::Bisect;
     this->param.multigrid_data_pressure_poisson.smoother_data.smoother =
       MultigridSmoother::Chebyshev;
     this->param.multigrid_data_pressure_poisson.smoother_data.iterations = 4;
@@ -279,6 +277,7 @@ public:
 
     GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
                                                               this->param.grid,
+                                                              this->param.involves_h_multigrid(),
                                                               lambda_create_triangulation);
   }
 

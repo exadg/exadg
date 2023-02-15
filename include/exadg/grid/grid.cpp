@@ -34,26 +34,10 @@
 namespace ExaDG
 {
 template<int dim>
-Grid<dim>::Grid(const GridData & data, MPI_Comm const & mpi_comm)
+Grid<dim>::Grid(GridData const & data, bool const involves_h_multigrid, MPI_Comm const & mpi_comm)
 {
-  if(data.element_type == ElementType::Simplex)
-  {
-    mesh_smoothing = dealii::Triangulation<dim>::none;
-
-    // the option limit_level_difference_at_vertices (required for local smoothing multigrid) is not
-    // implemented for simplicial elements.
-  }
-  else if(data.element_type == ElementType::Hypercube)
-  {
-    if(data.create_coarse_triangulations) // global coarsening multigrid
-      mesh_smoothing = dealii::Triangulation<dim>::none;
-    else // required for local smoothing
-      mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("Not implemented."));
-  }
+  auto const mesh_smoothing = GridUtilities::get_mesh_smoothing<dim>(
+    data.multigrid == MultigridVariant::LocalSmoothing and involves_h_multigrid, data.element_type);
 
   // triangulation
   if(data.triangulation_type == TriangulationType::Serial)
@@ -65,11 +49,11 @@ Grid<dim>::Grid(const GridData & data, MPI_Comm const & mpi_comm)
   {
     typename dealii::parallel::distributed::Triangulation<dim>::Settings distributed_settings;
 
-    if(data.create_coarse_triangulations)
-      distributed_settings = dealii::parallel::distributed::Triangulation<dim>::default_setting;
-    else
+    if(data.multigrid == MultigridVariant::LocalSmoothing and involves_h_multigrid)
       distributed_settings =
         dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy;
+    else
+      distributed_settings = dealii::parallel::distributed::Triangulation<dim>::default_setting;
 
     triangulation =
       std::make_shared<dealii::parallel::distributed::Triangulation<dim>>(mpi_comm,

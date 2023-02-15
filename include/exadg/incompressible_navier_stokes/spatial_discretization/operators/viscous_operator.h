@@ -8,6 +8,7 @@
 #ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_VISCOUS_OPERATOR_H_
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_VISCOUS_OPERATOR_H_
 
+#include <exadg/grid/grid_utilities.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/weak_boundary_conditions.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/matrix_free/integrators.h>
@@ -157,7 +158,7 @@ public:
                    integrator_p.read_cell_data(array_penalty_parameter)) *
           IP::get_penalty_factor<dim, Number>(
             degree,
-            get_element_type(
+            GridUtilities::get_element_type(
               integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
             data.IP_factor);
   }
@@ -168,7 +169,7 @@ public:
     tau = integrator_m.read_cell_data(array_penalty_parameter) *
           IP::get_penalty_factor<dim, Number>(
             degree,
-            get_element_type(
+            GridUtilities::get_element_type(
               integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
             data.IP_factor);
   }
@@ -185,7 +186,7 @@ public:
                      integrator_p.read_cell_data(array_penalty_parameter)) *
             IP::get_penalty_factor<dim, Number>(
               degree,
-              get_element_type(
+              GridUtilities::get_element_type(
                 integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
               data.IP_factor);
     }
@@ -194,7 +195,7 @@ public:
       tau = integrator_m.read_cell_data(array_penalty_parameter) *
             IP::get_penalty_factor<dim, Number>(
               degree,
-              get_element_type(
+              GridUtilities::get_element_type(
                 integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
               data.IP_factor);
     }

@@ -46,6 +46,18 @@ std::string
 enum_to_string(TriangulationType const enum_type);
 
 /*
+ * deal.II provides different multigrid variants, which is to be specified by this parameter.
+ */
+enum class MultigridVariant
+{
+  LocalSmoothing,
+  GlobalCoarsening
+};
+
+std::string
+enum_to_string(MultigridVariant const enum_type);
+
+/*
  * Element type
  */
 enum class ElementType

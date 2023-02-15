@@ -52,6 +52,9 @@ public:
   check() const;
 
   bool
+  involves_h_multigrid() const;
+
+  bool
   linear_system_including_convective_term_has_to_be_solved() const;
 
   bool

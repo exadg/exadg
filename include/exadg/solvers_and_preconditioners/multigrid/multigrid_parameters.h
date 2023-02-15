@@ -283,7 +283,6 @@ struct MultigridData
   MultigridData()
     : type(MultigridType::hMG),
       p_sequence(PSequenceType::Bisect),
-      use_global_coarsening(false),
       smoother_data(SmootherData()),
       coarse_problem(CoarseGridData())
   {
@@ -298,8 +297,6 @@ struct MultigridData
     {
       print_parameter(pcout, "p-sequence", enum_to_string(p_sequence));
     }
-
-    print_parameter(pcout, "Global coarsening", use_global_coarsening);
 
     smoother_data.print(pcout);
 
@@ -320,10 +317,6 @@ struct MultigridData
 
   // Sequence of polynomial degrees during p-multigrid
   PSequenceType p_sequence;
-
-  // Enable this option in order to invoke a multigrid transfer implementation that can deal with
-  // hanging nodes
-  bool use_global_coarsening;
 
   // Smoother data
   SmootherData smoother_data;

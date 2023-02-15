@@ -346,6 +346,7 @@ Operator<dim, n_components, Number>::setup_solver()
         pair(iter.first, new dealii::Functions::ZeroFunction<dim>(n_components)));
 
     mg_preconditioner->initialize(mg_data,
+                                  param.grid.multigrid,
                                   &dof_handler.get_triangulation(),
                                   grid->coarse_triangulations,
                                   dof_handler.get_fe(),

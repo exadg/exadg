@@ -39,7 +39,7 @@ Physical quantities:
 Spatial discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
-  Create coarse triangulations:              false
+  Multigrid variant:                         LocalSmoothing
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            2
@@ -97,7 +97,6 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid operator type:                   ReactionDiffusion
   Multigrid type:                            h-MG
-  Global coarsening:                         false
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
   Iterations smoother:                       5
@@ -113,7 +112,6 @@ Linear solver:
   Pressure/Schur-complement block:
   Preconditioner:                            PressureConvectionDiffusion
   Multigrid type:                            h-MG
-  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -165,10 +163,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 7.74429e-13
+  Absolute error (L2-norm): 7.77864e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 2.08940e-11
+  Absolute error (L2-norm): 2.10240e-11
 
 
 
@@ -210,7 +208,7 @@ Physical quantities:
 Spatial discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
-  Create coarse triangulations:              false
+  Multigrid variant:                         LocalSmoothing
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            3
@@ -268,7 +266,6 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid operator type:                   ReactionDiffusion
   Multigrid type:                            h-MG
-  Global coarsening:                         false
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
   Iterations smoother:                       5
@@ -284,7 +281,6 @@ Linear solver:
   Pressure/Schur-complement block:
   Preconditioner:                            PressureConvectionDiffusion
   Multigrid type:                            h-MG
-  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -336,10 +332,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 6.48213e-13
+  Absolute error (L2-norm): 6.48165e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 1.27638e-11
+  Absolute error (L2-norm): 1.24791e-11
 
 
 
@@ -381,7 +377,7 @@ Physical quantities:
 Spatial discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
-  Create coarse triangulations:              false
+  Multigrid variant:                         LocalSmoothing
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            4
@@ -439,7 +435,6 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid operator type:                   ReactionDiffusion
   Multigrid type:                            h-MG
-  Global coarsening:                         false
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
   Iterations smoother:                       5
@@ -455,7 +450,6 @@ Linear solver:
   Pressure/Schur-complement block:
   Preconditioner:                            PressureConvectionDiffusion
   Multigrid type:                            h-MG
-  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -507,10 +501,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 2.65808e-14
+  Absolute error (L2-norm): 2.87520e-14
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 6.89331e-13
+  Absolute error (L2-norm): 7.90487e-13
 
 
 
@@ -552,7 +546,7 @@ Physical quantities:
 Spatial discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
-  Create coarse triangulations:              false
+  Multigrid variant:                         LocalSmoothing
   Global refinements:                        1
   Subdivisions hypercube:                    1
   Mapping degree:                            5
@@ -610,7 +604,6 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid operator type:                   ReactionDiffusion
   Multigrid type:                            h-MG
-  Global coarsening:                         false
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
   Iterations smoother:                       5
@@ -626,7 +619,6 @@ Linear solver:
   Pressure/Schur-complement block:
   Preconditioner:                            PressureConvectionDiffusion
   Multigrid type:                            h-MG
-  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -678,7 +670,7 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 1.28881e-11
+  Absolute error (L2-norm): 9.55255e-12
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 3.30618e-10
+  Absolute error (L2-norm): 2.37835e-10

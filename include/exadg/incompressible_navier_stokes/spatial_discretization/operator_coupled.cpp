@@ -475,6 +475,7 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
       pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
 
   mg_preconditioner->initialize(this->param.multigrid_data_velocity_block,
+                                this->param.grid.multigrid,
                                 &this->get_dof_handler_u().get_triangulation(),
                                 this->grid->coarse_triangulations,
                                 this->get_dof_handler_u().get_fe(),
@@ -602,6 +603,7 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complement()
 
   auto & dof_handler = this->get_dof_handler_p();
   mg_preconditioner->initialize(mg_data,
+                                this->param.grid.multigrid,
                                 &dof_handler.get_triangulation(),
                                 this->grid->coarse_triangulations,
                                 dof_handler.get_fe(),

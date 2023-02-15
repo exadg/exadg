@@ -96,6 +96,7 @@ public:
   void
   initialize(
     MultigridData const &                                                  data,
+    MultigridVariant const &                                               multigrid_variant,
     dealii::Triangulation<dim> const *                                     tria,
     std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations,
     dealii::FiniteElement<dim> const &                                     fe,
@@ -312,6 +313,8 @@ private:
   MPI_Comm const mpi_comm;
 
   MultigridData data;
+
+  MultigridVariant multigrid_variant;
 
   dealii::Triangulation<dim> const * triangulation;
 

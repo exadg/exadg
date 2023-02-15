@@ -38,6 +38,7 @@ template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize(
   MultigridData const &                                                  mg_data,
+  MultigridVariant const &                                               multigrid_variant,
   dealii::Triangulation<dim> const *                                     tria,
   std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations,
   dealii::FiniteElement<dim> const &                                     fe,
@@ -80,6 +81,7 @@ MultigridPreconditioner<dim, Number>::initialize(
   }
 
   Base::initialize(mg_data,
+                   multigrid_variant,
                    tria,
                    coarse_triangulations,
                    fe,

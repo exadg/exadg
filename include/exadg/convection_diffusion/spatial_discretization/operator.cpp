@@ -469,6 +469,7 @@ Operator<dim, Number>::initialize_preconditioner()
     CombinedOperatorData<dim> const & data = combined_operator.get_data();
 
     mg_preconditioner->initialize(mg_data,
+                                  param.grid.multigrid,
                                   &dof_handler.get_triangulation(),
                                   grid->coarse_triangulations,
                                   dof_handler.get_fe(),

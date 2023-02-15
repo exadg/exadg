@@ -132,6 +132,7 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
         pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     mg_preconditioner->initialize(this->param.multigrid_data_viscous,
+                                  this->param.grid.multigrid,
                                   &this->get_dof_handler_u().get_triangulation(),
                                   this->grid->coarse_triangulations,
                                   this->get_dof_handler_u().get_fe(),

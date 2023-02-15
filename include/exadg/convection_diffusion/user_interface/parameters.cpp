@@ -327,6 +327,16 @@ Parameters::check() const
 }
 
 bool
+Parameters::involves_h_multigrid() const
+{
+  if(linear_system_has_to_be_solved() and preconditioner == Preconditioner::Multigrid and
+     multigrid_data.involves_h_transfer())
+    return true;
+  else
+    return false;
+}
+
+bool
 Parameters::linear_system_including_convective_term_has_to_be_solved() const
 {
   bool equation_with_convective_term =

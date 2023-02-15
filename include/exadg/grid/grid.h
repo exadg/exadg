@@ -32,25 +32,6 @@
 
 namespace ExaDG
 {
-template<int dim>
-ElementType
-get_element_type(dealii::Triangulation<dim> const & tria)
-{
-  if(tria.all_reference_cells_are_simplex())
-  {
-    return ElementType::Simplex;
-  }
-  else if(tria.all_reference_cells_are_hyper_cube())
-  {
-    return ElementType::Hypercube;
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("Invalid parameter element_type."));
-    return ElementType::Hypercube;
-  }
-}
-
 /**
  * A struct of dealii data structures occurring in close proximity to each other so that it makes
  * sense to group them together to keep interfaces lean.
@@ -66,12 +47,7 @@ public:
   /**
    * Constructor.
    */
-  Grid(GridData const & data, MPI_Comm const & mpi_comm);
-
-  /**
-   * dealii::Triangulation::MeshSmoothing
-   */
-  typename dealii::Triangulation<dim>::MeshSmoothing mesh_smoothing;
+  Grid(GridData const & data, bool const involves_h_multigrid, MPI_Comm const & mpi_comm);
 
   /**
    * dealii::Triangulation.

@@ -432,6 +432,7 @@ Operator<dim, Number>::initialize_preconditioner()
           pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
 
       mg_preconditioner->initialize(param.multigrid_data,
+                                    param.grid.multigrid,
                                     &dof_handler.get_triangulation(),
                                     grid->coarse_triangulations,
                                     dof_handler.get_fe(),
@@ -465,6 +466,7 @@ Operator<dim, Number>::initialize_preconditioner()
           pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
 
       mg_preconditioner->initialize(param.multigrid_data,
+                                    param.grid.multigrid,
                                     &dof_handler.get_triangulation(),
                                     grid->coarse_triangulations,
                                     dof_handler.get_fe(),

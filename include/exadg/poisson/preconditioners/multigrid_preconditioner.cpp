@@ -36,6 +36,7 @@ template<int dim, typename Number, int n_components>
 void
 MultigridPreconditioner<dim, Number, n_components>::initialize(
   MultigridData const &                                                  mg_data,
+  MultigridVariant const &                                               multigrid_variant,
   dealii::Triangulation<dim> const *                                     tria,
   std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations,
   dealii::FiniteElement<dim> const &                                     fe,
@@ -52,6 +53,7 @@ MultigridPreconditioner<dim, Number, n_components>::initialize(
   this->mesh_is_moving = mesh_is_moving;
 
   Base::initialize(mg_data,
+                   multigrid_variant,
                    tria,
                    coarse_triangulations,
                    fe,

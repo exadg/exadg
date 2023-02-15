@@ -284,10 +284,38 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
   AssertThrow(viscosity >= 0.0, dealii::ExcMessage("parameter must be defined"));
 
   // TEMPORAL DISCRETIZATION
-  AssertThrow(solver_type != SolverType::Undefined,
-              dealii::ExcMessage("parameter must be defined"));
-  AssertThrow(temporal_discretization != TemporalDiscretization::Undefined,
-              dealii::ExcMessage("parameter must be defined"));
+
+  if(problem_type == ProblemType::Steady)
+  {
+    AssertThrow(solver_type != SolverType::Undefined,
+                dealii::ExcMessage(
+                  "The parameter solver_type must be defined for ProblemType::Steady."));
+  }
+
+  if(problem_type == ProblemType::Unsteady)
+  {
+    AssertThrow(solver_type == SolverType::Unsteady,
+                dealii::ExcMessage(
+                  "An unsteady solver has to be used to solve unsteady problems."));
+  }
+
+  if(solver_type == SolverType::Steady)
+  {
+    if(convective_problem())
+    {
+      AssertThrow(treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit,
+                  dealii::ExcMessage(
+                    "Convective term has to be formulated implicitly when using a steady solver."));
+    }
+  }
+
+  // In case of a steady solver, the parameter temporal_discretization does not have to be
+  // specified, since we always choose a coupled/monolithic solution approach).
+  if(solver_type == SolverType::Unsteady)
+  {
+    AssertThrow(temporal_discretization != TemporalDiscretization::Undefined,
+                dealii::ExcMessage("parameter must be defined"));
+  }
 
   if(convective_problem())
   {
@@ -317,23 +345,6 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
                   "Adaptive time stepping is only implemented for TimeStepCalculation::CFL."));
   }
 
-  if(problem_type == ProblemType::Unsteady)
-  {
-    AssertThrow(solver_type == SolverType::Unsteady,
-                dealii::ExcMessage(
-                  "An unsteady solver has to be used to solve unsteady problems."));
-  }
-
-  if(solver_type == SolverType::Steady)
-  {
-    if(convective_problem())
-    {
-      AssertThrow(treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit,
-                  dealii::ExcMessage(
-                    "Convective term has to be formulated implicitly when using a steady solver."));
-    }
-  }
-
   // SPATIAL DISCRETIZATION
 
   grid.check();
@@ -342,10 +353,12 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
   // For projection-type methods, degree_p > 0 has to be fulfilled (the SIPG discretization
   // of the pressure Poisson equation would be inconsistent for degree_p = 0).
   if(temporal_discretization != TemporalDiscretization::BDFCoupledSolution)
+  {
     AssertThrow(
       get_degree_p(degree_u) > 0,
       dealii::ExcMessage(
         "Polynomial degree of pressure has to be larger than zero for projection-type methods."));
+  }
 
   AssertThrow(IP_formulation_viscous != InteriorPenaltyFormulation::Undefined,
               dealii::ExcMessage("parameter must be defined"));
@@ -557,6 +570,90 @@ Parameters::linear_problem_has_to_be_solved() const
   return equation_type == EquationType::Stokes ||
          treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit;
 }
+
+bool
+Parameters::involves_h_multigrid() const
+{
+  bool use_global_coarsening = false;
+
+  // Coupled solver
+  if(solver_type == SolverType::Steady or
+     (solver_type == SolverType::Unsteady and
+      temporal_discretization == TemporalDiscretization::BDFCoupledSolution))
+  {
+    // block preconditioner: velocity block
+    if(involves_h_multigrid_velocity_block())
+    {
+      use_global_coarsening = true;
+    }
+
+    // only those Schur complement preconditioners that involve multigrid
+    if(involves_h_multigrid_pressure_block())
+    {
+      use_global_coarsening = true;
+    }
+
+    // if an additional penalty step has to be solved
+    if(apply_penalty_terms_in_postprocessing_step and
+       (use_divergence_penalty or use_continuity_penalty))
+    {
+      if(involves_h_multigrid_penalty_step())
+      {
+        use_global_coarsening = true;
+      }
+    }
+  }
+  else if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme or
+          temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+  {
+    // pressure step is the same for both time discretization schemes
+    if(involves_h_multigrid_pressure_step())
+    {
+      use_global_coarsening = true;
+    }
+
+    // penalty step is the same for both discretization schemes
+    if(use_divergence_penalty or use_continuity_penalty)
+    {
+      if(involves_h_multigrid_penalty_step())
+      {
+        use_global_coarsening = true;
+      }
+    }
+
+    // viscous step for dual splitting scheme
+    if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      if(viscous_problem())
+      {
+        if(involves_h_multigrid_viscous_step())
+        {
+          use_global_coarsening = true;
+        }
+      }
+    }
+
+    // momentum step for pressure correction scheme
+    if(temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      if(viscous_problem() or (convective_problem() and
+                               treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
+      {
+        if(involves_h_multigrid_momentum_step())
+        {
+          use_global_coarsening = true;
+        }
+      }
+    }
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("not implemented."));
+  }
+
+  return use_global_coarsening;
+}
+
 
 unsigned int
 Parameters::get_degree_p(unsigned int const degree_u) const
@@ -1166,6 +1263,94 @@ Parameters::print_parameters_coupled_solver(dealii::ConditionalOStream const & p
       print_parameters_projection_step(pcout);
     }
   }
+}
+
+bool
+Parameters::involves_h_multigrid_velocity_block() const
+{
+  bool use_global_coarsening = false;
+
+  if(preconditioner_velocity_block == MomentumPreconditioner::Multigrid and
+     multigrid_data_velocity_block.involves_h_transfer())
+  {
+    use_global_coarsening = true;
+  }
+
+  return use_global_coarsening;
+}
+
+bool
+Parameters::involves_h_multigrid_pressure_block() const
+{
+  bool use_global_coarsening = false;
+
+  if(preconditioner_pressure_block == SchurComplementPreconditioner::LaplaceOperator or
+     preconditioner_pressure_block == SchurComplementPreconditioner::CahouetChabard or
+     preconditioner_pressure_block == SchurComplementPreconditioner::PressureConvectionDiffusion)
+  {
+    if(multigrid_data_pressure_block.involves_h_transfer())
+    {
+      use_global_coarsening = true;
+    }
+  }
+
+  return use_global_coarsening;
+}
+
+bool
+Parameters::involves_h_multigrid_penalty_step() const
+{
+  bool use_global_coarsening = false;
+
+  if(preconditioner_projection == PreconditionerProjection::Multigrid and
+     multigrid_data_projection.involves_h_transfer())
+  {
+    use_global_coarsening = true;
+  }
+
+  return use_global_coarsening;
+}
+
+bool
+Parameters::involves_h_multigrid_pressure_step() const
+{
+  bool use_global_coarsening = false;
+
+  if(preconditioner_pressure_poisson == PreconditionerPressurePoisson::Multigrid and
+     multigrid_data_pressure_poisson.involves_h_transfer())
+  {
+    use_global_coarsening = true;
+  }
+
+  return use_global_coarsening;
+}
+
+bool
+Parameters::involves_h_multigrid_viscous_step() const
+{
+  bool use_global_coarsening = false;
+
+  if(preconditioner_viscous == PreconditionerViscous::Multigrid and
+     multigrid_data_viscous.involves_h_transfer())
+  {
+    use_global_coarsening = true;
+  }
+
+  return use_global_coarsening;
+}
+
+bool
+Parameters::involves_h_multigrid_momentum_step() const
+{
+  bool use_global_coarsening = false;
+
+  if(preconditioner_momentum == MomentumPreconditioner::Multigrid and
+     multigrid_data_momentum.involves_h_transfer())
+  {
+    use_global_coarsening = true;
+  }
+
+  return use_global_coarsening;
 }
 
 } // namespace IncNS

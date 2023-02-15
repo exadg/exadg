@@ -46,6 +46,9 @@ public:
   void
   check() const;
 
+  bool
+  involves_h_multigrid() const;
+
   void
   print(dealii::ConditionalOStream const & pcout, std::string const & name) const;
 
