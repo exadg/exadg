@@ -5,10 +5,10 @@
         "IsTest": "false"
     },
     "SpatialResolution": {
-        "DegreeMin": "2",
-        "DegreeMax": "2",
-        "RefineSpaceMin": "0",
-        "RefineSpaceMax": "0"
+        "DegreeMin": "3",
+        "DegreeMax": "3",
+        "RefineSpaceMin": "2",
+        "RefineSpaceMax": "2"
     },
     "TemporalResolution": {
         "RefineTimeMin": "0",
@@ -21,6 +21,6 @@
     "Output": {
         "OutputDirectory": "output/poiseuille/",
         "OutputName": "l0_k2",
-        "WriteOutput": "false"
+        "WriteOutput": "true"
     }
 }

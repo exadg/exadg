@@ -480,6 +480,7 @@ private:
     pp_data.output_data.filename                  = this->output_parameters.filename;
     pp_data.output_data.write_vorticity           = true;
     pp_data.output_data.write_divergence          = true;
+    pp_data.output_data.write_shear_rate          = true;
     pp_data.output_data.write_velocity_magnitude  = true;
     pp_data.output_data.write_vorticity_magnitude = true;
     pp_data.output_data.write_processor_id        = true;
