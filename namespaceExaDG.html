@@ -357,6 +357,10 @@ Enumerations</h2></td></tr>
 , <b>FullyDistributed</b>
  }</td></tr>
 <tr class="separator:ad107b943d6bfdb6f5f1711ef757eb817"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0a87a51d3004099eaaffa1fd512696ca"><td class="memItemLeft" align="right" valign="top"><a id="a0a87a51d3004099eaaffa1fd512696ca" name="a0a87a51d3004099eaaffa1fd512696ca"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>MultigridVariant</b> { <b>LocalSmoothing</b>
+, <b>GlobalCoarsening</b>
+ }</td></tr>
+<tr class="separator:a0a87a51d3004099eaaffa1fd512696ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a75d967791461d2f8f2489eeee71dee0e"><td class="memItemLeft" align="right" valign="top"><a id="a75d967791461d2f8f2489eeee71dee0e" name="a75d967791461d2f8f2489eeee71dee0e"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>ElementType</b> { <b>Hypercube</b>
 , <b>Simplex</b>
  }</td></tr>
@@ -555,6 +559,9 @@ template&lt;int dim&gt; </td></tr>
 <tr class="memitem:a97397a765f79caf8aec1db82e5b60beb"><td class="memItemLeft" align="right" valign="top"><a id="a97397a765f79caf8aec1db82e5b60beb" name="a97397a765f79caf8aec1db82e5b60beb"></a>
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>enum_to_string</b> (TriangulationType const enum_type)</td></tr>
 <tr class="separator:a97397a765f79caf8aec1db82e5b60beb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5933090d4fcdbf1a6f967a6d96139401"><td class="memItemLeft" align="right" valign="top"><a id="a5933090d4fcdbf1a6f967a6d96139401" name="a5933090d4fcdbf1a6f967a6d96139401"></a>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><b>enum_to_string</b> (MultigridVariant const enum_type)</td></tr>
+<tr class="separator:a5933090d4fcdbf1a6f967a6d96139401"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aea9639637c2da10aed74f4d0aef5164a"><td class="memItemLeft" align="right" valign="top"><a id="aea9639637c2da10aed74f4d0aef5164a" name="aea9639637c2da10aed74f4d0aef5164a"></a>
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>enum_to_string</b> (ElementType const enum_type)</td></tr>
 <tr class="separator:aea9639637c2da10aed74f4d0aef5164a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -567,10 +574,6 @@ std::string&#160;</td><td class="memItemRight" valign="bottom"><b>enum_to_string
 <tr class="memitem:a7ece5f60d30685552c07158c85d74f2d"><td class="memTemplParams" colspan="2">template&lt;int dim, typename Number &gt; </td></tr>
 <tr class="memitem:a7ece5f60d30685552c07158c85d74f2d"><td class="memTemplItemLeft" align="right" valign="top">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#a7ece5f60d30685552c07158c85d74f2d">get_dynamic_mapping</a> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1GridMotionInterface.html">GridMotionInterface</a>&lt; dim, Number &gt; const &gt; grid_motion)</td></tr>
 <tr class="separator:a7ece5f60d30685552c07158c85d74f2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa9171da72c58101e3d2929f4146ac00b"><td class="memTemplParams" colspan="2"><a id="aa9171da72c58101e3d2929f4146ac00b" name="aa9171da72c58101e3d2929f4146ac00b"></a>
-template&lt;int dim&gt; </td></tr>
-<tr class="memitem:aa9171da72c58101e3d2929f4146ac00b"><td class="memTemplItemLeft" align="right" valign="top">ElementType&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get_element_type</b> (dealii::Triangulation&lt; dim &gt; const &amp;tria)</td></tr>
-<tr class="separator:aa9171da72c58101e3d2929f4146ac00b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac26ac75e95c9fbc45eaa00fa0c05a2b7"><td class="memTemplParams" colspan="2">template&lt;int dim&gt; </td></tr>
 <tr class="memitem:ac26ac75e95c9fbc45eaa00fa0c05a2b7"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#ac26ac75e95c9fbc45eaa00fa0c05a2b7">refine_local</a> (dealii::Triangulation&lt; dim &gt; &amp;tria, std::vector&lt; unsigned int &gt; const &amp;vector_local_refinements)</td></tr>
 <tr class="separator:ac26ac75e95c9fbc45eaa00fa0c05a2b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
