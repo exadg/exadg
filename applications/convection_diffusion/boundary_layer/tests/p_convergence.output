@@ -50,7 +50,6 @@ Spatial Discretization:
   Element type:                              Hypercube
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        4
-  Subdivisions hypercube:                    1
   Mapping degree:                            1
   Polynomial degree:                         1
   Numerical flux convective term:            LaxFriedrichsFlux
@@ -173,7 +172,6 @@ Spatial Discretization:
   Element type:                              Hypercube
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        4
-  Subdivisions hypercube:                    1
   Mapping degree:                            1
   Polynomial degree:                         2
   Numerical flux convective term:            LaxFriedrichsFlux
@@ -296,7 +294,6 @@ Spatial Discretization:
   Element type:                              Hypercube
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        4
-  Subdivisions hypercube:                    1
   Mapping degree:                            1
   Polynomial degree:                         3
   Numerical flux convective term:            LaxFriedrichsFlux
@@ -419,7 +416,6 @@ Spatial Discretization:
   Element type:                              Hypercube
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        4
-  Subdivisions hypercube:                    1
   Mapping degree:                            1
   Polynomial degree:                         4
   Numerical flux convective term:            LaxFriedrichsFlux
@@ -542,7 +538,6 @@ Spatial Discretization:
   Element type:                              Hypercube
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        4
-  Subdivisions hypercube:                    1
   Mapping degree:                            1
   Polynomial degree:                         5
   Numerical flux convective term:            LaxFriedrichsFlux

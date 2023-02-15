@@ -200,7 +200,7 @@ private:
         // choose a coarse grid with at least 2^dim elements to obtain a non-trivial coarse grid
         // problem
         unsigned int const n_cells_1d =
-          std::max((unsigned int)2, this->param.grid.n_subdivisions_1d_hypercube);
+          std::max((unsigned int)2, this->n_subdivisions_1d_hypercube);
 
         if(read_external_grid)
         {

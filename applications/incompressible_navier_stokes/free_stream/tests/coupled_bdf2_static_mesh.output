@@ -63,7 +63,6 @@ Spatial discretization:
   Element type:                              Hypercube
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        2
-  Subdivisions hypercube:                    1
   Mapping degree:                            3
   Element type:                              L2 - Discontinuous Galerkin
   Polynomial degree velocity:                3
