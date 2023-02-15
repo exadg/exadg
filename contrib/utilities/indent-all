@@ -26,7 +26,7 @@
 #
 #########################################################################
 
-cf=$(pwd)'/contrib/utilities/programs/clang-6/bin/clang-format'
+cf=clang-format
 
 # print which clang-format is used
 echo $cf
