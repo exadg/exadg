@@ -35,7 +35,7 @@ struct OutputData : public OutputDataBase
   OutputData()
     : write_vorticity(false),
       write_divergence(false),
-	  write_shear_rate(false),
+      write_shear_rate(false),
       write_velocity_magnitude(false),
       write_vorticity_magnitude(false),
       write_streamfunction(false),
