@@ -176,6 +176,81 @@ private:
   unsigned int quad_index;
 };
 
+template<int dim, typename Number>
+class ShearRateCalculator
+{
+public:
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef ShearRateCalculator<dim, Number> This;
+
+  typedef CellIntegrator<dim, dim, Number> CellIntegratorVector;
+  typedef CellIntegrator<dim, 1, Number>   CellIntegratorScalar;
+
+  typedef dealii::VectorizedArray<Number> scalar;
+  typedef dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> symmetricgradient;
+
+  ShearRateCalculator()
+    : matrix_free(nullptr), dof_index_vector(1), dof_index_scalar(2), quad_index(0){};
+
+  void
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+             unsigned int const                      dof_index_vector_in,
+             unsigned int const                      dof_index_scalar_in,
+             unsigned int const                      quad_index_in)
+  {
+    matrix_free      = &matrix_free_in;
+    dof_index_vector = dof_index_vector_in;
+    dof_index_scalar = dof_index_scalar_in;
+    quad_index       = quad_index_in;
+  }
+
+  void
+  compute_shear_rate(VectorType & dst, VectorType const & src) const
+  {
+    matrix_free->cell_loop(&This::local_compute_shear_rate, this, dst, src);
+  }
+
+private:
+  void
+  local_compute_shear_rate(dealii::MatrixFree<dim, Number> const &       matrix_free,
+                           VectorType &                                  dst,
+                           VectorType const &                            src,
+                           std::pair<unsigned int, unsigned int> const & cell_range) const
+  {
+    CellIntegratorVector integrator_vector(matrix_free, dof_index_vector, quad_index, 0);
+    CellIntegratorScalar integrator_scalar(matrix_free, dof_index_scalar, quad_index, 0);
+
+    for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
+    {
+      integrator_vector.reinit(cell);
+      integrator_vector.read_dof_values(src);
+      integrator_vector.evaluate(dealii::EvaluationFlags::gradients);
+
+      integrator_scalar.reinit(cell);
+
+      for(unsigned int q = 0; q < integrator_vector.n_q_points; q++)
+      {
+        symmetricgradient sym_grad_u = integrator_vector.get_symmetric_gradient(q);
+
+        // Shear rate definition according to Galdi et al., 2008
+        // ("Hemodynamical Flows: Modeling, Analysis and Simulation").
+        // trace(sym_grad_u^2) = sym_grad_u : sym_grad_u
+        scalar shear_rate = std::sqrt(2.0 * scalar_product(sym_grad_u, sym_grad_u));
+        integrator_scalar.submit_value(shear_rate, q);
+      }
+
+      integrator_scalar.integrate(dealii::EvaluationFlags::values);
+      integrator_scalar.set_dof_values(dst);
+    }
+  }
+
+  dealii::MatrixFree<dim, Number> const * matrix_free;
+
+  unsigned int dof_index_vector;
+  unsigned int dof_index_scalar;
+  unsigned int quad_index;
+};
 
 /*
  *  The DoF vector contains the vector of conserved quantities (rho, rho u, rho E).

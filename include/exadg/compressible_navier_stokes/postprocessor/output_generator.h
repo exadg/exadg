@@ -42,6 +42,7 @@ struct OutputData : public OutputDataBase
       write_temperature(false),
       write_vorticity(false),
       write_divergence(false),
+	  write_shear_rate(false),
       write_processor_id(false)
   {
   }
@@ -56,6 +57,7 @@ struct OutputData : public OutputDataBase
     print_parameter(pcout, "Write temperature", write_temperature);
     print_parameter(pcout, "Write vorticity", write_vorticity);
     print_parameter(pcout, "Write divergence", write_divergence);
+    print_parameter(pcout, "Write shear rate", write_shear_rate);
     print_parameter(pcout, "Write processor ID", write_processor_id);
   }
 
@@ -73,6 +75,9 @@ struct OutputData : public OutputDataBase
 
   // write divergence of velocity field
   bool write_divergence;
+
+  // write divergence of velocity field
+  bool write_shear_rate;
 
   // write processor ID to scalar field in order to visualize the
   // distribution of cells to processors

@@ -257,6 +257,7 @@ private:
     pp_data.output_data.write_temperature  = true;
     pp_data.output_data.write_vorticity    = true;
     pp_data.output_data.write_divergence   = true;
+    pp_data.output_data.write_shear_rate   = true;
     pp_data.output_data.degree             = this->param.degree;
     pp_data.output_data.write_higher_order = false;
 

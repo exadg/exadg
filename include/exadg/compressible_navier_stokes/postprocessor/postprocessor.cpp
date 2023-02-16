@@ -123,6 +123,11 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     solution,
       divergence.evaluate(velocity.evaluate_get(solution));
       additional_fields_vtu.push_back(&divergence);
     }
+    if(pp_data.output_data.write_shear_rate)
+    {
+      shear_rate.evaluate(velocity.evaluate_get(solution));
+      additional_fields_vtu.push_back(&shear_rate);
+    }
     if(pp_data.output_data.write_temperature)
     {
       temperature.evaluate(solution);
@@ -208,7 +213,8 @@ PostProcessor<dim, Number>::initialize_derived_fields()
   // velocity
   if(pp_data.output_data.write_velocity || pp_data.output_data.write_vorticity ||
      pp_data.output_data.write_divergence ||
-     pp_data.lift_and_drag_data.time_control_data.is_active ||
+	 pp_data.output_data.write_shear_rate ||
+	 pp_data.lift_and_drag_data.time_control_data.is_active ||
      pp_data.kinetic_energy_data.time_control_data.is_active ||
      pp_data.kinetic_energy_spectrum_data.time_control_data.is_active)
   {
@@ -263,6 +269,25 @@ PostProcessor<dim, Number>::initialize_derived_fields()
     divergence.reinit();
   }
 
+  // shear rate
+  if(pp_data.output_data.write_shear_rate)
+  {
+    AssertThrow(pp_data.output_data.write_velocity == true,
+                dealii::ExcMessage("You need to activate write_velocity."));
+
+    shear_rate.type              = SolutionFieldType::scalar;
+    shear_rate.name              = "shear_rate";
+    shear_rate.dof_handler       = &navier_stokes_operator->get_dof_handler_scalar();
+    shear_rate.initialize_vector = [&](VectorType & dst) {
+      navier_stokes_operator->initialize_dof_vector_scalar(dst);
+    };
+    shear_rate.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
+      navier_stokes_operator->compute_shear_rate(dst, src);
+    };
+
+    shear_rate.reinit();
+  }
+
   // temperature
   if(pp_data.output_data.write_temperature)
   {
@@ -289,6 +314,7 @@ PostProcessor<dim, Number>::invalidate_derived_fields()
   temperature.invalidate();
   vorticity.invalidate();
   divergence.invalidate();
+  shear_rate.invalidate();
 }
 
 template class PostProcessor<2, float>;
