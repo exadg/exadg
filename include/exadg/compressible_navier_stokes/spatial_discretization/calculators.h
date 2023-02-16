@@ -187,7 +187,7 @@ public:
   typedef CellIntegrator<dim, dim, Number> CellIntegratorVector;
   typedef CellIntegrator<dim, 1, Number>   CellIntegratorScalar;
 
-  typedef dealii::VectorizedArray<Number> scalar;
+  typedef dealii::VectorizedArray<Number>                                  scalar;
   typedef dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> symmetricgradient;
 
   ShearRateCalculator()

@@ -212,9 +212,8 @@ PostProcessor<dim, Number>::initialize_derived_fields()
 
   // velocity
   if(pp_data.output_data.write_velocity || pp_data.output_data.write_vorticity ||
-     pp_data.output_data.write_divergence ||
-	 pp_data.output_data.write_shear_rate ||
-	 pp_data.lift_and_drag_data.time_control_data.is_active ||
+     pp_data.output_data.write_divergence || pp_data.output_data.write_shear_rate ||
+     pp_data.lift_and_drag_data.time_control_data.is_active ||
      pp_data.kinetic_energy_data.time_control_data.is_active ||
      pp_data.kinetic_energy_spectrum_data.time_control_data.is_active)
   {

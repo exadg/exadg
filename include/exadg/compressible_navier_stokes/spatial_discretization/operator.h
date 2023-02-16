@@ -268,7 +268,7 @@ private:
   p_u_T_Calculator<dim, Number>     p_u_T_calculator;
   VorticityCalculator<dim, Number>  vorticity_calculator;
   DivergenceCalculator<dim, Number> divergence_calculator;
-  ShearRateCalculator<dim, Number> shear_rate_calculator;
+  ShearRateCalculator<dim, Number>  shear_rate_calculator;
 
   /*
    * MPI

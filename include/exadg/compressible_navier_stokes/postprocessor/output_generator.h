@@ -42,7 +42,7 @@ struct OutputData : public OutputDataBase
       write_temperature(false),
       write_vorticity(false),
       write_divergence(false),
-	  write_shear_rate(false),
+      write_shear_rate(false),
       write_processor_id(false)
   {
   }
