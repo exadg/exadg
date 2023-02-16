@@ -40,7 +40,8 @@ private:
 
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef dealii::VectorizedArray<Number> scalar;
+  typedef dealii::VectorizedArray<Number>                                  scalar;
+  typedef dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> symmetrictensor;
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
