@@ -140,7 +140,9 @@ Driver<dim, Number>::setup()
   if(application->get_parameters().use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
                                         matrix_free_data->data);
-  matrix_free->reinit(*application->get_grid()->mapping,
+  std::shared_ptr<dealii::Mapping<dim> const> mapping =
+    get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
+  matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
@@ -182,9 +184,7 @@ Driver<dim, Number>::setup()
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     scalar_postprocessor[i] = application->create_postprocessor_scalar(i);
-    std::shared_ptr<dealii::Mapping<dim> const> mapping =
-      get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
-    scalar_postprocessor[i]->setup(*scalar_operator[i], *mapping);
+    scalar_postprocessor[i]->setup(*scalar_operator[i]);
   }
 
   // setup time integrator before calling setup_solvers

@@ -85,6 +85,13 @@ public:
   unsigned int
   solve(VectorType & sol, VectorType const & rhs, double const time) const;
 
+  /*
+   * Setters and getters.
+   */
+
+  dealii::MatrixFree<dim, Number> const &
+  get_matrix_free() const;
+
   dealii::DoFHandler<dim> const &
   get_dof_handler() const;
 
@@ -103,6 +110,9 @@ public:
 
   std::shared_ptr<TimerTree>
   get_timings() const;
+
+  std::shared_ptr<dealii::Mapping<dim> const>
+  get_mapping() const;
 
 #ifdef DEAL_II_WITH_TRILINOS
   void
@@ -136,6 +146,9 @@ public:
   unsigned int
   get_dof_index() const;
 
+  unsigned int
+  get_quad_index() const;
+
 private:
   std::string
   get_dof_name() const;
@@ -145,9 +158,6 @@ private:
 
   std::string
   get_quad_gauss_lobatto_name() const;
-
-  unsigned int
-  get_quad_index() const;
 
   unsigned int
   get_quad_index_gauss_lobatto() const;

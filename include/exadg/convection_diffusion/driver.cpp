@@ -104,7 +104,7 @@ Driver<dim, Number>::setup()
   {
     // initialize postprocessor
     postprocessor = application->create_postprocessor();
-    postprocessor->setup(*pde_operator, *mapping);
+    postprocessor->setup(*pde_operator);
 
     // initialize time integrator or driver for steady problems
     if(application->get_parameters().problem_type == ProblemType::Unsteady)

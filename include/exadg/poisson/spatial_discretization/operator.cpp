@@ -492,6 +492,13 @@ Operator<dim, n_components, Number>::solve(VectorType &       sol,
 }
 
 template<int dim, int n_components, typename Number>
+dealii::MatrixFree<dim, Number> const &
+Operator<dim, n_components, Number>::get_matrix_free() const
+{
+  return *matrix_free;
+}
+
+template<int dim, int n_components, typename Number>
 dealii::DoFHandler<dim> const &
 Operator<dim, n_components, Number>::get_dof_handler() const
 {
@@ -637,6 +644,13 @@ std::shared_ptr<TimerTree>
 Operator<dim, n_components, Number>::get_timings() const
 {
   return iterative_solver->get_timings();
+}
+
+template<int dim, int n_components, typename Number>
+std::shared_ptr<dealii::Mapping<dim> const>
+Operator<dim, n_components, Number>::get_mapping() const
+{
+  return grid->mapping;
 }
 
 template class Operator<2, 1, float>;

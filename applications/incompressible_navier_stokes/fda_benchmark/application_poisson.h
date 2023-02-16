@@ -103,7 +103,7 @@ private:
     this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(1));
   }
 
-  std::shared_ptr<PostProcessorBase<dim, Number>>
+  std::shared_ptr<PostProcessorBase<dim, n_components, Number>>
   create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
@@ -113,8 +113,8 @@ private:
     pp_data.output_data.write_higher_order          = true;
     pp_data.output_data.degree                      = this->param.degree;
 
-    std::shared_ptr<PostProcessorBase<dim, Number>> pp;
-    pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
+    std::shared_ptr<PostProcessorBase<dim, n_components, Number>> pp;
+    pp.reset(new PostProcessor<dim, n_components, Number>(pp_data, this->mpi_comm));
 
     return pp;
   }

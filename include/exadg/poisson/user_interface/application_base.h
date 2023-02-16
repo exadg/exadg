@@ -124,7 +124,7 @@ public:
     set_field_functions();
   }
 
-  virtual std::shared_ptr<Poisson::PostProcessorBase<dim, Number>>
+  virtual std::shared_ptr<Poisson::PostProcessorBase<dim, n_components, Number>>
   create_postprocessor() = 0;
 
   Parameters const &

@@ -28,6 +28,7 @@
 // ExaDG
 #include <exadg/poisson/postprocessor/postprocessor_base.h>
 #include <exadg/postprocessor/error_calculation.h>
+#include <exadg/postprocessor/normal_flux_calculation.h>
 #include <exadg/postprocessor/output_data_base.h>
 #include <exadg/postprocessor/output_generator_scalar.h>
 
@@ -44,13 +45,14 @@ struct PostProcessorData
 
   OutputDataBase            output_data;
   ErrorCalculationData<dim> error_data;
+  NormalFluxCalculatorData  normal_flux_data;
 };
 
-template<int dim, typename Number>
-class PostProcessor : public PostProcessorBase<dim, Number>
+template<int dim, int n_components, typename Number>
+class PostProcessor : public PostProcessorBase<dim, n_components, Number>
 {
 protected:
-  typedef PostProcessorBase<dim, Number> Base;
+  typedef PostProcessorBase<dim, n_components, Number> Base;
 
   typedef typename Base::VectorType VectorType;
 
@@ -58,7 +60,7 @@ public:
   PostProcessor(PostProcessorData<dim> const & pp_data, MPI_Comm const & mpi_comm);
 
   void
-  setup(dealii::DoFHandler<dim> const & dof_handler, dealii::Mapping<dim> const & mapping) override;
+  setup(Operator<dim, n_components, Number> const & pde_operator) override;
 
   void
   do_postprocessing(VectorType const &     solution,
@@ -73,6 +75,8 @@ private:
 
   OutputGenerator<dim, Number> output_generator;
   ErrorCalculator<dim, Number> error_calculator;
+
+  std::shared_ptr<NormalFluxCalculator<dim, Number>> normal_flux_calculator;
 };
 
 } // namespace Poisson

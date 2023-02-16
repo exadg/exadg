@@ -303,7 +303,7 @@ private:
     this->field_functions->right_hand_side.reset(new RightHandSide<dim>());
   }
 
-  std::shared_ptr<PostProcessorBase<dim, Number>>
+  std::shared_ptr<PostProcessorBase<dim, n_components, Number>>
   create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
@@ -320,8 +320,15 @@ private:
     pp_data.error_data.analytical_solution.reset(new Solution<dim>());
     pp_data.error_data.calculate_relative_errors = true;
 
-    std::shared_ptr<PostProcessorBase<dim, Number>> pp;
-    pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
+    // these lines show exemplarily how to use the NormalFluxCalculator
+    pp_data.normal_flux_data.evaluate = false;
+    pp_data.normal_flux_data.boundary_ids.insert(0);
+    pp_data.normal_flux_data.boundary_ids.insert(1);
+    pp_data.normal_flux_data.directory = this->output_parameters.directory;
+    pp_data.normal_flux_data.filename  = this->output_parameters.filename;
+
+    std::shared_ptr<PostProcessorBase<dim, n_components, Number>> pp;
+    pp.reset(new PostProcessor<dim, n_components, Number>(pp_data, this->mpi_comm));
 
     return pp;
   }
