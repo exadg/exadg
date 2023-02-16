@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_OUTPUT_PARAMETERS_H_
-#define INCLUDE_EXADG_UTILITIES_OUTPUT_PARAMETERS_H_
+#ifndef INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_PARAMETERS_H_
+#define INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_PARAMETERS_H_
 
 // deal.II
 #include <deal.II/base/parameter_handler.h>
@@ -53,4 +53,4 @@ struct OutputParameters
 
 
 
-#endif /* INCLUDE_EXADG_UTILITIES_OUTPUT_PARAMETERS_H_ */
+#endif /* INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_PARAMETERS_H_ */
