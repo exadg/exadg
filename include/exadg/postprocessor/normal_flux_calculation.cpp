@@ -55,6 +55,8 @@ NormalFluxCalculator<dim, Number>::evaluate(VectorType const & solution,
                                             double const       time,
                                             bool const         unsteady)
 {
+  solution.update_ghost_values();
+
   // zero values since we sum into these variables
   for(auto & iterator : flux)
   {
