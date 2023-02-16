@@ -38,11 +38,10 @@ NormalFluxCalculator<dim, Number>::NormalFluxCalculator(
   : matrix_free(matrix_free_in),
     dof_index(dof_index_in),
     quad_index(quad_index_in),
+    data(data_in),
     clear_files(true),
     mpi_comm(mpi_comm_in)
 {
-  data = data_in;
-
   for(auto it : data.boundary_ids)
     flux.insert(typename std::pair<dealii::types::boundary_id, double>(it, 0.0));
 
@@ -56,8 +55,6 @@ NormalFluxCalculator<dim, Number>::evaluate(VectorType const & solution,
                                             double const       time,
                                             bool const         unsteady)
 {
-  std::cout << "Evaluate_normal_flux" << std::endl;
-
   // zero values since we sum into these variables
   for(auto & iterator : flux)
   {
@@ -66,16 +63,13 @@ NormalFluxCalculator<dim, Number>::evaluate(VectorType const & solution,
 
   FaceIntegratorScalar integrator(matrix_free, true, dof_index, quad_index);
 
-  std::map<dealii::types::boundary_id, double> area(flux);
-
   for(unsigned int face = matrix_free.n_inner_face_batches();
       face < (matrix_free.n_inner_face_batches() + matrix_free.n_boundary_face_batches());
       face++)
   {
-    typename std::map<dealii::types::boundary_id, double>::iterator it;
     dealii::types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
 
-    it = flux.find(boundary_id);
+    auto it = flux.find(boundary_id);
     if(it != flux.end())
     {
       integrator.reinit(face);
