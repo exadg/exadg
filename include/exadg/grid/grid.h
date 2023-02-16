@@ -47,7 +47,7 @@ public:
   /**
    * Constructor.
    */
-  Grid(GridData const & data, bool const involves_h_multigrid, MPI_Comm const & mpi_comm);
+  Grid(GridData const & data, MPI_Comm const & mpi_comm);
 
   /**
    * dealii::Triangulation.

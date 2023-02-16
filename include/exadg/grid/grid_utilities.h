@@ -103,7 +103,6 @@ inline void
 create_triangulation(
   std::shared_ptr<dealii::Triangulation<dim>>                    tria,
   GridData const &                                               data,
-  bool const                                                     involves_h_multigrid,
   std::function<void(dealii::Triangulation<dim> &,
                      unsigned int const,
                      std::vector<unsigned int> const &)> const & lambda_create_triangulation,
@@ -163,7 +162,7 @@ create_triangulation(
     }
     else if(data.element_type == ElementType::Hypercube)
     {
-      if(data.multigrid == MultigridVariant::LocalSmoothing and involves_h_multigrid)
+      if(data.multigrid == MultigridVariant::LocalSmoothing)
         triangulation_description_setting =
           dealii::TriangulationDescription::construct_multigrid_hierarchy;
       else
@@ -175,8 +174,7 @@ create_triangulation(
     }
 
     auto const mesh_smoothing =
-      GridUtilities::get_mesh_smoothing<dim>(data.multigrid == MultigridVariant::LocalSmoothing and
-                                               involves_h_multigrid,
+      GridUtilities::get_mesh_smoothing<dim>(data.multigrid == MultigridVariant::LocalSmoothing,
                                              data.element_type);
 
     auto const description = dealii::TriangulationDescription::Utilities::
@@ -239,10 +237,6 @@ create_coarse_triangulations(
   }
   else if(data.triangulation_type == TriangulationType::FullyDistributed)
   {
-    auto const mesh_smoothing =
-      GridUtilities::get_mesh_smoothing<dim>(false /* global-coarsening multigrid */,
-                                             data.element_type);
-
     // resize the empty coarse triangulations vector
     coarse_triangulations = std::vector<std::shared_ptr<dealii::Triangulation<dim> const>>(
       fine_triangulation.n_global_levels());
@@ -254,7 +248,7 @@ create_coarse_triangulations(
         fine_triangulation.get_communicator());
 
       GridUtilities::create_triangulation<dim>(
-        level_tria, data, mesh_smoothing, lambda_create_triangulation, refine_global, refine_local);
+        level_tria, data, lambda_create_triangulation, refine_global, refine_local);
 
       return level_tria;
     };
@@ -309,7 +303,6 @@ create_fine_and_coarse_triangulations(
 {
   GridUtilities::create_triangulation(grid.triangulation,
                                       data,
-                                      involves_h_multigrid,
                                       lambda_create_triangulation,
                                       data.n_refine_global,
                                       vector_local_refinements);

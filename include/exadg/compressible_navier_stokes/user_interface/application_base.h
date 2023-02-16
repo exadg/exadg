@@ -95,7 +95,7 @@ public:
     param.print(pcout, "List of parameters:");
 
     // grid
-    grid = std::make_shared<Grid<dim>>(param.grid, false /* involves_h_multigrid */, mpi_comm);
+    grid = std::make_shared<Grid<dim>>(param.grid, mpi_comm);
     create_grid();
     print_grid_info(pcout, *grid);
 
