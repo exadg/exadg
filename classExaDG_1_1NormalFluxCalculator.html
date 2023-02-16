@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.6"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::Poisson::PostProcessorInterface&lt; Number &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::NormalFluxCalculator&lt; dim, Number &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -69,42 +69,42 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><b>Poisson</b></li><li class="navelem"><a class="el" href="classExaDG_1_1Poisson_1_1PostProcessorInterface.html">PostProcessorInterface</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><a class="el" href="classExaDG_1_1NormalFluxCalculator.html">NormalFluxCalculator</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="classExaDG_1_1Poisson_1_1PostProcessorInterface-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::Poisson::PostProcessorInterface&lt; Number &gt; Class Template Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div></div>
+<a href="classExaDG_1_1NormalFluxCalculator-members.html">List of all members</a>  </div>
+  <div class="headertitle"><div class="title">ExaDG::NormalFluxCalculator&lt; dim, Number &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="dynheader">
-Inheritance diagram for ExaDG::Poisson::PostProcessorInterface&lt; Number &gt;:</div>
-<div class="dyncontent">
- <div class="center">
-  <img src="classExaDG_1_1Poisson_1_1PostProcessorInterface.png" usemap="#ExaDG::Poisson::PostProcessorInterface_3C_20Number_20_3E_map" alt=""/>
-  <map id="ExaDG::Poisson::PostProcessorInterface_3C_20Number_20_3E_map" name="ExaDG::Poisson::PostProcessorInterface_3C_20Number_20_3E_map">
-<area href="classExaDG_1_1Poisson_1_1PostProcessorBase.html" alt="ExaDG::Poisson::PostProcessorBase&lt; dim, n_components, Number &gt;" shape="rect" coords="0,56,403,80"/>
-<area href="classExaDG_1_1Poisson_1_1PostProcessor.html" alt="ExaDG::Poisson::PostProcessor&lt; dim, n_components, Number &gt;" shape="rect" coords="0,112,403,136"/>
-  </map>
-</div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:afe9800452083f64fb95a7b1419fd9d2a"><td class="memItemLeft" align="right" valign="top"><a id="afe9800452083f64fb95a7b1419fd9d2a" name="afe9800452083f64fb95a7b1419fd9d2a"></a>
+<tr class="memitem:a4e16f62a052d9b5fefd05345501881f7"><td class="memItemLeft" align="right" valign="top"><a id="a4e16f62a052d9b5fefd05345501881f7" name="a4e16f62a052d9b5fefd05345501881f7"></a>
 typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:afe9800452083f64fb95a7b1419fd9d2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a4e16f62a052d9b5fefd05345501881f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a249f30aa1d6289fa56c3d2a9247ef3f6"><td class="memItemLeft" align="right" valign="top"><a id="a249f30aa1d6289fa56c3d2a9247ef3f6" name="a249f30aa1d6289fa56c3d2a9247ef3f6"></a>
+typedef FaceIntegrator&lt; dim, 1, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>FaceIntegratorScalar</b></td></tr>
+<tr class="separator:a249f30aa1d6289fa56c3d2a9247ef3f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2cb08ab6bb4c760d70b1b238a7ea79ee"><td class="memItemLeft" align="right" valign="top"><a id="a2cb08ab6bb4c760d70b1b238a7ea79ee" name="a2cb08ab6bb4c760d70b1b238a7ea79ee"></a>
+typedef dealii::VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>scalar</b></td></tr>
+<tr class="separator:a2cb08ab6bb4c760d70b1b238a7ea79ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ad691806cae7cbf7f245a741e1c3e230a"><td class="memItemLeft" align="right" valign="top"><a id="ad691806cae7cbf7f245a741e1c3e230a" name="ad691806cae7cbf7f245a741e1c3e230a"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_postprocessing</b> (VectorType const &amp;solution, double const time=0.0, types::time_step const time_step_number=numbers::steady_timestep)=0</td></tr>
-<tr class="separator:ad691806cae7cbf7f245a741e1c3e230a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a71adbadf55bd516dd4ea6b587cdad950"><td class="memItemLeft" align="right" valign="top"><a id="a71adbadf55bd516dd4ea6b587cdad950" name="a71adbadf55bd516dd4ea6b587cdad950"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>NormalFluxCalculator</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, unsigned int dof_index_in, unsigned int quad_index_in, <a class="el" href="structExaDG_1_1NormalFluxCalculatorData.html">NormalFluxCalculatorData</a> const &amp;data, MPI_Comm const &amp;mpi_comm_in)</td></tr>
+<tr class="separator:a71adbadf55bd516dd4ea6b587cdad950"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abadcad77afafeb8a17dfbbab05e7e2c9"><td class="memItemLeft" align="right" valign="top"><a id="abadcad77afafeb8a17dfbbab05e7e2c9" name="abadcad77afafeb8a17dfbbab05e7e2c9"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;solution, double const time, bool const unsteady)</td></tr>
+<tr class="separator:abadcad77afafeb8a17dfbbab05e7e2c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/exadg/poisson/postprocessor/<a class="el" href="poisson_2postprocessor_2postprocessor__base_8h_source.html">postprocessor_base.h</a></li>
+<hr/>The documentation for this class was generated from the following files:<ul>
+<li>include/exadg/postprocessor/<a class="el" href="normal__flux__calculation_8h_source.html">normal_flux_calculation.h</a></li>
+<li>include/exadg/postprocessor/normal_flux_calculation.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

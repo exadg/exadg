@@ -97,13 +97,13 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a24f618b41f355f49c6a532c40bb6d3b6"><td class="memItemLeft" align="right" valign="top"><a id="a24f618b41f355f49c6a532c40bb6d3b6" name="a24f618b41f355f49c6a532c40bb6d3b6"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>PostProcessor</b> (<a class="el" href="structExaDG_1_1ConvDiff_1_1PostProcessorData.html">PostProcessorData</a>&lt; dim &gt; const &amp;pp_data, MPI_Comm const &amp;mpi_comm)</td></tr>
 <tr class="separator:a24f618b41f355f49c6a532c40bb6d3b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aea3d349dc445ab22bf078c0a7e128f01"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessor.html#aea3d349dc445ab22bf078c0a7e128f01">setup</a> (<a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">Operator</a>&lt; dim, Number &gt; const &amp;pde_operator, dealii::Mapping&lt; dim &gt; const &amp;mapping) override</td></tr>
-<tr class="separator:aea3d349dc445ab22bf078c0a7e128f01"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af877522742ad5e210be48f5a9487b8ea"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessor.html#af877522742ad5e210be48f5a9487b8ea">setup</a> (<a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">Operator</a>&lt; dim, Number &gt; const &amp;pde_operator) override</td></tr>
+<tr class="separator:af877522742ad5e210be48f5a9487b8ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a52bc894f09acd8d4c1fc37a131e72c72"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessor.html#a52bc894f09acd8d4c1fc37a131e72c72">do_postprocessing</a> (VectorType const &amp;solution, double const time=0.0, types::time_step const time_step_number=numbers::steady_timestep) override</td></tr>
 <tr class="separator:a52bc894f09acd8d4c1fc37a131e72c72"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af2acbfcb7df0bdd2b3159fcf66830050"><td class="memItemLeft" align="right" valign="top"><a id="af2acbfcb7df0bdd2b3159fcf66830050" name="af2acbfcb7df0bdd2b3159fcf66830050"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (<a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">Operator</a>&lt; dim, Number &gt; const &amp;pde_operator, dealii::Mapping&lt; dim &gt; const &amp;mapping)=0</td></tr>
-<tr class="separator:af2acbfcb7df0bdd2b3159fcf66830050"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5453dc57f51c4666328ba75ac103fc07"><td class="memItemLeft" align="right" valign="top"><a id="a5453dc57f51c4666328ba75ac103fc07" name="a5453dc57f51c4666328ba75ac103fc07"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (<a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">Operator</a>&lt; dim, Number &gt; const &amp;pde_operator)=0</td></tr>
+<tr class="separator:a5453dc57f51c4666328ba75ac103fc07"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2fd07b28d843cb20747e7d71c560d2bb"><td class="memItemLeft" align="right" valign="top"><a id="a2fd07b28d843cb20747e7d71c560d2bb" name="a2fd07b28d843cb20747e7d71c560d2bb"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_postprocessing</b> (VectorType const &amp;solution, double const time=0.0, types::time_step const time_step_number=numbers::steady_timestep)=0</td></tr>
 <tr class="separator:a2fd07b28d843cb20747e7d71c560d2bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -181,8 +181,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="aea3d349dc445ab22bf078c0a7e128f01" name="aea3d349dc445ab22bf078c0a7e128f01"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aea3d349dc445ab22bf078c0a7e128f01">&#9670;&#160;</a></span>setup()</h2>
+<a id="af877522742ad5e210be48f5a9487b8ea" name="af877522742ad5e210be48f5a9487b8ea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af877522742ad5e210be48f5a9487b8ea">&#9670;&#160;</a></span>setup()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -196,18 +196,8 @@ template&lt;int dim, typename Number &gt; </div>
           <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessor.html">ExaDG::ConvDiff::PostProcessor</a>&lt; dim, Number &gt;::setup </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">Operator</a>&lt; dim, Number &gt; const &amp;&#160;</td>
-          <td class="paramname"><em>pde_operator</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramname"><em>pde_operator</em></td><td>)</td>
           <td></td>
-          <td class="paramtype">dealii::Mapping&lt; dim &gt; const &amp;&#160;</td>
-          <td class="paramname"><em>mapping</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
   </td>
