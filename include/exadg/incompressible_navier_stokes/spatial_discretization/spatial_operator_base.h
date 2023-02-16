@@ -35,7 +35,6 @@
 #include <exadg/grid/grid_motion_interface.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/divergence_calculator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/q_criterion_calculator.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/shear_rate_calculator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/streamfunction_calculator_rhs_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/velocity_magnitude_calculator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/vorticity_calculator.h>
@@ -53,6 +52,7 @@
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
 #include <exadg/operators/mass_operator.h>
+#include <exadg/operators/navier_stokes_calculators.h>
 #include <exadg/poisson/preconditioners/multigrid_preconditioner.h>
 #include <exadg/poisson/spatial_discretization/laplace_operator.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>

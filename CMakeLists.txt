@@ -91,6 +91,7 @@ SET(TARGET_SRC
      include/exadg/operators/operator_base.cpp
      include/exadg/operators/mass_operator.cpp
      include/exadg/operators/rhs_operator.cpp
+     include/exadg/operators/navier_stokes_calculators.cpp
      # Poisson equation
      include/exadg/poisson/user_interface/enum_types.cpp
      include/exadg/poisson/user_interface/parameters.cpp
@@ -135,7 +136,6 @@ SET(TARGET_SRC
      include/exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/calculators/divergence_calculator.cpp
-     include/exadg/incompressible_navier_stokes/spatial_discretization/calculators/shear_rate_calculator.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/calculators/vorticity_calculator.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/calculators/velocity_magnitude_calculator.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/calculators/q_criterion_calculator.cpp

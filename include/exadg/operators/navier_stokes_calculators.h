@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CALCULATORS_SHEAR_RATE_CALCULATOR_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CALCULATORS_SHEAR_RATE_CALCULATOR_H_
+#ifndef INCLUDE_EXADG_OPERATORS_NAVIER_STOKES_CALCULATORS_H_
+#define INCLUDE_EXADG_OPERATORS_NAVIER_STOKES_CALCULATORS_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -29,8 +29,6 @@
 #include <exadg/matrix_free/integrators.h>
 
 namespace ExaDG
-{
-namespace IncNS
 {
 template<int dim, typename Number>
 class ShearRateCalculator
@@ -74,8 +72,7 @@ private:
   unsigned int quad_index;
 };
 
-} // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CALCULATORS_SHEAR_RATE_CALCULATOR_H_ \
+#endif /* INCLUDE_EXADG_OPERATORS_NAVIER_STOKES_CALCULATORS_H_ \
         */

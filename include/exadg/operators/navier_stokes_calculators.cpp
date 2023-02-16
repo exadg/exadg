@@ -19,11 +19,9 @@
  *  ______________________________________________________________________
  */
 
-#include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/shear_rate_calculator.h>
+#include <exadg/operators/navier_stokes_calculators.h>
 
 namespace ExaDG
-{
-namespace IncNS
 {
 template<int dim, typename Number>
 ShearRateCalculator<dim, Number>::ShearRateCalculator()
@@ -92,5 +90,4 @@ template class ShearRateCalculator<2, double>;
 template class ShearRateCalculator<3, float>;
 template class ShearRateCalculator<3, double>;
 
-} // namespace IncNS
 } // namespace ExaDG
