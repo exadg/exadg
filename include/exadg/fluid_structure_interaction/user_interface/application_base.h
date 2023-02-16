@@ -31,7 +31,7 @@
 
 // ExaDG
 #include <exadg/grid/grid.h>
-#include <exadg/utilities/output_parameters.h>
+#include <exadg/postprocessor/output_parameters.h>
 #include <exadg/utilities/resolution_parameters.h>
 
 // Fluid

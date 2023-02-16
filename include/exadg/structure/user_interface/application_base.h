@@ -29,13 +29,13 @@
 // ExaDG
 #include <exadg/grid/grid.h>
 #include <exadg/grid/grid_utilities.h>
+#include <exadg/postprocessor/output_parameters.h>
 #include <exadg/structure/material/library/st_venant_kirchhoff.h>
 #include <exadg/structure/postprocessor/postprocessor.h>
 #include <exadg/structure/user_interface/boundary_descriptor.h>
 #include <exadg/structure/user_interface/field_functions.h>
 #include <exadg/structure/user_interface/material_descriptor.h>
 #include <exadg/structure/user_interface/parameters.h>
-#include <exadg/utilities/output_parameters.h>
 
 namespace ExaDG
 {
