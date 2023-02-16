@@ -62,7 +62,8 @@ calculate_penalty_parameter(
   dealii::FEValues<dim> fe_values(mapping, fe, quadrature, dealii::update_JxW_values);
 
   auto const face_quadrature =
-    reference_cells[0].template get_gauss_type_quadrature<dim - 1>(degree + 1);
+    reference_cells[0].face_reference_cell(0).template get_gauss_type_quadrature<dim - 1>(degree +
+                                                                                          1);
   dealii::FEFaceValues<dim> fe_face_values(mapping, fe, face_quadrature, dealii::update_JxW_values);
 
   for(unsigned int i = 0; i < n_cells; ++i)
