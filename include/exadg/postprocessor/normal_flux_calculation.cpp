@@ -75,7 +75,7 @@ NormalFluxCalculator<dim, Number>::evaluate(VectorType const & solution,
     if(it != flux.end())
     {
       integrator.reinit(face);
-      integrator.read_dof_values(solution);
+      integrator.read_dof_values_plain(solution);
       integrator.evaluate(dealii::EvaluationFlags::gradients);
 
       scalar flux_face = dealii::make_vectorized_array<Number>(0.0);
