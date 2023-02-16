@@ -72,7 +72,7 @@ ShearRateCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> cons
 
     for(unsigned int q = 0; q < integrator_scalar.n_q_points; q++)
     {
-      symmetric_tensor sym_grad_u = integrator_vector.get_symmetric_gradient(q);
+      symmetrictensor sym_grad_u = integrator_vector.get_symmetric_gradient(q);
       // Shear rate definition according to Galdi et al., 2008
       // ("Hemodynamical Flows: Modeling, Analysis and Simulation").
       // trace(sym_grad_u^2) = sym_grad_u : sym_grad_u
