@@ -74,7 +74,7 @@ ShearRateCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> cons
 
       // Shear rate definition according to Galdi et al., 2008
       // ("Hemodynamical Flows: Modeling, Analysis and Simulation").
-      // trace(sym_grad_u^2) = sym_grad_u : sym_grad_u
+      // sqrt(2*trace(sym_grad_u^2)) = sqrt(2*sym_grad_u : sym_grad_u)
       scalar shear_rate = std::sqrt(2.0 * scalar_product(sym_grad_u, sym_grad_u));
 
       integrator_scalar.submit_value(shear_rate, q);

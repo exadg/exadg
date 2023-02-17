@@ -233,9 +233,6 @@ PostProcessor<dim, Number>::initialize_derived_fields()
   // vorticity
   if(pp_data.output_data.write_vorticity)
   {
-    AssertThrow(pp_data.output_data.write_velocity == true,
-                dealii::ExcMessage("You need to activate write_velocity."));
-
     vorticity.type              = SolutionFieldType::vector;
     vorticity.name              = "vorticity";
     vorticity.dof_handler       = &navier_stokes_operator->get_dof_handler_vector();
@@ -252,9 +249,6 @@ PostProcessor<dim, Number>::initialize_derived_fields()
   // divergence
   if(pp_data.output_data.write_divergence)
   {
-    AssertThrow(pp_data.output_data.write_velocity == true,
-                dealii::ExcMessage("You need to activate write_velocity."));
-
     divergence.type              = SolutionFieldType::scalar;
     divergence.name              = "velocity_divergence";
     divergence.dof_handler       = &navier_stokes_operator->get_dof_handler_scalar();
@@ -271,9 +265,6 @@ PostProcessor<dim, Number>::initialize_derived_fields()
   // shear rate
   if(pp_data.output_data.write_shear_rate)
   {
-    AssertThrow(pp_data.output_data.write_velocity == true,
-                dealii::ExcMessage("You need to activate write_velocity."));
-
     shear_rate.type              = SolutionFieldType::scalar;
     shear_rate.name              = "shear_rate";
     shear_rate.dof_handler       = &navier_stokes_operator->get_dof_handler_scalar();

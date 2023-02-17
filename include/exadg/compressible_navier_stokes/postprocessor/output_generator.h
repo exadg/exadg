@@ -76,7 +76,7 @@ struct OutputData : public OutputDataBase
   // write divergence of velocity field
   bool write_divergence;
 
-  // write divergence of velocity field
+  // write shear rate of velocity field
   bool write_shear_rate;
 
   // write processor ID to scalar field in order to visualize the
