@@ -97,6 +97,7 @@ private:
   // DoF vectors for derived quantities
   SolutionField<dim, Number> vorticity;
   SolutionField<dim, Number> divergence;
+  SolutionField<dim, Number> shear_rate;
   SolutionField<dim, Number> velocity_magnitude;
   SolutionField<dim, Number> vorticity_magnitude;
   SolutionField<dim, Number> streamfunction;

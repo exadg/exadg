@@ -52,6 +52,7 @@
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
 #include <exadg/operators/mass_operator.h>
+#include <exadg/operators/navier_stokes_calculators.h>
 #include <exadg/poisson/preconditioners/multigrid_preconditioner.h>
 #include <exadg/poisson/spatial_discretization/laplace_operator.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
@@ -294,6 +295,10 @@ public:
   // divergence
   void
   compute_divergence(VectorType & dst, VectorType const & src) const;
+
+  // shear rate
+  void
+  compute_shear_rate(VectorType & dst, VectorType const & src) const;
 
   // velocity_magnitude
   void
@@ -586,6 +591,7 @@ protected:
    */
   VorticityCalculator<dim, Number>         vorticity_calculator;
   DivergenceCalculator<dim, Number>        divergence_calculator;
+  ShearRateCalculator<dim, Number>         shear_rate_calculator;
   VelocityMagnitudeCalculator<dim, Number> velocity_magnitude_calculator;
   QCriterionCalculator<dim, Number>        q_criterion_calculator;
 

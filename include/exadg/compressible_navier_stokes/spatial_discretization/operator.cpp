@@ -402,6 +402,14 @@ Operator<dim, Number>::compute_divergence(VectorType & dst, VectorType const & s
 }
 
 template<int dim, typename Number>
+void
+Operator<dim, Number>::compute_shear_rate(VectorType & dst, VectorType const & src) const
+{
+  shear_rate_calculator.compute_shear_rate(dst, src);
+  inverse_mass_scalar.apply(dst, dst);
+}
+
+template<int dim, typename Number>
 double
 Operator<dim, Number>::get_wall_time_operator_evaluation() const
 {
@@ -542,6 +550,11 @@ Operator<dim, Number>::setup_operators()
   vorticity_calculator.initialize(*matrix_free, get_dof_index_vector(), get_quad_index_standard());
 
   divergence_calculator.initialize(*matrix_free,
+                                   get_dof_index_vector(),
+                                   get_dof_index_scalar(),
+                                   get_quad_index_standard());
+
+  shear_rate_calculator.initialize(*matrix_free,
                                    get_dof_index_vector(),
                                    get_dof_index_scalar(),
                                    get_quad_index_standard());

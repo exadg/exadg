@@ -37,6 +37,7 @@
 #include <exadg/grid/grid.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
+#include <exadg/operators/navier_stokes_calculators.h>
 
 namespace ExaDG
 {
@@ -152,6 +153,10 @@ public:
   void
   compute_divergence(VectorType & dst, VectorType const & src) const;
 
+  // shear rate
+  void
+  compute_shear_rate(VectorType & dst, VectorType const & src) const;
+
   double
   get_wall_time_operator_evaluation() const;
 
@@ -264,6 +269,7 @@ private:
   p_u_T_Calculator<dim, Number>     p_u_T_calculator;
   VorticityCalculator<dim, Number>  vorticity_calculator;
   DivergenceCalculator<dim, Number> divergence_calculator;
+  ShearRateCalculator<dim, Number>  shear_rate_calculator;
 
   /*
    * MPI

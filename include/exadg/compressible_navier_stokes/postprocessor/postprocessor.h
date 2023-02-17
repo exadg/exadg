@@ -71,6 +71,7 @@ protected:
   SolutionField<dim, Number> temperature;
   SolutionField<dim, Number> vorticity;
   SolutionField<dim, Number> divergence;
+  SolutionField<dim, Number> shear_rate;
 
 private:
   void

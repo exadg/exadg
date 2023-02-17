@@ -176,7 +176,6 @@ private:
   unsigned int quad_index;
 };
 
-
 /*
  *  The DoF vector contains the vector of conserved quantities (rho, rho u, rho E).
  *  This class allows to transfer these quantities into the derived variables (p, u, T)

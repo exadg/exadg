@@ -28,7 +28,7 @@
 
 cf=clang-format
 
-# print which clang-forma is used
+# print which clang-format is used
 echo $cf
 
 # format header files

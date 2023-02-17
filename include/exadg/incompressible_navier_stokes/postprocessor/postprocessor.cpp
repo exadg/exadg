@@ -150,6 +150,11 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
       divergence.evaluate(velocity);
       additional_fields_vtu.push_back(&divergence);
     }
+    if(pp_data.output_data.write_shear_rate)
+    {
+      shear_rate.evaluate(velocity);
+      additional_fields_vtu.push_back(&shear_rate);
+    }
     if(pp_data.output_data.write_velocity_magnitude)
     {
       velocity_magnitude.evaluate(velocity);
@@ -310,6 +315,22 @@ PostProcessor<dim, Number>::initialize_derived_fields()
     divergence.reinit();
   }
 
+  // shear rate
+  if(pp_data.output_data.write_shear_rate)
+  {
+    shear_rate.type              = SolutionFieldType::scalar;
+    shear_rate.name              = "shear_rate";
+    shear_rate.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
+    shear_rate.initialize_vector = [&](VectorType & dst) {
+      navier_stokes_operator->initialize_vector_velocity_scalar(dst);
+    };
+    shear_rate.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
+      navier_stokes_operator->compute_shear_rate(dst, src);
+    };
+
+    shear_rate.reinit();
+  }
+
   // velocity magnitude
   if(pp_data.output_data.write_velocity_magnitude)
   {
@@ -384,6 +405,7 @@ PostProcessor<dim, Number>::invalidate_derived_fields()
 {
   vorticity.invalidate();
   divergence.invalidate();
+  shear_rate.invalidate();
   velocity_magnitude.invalidate();
   vorticity_magnitude.invalidate();
   streamfunction.invalidate();
