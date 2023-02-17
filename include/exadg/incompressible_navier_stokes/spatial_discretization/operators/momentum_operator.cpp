@@ -564,10 +564,12 @@ MomentumOperator<dim, Number>::do_boundary_integral(
     if(operator_data.convective_problem)
     {
       // value_p is calculated differently for the convective term and the viscous term
-      value_p = convective_kernel->calculate_exterior_value_linearized(value_m,
-                                                                       q,
-                                                                       integrator,
-                                                                       boundary_type);
+      value_p =
+        calculate_exterior_value_linearized(value_m,
+                                            q,
+                                            integrator,
+                                            boundary_type,
+                                            operator_data.convective_kernel_data.type_dirichlet_bc);
 
       vector u_m = convective_kernel->get_velocity_m(q);
       vector u_p =

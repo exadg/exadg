@@ -48,6 +48,9 @@ namespace IncNS
  *   |     inflow, no-slip  |   Dirichlet(Cached):      |  Neumann:                                      |
  *   |                      | prescribe g_u             | no BCs to be prescribed                        |
  *   +----------------------+---------------------------+------------------------------------------------+
+ *   |     slip             |   Slip:                   |  Neumann:                                      |
+ *   |                      | no BCs to be prescribed   | no BCs to be prescribed                        |
+ *   +----------------------+---------------------------+------------------------------------------------+
  *   |     symmetry         |   Symmetry:               |  Neumann:                                      |
  *   |                      | no BCs to be prescribed   | no BCs to be prescribed                        |
  *   +----------------------+---------------------------+------------------------------------------------+
@@ -65,6 +68,7 @@ enum class BoundaryTypeU
   Undefined,
   Dirichlet,
   DirichletCached,
+  Slip,
   Neumann,
   Symmetry
 };
@@ -87,6 +91,13 @@ struct BoundaryDescriptorU
   // of interest at the given boundary (this type of Dirichlet boundary condition
   // is required for fluid-structure interaction problems)
   std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>> dirichlet_cached_bc;
+
+  // Slip: the velocity normal to boundary is set to zero
+  //
+  //   u*n=0
+  //
+  // Only the boundary IDs are stored but no functions need to be evaluated.
+  std::set<dealii::types::boundary_id> slip_bc;
 
   // Neumann: prescribe all components of the velocity gradient in normal direction
   std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> neumann_bc;
@@ -130,6 +141,8 @@ struct BoundaryDescriptorU
       return BoundaryTypeU::Dirichlet;
     else if(this->dirichlet_cached_bc.find(boundary_id) != this->dirichlet_cached_bc.end())
       return BoundaryTypeU::DirichletCached;
+    else if(this->slip_bc.find(boundary_id) != this->slip_bc.end())
+      return BoundaryTypeU::Slip;
     else if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
       return BoundaryTypeU::Neumann;
     else if(this->symmetry_bc.find(boundary_id) != this->symmetry_bc.end())
@@ -151,6 +164,9 @@ struct BoundaryDescriptorU
       counter++;
 
     if(this->dirichlet_cached_bc.find(boundary_id) != this->dirichlet_cached_bc.end())
+      counter++;
+
+    if(this->slip_bc.find(boundary_id) != this->slip_bc.end())
       counter++;
 
     if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())

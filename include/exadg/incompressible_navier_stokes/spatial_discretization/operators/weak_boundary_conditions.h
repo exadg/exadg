@@ -26,7 +26,7 @@ namespace IncNS
  *  operator type, the type of the boundary face and the given boundary conditions.
  *
  *                            +-------------------------+--------------------+------------------------------+
- *                            | Dirichlet boundaries    | Neumann boundaries | symmetry boundaries          |
+ *                            | Dirichlet boundaries    | Neumann boundaries | symmetry or slip boundaries  |
  *  +-------------------------+-------------------------+--------------------+------------------------------+
  *  | full operator           | u⁺ = -u⁻ + 2g           | u⁺ = u⁻            | u⁺ = u⁻ - 2 (u⁻*n)n          |
  *  +-------------------------+-------------------------+--------------------+------------------------------+
@@ -120,7 +120,7 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     value_p = value_m;
   }
-  else if(boundary_type == BoundaryTypeU::Symmetry)
+  else if(boundary_type == BoundaryTypeU::Symmetry or boundary_type == BoundaryTypeU::Slip)
   {
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normal_m =
       integrator.get_normal_vector(q);
@@ -139,9 +139,9 @@ inline DEAL_II_ALWAYS_INLINE //
  *  This function calculates the exterior velocity on boundary faces
  *  according to:
  *
- *  Dirichlet boundary: u⁺ = -u⁻ + 2g (mirror) or g (direct)
+ *  Dirichlet boundary: u⁺ = -u⁻ + 2g (mirror) or u⁺ = g (direct)
  *  Neumann boundary:   u⁺ = u⁻
- *  symmetry boundary:  u⁺ = u⁻ -(u⁻*n)n - (u⁻*n)n = u⁻ - 2 (u⁻*n)n
+ *  symmetry/slip boundary:  u⁺ = u⁻ - 2 (u⁻*n)n (mirror) or u⁺ = u⁻ - (u⁻*n)n (direct)
  *
  *  The name "nonlinear" indicates that this function is used when
  *  evaluating the nonlinear convective operator.
@@ -202,12 +202,25 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     u_p = u_m;
   }
-  else if(boundary_type == BoundaryTypeU::Symmetry)
+  else if(boundary_type == BoundaryTypeU::Symmetry or boundary_type == BoundaryTypeU::Slip)
   {
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normal_m =
       integrator.get_normal_vector(q);
 
     u_p = u_m - 2. * (u_m * normal_m) * normal_m;
+
+    if(type_dirichlet_bc == TypeDirichletBCs::Mirror)
+    {
+      u_p = u_m - 2. * (u_m * normal_m) * normal_m;
+    }
+    else if(type_dirichlet_bc == TypeDirichletBCs::Direct)
+    {
+      u_p = u_m - (u_m * normal_m) * normal_m;
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("TypeDirichletBCs is not implemented."));
+    }
   }
   else
   {
@@ -215,6 +228,81 @@ inline DEAL_II_ALWAYS_INLINE //
   }
 
   return u_p;
+}
+
+/*
+ *  The name "linearized" indicates that this function is used when
+ *  evaluating the linearized convective operator.
+ *
+ *  Linearized convective operator (= homogeneous operator):
+ *  Dirichlet boundary: delta_u⁺ = - delta_u⁻ (mirror) or 0 (direct)
+ *  Neumann boundary:   delta_u⁺ = + delta_u⁻
+ *  symmetry/slip boundary:  delta_u⁺ = delta_u⁻ - 2 (delta_u⁻*n)n (mirror) or delta_u⁺ = delta_u⁻ -
+ * (delta_u⁻*n)n (direct)
+ */
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
+    calculate_exterior_value_linearized(
+      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> & delta_uM,
+      unsigned int const                                        q,
+      FaceIntegrator<dim, dim, Number> &                        integrator,
+      BoundaryTypeU const &                                     boundary_type,
+      TypeDirichletBCs const &                                  type_dirichlet_bc)
+{
+  // element e⁺
+  dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> delta_uP;
+
+  if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)
+  {
+    if(type_dirichlet_bc == TypeDirichletBCs::Mirror)
+    {
+      delta_uP = -delta_uM;
+    }
+    else if(type_dirichlet_bc == TypeDirichletBCs::Direct)
+    {
+      // delta_uP = 0
+      // do nothing, delta_uP is already initialized with zero
+    }
+    else
+    {
+      AssertThrow(
+        false,
+        dealii::ExcMessage(
+          "Type of imposition of Dirichlet BC's for convective term is not implemented."));
+    }
+  }
+  else if(boundary_type == BoundaryTypeU::Neumann)
+  {
+    delta_uP = delta_uM;
+  }
+  else if(boundary_type == BoundaryTypeU::Symmetry or boundary_type == BoundaryTypeU::Slip)
+  {
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normalM =
+      integrator.get_normal_vector(q);
+
+    if(type_dirichlet_bc == TypeDirichletBCs::Mirror)
+    {
+      delta_uP = delta_uM - 2. * (delta_uM * normalM) * normalM;
+    }
+    else if(type_dirichlet_bc == TypeDirichletBCs::Direct)
+    {
+      delta_uP = delta_uM - (delta_uM * normalM) * normalM;
+    }
+    else
+    {
+      AssertThrow(
+        false,
+        dealii::ExcMessage(
+          "Type of imposition of Dirichlet BC's for convective term is not implemented."));
+    }
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+  }
+
+  return delta_uP;
 }
 
 template<int dim, typename Number>
@@ -251,7 +339,7 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     value_p = value_m;
   }
-  else if(boundary_type == BoundaryTypeU::Symmetry)
+  else if(boundary_type == BoundaryTypeU::Symmetry or boundary_type == BoundaryTypeU::Slip)
   {
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normal_m =
       integrator_bc.get_normal_vector(q);
@@ -410,7 +498,7 @@ inline DEAL_II_ALWAYS_INLINE //
  *  Laplace formulation:    F(u) = F_nu(u) / nu =  grad(u)
  *
  *                            +---------------------------------+---------------------------------------+----------------------------------------------------+
- *                            | Dirichlet boundaries            | Neumann boundaries                    | symmetry boundaries                                |
+ *                            | Dirichlet or slip boundaries    | Neumann boundaries                    | symmetry boundaries                                |
  *  +-------------------------+---------------------------------+---------------------------------------+----------------------------------------------------+
  *  | full operator           | F(u⁺)*n = F(u⁻)*n               | F(u⁺)*n = -F(u⁻)*n + 2h               | F(u⁺)*n = -F(u⁻)*n + 2*[(F(u⁻)*n)*n]n              |
  *  +-------------------------+---------------------------------+---------------------------------------+----------------------------------------------------+
@@ -420,7 +508,7 @@ inline DEAL_II_ALWAYS_INLINE //
  *  +-------------------------+---------------------------------+---------------------------------------+----------------------------------------------------+
  *
  *                            +---------------------------------+---------------------------------------+----------------------------------------------------+
- *                            | Dirichlet boundaries            | Neumann boundaries                    | symmetry boundaries                                |
+ *                            | Dirichlet or slip boundaries    | Neumann boundaries                    | symmetry boundaries                                |
  *  +-------------------------+---------------------------------+---------------------------------------+----------------------------------------------------+
  *  | full operator           | {{F(u)}}*n = F(u⁻)*n            | {{F(u)}}*n = h                        | {{F(u)}}*n = [(F(u⁻)*n)*n]n                        |
  *  +-------------------------+---------------------------------+---------------------------------------+----------------------------------------------------+
@@ -447,7 +535,8 @@ inline DEAL_II_ALWAYS_INLINE //
 {
   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normal_gradient_p;
 
-  if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)
+  if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached ||
+     boundary_type == BoundaryTypeU::Slip)
   {
     normal_gradient_p = normal_gradient_m;
   }

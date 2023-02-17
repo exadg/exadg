@@ -1781,7 +1781,8 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
     {
       AssertThrow(boundary_type == BoundaryTypeU::Dirichlet ||
                     boundary_type == BoundaryTypeU::Neumann ||
-                    boundary_type == BoundaryTypeU::Symmetry,
+                    boundary_type == BoundaryTypeU::Symmetry ||
+                    boundary_type == BoundaryTypeU::Slip,
                   dealii::ExcMessage("BoundaryTypeU not implemented."));
     }
   }

@@ -554,8 +554,8 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(
                                                     this->time);
 
     vector delta_u_m = integrator.get_value(q);
-    vector delta_u_p =
-      kernel->calculate_exterior_value_linearized(delta_u_m, q, integrator, boundary_type);
+    vector delta_u_p = calculate_exterior_value_linearized(
+      delta_u_m, q, integrator, boundary_type, operator_data.kernel_data.type_dirichlet_bc);
 
     vector normal_m = integrator.get_normal_vector(q);
 

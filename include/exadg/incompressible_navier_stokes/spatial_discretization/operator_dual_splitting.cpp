@@ -270,7 +270,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_boundary_
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
       if(boundary_type == BoundaryTypeU::Dirichlet ||
-         boundary_type == BoundaryTypeU::DirichletCached)
+         boundary_type == BoundaryTypeU::DirichletCached || boundary_type == BoundaryTypeU::Slip)
       {
         dealii::Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
@@ -366,7 +366,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
     for(unsigned int q = 0; q < pressure.n_q_points; ++q)
     {
       if(boundary_type == BoundaryTypeU::Dirichlet ||
-         boundary_type == BoundaryTypeU::DirichletCached)
+         boundary_type == BoundaryTypeU::DirichletCached || boundary_type == BoundaryTypeU::Slip)
       {
         vector normal = pressure.get_normal_vector(q);
 
@@ -841,8 +841,15 @@ OperatorDualSplitting<dim, Number>::local_interpolate_velocity_dirichlet_bc_boun
     else
     {
       AssertThrow(boundary_type == BoundaryTypeU::Neumann ||
-                    boundary_type == BoundaryTypeU::Symmetry,
+                    boundary_type == BoundaryTypeU::Symmetry ||
+                    boundary_type == BoundaryTypeU::Slip,
                   dealii::ExcMessage("BoundaryTypeU not implemented."));
+
+      // For symmetry or slip BCs, g_u is not zero. However, the boundary integrals evaluating the
+      // vector of Dirichlet boundary values in the end always compute g_u*n, which is exactly the
+      // quantity set to zero for symmetry and slip BCs. Hence, we can simply set g_u=0 for the
+      // vector of Dirichlet boundary values since multiplication by the normal vector will result
+      // in the desired boundary condition g_u*n=0 in the end.
     }
   }
 }
