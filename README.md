@@ -68,7 +68,7 @@ ExaDG's principal developers are:
 
 The following developers contributed to **ExaDG**:
 
-Maximilian Bergbauer, Tim Dockhorn, Elias Dejene, Daniel Dengler, Niklas Fehn, Anian Fuchs, Shahbaz Haider, Christoph Haslinger, Johannes Heinz, Pei-Hsuan Huang, Benjamin Krank, Martin Kronbichler, Stefan Legat, Peter Munch, Fazıl Necioğlu, Oliver Neumann, Leon Riccius, David Schneider, Yingxian Wang, Karl Robert Wichmann, Niklas Wik, Xuhui Zhang
+Maximilian Bergbauer, Tim Dockhorn, Elias Dejene, Daniel Dengler, Niklas Fehn, Anian Fuchs, Shahbaz Haider, Christoph Haslinger, Johannes Heinz, Pei-Hsuan Huang, Benjamin Krank, Martin Kronbichler, Stefan Legat, Peter Munch, Fazıl Necioğlu, Oliver Neumann, Leon Riccius, David Schneider, Richard Schussnig, Yingxian Wang, Karl Robert Wichmann, Niklas Wik, Xuhui Zhang
 
 Their contributions are highly appreciated!
 
