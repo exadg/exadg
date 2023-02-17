@@ -237,8 +237,8 @@ inline DEAL_II_ALWAYS_INLINE //
  *  Linearized convective operator (= homogeneous operator):
  *  Dirichlet boundary: delta_u⁺ = - delta_u⁻ (mirror) or 0 (direct)
  *  Neumann boundary:   delta_u⁺ = + delta_u⁻
- *  symmetry/slip boundary:  delta_u⁺ = delta_u⁻ - 2 (delta_u⁻*n)n (mirror) or delta_u⁺ = delta_u⁻ -
- * (delta_u⁻*n)n (direct)
+ *  symmetry/slip boundary:  delta_u⁺ = delta_u⁻ - 2 (delta_u⁻*n)n (mirror) or
+ *                           delta_u⁺ = delta_u⁻ - (delta_u⁻*n)n (direct)
  */
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
