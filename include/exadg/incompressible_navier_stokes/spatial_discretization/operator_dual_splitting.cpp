@@ -287,10 +287,11 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_boundary_
       }
       else if(boundary_type == BoundaryTypeU::Neumann || boundary_type == BoundaryTypeU::Symmetry)
       {
-        // Do nothing on Neumann and symmetry boundaries.
-        // Remark: On symmetry boundaries it follows from g_u * n = 0 that also g_{u_hat} * n = 0.
-        // Hence, a symmetry boundary for u is also a symmetry boundary for u_hat. Hence, there
-        // are no inhomogeneous contributions on symmetry boundaries.
+        // This boundary term does not have to be evaluated on Neumann boundaries.
+        //
+        // On symmetry boundaries, the body force vector has to be tangential to the symmetry plane,
+        // i.e. f*n = 0. Otherwise, the boundary could not be a symmetry boundary. Hence, no
+        // contributions to this integral can occur for a symmetry boundary.
         scalar zero = dealii::make_vectorized_array<Number>(0.0);
         integrator.submit_value(zero, q);
       }
@@ -401,10 +402,27 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
       }
       else if(boundary_type == BoundaryTypeU::Neumann || boundary_type == BoundaryTypeU::Symmetry)
       {
-        // Do nothing on Neumann and symmetry boundaries.
-        // Remark: On symmetry boundaries it follows from g_u * n = 0 that also g_{u_hat} * n = 0.
-        // Hence, a symmetry boundary for u is also a symmetry boundary for u_hat. Hence, there
-        // are no inhomogeneous contributions on symmetry boundaries.
+        // This boundary term does not have to be evaluated on Neumann boundaries.
+        //
+        // This boundary term also vanishes on symmetry boundaries. We need to compute
+        //
+        //   div(u \otimes u) * n // the normal vector is constant (symmetry boundary is  plane)
+        // 	= div((u*n) u) // apply product rule
+        // 	= u*n div(u) + grad(u*n) * u // first term is zero since u*n = 0 on symmetry boundary
+        // 	= grad(u*n) * u // u is tangential to symmetry plane
+        // 	= grad(u*n) * (u - (u*n) n) // we may subtract u*n, since u*n = 0 by definition
+        // 	= grad(u*n) * t // t is a vector tangential to the symmetry plane
+        // 	= 0
+        //
+        // The normal velocity is zero across the whole symmetry boundary. Hence, the change of the
+        // normal velocity in a direction tangential to the symmetry plane has to vanish. The
+        // considered boundary integral of the convective term therefore vanishes on symmetry
+        // boundaries. In case of an ALE formulation with moving meshes, we have to evaluate
+        //
+        // 	= grad(u*n) * (u-u_grid) ,
+        //
+        // which is again zero since u_grid has to be tangential to the symmetry plane. The boundary
+        // could otherwise not be a symmetry plane.
         scalar zero = dealii::make_vectorized_array<Number>(0.0);
         pressure.submit_value(zero, q);
       }
