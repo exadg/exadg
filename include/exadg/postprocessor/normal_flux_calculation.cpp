@@ -55,7 +55,9 @@ NormalFluxCalculator<dim, Number>::evaluate(VectorType const & solution,
                                             double const       time,
                                             bool const         unsteady)
 {
-  solution.update_ghost_values();
+  bool const has_ghost_elements = solution.has_ghost_elements();
+  if(not(has_ghost_elements))
+    solution.update_ghost_values();
 
   // zero values since we sum into these variables
   for(auto & iterator : flux)
@@ -93,6 +95,9 @@ NormalFluxCalculator<dim, Number>::evaluate(VectorType const & solution,
       }
     }
   }
+
+  if(not(has_ghost_elements))
+    solution.zero_out_ghost_values();
 
   // map -> vector
   std::vector<double> flux_vector(flux.size());
