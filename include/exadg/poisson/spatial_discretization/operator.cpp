@@ -35,6 +35,7 @@
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_amg.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
 #include <exadg/solvers_and_preconditioners/utilities/check_multigrid.h>
 #include <exadg/solvers_and_preconditioners/utilities/petsc_operation.h>
@@ -317,6 +318,11 @@ Operator<dim, n_components, Number>::setup_solver()
   else if(param.preconditioner == Poisson::Preconditioner::BlockJacobi)
   {
     preconditioner = std::make_shared<BlockJacobiPreconditioner<Laplace>>(laplace_operator);
+  }
+  else if(param.preconditioner == Poisson::Preconditioner::AMG)
+  {
+    preconditioner = std::make_shared<PreconditionerAMG<Laplace, Number>>(
+      laplace_operator, param.multigrid_data.coarse_problem.amg_data);
   }
   else if(param.preconditioner == Poisson::Preconditioner::Multigrid)
   {
