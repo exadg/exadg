@@ -406,7 +406,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
         //
         // This boundary term also vanishes on symmetry boundaries. We need to compute
         //
-        //   div(u \otimes u) * n // the normal vector is constant (symmetry boundary is  plane)
+        //   div(u \otimes u) * n // the normal vector is constant (symmetry boundary is planar)
         // 	= div((u*n) u) // apply product rule
         // 	= u*n div(u) + grad(u*n) * u // first term is zero since u*n = 0 on symmetry boundary
         // 	= grad(u*n) * u // u is tangential to symmetry plane
