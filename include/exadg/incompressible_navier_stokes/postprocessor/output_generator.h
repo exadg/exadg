@@ -56,6 +56,7 @@ struct OutputData : public OutputDataBase
     print_parameter(pcout, "Write shear rate", write_shear_rate);
     print_parameter(pcout, "Write velocity magnitude", write_velocity_magnitude);
     print_parameter(pcout, "Write vorticity magnitude", write_vorticity_magnitude);
+    print_parameter(pcout, "Write wall shear stress", write_wall_shear_stress_on_IDs.size() > 0);
     print_parameter(pcout, "Write streamfunction", write_streamfunction);
     print_parameter(pcout, "Write Q criterion", write_q_criterion);
 
@@ -76,6 +77,9 @@ struct OutputData : public OutputDataBase
 
   // write vorticity magnitude
   bool write_vorticity_magnitude;
+
+  // write wall shear stress on IDs
+  std::vector<dealii::types::boundary_id> write_wall_shear_stress_on_IDs;
 
   // Calculate streamfunction in order to visualize streamlines!
   // Note that this option is only available in 2D!
@@ -121,11 +125,13 @@ public:
         OutputData const &              output_data_in);
 
   void
-  evaluate(VectorType const &                                                    velocity,
-           VectorType const &                                                    pressure,
-           std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
-           double const                                                          time,
-           bool const                                                            unsteady);
+  evaluate(
+    VectorType const &                                                    velocity,
+    VectorType const &                                                    pressure,
+    std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
+    std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_surface_fields,
+    double const                                                          time,
+    bool const                                                            unsteady);
 
   TimeControl time_control;
 
