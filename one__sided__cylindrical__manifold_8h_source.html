@@ -125,7 +125,7 @@ $(function() {
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>                              dealii::Point&lt;dim&gt; <span class="keyword">const</span> &amp;                                 center_in)</div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    : alpha(1.0), radius(1.0), cell(cell_in), face(face_in), center(center_in)</div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  {</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    AssertThrow(face &gt;= 0 &amp;&amp; face &lt;= 3,</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    AssertThrow(face &lt;= 3,</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>                dealii::ExcMessage(</div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>                  <span class="stringliteral">&quot;One sided spherical manifold can only be applied to face f=0,1,2,3.&quot;</span>));</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
@@ -440,7 +440,7 @@ $(function() {
 <div class="line"><a id="l00362" name="l00362"></a><span class="lineno">  362</span>    AssertThrow(dim == 3,</div>
 <div class="line"><a id="l00363" name="l00363"></a><span class="lineno">  363</span>                dealii::ExcMessage(<span class="stringliteral">&quot;OneSidedConicalManifold can only be used for 3D problems.&quot;</span>));</div>
 <div class="line"><a id="l00364" name="l00364"></a><span class="lineno">  364</span> </div>
-<div class="line"><a id="l00365" name="l00365"></a><span class="lineno">  365</span>    AssertThrow(face &gt;= 0 &amp;&amp; face &lt;= 3,</div>
+<div class="line"><a id="l00365" name="l00365"></a><span class="lineno">  365</span>    AssertThrow(face &lt;= 3,</div>
 <div class="line"><a id="l00366" name="l00366"></a><span class="lineno">  366</span>                dealii::ExcMessage(</div>
 <div class="line"><a id="l00367" name="l00367"></a><span class="lineno">  367</span>                  <span class="stringliteral">&quot;One sided spherical manifold can only be applied to face f=0,1,2,3.&quot;</span>));</div>
 <div class="line"><a id="l00368" name="l00368"></a><span class="lineno">  368</span> </div>
