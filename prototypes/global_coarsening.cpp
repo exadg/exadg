@@ -134,7 +134,7 @@ test(const unsigned int n_local_refinements)
     }
 
     for(unsigned int l = 0; l < refinement_state.size() - 1 - ll; ++l)
-      for(const auto parent_cell : tria.cell_iterators_on_level(l))
+      for(const auto & parent_cell : tria.cell_iterators_on_level(l))
         if(parent_cell->is_locally_owned_on_level() == true && parent_cell->has_children())
         {
           // cell has been visited already -> nothing to do
@@ -145,7 +145,7 @@ test(const unsigned int n_local_refinements)
           // check if all chilren are active
           bool can_become_active = true;
 
-          for(const auto cell : parent_cell->child_iterators())
+          for(const auto & cell : parent_cell->child_iterators())
             if(refinement_state[cell->level()][cell->global_level_cell_index()] == 0)
               can_become_active = false;
 
@@ -154,7 +154,7 @@ test(const unsigned int n_local_refinements)
             // if yes: make children inactive and make this cell active
             refinement_state_temp[parent_cell->level()][parent_cell->global_level_cell_index()] =
               1.0;
-            for(const auto cell : parent_cell->child_iterators())
+            for(const auto & cell : parent_cell->child_iterators())
               refinement_state_temp[cell->level()][cell->global_level_cell_index()] =
                 -1.0; // indicate that cell has been
                       // visitied and its state has
@@ -165,7 +165,7 @@ test(const unsigned int n_local_refinements)
             // if no: copy old state
             refinement_state_temp[parent_cell->level()][parent_cell->global_level_cell_index()] =
               refinement_state[parent_cell->level()][parent_cell->global_level_cell_index()];
-            for(const auto cell : parent_cell->child_iterators())
+            for(const auto & cell : parent_cell->child_iterators())
               refinement_state_temp[cell->level()][cell->global_level_cell_index()] =
                 refinement_state[cell->level()][cell->global_level_cell_index()];
           }
