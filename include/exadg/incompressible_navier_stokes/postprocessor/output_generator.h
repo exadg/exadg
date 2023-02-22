@@ -125,13 +125,12 @@ public:
         OutputData const &              output_data_in);
 
   void
-  evaluate(
-    VectorType const &                                                    velocity,
-    VectorType const &                                                    pressure,
-    std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
-    std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_surface_fields,
-    double const                                                          time,
-    bool const                                                            unsteady);
+  evaluate(VectorType const &                                                    velocity,
+           VectorType const &                                                    pressure,
+           std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
+           std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & surface_fields,
+           double const                                                          time,
+           bool const                                                            unsteady);
 
   TimeControl time_control;
 

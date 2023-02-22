@@ -46,8 +46,8 @@ WallShearStressCalculator<dim, Number>::initialize(
 
   dynamic_viscosity = kinematic_viscosity * density;
 
-  // identify default matching Gauss-Lobatto point indices up front
-  // since orientation of boundary faces is constant
+  // identify default matching Gauss-Lobatto point indices once up
+  // front since orientation of boundary faces *should be* constant
   unsigned int const    fe_degree = matrix_free->get_dof_handler(dof_index).get_fe(0).degree;
   dealii::FESystem<dim> fe_system(dealii::FE_DGQ<dim>(fe_degree), dim);
   dealii::QGaussLobatto<dim - 1> face_quadrature(fe_degree + 1);

@@ -130,7 +130,7 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
   if(output_generator.time_control.needs_evaluation(time, time_step_number))
   {
     std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> additional_fields_vtu;
-    std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> additional_surface_fields_vtu;
+    std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> surface_fields_vtu;
     if(pp_data.output_data.write_vorticity)
     {
       vorticity.evaluate(velocity);
@@ -165,7 +165,7 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
     {
       wall_shear_stress.evaluate(velocity);
       if(dim == 3)
-        additional_surface_fields_vtu.push_back(&wall_shear_stress);
+        surface_fields_vtu.push_back(&wall_shear_stress);
       else
         additional_fields_vtu.push_back(&wall_shear_stress);
     }
@@ -187,7 +187,7 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
     output_generator.evaluate(velocity,
                               pressure,
                               additional_fields_vtu,
-                              additional_surface_fields_vtu,
+                              surface_fields_vtu,
                               time,
                               Utilities::is_unsteady_timestep(time_step_number));
   }
