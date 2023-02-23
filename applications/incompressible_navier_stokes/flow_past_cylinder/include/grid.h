@@ -1493,9 +1493,11 @@ create_coarse_grid(dealii::Triangulation<dim> &                             tria
 {
   if(element_type == ElementType::Simplex)
   {
-    AssertThrow(dim == 2,
-                dealii::ExcMessage("You are trying to create a grid with 3D Simplices. For this "
-                                   "application this is currently supported."));
+    AssertThrow(
+      dim == 2,
+      dealii::ExcMessage(
+        "You are trying to create a grid with 3D Simplices. This is currently not supported "
+        "for this application."));
   }
 
   select_cylinder_type(cylinder_type_string);
@@ -1507,8 +1509,8 @@ create_coarse_grid(dealii::Triangulation<dim> &                             tria
       AssertThrow(
         element_type == ElementType::Hypercube,
         dealii::ExcMessage(
-          "You are trying to create a grid with simplex elements with a circular cylinder, which "
-          "is currently not supported."));
+          "You are trying to create a grid with simplex elements for the circular cylinder case, "
+          "which is currently not supported."));
 
       CircularCylinder::create_coarse_triangulation<dim>(triangulation, periodic_faces);
       break;
