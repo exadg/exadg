@@ -1019,19 +1019,41 @@ double const h_x_1 = D / nele_x_middle_middle;
 double const h_x_0 = (X_1 - X_0) / nele_x_left;
 
 void
+do_create_coarse_triangulation(dealii::Triangulation<2> &        tria,
+                               std::vector<unsigned int> const & repetitions,
+                               dealii::Point<2> const &          p1,
+                               dealii::Point<2> const &          p2,
+                               ElementType const &               element_type,
+                               bool const                        colorize = false)
+{
+  if(element_type == ElementType::Hypercube)
+  {
+    dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, p1, p2, colorize);
+  }
+  else if(element_type == ElementType::Simplex)
+  {
+    dealii::GridGenerator::subdivided_hyper_rectangle_with_simplices(
+      tria, repetitions, p1, p2, colorize);
+  }
+  else
+    AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
+}
+
+void
 create_trapezoid(dealii::Triangulation<2> & tria,
                  std::vector<unsigned int>  ref,
                  dealii::Point<2> const     x_0,
                  double const               length,
                  double const               height,
                  double const               max_shift,
-                 double const               min_shift)
+                 double const               min_shift,
+                 ElementType                element_type)
 {
   dealii::Triangulation<2> tmp;
 
   dealii::Point<2> x_1 = x_0 + dealii::Point<2>(length, height);
 
-  dealii::GridGenerator::subdivided_hyper_rectangle(tmp, ref, x_0, x_1, false);
+  do_create_coarse_triangulation(tmp, ref, x_0, x_1, element_type, false);
 
   for(dealii::Triangulation<2>::vertex_iterator v = tmp.begin_vertex(); v != tmp.end_vertex(); ++v)
   {
@@ -1096,7 +1118,9 @@ set_boundary_ids(dealii::Triangulation<dim> & tria)
 
 template<unsigned int dim>
 void
-do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation, bool is_2d = true)
+do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation,
+                               ElementType                element_type,
+                               bool                       is_2d = true)
 {
   dealii::Triangulation<2> left, left_bottom, left_middle, left_top, middle, middle_top,
     middle_bottom, middle_left, middle_right, middle_left_top, middle_left_bottom, middle_right_top,
@@ -1125,28 +1149,52 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation, bool is
   std::vector<unsigned int> ref_middle_left  = {nele_x_middle_left, nele_y_middle};
 
   // left part
-  dealii::GridGenerator::subdivided_hyper_rectangle(
-    left_bottom, ref_left_bottom, dealii::Point<2>(X_0, Y_0), dealii::Point<2>(X_1, Y_1), false);
+  do_create_coarse_triangulation(left_bottom,
+                                 ref_left_bottom,
+                                 dealii::Point<2>(X_0, Y_0),
+                                 dealii::Point<2>(X_1, Y_1),
+                                 element_type,
+                                 false);
 
-  dealii::GridGenerator::subdivided_hyper_rectangle(
-    left_middle, ref_left_middle, dealii::Point<2>(X_0, Y_1), dealii::Point<2>(X_1, Y_2), false);
+  do_create_coarse_triangulation(left_middle,
+                                 ref_left_middle,
+                                 dealii::Point<2>(X_0, Y_1),
+                                 dealii::Point<2>(X_1, Y_2),
+                                 element_type,
+                                 false);
 
-  dealii::GridGenerator::subdivided_hyper_rectangle(
-    left_top, ref_left_top, dealii::Point<2>(X_0, Y_2), dealii::Point<2>(X_1, H), false);
+  do_create_coarse_triangulation(left_top,
+                                 ref_left_top,
+                                 dealii::Point<2>(X_0, Y_2),
+                                 dealii::Point<2>(X_1, H),
+                                 element_type,
+                                 false);
 
   // merge left triangulations
   dealii::GridGenerator::merge_triangulations(left_bottom, left_middle, tmp);
   dealii::GridGenerator::merge_triangulations(tmp, left_top, left);
 
   // right part
-  dealii::GridGenerator::subdivided_hyper_rectangle(
-    right_bottom, ref_right_bottom, dealii::Point<2>(X_2, Y_0), dealii::Point<2>(L, Y_1), false);
+  do_create_coarse_triangulation(right_bottom,
+                                 ref_right_bottom,
+                                 dealii::Point<2>(X_2, Y_0),
+                                 dealii::Point<2>(L, Y_1),
+                                 element_type,
+                                 false);
 
-  dealii::GridGenerator::subdivided_hyper_rectangle(
-    right_middle, ref_right_middle, dealii::Point<2>(X_2, Y_1), dealii::Point<2>(L, Y_2), false);
+  do_create_coarse_triangulation(right_middle,
+                                 ref_right_middle,
+                                 dealii::Point<2>(X_2, Y_1),
+                                 dealii::Point<2>(L, Y_2),
+                                 element_type,
+                                 false);
 
-  dealii::GridGenerator::subdivided_hyper_rectangle(
-    right_top, ref_right_top, dealii::Point<2>(X_2, Y_2), dealii::Point<2>(L, H), false);
+  do_create_coarse_triangulation(right_top,
+                                 ref_right_top,
+                                 dealii::Point<2>(X_2, Y_2),
+                                 dealii::Point<2>(L, H),
+                                 element_type,
+                                 false);
 
   // merge right triangulations
   dealii::GridGenerator::merge_triangulations(right_bottom, right_middle, tmp);
@@ -1156,56 +1204,64 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation, bool is
   if(!adaptive_mesh_shift)
   {
     // create middle bottom part
-    dealii::GridGenerator::subdivided_hyper_rectangle(middle_bottom,
-                                                      ref_middle_bottom,
-                                                      dealii::Point<2>(X_0 + I_x, Y_0),
-                                                      dealii::Point<2>(X_0 + I_x + D, Y_1),
-                                                      false);
+    do_create_coarse_triangulation(middle_bottom,
+                                   ref_middle_bottom,
+                                   dealii::Point<2>(X_0 + I_x, Y_0),
+                                   dealii::Point<2>(X_0 + I_x + D, Y_1),
+                                   element_type,
+                                   false);
 
     // create middle top part
-    dealii::GridGenerator::subdivided_hyper_rectangle(middle_top,
-                                                      ref_middle_top,
-                                                      dealii::Point<2>(X_0 + I_x, Y_2),
-                                                      dealii::Point<2>(X_0 + I_x + D, H),
-                                                      false);
+    do_create_coarse_triangulation(middle_top,
+                                   ref_middle_top,
+                                   dealii::Point<2>(X_0 + I_x, Y_2),
+                                   dealii::Point<2>(X_0 + I_x + D, H),
+                                   element_type,
+                                   false);
 
     // create middle left part
-    dealii::GridGenerator::subdivided_hyper_rectangle(middle_left,
-                                                      ref_middle_left,
-                                                      dealii::Point<2>(X_1, Y_1),
-                                                      dealii::Point<2>(X_0 + I_x, Y_2),
-                                                      false);
+    do_create_coarse_triangulation(middle_left,
+                                   ref_middle_left,
+                                   dealii::Point<2>(X_1, Y_1),
+                                   dealii::Point<2>(X_0 + I_x, Y_2),
+                                   element_type,
+                                   false);
 
-    dealii::GridGenerator::subdivided_hyper_rectangle(middle_left_top,
-                                                      ref_middle_top_left,
-                                                      dealii::Point<2>(X_1, Y_2),
-                                                      dealii::Point<2>(X_0 + I_x, H),
-                                                      false);
+    do_create_coarse_triangulation(middle_left_top,
+                                   ref_middle_top_left,
+                                   dealii::Point<2>(X_1, Y_2),
+                                   dealii::Point<2>(X_0 + I_x, H),
+                                   element_type,
+                                   false);
 
-    dealii::GridGenerator::subdivided_hyper_rectangle(middle_left_bottom,
-                                                      ref_middle_bottom_left,
-                                                      dealii::Point<2>(X_1, Y_0),
-                                                      dealii::Point<2>(X_0 + I_x, Y_1),
-                                                      false);
+    do_create_coarse_triangulation(middle_left_bottom,
+                                   ref_middle_bottom_left,
+                                   dealii::Point<2>(X_1, Y_0),
+                                   dealii::Point<2>(X_0 + I_x, Y_1),
+                                   element_type,
+                                   false);
 
     // create middle right part
-    dealii::GridGenerator::subdivided_hyper_rectangle(middle_right,
-                                                      ref_middle_right,
-                                                      dealii::Point<2>(X_0 + I_x + D, Y_1),
-                                                      dealii::Point<2>(X_2, Y_2),
-                                                      false);
+    do_create_coarse_triangulation(middle_right,
+                                   ref_middle_right,
+                                   dealii::Point<2>(X_0 + I_x + D, Y_1),
+                                   dealii::Point<2>(X_2, Y_2),
+                                   element_type,
+                                   false);
 
-    dealii::GridGenerator::subdivided_hyper_rectangle(middle_right_top,
-                                                      ref_middle_top_right,
-                                                      dealii::Point<2>(X_0 + I_x + D, Y_2),
-                                                      dealii::Point<2>(X_2, H),
-                                                      false);
+    do_create_coarse_triangulation(middle_right_top,
+                                   ref_middle_top_right,
+                                   dealii::Point<2>(X_0 + I_x + D, Y_2),
+                                   dealii::Point<2>(X_2, H),
+                                   element_type,
+                                   false);
 
-    dealii::GridGenerator::subdivided_hyper_rectangle(middle_right_bottom,
-                                                      ref_middle_bottom_right,
-                                                      dealii::Point<2>(X_0 + I_x + D, Y_0),
-                                                      dealii::Point<2>(X_2, Y_1),
-                                                      false);
+    do_create_coarse_triangulation(middle_right_bottom,
+                                   ref_middle_bottom_right,
+                                   dealii::Point<2>(X_0 + I_x + D, Y_0),
+                                   dealii::Point<2>(X_2, Y_1),
+                                   element_type,
+                                   false);
   }
   else
   {
@@ -1231,7 +1287,8 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation, bool is
                      I_x - X_1,
                      3.0 * D / 8.0,
                      H - Y_2,
-                     3.0 * D / 8.0);
+                     3.0 * D / 8.0,
+                     element_type);
 
     dealii::Tensor<1, 2> shift_middle_left_top;
     shift_middle_left_top[0] = X_1;
@@ -1244,7 +1301,8 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation, bool is
                      I_x - X_1,
                      1.0 * D / 8.0,
                      3.0 * D / 8.0,
-                     0);
+                     0,
+                     element_type);
 
     dealii::Tensor<1, 2> shift_middle_left;
     shift_middle_left[0] = X_1;
@@ -1257,7 +1315,8 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation, bool is
                      I_x - X_1,
                      D / 2.0,
                      0,
-                     -Y_1);
+                     -Y_1,
+                     element_type);
 
     dealii::Tensor<1, 2> shift_middle_left_bottom;
     shift_middle_left_bottom[0] = X_1;
@@ -1271,7 +1330,8 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation, bool is
                      I_y,
                      3.0 * D / 8.0,
                      -3.0 * D / 8.0,
-                     -(H - Y_2));
+                     -(H - Y_2),
+                     element_type);
 
     dealii::Tensor<1, 2> shift_middle_right_top;
     shift_middle_right_top[0] = I_x + D + I_y;
@@ -1285,7 +1345,8 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation, bool is
                      I_y,
                      1.0 * D / 8.0,
                      0,
-                     -3.0 * D / 8.0);
+                     -3.0 * D / 8.0,
+                     element_type);
 
     dealii::Tensor<1, 2> shift_middle_right;
     shift_middle_right[0] = I_x + D + I_y;
@@ -1299,7 +1360,8 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation, bool is
                      I_y,
                      D / 2.0,
                      Y_1,
-                     0);
+                     0,
+                     element_type);
 
     dealii::Tensor<1, 2> shift_middle_right_bottom;
     shift_middle_right_bottom[0] = I_x + D + I_y;
@@ -1308,8 +1370,14 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation, bool is
     dealii::GridTools::shift(shift_middle_right_bottom, middle_right_bottom);
 
     // create top trapez
-    create_trapezoid(
-      middle_top, ref_trapezoid_top, dealii::Point<2>(0, 0), H - Y_2, D, I_y, -(I_x - X_1));
+    create_trapezoid(middle_top,
+                     ref_trapezoid_top,
+                     dealii::Point<2>(0, 0),
+                     H - Y_2,
+                     D,
+                     I_y,
+                     -(I_x - X_1),
+                     element_type);
 
     dealii::Tensor<1, 2> shift_middle_top;
     shift_middle_top[0] = I_x;
@@ -1318,8 +1386,14 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation, bool is
     dealii::GridTools::shift(shift_middle_top, middle_top);
 
     // create bottom trapez
-    create_trapezoid(
-      middle_bottom, ref_trapezoid_bottom, dealii::Point<2>(0, 0), Y_1, D, I_y, -(I_x - X_1));
+    create_trapezoid(middle_bottom,
+                     ref_trapezoid_bottom,
+                     dealii::Point<2>(0, 0),
+                     Y_1,
+                     D,
+                     I_y,
+                     -(I_x - X_1),
+                     element_type);
 
     dealii::Tensor<1, 2> shift_middle_bottom;
     shift_middle_bottom[0] = I_x + D;
@@ -1353,19 +1427,19 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation, bool is
 
 template<unsigned int dim>
 void
-do_create_coarse_triangulation(dealii::Triangulation<3> & triangulation)
+do_create_coarse_triangulation(dealii::Triangulation<3> & triangulation, ElementType element_type)
 {
   dealii::Triangulation<2> tria_2D;
-  do_create_coarse_triangulation<2>(tria_2D, false);
+  do_create_coarse_triangulation<2>(tria_2D, element_type, false);
 
   dealii::GridGenerator::extrude_triangulation(tria_2D, nele_z, H, triangulation);
 }
 
 template<unsigned int dim>
 void
-create_coarse_triangulation(dealii::Triangulation<dim> & triangulation)
+create_coarse_triangulation(dealii::Triangulation<dim> & triangulation, ElementType element_type)
 {
-  do_create_coarse_triangulation<dim>(triangulation);
+  do_create_coarse_triangulation<dim>(triangulation, element_type);
 
   // set boundary ids
   set_boundary_ids<dim>(triangulation);
@@ -1395,18 +1469,36 @@ void
 create_coarse_grid(dealii::Triangulation<dim> &                             triangulation,
                    std::vector<dealii::GridTools::PeriodicFacePair<
                      typename dealii::Triangulation<dim>::cell_iterator>> & periodic_faces,
-                   std::string                                              cylinder_type_string)
+                   std::string                                              cylinder_type_string,
+                   ElementType                                              element_type)
 {
+  if(element_type == ElementType::Simplex)
+  {
+    AssertThrow(dim == 2,
+                dealii::ExcMessage("You are trying to create a grid with 3D Simplices. For this "
+                                   "application this is currently supported."));
+  }
+
   select_cylinder_type(cylinder_type_string);
 
   switch(cylinder_type)
   {
     case circular:
+    {
+      AssertThrow(
+        element_type == ElementType::Hypercube,
+        dealii::ExcMessage(
+          "You are trying to create a grid with simplex elements with a circular cylinder, which "
+          "is currently not supported."));
+
       CircularCylinder::create_coarse_triangulation<dim>(triangulation, periodic_faces);
       break;
+    }
     case square:
-      SquareCylinder::create_coarse_triangulation<dim>(triangulation);
+    {
+      SquareCylinder::create_coarse_triangulation<dim>(triangulation, element_type);
       break;
+    }
     default:
       AssertThrow(false, dealii::ExcNotImplemented());
   }
