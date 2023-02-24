@@ -257,8 +257,16 @@ create_coarse_triangulations(
     unsigned int              level        = fine_triangulation.n_global_levels() - 1;
     std::vector<unsigned int> refine_local = vector_local_refinements;
 
+    // make the last entry of the coarse_triangulations point to the fine_triangulation
+    coarse_triangulations[level].reset(&fine_triangulation, [](auto *) {
+      // empty deleter, since fine_triangulation is an external field
+      // and its destructor is called somewhere else
+    });
+
+    level--;
+
     // undo global refinements
-    for(int refine_global = data.n_refine_global; refine_global >= 0; --refine_global)
+    for(int refine_global = data.n_refine_global - 1; refine_global >= 0; --refine_global)
     {
       coarse_triangulations[level] = lambda_create_level_triangulation(refine_global, refine_local);
 
