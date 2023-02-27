@@ -5,3 +5,4 @@
 .directory
 build/
 programs/
+*exadg_revision.h
