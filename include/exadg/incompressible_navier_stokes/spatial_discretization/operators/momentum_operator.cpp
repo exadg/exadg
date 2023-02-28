@@ -41,7 +41,8 @@ MomentumOperator<dim, Number>::initialize(
     this->viscous_kernel = std::make_shared<Operators::ViscousKernel<dim, Number>>();
     this->viscous_kernel->reinit(matrix_free,
                                  operator_data.viscous_kernel_data,
-                                 operator_data.dof_index);
+                                 operator_data.dof_index,
+                                 operator_data.quad_index);
   }
 
   if(operator_data.unsteady_problem)

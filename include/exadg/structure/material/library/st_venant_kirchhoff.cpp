@@ -29,7 +29,6 @@ namespace Structure
 template<int dim, typename Number>
 StVenantKirchhoff<dim, Number>::StVenantKirchhoff(
   dealii::MatrixFree<dim, Number> const & matrix_free,
-  unsigned int const                      n_q_points_1d,
   unsigned int const                      dof_index,
   unsigned int const                      quad_index,
   StVenantKirchhoffData<dim> const &      data)
@@ -46,9 +45,9 @@ StVenantKirchhoff<dim, Number>::StVenantKirchhoff(
   if(E_is_variable)
   {
     // allocate vectors for variable coefficients and initialize with constant values
-    f0_coefficients.initialize(matrix_free, n_q_points_1d, get_f0_factor() * E);
-    f1_coefficients.initialize(matrix_free, n_q_points_1d, get_f1_factor() * E);
-    f2_coefficients.initialize(matrix_free, n_q_points_1d, get_f2_factor() * E);
+    f0_coefficients.initialize(matrix_free, quad_index, get_f0_factor() * E);
+    f1_coefficients.initialize(matrix_free, quad_index, get_f1_factor() * E);
+    f2_coefficients.initialize(matrix_free, quad_index, get_f2_factor() * E);
 
     VectorType dummy;
     matrix_free.cell_loop(&StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients,

@@ -63,7 +63,8 @@ public:
   void
   reinit(dealii::MatrixFree<dim, Number> const & matrix_free,
          ViscousKernelData const &               data,
-         unsigned int const                      dof_index)
+         unsigned int const                      dof_index,
+         unsigned int const                      quad_index)
   {
     this->data = data;
 
@@ -77,7 +78,7 @@ public:
     if(data.viscosity_is_variable)
     {
       // allocate vectors for variable coefficients and initialize with constant viscosity
-      viscosity_coefficients.initialize(matrix_free, degree, data.viscosity);
+      viscosity_coefficients.initialize(matrix_free, quad_index, data.viscosity);
     }
   }
 
@@ -495,7 +496,7 @@ private:
 
   mutable scalar tau;
 
-  VariableCoefficients<dim, Number> viscosity_coefficients;
+  VariableCoefficients<dealii::VectorizedArray<Number>> viscosity_coefficients;
 };
 
 } // namespace Operators
