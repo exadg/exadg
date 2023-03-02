@@ -21,6 +21,8 @@
 #ifndef INCLUDE_EXADG_OPERATORS_VARIABLE_COEFFICIENTS_H_
 #define INCLUDE_EXADG_OPERATORS_VARIABLE_COEFFICIENTS_H_
 
+#include <deal.II/matrix_free/matrix_free.h>
+
 namespace ExaDG
 {
 template<typename coefficient_t>

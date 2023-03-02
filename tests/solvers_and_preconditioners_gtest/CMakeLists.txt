@@ -1,5 +1,5 @@
 #########################################################################
-# 
+#
 #                 #######               ######  #######
 #                 ##                    ##   ## ##
 #                 #####   ##  ## #####  ##   ## ## ####
@@ -25,10 +25,14 @@
 #
 #########################################################################
 
-include(GoogleTest)
+TARGETNAME(TARGET_NAME ${CMAKE_CURRENT_SOURCE_DIR})
 
-ADD_SUBDIRECTORY(operators_gtest)
-ADD_SUBDIRECTORY(solvers_and_preconditioners_gtest)
+ADD_EXECUTABLE(
+    ${TARGET_NAME}
+    elementwise_gmres.cc
+)
 
-ADD_SUBDIRECTORY(solvers_and_preconditioners)
-ADD_SUBDIRECTORY(utilities)
+DEAL_II_SETUP_TARGET(${TARGET_NAME})
+TARGET_LINK_LIBRARIES(${TARGET_NAME} exadg GTest::gtest_main)
+
+GTEST_DISCOVER_TESTS(${TARGET_NAME})

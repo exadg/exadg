@@ -1,5 +1,5 @@
 #########################################################################
-# 
+#
 #                 #######               ######  #######
 #                 ##                    ##   ## ##
 #                 #####   ##  ## #####  ##   ## ## ####
@@ -25,10 +25,26 @@
 #
 #########################################################################
 
-include(GoogleTest)
+OPTION(EXADG_WITH_GOOGLETEST "Use GoogleTest for unit testing" ON)
+IF(EXADG_WITH_GOOGLETEST)
+  MESSAGE(STATUS "Unit tests with GoogleTest: enabled")
 
-ADD_SUBDIRECTORY(operators_gtest)
-ADD_SUBDIRECTORY(solvers_and_preconditioners_gtest)
+  ADD_CUSTOM_TARGET(unittests)
+  ADD_DEPENDENCIES(exadg unittests)
 
-ADD_SUBDIRECTORY(solvers_and_preconditioners)
-ADD_SUBDIRECTORY(utilities)
+  IF(TARGET gtest)
+    MESSAGE(FATAL_ERROR "A target <gtest> has already been included by a TPL." "This is not supported.")
+  ENDIF()
+
+  INCLUDE(FetchContent)
+  FETCHCONTENT_DECLARE(
+      googletest
+      GIT_REPOSITORY https://github.com/google/googletest.git
+      GIT_TAG release-1.12.0
+      )
+  FETCHCONTENT_MAKEAVAILABLE(googletest)
+
+  ADD_SUBDIRECTORY(tests)
+ELSE()
+  MESSAGE(STATUS "Unit tests with GoogleTest: disabled")
+ENDIF()
