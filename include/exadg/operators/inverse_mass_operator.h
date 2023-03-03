@@ -28,6 +28,8 @@
 
 // ExaDG
 #include <exadg/matrix_free/integrators.h>
+#include <exadg/operators/mass_operator.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 
 namespace ExaDG
 {
@@ -60,6 +62,35 @@ public:
     this->matrix_free = &matrix_free_in;
     dof_index         = dof_index_in;
     quad_index        = quad_index_in;
+
+    cellwise_inverse_mass_not_available = not(matrix_free->get_dof_handler(dof_index)
+                                                .get_triangulation()
+                                                .all_reference_cells_are_hyper_cube());
+
+    if(cellwise_inverse_mass_not_available)
+    {
+      initialize_inverse_mass_operator_with_block_jacobi();
+    }
+  }
+
+  void
+  initialize_inverse_mass_operator_with_block_jacobi()
+  {
+    // initialize mass operator
+    dealii::AffineConstraints<Number> const & constraint =
+      matrix_free->get_affine_constraints(dof_index);
+
+    MassOperatorData<dim> mass_operator_data;
+    mass_operator_data.dof_index  = dof_index;
+    mass_operator_data.quad_index = quad_index;
+
+    mass_operator.initialize(*matrix_free, constraint, mass_operator_data);
+
+    // build a BlockJacobiPreconditioner and use the vmult(dst,src) for applying the inverse mass
+    // operator on  source the vector
+    mass_preconditioner =
+      std::make_shared<BlockJacobiPreconditioner<MassOperator<dim, n_components, Number>>>(
+        mass_operator);
   }
 
   void
@@ -67,7 +98,14 @@ public:
   {
     dst.zero_out_ghost_values();
 
-    matrix_free->cell_loop(&This::cell_loop, this, dst, src);
+    if(cellwise_inverse_mass_not_available)
+    {
+      mass_preconditioner->vmult(dst, src);
+    }
+    else
+    {
+      matrix_free->cell_loop(&This::cell_loop, this, dst, src);
+    }
   }
 
 private:
@@ -94,6 +132,13 @@ private:
   dealii::MatrixFree<dim, Number> const * matrix_free;
 
   unsigned int dof_index, quad_index;
+
+  // BlockJacobi Preconditoner to be used when the CellwiseInverseMassMatrix is not available
+  bool cellwise_inverse_mass_not_available;
+
+  MassOperator<dim, n_components, Number> mass_operator;
+
+  std::shared_ptr<PreconditionerBase<Number>> mass_preconditioner;
 };
 
 } // namespace ExaDG

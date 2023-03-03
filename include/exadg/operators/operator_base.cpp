@@ -1954,17 +1954,21 @@ OperatorBase<dim, Number, n_components>::evaluate_face_integrals() const
 template class OperatorBase<2, float, 1>;
 template class OperatorBase<2, float, 2>;
 template class OperatorBase<2, float, 3>;
+template class OperatorBase<2, float, 4>;
 
 template class OperatorBase<2, double, 1>;
 template class OperatorBase<2, double, 2>;
 template class OperatorBase<2, double, 3>;
+template class OperatorBase<2, double, 4>;
 
 template class OperatorBase<3, float, 1>;
 template class OperatorBase<3, float, 3>;
 template class OperatorBase<3, float, 4>;
+template class OperatorBase<3, float, 5>;
 
 template class OperatorBase<3, double, 1>;
 template class OperatorBase<3, double, 3>;
 template class OperatorBase<3, double, 4>;
+template class OperatorBase<3, double, 5>;
 
 } // namespace ExaDG

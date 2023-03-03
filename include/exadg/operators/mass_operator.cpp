@@ -104,4 +104,11 @@ template class MassOperator<2, 3, double>;
 template class MassOperator<3, 4, float>;
 template class MassOperator<3, 4, double>;
 
+// compressible Navier-Stokes merged operators
+template class MassOperator<2, 4, float>;
+template class MassOperator<2, 4, double>;
+
+template class MassOperator<3, 5, float>;
+template class MassOperator<3, 5, double>;
+
 } // namespace ExaDG
