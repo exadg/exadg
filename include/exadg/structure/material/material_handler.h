@@ -47,7 +47,6 @@ public:
 
   void
   initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
-             unsigned int const                        n_q_points_1d,
              unsigned int const                        dof_index,
              unsigned int const                        quad_index,
              std::shared_ptr<MaterialDescriptor const> material_descriptor)
@@ -72,10 +71,8 @@ public:
         {
           std::shared_ptr<StVenantKirchhoffData<dim>> data_svk =
             std::static_pointer_cast<StVenantKirchhoffData<dim>>(data);
-          material_map.insert(
-            Pair(id,
-                 new StVenantKirchhoff<dim, Number>(
-                   matrix_free, n_q_points_1d, dof_index, quad_index, *data_svk)));
+          material_map.insert(Pair(
+            id, new StVenantKirchhoff<dim, Number>(matrix_free, dof_index, quad_index, *data_svk)));
           break;
         }
         default:

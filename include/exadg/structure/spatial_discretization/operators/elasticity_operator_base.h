@@ -39,7 +39,6 @@ struct OperatorData : public OperatorBaseData
       pull_back_traction(false),
       unsteady(false),
       density(1.0),
-      n_q_points_1d(2),
       quad_index_gauss_lobatto(0)
   {
   }
@@ -57,10 +56,6 @@ struct OperatorData : public OperatorBaseData
 
   // density
   double density;
-
-  // for a material law with spatially varying coefficients, the number of 1D
-  // quadrature points is needed
-  unsigned int n_q_points_1d;
 
   // for DirichletCached boundary conditions, another quadrature rule
   // is needed to set the constrained DoFs.

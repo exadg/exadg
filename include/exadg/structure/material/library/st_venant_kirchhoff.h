@@ -64,7 +64,6 @@ public:
   typedef CellIntegrator<dim, dim, Number>                   IntegratorCell;
 
   StVenantKirchhoff(dealii::MatrixFree<dim, Number> const & matrix_free,
-                    unsigned int const                      n_q_points_1d,
                     unsigned int const                      dof_index,
                     unsigned int const                      quad_index,
                     StVenantKirchhoffData<dim> const &      data);
@@ -105,10 +104,10 @@ private:
   mutable dealii::VectorizedArray<Number> f2;
 
   // cache coefficients for spatially varying material parameters
-  bool                                           E_is_variable;
-  mutable VariableCoefficientsCells<dim, Number> f0_coefficients;
-  mutable VariableCoefficientsCells<dim, Number> f1_coefficients;
-  mutable VariableCoefficientsCells<dim, Number> f2_coefficients;
+  bool                                                               E_is_variable;
+  mutable VariableCoefficientsCells<dealii::VectorizedArray<Number>> f0_coefficients;
+  mutable VariableCoefficientsCells<dealii::VectorizedArray<Number>> f1_coefficients;
+  mutable VariableCoefficientsCells<dealii::VectorizedArray<Number>> f2_coefficients;
 };
 } // namespace Structure
 } // namespace ExaDG
