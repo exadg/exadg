@@ -100,7 +100,8 @@ evaluate_scalar_quantity_in_point(
 }
 
 template<int dim, typename Number>
-void evaluate_vectorial_quantity_in_point(
+void
+evaluate_vectorial_quantity_in_point(
   dealii::Tensor<1, dim, Number> &                           solution_value,
   dealii::DoFHandler<dim> const &                            dof_handler,
   dealii::Mapping<dim> const &                               mapping,

@@ -32,16 +32,16 @@ namespace ExaDG
 {
 template<int dim, typename Number>
 void
-  calculate_lift_and_drag_force(dealii::Tensor<1, dim, Number> &             Force,
-                                dealii::MatrixFree<dim, Number> const &      matrix_free,
-                                unsigned int const                           dof_index_velocity,
-                                unsigned int const                           quad_index_velocity,
-                                unsigned int const                           dof_index_pressure,
-                                std::set<dealii::types::boundary_id> const & boundary_IDs,
-                                dealii::LinearAlgebra::distributed::Vector<Number> const & velocity,
-                                dealii::LinearAlgebra::distributed::Vector<Number> const & pressure,
-                                double const     viscosity,
-                                MPI_Comm const & mpi_comm)
+calculate_lift_and_drag_force(dealii::Tensor<1, dim, Number> &             Force,
+                              dealii::MatrixFree<dim, Number> const &      matrix_free,
+                              unsigned int const                           dof_index_velocity,
+                              unsigned int const                           quad_index_velocity,
+                              unsigned int const                           dof_index_pressure,
+                              std::set<dealii::types::boundary_id> const & boundary_IDs,
+                              dealii::LinearAlgebra::distributed::Vector<Number> const & velocity,
+                              dealii::LinearAlgebra::distributed::Vector<Number> const & pressure,
+                              double const                                               viscosity,
+                              MPI_Comm const &                                           mpi_comm)
 {
   FaceIntegrator<dim, dim, Number> integrator_velocity(matrix_free,
                                                        true,
