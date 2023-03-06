@@ -754,63 +754,6 @@ public:
             data.upwind_factor * 0.5 * std::abs(average_normal_velocity) * jump_value);
   }
 
-  /*
-   * Velocity:
-   *
-   *  Linearized convective operator (= homogeneous operator):
-   *  Dirichlet boundary: delta_u⁺ = - delta_u⁻ or 0
-   *  Neumann boundary:   delta_u⁺ = + delta_u⁻
-   *  symmetry boundary:  delta_u⁺ = delta_u⁻ - 2 (delta_u⁻*n)n
-   */
-  inline DEAL_II_ALWAYS_INLINE //
-      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
-      calculate_exterior_value_linearized(
-        dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> & delta_uM,
-        unsigned int const                                        q,
-        FaceIntegrator<dim, dim, Number> &                        integrator,
-        BoundaryTypeU const &                                     boundary_type) const
-  {
-    // element e⁺
-    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> delta_uP;
-
-    if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)
-    {
-      if(data.type_dirichlet_bc == TypeDirichletBCs::Mirror)
-      {
-        delta_uP = -delta_uM;
-      }
-      else if(data.type_dirichlet_bc == TypeDirichletBCs::Direct)
-      {
-        // delta_uP = 0
-        // do nothing, delta_uP is already initialized with zero
-      }
-      else
-      {
-        AssertThrow(
-          false,
-          dealii::ExcMessage(
-            "Type of imposition of Dirichlet BC's for convective term is not implemented."));
-      }
-    }
-    else if(boundary_type == BoundaryTypeU::Neumann)
-    {
-      delta_uP = delta_uM;
-    }
-    else if(boundary_type == BoundaryTypeU::Symmetry)
-    {
-      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normalM =
-        integrator.get_normal_vector(q);
-      delta_uP = delta_uM - 2. * (delta_uM * normalM) * normalM;
-    }
-    else
-    {
-      AssertThrow(false,
-                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-    }
-
-    return delta_uP;
-  }
-
 private:
   ConvectiveKernelData data;
 
