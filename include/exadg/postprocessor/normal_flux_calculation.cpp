@@ -55,6 +55,10 @@ NormalFluxCalculator<dim, Number>::evaluate(VectorType const & solution,
                                             double const       time,
                                             bool const         unsteady)
 {
+  bool const has_ghost_elements = solution.has_ghost_elements();
+  if(not(has_ghost_elements))
+    solution.update_ghost_values();
+
   // zero values since we sum into these variables
   for(auto & iterator : flux)
   {
@@ -73,7 +77,7 @@ NormalFluxCalculator<dim, Number>::evaluate(VectorType const & solution,
     if(it != flux.end())
     {
       integrator.reinit(face);
-      integrator.read_dof_values(solution);
+      integrator.read_dof_values_plain(solution);
       integrator.evaluate(dealii::EvaluationFlags::gradients);
 
       scalar flux_face = dealii::make_vectorized_array<Number>(0.0);
@@ -91,6 +95,9 @@ NormalFluxCalculator<dim, Number>::evaluate(VectorType const & solution,
       }
     }
   }
+
+  if(not(has_ghost_elements))
+    solution.zero_out_ghost_values();
 
   // map -> vector
   std::vector<double> flux_vector(flux.size());
