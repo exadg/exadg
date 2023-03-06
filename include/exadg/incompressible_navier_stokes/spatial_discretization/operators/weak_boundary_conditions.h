@@ -207,8 +207,6 @@ inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normal_m =
       integrator.get_normal_vector(q);
 
-    u_p = u_m - 2. * (u_m * normal_m) * normal_m;
-
     if(type_dirichlet_bc == TypeDirichletBCs::Mirror)
     {
       u_p = u_m - 2. * (u_m * normal_m) * normal_m;
