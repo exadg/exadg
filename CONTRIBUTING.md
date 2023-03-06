@@ -37,5 +37,5 @@ Once you mark your PR ready, other community members will review your changes an
 Please remember that everybody wants the best for the project, so feel free to express your own ideas and to respect those of the reviewers.
 Feel free to assign reviewers you think are most familiar with the relevant modified code and the topic.
 While PRs can only be merged by the principal developers (a full and up-to-date list is given [here](https://github.com/exadg/exadg/#authors)), everyone is invited to review code and contribute to the discussions.
-Once you address changes requested by code reviewers, the reviewers will check your changes again and finally resolve open conversations.
+Once you have addressed changes requested by code reviewers, the reviewers will check your changes again and finally resolve open conversations.
 We also want to encourage rebasing your branch onto the latest master commit before the PR is merged. 
