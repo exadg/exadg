@@ -59,6 +59,19 @@ enum_to_string(ProblemType const enum_type)
   return string_type;
 }
 
+void
+string_to_enum(ProblemType & enum_type, std::string const string_type)
+{
+  if(string_type == "Undefined")
+    enum_type = ProblemType::Undefined;
+  else if(string_type == "Steady")
+    enum_type = ProblemType::Steady;
+  else if(string_type == "Unsteady")
+    enum_type = ProblemType::Unsteady;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
 std::string
 enum_to_string(EquationType const enum_type)
 {
@@ -86,6 +99,21 @@ enum_to_string(EquationType const enum_type)
   return string_type;
 }
 
+void
+string_to_enum(EquationType & enum_type, std::string const string_type)
+{
+  if(string_type == "Undefined")
+    enum_type = EquationType::Undefined;
+  else if(string_type == "Stokes")
+    enum_type = EquationType::Stokes;
+  else if(string_type == "NavierStokes")
+    enum_type = EquationType::NavierStokes;
+  else if(string_type == "Euler")
+    enum_type = EquationType::Euler;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
 std::string
 enum_to_string(FormulationViscousTerm const enum_type)
 {
@@ -108,6 +136,19 @@ enum_to_string(FormulationViscousTerm const enum_type)
   }
 
   return string_type;
+}
+
+void
+string_to_enum(FormulationViscousTerm & enum_type, std::string const string_type)
+{
+  if(string_type == "Undefined")
+    enum_type = FormulationViscousTerm::Undefined;
+  else if(string_type == "LaplaceFormulation")
+    enum_type = FormulationViscousTerm::LaplaceFormulation;
+  else if(string_type == "DivergenceFormulation")
+    enum_type = FormulationViscousTerm::DivergenceFormulation;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
 }
 
 std::string
@@ -134,6 +175,19 @@ enum_to_string(FormulationConvectiveTerm const enum_type)
   return string_type;
 }
 
+void
+string_to_enum(FormulationConvectiveTerm & enum_type, std::string const string_type)
+{
+  if(string_type == "Undefined")
+    enum_type = FormulationConvectiveTerm::Undefined;
+  else if(string_type == "DivergenceFormulation")
+    enum_type = FormulationConvectiveTerm::DivergenceFormulation;
+  else if(string_type == "ConvectiveFormulation")
+    enum_type = FormulationConvectiveTerm::ConvectiveFormulation;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
 std::string
 enum_to_string(MeshMovementType const enum_type)
 {
@@ -156,6 +210,19 @@ enum_to_string(MeshMovementType const enum_type)
   }
 
   return string_type;
+}
+
+void
+string_to_enum(MeshMovementType & enum_type, std::string const string_type)
+{
+  if(string_type == "Function")
+    enum_type = MeshMovementType::Function;
+  else if(string_type == "Poisson")
+    enum_type = MeshMovementType::Poisson;
+  else if(string_type == "Elasticity")
+    enum_type = MeshMovementType::Elasticity;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
 }
 
 /**************************************************************************************/
@@ -199,6 +266,21 @@ enum_to_string(TemporalDiscretization const enum_type)
   return string_type;
 }
 
+void
+string_to_enum(TemporalDiscretization & enum_type, std::string const string_type)
+{
+  if(string_type == "Undefined")
+    enum_type = TemporalDiscretization::Undefined;
+  else if(string_type == "BDFDualSplittingScheme")
+    enum_type = TemporalDiscretization::BDFDualSplittingScheme;
+  else if(string_type == "BDFPressureCorrection")
+    enum_type = TemporalDiscretization::BDFPressureCorrection;
+  else if(string_type == "BDFCoupledSolution")
+    enum_type = TemporalDiscretization::BDFCoupledSolution;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
 std::string
 enum_to_string(TreatmentOfConvectiveTerm const enum_type)
 {
@@ -223,6 +305,18 @@ enum_to_string(TreatmentOfConvectiveTerm const enum_type)
   return string_type;
 }
 
+void
+string_to_enum(TreatmentOfConvectiveTerm & enum_type, std::string const string_type)
+{
+  if(string_type == "Undefined")
+    enum_type = TreatmentOfConvectiveTerm::Undefined;
+  else if(string_type == "Explicit")
+    enum_type = TreatmentOfConvectiveTerm::Explicit;
+  else if(string_type == "Implicit")
+    enum_type = TreatmentOfConvectiveTerm::Implicit;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
 
 std::string
 enum_to_string(TimeStepCalculation const enum_type)
@@ -251,6 +345,21 @@ enum_to_string(TimeStepCalculation const enum_type)
   return string_type;
 }
 
+void
+string_to_enum(TimeStepCalculation & enum_type, std::string const string_type)
+{
+  if(string_type == "Undefined")
+    enum_type = TimeStepCalculation::Undefined;
+  else if(string_type == "UserSpecified")
+    enum_type = TimeStepCalculation::UserSpecified;
+  else if(string_type == "CFL")
+    enum_type = TimeStepCalculation::CFL;
+  else if(string_type == "MaxEfficiency")
+    enum_type = TimeStepCalculation::MaxEfficiency;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
 std::string
 enum_to_string(ConvergenceCriterionSteadyProblem const enum_type)
 {
@@ -275,25 +384,17 @@ enum_to_string(ConvergenceCriterionSteadyProblem const enum_type)
   return string_type;
 }
 
-std::string
-enum_to_string(DegreePressure const enum_type)
+void
+string_to_enum(ConvergenceCriterionSteadyProblem & enum_type, std::string const string_type)
 {
-  std::string string_type;
-
-  switch(enum_type)
-  {
-    case DegreePressure::MixedOrder:
-      string_type = "Mixed-order";
-      break;
-    case DegreePressure::EqualOrder:
-      string_type = "Equal-order";
-      break;
-    default:
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
-      break;
-  }
-
-  return string_type;
+  if(string_type == "Undefined")
+    enum_type = ConvergenceCriterionSteadyProblem::Undefined;
+  else if(string_type == "ResidualSteadyNavierStokes")
+    enum_type = ConvergenceCriterionSteadyProblem::ResidualSteadyNavierStokes;
+  else if(string_type == "SolutionIncrement")
+    enum_type = ConvergenceCriterionSteadyProblem::SolutionIncrement;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
 }
 
 /**************************************************************************************/
@@ -323,6 +424,49 @@ enum_to_string(SpatialDiscretization const enum_type)
   return string_type;
 }
 
+void
+string_to_enum(SpatialDiscretization & enum_type, std::string const string_type)
+{
+  if(string_type == "L2")
+    enum_type = SpatialDiscretization::L2;
+  else if(string_type == "HDIV")
+    enum_type = SpatialDiscretization::HDIV;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
+std::string
+enum_to_string(DegreePressure const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    case DegreePressure::MixedOrder:
+      string_type = "Mixed-order";
+      break;
+    case DegreePressure::EqualOrder:
+      string_type = "Equal-order";
+      break;
+    default:
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      break;
+  }
+
+  return string_type;
+}
+
+void
+string_to_enum(DegreePressure & enum_type, std::string const string_type)
+{
+  if(string_type == "MixedOrder")
+    enum_type = DegreePressure::MixedOrder;
+  else if(string_type == "EqualOrder")
+    enum_type = DegreePressure::EqualOrder;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
 std::string
 enum_to_string(TypeDirichletBCs const enum_type)
 {
@@ -342,6 +486,17 @@ enum_to_string(TypeDirichletBCs const enum_type)
   }
 
   return string_type;
+}
+
+void
+string_to_enum(TypeDirichletBCs & enum_type, std::string const string_type)
+{
+  if(string_type == "Direct")
+    enum_type = TypeDirichletBCs::Direct;
+  else if(string_type == "Mirror")
+    enum_type = TypeDirichletBCs::Mirror;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
 }
 
 std::string
@@ -368,6 +523,19 @@ enum_to_string(InteriorPenaltyFormulation const enum_type)
   return string_type;
 }
 
+void
+string_to_enum(InteriorPenaltyFormulation & enum_type, std::string const string_type)
+{
+  if(string_type == "Undefined")
+    enum_type = InteriorPenaltyFormulation::Undefined;
+  else if(string_type == "SIPG")
+    enum_type = InteriorPenaltyFormulation::SIPG;
+  else if(string_type == "NIPG")
+    enum_type = InteriorPenaltyFormulation::NIPG;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
 std::string
 enum_to_string(PenaltyTermDivergenceFormulation const enum_type)
 {
@@ -390,6 +558,19 @@ enum_to_string(PenaltyTermDivergenceFormulation const enum_type)
   }
 
   return string_type;
+}
+
+void
+string_to_enum(PenaltyTermDivergenceFormulation & enum_type, std::string const string_type)
+{
+  if(string_type == "Undefined")
+    enum_type = PenaltyTermDivergenceFormulation::Undefined;
+  else if(string_type == "Symmetrized")
+    enum_type = PenaltyTermDivergenceFormulation::Symmetrized;
+  else if(string_type == "NotSymmetrized")
+    enum_type = PenaltyTermDivergenceFormulation::NotSymmetrized;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
 }
 
 std::string
@@ -416,6 +597,19 @@ enum_to_string(AdjustPressureLevel const enum_type)
   return string_type;
 }
 
+void
+string_to_enum(AdjustPressureLevel & enum_type, std::string const string_type)
+{
+  if(string_type == "ApplyZeroMeanValue")
+    enum_type = AdjustPressureLevel::ApplyZeroMeanValue;
+  else if(string_type == "ApplyAnalyticalMeanValue")
+    enum_type = AdjustPressureLevel::ApplyAnalyticalMeanValue;
+  else if(string_type == "ApplyAnalyticalSolutionInPoint")
+    enum_type = AdjustPressureLevel::ApplyAnalyticalSolutionInPoint;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
 std::string
 enum_to_string(FormulationVelocityDivergenceTerm const enum_type)
 {
@@ -437,6 +631,17 @@ enum_to_string(FormulationVelocityDivergenceTerm const enum_type)
   return string_type;
 }
 
+void
+string_to_enum(FormulationVelocityDivergenceTerm & enum_type, std::string const string_type)
+{
+  if(string_type == "Weak")
+    enum_type = FormulationVelocityDivergenceTerm::Weak;
+  else if(string_type == "Strong")
+    enum_type = FormulationVelocityDivergenceTerm::Strong;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
 std::string
 enum_to_string(FormulationPressureGradientTerm const enum_type)
 {
@@ -456,6 +661,17 @@ enum_to_string(FormulationPressureGradientTerm const enum_type)
   }
 
   return string_type;
+}
+
+void
+string_to_enum(FormulationPressureGradientTerm & enum_type, std::string const string_type)
+{
+  if(string_type == "Weak")
+    enum_type = FormulationPressureGradientTerm::Weak;
+  else if(string_type == "Strong")
+    enum_type = FormulationPressureGradientTerm::Strong;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
 }
 
 std::string
@@ -480,6 +696,19 @@ enum_to_string(ContinuityPenaltyComponents const enum_type)
   }
 
   return string_type;
+}
+
+void
+string_to_enum(ContinuityPenaltyComponents & enum_type, std::string const string_type)
+{
+  if(string_type == "Undefined")
+    enum_type = ContinuityPenaltyComponents::Undefined;
+  else if(string_type == "All")
+    enum_type = ContinuityPenaltyComponents::All;
+  else if(string_type == "Normal")
+    enum_type = ContinuityPenaltyComponents::Normal;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
 }
 
 std::string
@@ -507,6 +736,21 @@ enum_to_string(TypePenaltyParameter const enum_type)
   }
 
   return string_type;
+}
+
+void
+string_to_enum(TypePenaltyParameter & enum_type, std::string const string_type)
+{
+  if(string_type == "Undefined")
+    enum_type = TypePenaltyParameter::Undefined;
+  else if(string_type == "ConvectiveTerm")
+    enum_type = TypePenaltyParameter::ConvectiveTerm;
+  else if(string_type == "ViscousTerm")
+    enum_type = TypePenaltyParameter::ViscousTerm;
+  else if(string_type == "ViscousAndConvectiveTerms")
+    enum_type = TypePenaltyParameter::ViscousAndConvectiveTerms;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
 }
 
 /**************************************************************************************/
@@ -539,6 +783,19 @@ enum_to_string(MultigridOperatorType const enum_type)
   return string_type;
 }
 
+void
+string_to_enum(MultigridOperatorType & enum_type, std::string const string_type)
+{
+  if(string_type == "Undefined")
+    enum_type = MultigridOperatorType::Undefined;
+  else if(string_type == "ReactionDiffusion")
+    enum_type = MultigridOperatorType::ReactionDiffusion;
+  else if(string_type == "ReactionConvectionDiffusion")
+    enum_type = MultigridOperatorType::ReactionConvectionDiffusion;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
 std::string
 enum_to_string(QuadratureRuleLinearization const enum_type)
 {
@@ -559,6 +816,18 @@ enum_to_string(QuadratureRuleLinearization const enum_type)
 
   return string_type;
 }
+
+void
+string_to_enum(QuadratureRuleLinearization & enum_type, std::string const string_type)
+{
+  if(string_type == "Standard")
+    enum_type = QuadratureRuleLinearization::Standard;
+  else if(string_type == "Overintegration32k")
+    enum_type = QuadratureRuleLinearization::Overintegration32k;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -587,6 +856,17 @@ enum_to_string(SolverPressurePoisson const enum_type)
   return string_type;
 }
 
+void
+string_to_enum(SolverPressurePoisson & enum_type, std::string const string_type)
+{
+  if(string_type == "CG")
+    enum_type = SolverPressurePoisson::CG;
+  else if(string_type == "FGMRES")
+    enum_type = SolverPressurePoisson::FGMRES;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
 std::string
 enum_to_string(PreconditionerPressurePoisson const enum_type)
 {
@@ -611,6 +891,19 @@ enum_to_string(PreconditionerPressurePoisson const enum_type)
   return string_type;
 }
 
+void
+string_to_enum(PreconditionerPressurePoisson & enum_type, std::string const string_type)
+{
+  if(string_type == "None")
+    enum_type = PreconditionerPressurePoisson::None;
+  else if(string_type == "PointJacobi")
+    enum_type = PreconditionerPressurePoisson::PointJacobi;
+  else if(string_type == "Multigrid")
+    enum_type = PreconditionerPressurePoisson::Multigrid;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
 std::string
 enum_to_string(SolverProjection const enum_type)
 {
@@ -630,6 +923,17 @@ enum_to_string(SolverProjection const enum_type)
   }
 
   return string_type;
+}
+
+void
+string_to_enum(SolverProjection & enum_type, std::string const string_type)
+{
+  if(string_type == "CG")
+    enum_type = SolverProjection::CG;
+  else if(string_type == "FGMRES")
+    enum_type = SolverProjection::FGMRES;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
 }
 
 std::string
@@ -662,6 +966,23 @@ enum_to_string(PreconditionerProjection const enum_type)
   return string_type;
 }
 
+void
+string_to_enum(PreconditionerProjection & enum_type, std::string const string_type)
+{
+  if(string_type == "None")
+    enum_type = PreconditionerProjection::None;
+  else if(string_type == "InverseMassMatrix")
+    enum_type = PreconditionerProjection::InverseMassMatrix;
+  else if(string_type == "PointJacobi")
+    enum_type = PreconditionerProjection::PointJacobi;
+  else if(string_type == "BlockJacobi")
+    enum_type = PreconditionerProjection::BlockJacobi;
+  else if(string_type == "Multigrid")
+    enum_type = PreconditionerProjection::Multigrid;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
 std::string
 enum_to_string(SolverViscous const enum_type)
 {
@@ -684,6 +1005,19 @@ enum_to_string(SolverViscous const enum_type)
   }
 
   return string_type;
+}
+
+void
+string_to_enum(SolverViscous & enum_type, std::string const string_type)
+{
+  if(string_type == "CG")
+    enum_type = SolverViscous::CG;
+  else if(string_type == "GMRES")
+    enum_type = SolverViscous::GMRES;
+  else if(string_type == "FGMRES")
+    enum_type = SolverViscous::FGMRES;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
 }
 
 std::string
@@ -716,6 +1050,23 @@ enum_to_string(PreconditionerViscous const enum_type)
   return string_type;
 }
 
+void
+string_to_enum(PreconditionerViscous & enum_type, std::string const string_type)
+{
+  if(string_type == "None")
+    enum_type = PreconditionerViscous::None;
+  else if(string_type == "InverseMassMatrix")
+    enum_type = PreconditionerViscous::InverseMassMatrix;
+  else if(string_type == "PointJacobi")
+    enum_type = PreconditionerViscous::PointJacobi;
+  else if(string_type == "BlockJacobi")
+    enum_type = PreconditionerViscous::BlockJacobi;
+  else if(string_type == "Multigrid")
+    enum_type = PreconditionerViscous::Multigrid;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
 std::string
 enum_to_string(SolverMomentum const enum_type)
 {
@@ -740,6 +1091,19 @@ enum_to_string(SolverMomentum const enum_type)
   return string_type;
 }
 
+void
+string_to_enum(SolverMomentum & enum_type, std::string const string_type)
+{
+  if(string_type == "CG")
+    enum_type = SolverMomentum::CG;
+  else if(string_type == "GMRES")
+    enum_type = SolverMomentum::GMRES;
+  else if(string_type == "FGMRES")
+    enum_type = SolverMomentum::FGMRES;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
 std::string
 enum_to_string(SolverCoupled const enum_type)
 {
@@ -759,6 +1123,17 @@ enum_to_string(SolverCoupled const enum_type)
   }
 
   return string_type;
+}
+
+void
+string_to_enum(SolverCoupled & enum_type, std::string const string_type)
+{
+  if(string_type == "GMRES")
+    enum_type = SolverCoupled::GMRES;
+  else if(string_type == "FGMRES")
+    enum_type = SolverCoupled::FGMRES;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
 }
 
 std::string
@@ -786,6 +1161,21 @@ enum_to_string(PreconditionerCoupled const enum_type)
   }
 
   return string_type;
+}
+
+void
+string_to_enum(PreconditionerCoupled & enum_type, std::string const string_type)
+{
+  if(string_type == "None")
+    enum_type = PreconditionerCoupled::None;
+  else if(string_type == "BlockDiagonal")
+    enum_type = PreconditionerCoupled::BlockDiagonal;
+  else if(string_type == "BlockTriangular")
+    enum_type = PreconditionerCoupled::BlockTriangular;
+  else if(string_type == "BlockTriangularFactorization")
+    enum_type = PreconditionerCoupled::BlockTriangularFactorization;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
 }
 
 std::string
@@ -818,6 +1208,23 @@ enum_to_string(MomentumPreconditioner const enum_type)
   return string_type;
 }
 
+void
+string_to_enum(MomentumPreconditioner & enum_type, std::string const string_type)
+{
+  if(string_type == "None")
+    enum_type = MomentumPreconditioner::None;
+  else if(string_type == "PointJacobi")
+    enum_type = MomentumPreconditioner::PointJacobi;
+  else if(string_type == "BlockJacobi")
+    enum_type = MomentumPreconditioner::BlockJacobi;
+  else if(string_type == "InverseMassMatrix")
+    enum_type = MomentumPreconditioner::InverseMassMatrix;
+  else if(string_type == "Multigrid")
+    enum_type = MomentumPreconditioner::Multigrid;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
 std::string
 enum_to_string(SchurComplementPreconditioner const enum_type)
 {
@@ -848,6 +1255,23 @@ enum_to_string(SchurComplementPreconditioner const enum_type)
   return string_type;
 }
 
+void
+string_to_enum(SchurComplementPreconditioner & enum_type, std::string const string_type)
+{
+  if(string_type == "None")
+    enum_type = SchurComplementPreconditioner::None;
+  else if(string_type == "InverseMassMatrix")
+    enum_type = SchurComplementPreconditioner::InverseMassMatrix;
+  else if(string_type == "LaplaceOperator")
+    enum_type = SchurComplementPreconditioner::LaplaceOperator;
+  else if(string_type == "CahouetChabard")
+    enum_type = SchurComplementPreconditioner::CahouetChabard;
+  else if(string_type == "PressureConvectionDiffusion")
+    enum_type = SchurComplementPreconditioner::PressureConvectionDiffusion;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
 std::string
 enum_to_string(PreconditionerMass const enum_type)
 {
@@ -867,6 +1291,17 @@ enum_to_string(PreconditionerMass const enum_type)
   }
 
   return string_type;
+}
+
+void
+string_to_enum(PreconditionerMass & enum_type, std::string const string_type)
+{
+  if(string_type == "None")
+    enum_type = PreconditionerMass::None;
+  else if(string_type == "PointJacobi")
+    enum_type = PreconditionerMass::PointJacobi;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
 }
 
 /**************************************************************************************/
@@ -903,6 +1338,118 @@ enum_to_string(TurbulenceEddyViscosityModel const enum_type)
   }
 
   return string_type;
+}
+
+void
+string_to_enum(TurbulenceEddyViscosityModel & enum_type, std::string const string_type)
+{
+  if(string_type == "Undefined")
+    enum_type = TurbulenceEddyViscosityModel::Undefined;
+  else if(string_type == "Smagorinsky")
+    enum_type = TurbulenceEddyViscosityModel::Smagorinsky;
+  else if(string_type == "Vreman")
+    enum_type = TurbulenceEddyViscosityModel::Vreman;
+  else if(string_type == "WALE")
+    enum_type = TurbulenceEddyViscosityModel::WALE;
+  else if(string_type == "Sigma")
+    enum_type = TurbulenceEddyViscosityModel::Sigma;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
+/**************************************************************************************/
+/*                                                                                    */
+/*                            GENERALIZED NEWTONIAN MODELS                            */
+/*                                                                                    */
+/**************************************************************************************/
+
+std::string
+enum_to_string(GeneralizedNewtonianModel const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    case GeneralizedNewtonianModel::Undefined:
+      string_type = "Undefined";
+      break;
+    case GeneralizedNewtonianModel::GeneralizedCarreauYasuda:
+      string_type = "GeneralizedCarreauYasuda";
+      break;
+    case GeneralizedNewtonianModel::Carreau:
+      string_type = "Carreau";
+      break;
+    case GeneralizedNewtonianModel::Cross:
+      string_type = "Cross";
+      break;
+    case GeneralizedNewtonianModel::SimplifiedCross:
+      string_type = "SimplifiedCross";
+      break;
+    case GeneralizedNewtonianModel::PowerLaw:
+      string_type = "PowerLaw";
+      break;
+    default:
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      break;
+  }
+
+  return string_type;
+}
+
+void
+string_to_enum(GeneralizedNewtonianModel & enum_type, std::string const string_type)
+{
+  if(string_type == "Undefined")
+    enum_type = GeneralizedNewtonianModel::Undefined;
+  else if(string_type == "GeneralizedCarreauYasuda")
+    enum_type = GeneralizedNewtonianModel::GeneralizedCarreauYasuda;
+  else if(string_type == "Carreau")
+    enum_type = GeneralizedNewtonianModel::Carreau;
+  else if(string_type == "Cross")
+    enum_type = GeneralizedNewtonianModel::Cross;
+  else if(string_type == "SimplifiedCross")
+    enum_type = GeneralizedNewtonianModel::SimplifiedCross;
+  else if(string_type == "PowerLaw")
+    enum_type = GeneralizedNewtonianModel::PowerLaw;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
+}
+
+std::string
+enum_to_string(TreatmentOfNonlinearViscosity const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    case TreatmentOfNonlinearViscosity::Undefined:
+      string_type = "Undefined";
+      break;
+    case TreatmentOfNonlinearViscosity::LinearizedInTimeImplicit:
+      string_type = "LinearizedInTimeImplicit";
+      break;
+    case TreatmentOfNonlinearViscosity::Implicit:
+      string_type = "Implicit";
+      break;
+    default:
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      break;
+  }
+
+  return string_type;
+}
+
+void
+string_to_enum(TreatmentOfNonlinearViscosity & enum_type, std::string const string_type)
+{
+  if(string_type == "Undefined")
+    enum_type = TreatmentOfNonlinearViscosity::Undefined;
+  else if(string_type == "LinearizedInTimeImplicit")
+    enum_type = TreatmentOfNonlinearViscosity::LinearizedInTimeImplicit;
+  else if(string_type == "Implicit")
+    enum_type = TreatmentOfNonlinearViscosity::Implicit;
+  else
+    AssertThrow(false, dealii::ExcMessage("Unknown enum type. Not implemented."));
 }
 
 } // namespace IncNS

@@ -51,6 +51,9 @@ enum class ProblemType
 std::string
 enum_to_string(ProblemType const enum_type);
 
+void
+string_to_enum(ProblemType & enum_type, std::string const string_type);
+
 /*
  *  EquationType describes the physical/mathematical model that has to be solved,
  *  i.e., Stokes equations or Navier-Stokes equations
@@ -66,6 +69,9 @@ enum class EquationType
 std::string
 enum_to_string(EquationType const enum_type);
 
+void
+string_to_enum(EquationType & enum_type, std::string const string_type);
+
 /*
  *  Formulation of viscous term: divergence formulation or Laplace formulation
  */
@@ -78,6 +84,9 @@ enum class FormulationViscousTerm
 
 std::string
 enum_to_string(FormulationViscousTerm const enum_type);
+
+void
+string_to_enum(FormulationViscousTerm & enum_type, std::string const string_type);
 
 /*
  *  Formulation of convective term: divergence formulation or convective formulation
@@ -92,6 +101,9 @@ enum class FormulationConvectiveTerm
 std::string
 enum_to_string(FormulationConvectiveTerm const enum_type);
 
+void
+string_to_enum(FormulationConvectiveTerm & enum_type, std::string const string_type);
+
 enum class MeshMovementType
 {
   Function,
@@ -101,6 +113,9 @@ enum class MeshMovementType
 
 std::string
 enum_to_string(MeshMovementType const enum_type);
+
+void
+string_to_enum(MeshMovementType & enum_type, std::string const string_type);
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -146,6 +161,9 @@ enum class TemporalDiscretization
 std::string
 enum_to_string(TemporalDiscretization const enum_type);
 
+void
+string_to_enum(TemporalDiscretization & enum_type, std::string const string_type);
+
 /*
  *  The convective term can be treated explicitly (Explicit) or implicitly (Implicit).
  */
@@ -158,6 +176,9 @@ enum class TreatmentOfConvectiveTerm
 
 std::string
 enum_to_string(TreatmentOfConvectiveTerm const enum_type);
+
+void
+string_to_enum(TreatmentOfConvectiveTerm & enum_type, std::string const string_type);
 
 /*
  * calculation of time step size
@@ -173,6 +194,9 @@ enum class TimeStepCalculation
 
 std::string
 enum_to_string(TimeStepCalculation const enum_type);
+
+void
+string_to_enum(TimeStepCalculation & enum_type, std::string const string_type);
 
 /*
  *  Pseudo-timestepping for steady-state problems:
@@ -203,6 +227,9 @@ enum class ConvergenceCriterionSteadyProblem
 std::string
 enum_to_string(ConvergenceCriterionSteadyProblem const enum_type);
 
+void
+string_to_enum(ConvergenceCriterionSteadyProblem & enum_type, std::string const string_type);
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                              SPATIAL DISCRETIZATION                                */
@@ -223,6 +250,9 @@ enum class SpatialDiscretization
 std::string
 enum_to_string(SpatialDiscretization const enum_type);
 
+void
+string_to_enum(SpatialDiscretization & enum_type, std::string const string_type);
+
 /*
  *  Polynomial degree of pressure shape functions in relation to velocity degree
  */
@@ -234,6 +264,9 @@ enum class DegreePressure
 
 std::string
 enum_to_string(DegreePressure const enum_type);
+
+void
+string_to_enum(DegreePressure & enum_type, std::string const string_type);
 
 /*
  *  Type of imposition of Dirichlet BC's:
@@ -257,6 +290,9 @@ enum class TypeDirichletBCs
 std::string
 enum_to_string(TypeDirichletBCs const enum_type);
 
+void
+string_to_enum(TypeDirichletBCs & enum_type, std::string const string_type);
+
 /*
  *  Interior penalty formulation of viscous term:
  *  SIPG (symmetric IP) or NIPG (non-symmetric IP)
@@ -272,6 +308,9 @@ enum class InteriorPenaltyFormulation
 
 std::string
 enum_to_string(InteriorPenaltyFormulation const enum_type);
+
+void
+string_to_enum(InteriorPenaltyFormulation & enum_type, std::string const string_type);
 
 /*
  *  Penalty term in case of divergence formulation:
@@ -290,6 +329,9 @@ enum class PenaltyTermDivergenceFormulation
 std::string
 enum_to_string(PenaltyTermDivergenceFormulation const enum_type);
 
+void
+string_to_enum(PenaltyTermDivergenceFormulation & enum_type, std::string const string_type);
+
 /*
  * Different options for adjusting the pressure level in case of pure Dirichlet
  * boundary conditions
@@ -306,6 +348,8 @@ enum class AdjustPressureLevel
 std::string
 enum_to_string(AdjustPressureLevel const enum_type);
 
+void
+string_to_enum(AdjustPressureLevel & enum_type, std::string const string_type);
 
 /*
  *  Formulation of velocity divergence term
@@ -319,6 +363,9 @@ enum class FormulationVelocityDivergenceTerm
 std::string
 enum_to_string(FormulationVelocityDivergenceTerm const enum_type);
 
+void
+string_to_enum(FormulationVelocityDivergenceTerm & enum_type, std::string const string_type);
+
 /*
  *  Formulation of pressure gradient term
  */
@@ -330,6 +377,9 @@ enum class FormulationPressureGradientTerm
 
 std::string
 enum_to_string(FormulationPressureGradientTerm const enum_type);
+
+void
+string_to_enum(FormulationPressureGradientTerm & enum_type, std::string const string_type);
 
 /*
  * Continuity penalty term: apply penalty term to all velocity components or to
@@ -347,6 +397,9 @@ enum class ContinuityPenaltyComponents
 std::string
 enum_to_string(ContinuityPenaltyComponents const enum_type);
 
+void
+string_to_enum(ContinuityPenaltyComponents & enum_type, std::string const string_type);
+
 /*
  * Different options for calculation of penalty parameter
  *
@@ -363,6 +416,8 @@ enum class TypePenaltyParameter
 std::string
 enum_to_string(TypePenaltyParameter const enum_type);
 
+void
+string_to_enum(TypePenaltyParameter & enum_type, std::string const string_type);
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -384,6 +439,9 @@ enum class MultigridOperatorType
 std::string
 enum_to_string(MultigridOperatorType const enum_type);
 
+void
+string_to_enum(MultigridOperatorType & enum_type, std::string const string_type);
+
 /*
  *  QuadratureRule
  */
@@ -396,6 +454,8 @@ enum class QuadratureRuleLinearization
 std::string
 enum_to_string(QuadratureRuleLinearization const enum_type);
 
+void
+string_to_enum(QuadratureRuleLinearization & enum_type, std::string const string_type);
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -420,6 +480,9 @@ enum class SolverPressurePoisson
 std::string
 enum_to_string(SolverPressurePoisson const enum_type);
 
+void
+string_to_enum(SolverPressurePoisson & enum_type, std::string const string_type);
+
 /*
  *  Preconditioner type for solution of pressure Poisson equation:
  *
@@ -435,6 +498,8 @@ enum class PreconditionerPressurePoisson
 std::string
 enum_to_string(PreconditionerPressurePoisson const enum_type);
 
+void
+string_to_enum(PreconditionerPressurePoisson & enum_type, std::string const string_type);
 
 /*
  *  Type of projection solver
@@ -449,6 +514,9 @@ enum class SolverProjection
 
 std::string
 enum_to_string(SolverProjection const enum_type);
+
+void
+string_to_enum(SolverProjection & enum_type, std::string const string_type);
 
 /*
  *  Preconditioner type for solution of projection step:
@@ -467,6 +535,9 @@ enum class PreconditionerProjection
 
 std::string
 enum_to_string(PreconditionerProjection const enum_type);
+
+void
+string_to_enum(PreconditionerProjection & enum_type, std::string const string_type);
 
 /*
  *  Solver type for solution of viscous step:
@@ -487,6 +558,9 @@ enum class SolverViscous
 std::string
 enum_to_string(SolverViscous const enum_type);
 
+void
+string_to_enum(SolverViscous & enum_type, std::string const string_type);
+
 /*
  *  Preconditioner type for solution of viscous step:
  *
@@ -504,6 +578,9 @@ enum class PreconditionerViscous
 
 std::string
 enum_to_string(PreconditionerViscous const enum_type);
+
+void
+string_to_enum(PreconditionerViscous & enum_type, std::string const string_type);
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -528,6 +605,9 @@ enum class SolverMomentum
 
 std::string
 enum_to_string(SolverMomentum const enum_type);
+
+void
+string_to_enum(SolverMomentum & enum_type, std::string const string_type);
 
 /*
  *  Preconditioner type for solution of momentum equation:
@@ -559,6 +639,9 @@ enum class SolverCoupled
 std::string
 enum_to_string(SolverCoupled const enum_type);
 
+void
+string_to_enum(SolverCoupled & enum_type, std::string const string_type);
+
 /*
  *  Preconditioner type for linearized Navier-Stokes problem
  *
@@ -576,6 +659,9 @@ enum class PreconditionerCoupled
 
 std::string
 enum_to_string(PreconditionerCoupled const enum_type);
+
+void
+string_to_enum(PreconditionerCoupled & enum_type, std::string const string_type);
 
 /*
  *  preconditioner for velocity/momentum operator
@@ -601,6 +687,8 @@ enum class MomentumPreconditioner
 std::string
 enum_to_string(MomentumPreconditioner const enum_type);
 
+void
+string_to_enum(MomentumPreconditioner & enum_type, std::string const string_type);
 
 /*
  *  Preconditioner for (2,2) pressure/Schur complement block in case of block preconditioning
@@ -625,6 +713,8 @@ enum class SchurComplementPreconditioner
 std::string
 enum_to_string(SchurComplementPreconditioner const enum_type);
 
+void
+string_to_enum(SchurComplementPreconditioner & enum_type, std::string const string_type);
 
 
 /**************************************************************************************/
@@ -648,6 +738,8 @@ enum class PreconditionerMass
 std::string
 enum_to_string(PreconditionerMass const enum_type);
 
+void
+string_to_enum(PreconditionerMass & enum_type, std::string const string_type);
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -675,6 +767,59 @@ enum class TurbulenceEddyViscosityModel
 
 std::string
 enum_to_string(TurbulenceEddyViscosityModel const enum_type);
+
+void
+string_to_enum(TurbulenceEddyViscosityModel & enum_type, std::string const string_type);
+
+
+/**************************************************************************************/
+/*                                                                                    */
+/*                            GENERALIZED NEWTONIAN MODELS                            */
+/*                                                                                    */
+/**************************************************************************************/
+
+/*
+ *  Generalized Newtonian models, see, e.g., Galdi et al., 2008
+ *  ("Hemodynamical Flows: Modeling, Analysis and Simulation").
+ *  With
+ *  y    = sqrt(2*sym_grad_velocity : sym_grad_velocity)
+ *  e_oo = generalized_newtonian_kinematic_viscosity_lower_limit
+ *  e_0  = generalized_newtonian_kinematic_viscosity_upper_limit
+ *  k    = generalized_newtonian_kappa
+ *  l    = generalized_newtonian_lambda
+ *  a    = generalized_newtonian_a
+ *  b    = generalized_newtonian_b
+ *  we have the apparent viscosity
+ *  viscosity = e_oo + (e_0-e_oo) * [k + (l*y)^a]^[(n-1)/a]
+ */
+enum class GeneralizedNewtonianModel
+{
+  Undefined,
+  GeneralizedCarreauYasuda,
+  Carreau,         // k = 1, a = 2
+  Cross,           // k = 1, n = 1 - a
+  SimplifiedCross, // k = 1, a = 1, n = 0
+  PowerLaw         // e_00 = 0, k = 0
+};
+
+std::string
+enum_to_string(GeneralizedNewtonianModel const enum_type);
+
+void
+string_to_enum(GeneralizedNewtonianModel & enum_type, std::string const string_type);
+
+enum class TreatmentOfNonlinearViscosity
+{
+  Undefined,
+  LinearizedInTimeImplicit,
+  Implicit
+};
+
+std::string
+enum_to_string(TreatmentOfNonlinearViscosity const enum_type);
+
+void
+string_to_enum(TreatmentOfNonlinearViscosity & enum_type, std::string const string_type);
 
 } // namespace IncNS
 } // namespace ExaDG
