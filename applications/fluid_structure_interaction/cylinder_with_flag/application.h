@@ -315,7 +315,8 @@ private:
       SchurComplementPreconditioner::PressureConvectionDiffusion;
   }
 
-  void create_triangulation(dealii::Triangulation<2> & tria)
+  void
+  create_triangulation(dealii::Triangulation<2> & tria)
   {
     std::vector<dealii::Triangulation<2>> tria_vec;
     tria_vec.resize(11);
@@ -396,7 +397,8 @@ private:
     dealii::GridGenerator::merge_triangulations(tria_vec_ptr, tria);
   }
 
-  void create_triangulation(dealii::Triangulation<3> & tria)
+  void
+  create_triangulation(dealii::Triangulation<3> & tria)
   {
     (void)tria;
 
@@ -785,7 +787,8 @@ private:
     param.update_preconditioner_every_newton_iterations = 10;
   }
 
-  void create_triangulation_structure(dealii::Triangulation<2> & tria)
+  void
+  create_triangulation_structure(dealii::Triangulation<2> & tria)
   {
     if(STRUCTURE_COVERS_FLAG_ONLY)
     {
@@ -915,7 +918,8 @@ private:
     }
   }
 
-  void create_triangulation_structure(dealii::Triangulation<3> & tria)
+  void
+  create_triangulation_structure(dealii::Triangulation<3> & tria)
   {
     (void)tria;
 

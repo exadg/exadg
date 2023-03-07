@@ -67,7 +67,8 @@ public:
     initialize(x_1_2d, x_2_2d);
   }
 
-  void initialize(dealii::Point<2> const & x_1, dealii::Point<2> const & x_2)
+  void
+  initialize(dealii::Point<2> const & x_1, dealii::Point<2> const & x_2)
   {
     double const tol = 1.e-12;
 
@@ -382,7 +383,8 @@ public:
     initialize(x_1_2d, x_2_2d);
   }
 
-  void initialize(dealii::Point<2> const & x_1, dealii::Point<2> const & x_2)
+  void
+  initialize(dealii::Point<2> const & x_1, dealii::Point<2> const & x_2)
   {
     double const tol = 1.e-12;
 
