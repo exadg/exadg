@@ -4,7 +4,7 @@ Below, you find information explaining how to contribute to ExaDG.
 
 ## Getting started
 Please read our [README.md](https://github.com/exadg/exadg/#readme) for general information on ExaDG and how we want to maintain the project.
-In [our wiki](https://github.com/exadg/exadg/wiki), you can find out how to install ExaDG and setup your development environment.
+In [our wiki](https://github.com/exadg/exadg/wiki), you can find out how to install ExaDG and set up your development environment.
 
 ## Working with issues
 For any ideas, questions, or points that you want to discuss, please create an issue on GitHub.
