@@ -841,12 +841,12 @@ $(function() {
 <div class="line"><a id="l00763" name="l00763"></a><span class="lineno">  763</span><span class="comment">   *  symmetry boundary:  delta_u⁺ = delta_u⁻ - 2 (delta_u⁻*n)n</span></div>
 <div class="line"><a id="l00764" name="l00764"></a><span class="lineno">  764</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00765" name="l00765"></a><span class="lineno">  765</span>  <span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
-<div class="line"><a id="l00766" name="l00766"></a><span class="lineno">  766</span>      dealii::Tensor&lt;1, dim, dealii::VectorizedArray&lt;Number&gt;&gt;</div>
-<div class="line"><a id="l00767" name="l00767"></a><span class="lineno">  767</span>      calculate_exterior_value_linearized(</div>
-<div class="line"><a id="l00768" name="l00768"></a><span class="lineno">  768</span>        dealii::Tensor&lt;1, dim, dealii::VectorizedArray&lt;Number&gt;&gt; &amp; delta_uM,</div>
-<div class="line"><a id="l00769" name="l00769"></a><span class="lineno">  769</span>        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                        q,</div>
-<div class="line"><a id="l00770" name="l00770"></a><span class="lineno">  770</span>        FaceIntegrator&lt;dim, dim, Number&gt; &amp;                        integrator,</div>
-<div class="line"><a id="l00771" name="l00771"></a><span class="lineno">  771</span>        BoundaryTypeU <span class="keyword">const</span> &amp;                                     boundary_type)<span class="keyword"> const</span></div>
+<div class="line"><a id="l00766" name="l00766"></a><span class="lineno">  766</span>    dealii::Tensor&lt;1, dim, dealii::VectorizedArray&lt;Number&gt;&gt;</div>
+<div class="line"><a id="l00767" name="l00767"></a><span class="lineno">  767</span>    calculate_exterior_value_linearized(</div>
+<div class="line"><a id="l00768" name="l00768"></a><span class="lineno">  768</span>      dealii::Tensor&lt;1, dim, dealii::VectorizedArray&lt;Number&gt;&gt; &amp; delta_uM,</div>
+<div class="line"><a id="l00769" name="l00769"></a><span class="lineno">  769</span>      <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                        q,</div>
+<div class="line"><a id="l00770" name="l00770"></a><span class="lineno">  770</span>      FaceIntegrator&lt;dim, dim, Number&gt; &amp;                        integrator,</div>
+<div class="line"><a id="l00771" name="l00771"></a><span class="lineno">  771</span>      BoundaryTypeU <span class="keyword">const</span> &amp;                                     boundary_type)<span class="keyword"> const</span></div>
 <div class="line"><a id="l00772" name="l00772"></a><span class="lineno">  772</span><span class="keyword">  </span>{</div>
 <div class="line"><a id="l00773" name="l00773"></a><span class="lineno">  773</span>    <span class="comment">// element e⁺</span></div>
 <div class="line"><a id="l00774" name="l00774"></a><span class="lineno">  774</span>    dealii::Tensor&lt;1, dim, dealii::VectorizedArray&lt;Number&gt;&gt; delta_uP;</div>
