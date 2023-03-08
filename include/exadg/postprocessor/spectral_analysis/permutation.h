@@ -61,11 +61,10 @@ cmp(const void * a, const void * b)
            // same process
            array_list[ia] < array_list[ib] ? -1 : array_list[ia] > array_list[ib] :
            // different processes
-           array_proc[ia] == __rank ?
-           -1 :
-           array_proc[ib] == __rank ?
-           +1 :
-           array_proc[ia] < array_proc[ib] ? -1 : array_proc[ia] > array_proc[ib];
+           array_proc[ia] == __rank        ? -1 :
+           array_proc[ib] == __rank        ? +1 :
+           array_proc[ia] < array_proc[ib] ? -1 :
+                                             array_proc[ia] > array_proc[ib];
 }
 
 /**
@@ -210,10 +209,10 @@ public:
         unsigned long int temp = ii * dealii::Utilities::pow(n * points, dim - 1) + jj;
         want[counter]          = temp;
         // ... determine owning process
-        int t = dim == 3 ? (temp % pn) / points + ((temp % (pn * pn)) / pn) / points * n +
+        int t    = dim == 3 ? (temp % pn) / points + ((temp % (pn * pn)) / pn) / points * n +
                              (temp / pn / pn) / points * n * n :
-                           (temp % pn) / points + (temp / pn) / points * n;
-        int proc            = MAP.indices_proc(MAP.indices_inv(t));
+                              (temp % pn) / points + (temp / pn) / points * n;
+        int proc = MAP.indices_proc(MAP.indices_inv(t));
         want_procs[counter] = proc;
       }
 

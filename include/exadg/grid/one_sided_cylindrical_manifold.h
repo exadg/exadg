@@ -47,7 +47,7 @@ public:
                               dealii::Point<dim> const &                                 center_in)
     : alpha(1.0), radius(1.0), cell(cell_in), face(face_in), center(center_in)
   {
-    AssertThrow(face >= 0 && face <= 3,
+    AssertThrow(face <= 3,
                 dealii::ExcMessage(
                   "One sided spherical manifold can only be applied to face f=0,1,2,3."));
 
@@ -67,7 +67,8 @@ public:
     initialize(x_1_2d, x_2_2d);
   }
 
-  void initialize(dealii::Point<2> const & x_1, dealii::Point<2> const & x_2)
+  void
+  initialize(dealii::Point<2> const & x_1, dealii::Point<2> const & x_2)
   {
     double const tol = 1.e-12;
 
@@ -362,7 +363,7 @@ public:
     AssertThrow(dim == 3,
                 dealii::ExcMessage("OneSidedConicalManifold can only be used for 3D problems."));
 
-    AssertThrow(face >= 0 && face <= 3,
+    AssertThrow(face <= 3,
                 dealii::ExcMessage(
                   "One sided spherical manifold can only be applied to face f=0,1,2,3."));
 
@@ -382,7 +383,8 @@ public:
     initialize(x_1_2d, x_2_2d);
   }
 
-  void initialize(dealii::Point<2> const & x_1, dealii::Point<2> const & x_2)
+  void
+  initialize(dealii::Point<2> const & x_1, dealii::Point<2> const & x_2)
   {
     double const tol = 1.e-12;
 

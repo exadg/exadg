@@ -26,10 +26,15 @@
 #
 #########################################################################
 
-cf=clang-format
+if test -f "programs/clang-11/bin/clang-format"; then
+  cf=programs/clang-11/bin/clang-format
+else
+  cf=clang-format
+fi
 
 # print which clang-format is used
 echo $cf
+$cf --version
 
 # format header files
 for i in $(find . -type f \( -name "*.h" -o -name "*.h.in" -o -name "*.cc" -o -name "*.cpp" \) ); do 

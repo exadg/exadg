@@ -42,14 +42,14 @@ public:
   }
 
   virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-    evaluate_stress(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
-                    unsigned int const                                              cell,
-                    unsigned int const                                              q) const = 0;
+  evaluate_stress(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
+                  unsigned int const                                              cell,
+                  unsigned int const                                              q) const = 0;
 
   virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-    apply_C(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
-            unsigned int const                                              cell,
-            unsigned int const                                              q) const = 0;
+  apply_C(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
+          unsigned int const                                              cell,
+          unsigned int const                                              q) const = 0;
 };
 
 } // namespace Structure

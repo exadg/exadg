@@ -291,14 +291,16 @@ private:
       SchurComplementPreconditioner::PressureConvectionDiffusion;
   }
 
-  void create_triangulation(dealii::Triangulation<2> & tria)
+  void
+  create_triangulation(dealii::Triangulation<2> & tria)
   {
     (void)tria;
 
     AssertThrow(false, dealii::ExcMessage("not implemented."));
   }
 
-  void create_triangulation(dealii::Triangulation<3> & tria)
+  void
+  create_triangulation(dealii::Triangulation<3> & tria)
   {
     std::vector<dealii::Triangulation<3>> tria_vec;
     tria_vec.resize(17);

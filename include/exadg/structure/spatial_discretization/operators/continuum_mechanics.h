@@ -32,8 +32,8 @@ namespace Structure
 {
 template<int dim, typename Number = double>
 inline DEAL_II_ALWAYS_INLINE //
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-    add_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> gradient)
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  add_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> gradient)
 {
   for(unsigned int i = 0; i < dim; i++)
     gradient[i][i] = gradient[i][i] + 1.0;
@@ -42,8 +42,8 @@ inline DEAL_II_ALWAYS_INLINE //
 
 template<int dim, typename Number = double>
 inline DEAL_II_ALWAYS_INLINE //
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-    subtract_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> gradient)
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  subtract_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> gradient)
 {
   for(unsigned int i = 0; i < dim; i++)
     gradient[i][i] = gradient[i][i] - 1.0;
