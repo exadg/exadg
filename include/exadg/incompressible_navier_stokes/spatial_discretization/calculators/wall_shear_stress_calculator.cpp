@@ -64,37 +64,37 @@ WallShearStressCalculator<dim, Number>::initialize(
   face_to_cell_index.clear();
   for(auto const & cell : matrix_free->get_dof_handler(dof_index).active_cell_iterators())
   {
-    if(cell->is_locally_owned() == false)
-      continue;
-
-    fe_values.reinit(cell);
-    double const tol_sqrd = std::pow((cell->diameter() * rel_tol), 2);
-
-    face_to_cell_index.resize(cell->n_faces());
-
-    for(auto const face : cell->face_indices())
+    if(cell->is_locally_owned() == true)
     {
-      fe_face_values.reinit(cell, face);
-      std::vector<dealii::types::global_dof_index> face_cell_index_matches(
-        fe_face_values.n_quadrature_points, dealii::numbers::invalid_dof_index);
+      fe_values.reinit(cell);
+      double const tol_sqrd = std::pow((cell->diameter() * rel_tol), 2);
 
-      for(auto const i : fe_face_values.quadrature_point_indices())
+      face_to_cell_index.resize(cell->n_faces());
+
+      for(auto const face : cell->face_indices())
       {
-        dealii::Point<dim> const point_face = fe_face_values.quadrature_point(i);
-        for(auto const j : fe_values.quadrature_point_indices())
+        fe_face_values.reinit(cell, face);
+        std::vector<dealii::types::global_dof_index> face_cell_index_matches(
+          fe_face_values.n_quadrature_points, dealii::numbers::invalid_dof_index);
+
+        for(auto const i : fe_face_values.quadrature_point_indices())
         {
-          if(point_face.distance_square(fe_values.quadrature_point(j)) < tol_sqrd)
+          dealii::Point<dim> const point_face = fe_face_values.quadrature_point(i);
+          for(auto const j : fe_values.quadrature_point_indices())
           {
-            face_cell_index_matches[i] = j;
-            break;
+            if(point_face.distance_square(fe_values.quadrature_point(j)) < tol_sqrd)
+            {
+              face_cell_index_matches[i] = j;
+              break;
+            }
           }
         }
+
+        face_to_cell_index[face] = face_cell_index_matches;
       }
 
-      face_to_cell_index[face] = face_cell_index_matches;
+      break;
     }
-
-    break;
   }
 }
 
@@ -154,69 +154,67 @@ WallShearStressCalculator<dim, Number>::compute_wall_shear_stress(
   // fill vector with entries on boundary via cell-loop or prepared container.
   for(auto const & cell : matrix_free->get_dof_handler(dof_index).active_cell_iterators())
   {
-    if(cell->is_locally_owned() == false)
-      continue;
-
-    if(cell->at_boundary() == false)
-      continue;
-
-    cell->get_dof_indices(dof_indices);
+    if(cell->is_locally_owned() == true && cell->at_boundary() == true)
+    {
+      cell->get_dof_indices(dof_indices);
 
 #ifdef DEBUG
-    fe_values.reinit(cell);
-    double const tol_sqrd = std::pow((cell->diameter() * rel_tol), 2);
+      fe_values.reinit(cell);
+      double const tol_sqrd = std::pow((cell->diameter() * rel_tol), 2);
 #endif
 
-    for(auto const face : cell->face_indices())
-    {
-      if(cell->at_boundary(face) == false)
-        continue;
-
-      if(write_on_all_boundary_IDs ||
-         write_wall_shear_stress_boundary_IDs.find(cell->face(face)->boundary_id()) !=
-           write_wall_shear_stress_boundary_IDs.end())
+      for(auto const face : cell->face_indices())
       {
-        fe_face_values.reinit(cell, face);
-        fe_face_values[vector].get_function_gradients(src, velocity_gradients);
-
-        for(auto const i : fe_face_values.quadrature_point_indices())
+        if(cell->at_boundary(face) == true)
         {
-          unsigned int matching_idx = face_to_cell_index[face][i];
+          if(write_on_all_boundary_IDs ||
+             write_wall_shear_stress_boundary_IDs.find(cell->face(face)->boundary_id()) !=
+               write_wall_shear_stress_boundary_IDs.end())
+          {
+            fe_face_values.reinit(cell, face);
+            fe_face_values[vector].get_function_gradients(src, velocity_gradients);
+
+            for(auto const i : fe_face_values.quadrature_point_indices())
+            {
+              unsigned int matching_idx = face_to_cell_index[face][i];
 
 #ifdef DEBUG
-          // check point match in debug mode
-          dealii::Point<dim> const point_face = fe_face_values.quadrature_point(i);
+              // check point match in debug mode
+              dealii::Point<dim> const point_face = fe_face_values.quadrature_point(i);
 
-          if(point_face.distance_square(fe_values.quadrature_point(matching_idx)) >= tol_sqrd)
-          {
-            matching_idx = dealii::numbers::invalid_dof_index;
-            for(auto const j : fe_values.quadrature_point_indices())
-            {
-              if(point_face.distance_square(fe_values.quadrature_point(j)) < tol_sqrd)
+              if(point_face.distance_square(fe_values.quadrature_point(matching_idx)) >= tol_sqrd)
               {
-                matching_idx = j;
-                break;
+                matching_idx = dealii::numbers::invalid_dof_index;
+                for(auto const j : fe_values.quadrature_point_indices())
+                {
+                  if(point_face.distance_square(fe_values.quadrature_point(j)) < tol_sqrd)
+                  {
+                    matching_idx = j;
+                    break;
+                  }
+                }
+                std::cout << "Recover: "
+                          << "face = " << face << "i = " << i
+                          << "miss = " << face_to_cell_index[face][i] << " new = " << matching_idx
+                          << "\n";
+                AssertThrow(matching_idx == dealii::numbers::invalid_dof_index,
+                            dealii::ExcMessage("Face to cell match recovery not succesful."));
+              }
+#endif
+
+              dealii::Tensor<1, dim> const normal = fe_face_values.normal_vector(i);
+              dealii::Tensor<1, dim> const S_times_n =
+                dynamic_viscosity * (velocity_gradients[i] + transpose(velocity_gradients[i])) *
+                normal;
+              dealii::Tensor<1, dim> const wall_shear_stress =
+                S_times_n - scalar_product((S_times_n), normal) * normal;
+              for(unsigned int d = 0; d < dim; ++d)
+              {
+                if(src.get_partitioner()->in_local_range(
+                     dof_indices[matching_idx + d * dofs_per_component]))
+                  dst(dof_indices[matching_idx + d * dofs_per_component]) = wall_shear_stress[d];
               }
             }
-            std::cout << "Recover: "
-                      << "face = " << face << "i = " << i
-                      << "miss = " << face_to_cell_index[face][i] << " new = " << matching_idx
-                      << "\n";
-            AssertThrow(matching_idx == dealii::numbers::invalid_dof_index,
-                        dealii::ExcMessage("Face to cell match recovery not succesful."));
-          }
-#endif
-
-          dealii::Tensor<1, dim> const normal = fe_face_values.normal_vector(i);
-          dealii::Tensor<1, dim> const S_times_n =
-            dynamic_viscosity * (velocity_gradients[i] + transpose(velocity_gradients[i])) * normal;
-          dealii::Tensor<1, dim> const wall_shear_stress =
-            S_times_n - scalar_product((S_times_n), normal) * normal;
-          for(unsigned int d = 0; d < dim; ++d)
-          {
-            if(src.get_partitioner()->in_local_range(
-                 dof_indices[matching_idx + d * dofs_per_component]))
-              dst(dof_indices[matching_idx + d * dofs_per_component]) = wall_shear_stress[d];
           }
         }
       }
