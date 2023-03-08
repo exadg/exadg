@@ -62,7 +62,7 @@ public:
   initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
              unsigned int const                      dof_index_in,
              unsigned int const                      quad_index_in,
-			 double const                            dynamic_viscosity_in);
+             double const                            dynamic_viscosity_in);
 
   void
   compute_wall_shear_stress(
@@ -78,7 +78,10 @@ private:
   unsigned int                                              quad_index;
   std::vector<std::vector<dealii::types::global_dof_index>> face_to_cell_index;
   double                                                    dynamic_viscosity;
-  double const                                              rel_tol = 1.0e-5;
+
+  // relative tolerance with respect to cell diameter to check
+  // matching support points and integration points for copying entries.
+  double const rel_tol = 1.0e-5;
 };
 
 } // namespace IncNS

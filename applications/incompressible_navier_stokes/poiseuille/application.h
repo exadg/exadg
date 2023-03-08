@@ -476,19 +476,19 @@ private:
     pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
     pp_data.output_data.time_control_data.start_time       = start_time;
     pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 10.0;
-    pp_data.output_data.directory                      = this->output_parameters.directory + "vtu/";
-    pp_data.output_data.filename                       = this->output_parameters.filename;
-    pp_data.output_data.write_vorticity                = true;
-    pp_data.output_data.write_divergence               = true;
-    pp_data.output_data.write_shear_rate               = true;
-    pp_data.output_data.write_velocity_magnitude       = true;
-    pp_data.output_data.write_vorticity_magnitude      = true;
-    pp_data.output_data.write_wall_shear_stress        = true;
+    pp_data.output_data.directory                 = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename                  = this->output_parameters.filename;
+    pp_data.output_data.write_vorticity           = true;
+    pp_data.output_data.write_divergence          = true;
+    pp_data.output_data.write_shear_rate          = true;
+    pp_data.output_data.write_velocity_magnitude  = true;
+    pp_data.output_data.write_vorticity_magnitude = true;
+    pp_data.output_data.write_wall_shear_stress   = true;
     pp_data.output_data.write_wall_shear_stress_boundary_IDs = {0};
-    pp_data.output_data.write_processor_id             = true;
-    pp_data.output_data.write_q_criterion              = true;
-    pp_data.output_data.degree                         = this->param.degree_u;
-    pp_data.output_data.write_higher_order             = true;
+    pp_data.output_data.write_processor_id                   = true;
+    pp_data.output_data.write_q_criterion                    = true;
+    pp_data.output_data.degree                               = this->param.degree_u;
+    pp_data.output_data.write_higher_order                   = true;
 
     // calculation of error
     // calculation of velocity error

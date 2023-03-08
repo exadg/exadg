@@ -312,8 +312,8 @@ public:
   // wall shear stress
   void
   compute_wall_shear_stress(
-    VectorType &                                  dst,
-    VectorType const &                            src,
+    VectorType &                               dst,
+    VectorType const &                         src,
     std::set<dealii::types::boundary_id> const write_wall_shear_stress_boundary_IDs) const;
 
   // streamfunction

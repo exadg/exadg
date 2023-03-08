@@ -40,15 +40,17 @@ WallShearStressCalculator<dim, Number>::initialize(
   unsigned int const                      quad_index_in,
   double const                            dynamic_viscosity_in)
 {
-  matrix_free = &matrix_free_in;
-  dof_index   = dof_index_in;
-  quad_index  = quad_index_in;
+  matrix_free       = &matrix_free_in;
+  dof_index         = dof_index_in;
+  quad_index        = quad_index_in;
   dynamic_viscosity = dynamic_viscosity_in;
 
   // identify default matching Gauss-Lobatto point indices once up
   // front since orientation of boundary faces *should be* constant
-  bool is_hyper_cube = matrix_free->get_dof_handler(dof_index).get_fe(0).reference_cell().is_hyper_cube();
-  AssertThrow(is_hyper_cube, dealii::ExcMessage("WallShearStressCalculator assumes hypercube reference cells."));
+  bool is_hyper_cube =
+    matrix_free->get_dof_handler(dof_index).get_fe(0).reference_cell().is_hyper_cube();
+  AssertThrow(is_hyper_cube,
+              dealii::ExcMessage("WallShearStressCalculator assumes hypercube reference cells."));
 
   unsigned int const    fe_degree = matrix_free->get_dof_handler(dof_index).get_fe(0).degree;
   dealii::FESystem<dim> fe_system(dealii::FE_DGQ<dim>(fe_degree), dim);
@@ -111,13 +113,15 @@ WallShearStressCalculator<dim, Number>::compute_wall_shear_stress(
   bool write_on_all_boundary_IDs = false;
   if(write_wall_shear_stress_boundary_IDs.size() == 1)
   {
-	// no boundary_id(s) provided, but write_wall_shear_stress == true
+    // no boundary_id(s) provided, but write_wall_shear_stress == true
     if(*write_wall_shear_stress_boundary_IDs.begin() == dealii::numbers::invalid_boundary_id)
       write_on_all_boundary_IDs = true;
   }
 
-  bool is_hyper_cube = matrix_free->get_dof_handler(dof_index).get_fe(0).reference_cell().is_hyper_cube();
-  AssertThrow(is_hyper_cube, dealii::ExcMessage("WallShearStressCalculator assumes hypercube reference cells."));
+  bool is_hyper_cube =
+    matrix_free->get_dof_handler(dof_index).get_fe(0).reference_cell().is_hyper_cube();
+  AssertThrow(is_hyper_cube,
+              dealii::ExcMessage("WallShearStressCalculator assumes hypercube reference cells."));
 
   unsigned int const    fe_degree = matrix_free->get_dof_handler(dof_index).get_fe(0).degree;
   dealii::FESystem<dim> fe_system(dealii::FE_DGQ<dim>(fe_degree), dim);
@@ -169,7 +173,8 @@ WallShearStressCalculator<dim, Number>::compute_wall_shear_stress(
         continue;
 
       if(write_on_all_boundary_IDs ||
-         write_wall_shear_stress_boundary_IDs.find(cell->face(face)->boundary_id()) != write_wall_shear_stress_boundary_IDs.end())
+         write_wall_shear_stress_boundary_IDs.find(cell->face(face)->boundary_id()) !=
+           write_wall_shear_stress_boundary_IDs.end())
       {
         fe_face_values.reinit(cell, face);
         fe_face_values[vector].get_function_gradients(src, velocity_gradients);
