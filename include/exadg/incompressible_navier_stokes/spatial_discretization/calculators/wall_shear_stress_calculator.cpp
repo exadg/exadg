@@ -64,7 +64,7 @@ WallShearStressCalculator<dim, Number>::initialize(
   face_to_cell_index.clear();
   for(auto const & cell : matrix_free->get_dof_handler(dof_index).active_cell_iterators())
   {
-    if(cell->is_locally_owned() == true)
+    if(cell->is_locally_owned())
     {
       fe_values.reinit(cell);
       double const tol_sqrd = std::pow((cell->diameter() * rel_tol), 2);
@@ -131,6 +131,9 @@ WallShearStressCalculator<dim, Number>::compute_wall_shear_stress(
   unsigned int const dofs_per_component =
     matrix_free->get_dof_handler(dof_index).get_fe(0).dofs_per_cell / dim;
 
+  unsigned int const dofs_per_comp =
+    matrix_free->get_dof_handler(dof_index).get_fe(0).base_element(0).dofs_per_cell;
+
 #ifdef DEBUG
   dealii::FEFaceValues<dim> fe_face_values(*mapping,
                                            fe_system,
@@ -165,7 +168,7 @@ WallShearStressCalculator<dim, Number>::compute_wall_shear_stress(
 
       for(auto const face : cell->face_indices())
       {
-        if(cell->at_boundary(face) == true)
+        if(cell->at_boundary(face))
         {
           if(write_on_all_boundary_IDs ||
              write_wall_shear_stress_boundary_IDs.find(cell->face(face)->boundary_id()) !=
