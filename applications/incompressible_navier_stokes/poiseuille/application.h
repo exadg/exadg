@@ -483,7 +483,8 @@ private:
     pp_data.output_data.write_shear_rate               = true;
     pp_data.output_data.write_velocity_magnitude       = true;
     pp_data.output_data.write_vorticity_magnitude      = true;
-    pp_data.output_data.write_wall_shear_stress_on_IDs = {dealii::numbers::invalid_boundary_id};
+    pp_data.output_data.write_wall_shear_stress        = true;
+    pp_data.output_data.write_wall_shear_stress_boundary_IDs = {0};
     pp_data.output_data.write_processor_id             = true;
     pp_data.output_data.write_q_criterion              = true;
     pp_data.output_data.degree                         = this->param.degree_u;

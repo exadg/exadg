@@ -22,6 +22,9 @@
 #ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CALCULATORS_WALL_SHEAR_STRESS_CALCULATOR_H_
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CALCULATORS_WALL_SHEAR_STRESS_CALCULATOR_H_
 
+// C++
+#include <set>
+
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_system.h>
@@ -59,15 +62,14 @@ public:
   initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
              unsigned int const                      dof_index_in,
              unsigned int const                      quad_index_in,
-             double const                            kinematic_viscosity,
-             double const                            density);
+			 double const                            dynamic_viscosity_in);
 
   void
   compute_wall_shear_stress(
-    VectorType &                                  dst,
-    VectorType const &                            src,
-    std::shared_ptr<dealii::Mapping<dim> const>   mapping,
-    std::vector<dealii::types::boundary_id> const write_wall_shear_stress_on_IDs) const;
+    VectorType &                                dst,
+    VectorType const &                          src,
+    std::shared_ptr<dealii::Mapping<dim> const> mapping,
+    std::set<dealii::types::boundary_id> const  write_wall_shear_stress_boundary_IDs) const;
 
 private:
   dealii::MatrixFree<dim, Number> const * matrix_free;

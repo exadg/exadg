@@ -667,8 +667,7 @@ SpatialOperatorBase<dim, Number>::initialize_calculators_for_derived_quantities(
   wall_shear_stress_calculator.initialize(*matrix_free,
                                           get_dof_index_velocity(),
                                           get_quad_index_velocity_linear(),
-                                          param.viscosity,
-                                          param.density);
+                                          param.viscosity * param.density);
 }
 
 template<int dim, typename Number>
@@ -870,13 +869,6 @@ double
 SpatialOperatorBase<dim, Number>::get_viscosity() const
 {
   return param.viscosity;
-}
-
-template<int dim, typename Number>
-double
-SpatialOperatorBase<dim, Number>::get_density() const
-{
-  return param.density;
 }
 
 template<int dim, typename Number>
@@ -1219,14 +1211,13 @@ void
 SpatialOperatorBase<dim, Number>::compute_wall_shear_stress(
   VectorType &                                  dst,
   VectorType const &                            src,
-  std::vector<dealii::types::boundary_id> const write_wall_shear_stress_on_IDs) const
+  std::set<dealii::types::boundary_id> const write_wall_shear_stress_boundary_IDs) const
 {
   wall_shear_stress_calculator.compute_wall_shear_stress(dst,
                                                          src,
                                                          this->get_mapping(),
-                                                         write_wall_shear_stress_on_IDs);
+                                                         write_wall_shear_stress_boundary_IDs);
 }
-
 
 /*
  *  Streamfunction psi (2D only): defined as u1 = d(psi)/dx2, u2 = - d(psi)/dx1

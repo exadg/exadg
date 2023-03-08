@@ -124,50 +124,51 @@ write_surface_output(
   unsigned int const                                                    output_counter,
   MPI_Comm const &                                                      mpi_comm)
 {
-  AssertThrow(dim == 3, dealii::ExcMessage("Surface vtk output for dim == 3 only."));
-  AssertThrow(surface_fields.size() > 0, dealii::ExcMessage("Provided surface fields empty."));
-
-  std::string folder = output_data.directory, file = output_data.filename;
-
-  dealii::DataOutBase::VtkFlags flags;
-  flags.write_higher_order_cells = output_data.write_higher_order;
-
-  dealii::DataOutFaces<dim> data_out(true /*surface only*/);
-  data_out.set_flags(flags);
-
-  for(auto & additional_field : surface_fields)
+  // surface output for dim == 3 only
+  if(dim == 3 && surface_fields.size() > 0)
   {
-    if(additional_field->get_type() == SolutionFieldType::scalar)
-    {
-      data_out.add_data_vector(additional_field->get_dof_handler(),
-                               additional_field->get(),
-                               additional_field->get_name());
-    }
-    else if(additional_field->get_type() == SolutionFieldType::cellwise)
-    {
-      data_out.add_data_vector(additional_field->get(), additional_field->get_name());
-    }
-    else if(additional_field->get_type() == SolutionFieldType::vector)
-    {
-      std::vector<std::string> names(dim, additional_field->get_name());
-      std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
-        component_interpretation(dim,
-                                 dealii::DataComponentInterpretation::component_is_part_of_vector);
+	  std::string folder = output_data.directory, file = output_data.filename;
 
-      data_out.add_data_vector(additional_field->get_dof_handler(),
-                               additional_field->get(),
-                               names,
-                               component_interpretation);
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
-    }
+	  dealii::DataOutBase::VtkFlags flags;
+	  flags.write_higher_order_cells = output_data.write_higher_order;
+
+	  dealii::DataOutFaces<dim> data_out(true /*surface only*/);
+	  data_out.set_flags(flags);
+
+	  for(auto & additional_field : surface_fields)
+	  {
+		if(additional_field->get_type() == SolutionFieldType::scalar)
+		{
+		  data_out.add_data_vector(additional_field->get_dof_handler(),
+								   additional_field->get(),
+								   additional_field->get_name());
+		}
+		else if(additional_field->get_type() == SolutionFieldType::cellwise)
+		{
+		  data_out.add_data_vector(additional_field->get(), additional_field->get_name());
+		}
+		else if(additional_field->get_type() == SolutionFieldType::vector)
+		{
+		  std::vector<std::string> names(dim, additional_field->get_name());
+		  std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
+			component_interpretation(dim,
+									 dealii::DataComponentInterpretation::component_is_part_of_vector);
+
+		  data_out.add_data_vector(additional_field->get_dof_handler(),
+								   additional_field->get(),
+								   names,
+								   component_interpretation);
+		}
+		else
+		{
+		  AssertThrow(false, dealii::ExcMessage("Not implemented."));
+		}
+	  }
+
+	  data_out.build_patches(mapping, output_data.degree);
+
+	  data_out.write_vtu_with_pvtu_record(folder, file + "_surface", output_counter, mpi_comm, 4);
   }
-
-  data_out.build_patches(mapping, output_data.degree);
-
-  data_out.write_vtu_with_pvtu_record(folder, file + "_surface", output_counter, mpi_comm, 4);
 }
 
 template<int dim, typename Number>
@@ -258,12 +259,8 @@ OutputGenerator<dim, Number>::evaluate(
                     time_control.get_counter(),
                     mpi_comm);
 
-  if(dim == 3 && surface_fields.size() > 0)
-  {
-    // surface vtk output for dim == 3 only
-    write_surface_output<dim>(
-      output_data, *mapping, surface_fields, time_control.get_counter(), mpi_comm);
-  }
+  write_surface_output<dim>(
+    output_data, *mapping, surface_fields, time_control.get_counter(), mpi_comm);
 }
 
 template class OutputGenerator<2, float>;

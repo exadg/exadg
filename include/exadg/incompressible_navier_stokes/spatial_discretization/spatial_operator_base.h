@@ -192,9 +192,6 @@ public:
   double
   get_viscosity() const;
 
-  double
-  get_density() const;
-
   dealii::VectorizedArray<Number>
   get_viscosity_boundary_face(unsigned int const face, unsigned int const q) const;
 
@@ -317,7 +314,7 @@ public:
   compute_wall_shear_stress(
     VectorType &                                  dst,
     VectorType const &                            src,
-    std::vector<dealii::types::boundary_id> const write_wall_shear_stress_on_IDs) const;
+    std::set<dealii::types::boundary_id> const write_wall_shear_stress_boundary_IDs) const;
 
   // streamfunction
   void

@@ -19,6 +19,7 @@
  *  ______________________________________________________________________
  */
 
+// ExaDG
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/wall_shear_stress_calculator.h>
 
 namespace ExaDG
@@ -37,17 +38,18 @@ WallShearStressCalculator<dim, Number>::initialize(
   dealii::MatrixFree<dim, Number> const & matrix_free_in,
   unsigned int const                      dof_index_in,
   unsigned int const                      quad_index_in,
-  double const                            kinematic_viscosity,
-  double const                            density)
+  double const                            dynamic_viscosity_in)
 {
   matrix_free = &matrix_free_in;
   dof_index   = dof_index_in;
   quad_index  = quad_index_in;
-
-  dynamic_viscosity = kinematic_viscosity * density;
+  dynamic_viscosity = dynamic_viscosity_in;
 
   // identify default matching Gauss-Lobatto point indices once up
   // front since orientation of boundary faces *should be* constant
+  bool is_hyper_cube = matrix_free->get_dof_handler(dof_index).get_fe(0).reference_cell().is_hyper_cube();
+  AssertThrow(is_hyper_cube, dealii::ExcMessage("WallShearStressCalculator assumes hypercube reference cells."));
+
   unsigned int const    fe_degree = matrix_free->get_dof_handler(dof_index).get_fe(0).degree;
   dealii::FESystem<dim> fe_system(dealii::FE_DGQ<dim>(fe_degree), dim);
   dealii::QGaussLobatto<dim - 1> face_quadrature(fe_degree + 1);
@@ -97,35 +99,33 @@ WallShearStressCalculator<dim, Number>::initialize(
 template<int dim, typename Number>
 void
 WallShearStressCalculator<dim, Number>::compute_wall_shear_stress(
-  VectorType &                                  dst,
-  VectorType const &                            src,
-  std::shared_ptr<dealii::Mapping<dim> const>   mapping,
-  std::vector<dealii::types::boundary_id> const write_wall_shear_stress_on_IDs) const
+  VectorType &                                dst,
+  VectorType const &                          src,
+  std::shared_ptr<dealii::Mapping<dim> const> mapping,
+  std::set<dealii::types::boundary_id> const  write_wall_shear_stress_boundary_IDs) const
 {
   dst = 0;
 
-  // fill boundary ID to bool map OR write on all boundaries
-  AssertThrow(
-    write_wall_shear_stress_on_IDs.size() > 0,
-    dealii::ExcMessage(
-      "Provide at least write_wall_shear_stress_on_IDs = {dealii::numbers::invalid_boundary_id}.")) bool
-    write_on_all_boundary_IDs = false;
-  if(write_wall_shear_stress_on_IDs.size() == 1)
+  // if no write_wall_shear_stress_boundary_IDs is provided, the default invalid_boundary_id
+  // indicates writing the wall_shear_stress on all boundaries.
+  bool write_on_all_boundary_IDs = false;
+  if(write_wall_shear_stress_boundary_IDs.size() == 1)
   {
-    if(write_wall_shear_stress_on_IDs[0] == dealii::numbers::invalid_boundary_id)
+	// no boundary_id(s) provided, but write_wall_shear_stress == true
+    if(*write_wall_shear_stress_boundary_IDs.begin() == dealii::numbers::invalid_boundary_id)
       write_on_all_boundary_IDs = true;
   }
-  std::map<dealii::types::boundary_id, bool> write_on_boundary_IDs;
-  for(auto const id : write_wall_shear_stress_on_IDs)
-    write_on_boundary_IDs.insert({id, true});
+
+  bool is_hyper_cube = matrix_free->get_dof_handler(dof_index).get_fe(0).reference_cell().is_hyper_cube();
+  AssertThrow(is_hyper_cube, dealii::ExcMessage("WallShearStressCalculator assumes hypercube reference cells."));
+
+  unsigned int const    fe_degree = matrix_free->get_dof_handler(dof_index).get_fe(0).degree;
+  dealii::FESystem<dim> fe_system(dealii::FE_DGQ<dim>(fe_degree), dim);
+  dealii::QGaussLobatto<dim - 1> face_quadrature(fe_degree + 1);
+  dealii::QGaussLobatto<dim>     quadrature(fe_degree + 1);
 
   unsigned int const dofs_per_component =
     matrix_free->get_dof_handler(dof_index).get_fe(0).dofs_per_cell / dim;
-  unsigned int const    fe_degree = matrix_free->get_dof_handler(dof_index).get_fe(0).degree;
-  dealii::FESystem<dim> fe_system(dealii::FE_DGQ<dim>(fe_degree), dim);
-
-  dealii::QGaussLobatto<dim - 1> face_quadrature(fe_degree + 1);
-  dealii::QGaussLobatto<dim>     quadrature(fe_degree + 1);
 
 #ifdef DEBUG
   dealii::FEFaceValues<dim> fe_face_values(*mapping,
@@ -169,7 +169,7 @@ WallShearStressCalculator<dim, Number>::compute_wall_shear_stress(
         continue;
 
       if(write_on_all_boundary_IDs ||
-         write_on_boundary_IDs.find(cell->face(face)->boundary_id()) != write_on_boundary_IDs.end())
+         write_wall_shear_stress_boundary_IDs.find(cell->face(face)->boundary_id()) != write_wall_shear_stress_boundary_IDs.end())
       {
         fe_face_values.reinit(cell, face);
         fe_face_values[vector].get_function_gradients(src, velocity_gradients);
@@ -202,12 +202,11 @@ WallShearStressCalculator<dim, Number>::compute_wall_shear_stress(
           }
 #endif
 
+          dealii::Tensor<1, dim> const normal = fe_face_values.normal_vector(i);
           dealii::Tensor<1, dim> const S_times_n =
-            dynamic_viscosity * (velocity_gradients[i] + transpose(velocity_gradients[i])) *
-            fe_face_values.normal_vector(i);
+            dynamic_viscosity * (velocity_gradients[i] + transpose(velocity_gradients[i])) * normal;
           dealii::Tensor<1, dim> const wall_shear_stress =
-            S_times_n - scalar_product((S_times_n), fe_face_values.normal_vector(i)) *
-                          fe_face_values.normal_vector(i);
+            S_times_n - scalar_product((S_times_n), normal) * normal;
           for(unsigned int d = 0; d < dim; ++d)
           {
             if(src.get_partitioner()->in_local_range(

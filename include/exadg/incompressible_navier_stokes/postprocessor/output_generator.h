@@ -38,6 +38,8 @@ struct OutputData : public OutputDataBase
       write_shear_rate(false),
       write_velocity_magnitude(false),
       write_vorticity_magnitude(false),
+	  write_wall_shear_stress(false),
+	  write_wall_shear_stress_boundary_IDs({{dealii::numbers::invalid_boundary_id}}),
       write_streamfunction(false),
       write_q_criterion(false),
       mean_velocity(TimeControlData()),
@@ -56,7 +58,7 @@ struct OutputData : public OutputDataBase
     print_parameter(pcout, "Write shear rate", write_shear_rate);
     print_parameter(pcout, "Write velocity magnitude", write_velocity_magnitude);
     print_parameter(pcout, "Write vorticity magnitude", write_vorticity_magnitude);
-    print_parameter(pcout, "Write wall shear stress", write_wall_shear_stress_on_IDs.size() > 0);
+    print_parameter(pcout, "Write wall shear stress", write_wall_shear_stress);
     print_parameter(pcout, "Write streamfunction", write_streamfunction);
     print_parameter(pcout, "Write Q criterion", write_q_criterion);
 
@@ -79,7 +81,8 @@ struct OutputData : public OutputDataBase
   bool write_vorticity_magnitude;
 
   // write wall shear stress on IDs
-  std::vector<dealii::types::boundary_id> write_wall_shear_stress_on_IDs;
+  bool write_wall_shear_stress;
+  std::set<dealii::types::boundary_id> write_wall_shear_stress_boundary_IDs;
 
   // Calculate streamfunction in order to visualize streamlines!
   // Note that this option is only available in 2D!
