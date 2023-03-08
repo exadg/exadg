@@ -136,10 +136,6 @@ SET(TARGET_SRC
      include/exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.cpp
-     include/exadg/incompressible_navier_stokes/spatial_discretization/calculators/divergence_calculator.cpp
-     include/exadg/incompressible_navier_stokes/spatial_discretization/calculators/vorticity_calculator.cpp
-     include/exadg/incompressible_navier_stokes/spatial_discretization/calculators/velocity_magnitude_calculator.cpp
-     include/exadg/incompressible_navier_stokes/spatial_discretization/calculators/q_criterion_calculator.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/calculators/streamfunction_calculator_rhs_operator.cpp
      include/exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_momentum.cpp
      include/exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_projection.cpp
