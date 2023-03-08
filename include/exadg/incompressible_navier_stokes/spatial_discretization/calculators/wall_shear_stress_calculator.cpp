@@ -196,10 +196,6 @@ WallShearStressCalculator<dim, Number>::compute_wall_shear_stress(
                     break;
                   }
                 }
-                std::cout << "Recover: "
-                          << "face = " << face << "i = " << i
-                          << "miss = " << face_to_cell_index[face][i] << " new = " << matching_idx
-                          << "\n";
                 AssertThrow(matching_idx == dealii::numbers::invalid_dof_index,
                             dealii::ExcMessage("Face to cell match recovery not succesful."));
               }
