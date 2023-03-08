@@ -25,7 +25,7 @@ namespace ExaDG
 {
 template<int dim, typename Number>
 DivergenceCalculator<dim, Number>::DivergenceCalculator()
-  : matrix_free(nullptr), dof_index_vector(1), dof_index_scalar(2), quad_index(0)
+  : matrix_free(nullptr), dof_index_vector(0), dof_index_scalar(0), quad_index(0)
 {
 }
 
