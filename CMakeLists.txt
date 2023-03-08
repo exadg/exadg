@@ -272,9 +272,10 @@ DEAL_II_SETUP_TARGET(exadg)
 
 ENABLE_TESTING()
 
+INCLUDE(UnitTestingFramework.cmake)
+
 ADD_SUBDIRECTORY(applications)
 ADD_SUBDIRECTORY(prototypes)
-ADD_SUBDIRECTORY(tests)
 
 ADD_SUBDIRECTORY(doc/doxygen)
 

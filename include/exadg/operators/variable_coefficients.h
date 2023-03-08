@@ -21,119 +21,111 @@
 #ifndef INCLUDE_EXADG_OPERATORS_VARIABLE_COEFFICIENTS_H_
 #define INCLUDE_EXADG_OPERATORS_VARIABLE_COEFFICIENTS_H_
 
+#include <deal.II/matrix_free/matrix_free.h>
+
 namespace ExaDG
 {
-template<int dim, typename Number>
+template<typename coefficient_t>
 class VariableCoefficientsCells
 {
-private:
-  typedef dealii::VectorizedArray<Number> scalar;
-
 public:
+  template<int dim, typename Number>
   void
   initialize(dealii::MatrixFree<dim, Number> const & matrix_free,
-             unsigned int const                      degree,
-             Number const &                          constant_coefficient)
+             unsigned int const                      quad_index,
+             coefficient_t const &                   constant_coefficient)
   {
-    unsigned int const points_per_cell = dealii::Utilities::pow(degree + 1, dim);
+    reinit(matrix_free, quad_index);
 
-    coefficients_cell.reinit(matrix_free.n_cell_batches(), points_per_cell);
-    coefficients_cell.fill(dealii::make_vectorized_array<Number>(constant_coefficient));
+    fill(constant_coefficient);
   }
 
-  scalar
+  coefficient_t
   get_coefficient(unsigned int const cell, unsigned int const q) const
   {
     return coefficients_cell[cell][q];
   }
 
   void
-  set_coefficient(unsigned int const cell, unsigned int const q, scalar const & value)
+  set_coefficient(unsigned int const cell, unsigned int const q, coefficient_t const & value)
   {
     coefficients_cell[cell][q] = value;
   }
 
 private:
-  // variable coefficients
-  dealii::Table<2, scalar> coefficients_cell;
-};
-
-template<int dim, typename Number>
-class VariableCoefficients
-{
-private:
-  typedef dealii::VectorizedArray<Number> scalar;
-
-public:
+  template<int dim, typename Number>
   void
-  initialize(dealii::MatrixFree<dim, Number> const & matrix_free,
-             unsigned int const                      degree,
-             Number const &                          constant_coefficient)
+  reinit(dealii::MatrixFree<dim, Number> const & matrix_free, unsigned int const quad_index)
   {
-    unsigned int const points_per_cell = dealii::Utilities::pow(degree + 1, dim);
-    unsigned int const points_per_face = dealii::Utilities::pow(degree + 1, dim - 1);
-
-    // cells
-    coefficients_cell.reinit(matrix_free.n_cell_batches(), points_per_cell);
-
-    coefficients_cell.fill(dealii::make_vectorized_array<Number>(constant_coefficient));
-
-    // face-based loops
-    coefficients_face.reinit(matrix_free.n_inner_face_batches() +
-                               matrix_free.n_boundary_face_batches(),
-                             points_per_face);
-
-    coefficients_face.fill(dealii::make_vectorized_array<Number>(constant_coefficient));
-
-    coefficients_face_neighbor.reinit(matrix_free.n_inner_face_batches(), points_per_face);
-
-    coefficients_face_neighbor.fill(dealii::make_vectorized_array<Number>(constant_coefficient));
-
-    // TODO cell-based face loops
-    //    coefficients_face_cell_based.reinit(matrix_free.n_cell_batches()*2*dim,
-    //        points_per_face);
-    //
-    //    coefficients_face_cell_based.fill(dealii::make_vectorized_array<Number>(constant_coefficient));
+    coefficients_cell.reinit(matrix_free.n_cell_batches(), matrix_free.get_n_q_points(quad_index));
   }
 
-  scalar
+  void
+  fill(coefficient_t const & constant_coefficient)
+  {
+    coefficients_cell.fill(constant_coefficient);
+  }
+
+  // variable coefficients
+  dealii::Table<2, coefficient_t> coefficients_cell;
+};
+
+template<typename coefficient_t>
+class VariableCoefficients
+{
+public:
+  template<int dim, typename Number>
+  void
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free,
+             unsigned int const                      quad_index,
+             coefficient_t const &                   constant_coefficient)
+  {
+    reinit(matrix_free, quad_index);
+
+    fill(constant_coefficient);
+  }
+
+  coefficient_t
   get_coefficient_cell(unsigned int const cell, unsigned int const q) const
   {
     return coefficients_cell[cell][q];
   }
 
   void
-  set_coefficient_cell(unsigned int const cell, unsigned int const q, scalar const & value)
+  set_coefficient_cell(unsigned int const cell, unsigned int const q, coefficient_t const & value)
   {
     coefficients_cell[cell][q] = value;
   }
 
-  scalar
+  coefficient_t
   get_coefficient_face(unsigned int const face, unsigned int const q) const
   {
     return coefficients_face[face][q];
   }
 
   void
-  set_coefficient_face(unsigned int const face, unsigned int const q, scalar const & value)
+  set_coefficient_face(unsigned int const face, unsigned int const q, coefficient_t const & value)
   {
     coefficients_face[face][q] = value;
   }
 
-  scalar
+  coefficient_t
   get_coefficient_face_neighbor(unsigned int const face, unsigned int const q) const
   {
     return coefficients_face_neighbor[face][q];
   }
 
   void
-  set_coefficient_face_neighbor(unsigned int const face, unsigned int const q, scalar const & value)
+  set_coefficient_face_neighbor(unsigned int const    face,
+                                unsigned int const    q,
+                                coefficient_t const & value)
   {
     coefficients_face_neighbor[face][q] = value;
   }
 
   // TODO
-  //  scalar
+  //
+  //  coefficient_t
   //  get_coefficient_cell_based(unsigned int const face,
   //                             unsigned int const q) const
   //  {
@@ -141,26 +133,56 @@ public:
   //  }
   //
   //  void
-  //  set_coefficient_cell_based(unsigned int const face,
-  //                             unsigned int const q,
-  //                             scalar const &     value)
+  //  set_coefficient_cell_based(unsigned int const    face,
+  //                             unsigned int const    q,
+  //                             coefficient_t const & value)
   //  {
   //    coefficients_face_cell_based[face][q] = value;
   //  }
 
 private:
+  template<int dim, typename Number>
+  void
+  reinit(dealii::MatrixFree<dim, Number> const & matrix_free, unsigned int const quad_index)
+  {
+    coefficients_cell.reinit(matrix_free.n_cell_batches(), matrix_free.get_n_q_points(quad_index));
+
+    coefficients_face.reinit(matrix_free.n_inner_face_batches() +
+                               matrix_free.n_boundary_face_batches(),
+                             matrix_free.get_n_q_points_face(quad_index));
+
+    coefficients_face_neighbor.reinit(matrix_free.n_inner_face_batches(),
+                                      matrix_free.get_n_q_points_face(quad_index));
+
+    // TODO
+    // // cell-based face loops
+    // coefficients_face_cell_based.reinit(matrix_free.n_cell_batches()*2*dim,
+    // matrix_free.get_n_q_points_face(quad_index));
+  }
+
+  void
+  fill(coefficient_t const & constant_coefficient)
+  {
+    coefficients_cell.fill(constant_coefficient);
+    coefficients_face.fill(constant_coefficient);
+    coefficients_face_neighbor.fill(constant_coefficient);
+
+    // TODO
+    // coefficients_face_cell_based.fill(constant_coefficient);
+  }
+
   // variable coefficients
 
   // cell
-  dealii::Table<2, scalar> coefficients_cell;
+  dealii::Table<2, coefficient_t> coefficients_cell;
 
   // face-based loops
-  dealii::Table<2, scalar> coefficients_face;
-  dealii::Table<2, scalar> coefficients_face_neighbor;
+  dealii::Table<2, coefficient_t> coefficients_face;
+  dealii::Table<2, coefficient_t> coefficients_face_neighbor;
 
   // TODO
   //  // cell-based face loops
-  //  dealii::Table<2, scalar> coefficients_face_cell_based;
+  //  dealii::Table<2, coefficient_t> coefficients_face_cell_based;
 };
 
 } // namespace ExaDG
