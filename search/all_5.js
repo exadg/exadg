@@ -10,5 +10,6 @@ var searchData=
   ['functionevaluator_7',['FunctionEvaluator',['../structExaDG_1_1FunctionEvaluator.html',1,'ExaDG']]],
   ['functionevaluator_3c_200_2c_20dim_2c_20number_20_3e_8',['FunctionEvaluator&lt; 0, dim, Number &gt;',['../structExaDG_1_1FunctionEvaluator_3_010_00_01dim_00_01Number_01_4.html',1,'ExaDG']]],
   ['functionevaluator_3c_201_2c_20dim_2c_20number_20_3e_9',['FunctionEvaluator&lt; 1, dim, Number &gt;',['../structExaDG_1_1FunctionEvaluator_3_011_00_01dim_00_01Number_01_4.html',1,'ExaDG']]],
-  ['functionwithnormal_10',['FunctionWithNormal',['../classExaDG_1_1FunctionWithNormal.html',1,'ExaDG']]]
+  ['functionevaluator_3c_202_2c_20dim_2c_20number_20_3e_10',['FunctionEvaluator&lt; 2, dim, Number &gt;',['../structExaDG_1_1FunctionEvaluator_3_012_00_01dim_00_01Number_01_4.html',1,'ExaDG']]],
+  ['functionwithnormal_11',['FunctionWithNormal',['../classExaDG_1_1FunctionWithNormal.html',1,'ExaDG']]]
 ];
