@@ -140,7 +140,8 @@ Operator<dim, n_components, Number>::distribute_dofs()
     for(auto it : this->boundary_descriptor->dirichlet_bc)
     {
       dealii::ComponentMask mask = dealii::ComponentMask();
-      auto it_mask               = boundary_descriptor->dirichlet_bc_component_mask.find(it.first);
+
+      auto it_mask = boundary_descriptor->dirichlet_bc_component_mask.find(it.first);
       if(it_mask != boundary_descriptor->dirichlet_bc_component_mask.end())
         mask = it_mask->second;
 
@@ -336,11 +337,12 @@ Operator<dim, n_components, Number>::setup_solver()
     std::shared_ptr<Multigrid> mg_preconditioner =
       std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
-    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
-      pair;
-
     std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
       dirichlet_boundary_conditions = laplace_operator.get_data().bc->dirichlet_bc;
+
+    typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
+    Map_DBC_ComponentMask dirichlet_bc_component_mask =
+      laplace_operator.get_data().bc->dirichlet_bc_component_mask;
 
     // We also need to add DirichletCached boundary conditions. From the
     // perspective of multigrid, there is no difference between standard
@@ -348,8 +350,18 @@ Operator<dim, n_components, Number>::setup_solver()
     // about inhomogeneous boundary data, we simply fill the map with
     // dealii::Functions::ZeroFunction for DirichletCached BCs.
     for(auto iter : laplace_operator.get_data().bc->dirichlet_cached_bc)
+    {
+      typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+        pair;
+
       dirichlet_boundary_conditions.insert(
         pair(iter.first, new dealii::Functions::ZeroFunction<dim>(n_components)));
+
+      typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
+
+      std::vector<bool> default_mask = std::vector<bool>(n_components, true);
+      dirichlet_bc_component_mask.insert(pair_mask(iter.first, default_mask));
+    }
 
     mg_preconditioner->initialize(mg_data,
                                   param.grid.multigrid,
@@ -360,6 +372,7 @@ Operator<dim, n_components, Number>::setup_solver()
                                   laplace_operator.get_data(),
                                   false /* moving_mesh */,
                                   dirichlet_boundary_conditions,
+                                  dirichlet_bc_component_mask,
                                   grid->periodic_faces);
   }
   else

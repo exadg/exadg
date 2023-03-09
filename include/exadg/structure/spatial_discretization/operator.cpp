@@ -132,8 +132,11 @@ Operator<dim, Number>::distribute_dofs()
   // standard Dirichlet boundaries
   for(auto it : this->boundary_descriptor->dirichlet_bc)
   {
-    dealii::ComponentMask mask =
-      this->boundary_descriptor->dirichlet_bc_component_mask.find(it.first)->second;
+    dealii::ComponentMask mask = dealii::ComponentMask();
+
+    auto it_mask = this->boundary_descriptor->dirichlet_bc_component_mask.find(it.first);
+    if(it_mask != this->boundary_descriptor->dirichlet_bc_component_mask.end())
+      mask = it_mask->second;
 
     dealii::DoFTools::make_zero_boundary_constraints(this->dof_handler,
                                                      it.first,
@@ -416,11 +419,12 @@ Operator<dim, Number>::initialize_preconditioner()
       std::shared_ptr<Multigrid> mg_preconditioner =
         std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
-      typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
-        pair;
-
       std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
         dirichlet_boundary_conditions = elasticity_operator_nonlinear.get_data().bc->dirichlet_bc;
+
+      typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
+      Map_DBC_ComponentMask dirichlet_bc_component_mask =
+        elasticity_operator_nonlinear.get_data().bc->dirichlet_bc_component_mask;
 
       // We also need to add DirichletCached boundary conditions. From the
       // perspective of multigrid, there is no difference between standard
@@ -428,8 +432,19 @@ Operator<dim, Number>::initialize_preconditioner()
       // about inhomogeneous boundary data, we simply fill the map with
       // dealii::Functions::ZeroFunction for DirichletCached BCs.
       for(auto iter : elasticity_operator_nonlinear.get_data().bc->dirichlet_cached_bc)
+      {
+        typedef
+          typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+            pair;
+
         dirichlet_boundary_conditions.insert(
           pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+
+        typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
+
+        std::vector<bool> default_mask = std::vector<bool>(dim, true);
+        dirichlet_bc_component_mask.insert(pair_mask(iter.first, default_mask));
+      }
 
       mg_preconditioner->initialize(param.multigrid_data,
                                     param.grid.multigrid,
@@ -440,6 +455,7 @@ Operator<dim, Number>::initialize_preconditioner()
                                     elasticity_operator_nonlinear,
                                     param.large_deformation,
                                     dirichlet_boundary_conditions,
+                                    dirichlet_bc_component_mask,
                                     grid->periodic_faces);
     }
     else
@@ -450,11 +466,12 @@ Operator<dim, Number>::initialize_preconditioner()
       std::shared_ptr<Multigrid> mg_preconditioner =
         std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
-      typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
-        pair;
-
       std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
         dirichlet_boundary_conditions = elasticity_operator_linear.get_data().bc->dirichlet_bc;
+
+      typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
+      Map_DBC_ComponentMask dirichlet_bc_component_mask =
+        elasticity_operator_linear.get_data().bc->dirichlet_bc_component_mask;
 
       // We also need to add DirichletCached boundary conditions. From the
       // perspective of multigrid, there is no difference between standard
@@ -462,8 +479,19 @@ Operator<dim, Number>::initialize_preconditioner()
       // about inhomogeneous boundary data, we simply fill the map with
       // dealii::Functions::ZeroFunction for DirichletCached BCs.
       for(auto iter : elasticity_operator_linear.get_data().bc->dirichlet_cached_bc)
+      {
+        typedef
+          typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+            pair;
+
         dirichlet_boundary_conditions.insert(
           pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+
+        typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
+
+        std::vector<bool> default_mask = std::vector<bool>(dim, true);
+        dirichlet_bc_component_mask.insert(pair_mask(iter.first, default_mask));
+      }
 
       mg_preconditioner->initialize(param.multigrid_data,
                                     param.grid.multigrid,
@@ -474,6 +502,7 @@ Operator<dim, Number>::initialize_preconditioner()
                                     elasticity_operator_linear,
                                     param.large_deformation,
                                     dirichlet_boundary_conditions,
+                                    dirichlet_bc_component_mask,
                                     grid->periodic_faces);
     }
   }

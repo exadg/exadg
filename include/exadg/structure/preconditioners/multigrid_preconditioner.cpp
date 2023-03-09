@@ -42,8 +42,9 @@ MultigridPreconditioner<dim, Number>::initialize(
   std::shared_ptr<dealii::Mapping<dim> const>                            mapping,
   ElasticityOperatorBase<dim, Number> const &                            pde_operator,
   bool const                                                             nonlinear_operator,
-  Map const &                                                            dirichlet_bc,
-  PeriodicFacePairs const &                                              periodic_face_pairs)
+  Map_DBC const &                                                        dirichlet_bc,
+  Map_DBC_ComponentMask const & dirichlet_bc_component_mask,
+  PeriodicFacePairs const &     periodic_face_pairs)
 {
   this->pde_operator = &pde_operator;
 
@@ -59,6 +60,7 @@ MultigridPreconditioner<dim, Number>::initialize(
                    mapping,
                    false /*operator_is_singular*/,
                    dirichlet_bc,
+                   dirichlet_bc_component_mask,
                    periodic_face_pairs);
 }
 
@@ -117,32 +119,6 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
       false,
       dealii::ExcMessage(
         "Only pure hypercube or pure simplex meshes are implemented for Structure::MultigridPreconditioner."));
-  }
-}
-
-template<int dim, typename Number>
-void
-MultigridPreconditioner<dim, Number>::initialize_constrained_dofs(
-  dealii::DoFHandler<dim> const & dof_handler,
-  dealii::MGConstrainedDoFs &     constrained_dofs,
-  Map const &                     dirichlet_bc)
-{
-  // We use data.bc->dirichlet_bc since we also need dirichlet_bc_component_mask,
-  // but the argument dirichlet_bc could be used as well
-  (void)dirichlet_bc;
-
-  constrained_dofs.initialize(dof_handler);
-  for(auto it : data.bc->dirichlet_bc)
-  {
-    std::set<dealii::types::boundary_id> dirichlet_boundary;
-    dirichlet_boundary.insert(it.first);
-
-    dealii::ComponentMask mask    = dealii::ComponentMask();
-    auto                  it_mask = data.bc->dirichlet_bc_component_mask.find(it.first);
-    if(it_mask != data.bc->dirichlet_bc_component_mask.end())
-      mask = it_mask->second;
-
-    constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary, mask);
   }
 }
 

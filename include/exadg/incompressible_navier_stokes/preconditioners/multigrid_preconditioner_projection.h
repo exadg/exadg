@@ -48,10 +48,11 @@ private:
   typedef MultigridOperatorBase<dim, MultigridNumber>            MGOperatorBase;
   typedef MultigridOperator<dim, MultigridNumber, PDEOperatorMG> MGOperator;
 
-  typedef typename Base::Map               Map;
-  typedef typename Base::PeriodicFacePairs PeriodicFacePairs;
-  typedef typename Base::VectorType        VectorType;
-  typedef typename Base::VectorTypeMG      VectorTypeMG;
+  typedef typename Base::Map_DBC               Map_DBC;
+  typedef typename Base::Map_DBC_ComponentMask Map_DBC_ComponentMask;
+  typedef typename Base::PeriodicFacePairs     PeriodicFacePairs;
+  typedef typename Base::VectorType            VectorType;
+  typedef typename Base::VectorTypeMG          VectorTypeMG;
 
 public:
   MultigridPreconditionerProjection(MPI_Comm const & mpi_comm);
@@ -66,8 +67,9 @@ public:
     std::shared_ptr<dealii::Mapping<dim> const>                            mapping,
     PDEOperator const &                                                    pde_operator,
     bool const                                                             mesh_is_moving,
-    Map const &                                                            dirichlet_bc,
-    PeriodicFacePairs const &                                              periodic_face_pairs);
+    Map_DBC const &                                                        dirichlet_bc,
+    Map_DBC_ComponentMask const & dirichlet_bc_component_mask,
+    PeriodicFacePairs const &     periodic_face_pairs);
 
   /*
    * This function updates the multigrid preconditioner.

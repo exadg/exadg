@@ -62,7 +62,9 @@ public:
   typedef float MultigridNumber;
 
 protected:
-  typedef std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> Map;
+  typedef std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> Map_DBC;
+  typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
+
   typedef std::vector<
     dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>>
     PeriodicFacePairs;
@@ -102,8 +104,9 @@ public:
     dealii::FiniteElement<dim> const &                                     fe,
     std::shared_ptr<dealii::Mapping<dim> const>                            mapping,
     bool const                                                             operator_is_singular,
-    Map const &                                                            dirichlet_bc,
-    PeriodicFacePairs const &                                              periodic_face_pairs);
+    Map_DBC const &                                                        dirichlet_bc,
+    Map_DBC_ComponentMask const & dirichlet_bc_component_mask,
+    PeriodicFacePairs const &     periodic_face_pairs);
 
   /*
    * This function applies the multigrid preconditioner dst = P^{-1} src.
@@ -179,17 +182,19 @@ protected:
                                          PeriodicFacePairs const &          periodic_face_pairs,
                                          dealii::FiniteElement<dim> const & fe,
                                          dealii::Triangulation<dim> const * tria,
-                                         Map const &                        dirichlet_bc);
+                                         Map_DBC const &                    dirichlet_bc,
+                                         Map_DBC_ComponentMask const & dirichlet_bc_component_mask);
 
   void
   do_initialize_dof_handler_and_constraints(
-    bool                                                                    is_singular,
-    PeriodicFacePairs const &                                               periodic_face_pairs,
-    dealii::FiniteElement<dim> const &                                      fe,
-    dealii::Triangulation<dim> const *                                      tria,
-    Map const &                                                             dirichlet_bc,
-    std::vector<MGLevelInfo> &                                              level_info,
-    std::vector<MGDoFHandlerIdentifier> &                                   p_levels,
+    bool                                  is_singular,
+    PeriodicFacePairs const &             periodic_face_pairs,
+    dealii::FiniteElement<dim> const &    fe,
+    dealii::Triangulation<dim> const *    tria,
+    Map_DBC const &                       dirichlet_bc,
+    Map_DBC_ComponentMask const &         dirichlet_bc_component_mask,
+    std::vector<MGLevelInfo> &            level_info,
+    std::vector<MGDoFHandlerIdentifier> & p_levels,
     dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> & dofhandlers,
     dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> &     constrained_dofs,
     dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> &
@@ -242,20 +247,12 @@ private:
   get_mapping(unsigned int const h_level) const;
 
   /*
-   * Constrained dofs. This function is required for MGTransfer_dealii::MGLevelObject.
-   */
-  virtual void
-  initialize_constrained_dofs(dealii::DoFHandler<dim> const & dof_handler,
-                              dealii::MGConstrainedDoFs &     constrained_dofs,
-                              Map const &                     dirichlet_bc);
-
-  /*
    * Constrained dofs. This function is required for MGTransferGlobalCoarsening.
    */
   void
   initialize_affine_constraints(dealii::DoFHandler<dim> const &              dof_handler,
                                 dealii::AffineConstraints<MultigridNumber> & affine_contraints,
-                                Map const &                                  dirichlet_bc);
+                                Map_DBC const &                              dirichlet_bc);
 
   /*
    * Data structures needed for matrix-free operator evaluation.
