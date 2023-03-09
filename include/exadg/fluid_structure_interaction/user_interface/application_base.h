@@ -104,7 +104,7 @@ public:
     param.print(pcout, "List of parameters for structure:");
 
     // grid
-    grid = std::make_shared<Grid<dim>>(param.grid, param.involves_h_multigrid(), mpi_comm);
+    grid = std::make_shared<Grid<dim>>(param.grid, mpi_comm);
     create_grid();
     print_grid_info(pcout, *grid);
 
@@ -249,7 +249,7 @@ public:
                 dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
     // grid
-    grid = std::make_shared<Grid<dim>>(param.grid, param.involves_h_multigrid(), mpi_comm);
+    grid = std::make_shared<Grid<dim>>(param.grid, mpi_comm);
     create_grid();
     print_grid_info(pcout, *grid);
 
