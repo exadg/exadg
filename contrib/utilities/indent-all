@@ -26,8 +26,8 @@
 #
 #########################################################################
 
-if test -f "programs/clang-11/bin/clang-format"; then
-  cf=programs/clang-11/bin/clang-format
+if test -f "contrib/utilities/programs/clang-11/bin/clang-format"; then
+  cf=contrib/utilities/programs/clang-11/bin/clang-format
 else
   cf=clang-format
 fi
