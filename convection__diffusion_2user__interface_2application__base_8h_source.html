@@ -169,7 +169,7 @@ $(function() {
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    param.print(pcout, <span class="stringliteral">&quot;List of parameters:&quot;</span>);</div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    <span class="comment">// grid</span></div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    grid = std::make_shared&lt;Grid&lt;dim&gt;&gt;(param.grid, param.involves_h_multigrid(), mpi_comm);</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    grid = std::make_shared&lt;Grid&lt;dim&gt;&gt;(param.grid, mpi_comm);</div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>    create_grid();</div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    print_grid_info(pcout, *grid);</div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>

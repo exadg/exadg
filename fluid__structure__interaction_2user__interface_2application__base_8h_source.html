@@ -182,7 +182,7 @@ $(function() {
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    param.print(pcout, <span class="stringliteral">&quot;List of parameters for structure:&quot;</span>);</div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span> </div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    <span class="comment">// grid</span></div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    grid = std::make_shared&lt;Grid&lt;dim&gt;&gt;(param.grid, param.involves_h_multigrid(), mpi_comm);</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    grid = std::make_shared&lt;Grid&lt;dim&gt;&gt;(param.grid, mpi_comm);</div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    create_grid();</div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    print_grid_info(pcout, *grid);</div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
@@ -327,7 +327,7 @@ $(function() {
 <div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>                dealii::ExcMessage(<span class="stringliteral">&quot;Invalid parameter in context of fluid-structure interaction.&quot;</span>));</div>
 <div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span> </div>
 <div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>    <span class="comment">// grid</span></div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>    grid = std::make_shared&lt;Grid&lt;dim&gt;&gt;(param.grid, param.involves_h_multigrid(), mpi_comm);</div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>    grid = std::make_shared&lt;Grid&lt;dim&gt;&gt;(param.grid, mpi_comm);</div>
 <div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>    create_grid();</div>
 <div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>    print_grid_info(pcout, *grid);</div>
 <div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span> </div>
