@@ -511,20 +511,20 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       dealii::Functions::ZeroFunction<dim, MultigridNumber> zero_function(
         dof_handler->get_fe().n_components());
 
-      std::map<dealii::types::boundary_id, dealii::Function<dim, MultigridNumber> const *>
-        boundary_functions;
-      for(auto & it : dirichlet_bc)
-      {
-        boundary_functions[it.first] = &zero_function;
-      }
-
       auto const & mapping_dummy =
         dof_handler->get_fe().reference_cell().template get_default_linear_mapping<dim>();
 
-      dealii::VectorTools::interpolate_boundary_values(mapping_dummy,
-                                                       *dof_handler,
-                                                       boundary_functions,
-                                                       *affine_constraints_own);
+      for(auto & it : dirichlet_bc)
+      {
+        dealii::ComponentMask mask = dealii::ComponentMask();
+
+        auto it_mask = dirichlet_bc_component_mask.find(it.first);
+        if(it_mask != dirichlet_bc_component_mask.end())
+          mask = it_mask->second;
+
+        dealii::VectorTools::interpolate_boundary_values(
+          mapping_dummy, *dof_handler, it.first, zero_function, *affine_constraints_own, mask);
+      }
 
       affine_constraints_own->close();
 
