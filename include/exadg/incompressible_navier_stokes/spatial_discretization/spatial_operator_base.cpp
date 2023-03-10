@@ -656,7 +656,7 @@ SpatialOperatorBase<dim, Number>::initialize_viscosity_model()
   generalized_newtonian_model_data.generalized_newtonian_model = param.generalized_newtonian_model;
   generalized_newtonian_model_data.kinematic_viscosity_lower_limit = param.viscosity;
   generalized_newtonian_model_data.kinematic_viscosity_upper_limit =
-	param.generalized_newtonian_kinematic_viscosity_upper_limit;
+    param.generalized_newtonian_kinematic_viscosity_upper_limit;
   generalized_newtonian_model_data.kappa          = param.generalized_newtonian_kappa;
   generalized_newtonian_model_data.lambda         = param.generalized_newtonian_lambda;
   generalized_newtonian_model_data.a              = param.generalized_newtonian_a;
@@ -667,32 +667,32 @@ SpatialOperatorBase<dim, Number>::initialize_viscosity_model()
 
   if(param.use_turbulence_model && param.use_generalized_newtonian_model)
   {
-	generalized_newtonian_turbulent_viscosity_model.initialize(*matrix_free,
-															   *get_mapping(),
-															   viscous_kernel,
-															   turbulence_model_data,
-															   generalized_newtonian_model_data);
+    generalized_newtonian_turbulent_viscosity_model.initialize(*matrix_free,
+                                                               *get_mapping(),
+                                                               viscous_kernel,
+                                                               turbulence_model_data,
+                                                               generalized_newtonian_model_data);
   }
   else if(param.use_turbulence_model && not(param.use_generalized_newtonian_model))
   {
-	turbulent_viscosity_model.initialize(*matrix_free,
-										 *get_mapping(),
-										 viscous_kernel,
-										 turbulence_model_data,
-										 generalized_newtonian_model_data);
+    turbulent_viscosity_model.initialize(*matrix_free,
+                                         *get_mapping(),
+                                         viscous_kernel,
+                                         turbulence_model_data,
+                                         generalized_newtonian_model_data);
   }
   else if(not(param.use_turbulence_model) && param.use_generalized_newtonian_model)
   {
-	generalized_newtonian_viscosity_model.initialize(*matrix_free,
-													 *get_mapping(),
-													 viscous_kernel,
-													 turbulence_model_data,
-													 generalized_newtonian_model_data);
+    generalized_newtonian_viscosity_model.initialize(*matrix_free,
+                                                     *get_mapping(),
+                                                     viscous_kernel,
+                                                     turbulence_model_data,
+                                                     generalized_newtonian_model_data);
   }
   else
   {
-	AssertThrow(param.use_turbulence_model || param.use_generalized_newtonian_model,
-				dealii::ExcMessage("Viscosity model initialization not needed."));
+    AssertThrow(param.use_turbulence_model || param.use_generalized_newtonian_model,
+                dealii::ExcMessage("Viscosity model initialization not needed."));
   }
 }
 
@@ -922,11 +922,11 @@ SpatialOperatorBase<dim, Number>::get_viscosity_boundary_face(unsigned int const
 {
   if(param.viscosity_is_variable() == true)
   {
-	return viscous_kernel->get_coefficient_face(face, q);
+    return viscous_kernel->get_coefficient_face(face, q);
   }
   else
   {
-	return dealii::make_vectorized_array<Number>(param.viscosity);
+    return dealii::make_vectorized_array<Number>(param.viscosity);
   }
 }
 
@@ -1548,15 +1548,15 @@ SpatialOperatorBase<dim, Number>::update_after_grid_motion()
 {
   if(param.use_turbulence_model)
   {
-	// the mesh (and hence the filter width) changes in case of ALE formulation
-	if(param.use_generalized_newtonian_model)
-	{
-	  generalized_newtonian_turbulent_viscosity_model.calculate_filter_width(*get_mapping());
-	}
-	else
-	{
-	  turbulent_viscosity_model.calculate_filter_width(*get_mapping());
-	}
+    // the mesh (and hence the filter width) changes in case of ALE formulation
+    if(param.use_generalized_newtonian_model)
+    {
+      generalized_newtonian_turbulent_viscosity_model.calculate_filter_width(*get_mapping());
+    }
+    else
+    {
+      turbulent_viscosity_model.calculate_filter_width(*get_mapping());
+    }
   }
 
   if(this->param.viscous_problem())
@@ -1823,7 +1823,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
   FaceIntegratorP integrator_p(matrix_free, true, dof_index_p, quad_index);
 
   bool const viscosity_is_variable = param.viscosity_is_variable();
-  scalar viscosity = dealii::make_vectorized_array<Number>(param.viscosity);
+  scalar     viscosity             = dealii::make_vectorized_array<Number>(param.viscosity);
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {

@@ -663,8 +663,7 @@ Parameters::viscous_problem() const
 bool
 Parameters::viscous_term_is_linear() const
 {
-  bool const nonlinear_term_is_present =
-    use_turbulence_model || use_generalized_newtonian_model;
+  bool const nonlinear_term_is_present = use_turbulence_model || use_generalized_newtonian_model;
   if(nonlinear_term_is_present &&
      treatment_of_nonlinear_viscosity == TreatmentOfNonlinearViscosity::Implicit)
   {

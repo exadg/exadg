@@ -217,11 +217,11 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_solver()
   // Navier-Stokes equations with an implicit treatment of the convective term
   if(this->param.nonlinear_problem_has_to_be_solved())
   {
-	    // nonlinear_operator
-	  bool const nonlinear_viscous_term_treated_implicitly =
-		this->param.viscous_term_is_nonlinear() == true &&
-		this->param.treatment_of_nonlinear_viscosity == TreatmentOfNonlinearViscosity::Implicit;
-	  nonlinear_operator.initialize(*this, nonlinear_viscous_term_treated_implicitly);
+    // nonlinear_operator
+    bool const nonlinear_viscous_term_treated_implicitly =
+      this->param.viscous_term_is_nonlinear() == true &&
+      this->param.treatment_of_nonlinear_viscosity == TreatmentOfNonlinearViscosity::Implicit;
+    nonlinear_operator.initialize(*this, nonlinear_viscous_term_treated_implicitly);
 
     // setup Newton solver
     momentum_newton_solver = std::make_shared<Newton::Solver<VectorType,

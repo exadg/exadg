@@ -138,11 +138,11 @@ OperatorCoupled<dim, Number>::initialize_solver_coupled()
   // setup Newton solver
   if(this->param.nonlinear_problem_has_to_be_solved())
   {
-	bool const nonlinear_viscous_term_treated_implicitly =
-	  this->param.viscous_term_is_nonlinear() &&
-	  this->param.treatment_of_nonlinear_viscosity == TreatmentOfNonlinearViscosity::Implicit;
+    bool const nonlinear_viscous_term_treated_implicitly =
+      this->param.viscous_term_is_nonlinear() &&
+      this->param.treatment_of_nonlinear_viscosity == TreatmentOfNonlinearViscosity::Implicit;
 
-	nonlinear_operator.initialize(*this, nonlinear_viscous_term_treated_implicitly);
+    nonlinear_operator.initialize(*this, nonlinear_viscous_term_treated_implicitly);
 
     newton_solver = std::make_shared<Newton::Solver<BlockVectorType,
                                                     NonlinearOperatorCoupled<dim, Number>,
@@ -1094,7 +1094,7 @@ OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &  
   else if(type == SchurComplementPreconditioner::InverseMassMatrix)
   {
     // - S^{-1} = nu M_p^{-1}
-	// TODO consider variable viscosity here
+    // TODO consider variable viscosity here
     inverse_mass_preconditioner_schur_complement->vmult(dst, src);
     dst *= this->param.viscosity;
   }

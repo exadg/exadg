@@ -45,7 +45,7 @@
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/projection_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/rhs_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/viscosity_model.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/turbulence_model.h>
 #include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>

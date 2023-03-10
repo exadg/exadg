@@ -694,29 +694,29 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
 
   if(this->param.viscous_problem())
   {
-	//  if a variable viscosity is used: update
-	//  LES turbulence or generalized Newtonian model
-	//  before calculating rhs_viscous
-	if(this->param.viscosity_is_variable())
-	{
-	  dealii::Timer timer_viscosity_update;
-	  timer_viscosity_update.restart();
+    //  if a variable viscosity is used: update
+    //  LES turbulence or generalized Newtonian model
+    //  before calculating rhs_viscous
+    if(this->param.viscosity_is_variable())
+    {
+      dealii::Timer timer_viscosity_update;
+      timer_viscosity_update.restart();
 
-	  // extrapolate velocity to time t_n+1 and use this velocity field to
-	  // update the viscosity model (to recalculate the variable viscosity)
-	  VectorType velocity_extrapolated(velocity[0]);
-	  velocity_extrapolated = 0;
-	  for(unsigned int i = 0; i < velocity.size(); ++i)
-		velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
+      // extrapolate velocity to time t_n+1 and use this velocity field to
+      // update the viscosity model (to recalculate the variable viscosity)
+      VectorType velocity_extrapolated(velocity[0]);
+      velocity_extrapolated = 0;
+      for(unsigned int i = 0; i < velocity.size(); ++i)
+        velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
 
-	  pde_operator->update_viscosity(velocity_extrapolated);
+      pde_operator->update_viscosity(velocity_extrapolated);
 
-	  if(this->print_solver_info() and not(this->is_test))
-	  {
-		this->pcout << std::endl << "Update of variable viscosity:";
-		print_wall_time(this->pcout, timer_viscosity_update.wall_time());
-	  }
-	}
+      if(this->print_solver_info() and not(this->is_test))
+      {
+        this->pcout << std::endl << "Update of variable viscosity:";
+        print_wall_time(this->pcout, timer_viscosity_update.wall_time());
+      }
+    }
 
     VectorType rhs(velocity_np);
     // compute right-hand-side vector
