@@ -493,13 +493,40 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       auto affine_constraints_own = new dealii::AffineConstraints<MultigridNumber>();
 
       // TODO: integrate periodic constraints into initialize_affine_constraints
-      initialize_affine_constraints(*dof_handler, *affine_constraints_own, dirichlet_bc);
 
       AssertThrow(is_singular == false, dealii::ExcNotImplemented());
       AssertThrow(periodic_face_pairs.empty(),
                   dealii::ExcMessage(
                     "Multigrid transfer option use_global_coarsening "
                     "is currently not available for problems with periodic boundaries."));
+
+      dealii::IndexSet locally_relevant_dofs;
+      dealii::DoFTools::extract_locally_relevant_dofs(*dof_handler, locally_relevant_dofs);
+      affine_constraints_own->reinit(locally_relevant_dofs);
+
+      dealii::DoFTools::make_hanging_node_constraints(*dof_handler, *affine_constraints_own);
+
+      // collect all boundary functions and translate to format understood by
+      // deal.II to cover all boundaries at once
+      dealii::Functions::ZeroFunction<dim, MultigridNumber> zero_function(
+        dof_handler->get_fe().n_components());
+
+      std::map<dealii::types::boundary_id, dealii::Function<dim, MultigridNumber> const *>
+        boundary_functions;
+      for(auto & it : dirichlet_bc)
+      {
+        boundary_functions[it.first] = &zero_function;
+      }
+
+      auto const & mapping_dummy =
+        dof_handler->get_fe().reference_cell().template get_default_linear_mapping<dim>();
+
+      dealii::VectorTools::interpolate_boundary_values(mapping_dummy,
+                                                       *dof_handler,
+                                                       boundary_functions,
+                                                       *affine_constraints_own);
+
+      affine_constraints_own->close();
 
       constraints[i].reset(affine_constraints_own);
     }
@@ -675,42 +702,6 @@ MultigridPreconditionerBase<dim, Number>::initialize_smoothers()
   // skip the coarsest level
   for(unsigned int level = coarse_level + 1; level <= fine_level; level++)
     this->initialize_smoother(*this->operators[level], level);
-}
-
-template<int dim, typename Number>
-void
-MultigridPreconditionerBase<dim, Number>::initialize_affine_constraints(
-  dealii::DoFHandler<dim> const &              dof_handler,
-  dealii::AffineConstraints<MultigridNumber> & affine_constraints,
-  Map_DBC const &                              dirichlet_bc)
-{
-  dealii::IndexSet locally_relevant_dofs;
-  dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
-  affine_constraints.reinit(locally_relevant_dofs);
-
-  dealii::DoFTools::make_hanging_node_constraints(dof_handler, affine_constraints);
-
-  // collect all boundary functions and translate to format understood by
-  // deal.II to cover all boundaries at once
-  dealii::Functions::ZeroFunction<dim, MultigridNumber> zero_function(
-    dof_handler.get_fe().n_components());
-
-  std::map<dealii::types::boundary_id, dealii::Function<dim, MultigridNumber> const *>
-    boundary_functions;
-  for(auto & it : dirichlet_bc)
-  {
-    boundary_functions[it.first] = &zero_function;
-  }
-
-  auto const & mapping_dummy =
-    dof_handler.get_fe().reference_cell().template get_default_linear_mapping<dim>();
-
-  dealii::VectorTools::interpolate_boundary_values(mapping_dummy,
-                                                   dof_handler,
-                                                   boundary_functions,
-                                                   affine_constraints);
-
-  affine_constraints.close();
 }
 
 template<int dim, typename Number>
