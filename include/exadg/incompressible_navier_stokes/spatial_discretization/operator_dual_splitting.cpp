@@ -145,7 +145,7 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
                                   this->momentum_operator,
                                   MultigridOperatorType::ReactionDiffusion,
                                   this->param.ale_formulation,
-                                  this->momentum_operator.get_data().bc->dirichlet_bc,
+                                  dirichlet_boundary_conditions,
                                   dirichlet_bc_component_mask,
                                   this->grid->periodic_faces);
   }
