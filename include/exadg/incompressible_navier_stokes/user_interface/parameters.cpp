@@ -425,6 +425,13 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
     }
   }
 
+  bool const variable_viscosity = use_turbulence_model;
+  if(variable_viscosity and nonlinear_problem_has_to_be_solved())
+    AssertThrow(quad_rule_linearization == QuadratureRuleLinearization::Standard,
+                dealii::ExcMessage(
+                  "Only the standard integration rule is supported for variable viscosity. "
+                  "Variable viscosity with multiple integration rules is not yet implemented."));
+
   // HIGH-ORDER DUAL SPLITTING SCHEME
   if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {

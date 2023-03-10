@@ -404,7 +404,10 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   viscous_kernel_data.viscosity_is_variable        = param.use_turbulence_model;
   viscous_kernel_data.variable_normal_vector       = param.neumann_with_variable_normal_vector;
   viscous_kernel = std::make_shared<Operators::ViscousKernel<dim, Number>>();
-  viscous_kernel->reinit(*matrix_free, viscous_kernel_data, get_dof_index_velocity());
+  viscous_kernel->reinit(*matrix_free,
+                         viscous_kernel_data,
+                         get_dof_index_velocity(),
+                         get_quad_index_velocity_linear());
 
   dealii::AffineConstraints<Number> constraint_dummy;
   constraint_dummy.close();
