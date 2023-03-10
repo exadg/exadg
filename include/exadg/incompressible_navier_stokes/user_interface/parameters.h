@@ -57,6 +57,15 @@ public:
   viscous_problem() const;
 
   bool
+  viscous_term_is_linear() const;
+
+  bool
+  viscous_term_is_nonlinear() const;
+
+  bool
+  viscosity_is_variable() const;
+
+  bool
   nonlinear_problem_has_to_be_solved() const;
 
   bool
@@ -86,6 +95,9 @@ private:
 
   void
   print_parameters_turbulence(dealii::ConditionalOStream const & pcout) const;
+
+  void
+  print_parameters_generalized_newtonian(dealii::ConditionalOStream const & pcout) const;
 
   void
   print_parameters_numerical_parameters(dealii::ConditionalOStream const & pcout) const;
@@ -411,6 +423,27 @@ public:
   // turbulence model
   TurbulenceEddyViscosityModel turbulence_model;
 
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                      GENERALIZED NEWTONIAN FLUIDS                                  */
+  /*                                                                                    */
+  /**************************************************************************************/
+
+  // use generalized Newtonian model
+  bool use_generalized_newtonian_model;
+
+  // parameters for generalized Newtonian fluid models
+  double generalized_newtonian_kinematic_viscosity_upper_limit;
+  double generalized_newtonian_kappa;
+  double generalized_newtonian_lambda;
+  double generalized_newtonian_a;
+  double generalized_newtonian_n;
+
+  // generalized Newtonian model
+  GeneralizedNewtonianModel generalized_newtonian_model;
+
+  // treatment of nonlinear viscosity
+  TreatmentOfNonlinearViscosity treatment_of_nonlinear_viscosity;
 
   /**************************************************************************************/
   /*                                                                                    */

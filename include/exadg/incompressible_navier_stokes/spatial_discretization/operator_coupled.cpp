@@ -138,7 +138,11 @@ OperatorCoupled<dim, Number>::initialize_solver_coupled()
   // setup Newton solver
   if(this->param.nonlinear_problem_has_to_be_solved())
   {
-    nonlinear_operator.initialize(*this);
+	bool const nonlinear_viscous_term_treated_implicitly =
+	  this->param.viscous_term_is_nonlinear() &&
+	  this->param.treatment_of_nonlinear_viscosity == TreatmentOfNonlinearViscosity::Implicit;
+
+	nonlinear_operator.initialize(*this, nonlinear_viscous_term_treated_implicitly);
 
     newton_solver = std::make_shared<Newton::Solver<BlockVectorType,
                                                     NonlinearOperatorCoupled<dim, Number>,
@@ -1090,8 +1094,9 @@ OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &  
   else if(type == SchurComplementPreconditioner::InverseMassMatrix)
   {
     // - S^{-1} = nu M_p^{-1}
+	// TODO consider variable viscosity here
     inverse_mass_preconditioner_schur_complement->vmult(dst, src);
-    dst *= this->get_viscosity();
+    dst *= this->param.viscosity;
   }
   else if(type == SchurComplementPreconditioner::LaplaceOperator)
   {
@@ -1109,10 +1114,11 @@ OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &  
 
     // II. M_p^{-1}, apply inverse pressure mass operator to src-vector and store the result in a
     // temporary vector
+    // TODO consider variable viscosity here
     inverse_mass_preconditioner_schur_complement->vmult(tmp_scp_pressure, src);
 
     // III. add temporary vector scaled by viscosity
-    dst.add(this->get_viscosity(), tmp_scp_pressure);
+    dst.add(this->param.viscosity, tmp_scp_pressure);
   }
   else if(type == SchurComplementPreconditioner::PressureConvectionDiffusion)
   {
@@ -1134,6 +1140,7 @@ OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &  
     pressure_conv_diff_operator->apply(dst, tmp_scp_pressure);
 
     // III. inverse pressure mass operator M_p^{-1}
+    // TODO consider variable viscosity here
     inverse_mass_preconditioner_schur_complement->vmult(dst, dst);
   }
   else

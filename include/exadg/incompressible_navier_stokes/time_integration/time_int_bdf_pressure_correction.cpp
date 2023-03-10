@@ -355,20 +355,21 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
   }
 
   /*
-   *  if a turbulence model is used:
-   *  update turbulence model before calculating rhs_momentum
+   *  if a variable viscosity is used: update
+   *  LES turbulence or generalized Newtonian model
+   *  before calculating rhs_momentum
    */
-  if(this->param.use_turbulence_model == true)
+  if(this->param.viscosity_is_variable() == true)
   {
-    dealii::Timer timer_turbulence;
-    timer_turbulence.restart();
+    dealii::Timer timer_viscosity_update;
+    timer_viscosity_update.restart();
 
-    pde_operator->update_turbulence_model(velocity_np);
+    pde_operator->update_viscosity(velocity_np);
 
     if(this->print_solver_info() and not(this->is_test))
     {
-      this->pcout << std::endl << "Update of turbulent viscosity:";
-      print_wall_time(this->pcout, timer_turbulence.wall_time());
+      this->pcout << std::endl << "Update of variable viscosity:";
+      print_wall_time(this->pcout, timer_viscosity_update.wall_time());
     }
   }
 

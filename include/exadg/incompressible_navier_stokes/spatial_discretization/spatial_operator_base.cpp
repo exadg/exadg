@@ -203,10 +203,11 @@ SpatialOperatorBase<dim, Number>::setup(
 
   initialize_calculators_for_derived_quantities();
 
-  // turbulence model depends on MatrixFree and ViscousOperator
-  if(param.use_turbulence_model == true)
+  // turbulence and generalized Newtonian models depend on MatrixFree and ViscousOperator
+  if(param.viscosity_is_variable())
   {
-    initialize_turbulence_model();
+    pcout << std::endl << "... initializing viscosity model ..." << std::endl << std::flush;
+    initialize_viscosity_model();
   }
 
   pcout << std::endl << "... done!" << std::endl << std::flush;
@@ -401,7 +402,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   viscous_kernel_data.formulation_viscous_term     = param.formulation_viscous_term;
   viscous_kernel_data.penalty_term_div_formulation = param.penalty_term_div_formulation;
   viscous_kernel_data.IP_formulation               = param.IP_formulation_viscous;
-  viscous_kernel_data.viscosity_is_variable        = param.use_turbulence_model;
+  viscous_kernel_data.viscosity_is_variable        = param.viscosity_is_variable();
   viscous_kernel_data.variable_normal_vector       = param.neumann_with_variable_normal_vector;
   viscous_kernel = std::make_shared<Operators::ViscousKernel<dim, Number>>();
   viscous_kernel->reinit(*matrix_free,
@@ -523,9 +524,17 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
 
   data.unsteady_problem = unsteady_problem_has_to_be_solved();
   if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  {
     data.convective_problem = false;
+  }
   else
-    data.convective_problem = param.nonlinear_problem_has_to_be_solved();
+  {
+    data.convective_problem =
+      param.convective_problem() &&
+      (param.solver_type == SolverType::Steady ||
+       (param.solver_type == SolverType::Unsteady &&
+        (param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)));
+  }
   data.viscous_problem = param.viscous_problem();
 
   data.convective_kernel_data = convective_kernel_data;
@@ -631,17 +640,60 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::initialize_turbulence_model()
+SpatialOperatorBase<dim, Number>::initialize_viscosity_model()
 {
   // initialize turbulence model
-  TurbulenceModelData model_data;
-  model_data.turbulence_model    = param.turbulence_model;
-  model_data.constant            = param.turbulence_model_constant;
-  model_data.kinematic_viscosity = param.viscosity;
-  model_data.dof_index           = get_dof_index_velocity();
-  model_data.quad_index          = get_quad_index_velocity_linear();
-  model_data.degree              = param.degree_u;
-  turbulence_model.initialize(*matrix_free, *get_mapping(), viscous_kernel, model_data);
+  TurbulenceModelData turbulence_model_data;
+  turbulence_model_data.turbulence_model    = param.turbulence_model;
+  turbulence_model_data.constant            = param.turbulence_model_constant;
+  turbulence_model_data.kinematic_viscosity = param.viscosity;
+  turbulence_model_data.dof_index           = get_dof_index_velocity();
+  turbulence_model_data.quad_index          = get_quad_index_velocity_linear();
+  turbulence_model_data.degree              = param.degree_u;
+
+  // initialize generalized Newtonian model
+  GeneralizedNewtonianModelData generalized_newtonian_model_data;
+  generalized_newtonian_model_data.generalized_newtonian_model = param.generalized_newtonian_model;
+  generalized_newtonian_model_data.kinematic_viscosity_lower_limit = param.viscosity;
+  generalized_newtonian_model_data.kinematic_viscosity_upper_limit =
+	param.generalized_newtonian_kinematic_viscosity_upper_limit;
+  generalized_newtonian_model_data.kappa          = param.generalized_newtonian_kappa;
+  generalized_newtonian_model_data.lambda         = param.generalized_newtonian_lambda;
+  generalized_newtonian_model_data.a              = param.generalized_newtonian_a;
+  generalized_newtonian_model_data.n              = param.generalized_newtonian_n;
+  generalized_newtonian_model_data.lambda_squared = std::pow(param.generalized_newtonian_lambda, 2);
+  generalized_newtonian_model_data.dof_index      = get_dof_index_velocity();
+  generalized_newtonian_model_data.quad_index     = get_quad_index_velocity_linear();
+
+  if(param.use_turbulence_model && param.use_generalized_newtonian_model)
+  {
+	generalized_newtonian_turbulent_viscosity_model.initialize(*matrix_free,
+															   *get_mapping(),
+															   viscous_kernel,
+															   turbulence_model_data,
+															   generalized_newtonian_model_data);
+  }
+  else if(param.use_turbulence_model && not(param.use_generalized_newtonian_model))
+  {
+	turbulent_viscosity_model.initialize(*matrix_free,
+										 *get_mapping(),
+										 viscous_kernel,
+										 turbulence_model_data,
+										 generalized_newtonian_model_data);
+  }
+  else if(not(param.use_turbulence_model) && param.use_generalized_newtonian_model)
+  {
+	generalized_newtonian_viscosity_model.initialize(*matrix_free,
+													 *get_mapping(),
+													 viscous_kernel,
+													 turbulence_model_data,
+													 generalized_newtonian_model_data);
+  }
+  else
+  {
+	AssertThrow(param.use_turbulence_model || param.use_generalized_newtonian_model,
+				dealii::ExcMessage("Viscosity model initialization not needed."));
+  }
 }
 
 template<int dim, typename Number>
@@ -864,25 +916,18 @@ SpatialOperatorBase<dim, Number>::get_constraint_u() const
 }
 
 template<int dim, typename Number>
-double
-SpatialOperatorBase<dim, Number>::get_viscosity() const
-{
-  return param.viscosity;
-}
-
-template<int dim, typename Number>
 dealii::VectorizedArray<Number>
 SpatialOperatorBase<dim, Number>::get_viscosity_boundary_face(unsigned int const face,
                                                               unsigned int const q) const
 {
-  dealii::VectorizedArray<Number> viscosity =
-    dealii::make_vectorized_array<Number>(get_viscosity());
-
-  bool const viscosity_is_variable = param.use_turbulence_model;
-  if(viscosity_is_variable)
-    viscous_kernel->get_coefficient_face(face, q);
-
-  return viscosity;
+  if(param.viscosity_is_variable() == true)
+  {
+	return viscous_kernel->get_coefficient_face(face, q);
+  }
+  else
+  {
+	return dealii::make_vectorized_array<Number>(param.viscosity);
+  }
 }
 
 template<int dim, typename Number>
@@ -1378,10 +1423,27 @@ SpatialOperatorBase<dim, Number>::evaluate_velocity_divergence_term(VectorType &
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::update_turbulence_model(VectorType const & velocity)
+SpatialOperatorBase<dim, Number>::update_viscosity(VectorType const & velocity)
 {
-  // calculate turbulent viscosity locally in each cell and face quadrature point
-  turbulence_model.calculate_turbulent_viscosity(velocity);
+  // calculate apparent viscosity for LES turbulence and/or generalized Newtonian models in each
+  // cell and face quadrature point
+  if(param.use_turbulence_model && param.use_generalized_newtonian_model)
+  {
+    generalized_newtonian_turbulent_viscosity_model.calculate_viscosity(velocity);
+  }
+  else if(param.use_turbulence_model && not(param.use_generalized_newtonian_model))
+  {
+    turbulent_viscosity_model.calculate_viscosity(velocity);
+  }
+  else if(not(param.use_turbulence_model) && param.use_generalized_newtonian_model)
+  {
+    generalized_newtonian_viscosity_model.calculate_viscosity(velocity);
+  }
+  else
+  {
+    AssertThrow(param.use_turbulence_model || param.use_generalized_newtonian_model,
+                dealii::ExcMessage("Viscosity model initialization not needed."));
+  }
 }
 
 template<int dim, typename Number>
@@ -1484,10 +1546,17 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::update_after_grid_motion()
 {
-  if(this->param.use_turbulence_model)
+  if(param.use_turbulence_model)
   {
-    // the mesh (and hence the filter width) changes in case of ALE formulation
-    turbulence_model.calculate_filter_width(*get_mapping());
+	// the mesh (and hence the filter width) changes in case of ALE formulation
+	if(param.use_generalized_newtonian_model)
+	{
+	  generalized_newtonian_turbulent_viscosity_model.calculate_filter_width(*get_mapping());
+	}
+	else
+	{
+	  turbulent_viscosity_model.calculate_filter_width(*get_mapping());
+	}
   }
 
   if(this->param.viscous_problem())
@@ -1753,6 +1822,9 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
   FaceIntegratorU integrator_u(matrix_free, true, dof_index_u, quad_index);
   FaceIntegratorP integrator_p(matrix_free, true, dof_index_p, quad_index);
 
+  bool const viscosity_is_variable = param.viscosity_is_variable();
+  scalar viscosity = dealii::make_vectorized_array<Number>(param.viscosity);
+
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
     dealii::types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
@@ -1782,11 +1854,16 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
         tensor grad_u = integrator_u.get_gradient(q);
         scalar p      = integrator_p.get_value(q);
 
+        if(viscosity_is_variable)
+        {
+          viscosity = get_viscosity_boundary_face(integrator_u.get_current_cell_index(), q);
+        }
+
         // incompressible flow solver is formulated in terms of kinematic viscosity and kinematic
         // pressure
         // -> multiply by density to get true traction in N/m^2.
         vector traction =
-          param.density * (param.viscosity * (grad_u + transpose(grad_u)) * normal - p * normal);
+          param.density * (viscosity * (grad_u + transpose(grad_u)) * normal - p * normal);
 
         integrator_u.submit_dof_value(traction, index);
       }

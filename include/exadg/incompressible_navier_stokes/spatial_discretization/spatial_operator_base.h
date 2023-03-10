@@ -45,7 +45,7 @@
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/projection_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/rhs_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/turbulence_model.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/viscosity_model.h>
 #include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
@@ -187,9 +187,6 @@ public:
 
   dealii::types::global_dof_index
   get_number_of_dofs() const;
-
-  double
-  get_viscosity() const;
 
   dealii::VectorizedArray<Number>
   get_viscosity_boundary_face(unsigned int const face, unsigned int const q) const;
@@ -352,10 +349,11 @@ public:
   apply_inverse_mass_operator(VectorType & dst, VectorType const & src) const;
 
   /*
-   *  Update turbulence model, i.e., calculate turbulent viscosity.
+   * Update viscosity, i.e., calculate apparent viscosity from turbulent and generalized Newtonian
+   * viscosity.
    */
   void
-  update_turbulence_model(VectorType const & velocity);
+  update_viscosity(VectorType const & velocity);
 
   /*
    * Projection step.
@@ -617,7 +615,7 @@ private:
   initialize_operators(std::string const & dof_index_temperature);
 
   void
-  initialize_turbulence_model();
+  initialize_viscosity_model();
 
   void
   initialize_calculators_for_derived_quantities();
@@ -654,9 +652,23 @@ private:
   mutable VectorType const * pressure_ptr;
 
   /*
-   * LES turbulence modeling.
+   * LES turbulence and generalized Newtonian models with templated activation.
    */
-  TurbulenceModel<dim, Number> turbulence_model;
+  ViscosityModel<dim,
+                 Number,
+                 true /*use_turbulence_model*/,
+                 false /*use_generalized_newtonian_model*/>
+    turbulent_viscosity_model;
+  ViscosityModel<dim,
+                 Number,
+                 true /*use_turbulence_model*/,
+                 true /*use_generalized_newtonian_model*/>
+    generalized_newtonian_turbulent_viscosity_model;
+  ViscosityModel<dim,
+                 Number,
+                 false /*use_turbulence_model*/,
+                 true /*use_generalized_newtonian_model*/>
+    generalized_newtonian_viscosity_model;
 };
 
 } // namespace IncNS

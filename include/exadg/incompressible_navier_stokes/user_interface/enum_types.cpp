@@ -905,5 +905,68 @@ enum_to_string(TurbulenceEddyViscosityModel const enum_type)
   return string_type;
 }
 
+/**************************************************************************************/
+/*                                                                                    */
+/*                            GENERALIZED NEWTONIAN MODELS                            */
+/*                                                                                    */
+/**************************************************************************************/
+
+std::string
+enum_to_string(GeneralizedNewtonianModel const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    case GeneralizedNewtonianModel::Undefined:
+      string_type = "Undefined";
+      break;
+    case GeneralizedNewtonianModel::GeneralizedCarreauYasuda:
+      string_type = "GeneralizedCarreauYasuda";
+      break;
+    case GeneralizedNewtonianModel::Carreau:
+      string_type = "Carreau";
+      break;
+    case GeneralizedNewtonianModel::Cross:
+      string_type = "Cross";
+      break;
+    case GeneralizedNewtonianModel::SimplifiedCross:
+      string_type = "SimplifiedCross";
+      break;
+    case GeneralizedNewtonianModel::PowerLaw:
+      string_type = "PowerLaw";
+      break;
+    default:
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      break;
+  }
+
+  return string_type;
+}
+
+std::string
+enum_to_string(TreatmentOfNonlinearViscosity const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    case TreatmentOfNonlinearViscosity::Undefined:
+      string_type = "Undefined";
+      break;
+    case TreatmentOfNonlinearViscosity::LinearizedInTimeImplicit:
+      string_type = "LinearizedInTimeImplicit";
+      break;
+    case TreatmentOfNonlinearViscosity::Implicit:
+      string_type = "Implicit";
+      break;
+    default:
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      break;
+  }
+
+  return string_type;
+}
+
 } // namespace IncNS
 } // namespace ExaDG

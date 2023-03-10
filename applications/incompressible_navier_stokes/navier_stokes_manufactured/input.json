@@ -1,0 +1,38 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "2",
+        "DegreeMax": "2",
+        "RefineSpaceMin": "0",
+        "RefineSpaceMax": "4"
+    },
+    "TemporalResolution": {
+        "RefineTimeMin": "2",
+        "RefineTimeMax": "2"
+    },
+    "Application": {
+         "IncludeConvectiveTerm": "true",
+         "PureDirichletProblem": "true",
+         "StartTime": "0.0",
+         "EndTime": "0.0001",
+         "IntervalStart": "0.0",
+         "IntervalEnd": "1.0",
+         "Density": "1000.0",
+         "KinematicViscosity": "1e-6",
+         "UseGeneralizedNewtonianModel": "true",
+         "GeneralizedNewtonianKinematicViscosityUpperLimit": "10e-6",
+         "GeneralizedNewtonianKappa": "1.0",
+         "GeneralizedNewtonianLambda": "1.0",
+         "GeneralizedNewtonianA": "2.0",
+         "GeneralizedNewtonianN": "0.5"
+    },
+    "Output": {
+        "OutputDirectory": "output/",
+        "OutputName": "test",
+        "WriteOutput": "true"
+    }
+}

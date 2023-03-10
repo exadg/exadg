@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_TURBULENCE_MODEL_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_TURBULENCE_MODEL_H_
+#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_VISCOSITY_MODEL_H_
+#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_VISCOSITY_MODEL_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -63,15 +63,51 @@ struct TurbulenceModelData
   unsigned int degree;
 };
 
+/*
+ * Gneralized Newtonian model data.
+ */
+struct GeneralizedNewtonianModelData
+{
+  GeneralizedNewtonianModelData()
+    : generalized_newtonian_model(GeneralizedNewtonianModel::Undefined),
+      kinematic_viscosity_lower_limit(-1.0),
+      kinematic_viscosity_upper_limit(-1.0),
+      kappa(-1.0),
+      lambda(-1.0),
+      a(-1.0),
+      n(-1.0),
+      lambda_squared(-1.0),
+      dof_index(0),
+      quad_index(0)
+  {
+  }
+
+  GeneralizedNewtonianModel generalized_newtonian_model;
+
+  // parameters in generalized Carreau-Yasuda model
+  double kinematic_viscosity_lower_limit;
+  double kinematic_viscosity_upper_limit;
+  double kappa;
+  double lambda;
+  double a;
+  double n;
+
+  double lambda_squared;
+
+  // required for matrix-free loops
+  unsigned int dof_index;
+  unsigned int quad_index;
+};
 
 /*
- *  Algebraic subgrid-scale turbulence models for LES of incompressible flows.
+ *  Algebraic subgrid-scale turbulence models for LES of incompressible flows
+ *  and generalized Newtonian fluids.
  */
-template<int dim, typename Number>
-class TurbulenceModel
+template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
+class ViscosityModel
 {
 private:
-  typedef TurbulenceModel<dim, Number> This;
+  typedef ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model> This;
 
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
@@ -87,7 +123,7 @@ public:
   /*
    *  Constructor.
    */
-  TurbulenceModel();
+  ViscosityModel();
 
   /*
    * Initialization function.
@@ -96,13 +132,14 @@ public:
   initialize(dealii::MatrixFree<dim, Number> const &                matrix_free_in,
              dealii::Mapping<dim> const &                           mapping_in,
              std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
-             TurbulenceModelData const &                            data_in);
+             TurbulenceModelData const &                            turbulence_model_data_in,
+             GeneralizedNewtonianModelData const & generalized_newtonian_model_data_in);
 
   /*
    *  This function calculates the turbulent viscosity for a given velocity field.
    */
   void
-  calculate_turbulent_viscosity(VectorType const & velocity) const;
+  calculate_viscosity(VectorType const & velocity) const;
 
   /*
    *  This function calculates the filter width for each cell.
@@ -137,6 +174,8 @@ private:
   add_turbulent_viscosity(scalar &       viscosity,
                           scalar const & filter_width,
                           tensor const & velocity_gradient,
+                          tensor const & symmetric_velocity_gradient,
+                          scalar const & shear_rate_squared,
                           double const & model_constant) const;
 
   /*
@@ -154,10 +193,10 @@ private:
    *      C = 0.18  (Toda et al. (2010))
    */
   void
-  smagorinsky_model(scalar const & filter_width,
-                    tensor const & velocity_gradient,
-                    double const & C,
-                    scalar &       viscosity) const;
+  smagorinsky_turbulence_model(scalar const & filter_width,
+                               scalar const & shear_rate_squared,
+                               double const & C,
+                               scalar &       viscosity) const;
 
   /*
    *  Vreman model (2004): Note that we only consider the isotropic variant of the Vreman model:
@@ -184,10 +223,11 @@ private:
    *
    */
   void
-  vreman_model(scalar const & filter_width,
-               tensor const & velocity_gradient,
-               double const & C,
-               scalar &       viscosity) const;
+  vreman_turbulence_model(scalar const & filter_width,
+                          tensor const & velocity_gradient,
+                          tensor const & symmetric_velocity_gradient,
+                          double const & C,
+                          scalar &       viscosity) const;
 
   /*
    *  WALE (wall-adapting local eddy-viscosity) model (Nicoud & Ducros 1999):
@@ -215,10 +255,11 @@ private:
    *
    */
   void
-  wale_model(scalar const & filter_width,
-             tensor const & velocity_gradient,
-             double const & C,
-             scalar &       viscosity) const;
+  wale_turbulence_model(scalar const & filter_width,
+                        tensor const & velocity_gradient,
+                        scalar const & shear_rate_squared,
+                        double const & C,
+                        scalar &       viscosity) const;
 
   /*
    *  Sigma model (Toda et al. 2010, Nicoud et al. 2011):
@@ -238,13 +279,57 @@ private:
    *      C = 1.5  (Toda et al. (2010)) .
    */
   void
-  sigma_model(scalar const & filter_width,
-              tensor const & velocity_gradient,
-              double const & C,
-              scalar &       viscosity) const;
+  sigma_turbulence_model(scalar const & filter_width,
+                         tensor const & symmetric_velocity_gradient,
+                         double const & C,
+                         scalar &       viscosity) const;
 
+  /*
+   *  This function computes the kinematic viscosity for
+   *  generalized Newtonian fluids, i.e., based on the shear rate.
+   *  All models can be found in , e.g., Galdi et al., 2008
+   *  ("Hemodynamical Flows: Modeling, Analysis and Simulation").
+   *  With
+   *  y    = sqrt(2*sym_grad_velocity : sym_grad_velocity)
+   *  e_oo = generalized_newtonian_kinematic_viscosity_lower_limit
+   *  e_0  = generalized_newtonian_kinematic_viscosity_upper_limit
+   *  k    = generalized_newtonian_kappa
+   *  l    = generalized_newtonian_lambda
+   *  a    = generalized_newtonian_a
+   *  b    = generalized_newtonian_b
+   *  we have the apparent viscosity
+   *  viscosity = e_oo + (e_0-e_oo) * [k + (l*y)^a]^[(n-1)/a]
+   *
+   *  We distinguish the cases:
+   *  GeneralizedCarreauYasuda, // no assumptions
+   *  Carreau,                  // k = 1, a = 2
+   *  Cross,                    // k = 1, n = 1 - a
+   *  SimplifiedCross,          // k = 1, a = 1, n = 0
+   *  PowerLaw                  // e_00 = 0, k = 0
+   */
+  void
+  set_generalized_newtonian_viscosity(scalar const & shear_rate_squared, scalar & viscosity) const;
 
-  TurbulenceModelData turb_model_data;
+  void
+  generalized_carreau_yasuda_generalized_newtonian_model(scalar const & shear_rate_squared,
+                                                         scalar &       viscosity) const;
+
+  void
+  carreau_generalized_newtonian_model(scalar const & shear_rate_squared, scalar & viscosity) const;
+
+  void
+  cross_generalized_newtonian_model(scalar const & shear_rate_squared, scalar & viscosity) const;
+
+  void
+  simplified_cross_generalized_newtonian_model(scalar const & shear_rate_squared,
+                                               scalar &       viscosity) const;
+
+  void
+  power_law_generalized_newtonian_model(scalar const & shear_rate_squared,
+                                        scalar &       viscosity) const;
+
+  TurbulenceModelData           turbulence_model_data;
+  GeneralizedNewtonianModelData generalized_newtonian_model_data;
 
   dealii::MatrixFree<dim, Number> const * matrix_free;
 
@@ -256,4 +341,4 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_TURBULENCE_MODEL_H_ */
+#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_VISCOSITY_MODEL_H_ */

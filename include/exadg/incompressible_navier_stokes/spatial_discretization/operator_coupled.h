@@ -45,14 +45,16 @@ private:
 
 public:
   NonlinearOperatorCoupled()
-    : pde_operator(nullptr), rhs_vector(nullptr), time(0.0), scaling_factor_mass(1.0)
+    : pde_operator(nullptr), rhs_vector(nullptr), time(0.0), scaling_factor_mass(1.0),
+      nonlinear_viscous_term_treated_implicitly(false)
   {
   }
 
   void
-  initialize(PDEOperator const & pde_operator)
+  initialize(PDEOperator & pde_operator, bool nonlinear_viscous_term_treated_implicitly_in)
   {
     this->pde_operator = &pde_operator;
+    this->nonlinear_viscous_term_treated_implicitly = nonlinear_viscous_term_treated_implicitly_in;
   }
 
   void
@@ -70,15 +72,22 @@ public:
   void
   evaluate_residual(BlockVectorType & dst, BlockVectorType const & src) const
   {
+	// update implicitly coupled viscosity
+	if(nonlinear_viscous_term_treated_implicitly)
+	{
+	  pde_operator->update_viscosity(src.block(0));
+	}
+
     pde_operator->evaluate_nonlinear_residual(dst, src, rhs_vector, time, scaling_factor_mass);
   }
 
 private:
-  PDEOperator const * pde_operator;
+  PDEOperator * pde_operator;
 
   VectorType const * rhs_vector;
   double             time;
   double             scaling_factor_mass;
+  bool               nonlinear_viscous_term_treated_implicitly;
 };
 
 template<int dim, typename Number>
