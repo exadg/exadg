@@ -130,6 +130,7 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
   if(output_generator.time_control.needs_evaluation(time, time_step_number))
   {
     std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> additional_fields_vtu;
+    std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> surface_fields_vtu;
     if(pp_data.output_data.write_vorticity)
     {
       vorticity.evaluate(velocity);
@@ -160,6 +161,17 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
       velocity_magnitude.evaluate(velocity);
       additional_fields_vtu.push_back(&velocity_magnitude);
     }
+    if(pp_data.output_data.write_wall_shear_stress)
+    {
+      wall_shear_stress.evaluate(velocity);
+
+      // append wall shear stress field to surface or volume output
+      // depending on dim (deal.II does not support surface output for dim == 2)
+      if(dim == 3)
+        surface_fields_vtu.push_back(&wall_shear_stress);
+      else
+        additional_fields_vtu.push_back(&wall_shear_stress);
+    }
     if(pp_data.output_data.write_q_criterion)
     {
       q_criterion.evaluate(velocity);
@@ -178,6 +190,7 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
     output_generator.evaluate(velocity,
                               pressure,
                               additional_fields_vtu,
+                              surface_fields_vtu,
                               time,
                               Utilities::is_unsteady_timestep(time_step_number));
   }
@@ -279,6 +292,22 @@ PostProcessor<dim, Number>::initialize_derived_fields()
     vorticity_magnitude.reinit();
   }
 
+  // wall shear stress
+  if(pp_data.output_data.write_wall_shear_stress)
+  {
+    wall_shear_stress.type              = SolutionFieldType::vector;
+    wall_shear_stress.name              = "wall_shear_stress";
+    wall_shear_stress.dof_handler       = &navier_stokes_operator->get_dof_handler_u();
+    wall_shear_stress.initialize_vector = [&](VectorType & dst) {
+      navier_stokes_operator->initialize_vector_velocity(dst);
+    };
+    wall_shear_stress.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
+      navier_stokes_operator->compute_wall_shear_stress(
+        dst, src, pp_data.output_data.write_wall_shear_stress_boundary_IDs);
+    };
+
+    wall_shear_stress.reinit();
+  }
 
   // streamfunction
   if(pp_data.output_data.write_streamfunction)
@@ -408,6 +437,7 @@ PostProcessor<dim, Number>::invalidate_derived_fields()
   shear_rate.invalidate();
   velocity_magnitude.invalidate();
   vorticity_magnitude.invalidate();
+  wall_shear_stress.invalidate();
   streamfunction.invalidate();
   q_criterion.invalidate();
   cfl_vector.invalidate();

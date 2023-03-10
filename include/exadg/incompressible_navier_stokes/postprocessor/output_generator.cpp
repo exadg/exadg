@@ -25,6 +25,7 @@
 // deal.II
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/numerics/data_out.h>
+#include <deal.II/numerics/data_out_faces.h>
 
 // ExaDG
 #include <exadg/incompressible_navier_stokes/postprocessor/output_generator.h>
@@ -115,6 +116,62 @@ write_output(
 }
 
 template<int dim, typename Number>
+void
+write_surface_output(
+  OutputData const &                                                    output_data,
+  dealii::Mapping<dim> const &                                          mapping,
+  std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & surface_fields,
+  unsigned int const                                                    output_counter,
+  MPI_Comm const &                                                      mpi_comm)
+{
+  // surface output for dim == 3 only
+  if(dim == 3 && surface_fields.size() > 0)
+  {
+    std::string folder = output_data.directory, file = output_data.filename;
+
+    dealii::DataOutBase::VtkFlags flags;
+    flags.write_higher_order_cells = output_data.write_higher_order;
+
+    dealii::DataOutFaces<dim> data_out(true /*surface only*/);
+    data_out.set_flags(flags);
+
+    for(auto & additional_field : surface_fields)
+    {
+      if(additional_field->get_type() == SolutionFieldType::scalar)
+      {
+        data_out.add_data_vector(additional_field->get_dof_handler(),
+                                 additional_field->get(),
+                                 additional_field->get_name());
+      }
+      else if(additional_field->get_type() == SolutionFieldType::cellwise)
+      {
+        data_out.add_data_vector(additional_field->get(), additional_field->get_name());
+      }
+      else if(additional_field->get_type() == SolutionFieldType::vector)
+      {
+        std::vector<std::string> names(dim, additional_field->get_name());
+        std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
+          component_interpretation(
+            dim, dealii::DataComponentInterpretation::component_is_part_of_vector);
+
+        data_out.add_data_vector(additional_field->get_dof_handler(),
+                                 additional_field->get(),
+                                 names,
+                                 component_interpretation);
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      }
+    }
+
+    data_out.build_patches(mapping, output_data.degree);
+
+    data_out.write_vtu_with_pvtu_record(folder, file + "_surface", output_counter, mpi_comm, 4);
+  }
+}
+
+template<int dim, typename Number>
 OutputGenerator<dim, Number>::OutputGenerator(MPI_Comm const & comm) : mpi_comm(comm)
 {
 }
@@ -186,6 +243,7 @@ OutputGenerator<dim, Number>::evaluate(
   VectorType const &                                                    velocity,
   VectorType const &                                                    pressure,
   std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
+  std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & surface_fields,
   double const                                                          time,
   bool const                                                            unsteady)
 {
@@ -200,6 +258,9 @@ OutputGenerator<dim, Number>::evaluate(
                     additional_fields,
                     time_control.get_counter(),
                     mpi_comm);
+
+  write_surface_output<dim>(
+    output_data, *mapping, surface_fields, time_control.get_counter(), mpi_comm);
 }
 
 template class OutputGenerator<2, float>;

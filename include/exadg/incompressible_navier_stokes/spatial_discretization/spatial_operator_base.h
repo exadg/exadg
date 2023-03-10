@@ -38,6 +38,7 @@
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/streamfunction_calculator_rhs_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/velocity_magnitude_calculator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/vorticity_calculator.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/wall_shear_stress_calculator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/convective_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/divergence_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/gradient_operator.h>
@@ -307,6 +308,13 @@ public:
   // vorticity_magnitude
   void
   compute_vorticity_magnitude(VectorType & dst, VectorType const & src) const;
+
+  // wall shear stress
+  void
+  compute_wall_shear_stress(
+    VectorType &                               dst,
+    VectorType const &                         src,
+    std::set<dealii::types::boundary_id> const write_wall_shear_stress_boundary_IDs) const;
 
   // streamfunction
   void
@@ -592,6 +600,7 @@ protected:
   VorticityCalculator<dim, Number>         vorticity_calculator;
   DivergenceCalculator<dim, Number>        divergence_calculator;
   ShearRateCalculator<dim, Number>         shear_rate_calculator;
+  WallShearStressCalculator<dim, Number>   wall_shear_stress_calculator;
   VelocityMagnitudeCalculator<dim, Number> velocity_magnitude_calculator;
   QCriterionCalculator<dim, Number>        q_criterion_calculator;
 

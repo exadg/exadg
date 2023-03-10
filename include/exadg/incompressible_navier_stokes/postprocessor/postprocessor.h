@@ -100,6 +100,7 @@ private:
   SolutionField<dim, Number> shear_rate;
   SolutionField<dim, Number> velocity_magnitude;
   SolutionField<dim, Number> vorticity_magnitude;
+  SolutionField<dim, Number> wall_shear_stress;
   SolutionField<dim, Number> streamfunction;
   SolutionField<dim, Number> q_criterion;
   SolutionField<dim, Number> cfl_vector;
