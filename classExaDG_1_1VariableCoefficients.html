@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.6"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::VariableCoefficients&lt; dim, Number &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::VariableCoefficients&lt; coefficient_type &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -76,33 +76,34 @@ $(function() {
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classExaDG_1_1VariableCoefficients-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::VariableCoefficients&lt; dim, Number &gt; Class Template Reference</div></div>
+  <div class="headertitle"><div class="title">ExaDG::VariableCoefficients&lt; coefficient_type &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a98e0ad9d76bf3e79956d02a83b23208a"><td class="memItemLeft" align="right" valign="top"><a id="a98e0ad9d76bf3e79956d02a83b23208a" name="a98e0ad9d76bf3e79956d02a83b23208a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, unsigned int const degree, Number const &amp;constant_coefficient)</td></tr>
-<tr class="separator:a98e0ad9d76bf3e79956d02a83b23208a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aabab120892c87effa87bfd88c51fe682"><td class="memItemLeft" align="right" valign="top"><a id="aabab120892c87effa87bfd88c51fe682" name="aabab120892c87effa87bfd88c51fe682"></a>
-scalar&#160;</td><td class="memItemRight" valign="bottom"><b>get_coefficient_cell</b> (unsigned int const cell, unsigned int const q) const</td></tr>
-<tr class="separator:aabab120892c87effa87bfd88c51fe682"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a931b9006db0b5d4579e8dbb1c75f3af3"><td class="memItemLeft" align="right" valign="top"><a id="a931b9006db0b5d4579e8dbb1c75f3af3" name="a931b9006db0b5d4579e8dbb1c75f3af3"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_coefficient_cell</b> (unsigned int const cell, unsigned int const q, scalar const &amp;value)</td></tr>
-<tr class="separator:a931b9006db0b5d4579e8dbb1c75f3af3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6e17bb7c252cc660eec36f942f4702d7"><td class="memItemLeft" align="right" valign="top"><a id="a6e17bb7c252cc660eec36f942f4702d7" name="a6e17bb7c252cc660eec36f942f4702d7"></a>
-scalar&#160;</td><td class="memItemRight" valign="bottom"><b>get_coefficient_face</b> (unsigned int const face, unsigned int const q) const</td></tr>
-<tr class="separator:a6e17bb7c252cc660eec36f942f4702d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a91a0cdf7724135b7d78cb1d3e61946bf"><td class="memItemLeft" align="right" valign="top"><a id="a91a0cdf7724135b7d78cb1d3e61946bf" name="a91a0cdf7724135b7d78cb1d3e61946bf"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_coefficient_face</b> (unsigned int const face, unsigned int const q, scalar const &amp;value)</td></tr>
-<tr class="separator:a91a0cdf7724135b7d78cb1d3e61946bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7313bf0c0f01c75566ac68aca5a99c9d"><td class="memItemLeft" align="right" valign="top"><a id="a7313bf0c0f01c75566ac68aca5a99c9d" name="a7313bf0c0f01c75566ac68aca5a99c9d"></a>
-scalar&#160;</td><td class="memItemRight" valign="bottom"><b>get_coefficient_face_neighbor</b> (unsigned int const face, unsigned int const q) const</td></tr>
-<tr class="separator:a7313bf0c0f01c75566ac68aca5a99c9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4f9362f202e2db8daecd362d45769b43"><td class="memItemLeft" align="right" valign="top"><a id="a4f9362f202e2db8daecd362d45769b43" name="a4f9362f202e2db8daecd362d45769b43"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_coefficient_face_neighbor</b> (unsigned int const face, unsigned int const q, scalar const &amp;value)</td></tr>
-<tr class="separator:a4f9362f202e2db8daecd362d45769b43"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3d060e7fdf1f230431957510cfa2f92c"><td class="memTemplParams" colspan="2"><a id="a3d060e7fdf1f230431957510cfa2f92c" name="a3d060e7fdf1f230431957510cfa2f92c"></a>
+template&lt;int dim, typename Number &gt; </td></tr>
+<tr class="memitem:a3d060e7fdf1f230431957510cfa2f92c"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, unsigned int const quad_index, coefficient_type const &amp;constant_coefficient)</td></tr>
+<tr class="separator:a3d060e7fdf1f230431957510cfa2f92c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a46f7dd2e11958b25e6612a0c6fac9f1f"><td class="memItemLeft" align="right" valign="top"><a id="a46f7dd2e11958b25e6612a0c6fac9f1f" name="a46f7dd2e11958b25e6612a0c6fac9f1f"></a>
+coefficient_type&#160;</td><td class="memItemRight" valign="bottom"><b>get_coefficient_cell</b> (unsigned int const cell, unsigned int const q) const</td></tr>
+<tr class="separator:a46f7dd2e11958b25e6612a0c6fac9f1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a711149d1a18b73b2a39c30b91a255903"><td class="memItemLeft" align="right" valign="top"><a id="a711149d1a18b73b2a39c30b91a255903" name="a711149d1a18b73b2a39c30b91a255903"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_coefficient_cell</b> (unsigned int const cell, unsigned int const q, coefficient_type const &amp;value)</td></tr>
+<tr class="separator:a711149d1a18b73b2a39c30b91a255903"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af9011c9ad2a8f8548abc3145c87adf16"><td class="memItemLeft" align="right" valign="top"><a id="af9011c9ad2a8f8548abc3145c87adf16" name="af9011c9ad2a8f8548abc3145c87adf16"></a>
+coefficient_type&#160;</td><td class="memItemRight" valign="bottom"><b>get_coefficient_face</b> (unsigned int const face, unsigned int const q) const</td></tr>
+<tr class="separator:af9011c9ad2a8f8548abc3145c87adf16"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a52481931c875899a5993e825ea24d7be"><td class="memItemLeft" align="right" valign="top"><a id="a52481931c875899a5993e825ea24d7be" name="a52481931c875899a5993e825ea24d7be"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_coefficient_face</b> (unsigned int const face, unsigned int const q, coefficient_type const &amp;value)</td></tr>
+<tr class="separator:a52481931c875899a5993e825ea24d7be"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a678d10eeced6f4da25c685c1f74d4dc1"><td class="memItemLeft" align="right" valign="top"><a id="a678d10eeced6f4da25c685c1f74d4dc1" name="a678d10eeced6f4da25c685c1f74d4dc1"></a>
+coefficient_type&#160;</td><td class="memItemRight" valign="bottom"><b>get_coefficient_face_neighbor</b> (unsigned int const face, unsigned int const q) const</td></tr>
+<tr class="separator:a678d10eeced6f4da25c685c1f74d4dc1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a452b4604844922f002369643df0dbeff"><td class="memItemLeft" align="right" valign="top"><a id="a452b4604844922f002369643df0dbeff" name="a452b4604844922f002369643df0dbeff"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_coefficient_face_neighbor</b> (unsigned int const face, unsigned int const q, coefficient_type const &amp;value)</td></tr>
+<tr class="separator:a452b4604844922f002369643df0dbeff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/operators/<a class="el" href="variable__coefficients_8h_source.html">variable_coefficients.h</a></li>

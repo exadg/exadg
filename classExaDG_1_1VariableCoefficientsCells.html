@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.6"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::VariableCoefficientsCells&lt; dim, Number &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::VariableCoefficientsCells&lt; coefficient_type &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -76,21 +76,22 @@ $(function() {
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classExaDG_1_1VariableCoefficientsCells-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::VariableCoefficientsCells&lt; dim, Number &gt; Class Template Reference</div></div>
+  <div class="headertitle"><div class="title">ExaDG::VariableCoefficientsCells&lt; coefficient_type &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ab61dd107d33907a634eb7c54cd251da0"><td class="memItemLeft" align="right" valign="top"><a id="ab61dd107d33907a634eb7c54cd251da0" name="ab61dd107d33907a634eb7c54cd251da0"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, unsigned int const degree, Number const &amp;constant_coefficient)</td></tr>
-<tr class="separator:ab61dd107d33907a634eb7c54cd251da0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac34e0ba561c13cb1caecb039196e5ce5"><td class="memItemLeft" align="right" valign="top"><a id="ac34e0ba561c13cb1caecb039196e5ce5" name="ac34e0ba561c13cb1caecb039196e5ce5"></a>
-scalar&#160;</td><td class="memItemRight" valign="bottom"><b>get_coefficient</b> (unsigned int const cell, unsigned int const q) const</td></tr>
-<tr class="separator:ac34e0ba561c13cb1caecb039196e5ce5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a68b8b854059f5aff2280db62ad13853a"><td class="memItemLeft" align="right" valign="top"><a id="a68b8b854059f5aff2280db62ad13853a" name="a68b8b854059f5aff2280db62ad13853a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_coefficient</b> (unsigned int const cell, unsigned int const q, scalar const &amp;value)</td></tr>
-<tr class="separator:a68b8b854059f5aff2280db62ad13853a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a31e72eb285b007fe9c70826f44ab829f"><td class="memTemplParams" colspan="2"><a id="a31e72eb285b007fe9c70826f44ab829f" name="a31e72eb285b007fe9c70826f44ab829f"></a>
+template&lt;int dim, typename Number &gt; </td></tr>
+<tr class="memitem:a31e72eb285b007fe9c70826f44ab829f"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, unsigned int const quad_index, coefficient_type const &amp;constant_coefficient)</td></tr>
+<tr class="separator:a31e72eb285b007fe9c70826f44ab829f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af42d58ca056419935fbc02b51ed8e335"><td class="memItemLeft" align="right" valign="top"><a id="af42d58ca056419935fbc02b51ed8e335" name="af42d58ca056419935fbc02b51ed8e335"></a>
+coefficient_type&#160;</td><td class="memItemRight" valign="bottom"><b>get_coefficient</b> (unsigned int const cell, unsigned int const q) const</td></tr>
+<tr class="separator:af42d58ca056419935fbc02b51ed8e335"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3dd3c4c12295388971e3f69819f97bcb"><td class="memItemLeft" align="right" valign="top"><a id="a3dd3c4c12295388971e3f69819f97bcb" name="a3dd3c4c12295388971e3f69819f97bcb"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_coefficient</b> (unsigned int const cell, unsigned int const q, coefficient_type const &amp;value)</td></tr>
+<tr class="separator:a3dd3c4c12295388971e3f69819f97bcb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/operators/<a class="el" href="variable__coefficients_8h_source.html">variable_coefficients.h</a></li>
