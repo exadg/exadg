@@ -247,14 +247,6 @@ private:
   get_mapping(unsigned int const h_level) const;
 
   /*
-   * Constrained dofs. This function is required for MGTransferGlobalCoarsening.
-   */
-  void
-  initialize_affine_constraints(dealii::DoFHandler<dim> const &              dof_handler,
-                                dealii::AffineConstraints<MultigridNumber> & affine_contraints,
-                                Map_DBC const &                              dirichlet_bc);
-
-  /*
    * Data structures needed for matrix-free operator evaluation.
    */
   virtual void
