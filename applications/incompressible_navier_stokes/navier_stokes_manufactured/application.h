@@ -501,6 +501,7 @@ private:
     // WALE: 0.50
     // Sigma: 1.35
     this->param.viscosity_model_data.turbulence_model_data.constant = 1.35;
+    this->param.viscosity_model_data.turbulence_model_data.viscosity = kinematic_viscosity;
 
     // GENERALIZED NEWTONIAN MODEL
     this->param.viscosity_model_data.use_generalized_newtonian_model = use_generalized_newtonian_model;
