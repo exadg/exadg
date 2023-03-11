@@ -176,7 +176,7 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
   }
 
   // update viscosity model
-  if(this->param.viscosity_is_variable() == true)
+  if(this->param.viscosity_is_variable())
   {
     dealii::Timer timer_viscosity_update;
     timer_viscosity_update.restart();

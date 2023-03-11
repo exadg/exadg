@@ -642,10 +642,8 @@ Parameters::viscous_problem() const
 bool
 Parameters::viscous_term_is_linear() const
 {
-  bool const nonlinear_term_is_present = viscosity_model_data.use_turbulence_model ||
-                                         viscosity_model_data.use_generalized_newtonian_model;
-  if(nonlinear_term_is_present && viscosity_model_data.treatment_of_nonlinear_viscosity ==
-                                    TreatmentOfNonlinearViscosity::Implicit)
+  if(viscosity_is_variable() && viscosity_model_data.treatment_of_nonlinear_viscosity ==
+                                  TreatmentOfNonlinearViscosity::Implicit)
   {
     return false;
   }
@@ -1068,7 +1066,7 @@ Parameters::print_parameters_turbulence(dealii::ConditionalOStream const & pcout
 
   print_parameter(pcout, "Use turbulence model", viscosity_model_data.use_turbulence_model);
 
-  if(viscosity_model_data.use_turbulence_model == true)
+  if(viscosity_model_data.use_turbulence_model)
   {
     print_parameter(pcout,
                     "Turbulence model",
@@ -1091,13 +1089,15 @@ Parameters::print_parameters_generalized_newtonian(dealii::ConditionalOStream co
                   "Treatment of nonlinear viscosity",
                   enum_to_string(viscosity_model_data.treatment_of_nonlinear_viscosity));
 
-  if(viscosity_model_data.use_generalized_newtonian_model == true)
+  if(viscosity_model_data.use_generalized_newtonian_model)
   {
     print_parameter(pcout,
                     "Generalized Newtonian model",
                     enum_to_string(viscosity_model_data.generalized_newtonian_model_data
                                      .generalized_newtonian_model));
-    print_parameter(pcout, "lower viscosity limit eta_oo", viscosity);
+    print_parameter(pcout,
+                    "lower viscosity limit eta_oo",
+                    viscosity_model_data.generalized_newtonian_model_data.viscosity_lower_limit);
     print_parameter(pcout,
                     "upper viscosity limit eta_0",
                     viscosity_model_data.generalized_newtonian_model_data.viscosity_upper_limit);

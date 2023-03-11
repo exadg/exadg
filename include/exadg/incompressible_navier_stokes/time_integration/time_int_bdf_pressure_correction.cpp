@@ -359,7 +359,7 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
    *  LES turbulence or generalized Newtonian model
    *  before calculating rhs_momentum
    */
-  if(this->param.viscosity_is_variable() == true)
+  if(this->param.viscosity_is_variable())
   {
     dealii::Timer timer_viscosity_update;
     timer_viscosity_update.restart();

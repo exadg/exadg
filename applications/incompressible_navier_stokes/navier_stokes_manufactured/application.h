@@ -750,7 +750,8 @@ private:
 
   FormulationViscousTerm const formulation_viscous_term =
     FormulationViscousTerm::LaplaceFormulation;
-  TemporalDiscretization const temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
+  TemporalDiscretization const temporal_discretization =
+    TemporalDiscretization::BDFPressureCorrection;
   TreatmentOfConvectiveTerm const treatment_of_convective_term =
     TreatmentOfConvectiveTerm::Implicit;
   GeneralizedNewtonianModel const generalized_newtonian_model =

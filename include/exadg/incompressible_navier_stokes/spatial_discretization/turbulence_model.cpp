@@ -88,7 +88,6 @@ ViscosityModel<dim, Number>::cell_loop_set_coefficients(
 {
   CellIntegratorU integrator(matrix_free, dof_index_velocity, quad_index_velocity_linear);
 
-  // containers needed dependent on template parameters
   scalar filter_width;
   scalar viscosity;
 
@@ -153,7 +152,6 @@ ViscosityModel<dim, Number>::face_loop_set_coefficients(
   FaceIntegratorU integrator_m(matrix_free, true, dof_index_velocity, quad_index_velocity_linear);
   FaceIntegratorU integrator_p(matrix_free, false, dof_index_velocity, quad_index_velocity_linear);
 
-  // containers needed dependent on template parameters
   scalar filter_width;
   scalar filter_width_neighbor;
   scalar viscosity;
@@ -307,12 +305,10 @@ ViscosityModel<dim, Number>::calculate_filter_width(dealii::Mapping<dim> const &
 
   filter_width_vector.resize(n_cells);
 
-  unsigned int const dof_index = dof_index_velocity;
-
   dealii::QGauss<dim> quadrature(degree_u + 1);
 
   dealii::FEValues<dim> fe_values(mapping,
-                                  matrix_free->get_dof_handler(dof_index).get_fe(),
+                                  matrix_free->get_dof_handler(dof_index_velocity).get_fe(),
                                   quadrature,
                                   dealii::update_JxW_values);
 
@@ -322,7 +318,7 @@ ViscosityModel<dim, Number>::calculate_filter_width(dealii::Mapping<dim> const &
     for(unsigned int v = 0; v < matrix_free->n_active_entries_per_cell_batch(i); ++v)
     {
       typename dealii::DoFHandler<dim>::cell_iterator cell =
-        matrix_free->get_cell_iterator(i, v, dof_index);
+        matrix_free->get_cell_iterator(i, v, dof_index_velocity);
       fe_values.reinit(cell);
 
       // calculate cell volume
@@ -336,6 +332,7 @@ ViscosityModel<dim, Number>::calculate_filter_width(dealii::Mapping<dim> const &
       double h = std::exp(std::log(volume) / (double)dim);
 
       // take polynomial degree of shape functions into account:
+      // h/(k_u + 1)
       h /= double(degree_u + 1);
 
       filter_width_vector[i][v] = h;
