@@ -220,7 +220,7 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_solver()
     // nonlinear_operator
     bool const nonlinear_viscous_term_treated_implicitly =
       this->param.viscous_term_is_nonlinear() == true &&
-      this->param.treatment_of_nonlinear_viscosity == TreatmentOfNonlinearViscosity::Implicit;
+      this->param.viscosity_model_data.treatment_of_nonlinear_viscosity == TreatmentOfNonlinearViscosity::Implicit;
     nonlinear_operator.initialize(*this, nonlinear_viscous_term_treated_implicitly);
 
     // setup Newton solver

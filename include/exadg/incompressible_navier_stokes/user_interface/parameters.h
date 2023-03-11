@@ -29,6 +29,7 @@
 #include <exadg/grid/enum_types.h>
 #include <exadg/grid/grid_data.h>
 #include <exadg/incompressible_navier_stokes/user_interface/enum_types.h>
+#include <exadg/incompressible_navier_stokes/user_interface/viscosity_model_data.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver_data.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/enum_types.h>
@@ -410,40 +411,11 @@ public:
 
   /**************************************************************************************/
   /*                                                                                    */
-  /*                                     TURBULENCE                                     */
+  /*                            Variable viscosity models                               */
   /*                                                                                    */
   /**************************************************************************************/
 
-  // use turbulence model
-  bool use_turbulence_model;
-
-  // scaling factor for turbulent viscosity model
-  double turbulence_model_constant;
-
-  // turbulence model
-  TurbulenceEddyViscosityModel turbulence_model;
-
-  /**************************************************************************************/
-  /*                                                                                    */
-  /*                      GENERALIZED NEWTONIAN FLUIDS                                  */
-  /*                                                                                    */
-  /**************************************************************************************/
-
-  // use generalized Newtonian model
-  bool use_generalized_newtonian_model;
-
-  // parameters for generalized Newtonian fluid models
-  double generalized_newtonian_kinematic_viscosity_upper_limit;
-  double generalized_newtonian_kappa;
-  double generalized_newtonian_lambda;
-  double generalized_newtonian_a;
-  double generalized_newtonian_n;
-
-  // generalized Newtonian model
-  GeneralizedNewtonianModel generalized_newtonian_model;
-
-  // treatment of nonlinear viscosity
-  TreatmentOfNonlinearViscosity treatment_of_nonlinear_viscosity;
+  ViscosityModelData viscosity_model_data;
 
   /**************************************************************************************/
   /*                                                                                    */

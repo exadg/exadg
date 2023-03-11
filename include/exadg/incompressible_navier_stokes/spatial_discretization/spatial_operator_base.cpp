@@ -642,34 +642,16 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::initialize_viscosity_model()
 {
-  // initialize turbulence model
-  TurbulenceModelData turbulence_model_data;
-  turbulence_model_data.turbulence_model    = param.turbulence_model;
-  turbulence_model_data.constant            = param.turbulence_model_constant;
-  turbulence_model_data.kinematic_viscosity = param.viscosity;
-  turbulence_model_data.dof_index           = get_dof_index_velocity();
-  turbulence_model_data.quad_index          = get_quad_index_velocity_linear();
-  turbulence_model_data.degree              = param.degree_u;
-
-  // initialize generalized Newtonian model
-  GeneralizedNewtonianModelData generalized_newtonian_model_data;
-  generalized_newtonian_model_data.generalized_newtonian_model = param.generalized_newtonian_model;
-  generalized_newtonian_model_data.kinematic_viscosity_lower_limit = param.viscosity;
-  generalized_newtonian_model_data.kinematic_viscosity_upper_limit =
-    param.generalized_newtonian_kinematic_viscosity_upper_limit;
-  generalized_newtonian_model_data.kappa          = param.generalized_newtonian_kappa;
-  generalized_newtonian_model_data.lambda         = param.generalized_newtonian_lambda;
-  generalized_newtonian_model_data.a              = param.generalized_newtonian_a;
-  generalized_newtonian_model_data.n              = param.generalized_newtonian_n;
-  generalized_newtonian_model_data.lambda_squared = std::pow(param.generalized_newtonian_lambda, 2);
-  generalized_newtonian_model_data.dof_index      = get_dof_index_velocity();
-  generalized_newtonian_model_data.quad_index     = get_quad_index_velocity_linear();
+  // initialize viscosity model data
+  ViscosityModelData viscosity_model_data = param.viscosity_model_data;
 
   viscosity_model.initialize(*matrix_free,
                              *get_mapping(),
                              viscous_kernel,
-                             turbulence_model_data,
-                             generalized_newtonian_model_data);
+                             viscosity_model_data,
+                             get_dof_index_velocity(),
+                             get_quad_index_velocity_linear(),
+                             param.degree_u);
 }
 
 template<int dim, typename Number>
@@ -1506,10 +1488,10 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::update_after_grid_motion()
 {
-  if(param.use_turbulence_model)
+  if(param.viscosity_model_data.use_turbulence_model)
   {
-	// the mesh (and hence the filter width) changes in case of an ALE formulation
-	viscosity_model.calculate_filter_width(*get_mapping());
+    // the mesh (and hence the filter width) changes in case of an ALE formulation
+    viscosity_model.calculate_filter_width(*get_mapping());
   }
 
   if(this->param.viscous_problem())

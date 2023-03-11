@@ -493,20 +493,34 @@ private:
     this->param.continuity_penalty_use_boundary_data       = true;
     this->param.apply_penalty_terms_in_postprocessing_step = true;
 
-    // FLUID MODEL
-    this->param.use_generalized_newtonian_model = use_generalized_newtonian_model;
+    // TURBULENCE
+    this->param.viscosity_model_data.use_turbulence_model = use_turbulence_model;
+    this->param.viscosity_model_data.turbulence_model_data.turbulence_model = TurbulenceEddyViscosityModel::Sigma;
+    // Smagorinsky: 0.165
+    // Vreman: 0.28
+    // WALE: 0.50
+    // Sigma: 1.35
+    this->param.viscosity_model_data.turbulence_model_data.constant = 1.35;
+
+    // GENERALIZED NEWTONIAN MODEL
+    this->param.viscosity_model_data.use_generalized_newtonian_model = use_generalized_newtonian_model;
     if(use_generalized_newtonian_model)
     {
-      this->param.generalized_newtonian_model      = generalized_newtonian_model;
-      this->param.treatment_of_nonlinear_viscosity = treatment_of_nonlinear_viscosity;
+      this->param.viscosity_model_data.generalized_newtonian_model_data.generalized_newtonian_model = generalized_newtonian_model;
+      this->param.viscosity_model_data.treatment_of_nonlinear_viscosity = treatment_of_nonlinear_viscosity;
 
-      this->param.generalized_newtonian_kinematic_viscosity_upper_limit =
+      this->param.viscosity_model_data.generalized_newtonian_model_data.viscosity_lower_limit =
+        kinematic_viscosity;
+      this->param.viscosity_model_data.generalized_newtonian_model_data.viscosity_upper_limit =
         generalized_newtonian_kinematic_viscosity_upper_limit;
-      this->param.generalized_newtonian_kappa  = generalized_newtonian_kappa;
-      this->param.generalized_newtonian_lambda = generalized_newtonian_lambda;
-      this->param.generalized_newtonian_a      = generalized_newtonian_a;
-      this->param.generalized_newtonian_n      = generalized_newtonian_n;
+      this->param.viscosity_model_data.generalized_newtonian_model_data.kappa  = generalized_newtonian_kappa;
+      this->param.viscosity_model_data.generalized_newtonian_model_data.lambda = generalized_newtonian_lambda;
+      this->param.viscosity_model_data.generalized_newtonian_model_data.a      = generalized_newtonian_a;
+      this->param.viscosity_model_data.generalized_newtonian_model_data.n      = generalized_newtonian_n;
+    }
 
+    if(use_turbulence_model || use_generalized_newtonian_model)
+    {
       this->param.use_cell_based_face_loops = false;
       this->param.quad_rule_linearization   = QuadratureRuleLinearization::Standard;
     }
@@ -717,6 +731,7 @@ private:
   double end_time                                              = 0.1;
   double density                                               = 1000.0;
   double kinematic_viscosity                                   = 5e-6;
+  bool   use_turbulence_model                                  = false;
   bool   use_generalized_newtonian_model                       = true;
   double generalized_newtonian_kinematic_viscosity_upper_limit = 50.0e-6;
   double generalized_newtonian_kappa                           = 1.1;

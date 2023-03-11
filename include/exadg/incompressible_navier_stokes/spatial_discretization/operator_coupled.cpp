@@ -140,7 +140,7 @@ OperatorCoupled<dim, Number>::initialize_solver_coupled()
   {
     bool const nonlinear_viscous_term_treated_implicitly =
       this->param.viscous_term_is_nonlinear() &&
-      this->param.treatment_of_nonlinear_viscosity == TreatmentOfNonlinearViscosity::Implicit;
+      this->param.viscosity_model_data.treatment_of_nonlinear_viscosity == TreatmentOfNonlinearViscosity::Implicit;
 
     nonlinear_operator.initialize(*this, nonlinear_viscous_term_treated_implicitly);
 

@@ -28,77 +28,13 @@
 // ExaDG
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
+#include <exadg/incompressible_navier_stokes/user_interface/viscosity_model_data.h>
 #include <exadg/matrix_free/integrators.h>
 
 namespace ExaDG
 {
 namespace IncNS
 {
-/*
- *  Turbulence model data.
- */
-struct TurbulenceModelData
-{
-  TurbulenceModelData()
-    : turbulence_model(TurbulenceEddyViscosityModel::Undefined),
-      constant(1.0),
-      kinematic_viscosity(1.0),
-      dof_index(0),
-      quad_index(0),
-      degree(1)
-  {
-  }
-
-  TurbulenceEddyViscosityModel turbulence_model;
-  double                       constant;
-
-  // constant kinematic viscosity (physical viscosity)
-  double kinematic_viscosity;
-
-  // required for matrix-free loops
-  unsigned int dof_index;
-  unsigned int quad_index;
-
-  // required for calculation of filter width
-  unsigned int degree;
-};
-
-/*
- * Gneralized Newtonian model data.
- */
-struct GeneralizedNewtonianModelData
-{
-  GeneralizedNewtonianModelData()
-    : generalized_newtonian_model(GeneralizedNewtonianModel::Undefined),
-      kinematic_viscosity_lower_limit(-1.0),
-      kinematic_viscosity_upper_limit(-1.0),
-      kappa(-1.0),
-      lambda(-1.0),
-      a(-1.0),
-      n(-1.0),
-      lambda_squared(-1.0),
-      dof_index(0),
-      quad_index(0)
-  {
-  }
-
-  GeneralizedNewtonianModel generalized_newtonian_model;
-
-  // parameters in generalized Carreau-Yasuda model
-  double kinematic_viscosity_lower_limit;
-  double kinematic_viscosity_upper_limit;
-  double kappa;
-  double lambda;
-  double a;
-  double n;
-
-  double lambda_squared;
-
-  // required for matrix-free loops
-  unsigned int dof_index;
-  unsigned int quad_index;
-};
-
 /*
  *  Algebraic subgrid-scale turbulence models for LES of incompressible flows
  *  and generalized Newtonian fluids.
@@ -132,8 +68,10 @@ public:
   initialize(dealii::MatrixFree<dim, Number> const &                matrix_free_in,
              dealii::Mapping<dim> const &                           mapping_in,
              std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
-             TurbulenceModelData const &                            turbulence_model_data_in,
-             GeneralizedNewtonianModelData const & generalized_newtonian_model_data_in);
+             ViscosityModelData const &                             viscosity_model_data_in,
+			  unsigned int                                           dof_index_velocity_in,
+			  unsigned int                                           quad_index_velocity_linear_in,
+			  unsigned int                                           degree_u_in);
 
   /*
    *  This function calculates the turbulent viscosity for a given velocity field.
@@ -328,6 +266,11 @@ private:
   power_law_generalized_newtonian_model(scalar const & shear_rate_squared,
                                         scalar &       viscosity) const;
 
+  bool                          use_turbulence_model;
+  bool                          use_generalized_newtonian_model;
+  unsigned int                  dof_index_velocity;
+  unsigned int                  quad_index_velocity_linear;
+  unsigned int                  degree_u;
   TurbulenceModelData           turbulence_model_data;
   GeneralizedNewtonianModelData generalized_newtonian_model_data;
 
