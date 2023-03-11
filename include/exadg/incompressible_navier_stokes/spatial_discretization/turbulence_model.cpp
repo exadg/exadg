@@ -25,15 +25,15 @@ namespace ExaDG
 {
 namespace IncNS
 {
-template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
-ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model>::ViscosityModel()
+template<int dim, typename Number>
+ViscosityModel<dim, Number>::ViscosityModel()
   : matrix_free(nullptr)
 {
 }
 
-template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
+template<int dim, typename Number>
 void
-ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model>::initialize(
+ViscosityModel<dim, Number>::initialize(
   dealii::MatrixFree<dim, Number> const &                matrix_free_in,
   dealii::Mapping<dim> const &                           mapping_in,
   std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
@@ -45,15 +45,15 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
   turbulence_model_data            = turbulence_model_data_in;
   generalized_newtonian_model_data = generalized_newtonian_model_data_in;
 
-  if(use_turbulence_model == true)
+  if(not(turbulence_model_data.turbulence_model == TurbulenceEddyViscosityModel::Undefined))
   {
     calculate_filter_width(mapping_in);
   }
 }
 
-template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
+template<int dim, typename Number>
 void
-ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model>::
+ViscosityModel<dim, Number>::
   calculate_viscosity(VectorType const & velocity) const
 {
   VectorType dummy;
@@ -66,9 +66,9 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
                     velocity);
 }
 
-template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
+template<int dim, typename Number>
 void
-ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model>::
+ViscosityModel<dim, Number>::
   cell_loop_set_coefficients(dealii::MatrixFree<dim, Number> const & matrix_free,
                              VectorType &,
                              VectorType const & src,
@@ -82,6 +82,9 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
   scalar filter_width;
   scalar viscosity;
 
+  bool const use_turbulence_model = not(turbulence_model_data.turbulence_model == TurbulenceEddyViscosityModel::Undefined);
+  bool const use_generalized_newtonian_model = not(generalized_newtonian_model_data.generalized_newtonian_model == GeneralizedNewtonianModel::Undefined);
+
   // loop over all cells
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
@@ -92,7 +95,7 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
     integrator.evaluate(dealii::EvaluationFlags::gradients);
 
     // get filter width for this cell
-    if(use_turbulence_model == true)
+    if(use_turbulence_model)
     {
       filter_width = integrator.read_cell_data(this->filter_width_vector);
     }
@@ -133,9 +136,9 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
   }
 }
 
-template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
+template<int dim, typename Number>
 void
-ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model>::
+ViscosityModel<dim, Number>::
   face_loop_set_coefficients(dealii::MatrixFree<dim, Number> const & matrix_free,
                              VectorType &,
                              VectorType const & src,
@@ -155,6 +158,9 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
   scalar filter_width_neighbor;
   scalar viscosity;
   scalar viscosity_neighbor;
+
+  bool const use_turbulence_model = not(turbulence_model_data.turbulence_model == TurbulenceEddyViscosityModel::Undefined);
+  bool const use_generalized_newtonian_model = not(generalized_newtonian_model_data.generalized_newtonian_model == GeneralizedNewtonianModel::Undefined);
 
   // loop over all interior faces
   for(unsigned int face = face_range.first; face < face_range.second; face++)
@@ -217,6 +223,7 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
                                 symmetric_velocity_gradient,
                                 shear_rate_squared,
                                 turbulence_model_data.constant);
+
         add_turbulent_viscosity(viscosity_neighbor /*might use generalized Newtonian viscosity*/,
                                 filter_width_neighbor,
                                 velocity_gradient_neighbor,
@@ -232,9 +239,9 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
   }
 }
 
-template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
+template<int dim, typename Number>
 void
-ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model>::
+ViscosityModel<dim, Number>::
   boundary_face_loop_set_coefficients(dealii::MatrixFree<dim, Number> const & matrix_free,
                                       VectorType &,
                                       VectorType const & src,
@@ -248,6 +255,9 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
   // containers needed dependent on template parameters
   scalar filter_width;
   scalar viscosity;
+
+  bool const use_turbulence_model = not(turbulence_model_data.turbulence_model == TurbulenceEddyViscosityModel::Undefined);
+  bool const use_generalized_newtonian_model = not(generalized_newtonian_model_data.generalized_newtonian_model == GeneralizedNewtonianModel::Undefined);
 
   // loop over all boundary faces
   for(unsigned int face = face_range.first; face < face_range.second; face++)
@@ -301,9 +311,9 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
   }
 }
 
-template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
+template<int dim, typename Number>
 void
-ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model>::
+ViscosityModel<dim, Number>::
   calculate_filter_width(dealii::Mapping<dim> const & mapping)
 {
   unsigned int n_cells = matrix_free->n_cell_batches() + matrix_free->n_ghost_cell_batches();
@@ -349,9 +359,9 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
   }
 }
 
-template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
+template<int dim, typename Number>
 void
-ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model>::
+ViscosityModel<dim, Number>::
   add_turbulent_viscosity(scalar &       viscosity,
                           scalar const & filter_width,
                           tensor const & velocity_gradient,
@@ -387,9 +397,9 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
   }
 }
 
-template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
+template<int dim, typename Number>
 void
-ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model>::
+ViscosityModel<dim, Number>::
   smagorinsky_turbulence_model(scalar const & filter_width,
                                scalar const & shear_rate_squared,
                                double const & C,
@@ -401,9 +411,9 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
   viscosity += factor;
 }
 
-template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
+template<int dim, typename Number>
 void
-ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model>::
+ViscosityModel<dim, Number>::
   vreman_turbulence_model(scalar const & filter_width,
                           tensor const & velocity_gradient,
                           tensor const & symmetric_velocity_gradient,
@@ -439,9 +449,9 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
   }
 }
 
-template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
+template<int dim, typename Number>
 void
-ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model>::
+ViscosityModel<dim, Number>::
   wale_turbulence_model(scalar const & filter_width,
                         tensor const & velocity_gradient,
                         scalar const & shear_rate_squared,
@@ -482,9 +492,9 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
   viscosity += factor * factor * D;
 }
 
-template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
+template<int dim, typename Number>
 void
-ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model>::
+ViscosityModel<dim, Number>::
   sigma_turbulence_model(scalar const & filter_width,
                          tensor const & symmetric_velocity_gradient,
                          double const & C,
@@ -662,9 +672,9 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
   viscosity += factor * factor * D;
 }
 
-template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
+template<int dim, typename Number>
 void
-ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model>::
+ViscosityModel<dim, Number>::
   set_generalized_newtonian_viscosity(scalar const & shear_rate_squared, scalar & viscosity) const
 {
   switch(generalized_newtonian_model_data.generalized_newtonian_model)
@@ -696,9 +706,9 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
   }
 }
 
-template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
+template<int dim, typename Number>
 void
-ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model>::
+ViscosityModel<dim, Number>::
   generalized_carreau_yasuda_generalized_newtonian_model(scalar const & shear_rate_squared,
                                                          scalar &       viscosity) const
 {
@@ -721,9 +731,9 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
     generalized_newtonian_model_data.kinematic_viscosity_lower_limit);
 }
 
-template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
+template<int dim, typename Number>
 void
-ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model>::
+ViscosityModel<dim, Number>::
   carreau_generalized_newtonian_model(scalar const & shear_rate_squared, scalar & viscosity) const
 {
   // eta = eta_oo + (eta_0 - eta_oo) * [k + (l * y)^a]^[(n-1)/a]
@@ -745,9 +755,9 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
     generalized_newtonian_model_data.kinematic_viscosity_lower_limit);
 }
 
-template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
+template<int dim, typename Number>
 void
-ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model>::
+ViscosityModel<dim, Number>::
   cross_generalized_newtonian_model(scalar const & shear_rate_squared, scalar & viscosity) const
 {
   // eta = eta_oo + (eta_0 - eta_oo) * [k + (l * y)^a]^[(n-1)/a]
@@ -770,9 +780,9 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
     generalized_newtonian_model_data.kinematic_viscosity_lower_limit);
 }
 
-template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
+template<int dim, typename Number>
 void
-ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model>::
+ViscosityModel<dim, Number>::
   simplified_cross_generalized_newtonian_model(scalar const & shear_rate_squared,
                                                scalar &       viscosity) const
 {
@@ -796,9 +806,9 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
     generalized_newtonian_model_data.kinematic_viscosity_lower_limit);
 }
 
-template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
+template<int dim, typename Number>
 void
-ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model>::
+ViscosityModel<dim, Number>::
   power_law_generalized_newtonian_model(scalar const & shear_rate_squared, scalar & viscosity) const
 {
   // eta = eta_oo + (eta_0 - eta_oo) * [k + (l * y)^a]^[(n-1)/a]
@@ -813,20 +823,10 @@ ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_mode
     generalized_newtonian_model_data.kinematic_viscosity_upper_limit);
 }
 
-template class ViscosityModel<2, float, true, true>;
-template class ViscosityModel<2, double, true, true>;
-template class ViscosityModel<3, float, true, true>;
-template class ViscosityModel<3, double, true, true>;
-
-template class ViscosityModel<2, float, true, false>;
-template class ViscosityModel<2, double, true, false>;
-template class ViscosityModel<3, float, true, false>;
-template class ViscosityModel<3, double, true, false>;
-
-template class ViscosityModel<2, float, false, true>;
-template class ViscosityModel<2, double, false, true>;
-template class ViscosityModel<3, float, false, true>;
-template class ViscosityModel<3, double, false, true>;
+template class ViscosityModel<2, float>;
+template class ViscosityModel<2, double>;
+template class ViscosityModel<3, float>;
+template class ViscosityModel<3, double>;
 
 } // namespace IncNS
 } // namespace ExaDG

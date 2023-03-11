@@ -652,23 +652,9 @@ private:
   mutable VectorType const * pressure_ptr;
 
   /*
-   * LES turbulence and generalized Newtonian models with templated activation.
+   * LES turbulence and generalized Newtonian models.
    */
-  ViscosityModel<dim,
-                 Number,
-                 true /*use_turbulence_model*/,
-                 false /*use_generalized_newtonian_model*/>
-    turbulent_viscosity_model;
-  ViscosityModel<dim,
-                 Number,
-                 true /*use_turbulence_model*/,
-                 true /*use_generalized_newtonian_model*/>
-    generalized_newtonian_turbulent_viscosity_model;
-  ViscosityModel<dim,
-                 Number,
-                 false /*use_turbulence_model*/,
-                 true /*use_generalized_newtonian_model*/>
-    generalized_newtonian_viscosity_model;
+  ViscosityModel<dim, Number> viscosity_model;
 };
 
 } // namespace IncNS

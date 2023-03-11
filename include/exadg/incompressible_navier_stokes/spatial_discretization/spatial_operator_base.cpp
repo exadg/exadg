@@ -665,35 +665,11 @@ SpatialOperatorBase<dim, Number>::initialize_viscosity_model()
   generalized_newtonian_model_data.dof_index      = get_dof_index_velocity();
   generalized_newtonian_model_data.quad_index     = get_quad_index_velocity_linear();
 
-  if(param.use_turbulence_model && param.use_generalized_newtonian_model)
-  {
-    generalized_newtonian_turbulent_viscosity_model.initialize(*matrix_free,
-                                                               *get_mapping(),
-                                                               viscous_kernel,
-                                                               turbulence_model_data,
-                                                               generalized_newtonian_model_data);
-  }
-  else if(param.use_turbulence_model && not(param.use_generalized_newtonian_model))
-  {
-    turbulent_viscosity_model.initialize(*matrix_free,
-                                         *get_mapping(),
-                                         viscous_kernel,
-                                         turbulence_model_data,
-                                         generalized_newtonian_model_data);
-  }
-  else if(not(param.use_turbulence_model) && param.use_generalized_newtonian_model)
-  {
-    generalized_newtonian_viscosity_model.initialize(*matrix_free,
-                                                     *get_mapping(),
-                                                     viscous_kernel,
-                                                     turbulence_model_data,
-                                                     generalized_newtonian_model_data);
-  }
-  else
-  {
-    AssertThrow(param.use_turbulence_model || param.use_generalized_newtonian_model,
-                dealii::ExcMessage("Viscosity model initialization not needed."));
-  }
+  viscosity_model.initialize(*matrix_free,
+                             *get_mapping(),
+                             viscous_kernel,
+                             turbulence_model_data,
+                             generalized_newtonian_model_data);
 }
 
 template<int dim, typename Number>
@@ -1427,23 +1403,7 @@ SpatialOperatorBase<dim, Number>::update_viscosity(VectorType const & velocity)
 {
   // calculate apparent viscosity for LES turbulence and/or generalized Newtonian models in each
   // cell and face quadrature point
-  if(param.use_turbulence_model && param.use_generalized_newtonian_model)
-  {
-    generalized_newtonian_turbulent_viscosity_model.calculate_viscosity(velocity);
-  }
-  else if(param.use_turbulence_model && not(param.use_generalized_newtonian_model))
-  {
-    turbulent_viscosity_model.calculate_viscosity(velocity);
-  }
-  else if(not(param.use_turbulence_model) && param.use_generalized_newtonian_model)
-  {
-    generalized_newtonian_viscosity_model.calculate_viscosity(velocity);
-  }
-  else
-  {
-    AssertThrow(param.use_turbulence_model || param.use_generalized_newtonian_model,
-                dealii::ExcMessage("Viscosity model initialization not needed."));
-  }
+  viscosity_model.calculate_viscosity(velocity);
 }
 
 template<int dim, typename Number>
@@ -1548,15 +1508,8 @@ SpatialOperatorBase<dim, Number>::update_after_grid_motion()
 {
   if(param.use_turbulence_model)
   {
-    // the mesh (and hence the filter width) changes in case of ALE formulation
-    if(param.use_generalized_newtonian_model)
-    {
-      generalized_newtonian_turbulent_viscosity_model.calculate_filter_width(*get_mapping());
-    }
-    else
-    {
-      turbulent_viscosity_model.calculate_filter_width(*get_mapping());
-    }
+	// the mesh (and hence the filter width) changes in case of an ALE formulation
+	viscosity_model.calculate_filter_width(*get_mapping());
   }
 
   if(this->param.viscous_problem())

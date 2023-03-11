@@ -103,11 +103,11 @@ struct GeneralizedNewtonianModelData
  *  Algebraic subgrid-scale turbulence models for LES of incompressible flows
  *  and generalized Newtonian fluids.
  */
-template<int dim, typename Number, bool use_turbulence_model, bool use_generalized_newtonian_model>
+template<int dim, typename Number>
 class ViscosityModel
 {
 private:
-  typedef ViscosityModel<dim, Number, use_turbulence_model, use_generalized_newtonian_model> This;
+  typedef ViscosityModel<dim, Number> This;
 
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
