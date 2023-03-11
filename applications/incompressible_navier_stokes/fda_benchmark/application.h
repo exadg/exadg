@@ -266,9 +266,10 @@ private:
 
     // TURBULENCE
     param.viscosity_model_data.use_turbulence_model = false;
-    param.viscosity_model_data.turbulence_model_data.turbulence_model = TurbulenceEddyViscosityModel::Sigma;
+    param.viscosity_model_data.turbulence_model_data.turbulence_model =
+      TurbulenceEddyViscosityModel::Sigma;
     // Smagorinsky: 0.165, Vreman: 0.28, WALE: 0.50, Sigma: 1.35
-    param.viscosity_model_data.turbulence_model_data.constant = 1.35;
+    param.viscosity_model_data.turbulence_model_data.constant  = 1.35;
     param.viscosity_model_data.turbulence_model_data.viscosity = viscosity;
 
     // PROJECTION METHODS

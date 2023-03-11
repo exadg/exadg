@@ -495,29 +495,35 @@ private:
 
     // TURBULENCE
     this->param.viscosity_model_data.use_turbulence_model = use_turbulence_model;
-    this->param.viscosity_model_data.turbulence_model_data.turbulence_model = TurbulenceEddyViscosityModel::Sigma;
+    this->param.viscosity_model_data.turbulence_model_data.turbulence_model =
+      TurbulenceEddyViscosityModel::Sigma;
     // Smagorinsky: 0.165
     // Vreman: 0.28
     // WALE: 0.50
     // Sigma: 1.35
-    this->param.viscosity_model_data.turbulence_model_data.constant = 1.35;
+    this->param.viscosity_model_data.turbulence_model_data.constant  = 1.35;
     this->param.viscosity_model_data.turbulence_model_data.viscosity = kinematic_viscosity;
 
     // GENERALIZED NEWTONIAN MODEL
-    this->param.viscosity_model_data.use_generalized_newtonian_model = use_generalized_newtonian_model;
+    this->param.viscosity_model_data.use_generalized_newtonian_model =
+      use_generalized_newtonian_model;
     if(use_generalized_newtonian_model)
     {
-      this->param.viscosity_model_data.generalized_newtonian_model_data.generalized_newtonian_model = generalized_newtonian_model;
-      this->param.viscosity_model_data.treatment_of_nonlinear_viscosity = treatment_of_nonlinear_viscosity;
+      this->param.viscosity_model_data.generalized_newtonian_model_data
+        .generalized_newtonian_model = generalized_newtonian_model;
+      this->param.viscosity_model_data.treatment_of_nonlinear_viscosity =
+        treatment_of_nonlinear_viscosity;
 
       this->param.viscosity_model_data.generalized_newtonian_model_data.viscosity_lower_limit =
         kinematic_viscosity;
       this->param.viscosity_model_data.generalized_newtonian_model_data.viscosity_upper_limit =
         generalized_newtonian_kinematic_viscosity_upper_limit;
-      this->param.viscosity_model_data.generalized_newtonian_model_data.kappa  = generalized_newtonian_kappa;
-      this->param.viscosity_model_data.generalized_newtonian_model_data.lambda = generalized_newtonian_lambda;
-      this->param.viscosity_model_data.generalized_newtonian_model_data.a      = generalized_newtonian_a;
-      this->param.viscosity_model_data.generalized_newtonian_model_data.n      = generalized_newtonian_n;
+      this->param.viscosity_model_data.generalized_newtonian_model_data.kappa =
+        generalized_newtonian_kappa;
+      this->param.viscosity_model_data.generalized_newtonian_model_data.lambda =
+        generalized_newtonian_lambda;
+      this->param.viscosity_model_data.generalized_newtonian_model_data.a = generalized_newtonian_a;
+      this->param.viscosity_model_data.generalized_newtonian_model_data.n = generalized_newtonian_n;
     }
 
     if(use_turbulence_model || use_generalized_newtonian_model)
@@ -744,9 +750,9 @@ private:
 
   FormulationViscousTerm const formulation_viscous_term =
     FormulationViscousTerm::LaplaceFormulation;
-  TemporalDiscretization const temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
+  TemporalDiscretization const temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
   TreatmentOfConvectiveTerm const treatment_of_convective_term =
-    TreatmentOfConvectiveTerm::Explicit;
+    TreatmentOfConvectiveTerm::Implicit;
   GeneralizedNewtonianModel const generalized_newtonian_model =
     GeneralizedNewtonianModel::GeneralizedCarreauYasuda;
   TreatmentOfNonlinearViscosity const treatment_of_nonlinear_viscosity =

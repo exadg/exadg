@@ -69,9 +69,9 @@ public:
              dealii::Mapping<dim> const &                           mapping_in,
              std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
              ViscosityModelData const &                             viscosity_model_data_in,
-			  unsigned int                                           dof_index_velocity_in,
-			  unsigned int                                           quad_index_velocity_linear_in,
-			  unsigned int                                           degree_u_in);
+             unsigned int                                           dof_index_velocity_in,
+             unsigned int                                           quad_index_velocity_linear_in,
+             unsigned int                                           degree_u_in);
 
   /*
    *  This function calculates the turbulent viscosity for a given velocity field.

@@ -86,9 +86,7 @@ ViscosityModel<dim, Number>::cell_loop_set_coefficients(
   VectorType const & src,
   Range const &      cell_range) const
 {
-  CellIntegratorU integrator(matrix_free,
-                             dof_index_velocity,
-                             quad_index_velocity_linear);
+  CellIntegratorU integrator(matrix_free, dof_index_velocity, quad_index_velocity_linear);
 
   // containers needed dependent on template parameters
   scalar filter_width;
@@ -152,14 +150,8 @@ ViscosityModel<dim, Number>::face_loop_set_coefficients(
   VectorType const & src,
   Range const &      face_range) const
 {
-  FaceIntegratorU integrator_m(matrix_free,
-                               true,
-                               dof_index_velocity,
-                               quad_index_velocity_linear);
-  FaceIntegratorU integrator_p(matrix_free,
-                               false,
-                               dof_index_velocity,
-                               quad_index_velocity_linear);
+  FaceIntegratorU integrator_m(matrix_free, true, dof_index_velocity, quad_index_velocity_linear);
+  FaceIntegratorU integrator_p(matrix_free, false, dof_index_velocity, quad_index_velocity_linear);
 
   // containers needed dependent on template parameters
   scalar filter_width;
@@ -250,10 +242,7 @@ ViscosityModel<dim, Number>::boundary_face_loop_set_coefficients(
   VectorType const & src,
   Range const &      face_range) const
 {
-  FaceIntegratorU integrator(matrix_free,
-                             true,
-                             dof_index_velocity,
-                             quad_index_velocity_linear);
+  FaceIntegratorU integrator(matrix_free, true, dof_index_velocity, quad_index_velocity_linear);
 
   // containers needed dependent on template parameters
   scalar filter_width;

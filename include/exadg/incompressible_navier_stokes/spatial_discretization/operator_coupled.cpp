@@ -138,11 +138,7 @@ OperatorCoupled<dim, Number>::initialize_solver_coupled()
   // setup Newton solver
   if(this->param.nonlinear_problem_has_to_be_solved())
   {
-    bool const nonlinear_viscous_term_treated_implicitly =
-      this->param.viscous_term_is_nonlinear() &&
-      this->param.viscosity_model_data.treatment_of_nonlinear_viscosity == TreatmentOfNonlinearViscosity::Implicit;
-
-    nonlinear_operator.initialize(*this, nonlinear_viscous_term_treated_implicitly);
+    nonlinear_operator.initialize(*this);
 
     newton_solver = std::make_shared<Newton::Solver<BlockVectorType,
                                                     NonlinearOperatorCoupled<dim, Number>,
@@ -283,8 +279,16 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &     
                                                           BlockVectorType const & src,
                                                           VectorType const *      rhs_vector,
                                                           double const &          time,
-                                                          double const & scaling_factor_mass) const
+                                                          double const & scaling_factor_mass)
 {
+  // update implicitly coupled variable viscosity
+  if(this->param.viscous_term_is_nonlinear() &&
+     this->param.viscosity_model_data.treatment_of_nonlinear_viscosity ==
+       TreatmentOfNonlinearViscosity::Implicit)
+  {
+    this->update_viscosity(src.block(0));
+  }
+
   // velocity-block
 
   if(this->unsteady_problem_has_to_be_solved())
@@ -331,8 +335,16 @@ template<int dim, typename Number>
 void
 OperatorCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVectorType &       dst,
                                                                  BlockVectorType const & src,
-                                                                 double const &          time) const
+                                                                 double const &          time)
 {
+  // update implicitly coupled variable viscosity
+  if(this->param.viscous_term_is_nonlinear() &&
+     this->param.viscosity_model_data.treatment_of_nonlinear_viscosity ==
+       TreatmentOfNonlinearViscosity::Implicit)
+  {
+    this->update_viscosity(src.block(0));
+  }
+
   // velocity-block
 
   // set dst.block(0) to zero. This is necessary since subsequent operators

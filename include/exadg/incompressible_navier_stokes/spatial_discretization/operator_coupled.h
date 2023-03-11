@@ -45,19 +45,14 @@ private:
 
 public:
   NonlinearOperatorCoupled()
-    : pde_operator(nullptr),
-      rhs_vector(nullptr),
-      time(0.0),
-      scaling_factor_mass(1.0),
-      nonlinear_viscous_term_treated_implicitly(false)
+    : pde_operator(nullptr), rhs_vector(nullptr), time(0.0), scaling_factor_mass(1.0)
   {
   }
 
   void
-  initialize(PDEOperator & pde_operator, bool nonlinear_viscous_term_treated_implicitly_in)
+  initialize(PDEOperator & pde_operator)
   {
-    this->pde_operator                              = &pde_operator;
-    this->nonlinear_viscous_term_treated_implicitly = nonlinear_viscous_term_treated_implicitly_in;
+    this->pde_operator = &pde_operator;
   }
 
   void
@@ -73,14 +68,8 @@ public:
    * 'evaluate_residual'.
    */
   void
-  evaluate_residual(BlockVectorType & dst, BlockVectorType const & src) const
+  evaluate_residual(BlockVectorType & dst, BlockVectorType const & src)
   {
-    // update implicitly coupled viscosity
-    if(nonlinear_viscous_term_treated_implicitly)
-    {
-      pde_operator->update_viscosity(src.block(0));
-    }
-
     pde_operator->evaluate_nonlinear_residual(dst, src, rhs_vector, time, scaling_factor_mass);
   }
 
@@ -90,7 +79,6 @@ private:
   VectorType const * rhs_vector;
   double             time;
   double             scaling_factor_mass;
-  bool               nonlinear_viscous_term_treated_implicitly;
 };
 
 template<int dim, typename Number>
@@ -294,7 +282,7 @@ public:
                               BlockVectorType const & src,
                               VectorType const *      rhs_vector,
                               double const &          time,
-                              double const &          scaling_factor_mass) const;
+                              double const &          scaling_factor_mass);
 
   /*
    * This function evaluates the nonlinear residual of the steady Navier-Stokes equations.
@@ -305,7 +293,7 @@ public:
   void
   evaluate_nonlinear_residual_steady(BlockVectorType &       dst,
                                      BlockVectorType const & src,
-                                     double const &          time) const;
+                                     double const &          time);
 
   /*
    * This function calculates the matrix-vector product for the linear(ized) problem.

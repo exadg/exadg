@@ -218,10 +218,7 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_solver()
   if(this->param.nonlinear_problem_has_to_be_solved())
   {
     // nonlinear_operator
-    bool const nonlinear_viscous_term_treated_implicitly =
-      this->param.viscous_term_is_nonlinear() == true &&
-      this->param.viscosity_model_data.treatment_of_nonlinear_viscosity == TreatmentOfNonlinearViscosity::Implicit;
-    nonlinear_operator.initialize(*this, nonlinear_viscous_term_treated_implicitly);
+    nonlinear_operator.initialize(*this);
 
     // setup Newton solver
     momentum_newton_solver = std::make_shared<Newton::Solver<VectorType,
@@ -308,8 +305,16 @@ OperatorPressureCorrection<dim, Number>::evaluate_nonlinear_residual(
   VectorType const & src,
   VectorType const * rhs_vector,
   double const &     time,
-  double const &     scaling_factor_mass) const
+  double const &     scaling_factor_mass)
 {
+  // update implicitly coupled viscosity
+  if(this->param.viscous_term_is_nonlinear() &&
+     this->param.viscosity_model_data.treatment_of_nonlinear_viscosity ==
+       TreatmentOfNonlinearViscosity::Implicit)
+  {
+    this->update_viscosity(src);
+  }
+
   this->mass_operator.apply_scale(dst, scaling_factor_mass, src);
 
   // always evaluate convective term since this function is only called
@@ -332,8 +337,16 @@ OperatorPressureCorrection<dim, Number>::evaluate_nonlinear_residual_steady(
   VectorType &       dst_p,
   VectorType const & src_u,
   VectorType const & src_p,
-  double const &     time) const
+  double const &     time)
 {
+  // update implicitly coupled viscosity
+  if(this->param.viscous_term_is_nonlinear() &&
+     this->param.viscosity_model_data.treatment_of_nonlinear_viscosity ==
+       TreatmentOfNonlinearViscosity::Implicit)
+  {
+    this->update_viscosity(src_u);
+  }
+
   // velocity-block
 
   // set dst_u to zero. This is necessary since subsequent operators
