@@ -39,7 +39,7 @@ Physical quantities:
   Density:                                   1.0000e+00
 
 Temporal discretization:
-  Temporal discretization method:            BDF coupled solution
+  Temporal discretization method:            BDFCoupledSolution
   Treatment of convective term:              Explicit
   Calculation of time step size:             CFL
   Adaptive time stepping:                    true
@@ -64,9 +64,9 @@ Spatial discretization:
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        2
   Mapping degree:                            3
-  Element type:                              L2 - Discontinuous Galerkin
+  Element type:                              L2
   Polynomial degree velocity:                3
-  Polynomial degree pressure:                Mixed-order
+  Polynomial degree pressure:                MixedOrder
   Convective term - Upwind factor:           1.0000e+00
   Convective term - Type of Dirichlet BC's:  Mirror
   Viscous term - IP formulation:             SIPG
@@ -93,7 +93,7 @@ Turbulence:
 Numerical parameters:
   Block Jacobi matrix-free:                  false
   Use cell-based face loops:                 false
-  Quadrature rule linearization:             Over-integration (3/2k)
+  Quadrature rule linearization:             Overintegration32k
 
 Coupled Navier-Stokes solver:
   Use scaling of continuity equation:        false
@@ -110,7 +110,7 @@ Linear solver:
   Velocity/momentum block:
   Preconditioner:                            Multigrid
   Multigrid operator type:                   ReactionDiffusion
-  Multigrid type:                            ph-MG
+  Multigrid type:                            phMG
   p-sequence:                                Bisect
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   BlockJacobi
@@ -127,7 +127,7 @@ Linear solver:
 
   Pressure/Schur-complement block:
   Preconditioner:                            PressureConvectionDiffusion
-  Multigrid type:                            h-MG
+  Multigrid type:                            hMG
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5

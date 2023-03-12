@@ -44,9 +44,6 @@ enum class ProblemType
   Unsteady
 };
 
-std::string
-enum_to_string(ProblemType const enum_type);
-
 /*
  *  EquationType describes the physical/mathematical model that has to be solved,
  *  i.e., diffusion problem, convective problem or convection-diffusion problem
@@ -58,9 +55,6 @@ enum class EquationType
   Diffusion,
   ConvectionDiffusion
 };
-
-std::string
-enum_to_string(EquationType const enum_type);
 
 /*
  * This parameter describes the type of velocity field for the convective term.
@@ -83,9 +77,6 @@ enum class FormulationConvectiveTerm
   DivergenceFormulation,
   ConvectiveFormulation
 };
-
-std::string
-enum_to_string(FormulationConvectiveTerm const enum_type);
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -115,9 +106,6 @@ enum class TemporalDiscretization
   BDF
 };
 
-std::string
-enum_to_string(TemporalDiscretization const enum_type);
-
 /*
  *  For the BDF time integrator, the convective term can be either
  *  treated explicitly or implicitly
@@ -128,9 +116,6 @@ enum class TreatmentOfConvectiveTerm
   Explicit, // additive decomposition (IMEX)
   Implicit
 };
-
-std::string
-enum_to_string(TreatmentOfConvectiveTerm const enum_type);
 
 /*
  *  Temporal discretization method for OIF splitting:
@@ -152,9 +137,6 @@ enum class TimeIntegratorRK
   ExplRK5Stage9Reg2S
 };
 
-std::string
-enum_to_string(TimeIntegratorRK const enum_type);
-
 /*
  * calculation of time step size
  */
@@ -167,9 +149,6 @@ enum class TimeStepCalculation
   CFLAndDiffusion,
   MaxEfficiency
 };
-
-std::string
-enum_to_string(TimeStepCalculation const enum_type);
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -186,9 +165,6 @@ enum class NumericalFluxConvectiveOperator
   CentralFlux,
   LaxFriedrichsFlux
 };
-
-std::string
-enum_to_string(NumericalFluxConvectiveOperator const enum_type);
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -207,9 +183,6 @@ enum class Solver
   FGMRES // flexible GMRES
 };
 
-std::string
-enum_to_string(Solver const enum_type);
-
 /*
  *  Preconditioner type for solution of linear system of equations
  */
@@ -223,9 +196,6 @@ enum class Preconditioner
   Multigrid
 };
 
-std::string
-enum_to_string(Preconditioner const enum_type);
-
 /*
  * Specify the operator type to be used for multigrid (which can differ from the
  * equation type)
@@ -237,9 +207,6 @@ enum class MultigridOperatorType
   ReactionConvection,
   ReactionConvectionDiffusion
 };
-
-std::string
-enum_to_string(MultigridOperatorType const enum_type);
 
 /**************************************************************************************/
 /*                                                                                    */

@@ -33,9 +33,6 @@ enum class CFLConditionType
   VelocityComponents
 };
 
-std::string
-enum_to_string(CFLConditionType const enum_type);
-
 enum class GenAlphaType
 {
   Newmark,
@@ -43,9 +40,6 @@ enum class GenAlphaType
   HHTAlpha,
   BossakAlpha
 };
-
-std::string
-enum_to_string(GenAlphaType const enum_type);
 
 } // namespace ExaDG
 

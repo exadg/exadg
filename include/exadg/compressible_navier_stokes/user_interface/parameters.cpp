@@ -168,7 +168,7 @@ Parameters::print_parameters_mathematical_model(dealii::ConditionalOStream const
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
-  print_parameter(pcout, "Equation type", enum_to_string(equation_type));
+  print_parameter(pcout, "Equation type", equation_type);
   print_parameter(pcout, "Right-hand side", right_hand_side);
 }
 
@@ -192,7 +192,7 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
 {
   pcout << std::endl << "Temporal discretization:" << std::endl;
 
-  print_parameter(pcout, "Temporal discretization method", enum_to_string(temporal_discretization));
+  print_parameter(pcout, "Temporal discretization method", temporal_discretization);
 
   if(temporal_discretization == TemporalDiscretization::ExplRK)
   {
@@ -205,9 +205,7 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
     print_parameter(pcout, "Number of stages", stages);
   }
 
-  print_parameter(pcout,
-                  "Calculation of time step size",
-                  enum_to_string(calculation_of_time_step_size));
+  print_parameter(pcout, "Calculation of time step size", calculation_of_time_step_size);
 
   // maximum number of time steps
   print_parameter(pcout, "Maximum number of time steps", max_number_of_time_steps);
@@ -235,8 +233,8 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
 
   print_parameter(pcout, "Polynomial degree", degree);
 
-  print_parameter(pcout, "Quadrature rule convective term", enum_to_string(n_q_points_convective));
-  print_parameter(pcout, "Quadrature rule viscous term", enum_to_string(n_q_points_viscous));
+  print_parameter(pcout, "Quadrature rule convective term", n_q_points_convective);
+  print_parameter(pcout, "Quadrature rule viscous term", n_q_points_viscous);
 
   print_parameter(pcout, "IP factor viscous term", IP_factor);
 }

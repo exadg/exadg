@@ -72,15 +72,11 @@ SET(TARGET_SRC
      include/exadg/time_integration/time_int_bdf_base.cpp
      include/exadg/time_integration/time_int_explicit_runge_kutta_base.cpp
      include/exadg/time_integration/time_int_gen_alpha_base.cpp
-     include/exadg/time_integration/enum_types.cpp
-     include/exadg/grid/enum_types.cpp
      include/exadg/grid/grid.cpp
      include/exadg/functions_and_boundary_conditions/container_interface_data.cpp
      include/exadg/functions_and_boundary_conditions/function_cached.cpp
      include/exadg/functions_and_boundary_conditions/linear_interpolation.cpp
      include/exadg/functions_and_boundary_conditions/interface_coupling.cpp
-     include/exadg/solvers_and_preconditioners/preconditioners/enum_types.cpp
-     include/exadg/solvers_and_preconditioners/solvers/enum_types.cpp
      include/exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.cpp
      include/exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.cpp
      include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_p.cpp
@@ -103,7 +99,6 @@ SET(TARGET_SRC
      include/exadg/operators/rhs_operator.cpp
      include/exadg/operators/navier_stokes_calculators.cpp
      # Poisson equation
-     include/exadg/poisson/user_interface/enum_types.cpp
      include/exadg/poisson/user_interface/parameters.cpp
      include/exadg/poisson/spatial_discretization/operator.cpp
      include/exadg/poisson/spatial_discretization/laplace_operator.cpp
@@ -112,7 +107,6 @@ SET(TARGET_SRC
      include/exadg/poisson/driver.cpp
      include/exadg/poisson/overset_grids/driver.cpp
      # convection-diffusion equation
-     include/exadg/convection_diffusion/user_interface/enum_types.cpp
      include/exadg/convection_diffusion/user_interface/parameters.cpp
      include/exadg/convection_diffusion/spatial_discretization/operators/convective_operator.cpp
      include/exadg/convection_diffusion/spatial_discretization/operators/diffusive_operator.cpp
@@ -129,7 +123,6 @@ SET(TARGET_SRC
      include/exadg/convection_diffusion/driver.cpp
      # incompressible Navier-Stokes equations
      include/exadg/incompressible_navier_stokes/user_interface/parameters.cpp
-     include/exadg/incompressible_navier_stokes/user_interface/enum_types.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/operators/convective_operator.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/operators/gradient_operator.cpp
@@ -168,7 +161,6 @@ SET(TARGET_SRC
      # incompressible flow with transport
      include/exadg/incompressible_flow_with_transport/driver.cpp
      # compressible Navier-Stokes equations
-     include/exadg/compressible_navier_stokes/user_interface/enum_types.cpp
      include/exadg/compressible_navier_stokes/user_interface/parameters.cpp
      include/exadg/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.cpp
      include/exadg/compressible_navier_stokes/spatial_discretization/interface.cpp
@@ -178,7 +170,6 @@ SET(TARGET_SRC
      include/exadg/compressible_navier_stokes/postprocessor/postprocessor.cpp
      include/exadg/compressible_navier_stokes/driver.cpp
      # elasticity
-     include/exadg/structure/user_interface/enum_types.cpp
      include/exadg/structure/user_interface/parameters.cpp
      include/exadg/structure/material/library/st_venant_kirchhoff.cpp
      include/exadg/structure/spatial_discretization/operators/elasticity_operator_base.cpp
@@ -209,7 +200,7 @@ OPTION(BUILD_SHARED_LIBS "Build shared library." ON)
 ADD_LIBRARY(exadg ${TARGET_SRC})
 
 # Set the include directories
-SET(EXADG_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include)
+SET(EXADG_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/bundled)
 TARGET_INCLUDE_DIRECTORIES(exadg PUBLIC ${EXADG_INCLUDE_DIRS})
 
 # FFTW

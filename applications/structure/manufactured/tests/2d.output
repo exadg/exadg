@@ -65,7 +65,7 @@ Linear solver:
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
-  Multigrid type:                            ph-MG
+  Multigrid type:                            phMG
   p-sequence:                                Bisect
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
@@ -186,7 +186,7 @@ Linear solver:
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
-  Multigrid type:                            ph-MG
+  Multigrid type:                            phMG
   p-sequence:                                Bisect
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
@@ -307,7 +307,7 @@ Linear solver:
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
-  Multigrid type:                            ph-MG
+  Multigrid type:                            phMG
   p-sequence:                                Bisect
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
@@ -428,7 +428,7 @@ Linear solver:
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
-  Multigrid type:                            ph-MG
+  Multigrid type:                            phMG
   p-sequence:                                Bisect
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
@@ -549,7 +549,7 @@ Linear solver:
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
-  Multigrid type:                            ph-MG
+  Multigrid type:                            phMG
   p-sequence:                                Bisect
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
@@ -670,7 +670,7 @@ Linear solver:
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
-  Multigrid type:                            ph-MG
+  Multigrid type:                            phMG
   p-sequence:                                Bisect
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
@@ -791,7 +791,7 @@ Linear solver:
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
-  Multigrid type:                            ph-MG
+  Multigrid type:                            phMG
   p-sequence:                                Bisect
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
@@ -912,7 +912,7 @@ Linear solver:
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
-  Multigrid type:                            ph-MG
+  Multigrid type:                            phMG
   p-sequence:                                Bisect
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
@@ -1033,7 +1033,7 @@ Linear solver:
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
-  Multigrid type:                            ph-MG
+  Multigrid type:                            phMG
   p-sequence:                                Bisect
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi

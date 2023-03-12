@@ -110,7 +110,7 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
 
   grid.print(pcout);
 
-  print_parameter(pcout, "Element type", enum_to_string(spatial_discretization));
+  print_parameter(pcout, "Element type", spatial_discretization);
 
   print_parameter(pcout, "Polynomial degree", degree);
 
@@ -123,11 +123,11 @@ Parameters::print_parameters_solver(dealii::ConditionalOStream const & pcout) co
 {
   pcout << std::endl << "Solver:" << std::endl;
 
-  print_parameter(pcout, "Solver", enum_to_string(solver));
+  print_parameter(pcout, "Solver", solver);
 
   solver_data.print(pcout);
 
-  print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner));
+  print_parameter(pcout, "Preconditioner", preconditioner);
 
   if(preconditioner == Preconditioner::Multigrid)
     multigrid_data.print(pcout);

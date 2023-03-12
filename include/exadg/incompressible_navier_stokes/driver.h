@@ -60,46 +60,6 @@ enum class OperatorType{
 };
 // clang-format on
 
-inline std::string
-enum_to_string(OperatorType const enum_type)
-{
-  std::string string_type;
-
-  switch(enum_type)
-  {
-    // clang-format off
-    case OperatorType::CoupledNonlinearResidual: string_type = "CoupledNonlinearResidual"; break;
-    case OperatorType::CoupledLinearized:        string_type = "CoupledLinearized";        break;
-    case OperatorType::PressurePoissonOperator:  string_type = "PressurePoissonOperator";  break;
-    case OperatorType::ConvectiveOperator:       string_type = "ConvectiveOperator";       break;
-    case OperatorType::HelmholtzOperator:        string_type = "HelmholtzOperator";        break;
-    case OperatorType::ProjectionOperator:       string_type = "ProjectionOperator";       break;
-    case OperatorType::VelocityConvDiffOperator: string_type = "VelocityConvDiffOperator"; break;
-    case OperatorType::InverseMassOperator:      string_type = "InverseMassOperator";      break;
-
-    default:AssertThrow(false, dealii::ExcMessage("Not implemented.")); break;
-      // clang-format on
-  }
-
-  return string_type;
-}
-
-inline void
-string_to_enum(OperatorType & enum_type, std::string const string_type)
-{
-  // clang-format off
-  if     (string_type == "CoupledNonlinearResidual")  enum_type = OperatorType::CoupledNonlinearResidual;
-  else if(string_type == "CoupledLinearized")         enum_type = OperatorType::CoupledLinearized;
-  else if(string_type == "PressurePoissonOperator")   enum_type = OperatorType::PressurePoissonOperator;
-  else if(string_type == "ConvectiveOperator")        enum_type = OperatorType::ConvectiveOperator;
-  else if(string_type == "HelmholtzOperator")         enum_type = OperatorType::HelmholtzOperator;
-  else if(string_type == "ProjectionOperator")        enum_type = OperatorType::ProjectionOperator;
-  else if(string_type == "VelocityConvDiffOperator")  enum_type = OperatorType::VelocityConvDiffOperator;
-  else if(string_type == "InverseMassOperator")       enum_type = OperatorType::InverseMassOperator;
-  else AssertThrow(false, dealii::ExcMessage("Unknown operator type. Not implemented."));
-  // clang-format on
-}
-
 inline unsigned int
 get_dofs_per_element(std::string const & input_file,
                      unsigned int const  dim,
@@ -127,7 +87,7 @@ get_dofs_per_element(std::string const & input_file,
   prm.parse_input(input_file, "", true, true);
 
   OperatorType operator_type;
-  string_to_enum(operator_type, operator_type_string);
+  Utilities::string_to_enum(operator_type, operator_type_string);
 
   unsigned int const velocity_dofs_per_element = dim * dealii::Utilities::pow(degree + 1, dim);
   unsigned int       pressure_dofs_per_element = 1;

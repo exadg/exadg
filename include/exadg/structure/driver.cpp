@@ -225,7 +225,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
 
   OperatorType operator_type;
-  string_to_enum(operator_type, operator_type_string);
+  Utilities::string_to_enum(operator_type, operator_type_string);
 
   dealii::LinearAlgebra::distributed::Vector<Number> dst, src, linearization;
   pde_operator->initialize_dof_vector(src);

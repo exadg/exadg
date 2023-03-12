@@ -48,9 +48,6 @@ enum class ProblemType
   Unsteady
 };
 
-std::string
-enum_to_string(ProblemType const enum_type);
-
 /*
  *  EquationType describes the physical/mathematical model that has to be solved,
  *  i.e., Stokes equations or Navier-Stokes equations
@@ -63,9 +60,6 @@ enum class EquationType
   NavierStokes
 };
 
-std::string
-enum_to_string(EquationType const enum_type);
-
 /*
  *  Formulation of viscous term: divergence formulation or Laplace formulation
  */
@@ -75,9 +69,6 @@ enum class FormulationViscousTerm
   DivergenceFormulation,
   LaplaceFormulation
 };
-
-std::string
-enum_to_string(FormulationViscousTerm const enum_type);
 
 /*
  *  Formulation of convective term: divergence formulation or convective formulation
@@ -89,18 +80,12 @@ enum class FormulationConvectiveTerm
   ConvectiveFormulation
 };
 
-std::string
-enum_to_string(FormulationConvectiveTerm const enum_type);
-
 enum class MeshMovementType
 {
   Function,
   Poisson,
   Elasticity
 };
-
-std::string
-enum_to_string(MeshMovementType const enum_type);
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -143,9 +128,6 @@ enum class TemporalDiscretization
   BDFCoupledSolution
 };
 
-std::string
-enum_to_string(TemporalDiscretization const enum_type);
-
 /*
  *  The convective term can be treated explicitly (Explicit) or implicitly (Implicit).
  */
@@ -155,9 +137,6 @@ enum class TreatmentOfConvectiveTerm
   Explicit,
   Implicit
 };
-
-std::string
-enum_to_string(TreatmentOfConvectiveTerm const enum_type);
 
 /*
  * calculation of time step size
@@ -170,9 +149,6 @@ enum class TimeStepCalculation
   MaxEfficiency // only relevant for analytical test cases with optimal rates of
                 // convergence in space
 };
-
-std::string
-enum_to_string(TimeStepCalculation const enum_type);
 
 /*
  *  Pseudo-timestepping for steady-state problems:
@@ -200,9 +176,6 @@ enum class ConvergenceCriterionSteadyProblem
   SolutionIncrement
 };
 
-std::string
-enum_to_string(ConvergenceCriterionSteadyProblem const enum_type);
-
 /**************************************************************************************/
 /*                                                                                    */
 /*                              SPATIAL DISCRETIZATION                                */
@@ -220,9 +193,6 @@ enum class SpatialDiscretization
   HDIV
 };
 
-std::string
-enum_to_string(SpatialDiscretization const enum_type);
-
 /*
  *  Polynomial degree of pressure shape functions in relation to velocity degree
  */
@@ -231,9 +201,6 @@ enum class DegreePressure
   MixedOrder,
   EqualOrder
 };
-
-std::string
-enum_to_string(DegreePressure const enum_type);
 
 /*
  *  Type of imposition of Dirichlet BC's:
@@ -254,9 +221,6 @@ enum class TypeDirichletBCs
   Mirror
 };
 
-std::string
-enum_to_string(TypeDirichletBCs const enum_type);
-
 /*
  *  Interior penalty formulation of viscous term:
  *  SIPG (symmetric IP) or NIPG (non-symmetric IP)
@@ -269,9 +233,6 @@ enum class InteriorPenaltyFormulation
   SIPG,
   NIPG
 };
-
-std::string
-enum_to_string(InteriorPenaltyFormulation const enum_type);
 
 /*
  *  Penalty term in case of divergence formulation:
@@ -287,9 +248,6 @@ enum class PenaltyTermDivergenceFormulation
   NotSymmetrized
 };
 
-std::string
-enum_to_string(PenaltyTermDivergenceFormulation const enum_type);
-
 /*
  * Different options for adjusting the pressure level in case of pure Dirichlet
  * boundary conditions
@@ -303,10 +261,6 @@ enum class AdjustPressureLevel
   ApplyAnalyticalSolutionInPoint
 };
 
-std::string
-enum_to_string(AdjustPressureLevel const enum_type);
-
-
 /*
  *  Formulation of velocity divergence term
  */
@@ -316,9 +270,6 @@ enum class FormulationVelocityDivergenceTerm
   Strong
 };
 
-std::string
-enum_to_string(FormulationVelocityDivergenceTerm const enum_type);
-
 /*
  *  Formulation of pressure gradient term
  */
@@ -327,9 +278,6 @@ enum class FormulationPressureGradientTerm
   Weak,
   Strong
 };
-
-std::string
-enum_to_string(FormulationPressureGradientTerm const enum_type);
 
 /*
  * Continuity penalty term: apply penalty term to all velocity components or to
@@ -344,9 +292,6 @@ enum class ContinuityPenaltyComponents
   Normal
 };
 
-std::string
-enum_to_string(ContinuityPenaltyComponents const enum_type);
-
 /*
  * Different options for calculation of penalty parameter
  *
@@ -359,10 +304,6 @@ enum class TypePenaltyParameter
   ViscousTerm,
   ViscousAndConvectiveTerms
 };
-
-std::string
-enum_to_string(TypePenaltyParameter const enum_type);
-
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -381,9 +322,6 @@ enum class MultigridOperatorType
   ReactionConvectionDiffusion
 };
 
-std::string
-enum_to_string(MultigridOperatorType const enum_type);
-
 /*
  *  QuadratureRule
  */
@@ -392,10 +330,6 @@ enum class QuadratureRuleLinearization
   Standard,
   Overintegration32k
 };
-
-std::string
-enum_to_string(QuadratureRuleLinearization const enum_type);
-
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -417,9 +351,6 @@ enum class SolverPressurePoisson
   FGMRES
 };
 
-std::string
-enum_to_string(SolverPressurePoisson const enum_type);
-
 /*
  *  Preconditioner type for solution of pressure Poisson equation:
  *
@@ -432,10 +363,6 @@ enum class PreconditionerPressurePoisson
   Multigrid
 };
 
-std::string
-enum_to_string(PreconditionerPressurePoisson const enum_type);
-
-
 /*
  *  Type of projection solver
  *
@@ -446,9 +373,6 @@ enum class SolverProjection
   CG,
   FGMRES
 };
-
-std::string
-enum_to_string(SolverProjection const enum_type);
 
 /*
  *  Preconditioner type for solution of projection step:
@@ -464,9 +388,6 @@ enum class PreconditionerProjection
   BlockJacobi,
   Multigrid
 };
-
-std::string
-enum_to_string(PreconditionerProjection const enum_type);
 
 /*
  *  Solver type for solution of viscous step:
@@ -484,9 +405,6 @@ enum class SolverViscous
   FGMRES
 };
 
-std::string
-enum_to_string(SolverViscous const enum_type);
-
 /*
  *  Preconditioner type for solution of viscous step:
  *
@@ -501,9 +419,6 @@ enum class PreconditionerViscous
   BlockJacobi,
   Multigrid
 };
-
-std::string
-enum_to_string(PreconditionerViscous const enum_type);
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -525,9 +440,6 @@ enum class SolverMomentum
   GMRES,
   FGMRES
 };
-
-std::string
-enum_to_string(SolverMomentum const enum_type);
 
 /*
  *  Preconditioner type for solution of momentum equation:
@@ -556,9 +468,6 @@ enum class SolverCoupled
   FGMRES
 };
 
-std::string
-enum_to_string(SolverCoupled const enum_type);
-
 /*
  *  Preconditioner type for linearized Navier-Stokes problem
  *
@@ -573,9 +482,6 @@ enum class PreconditionerCoupled
   BlockTriangular,
   BlockTriangularFactorization
 };
-
-std::string
-enum_to_string(PreconditionerCoupled const enum_type);
 
 /*
  *  preconditioner for velocity/momentum operator
@@ -598,10 +504,6 @@ enum class MomentumPreconditioner
   Multigrid
 };
 
-std::string
-enum_to_string(MomentumPreconditioner const enum_type);
-
-
 /*
  *  Preconditioner for (2,2) pressure/Schur complement block in case of block preconditioning
  *
@@ -622,11 +524,6 @@ enum class SchurComplementPreconditioner
   PressureConvectionDiffusion
 };
 
-std::string
-enum_to_string(SchurComplementPreconditioner const enum_type);
-
-
-
 /**************************************************************************************/
 /*                                                                                    */
 /*                            SOLVE MASS SYSTEM (projection)                          */
@@ -644,10 +541,6 @@ enum class PreconditionerMass
   None,
   PointJacobi
 };
-
-std::string
-enum_to_string(PreconditionerMass const enum_type);
-
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -672,9 +565,6 @@ enum class TurbulenceEddyViscosityModel
   WALE,
   Sigma
 };
-
-std::string
-enum_to_string(TurbulenceEddyViscosityModel const enum_type);
 
 } // namespace IncNS
 } // namespace ExaDG

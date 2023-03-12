@@ -42,9 +42,9 @@ Spatial discretization:
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        1
   Mapping degree:                            2
-  Element type:                              L2 - Discontinuous Galerkin
+  Element type:                              L2
   Polynomial degree velocity:                2
-  Polynomial degree pressure:                Mixed-order
+  Polynomial degree pressure:                MixedOrder
   Convective term - Upwind factor:           1.0000e+00
   Convective term - Type of Dirichlet BC's:  Mirror
   Viscous term - IP formulation:             SIPG
@@ -71,7 +71,7 @@ Turbulence:
 Numerical parameters:
   Block Jacobi matrix-free:                  false
   Use cell-based face loops:                 false
-  Quadrature rule linearization:             Over-integration (3/2k)
+  Quadrature rule linearization:             Overintegration32k
 
 Coupled Navier-Stokes solver:
   Use scaling of continuity equation:        false
@@ -95,7 +95,7 @@ Linear solver:
   Velocity/momentum block:
   Preconditioner:                            Multigrid
   Multigrid operator type:                   ReactionDiffusion
-  Multigrid type:                            h-MG
+  Multigrid type:                            hMG
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
   Iterations smoother:                       5
@@ -110,7 +110,7 @@ Linear solver:
 
   Pressure/Schur-complement block:
   Preconditioner:                            PressureConvectionDiffusion
-  Multigrid type:                            h-MG
+  Multigrid type:                            hMG
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -210,9 +210,9 @@ Spatial discretization:
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        1
   Mapping degree:                            3
-  Element type:                              L2 - Discontinuous Galerkin
+  Element type:                              L2
   Polynomial degree velocity:                3
-  Polynomial degree pressure:                Mixed-order
+  Polynomial degree pressure:                MixedOrder
   Convective term - Upwind factor:           1.0000e+00
   Convective term - Type of Dirichlet BC's:  Mirror
   Viscous term - IP formulation:             SIPG
@@ -239,7 +239,7 @@ Turbulence:
 Numerical parameters:
   Block Jacobi matrix-free:                  false
   Use cell-based face loops:                 false
-  Quadrature rule linearization:             Over-integration (3/2k)
+  Quadrature rule linearization:             Overintegration32k
 
 Coupled Navier-Stokes solver:
   Use scaling of continuity equation:        false
@@ -263,7 +263,7 @@ Linear solver:
   Velocity/momentum block:
   Preconditioner:                            Multigrid
   Multigrid operator type:                   ReactionDiffusion
-  Multigrid type:                            h-MG
+  Multigrid type:                            hMG
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
   Iterations smoother:                       5
@@ -278,7 +278,7 @@ Linear solver:
 
   Pressure/Schur-complement block:
   Preconditioner:                            PressureConvectionDiffusion
-  Multigrid type:                            h-MG
+  Multigrid type:                            hMG
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -378,9 +378,9 @@ Spatial discretization:
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        1
   Mapping degree:                            4
-  Element type:                              L2 - Discontinuous Galerkin
+  Element type:                              L2
   Polynomial degree velocity:                4
-  Polynomial degree pressure:                Mixed-order
+  Polynomial degree pressure:                MixedOrder
   Convective term - Upwind factor:           1.0000e+00
   Convective term - Type of Dirichlet BC's:  Mirror
   Viscous term - IP formulation:             SIPG
@@ -407,7 +407,7 @@ Turbulence:
 Numerical parameters:
   Block Jacobi matrix-free:                  false
   Use cell-based face loops:                 false
-  Quadrature rule linearization:             Over-integration (3/2k)
+  Quadrature rule linearization:             Overintegration32k
 
 Coupled Navier-Stokes solver:
   Use scaling of continuity equation:        false
@@ -431,7 +431,7 @@ Linear solver:
   Velocity/momentum block:
   Preconditioner:                            Multigrid
   Multigrid operator type:                   ReactionDiffusion
-  Multigrid type:                            h-MG
+  Multigrid type:                            hMG
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
   Iterations smoother:                       5
@@ -446,7 +446,7 @@ Linear solver:
 
   Pressure/Schur-complement block:
   Preconditioner:                            PressureConvectionDiffusion
-  Multigrid type:                            h-MG
+  Multigrid type:                            hMG
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -546,9 +546,9 @@ Spatial discretization:
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        1
   Mapping degree:                            5
-  Element type:                              L2 - Discontinuous Galerkin
+  Element type:                              L2
   Polynomial degree velocity:                5
-  Polynomial degree pressure:                Mixed-order
+  Polynomial degree pressure:                MixedOrder
   Convective term - Upwind factor:           1.0000e+00
   Convective term - Type of Dirichlet BC's:  Mirror
   Viscous term - IP formulation:             SIPG
@@ -575,7 +575,7 @@ Turbulence:
 Numerical parameters:
   Block Jacobi matrix-free:                  false
   Use cell-based face loops:                 false
-  Quadrature rule linearization:             Over-integration (3/2k)
+  Quadrature rule linearization:             Overintegration32k
 
 Coupled Navier-Stokes solver:
   Use scaling of continuity equation:        false
@@ -599,7 +599,7 @@ Linear solver:
   Velocity/momentum block:
   Preconditioner:                            Multigrid
   Multigrid operator type:                   ReactionDiffusion
-  Multigrid type:                            h-MG
+  Multigrid type:                            hMG
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
   Iterations smoother:                       5
@@ -614,7 +614,7 @@ Linear solver:
 
   Pressure/Schur-complement block:
   Preconditioner:                            PressureConvectionDiffusion
-  Multigrid type:                            h-MG
+  Multigrid type:                            hMG
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
