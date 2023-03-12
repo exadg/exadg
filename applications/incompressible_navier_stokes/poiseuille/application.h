@@ -178,9 +178,8 @@ public:
     // clang-format off
     prm.enter_subsection("Application");
       prm.add_parameter("BoundaryConditionType",
-                        boundary_condition_string,
-                        "Type of boundary condition.",
-                        dealii::Patterns::Selection("ParabolicInflow|PressureInflow|Periodic"));
+                        boundary_condition,
+                        "Type of boundary condition.");
       prm.add_parameter("ApplySymmetryBC",
                         apply_symmetry_bc,
                         "Apply symmetry boundary condition.",
@@ -190,13 +189,6 @@ public:
   }
 
 private:
-  void
-  parse_parameters() final
-  {
-    ApplicationBase<dim, Number>::parse_parameters();
-
-    Utilities::string_to_enum(boundary_condition, boundary_condition_string);
-  }
   void
   set_parameters() final
   {
@@ -505,8 +497,7 @@ private:
     return pp;
   }
 
-  std::string       boundary_condition_string = "ParabolicInflow";
-  BoundaryCondition boundary_condition        = BoundaryCondition::ParabolicInflow;
+  BoundaryCondition boundary_condition = BoundaryCondition::ParabolicInflow;
 
   bool apply_symmetry_bc = false;
 

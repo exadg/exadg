@@ -31,7 +31,9 @@
 #include <deal.II/base/parameter_handler.h>
 
 // ExaDG
+#include <exadg/utilities/enum_patterns.h>
 #include <exadg/utilities/print_solver_results.h>
+
 
 namespace ExaDG
 {

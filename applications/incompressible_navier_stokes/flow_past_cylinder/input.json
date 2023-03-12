@@ -16,7 +16,7 @@
     },
     "Application": {
         "TestCase": "3",
-        "CylinderType": "circular",
+        "CylinderType": "Circular",
         "CFL": "0.35"
     },
     "Output": {

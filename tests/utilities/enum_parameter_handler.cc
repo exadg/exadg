@@ -19,39 +19,60 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_PARAMETERS_H_
-#define INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_PARAMETERS_H_
+// C++
+#include <iostream>
+#include <sstream>
 
 #include <deal.II/base/parameter_handler.h>
 
 #include <exadg/utilities/enum_patterns.h>
 
-namespace ExaDG
+enum class EnumClass
 {
-struct OutputParameters
-{
-  OutputParameters() : directory("output/"), filename("solution"), write(false)
-  {
-  }
-
-  void
-  add_parameters(dealii::ParameterHandler & prm, std::string const & subsection_name = "Output")
-  {
-    // clang-format off
-    prm.enter_subsection(subsection_name);
-      prm.add_parameter("OutputDirectory",  directory, "Directory where output is written.");
-      prm.add_parameter("OutputName",       filename,  "Name of output files.");
-      prm.add_parameter("WriteOutput",      write,     "Decides whether output is written.");
-    prm.leave_subsection();
-    // clang-format on
-  }
-
-  std::string directory;
-  std::string filename;
-  bool        write;
+  Undefined,
+  AScoped,
+  BScoped,
+  CScoped
 };
-} // namespace ExaDG
+
+enum Enum
+{
+  Undefined,
+  A,
+  B,
+  C
+};
+
+template<typename EnumType>
+void
+test_enum(EnumType enum_type)
+{
+  dealii::ParameterHandler prm;
+
+  prm.add_parameter("EnumType", enum_type);
+
+  prm.print_parameters(std::cout, dealii::ParameterHandler::OutputStyle::Description);
+  std::cout << std::endl;
+
+  prm.print_parameters(std::cout, dealii::ParameterHandler::OutputStyle::PRM);
+  std::cout << std::endl;
+
+  auto const enum_strings = magic_enum::enum_names<EnumType>();
+  for(const auto e : enum_strings)
+  {
+    std::istringstream is("{\"EnumType\" : \"" + std::string(e) + "\"}");
+    prm.parse_input_from_json(is);
+    prm.print_parameters(std::cout, dealii::ParameterHandler::OutputStyle::PRM);
+    std::cout << std::endl;
+  }
+}
 
 
+int
+main()
+{
+  test_enum(EnumClass::Undefined);
+  test_enum(Enum::Undefined);
 
-#endif /* INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_PARAMETERS_H_ */
+  return 0;
+}

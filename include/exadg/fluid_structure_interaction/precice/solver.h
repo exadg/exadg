@@ -30,6 +30,7 @@
 #include <exadg/fluid_structure_interaction/precice/driver_fluid.h>
 #include <exadg/fluid_structure_interaction/precice/driver_solid.h>
 #include <exadg/fluid_structure_interaction/user_interface/declare_get_application.h>
+#include <exadg/utilities/enum_patterns.h>
 #include <exadg/utilities/general_parameters.h>
 
 namespace ExaDG

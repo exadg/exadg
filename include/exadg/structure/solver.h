@@ -25,12 +25,11 @@
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/parameter_handler.h>
 
-// ExaDG
-
 // driver
 #include <exadg/structure/driver.h>
 
 // utilities
+#include <exadg/utilities/enum_patterns.h>
 #include <exadg/utilities/general_parameters.h>
 #include <exadg/utilities/resolution_parameters.h>
 

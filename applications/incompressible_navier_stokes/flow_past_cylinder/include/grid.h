@@ -33,6 +33,12 @@ namespace ExaDG
 {
 namespace FlowPastCylinder
 {
+enum class CylinderType
+{
+  Circular,
+  Square
+};
+
 // physical dimensions (diameter D and center coordinate Y_C can be varied)
 double const X_0 = 0.0;  // origin (x-coordinate)
 double const Y_0 = 0.0;  // origin (y-coordinate)
@@ -1450,29 +1456,12 @@ create_coarse_triangulation(dealii::Triangulation<dim> & triangulation, ElementT
 
 } // namespace SquareCylinder
 
-enum CylinderType
-{
-  circular,
-  square
-} cylinder_type;
-
-void
-select_cylinder_type(std::string cylinder_type_string)
-{
-  if(cylinder_type_string == "circular")
-    cylinder_type = circular;
-  else if(cylinder_type_string == "square")
-    cylinder_type = square;
-  else
-    AssertThrow(false, dealii::ExcNotImplemented());
-}
-
 template<unsigned int dim>
 void
 create_coarse_grid(dealii::Triangulation<dim> &                             triangulation,
                    std::vector<dealii::GridTools::PeriodicFacePair<
                      typename dealii::Triangulation<dim>::cell_iterator>> & periodic_faces,
-                   std::string                                              cylinder_type_string,
+                   CylinderType const                                       cylinder_type,
                    ElementType                                              element_type)
 {
   if(element_type == ElementType::Simplex)
@@ -1484,11 +1473,9 @@ create_coarse_grid(dealii::Triangulation<dim> &                             tria
         "for this application."));
   }
 
-  select_cylinder_type(cylinder_type_string);
-
   switch(cylinder_type)
   {
-    case circular:
+    case CylinderType::Circular:
     {
       AssertThrow(
         element_type == ElementType::Hypercube,
@@ -1499,7 +1486,7 @@ create_coarse_grid(dealii::Triangulation<dim> &                             tria
       CircularCylinder::create_coarse_triangulation<dim>(triangulation, periodic_faces);
       break;
     }
-    case square:
+    case CylinderType::Square:
     {
       SquareCylinder::create_coarse_triangulation<dim>(triangulation, element_type);
       break;

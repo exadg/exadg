@@ -102,7 +102,7 @@ public:
 
     // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("MeshType",        mesh_type_string,                  "Type of mesh (Cartesian versus curvilinear).", dealii::Patterns::Selection("Cartesian|Curvilinear"));
+      prm.add_parameter("MeshType",        mesh_type,                         "Type of mesh (Cartesian versus Curvilinear).") ;
       prm.add_parameter("NCoarseCells1D",  n_subdivisions_1d_hypercube,       "Number of cells per direction on coarse grid.", dealii::Patterns::Integer(1,5));
       prm.add_parameter("ExploitSymmetry", exploit_symmetry,                  "Exploit symmetry and reduce DoFs by a factor of 8?");
       prm.add_parameter("MovingMesh",      ALE,                               "Moving mesh?");
@@ -119,8 +119,6 @@ private:
   parse_parameters() final
   {
     ApplicationBase<dim, Number>::parse_parameters();
-
-    Utilities::string_to_enum(mesh_type, mesh_type_string);
 
     // viscosity needs to be recomputed since the parameters inviscid, Re are
     // read from the input file
@@ -488,8 +486,7 @@ private:
   }
 
   // mesh type
-  std::string mesh_type_string = "Cartesian";
-  MeshType    mesh_type        = MeshType::Cartesian;
+  MeshType mesh_type = MeshType::Cartesian;
 
   unsigned int n_subdivisions_1d_hypercube = 1;
 

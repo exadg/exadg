@@ -70,8 +70,8 @@ public:
 
     // clang-format off
     prm.enter_subsection("Application");
-    prm.add_parameter("CFL",        cfl_number, "CFL number.",      Patterns::Double(0.0, 1.0e6), true);
-    prm.add_parameter("Viscosity",  viscosity,  "Fluid viscosity.", Patterns::Double(0.0, 1e30),  false);
+    prm.add_parameter("CFL",        cfl_number, "CFL number.",      dealii::Patterns::Double(0.0, 1.0e6), true);
+    prm.add_parameter("Viscosity",  viscosity,  "Fluid viscosity.", dealii::Patterns::Double(0.0, 1e30),  false);
     prm.leave_subsection();
     // clang-format on
   }

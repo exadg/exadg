@@ -26,6 +26,7 @@
 #include <deal.II/base/parameter_handler.h>
 
 // ExaDG
+#include <exadg/utilities/enum_patterns.h>
 
 // driver
 #include <exadg/incompressible_navier_stokes/driver_precursor.h>

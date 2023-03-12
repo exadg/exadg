@@ -182,7 +182,7 @@ PartitionedSolver<dim, Number>::solve(
   unsigned int k = 0;
 
   // fixed-point iteration with dynamic relaxation (Aitken relaxation)
-  if(parameters.method == "Aitken")
+  if(parameters.method == AccelerationMethod::Aitken)
   {
     VectorType r_old, d;
     structure->pde_operator->initialize_dof_vector(r_old);
@@ -236,7 +236,7 @@ PartitionedSolver<dim, Number>::solve(
       ++k;
     }
   }
-  else if(parameters.method == "IQN-ILS")
+  else if(parameters.method == AccelerationMethod::IQN_ILS)
   {
     std::shared_ptr<std::vector<VectorType>> D, R;
     D = std::make_shared<std::vector<VectorType>>();
@@ -357,7 +357,7 @@ PartitionedSolver<dim, Number>::solve(
 
     timer_tree->insert({"IQN-ILS"}, timer.wall_time());
   }
-  else if(parameters.method == "IQN-IMVLS")
+  else if(parameters.method == AccelerationMethod::IQN_IMVLS)
   {
     std::shared_ptr<std::vector<VectorType>> D, R;
     D = std::make_shared<std::vector<VectorType>>();

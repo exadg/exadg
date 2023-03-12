@@ -120,20 +120,12 @@ public:
 
     // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("MeshType", mesh_type_string, "Type of mesh (Cartesian versus curvilinear).", dealii::Patterns::Selection("Cartesian|Curvilinear"));
+      prm.add_parameter("MeshType", mesh_type, "Type of mesh (Cartesian versus curvilinear).");
     prm.leave_subsection();
     // clang-format on
   }
 
 private:
-  void
-  parse_parameters() final
-  {
-    ApplicationBase<dim, n_components, Number>::parse_parameters();
-
-    Utilities::string_to_enum(mesh_type, mesh_type_string);
-  }
-
   void
   set_parameters() final
   {
@@ -356,8 +348,7 @@ private:
 
   bool const read_external_grid = false;
 
-  std::string mesh_type_string = "Cartesian";
-  MeshType    mesh_type        = MeshType::Cartesian;
+  MeshType mesh_type = MeshType::Cartesian;
 };
 
 } // namespace Poisson

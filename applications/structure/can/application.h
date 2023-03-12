@@ -130,7 +130,7 @@ public:
     prm.add_parameter("Height",           height,           "Height.");
     prm.add_parameter("UseVolumeForce",   use_volume_force, "Use volume force.");
     prm.add_parameter("VolumeForce",      volume_force,     "Volume force.");
-    prm.add_parameter("BoundaryType",     boundary_type,    "Type of boundary condition, Dirichlet vs Neumann.", dealii::Patterns::Selection("Dirichlet|Neumann"));
+    prm.add_parameter("BoundaryType",     boundary_type,    "Type of boundary condition, Dirichlet vs Neumann.");
     prm.add_parameter("Displacement",     displacement,     "Diplacement of right boundary in case of Dirichlet BC.");
     prm.add_parameter("Traction",         area_force,       "Traction acting on right boundary in case of Neumann BC.");
     prm.leave_subsection();
@@ -224,7 +224,7 @@ private:
 
     // BC at the top (boundary_id = 1)
     bool const incremental_loading = (this->param.problem_type == ProblemType::QuasiStatic);
-    if(boundary_type == "Dirichlet")
+    if(boundary_type == BoundaryType::Dirichlet)
     {
       std::vector<bool> mask_upper = {false, false, true}; // let boundary slide in x-y-plane
       //      std::vector<bool> mask_upper = {true, true, true}; // clamp boundary, i.e., fix all
@@ -233,7 +233,7 @@ private:
         pair(1, new DisplacementDBC<dim>(displacement, incremental_loading)));
       this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, mask_upper));
     }
-    else if(boundary_type == "Neumann")
+    else if(boundary_type == BoundaryType::Neumann)
     {
       this->boundary_descriptor->neumann_bc.insert(
         pair(1, new AreaForce<dim>(area_force, incremental_loading)));
@@ -296,7 +296,13 @@ private:
 
   double volume_force = 1.0;
 
-  std::string boundary_type = "Dirichlet";
+  enum BoundaryType
+  {
+    Dirichlet,
+    Neumann
+  };
+  BoundaryType boundary_type = BoundaryType::Dirichlet;
+
 
   double displacement = 0.2; // "Dirichlet"
   double area_force   = 1.0; // "Neumann"

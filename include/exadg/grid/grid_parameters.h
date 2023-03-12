@@ -22,8 +22,9 @@
 #ifndef EXADG_GRID_GRID_PARAMETERS_H
 #define EXADG_GRID_GRID_PARAMETERS_H
 
-// deal.II
 #include <deal.II/base/parameter_handler.h>
+
+#include <exadg/utilities/enum_patterns.h>
 
 namespace ExaDG
 {

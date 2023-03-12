@@ -22,8 +22,9 @@
 #ifndef INCLUDE_EXADG_UTILITIES_GENERAL_PARAMETERS_H_
 #define INCLUDE_EXADG_UTILITIES_GENERAL_PARAMETERS_H_
 
-// deal.II
 #include <deal.II/base/parameter_handler.h>
+
+#include <exadg/utilities/enum_patterns.h>
 
 namespace ExaDG
 {

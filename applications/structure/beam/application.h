@@ -142,7 +142,7 @@ public:
     prm.add_parameter("Length",           length,           "Length of domain.");
     prm.add_parameter("Height",           height,           "Height of domain.");
     prm.add_parameter("Width",            width,            "Width of domain.");
-    prm.add_parameter("BoundaryType",     boundary_type,    "Type of Neumann BC at right boundary.", dealii::Patterns::Selection("SingleForce|BendingMoment"));
+    prm.add_parameter("BoundaryType",     boundary_type,    "Type of Neumann BC at right boundary.");
     prm.add_parameter("Force",            force,            "Value of force on right boundary.");
     prm.leave_subsection();
     // clang-format on
@@ -222,13 +222,14 @@ private:
         else if(std::fabs(cell.face(face)->center()(0) - this->length) < element_length and
                 std::fabs(cell.face(face)->center()(1) - this->height / 2) < tol)
         {
-          if(boundary_type == "SingleForce")
+          if(boundary_type == BoundaryType::SingleForce)
           {
             cell.face(face)->set_all_boundary_ids(3);
           }
           else
           {
-            AssertThrow(boundary_type == "BendingMoment", dealii::ExcMessage("Not implemented."));
+            AssertThrow(boundary_type == BoundaryType::BendingMoment,
+                        dealii::ExcMessage("Not implemented."));
           }
         }
       }
@@ -256,12 +257,12 @@ private:
     // right side
     bool const incremental_loading = (this->param.problem_type == ProblemType::QuasiStatic);
 
-    if(boundary_type == "BendingMoment")
+    if(boundary_type == BoundaryType::BendingMoment)
     {
       this->boundary_descriptor->neumann_bc.insert(
         pair(2, new BendingMoment<dim>(force, height, incremental_loading)));
     }
-    else if(boundary_type == "SingleForce")
+    else if(boundary_type == BoundaryType::SingleForce)
     {
       this->boundary_descriptor->neumann_bc.insert(
         pair(2, new dealii::Functions::ZeroFunction<dim>(dim)));
@@ -308,7 +309,7 @@ private:
     pp_data.output_data.write_higher_order          = false;
     pp_data.output_data.degree                      = this->param.degree;
 
-    if(boundary_type == "SingleForce")
+    if(boundary_type == BoundaryType::SingleForce)
     {
       pp_data.error_data.time_control_data.is_active = true;
       pp_data.error_data.calculate_relative_errors   = true;
@@ -317,7 +318,8 @@ private:
     }
     else
     {
-      AssertThrow(boundary_type == "BendingMoment", dealii::ExcMessage("Not implemented."));
+      AssertThrow(boundary_type == BoundaryType::BendingMoment,
+                  dealii::ExcMessage("Not implemented."));
     }
 
     std::shared_ptr<PostProcessor<dim, Number>> post(
@@ -330,7 +332,13 @@ private:
   double length = 1.0, height = 1.0, width = 1.0;
 
   // single force or bending moment
-  std::string boundary_type = "SingleForce";
+  enum class BoundaryType
+  {
+    SingleForce,
+    BendingMoment
+  };
+  BoundaryType boundary_type = BoundaryType::SingleForce;
+
 
   double force = 2500;
 
