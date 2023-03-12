@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_ERROR_CALCULATION_H_
-#define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_ERROR_CALCULATION_H_
+#ifndef INCLUDE_POSTPROCESSOR_ERROR_CALCULATION_H_
+#define INCLUDE_POSTPROCESSOR_ERROR_CALCULATION_H_
 
 // deal.II
 #include <deal.II/base/function.h>
@@ -105,6 +105,11 @@ private:
   void
   do_evaluate(VectorType const & solution_vector, double const time);
 
+  std::string
+  filename_from_filename_base(std::string const & directory,
+                              std::string const & filename_base,
+                              bool const          initial_call);
+
   MPI_Comm const mpi_comm;
 
   bool clear_files_L2, clear_files_H1_seminorm;
@@ -117,4 +122,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_ERROR_CALCULATION_H_ */
+#endif /* INCLUDE_POSTPROCESSOR_ERROR_CALCULATION_H_ */

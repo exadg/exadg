@@ -496,6 +496,7 @@ private:
     pp_data.error_data_u.analytical_solution.reset(
       new AnalyticalSolutionVelocity<dim>(max_velocity, H));
     pp_data.error_data_u.calculate_relative_errors = false;
+    pp_data.error_data_u.write_errors_to_file      = false;
     pp_data.error_data_u.name                      = "velocity";
 
     // ... pressure error
@@ -508,6 +509,7 @@ private:
       pp_data.error_data_p.analytical_solution.reset(
         new AnalyticalSolutionPressure<dim>(viscosity, max_velocity, L, H));
     pp_data.error_data_p.calculate_relative_errors = false;
+    pp_data.error_data_p.write_errors_to_file      = false;
     pp_data.error_data_p.name                      = "pressure";
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;

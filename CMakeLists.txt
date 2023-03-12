@@ -57,6 +57,7 @@ DEAL_II_INITIALIZE_CACHED_VARIABLES()
 # Set the source files to be compiled
 SET(TARGET_SRC
      include/exadg/utilities/timer_tree.cpp
+     include/exadg/utilities/evaluate_convergence_study.cpp
      include/exadg/time_integration/bdf_time_integration.cpp
      include/exadg/time_integration/extrapolation_scheme.cpp
      include/exadg/time_integration/time_int_base.cpp

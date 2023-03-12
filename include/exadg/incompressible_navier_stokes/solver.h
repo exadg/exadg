@@ -26,6 +26,7 @@
 #include <exadg/incompressible_navier_stokes/driver.h>
 
 // utilities
+#include <exadg/utilities/evaluate_convergence_study.h>
 #include <exadg/utilities/general_parameters.h>
 #include <exadg/utilities/resolution_parameters.h>
 
@@ -182,6 +183,9 @@ main(int argc, char ** argv)
       }
     }
   }
+
+  // print convergence study given data in ./output/run_(...)
+  ExaDG::evaluate_convergence_study(mpi_comm, general.is_test);
 
 #ifdef USE_SUB_COMMUNICATOR
   // free communicator
