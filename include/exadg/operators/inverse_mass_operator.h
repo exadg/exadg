@@ -63,11 +63,11 @@ public:
     dof_index         = dof_index_in;
     quad_index        = quad_index_in;
 
-    matrixfree_inverse_mass_not_available = not(matrix_free->get_dof_handler(dof_index)
-                                                  .get_triangulation()
-                                                  .all_reference_cells_are_hyper_cube());
+    explicit_matrix_free_inverse_mass_available = matrix_free->get_dof_handler(dof_index)
+                                                   .get_triangulation()
+                                                   .all_reference_cells_are_hyper_cube();
 
-    if(matrixfree_inverse_mass_not_available)
+    if(not(explicit_matrix_free_inverse_mass_available))
     {
       initialize_inverse_mass_operator_with_block_jacobi();
     }
@@ -78,7 +78,7 @@ public:
   {
     dst.zero_out_ghost_values();
 
-    if(matrixfree_inverse_mass_not_available)
+    if(not(explicit_matrix_free_inverse_mass_available))
     {
       mass_preconditioner->vmult(dst, src);
     }
@@ -134,7 +134,7 @@ private:
   unsigned int dof_index, quad_index;
 
   // BlockJacobi Preconditoner to be used when the MatrixFreeInverseMass is not available
-  bool matrixfree_inverse_mass_not_available;
+  bool explicit_matrix_free_inverse_mass_available;
 
   MassOperator<dim, n_components, Number> mass_operator;
 
