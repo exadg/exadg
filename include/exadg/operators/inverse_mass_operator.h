@@ -64,8 +64,8 @@ public:
     quad_index        = quad_index_in;
 
     explicit_matrix_free_inverse_mass_available = matrix_free->get_dof_handler(dof_index)
-                                                   .get_triangulation()
-                                                   .all_reference_cells_are_hyper_cube();
+                                                    .get_triangulation()
+                                                    .all_reference_cells_are_hyper_cube();
 
     if(not(explicit_matrix_free_inverse_mass_available))
     {
