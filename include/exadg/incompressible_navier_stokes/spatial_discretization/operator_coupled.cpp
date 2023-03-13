@@ -469,8 +469,7 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
   // dealii::Functions::ZeroFunction for DirichletCached BCs.
   for(auto iter : this->momentum_operator.get_data().bc->dirichlet_cached_bc)
   {
-    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
-      pair;
+    typedef std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> pair;
 
     dirichlet_boundary_conditions.insert(
       pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));

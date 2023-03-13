@@ -573,18 +573,10 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       // constrained dofs
       auto constrained_dofs = new dealii::MGConstrainedDoFs();
       constrained_dofs->clear();
+      constrained_dofs->initialize(*dof_handler);
 
-      if(level.is_dg)
+      if(not(level.is_dg))
       {
-        std::set<dealii::types::boundary_id> dirichlet_boundary;
-        for(auto & it : dirichlet_bc)
-          dirichlet_boundary.insert(it.first);
-        constrained_dofs->initialize(*dof_handler);
-        constrained_dofs->make_zero_boundary_constraints(*dof_handler, dirichlet_boundary);
-      }
-      else
-      {
-        constrained_dofs->initialize(*dof_handler);
         for(auto it : dirichlet_bc)
         {
           std::set<dealii::types::boundary_id> dirichlet_boundary;
