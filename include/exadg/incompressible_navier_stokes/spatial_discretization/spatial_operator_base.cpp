@@ -659,14 +659,15 @@ SpatialOperatorBase<dim, Number>::initialize_calculators_for_derived_quantities(
                                    get_dof_index_velocity(),
                                    get_dof_index_velocity_scalar(),
                                    get_quad_index_velocity_linear());
-  velocity_magnitude_calculator.initialize(*matrix_free,
-                                           get_dof_index_velocity(),
-                                           get_dof_index_velocity_scalar(),
-                                           get_quad_index_velocity_linear());
+  magnitude_calculator.initialize(*matrix_free,
+                                  get_dof_index_velocity(),
+                                  get_dof_index_velocity_scalar(),
+                                  get_quad_index_velocity_linear());
   q_criterion_calculator.initialize(*matrix_free,
                                     get_dof_index_velocity(),
                                     get_dof_index_velocity_scalar(),
-                                    get_quad_index_velocity_linear());
+                                    get_quad_index_velocity_linear(),
+                                    false /*compressible_flow*/);
 }
 
 template<int dim, typename Number>
@@ -1190,7 +1191,7 @@ void
 SpatialOperatorBase<dim, Number>::compute_velocity_magnitude(VectorType &       dst,
                                                              VectorType const & src) const
 {
-  velocity_magnitude_calculator.compute(dst, src);
+  magnitude_calculator.compute(dst, src);
 
   inverse_mass_velocity_scalar.apply(dst, dst);
 }
@@ -1200,7 +1201,7 @@ void
 SpatialOperatorBase<dim, Number>::compute_vorticity_magnitude(VectorType &       dst,
                                                               VectorType const & src) const
 {
-  velocity_magnitude_calculator.compute(dst, src);
+  magnitude_calculator.compute(dst, src);
 
   inverse_mass_velocity_scalar.apply(dst, dst);
 }
