@@ -47,7 +47,7 @@ struct BoundaryDescriptor
   // Dirichlet
   std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> dirichlet_bc;
 
-  // ComponentMaskn (only used/relevant for continuous Galerkin, ignored for DG)
+  // ComponentMask (only used/relevant for continuous Galerkin, ignored for DG)
   // If a certain boundary ID is not inserted into this map, it is assumed that all components are
   // active, in analogy to the default constructor of dealii::ComponentMask.
   std::map<dealii::types::boundary_id, dealii::ComponentMask> dirichlet_bc_component_mask;
