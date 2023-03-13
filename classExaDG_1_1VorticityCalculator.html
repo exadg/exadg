@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.6"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::CompNS::VorticityCalculator&lt; dim, Number &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::VorticityCalculator&lt; dim, Number &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -69,7 +69,7 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><b>CompNS</b></li><li class="navelem"><a class="el" href="classExaDG_1_1CompNS_1_1VorticityCalculator.html">VorticityCalculator</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><a class="el" href="classExaDG_1_1VorticityCalculator.html">VorticityCalculator</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -77,43 +77,44 @@ $(function() {
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
-<a href="classExaDG_1_1CompNS_1_1VorticityCalculator-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::CompNS::VorticityCalculator&lt; dim, Number &gt; Class Template Reference</div></div>
+<a href="classExaDG_1_1VorticityCalculator-members.html">List of all members</a>  </div>
+  <div class="headertitle"><div class="title">ExaDG::VorticityCalculator&lt; dim, Number &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:aaa746ccf9c7985553aa0b2f5adfb4ae8"><td class="memItemLeft" align="right" valign="top"><a id="aaa746ccf9c7985553aa0b2f5adfb4ae8" name="aaa746ccf9c7985553aa0b2f5adfb4ae8"></a>
+<tr class="memitem:ad5f060d3bfb3f64b4fc153db365c1739"><td class="memItemLeft" align="right" valign="top"><a id="ad5f060d3bfb3f64b4fc153db365c1739" name="ad5f060d3bfb3f64b4fc153db365c1739"></a>
 typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:aaa746ccf9c7985553aa0b2f5adfb4ae8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a402d307077204359c6ff87dc5b5cdc8a"><td class="memItemLeft" align="right" valign="top"><a id="a402d307077204359c6ff87dc5b5cdc8a" name="a402d307077204359c6ff87dc5b5cdc8a"></a>
-typedef <a class="el" href="classExaDG_1_1CompNS_1_1VorticityCalculator.html">VorticityCalculator</a>&lt; dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>This</b></td></tr>
-<tr class="separator:a402d307077204359c6ff87dc5b5cdc8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a85866ad2b6231e1171f309c408531920"><td class="memItemLeft" align="right" valign="top"><a id="a85866ad2b6231e1171f309c408531920" name="a85866ad2b6231e1171f309c408531920"></a>
+<tr class="separator:ad5f060d3bfb3f64b4fc153db365c1739"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a438e8e5df5a8ce63eb68225c6e44732e"><td class="memItemLeft" align="right" valign="top"><a id="a438e8e5df5a8ce63eb68225c6e44732e" name="a438e8e5df5a8ce63eb68225c6e44732e"></a>
+typedef <a class="el" href="classExaDG_1_1VorticityCalculator.html">VorticityCalculator</a>&lt; dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>This</b></td></tr>
+<tr class="separator:a438e8e5df5a8ce63eb68225c6e44732e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa1ebca5d62eca65f81f98c19df64bf48"><td class="memItemLeft" align="right" valign="top"><a id="aa1ebca5d62eca65f81f98c19df64bf48" name="aa1ebca5d62eca65f81f98c19df64bf48"></a>
 typedef CellIntegrator&lt; dim, dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>CellIntegratorVector</b></td></tr>
-<tr class="separator:a85866ad2b6231e1171f309c408531920"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6e5f8a99e66f08982d80d2a7350b1f98"><td class="memItemLeft" align="right" valign="top"><a id="a6e5f8a99e66f08982d80d2a7350b1f98" name="a6e5f8a99e66f08982d80d2a7350b1f98"></a>
+<tr class="separator:aa1ebca5d62eca65f81f98c19df64bf48"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4b5162d322b10d0ffe82afec6e92517d"><td class="memItemLeft" align="right" valign="top"><a id="a4b5162d322b10d0ffe82afec6e92517d" name="a4b5162d322b10d0ffe82afec6e92517d"></a>
 typedef dealii::Tensor&lt; 1, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>vector</b></td></tr>
-<tr class="separator:a6e5f8a99e66f08982d80d2a7350b1f98"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a4b5162d322b10d0ffe82afec6e92517d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aa50ede8a3d5f035c09d78bed80373280"><td class="memItemLeft" align="right" valign="top"><a id="aa50ede8a3d5f035c09d78bed80373280" name="aa50ede8a3d5f035c09d78bed80373280"></a>
+<tr class="memitem:a313a7db14891b7e3f422c738d0870604"><td class="memItemLeft" align="right" valign="top"><a id="a313a7db14891b7e3f422c738d0870604" name="a313a7db14891b7e3f422c738d0870604"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, unsigned int const dof_index_in, unsigned int const quad_index_in)</td></tr>
-<tr class="separator:aa50ede8a3d5f035c09d78bed80373280"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abdeb9f2cbf6719b797177be390fe5db0"><td class="memItemLeft" align="right" valign="top"><a id="abdeb9f2cbf6719b797177be390fe5db0" name="abdeb9f2cbf6719b797177be390fe5db0"></a>
+<tr class="separator:a313a7db14891b7e3f422c738d0870604"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb6e2daf8a1b41a30143db2a6222bb42"><td class="memItemLeft" align="right" valign="top"><a id="abb6e2daf8a1b41a30143db2a6222bb42" name="abb6e2daf8a1b41a30143db2a6222bb42"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>compute_vorticity</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:abdeb9f2cbf6719b797177be390fe5db0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:abb6e2daf8a1b41a30143db2a6222bb42"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
-<tr class="memitem:a2124e697a3de15300c2cc277df060b36"><td class="memItemLeft" align="right" valign="top"><a id="a2124e697a3de15300c2cc277df060b36" name="a2124e697a3de15300c2cc277df060b36"></a>
+<tr class="memitem:a8751fa022ec830cf6d6a0a52779da953"><td class="memItemLeft" align="right" valign="top"><a id="a8751fa022ec830cf6d6a0a52779da953" name="a8751fa022ec830cf6d6a0a52779da953"></a>
 static unsigned int const&#160;</td><td class="memItemRight" valign="bottom"><b>number_vorticity_components</b> = (dim == 2) ? 1 : dim</td></tr>
-<tr class="separator:a2124e697a3de15300c2cc277df060b36"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a8751fa022ec830cf6d6a0a52779da953"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/exadg/compressible_navier_stokes/spatial_discretization/<a class="el" href="calculators_8h_source.html">calculators.h</a></li>
+<hr/>The documentation for this class was generated from the following files:<ul>
+<li>include/exadg/operators/<a class="el" href="navier__stokes__calculators_8h_source.html">navier_stokes_calculators.h</a></li>
+<li>include/exadg/operators/navier_stokes_calculators.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
