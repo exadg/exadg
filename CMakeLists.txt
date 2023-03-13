@@ -54,9 +54,18 @@ ENDIF()
 
 DEAL_II_INITIALIZE_CACHED_VARIABLES()
 
+# Add info of git branch 
+DEAL_II_QUERY_GIT_INFORMATION(EXADG)
+CONFIGURE_FILE(
+  ${CMAKE_SOURCE_DIR}/include/exadg/utilities/exadg_revision.h.in
+  ${CMAKE_SOURCE_DIR}/include/exadg/utilities/exadg_revision.h
+  )
+
+
 # Set the source files to be compiled
 SET(TARGET_SRC
      include/exadg/utilities/timer_tree.cpp
+     include/exadg/utilities/print_general_infos.cpp
      include/exadg/time_integration/bdf_time_integration.cpp
      include/exadg/time_integration/extrapolation_scheme.cpp
      include/exadg/time_integration/time_int_base.cpp
@@ -198,6 +207,7 @@ OPTION(PICKUP_TESTS "Pick up ExaDG tests." ON)
 OPTION(BUILD_SHARED_LIBS "Build shared library." ON)
 
 ADD_LIBRARY(exadg ${TARGET_SRC})
+
 # Set the include directories
 SET(EXADG_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include)
 TARGET_INCLUDE_DIRECTORIES(exadg PUBLIC ${EXADG_INCLUDE_DIRS})
