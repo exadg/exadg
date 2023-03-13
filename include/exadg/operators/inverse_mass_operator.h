@@ -45,7 +45,7 @@ private:
 
   // use a template parameter of -1 to select the precompiled version of this operator
   typedef dealii::MatrixFreeOperators::CellwiseInverseMassMatrix<dim, -1, n_components, Number>
-    CellwiseInverseMass;
+    ExplicitMatrixFreeInverseMass;
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
@@ -63,11 +63,11 @@ public:
     dof_index         = dof_index_in;
     quad_index        = quad_index_in;
 
-    cellwise_inverse_mass_not_available = not(matrix_free->get_dof_handler(dof_index)
-                                                .get_triangulation()
-                                                .all_reference_cells_are_hyper_cube());
+    matrixfree_inverse_mass_not_available = not(matrix_free->get_dof_handler(dof_index)
+                                                  .get_triangulation()
+                                                  .all_reference_cells_are_hyper_cube());
 
-    if(cellwise_inverse_mass_not_available)
+    if(matrixfree_inverse_mass_not_available)
     {
       initialize_inverse_mass_operator_with_block_jacobi();
     }
@@ -78,7 +78,7 @@ public:
   {
     dst.zero_out_ghost_values();
 
-    if(cellwise_inverse_mass_not_available)
+    if(matrixfree_inverse_mass_not_available)
     {
       mass_preconditioner->vmult(dst, src);
     }
@@ -95,8 +95,8 @@ private:
             VectorType const & src,
             Range const &      cell_range) const
   {
-    Integrator          integrator(*matrix_free, dof_index, quad_index);
-    CellwiseInverseMass inverse(integrator);
+    Integrator                    integrator(*matrix_free, dof_index, quad_index);
+    ExplicitMatrixFreeInverseMass inverse(integrator);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -133,8 +133,8 @@ private:
 
   unsigned int dof_index, quad_index;
 
-  // BlockJacobi Preconditoner to be used when the CellwiseInverseMassMatrix is not available
-  bool cellwise_inverse_mass_not_available;
+  // BlockJacobi Preconditoner to be used when the MatrixFreeInverseMass is not available
+  bool matrixfree_inverse_mass_not_available;
 
   MassOperator<dim, n_components, Number> mass_operator;
 
