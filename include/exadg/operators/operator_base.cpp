@@ -510,6 +510,12 @@ OperatorBase<dim, Number, n_components>::apply_inverse_block_diagonal(VectorType
   // matrix-free
   if(this->data.implement_block_diagonal_preconditioner_matrix_free)
   {
+    AssertThrow((evaluate_face_integrals() and data.use_cell_based_loops) or
+                  not(evaluate_face_integrals()),
+                dealii::ExcMessage(
+                  "Cell based face loops have to be activated for matrix-free implementation of "
+                  "block diagonal preconditioner, if face integrals need to be evaluated."));
+
     // Solve elementwise block Jacobi problems iteratively using an elementwise solver vectorized
     // over several elements.
     elementwise_solver->solve(dst, src);

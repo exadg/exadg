@@ -529,11 +529,6 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
   // NUMERICAL PARAMETERS
   if(implement_block_diagonal_preconditioner_matrix_free)
   {
-    AssertThrow(
-      use_cell_based_face_loops == true,
-      dealii::ExcMessage(
-        "Cell based face loops have to be used for matrix-free implementation of block diagonal preconditioner."));
-
     AssertThrow(spatial_discretization == SpatialDiscretization::L2,
                 dealii::ExcMessage("Not implemented."));
   }
