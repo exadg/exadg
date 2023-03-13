@@ -74,26 +74,6 @@ public:
   }
 
   void
-  initialize_inverse_mass_operator_with_block_jacobi()
-  {
-    // initialize mass operator
-    dealii::AffineConstraints<Number> const & constraint =
-      matrix_free->get_affine_constraints(dof_index);
-
-    MassOperatorData<dim> mass_operator_data;
-    mass_operator_data.dof_index  = dof_index;
-    mass_operator_data.quad_index = quad_index;
-
-    mass_operator.initialize(*matrix_free, constraint, mass_operator_data);
-
-    // build a BlockJacobiPreconditioner and use the vmult(dst,src) for applying the inverse mass
-    // operator on  source the vector
-    mass_preconditioner =
-      std::make_shared<BlockJacobiPreconditioner<MassOperator<dim, n_components, Number>>>(
-        mass_operator);
-  }
-
-  void
   apply(VectorType & dst, VectorType const & src) const
   {
     dst.zero_out_ghost_values();
@@ -127,6 +107,26 @@ private:
 
       integrator.set_dof_values(dst, 0);
     }
+  }
+
+  void
+  initialize_inverse_mass_operator_with_block_jacobi()
+  {
+    // initialize mass operator
+    dealii::AffineConstraints<Number> const & constraint =
+      matrix_free->get_affine_constraints(dof_index);
+
+    MassOperatorData<dim> mass_operator_data;
+    mass_operator_data.dof_index  = dof_index;
+    mass_operator_data.quad_index = quad_index;
+
+    mass_operator.initialize(*matrix_free, constraint, mass_operator_data);
+
+    // build a BlockJacobiPreconditioner and use the vmult(dst,src) for applying the inverse mass
+    // operator on  source the vector
+    mass_preconditioner =
+      std::make_shared<BlockJacobiPreconditioner<MassOperator<dim, n_components, Number>>>(
+        mass_operator);
   }
 
   dealii::MatrixFree<dim, Number> const * matrix_free;
