@@ -474,7 +474,11 @@ Operator<dim, Number>::initialize_preconditioner()
       }
     }
 
-    CombinedOperatorData<dim> const & data = combined_operator.get_data();
+    std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      dirichlet_boundary_conditions = combined_operator.get_data().bc->dirichlet_bc;
+
+    typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
+    Map_DBC_ComponentMask                                               dirichlet_bc_component_mask;
 
     mg_preconditioner->initialize(mg_data,
                                   param.grid.multigrid,
@@ -485,7 +489,8 @@ Operator<dim, Number>::initialize_preconditioner()
                                   combined_operator,
                                   param.mg_operator_type,
                                   param.ale_formulation,
-                                  data.bc->dirichlet_bc,
+                                  dirichlet_boundary_conditions,
+                                  dirichlet_bc_component_mask,
                                   grid->periodic_faces);
   }
   else

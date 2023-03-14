@@ -43,8 +43,9 @@ MultigridPreconditioner<dim, Number, n_components>::initialize(
   std::shared_ptr<dealii::Mapping<dim> const>                            mapping,
   LaplaceOperatorData<rank, dim> const &                                 data_in,
   bool const                                                             mesh_is_moving,
-  Map const &                                                            dirichlet_bc,
-  PeriodicFacePairs const &                                              periodic_face_pairs)
+  Map_DBC const &                                                        dirichlet_bc,
+  Map_DBC_ComponentMask const & dirichlet_bc_component_mask,
+  PeriodicFacePairs const &     periodic_face_pairs)
 {
   data = data_in;
 
@@ -60,6 +61,7 @@ MultigridPreconditioner<dim, Number, n_components>::initialize(
                    mapping,
                    data.operator_is_singular,
                    dirichlet_bc,
+                   dirichlet_bc_component_mask,
                    periodic_face_pairs);
 }
 
@@ -125,44 +127,6 @@ MultigridPreconditioner<dim, Number, n_components>::fill_matrix_free_data(
       false,
       dealii::ExcMessage(
         "Only pure hypercube or pure simplex meshes are implemented for Poisson::MultigridPreconditioner."));
-  }
-}
-
-template<int dim, typename Number, int n_components>
-void
-MultigridPreconditioner<dim, Number, n_components>::initialize_constrained_dofs(
-  dealii::DoFHandler<dim> const & dof_handler,
-  dealii::MGConstrainedDoFs &     constrained_dofs,
-  Map const &                     dirichlet_bc)
-{
-  // TODO: use the same code as for CG case below (which currently segfaults
-  // if used for DG case as well)
-  if(is_dg)
-  {
-    std::set<dealii::types::boundary_id> dirichlet_boundary;
-    for(auto & it : dirichlet_bc)
-      dirichlet_boundary.insert(it.first);
-    constrained_dofs.initialize(dof_handler);
-    constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary);
-  }
-  else
-  {
-    // We use data.bc->dirichlet_bc since we also need dirichlet_bc_component_mask,
-    // but the argument dirichlet_bc could be used as well
-
-    constrained_dofs.initialize(dof_handler);
-    for(auto it : data.bc->dirichlet_bc)
-    {
-      std::set<dealii::types::boundary_id> dirichlet_boundary;
-      dirichlet_boundary.insert(it.first);
-
-      dealii::ComponentMask mask    = dealii::ComponentMask();
-      auto                  it_mask = data.bc->dirichlet_bc_component_mask.find(it.first);
-      if(it_mask != data.bc->dirichlet_bc_component_mask.end())
-        mask = it_mask->second;
-
-      constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary, mask);
-    }
   }
 }
 

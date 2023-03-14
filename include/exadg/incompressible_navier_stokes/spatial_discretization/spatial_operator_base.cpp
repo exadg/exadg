@@ -1276,6 +1276,9 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   std::shared_ptr<MultigridPoisson> mg_preconditioner =
     std::dynamic_pointer_cast<MultigridPoisson>(preconditioner);
 
+  typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
+  Map_DBC_ComponentMask                                               dirichlet_bc_component_mask;
+
   mg_preconditioner->initialize(mg_data,
                                 param.grid.multigrid,
                                 &dof_handler_u_scalar.get_triangulation(),
@@ -1285,6 +1288,7 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
                                 laplace_operator.get_data(),
                                 param.ale_formulation,
                                 laplace_operator.get_data().bc->dirichlet_bc,
+                                dirichlet_bc_component_mask,
                                 grid->periodic_faces);
 
   // setup solver
@@ -1622,6 +1626,9 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
         dirichlet_boundary_conditions.insert(
           pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
 
+      typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
+      Map_DBC_ComponentMask dirichlet_bc_component_mask;
+
       auto const & dof_handler = this->get_dof_handler_u();
       mg_preconditioner->initialize(this->param.multigrid_data_projection,
                                     this->param.grid.multigrid,
@@ -1632,6 +1639,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
                                     *this->projection_operator,
                                     this->param.ale_formulation,
                                     dirichlet_boundary_conditions,
+                                    dirichlet_bc_component_mask,
                                     grid->periodic_faces);
     }
     else

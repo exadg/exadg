@@ -70,8 +70,9 @@ MultigridPreconditionerBase<dim, Number>::initialize(
   dealii::FiniteElement<dim> const &                                     fe,
   std::shared_ptr<dealii::Mapping<dim> const>                            mapping,
   bool const                                                             operator_is_singular,
-  Map const &                                                            dirichlet_bc,
-  PeriodicFacePairs const &                                              periodic_face_pairs)
+  Map_DBC const &                                                        dirichlet_bc,
+  Map_DBC_ComponentMask const & dirichlet_bc_component_mask,
+  PeriodicFacePairs const &     periodic_face_pairs)
 {
   this->data = data;
 
@@ -89,8 +90,12 @@ MultigridPreconditionerBase<dim, Number>::initialize(
 
   this->initialize_mapping();
 
-  this->initialize_dof_handler_and_constraints(
-    operator_is_singular, periodic_face_pairs, fe, this->triangulation, dirichlet_bc);
+  this->initialize_dof_handler_and_constraints(operator_is_singular,
+                                               periodic_face_pairs,
+                                               fe,
+                                               this->triangulation,
+                                               dirichlet_bc,
+                                               dirichlet_bc_component_mask);
 
   this->initialize_matrix_free();
 
@@ -414,13 +419,15 @@ MultigridPreconditionerBase<dim, Number>::initialize_dof_handler_and_constraints
   PeriodicFacePairs const &          periodic_face_pairs,
   dealii::FiniteElement<dim> const & fe,
   dealii::Triangulation<dim> const * tria,
-  Map const &                        dirichlet_bc)
+  Map_DBC const &                    dirichlet_bc,
+  Map_DBC_ComponentMask const &      dirichlet_bc_component_mask)
 {
   this->do_initialize_dof_handler_and_constraints(operator_is_singular,
                                                   periodic_face_pairs,
                                                   fe,
                                                   tria,
                                                   dirichlet_bc,
+                                                  dirichlet_bc_component_mask,
                                                   this->level_info,
                                                   this->p_levels,
                                                   this->dof_handlers,
@@ -431,13 +438,14 @@ MultigridPreconditionerBase<dim, Number>::initialize_dof_handler_and_constraints
 template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constraints(
-  bool                                                                    is_singular,
-  PeriodicFacePairs const &                                               periodic_face_pairs,
-  dealii::FiniteElement<dim> const &                                      fe,
-  dealii::Triangulation<dim> const *                                      tria,
-  Map const &                                                             dirichlet_bc,
-  std::vector<MGLevelInfo> &                                              level_info,
-  std::vector<MGDoFHandlerIdentifier> &                                   p_levels,
+  bool                                  is_singular,
+  PeriodicFacePairs const &             periodic_face_pairs,
+  dealii::FiniteElement<dim> const &    fe,
+  dealii::Triangulation<dim> const *    tria,
+  Map_DBC const &                       dirichlet_bc,
+  Map_DBC_ComponentMask const &         dirichlet_bc_component_mask,
+  std::vector<MGLevelInfo> &            level_info,
+  std::vector<MGDoFHandlerIdentifier> & p_levels,
   dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> & dof_handlers,
   dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> &     constrained_dofs,
   dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> & constraints)
@@ -485,13 +493,40 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       auto affine_constraints_own = new dealii::AffineConstraints<MultigridNumber>();
 
       // TODO: integrate periodic constraints into initialize_affine_constraints
-      initialize_affine_constraints(*dof_handler, *affine_constraints_own, dirichlet_bc);
 
       AssertThrow(is_singular == false, dealii::ExcNotImplemented());
       AssertThrow(periodic_face_pairs.empty(),
                   dealii::ExcMessage(
                     "Multigrid transfer option use_global_coarsening "
                     "is currently not available for problems with periodic boundaries."));
+
+      dealii::IndexSet locally_relevant_dofs;
+      dealii::DoFTools::extract_locally_relevant_dofs(*dof_handler, locally_relevant_dofs);
+      affine_constraints_own->reinit(locally_relevant_dofs);
+
+      dealii::DoFTools::make_hanging_node_constraints(*dof_handler, *affine_constraints_own);
+
+      // collect all boundary functions and translate to format understood by
+      // deal.II to cover all boundaries at once
+      dealii::Functions::ZeroFunction<dim, MultigridNumber> zero_function(
+        dof_handler->get_fe().n_components());
+
+      auto const & mapping_dummy =
+        dof_handler->get_fe().reference_cell().template get_default_linear_mapping<dim>();
+
+      for(auto & it : dirichlet_bc)
+      {
+        dealii::ComponentMask mask = dealii::ComponentMask();
+
+        auto it_mask = dirichlet_bc_component_mask.find(it.first);
+        if(it_mask != dirichlet_bc_component_mask.end())
+          mask = it_mask->second;
+
+        dealii::VectorTools::interpolate_boundary_values(
+          mapping_dummy, *dof_handler, it.first, zero_function, *affine_constraints_own, mask);
+      }
+
+      affine_constraints_own->close();
 
       constraints[i].reset(affine_constraints_own);
     }
@@ -517,20 +552,44 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
     // setup dof-handler and constrained dofs for each p-level
     for(auto level : p_levels)
     {
-      // setup dof_handler: create dof_handler...
+      // setup dof_handler
       auto dof_handler = new dealii::DoFHandler<dim>(*tria);
-      // ... create FE and distribute it
+
+      // distribute dofs
       if(level.is_dg)
+      {
         dof_handler->distribute_dofs(
           dealii::FESystem<dim>(dealii::FE_DGQ<dim>(level.degree), n_components));
+      }
       else
+      {
         dof_handler->distribute_dofs(
           dealii::FESystem<dim>(dealii::FE_Q<dim>(level.degree), n_components));
+      }
+
+      // distribute MG dofs
       dof_handler->distribute_mg_dofs();
-      // setup constrained dofs:
+
+      // constrained dofs
       auto constrained_dofs = new dealii::MGConstrainedDoFs();
       constrained_dofs->clear();
-      this->initialize_constrained_dofs(*dof_handler, *constrained_dofs, dirichlet_bc);
+      constrained_dofs->initialize(*dof_handler);
+
+      if(not(level.is_dg))
+      {
+        for(auto it : dirichlet_bc)
+        {
+          std::set<dealii::types::boundary_id> dirichlet_boundary;
+          dirichlet_boundary.insert(it.first);
+
+          dealii::ComponentMask mask    = dealii::ComponentMask();
+          auto                  it_mask = dirichlet_bc_component_mask.find(it.first);
+          if(it_mask != dirichlet_bc_component_mask.end())
+            mask = it_mask->second;
+
+          constrained_dofs->make_zero_boundary_constraints(*dof_handler, dirichlet_boundary, mask);
+        }
+      }
 
       // put in temporal storage
       map_dofhandlers[level]      = std::shared_ptr<dealii::DoFHandler<dim> const>(dof_handler);
@@ -635,56 +694,6 @@ MultigridPreconditionerBase<dim, Number>::initialize_smoothers()
   // skip the coarsest level
   for(unsigned int level = coarse_level + 1; level <= fine_level; level++)
     this->initialize_smoother(*this->operators[level], level);
-}
-
-template<int dim, typename Number>
-void
-MultigridPreconditionerBase<dim, Number>::initialize_constrained_dofs(
-  dealii::DoFHandler<dim> const & dof_handler,
-  dealii::MGConstrainedDoFs &     constrained_dofs,
-  Map const &                     dirichlet_bc)
-{
-  std::set<dealii::types::boundary_id> dirichlet_boundary;
-  for(auto & it : dirichlet_bc)
-    dirichlet_boundary.insert(it.first);
-  constrained_dofs.initialize(dof_handler);
-  constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary);
-}
-
-template<int dim, typename Number>
-void
-MultigridPreconditionerBase<dim, Number>::initialize_affine_constraints(
-  dealii::DoFHandler<dim> const &              dof_handler,
-  dealii::AffineConstraints<MultigridNumber> & affine_constraints,
-  Map const &                                  dirichlet_bc)
-{
-  dealii::IndexSet locally_relevant_dofs;
-  dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
-  affine_constraints.reinit(locally_relevant_dofs);
-
-  dealii::DoFTools::make_hanging_node_constraints(dof_handler, affine_constraints);
-
-  // collect all boundary functions and translate to format understood by
-  // deal.II to cover all boundaries at once
-  dealii::Functions::ZeroFunction<dim, MultigridNumber> zero_function(
-    dof_handler.get_fe().n_components());
-
-  std::map<dealii::types::boundary_id, dealii::Function<dim, MultigridNumber> const *>
-    boundary_functions;
-  for(auto & it : dirichlet_bc)
-  {
-    boundary_functions[it.first] = &zero_function;
-  }
-
-  auto const & mapping_dummy =
-    dof_handler.get_fe().reference_cell().template get_default_linear_mapping<dim>();
-
-  dealii::VectorTools::interpolate_boundary_values(mapping_dummy,
-                                                   dof_handler,
-                                                   boundary_functions,
-                                                   affine_constraints);
-
-  affine_constraints.close();
 }
 
 template<int dim, typename Number>

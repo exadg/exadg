@@ -52,8 +52,9 @@ MultigridPreconditioner<dim, Number>::initialize(
   PDEOperator const &                                                    pde_operator,
   MultigridOperatorType const &                                          mg_operator_type,
   bool const                                                             mesh_is_moving,
-  Map const &                                                            dirichlet_bc,
-  PeriodicFacePairs const &                                              periodic_face_pairs)
+  Map_DBC const &                                                        dirichlet_bc,
+  Map_DBC_ComponentMask const & dirichlet_bc_component_mask,
+  PeriodicFacePairs const &     periodic_face_pairs)
 {
   this->pde_operator     = &pde_operator;
   this->mg_operator_type = mg_operator_type;
@@ -100,6 +101,7 @@ MultigridPreconditioner<dim, Number>::initialize(
                    mapping,
                    data.operator_is_singular,
                    dirichlet_bc,
+                   dirichlet_bc_component_mask,
                    periodic_face_pairs);
 }
 
@@ -211,21 +213,25 @@ MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
   PeriodicFacePairs const &          periodic_face_pairs,
   dealii::FiniteElement<dim> const & fe,
   dealii::Triangulation<dim> const * tria,
-  Map const &                        dirichlet_bc)
+  Map_DBC const &                    dirichlet_bc,
+  Map_DBC_ComponentMask const &      dirichlet_bc_component_mask)
 {
   Base::initialize_dof_handler_and_constraints(
-    operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc);
+    operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc, dirichlet_bc_component_mask);
 
   if(data.convective_problem &&
      data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
   {
     dealii::FESystem<dim> fe_velocity(dealii::FE_DGQ<dim>(fe.degree), dim);
-    Map                   dirichlet_bc_velocity;
+
+    Map_DBC               dirichlet_bc_velocity;
+    Map_DBC_ComponentMask dirichlet_bc_velocity_component_mask;
     this->do_initialize_dof_handler_and_constraints(false,
                                                     periodic_face_pairs,
                                                     fe_velocity,
                                                     tria,
                                                     dirichlet_bc_velocity,
+                                                    dirichlet_bc_velocity_component_mask,
                                                     this->level_info,
                                                     this->p_levels,
                                                     dof_handlers_velocity,

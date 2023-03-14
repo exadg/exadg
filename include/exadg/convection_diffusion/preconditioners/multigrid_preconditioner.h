@@ -49,10 +49,11 @@ private:
   typedef MultigridOperatorBase<dim, MultigridNumber>            MGOperatorBase;
   typedef MultigridOperator<dim, MultigridNumber, PDEOperatorMG> MGOperator;
 
-  typedef typename Base::Map               Map;
-  typedef typename Base::PeriodicFacePairs PeriodicFacePairs;
-  typedef typename Base::VectorType        VectorType;
-  typedef typename Base::VectorTypeMG      VectorTypeMG;
+  typedef typename Base::Map_DBC               Map_DBC;
+  typedef typename Base::Map_DBC_ComponentMask Map_DBC_ComponentMask;
+  typedef typename Base::PeriodicFacePairs     PeriodicFacePairs;
+  typedef typename Base::VectorType            VectorType;
+  typedef typename Base::VectorTypeMG          VectorTypeMG;
 
 public:
   MultigridPreconditioner(MPI_Comm const & mpi_comm);
@@ -73,8 +74,9 @@ public:
     PDEOperator const &                                                    pde_operator,
     MultigridOperatorType const &                                          mg_operator_type,
     bool const                                                             mesh_is_moving,
-    Map const &                                                            dirichlet_bc,
-    PeriodicFacePairs const &                                              periodic_face_pairs);
+    Map_DBC const &                                                        dirichlet_bc,
+    Map_DBC_ComponentMask const & dirichlet_bc_component_mask,
+    PeriodicFacePairs const &     periodic_face_pairs);
 
   /*
    *  This function updates the multigrid preconditioner.
@@ -92,11 +94,13 @@ private:
   initialize_operator(unsigned int const level) override;
 
   void
-  initialize_dof_handler_and_constraints(bool const                         operator_is_singular,
-                                         PeriodicFacePairs const &          periodic_face_pairs,
-                                         dealii::FiniteElement<dim> const & fe,
-                                         dealii::Triangulation<dim> const * tria,
-                                         Map const &                        dirichlet_bc) override;
+  initialize_dof_handler_and_constraints(
+    bool const                         operator_is_singular,
+    PeriodicFacePairs const &          periodic_face_pairs,
+    dealii::FiniteElement<dim> const & fe,
+    dealii::Triangulation<dim> const * tria,
+    Map_DBC const &                    dirichlet_bc,
+    Map_DBC_ComponentMask const &      dirichlet_bc_component_mask) override;
 
   void
   initialize_transfer_operators() override;
