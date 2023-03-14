@@ -195,6 +195,8 @@ private:
     this->param.grid.triangulation_type = TriangulationType::Distributed;
     this->param.grid.mapping_degree     = this->param.degree_u;
     this->param.degree_p                = DegreePressure::MixedOrder;
+    this->param.grid.element_type       = ElementType::Hypercube;
+    this->param.grid.multigrid          = MultigridVariant::LocalSmoothing;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)

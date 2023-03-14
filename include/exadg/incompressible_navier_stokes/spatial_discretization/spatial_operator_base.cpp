@@ -53,8 +53,6 @@ SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
     field(field_in),
     dof_index_first_point(0),
     evaluation_time(0.0),
-    fe_p(parameters_in.get_degree_p(parameters_in.degree_u)),
-    fe_u_scalar(parameters_in.degree_u),
     dof_handler_u(*grid_in->triangulation),
     dof_handler_p(*grid_in->triangulation),
     dof_handler_u_scalar(*grid_in->triangulation),
@@ -147,10 +145,14 @@ SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
   matrix_free_data.insert_constraint(&constraint_u_scalar, field + dof_index_u_scalar);
 
   // quadrature
-  matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree_u + 1), field + quad_index_u);
-  matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.get_degree_p(param.degree_u) + 1),
+  matrix_free_data.insert_quadrature(fe_u->reference_cell().template get_gauss_type_quadrature<dim>(
+                                       param.degree_u + 1),
+                                     field + quad_index_u);
+  matrix_free_data.insert_quadrature(fe_p->reference_cell().template get_gauss_type_quadrature<dim>(
+                                       param.get_degree_p(param.degree_u) + 1),
                                      field + quad_index_p);
-  matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree_u + (param.degree_u + 2) / 2),
+  matrix_free_data.insert_quadrature(fe_u->reference_cell().template get_gauss_type_quadrature<dim>(
+                                       param.degree_u + (param.degree_u + 2) / 2),
                                      field + quad_index_u_nonlinear);
 
   // TODO create those quadrature rules only when needed
@@ -256,22 +258,43 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::distribute_dofs()
 {
-  if(param.spatial_discretization == SpatialDiscretization::L2)
+  if(param.grid.element_type == ElementType::Hypercube)
   {
-    fe_u = std::make_shared<dealii::FESystem<dim>>(dealii::FE_DGQ<dim>(param.degree_u), dim);
+    fe_p        = std::make_shared<dealii::FE_DGQ<dim>>(param.get_degree_p(param.degree_u));
+    fe_u_scalar = std::make_shared<dealii::FE_DGQ<dim>>(param.degree_u);
+    if(param.spatial_discretization == SpatialDiscretization::L2)
+    {
+      fe_u = std::make_shared<dealii::FESystem<dim>>(dealii::FE_DGQ<dim>(param.degree_u), dim);
+    }
+    else if(param.spatial_discretization == SpatialDiscretization::HDIV)
+    {
+      // The constructor of FE_RaviartThomas takes the degree in tangential direction as an
+      // argument.
+      fe_u = std::make_shared<dealii::FE_RaviartThomasNodal<dim>>(param.degree_u - 1);
+    }
+    else
+      AssertThrow(false, dealii::ExcMessage("FE not implemented."));
   }
-  else if(param.spatial_discretization == SpatialDiscretization::HDIV)
+  else if(param.grid.element_type == ElementType::Simplex)
   {
-    // The constructor of FE_RaviartThomas takes the degree in tangential direction as an argument.
-    fe_u = std::make_shared<dealii::FE_RaviartThomasNodal<dim>>(param.degree_u - 1);
+    if(param.spatial_discretization == SpatialDiscretization::L2)
+    {
+      fe_u =
+        std::make_shared<dealii::FESystem<dim>>(dealii::FE_SimplexDGP<dim>(param.degree_u), dim);
+      fe_p = std::make_shared<dealii::FE_SimplexDGP<dim>>(param.get_degree_p(param.degree_u));
+      fe_u_scalar = std::make_shared<dealii::FE_SimplexDGP<dim>>(param.degree_u);
+    }
+    else
+      AssertThrow(false, dealii::ExcMessage("FE not implemented."));
   }
   else
-    AssertThrow(false, dealii::ExcMessage("FE not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
+
 
   // enumerate degrees of freedom
   dof_handler_u.distribute_dofs(*fe_u);
-  dof_handler_p.distribute_dofs(fe_p);
-  dof_handler_u_scalar.distribute_dofs(fe_u_scalar);
+  dof_handler_p.distribute_dofs(*fe_p);
+  dof_handler_u_scalar.distribute_dofs(*fe_u_scalar);
 
   // Strong imposition of boundary conditions in the case of HDIV
   if(param.spatial_discretization == SpatialDiscretization::HDIV)
@@ -316,24 +339,9 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
     }
   }
 
-  unsigned int ndofs_per_cell_velocity;
-  if(param.spatial_discretization == SpatialDiscretization::L2)
-  {
-    ndofs_per_cell_velocity = dealii::Utilities::pow(param.degree_u + 1, dim) * dim;
-  }
-  else if(param.spatial_discretization == SpatialDiscretization::HDIV)
-  {
-    ndofs_per_cell_velocity =
-      dealii::Utilities::pow(param.degree_u, dim - 1) * (param.degree_u + 1) * dim;
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("FE not implemented."));
-  }
+  unsigned int ndofs_per_cell_velocity = fe_u->n_dofs_per_cell();
 
-  unsigned int const ndofs_per_cell_pressure =
-    dealii::Utilities::pow(param.get_degree_p(param.degree_u) + 1, dim);
-
+  unsigned int const ndofs_per_cell_pressure = fe_p->n_dofs_per_cell();
 
   pcout << "Velocity:" << std::endl;
   if(param.spatial_discretization == SpatialDiscretization::L2)
@@ -843,10 +851,10 @@ SpatialOperatorBase<dim, Number>::get_fe_u() const
 }
 
 template<int dim, typename Number>
-dealii::FE_DGQ<dim> const &
+dealii::FiniteElement<dim> const &
 SpatialOperatorBase<dim, Number>::get_fe_p() const
 {
-  return fe_p;
+  return *fe_p;
 }
 
 template<int dim, typename Number>
