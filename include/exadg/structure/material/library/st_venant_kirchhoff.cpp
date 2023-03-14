@@ -128,10 +128,10 @@ StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients(
 
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  StVenantKirchhoff<dim, Number>::evaluate_stress(
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
-    unsigned int const                                              cell,
-    unsigned int const                                              q) const
+StVenantKirchhoff<dim, Number>::evaluate_stress(
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
+  unsigned int const                                              cell,
+  unsigned int const                                              q) const
 {
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> S;
 
@@ -166,7 +166,8 @@ dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 }
 
 template<int dim, typename Number>
-dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> StVenantKirchhoff<dim, Number>::apply_C(
+dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+StVenantKirchhoff<dim, Number>::apply_C(
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
   unsigned int const                                              cell,
   unsigned int const                                              q) const

@@ -145,11 +145,11 @@ struct FunctionEvaluator<0, dim, Number>
   }
 
   static inline DEAL_II_ALWAYS_INLINE //
-      dealii::Tensor<0, dim, dealii::VectorizedArray<Number>>
-      value(std::shared_ptr<FunctionCached<0, dim>> function,
-            unsigned int const                      face,
-            unsigned int const                      q,
-            unsigned int const                      quad_index)
+    dealii::Tensor<0, dim, dealii::VectorizedArray<Number>>
+    value(std::shared_ptr<FunctionCached<0, dim>> function,
+          unsigned int const                      face,
+          unsigned int const                      q,
+          unsigned int const                      quad_index)
   {
     dealii::VectorizedArray<Number> value = dealii::make_vectorized_array<Number>(0.0);
 
@@ -188,11 +188,11 @@ struct FunctionEvaluator<1, dim, Number>
   }
 
   static inline DEAL_II_ALWAYS_INLINE //
-      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
-      value(std::shared_ptr<FunctionCached<1, dim>> function,
-            unsigned int const                      face,
-            unsigned int const                      q,
-            unsigned int const                      quad_index)
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
+    value(std::shared_ptr<FunctionCached<1, dim>> function,
+          unsigned int const                      face,
+          unsigned int const                      q,
+          unsigned int const                      quad_index)
   {
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> value;
 
@@ -279,11 +279,11 @@ struct FunctionEvaluator<2, dim, Number>
   }
 
   static inline DEAL_II_ALWAYS_INLINE //
-      dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-      value(std::shared_ptr<FunctionCached<2, dim>> function,
-            unsigned int const                      face,
-            unsigned int const                      q,
-            unsigned int const                      quad_index)
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+    value(std::shared_ptr<FunctionCached<2, dim>> function,
+          unsigned int const                      face,
+          unsigned int const                      q,
+          unsigned int const                      quad_index)
   {
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> value;
 
@@ -338,11 +338,11 @@ struct FunctionEvaluator<2, dim, Number>
   }
 
   static inline DEAL_II_ALWAYS_INLINE //
-      dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
-      value_symmetric(std::shared_ptr<FunctionCached<2, dim>> function,
-                      unsigned int const                      face,
-                      unsigned int const                      q,
-                      unsigned int const                      quad_index)
+    dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
+    value_symmetric(std::shared_ptr<FunctionCached<2, dim>> function,
+                    unsigned int const                      face,
+                    unsigned int const                      q,
+                    unsigned int const                      quad_index)
   {
     dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> value;
 
