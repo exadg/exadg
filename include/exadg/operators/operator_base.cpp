@@ -260,6 +260,7 @@ OperatorBase<dim, Number, n_components>::apply(VectorType & dst, VectorType cons
   if(is_dg)
   {
     if(evaluate_face_integrals())
+    {
       matrix_free->loop(&This::cell_loop,
                         &This::face_loop,
                         &This::boundary_face_loop_hom_operator,
@@ -267,8 +268,11 @@ OperatorBase<dim, Number, n_components>::apply(VectorType & dst, VectorType cons
                         dst,
                         src,
                         true);
+    }
     else
+    {
       matrix_free->cell_loop(&This::cell_loop, this, dst, src, true);
+    }
   }
   else
   {
@@ -295,10 +299,14 @@ OperatorBase<dim, Number, n_components>::apply_add(VectorType & dst, VectorType 
   if(is_dg)
   {
     if(evaluate_face_integrals())
+    {
       matrix_free->loop(
         &This::cell_loop, &This::face_loop, &This::boundary_face_loop_hom_operator, this, dst, src);
+    }
     else
+    {
       matrix_free->cell_loop(&This::cell_loop, this, dst, src);
+    }
   }
   else
   {
