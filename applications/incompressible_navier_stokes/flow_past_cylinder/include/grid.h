@@ -1122,9 +1122,15 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation,
                                ElementType                element_type,
                                bool                       is_2d = true)
 {
-  dealii::Triangulation<2> left, left_bottom, left_middle, left_top, middle, middle_top,
-    middle_bottom, middle_left, middle_right, middle_left_top, middle_left_bottom, middle_right_top,
-    middle_right_bottom, right, right_bottom, right_middle, right_top, tmp;
+  dealii::Triangulation<2>::MeshSmoothing const mesh_smoothing = triangulation.get_mesh_smoothing();
+
+  dealii::Triangulation<2> left(mesh_smoothing), left_bottom(mesh_smoothing),
+    left_middle(mesh_smoothing), left_top(mesh_smoothing), middle(mesh_smoothing),
+    middle_top(mesh_smoothing), middle_bottom(mesh_smoothing), middle_left(mesh_smoothing),
+    middle_right(mesh_smoothing), middle_left_top(mesh_smoothing),
+    middle_left_bottom(mesh_smoothing), middle_right_top(mesh_smoothing),
+    middle_right_bottom(mesh_smoothing), right(mesh_smoothing), right_bottom(mesh_smoothing),
+    right_middle(mesh_smoothing), right_top(mesh_smoothing), tmp(mesh_smoothing);
 
   // left
   std::vector<unsigned int> ref_left_top    = {nele_x_left, nele_y_top};
@@ -1430,6 +1436,19 @@ void
 do_create_coarse_triangulation(dealii::Triangulation<3> & triangulation, ElementType element_type)
 {
   dealii::Triangulation<2> tria_2D;
+
+  if(triangulation.get_mesh_smoothing() == dealii::Triangulation<3>::none)
+  {
+    tria_2D.set_mesh_smoothing(dealii::Triangulation<2>::none);
+  }
+  else if(triangulation.get_mesh_smoothing() ==
+          dealii::Triangulation<3>::limit_level_difference_at_vertices)
+  {
+    tria_2D.set_mesh_smoothing(dealii::Triangulation<2>::limit_level_difference_at_vertices);
+  }
+  else
+    AssertThrow(false, dealii::ExcMessage("Invalid parameter mesh smoothing."));
+
   do_create_coarse_triangulation<2>(tria_2D, element_type, false);
 
   dealii::GridGenerator::extrude_triangulation(tria_2D, nele_z, H, triangulation);
