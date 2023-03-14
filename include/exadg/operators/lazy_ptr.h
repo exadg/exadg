@@ -53,14 +53,12 @@ public:
     return t;
   }
 
-  T const *
-  operator->() const
+  T const * operator->() const
   {
     return t_ptr;
   }
 
-  T const &
-  operator*() const
+  T const & operator*() const
   {
     return *t_ptr;
   }

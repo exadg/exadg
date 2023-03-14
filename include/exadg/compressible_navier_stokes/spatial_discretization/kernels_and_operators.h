@@ -42,11 +42,11 @@ namespace CompNS
 {
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-  dealii::VectorizedArray<Number>
-  calculate_pressure(dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & rho_u,
-                     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & u,
-                     dealii::VectorizedArray<Number> const &                         rho_E,
-                     Number const &                                                  gamma)
+    dealii::VectorizedArray<Number>
+    calculate_pressure(dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & rho_u,
+                       dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & u,
+                       dealii::VectorizedArray<Number> const &                         rho_E,
+                       Number const &                                                  gamma)
 {
   return (gamma - 1.0) * (rho_E - 0.5 * scalar_product(rho_u, u));
 }
@@ -115,21 +115,21 @@ inline DEAL_II_ALWAYS_INLINE //
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-  dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
-  calculate_grad_T(dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & grad_E,
-                   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & u,
-                   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & grad_u,
-                   Number const &                                                  gamma,
-                   Number const &                                                  R)
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
+    calculate_grad_T(dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & grad_E,
+                     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & u,
+                     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & grad_u,
+                     Number const &                                                  gamma,
+                     Number const &                                                  R)
 {
   return (gamma - 1.0) / R * (grad_E - u * grad_u);
 }
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  calculate_stress_tensor(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & grad_u,
-                          Number const &                                                  viscosity)
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+    calculate_stress_tensor(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & grad_u,
+                            Number const & viscosity)
 {
   dealii::VectorizedArray<Number> const divu = (2. / 3.) * trace(grad_u);
 
@@ -223,13 +223,13 @@ inline DEAL_II_ALWAYS_INLINE //
  */
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-  dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
-  calculate_flux(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & momentum_flux_M,
-                 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & momentum_flux_P,
-                 dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & rho_u_M,
-                 dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & rho_u_P,
-                 dealii::VectorizedArray<Number> const &                         lambda,
-                 dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & normal)
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
+    calculate_flux(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & momentum_flux_M,
+                   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & momentum_flux_P,
+                   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & rho_u_M,
+                   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & rho_u_P,
+                   dealii::VectorizedArray<Number> const &                         lambda,
+                   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & normal)
 {
   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> out;
   for(unsigned int d = 0; d < dim; ++d)
@@ -248,13 +248,13 @@ inline DEAL_II_ALWAYS_INLINE //
  */
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-  dealii::VectorizedArray<Number>
-  calculate_flux(dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & flux_M,
-                 dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & flux_P,
-                 dealii::VectorizedArray<Number> const &                         value_M,
-                 dealii::VectorizedArray<Number> const &                         value_P,
-                 dealii::VectorizedArray<Number> const &                         lambda,
-                 dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & normal)
+    dealii::VectorizedArray<Number>
+    calculate_flux(dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & flux_M,
+                   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & flux_P,
+                   dealii::VectorizedArray<Number> const &                         value_M,
+                   dealii::VectorizedArray<Number> const &                         value_P,
+                   dealii::VectorizedArray<Number> const &                         lambda,
+                   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & normal)
 {
   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> average_flux = 0.5 * (flux_M + flux_P);
 

@@ -131,7 +131,11 @@ Operator<dim, n_components, Number>::distribute_dofs()
 
   dof_handler.distribute_dofs(*fe);
 
-  // affine constraints only relevant for continuous FE discretization
+  // Affine constraints are only relevant for continuous Galerin discretization.
+  // The AffineConstraints object is used to initialize MatrixFree. Here, we apply homogeneous
+  // boundary conditions as needed by vmult() in iterative solvers for linear systems of equations,
+  // implemented via dealii::MatrixFree and FEEvaluation::read_dof_values() (or gather_evaluate()).
+  // The actual inhomogeneous boundary data needs to be imposed separately and explicitly in ExaDG.
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
     affine_constraints.clear();

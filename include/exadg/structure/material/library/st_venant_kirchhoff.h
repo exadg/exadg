@@ -69,14 +69,14 @@ public:
                     StVenantKirchhoffData<dim> const &      data);
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  evaluate_stress(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
-                  unsigned int const                                              cell,
-                  unsigned int const                                              q) const;
+    evaluate_stress(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
+                    unsigned int const                                              cell,
+                    unsigned int const                                              q) const;
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  apply_C(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
-          unsigned int const                                              cell,
-          unsigned int const                                              q) const;
+    apply_C(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
+            unsigned int const                                              cell,
+            unsigned int const                                              q) const;
 
 private:
   Number
