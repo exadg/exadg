@@ -510,11 +510,17 @@ OperatorBase<dim, Number, n_components>::apply_inverse_block_diagonal(VectorType
   // matrix-free
   if(this->data.implement_block_diagonal_preconditioner_matrix_free)
   {
-    AssertThrow((evaluate_face_integrals() and data.use_cell_based_loops) or
-                  not(evaluate_face_integrals()),
-                dealii::ExcMessage(
-                  "Cell based face loops have to be activated for matrix-free implementation of "
-                  "block diagonal preconditioner, if face integrals need to be evaluated."));
+    if(evaluate_face_integrals())
+    {
+      AssertThrow(data.use_cell_based_loops,
+                  dealii::ExcMessage("Cell based face loops have to be activated for matrix-free "
+                                     "implementation of block diagonal preconditioner, if face "
+                                     "integrals need to be evaluated."));
+      AssertThrow(matrix_free->get_dof_handler(data.dof_index)
+                    .get_triangulation()
+                    .all_reference_cells_are_hyper_cube(),
+                  dealii::ExcMessage("Can't do cell based loop over faces for simplices."));
+    }
 
     // Solve elementwise block Jacobi problems iteratively using an elementwise solver vectorized
     // over several elements.
@@ -612,11 +618,6 @@ OperatorBase<dim, Number, n_components>::apply_add_block_diagonal_elementwise(
     unsigned int const n_faces = dealii::ReferenceCells::template get_hypercube<dim>().n_faces();
     for(unsigned int face = 0; face < n_faces; ++face)
     {
-      AssertThrow(matrix_free->get_dof_handler(data.dof_index)
-                    .get_triangulation()
-                    .all_reference_cells_are_hyper_cube(),
-                  dealii::ExcMessage("Can't do cell based loop over faces for simplices."));
-
       auto bids = (*matrix_free).get_faces_by_cells_boundary_id(cell, face);
       auto bid  = bids[0];
 
@@ -1341,11 +1342,6 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
     unsigned int const n_faces = dealii::ReferenceCells::template get_hypercube<dim>().n_faces();
     for(unsigned int face = 0; face < n_faces; ++face)
     {
-      AssertThrow(matrix_free.get_dof_handler(data.dof_index)
-                    .get_triangulation()
-                    .all_reference_cells_are_hyper_cube(),
-                  dealii::ExcMessage("Can't do cell based loop over faces for simplices."));
-
       auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
       auto bid  = bids[0];
 
@@ -1623,11 +1619,6 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_block_diagonal(
     unsigned int const n_faces = dealii::ReferenceCells::template get_hypercube<dim>().n_faces();
     for(unsigned int face = 0; face < n_faces; ++face)
     {
-      AssertThrow(matrix_free.get_dof_handler(data.dof_index)
-                    .get_triangulation()
-                    .all_reference_cells_are_hyper_cube(),
-                  dealii::ExcMessage("Can't do cell based loop over faces for simplices."));
-
       auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
       auto bid  = bids[0];
 

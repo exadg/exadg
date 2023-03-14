@@ -69,7 +69,20 @@ public:
 
     if(not(explicit_matrix_free_inverse_mass_available))
     {
-      initialize_inverse_mass_operator_with_block_jacobi();
+      // initialize mass operator
+      dealii::AffineConstraints<Number> constraint;
+      constraint.clear();
+      constraint.close();
+
+      MassOperatorData<dim> mass_operator_data;
+      mass_operator_data.dof_index  = dof_index;
+      mass_operator_data.quad_index = quad_index;
+
+      mass_operator.initialize(*matrix_free, constraint, mass_operator_data);
+
+      mass_preconditioner =
+        std::make_shared<BlockJacobiPreconditioner<MassOperator<dim, n_components, Number>>>(
+          mass_operator);
     }
   }
 
@@ -78,13 +91,13 @@ public:
   {
     dst.zero_out_ghost_values();
 
-    if(not(explicit_matrix_free_inverse_mass_available))
+    if(explicit_matrix_free_inverse_mass_available)
     {
-      mass_preconditioner->vmult(dst, src);
+      matrix_free->cell_loop(&This::cell_loop, this, dst, src);
     }
     else
     {
-      matrix_free->cell_loop(&This::cell_loop, this, dst, src);
+      mass_preconditioner->vmult(dst, src);
     }
   }
 
@@ -109,26 +122,6 @@ private:
     }
   }
 
-  void
-  initialize_inverse_mass_operator_with_block_jacobi()
-  {
-    // initialize mass operator
-    dealii::AffineConstraints<Number> const & constraint =
-      matrix_free->get_affine_constraints(dof_index);
-
-    MassOperatorData<dim> mass_operator_data;
-    mass_operator_data.dof_index  = dof_index;
-    mass_operator_data.quad_index = quad_index;
-
-    mass_operator.initialize(*matrix_free, constraint, mass_operator_data);
-
-    // build a BlockJacobiPreconditioner and use the vmult(dst,src) for applying the inverse mass
-    // operator on  source the vector
-    mass_preconditioner =
-      std::make_shared<BlockJacobiPreconditioner<MassOperator<dim, n_components, Number>>>(
-        mass_operator);
-  }
-
   dealii::MatrixFree<dim, Number> const * matrix_free;
 
   unsigned int dof_index, quad_index;
@@ -138,7 +131,8 @@ private:
 
   MassOperator<dim, n_components, Number> mass_operator;
 
-  std::shared_ptr<PreconditionerBase<Number>> mass_preconditioner;
+  std::shared_ptr<BlockJacobiPreconditioner<MassOperator<dim, n_components, Number>>>
+    mass_preconditioner;
 };
 
 } // namespace ExaDG
