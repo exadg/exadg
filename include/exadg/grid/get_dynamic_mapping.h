@@ -34,7 +34,7 @@ namespace ExaDG
  */
 template<int dim, typename Number>
 std::shared_ptr<dealii::Mapping<dim> const>
-get_dynamic_mapping(std::shared_ptr<Grid<dim> const>                        grid,
+get_dynamic_mapping(std::shared_ptr<GridManager<dim> const>                 grid,
                     std::shared_ptr<GridMotionInterface<dim, Number> const> grid_motion)
 {
   if(grid_motion.get() != 0)

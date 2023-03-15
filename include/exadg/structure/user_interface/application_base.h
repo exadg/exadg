@@ -121,7 +121,7 @@ public:
     return param;
   }
 
-  std::shared_ptr<Grid<dim> const>
+  std::shared_ptr<GridManager<dim> const>
   get_grid() const
   {
     return grid;
@@ -160,7 +160,7 @@ protected:
 
   Parameters param;
 
-  std::shared_ptr<Grid<dim>> grid;
+  std::shared_ptr<GridManager<dim>> grid;
 
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
   std::shared_ptr<MaterialDescriptor>      material_descriptor;

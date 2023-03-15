@@ -29,7 +29,8 @@ namespace ExaDG
 {
 template<int dim, typename BoundaryDescriptor>
 void
-verify_boundary_conditions(BoundaryDescriptor const & boundary_descriptor, Grid<dim> const & grid)
+verify_boundary_conditions(BoundaryDescriptor const & boundary_descriptor,
+                           GridManager<dim> const &   grid)
 {
   // fill set with periodic boundary ids
   std::set<dealii::types::boundary_id> periodic_boundary_ids;

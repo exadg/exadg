@@ -49,7 +49,7 @@ namespace Poisson
 {
 template<int dim, int n_components, typename Number>
 Operator<dim, n_components, Number>::Operator(
-  std::shared_ptr<Grid<dim> const>                     grid_in,
+  std::shared_ptr<GridManager<dim> const>              grid_in,
   std::shared_ptr<BoundaryDescriptor<rank, dim> const> boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim> const>           field_functions_in,
   Parameters const &                                   param_in,

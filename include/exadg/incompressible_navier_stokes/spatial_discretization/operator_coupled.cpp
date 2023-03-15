@@ -34,7 +34,7 @@ namespace IncNS
 {
 template<int dim, typename Number>
 OperatorCoupled<dim, Number>::OperatorCoupled(
-  std::shared_ptr<Grid<dim> const>                  grid_in,
+  std::shared_ptr<GridManager<dim> const>           grid_in,
   std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion_in,
   std::shared_ptr<BoundaryDescriptor<dim> const>    boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim> const>        field_functions_in,

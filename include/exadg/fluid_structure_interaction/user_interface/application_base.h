@@ -128,7 +128,7 @@ public:
     return param;
   }
 
-  std::shared_ptr<Grid<dim> const>
+  std::shared_ptr<GridManager<dim> const>
   get_grid() const
   {
     return grid;
@@ -161,7 +161,7 @@ protected:
   dealii::ConditionalOStream pcout;
 
   Structure::Parameters                               param;
-  std::shared_ptr<Grid<dim>>                          grid;
+  std::shared_ptr<GridManager<dim>>                   grid;
   std::shared_ptr<Structure::MaterialDescriptor>      material_descriptor;
   std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor;
   std::shared_ptr<Structure::FieldFunctions<dim>>     field_functions;
@@ -327,7 +327,7 @@ public:
     return param;
   }
 
-  std::shared_ptr<Grid<dim> const>
+  std::shared_ptr<GridManager<dim> const>
   get_grid() const
   {
     return grid;
@@ -397,7 +397,7 @@ protected:
 
   // fluid
   IncNS::Parameters                               param;
-  std::shared_ptr<Grid<dim>>                      grid;
+  std::shared_ptr<GridManager<dim>>               grid;
   std::shared_ptr<IncNS::FieldFunctions<dim>>     field_functions;
   std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor;
 
