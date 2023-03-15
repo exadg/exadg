@@ -39,6 +39,7 @@ OperatorBase<dim, Number, n_components>::OperatorBase()
     time(0.0),
     is_mg(false),
     is_dg(true),
+    has_overset_faces(false),
     data(OperatorBaseData()),
     level(dealii::numbers::invalid_unsigned_int),
     block_diagonal_preconditioner_is_initialized(false),
@@ -80,6 +81,9 @@ OperatorBase<dim, Number, n_components>::reinit(
                                                   false,
                                                   this->data.dof_index,
                                                   this->data.quad_index);
+
+  // setup for overset faces
+  setup_overset_integrators(this->data.overset_face_pairs);
 
   if(!is_dg)
   {
@@ -262,6 +266,10 @@ OperatorBase<dim, Number, n_components>::apply(VectorType & dst, VectorType cons
   if(is_dg)
   {
     if(evaluate_face_integrals())
+    {
+      if(has_overset_faces)
+        overset_integrator_p->gather_evaluate(src, integrator_flags.face_evaluate);
+
       matrix_free->loop(&This::cell_loop,
                         &This::face_loop,
                         &This::boundary_face_loop_hom_operator,
@@ -269,6 +277,7 @@ OperatorBase<dim, Number, n_components>::apply(VectorType & dst, VectorType cons
                         dst,
                         src,
                         true);
+    }
     else
       matrix_free->cell_loop(&This::cell_loop, this, dst, src, true);
   }
@@ -312,8 +321,13 @@ OperatorBase<dim, Number, n_components>::apply_add(VectorType & dst, VectorType 
   if(is_dg)
   {
     if(evaluate_face_integrals())
+    {
+      if(has_overset_faces)
+        overset_integrator_p->gather_evaluate(src, integrator_flags.face_evaluate);
+
       matrix_free->loop(
         &This::cell_loop, &This::face_loop, &This::boundary_face_loop_hom_operator, this, dst, src);
+    }
     else
       matrix_free->cell_loop(&This::cell_loop, this, dst, src);
   }
@@ -402,6 +416,9 @@ void
 OperatorBase<dim, Number, n_components>::evaluate_add(VectorType &       dst,
                                                       VectorType const & src) const
 {
+  if(has_overset_faces)
+    overset_integrator_p->gather_evaluate(src, integrator_flags.face_evaluate);
+
   matrix_free->loop(
     &This::cell_loop, &This::face_loop, &This::boundary_face_loop_full_operator, this, dst, src);
 }
@@ -425,6 +442,9 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
   {
     if(data.use_cell_based_loops)
     {
+      AssertThrow(!has_overset_faces,
+                  dealii::ExcMessage("Cell based loops not supported with overset elements"));
+
       matrix_free->cell_loop(&This::cell_based_loop_diagonal, this, diagonal, diagonal);
     }
     else
@@ -496,6 +516,9 @@ OperatorBase<dim, Number, n_components>::add_block_diagonal_matrices(BlockMatrix
   {
     if(data.use_cell_based_loops)
     {
+      AssertThrow(!has_overset_faces,
+                  dealii::ExcMessage("Cell based loops not supported with overset elements"));
+
       matrix_free->cell_loop(&This::cell_based_loop_block_diagonal, this, matrices, matrices);
     }
     else
@@ -649,7 +672,8 @@ OperatorBase<dim, Number, n_components>::apply_add_block_diagonal_elementwise(
 
       integrator_m->evaluate(integrator_flags.face_evaluate);
 
-      if(bid == dealii::numbers::internal_face_boundary_id) // internal face
+      if(bid == dealii::numbers::internal_face_boundary_id ||
+         is_overset_face(face)) // internal face
       {
         this->do_face_int_integral_cell_based(*integrator_m, *integrator_p);
       }
@@ -805,6 +829,10 @@ OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix(
   // assemble matrix locally on each process
   if(evaluate_face_integrals() && is_dg)
   {
+    AssertThrow(!has_overset_faces,
+                dealii::ExcMessage(
+                  "Computation of system Matrix not supported with overset elements"));
+
     matrix_free->loop(&This::cell_loop_calculate_system_matrix,
                       &This::face_loop_calculate_system_matrix,
                       &This::boundary_face_loop_calculate_system_matrix,
@@ -844,6 +872,9 @@ void
 OperatorBase<dim, Number, n_components>::reinit_boundary_face(unsigned int const face) const
 {
   integrator_m->reinit(face);
+
+  if(has_overset_faces)
+    overset_integrator_p->reinit(face);
 }
 
 template<int dim, typename Number, int n_components>
@@ -866,6 +897,19 @@ OperatorBase<dim, Number, n_components>::do_face_integral(IntegratorFace & integ
 
   AssertThrow(false,
               dealii::ExcMessage("OperatorBase::do_face_integral() has not been implemented!"));
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::do_overset_integral(
+  IntegratorFace &       integrator_m,
+  RemoteIntegratorFace & overset_integrator_p) const
+{
+  (void)integrator_m;
+  (void)overset_integrator_p;
+
+  AssertThrow(false,
+              dealii::ExcMessage("OperatorBase::do_overset_integral() has not been implemented!"));
 }
 
 template<int dim, typename Number, int n_components>
@@ -948,6 +992,13 @@ OperatorBase<dim, Number, n_components>::reinit_face_cell_based(
   {
     integrator_p->reinit(cell, face);
   }
+}
+
+template<int dim, typename Number, int n_components>
+bool
+OperatorBase<dim, Number, n_components>::is_overset_face(unsigned int const face) const
+{
+  return overset_face_ids.find(matrix_free->get_boundary_id(face)) != overset_face_ids.end();
 }
 
 template<int dim, typename Number, int n_components>
@@ -1082,9 +1133,16 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_hom_operator(
 
     integrator_m->gather_evaluate(src, integrator_flags.face_evaluate);
 
-    do_boundary_integral(*integrator_m,
-                         OperatorType::homogeneous,
-                         matrix_free.get_boundary_id(face));
+    if(is_overset_face(face))
+    {
+      do_overset_integral(*integrator_m, *overset_integrator_p);
+    }
+    else
+    {
+      do_boundary_integral(*integrator_m,
+                           OperatorType::homogeneous,
+                           matrix_free.get_boundary_id(face));
+    }
 
     integrator_m->integrate_scatter(integrator_flags.face_integrate, dst);
   }
@@ -1104,11 +1162,14 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_inhom_operator(
   {
     for(unsigned int face = range.first; face < range.second; face++)
     {
+      // boundary_face_loop_inhom_operator is called in combination with cell_loop_empty
+      if(is_overset_face(face))
+        continue;
+
       this->reinit_boundary_face(face);
 
       // note: no gathering/evaluation is necessary when calculating the
       //       inhomogeneous part of boundary face integrals
-
       do_boundary_integral(*integrator_m,
                            OperatorType::inhomogeneous,
                            matrix_free.get_boundary_id(face));
@@ -1120,11 +1181,14 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_inhom_operator(
   {
     for(unsigned int face = range.first; face < range.second; face++)
     {
+      // boundary_face_loop_inhom_operator is called in combination with cell_loop_empty
+      if(is_overset_face(face))
+        continue;
+
       this->reinit_boundary_face(face);
 
       // note: no gathering/evaluation is necessary when calculating the
       //       inhomogeneous part of boundary face integrals
-
       do_boundary_integral_continuous(*integrator_m, matrix_free.get_boundary_id(face));
 
       integrator_m->integrate_scatter(integrator_flags.face_integrate, dst);
@@ -1146,7 +1210,10 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_full_operator(
 
     integrator_m->gather_evaluate(src, integrator_flags.face_evaluate);
 
-    do_boundary_integral(*integrator_m, OperatorType::full, matrix_free.get_boundary_id(face));
+    if(is_overset_face(face))
+      do_overset_integral(*integrator_m, *overset_integrator_p);
+    else
+      do_boundary_integral(*integrator_m, OperatorType::full, matrix_free.get_boundary_id(face));
 
     integrator_m->integrate_scatter(integrator_flags.face_integrate, dst);
   }
@@ -1311,7 +1378,10 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_diagonal(
 
       integrator_m->evaluate(integrator_flags.face_evaluate);
 
-      this->do_boundary_integral(*integrator_m, OperatorType::homogeneous, bid);
+      if(is_overset_face(face))
+        this->do_face_int_integral(*integrator_m, *integrator_p);
+      else
+        this->do_boundary_integral(*integrator_m, OperatorType::homogeneous, bid);
 
       integrator_m->integrate(integrator_flags.face_integrate);
 
@@ -1588,7 +1658,10 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_block_diagonal(
 
       integrator_m->evaluate(integrator_flags.face_evaluate);
 
-      this->do_boundary_integral(*integrator_m, OperatorType::homogeneous, bid);
+      if(is_overset_face(face))
+        this->do_face_int_integral(*integrator_m, *integrator_p);
+      else
+        this->do_boundary_integral(*integrator_m, OperatorType::homogeneous, bid);
 
       integrator_m->integrate(integrator_flags.face_integrate);
 
@@ -1981,6 +2054,37 @@ OperatorBase<dim, Number, n_components>::evaluate_face_integrals() const
          (integrator_flags.face_integrate != dealii::EvaluationFlags::nothing);
 }
 
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::setup_overset_integrators(
+  std::map<dealii::types::boundary_id, dealii::types::boundary_id> const & overset_face_pairs)
+{
+  has_overset_faces = (overset_face_pairs.size() > 0);
+
+
+  if(has_overset_faces)
+  {
+    AssertThrow(is_dg, dealii::ExcMessage("Overset elements currently work with DG only."));
+
+    // setup overset communication
+    overset_comm.initialize_face_pairs({overset_face_pairs.begin(), overset_face_pairs.end()},
+                                       *matrix_free,
+                                       this->data.dof_index,
+                                       this->data.quad_index,
+                                       1.0e-6);
+
+    AssertThrow(overset_comm.all_points_found(),
+                dealii::ExcMessage("Not all remote points of overset faces found."));
+
+    // initialize overset integrator
+    overset_integrator_p =
+      std::make_shared<RemoteIntegratorFace>(overset_comm, matrix_free->get_dof_handler());
+
+    // store all boundary faces in one set
+    for(const auto & face_pair : overset_face_pairs)
+      overset_face_ids.insert(face_pair.first);
+  }
+}
 
 template class OperatorBase<2, float, 1>;
 template class OperatorBase<2, float, 2>;

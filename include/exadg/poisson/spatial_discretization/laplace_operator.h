@@ -59,23 +59,28 @@ public:
   }
 
   void
-  reinit(dealii::MatrixFree<dim, Number> const & matrix_free,
-         LaplaceKernelData const &               data_in,
-         unsigned int const                      dof_index)
+  reinit(dealii::MatrixFree<dim, Number> const &      matrix_free,
+         LaplaceKernelData const &                    data_in,
+         unsigned int const                           dof_index,
+         std::set<dealii::types::boundary_id> const & overset_faces)
   {
     data = data_in;
 
     dealii::FiniteElement<dim> const & fe = matrix_free.get_dof_handler(dof_index).get_fe();
     degree                                = fe.degree;
 
-    calculate_penalty_parameter(matrix_free, dof_index);
+    calculate_penalty_parameter(matrix_free, dof_index, overset_faces);
   }
 
   void
-  calculate_penalty_parameter(dealii::MatrixFree<dim, Number> const & matrix_free,
-                              unsigned int const                      dof_index)
+  calculate_penalty_parameter(dealii::MatrixFree<dim, Number> const &      matrix_free,
+                              unsigned int const                           dof_index,
+                              std::set<dealii::types::boundary_id> const & overset_faces)
   {
-    IP::calculate_penalty_parameter<dim, Number>(array_penalty_parameter, matrix_free, dof_index);
+    IP::calculate_penalty_parameter<dim, Number>(array_penalty_parameter,
+                                                 matrix_free,
+                                                 dof_index,
+                                                 overset_faces);
   }
 
   IntegratorFlags
@@ -234,8 +239,9 @@ private:
   typedef OperatorBase<dim, Number, n_components>    Base;
   typedef LaplaceOperator<dim, Number, n_components> This;
 
-  typedef typename Base::IntegratorCell IntegratorCell;
-  typedef typename Base::IntegratorFace IntegratorFace;
+  typedef typename Base::IntegratorCell       IntegratorCell;
+  typedef typename Base::IntegratorFace       IntegratorFace;
+  typedef typename Base::RemoteIntegratorFace RemoteIntegratorFace;
 
   typedef typename Base::Range Range;
 
@@ -258,8 +264,9 @@ public:
   }
 
   void
-  calculate_penalty_parameter(dealii::MatrixFree<dim, Number> const & matrix_free,
-                              unsigned int const                      dof_index);
+  calculate_penalty_parameter(dealii::MatrixFree<dim, Number> const &      matrix_free,
+                              unsigned int const                           dof_index,
+                              std::set<dealii::types::boundary_id> const & overset_faces);
 
   void
   update_penalty_parameter();
@@ -291,6 +298,10 @@ private:
 
   void
   do_face_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const final;
+
+  void
+  do_overset_integral(IntegratorFace &       integrator_m,
+                      RemoteIntegratorFace & integrator_p) const final;
 
   void
   do_face_int_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const final;

@@ -240,6 +240,9 @@ Operator<dim, n_components, Number>::setup_operators()
   Poisson::LaplaceOperatorData<rank, dim> laplace_operator_data;
   laplace_operator_data.dof_index  = get_dof_index();
   laplace_operator_data.quad_index = get_quad_index();
+  if(not(boundary_descriptor->overset_boundaries.empty()))
+    laplace_operator_data.overset_face_pairs = boundary_descriptor->overset_boundaries;
+
   if(param.spatial_discretization == SpatialDiscretization::CG &&
      not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
@@ -396,6 +399,24 @@ Operator<dim, n_components, Number>::setup_solver()
     iterative_solver =
       std::make_shared<Krylov::SolverCG<Laplace, PreconditionerBase<Number>, VectorType>>(
         laplace_operator, *preconditioner, solver_data);
+  }
+  else if(param.solver == Poisson::Solver::GMRES)
+  {
+    // initialize solver_data
+    Krylov::SolverDataGMRES solver_data;
+    solver_data.solver_tolerance_abs        = param.solver_data.abs_tol;
+    solver_data.solver_tolerance_rel        = param.solver_data.rel_tol;
+    solver_data.max_iter                    = param.solver_data.max_iter;
+    solver_data.max_n_tmp_vectors           = param.solver_data.max_krylov_size;
+    solver_data.compute_performance_metrics = param.compute_performance_metrics;
+
+    if(param.preconditioner != Poisson::Preconditioner::None)
+      solver_data.use_preconditioner = true;
+
+    // initialize solver
+    iterative_solver =
+      std::make_shared<Krylov::SolverGMRES<Laplace, PreconditionerBase<Number>, VectorType>>(
+        laplace_operator, *preconditioner, solver_data, mpi_comm);
   }
   else if(param.solver == Solver::FGMRES)
   {

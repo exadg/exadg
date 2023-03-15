@@ -19,33 +19,31 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_MATRIX_FREE_INTEGRATORS_H_
-#define INCLUDE_EXADG_MATRIX_FREE_INTEGRATORS_H_
+#ifndef INCLUDE_COUPLING_FE_REMOTE_POINT_EVALUATION_DATA_H_
+#define INCLUDE_COUPLING_FE_REMOTE_POINT_EVALUATION_DATA_H_
 
-// deal.II
-#include <deal.II/base/config.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
 
-#include <exadg/coupling/fe_remote_point_evaluation.h>
-
+namespace ExaDG
+{
+/**
+ * A class that stores quantities at the quadrature points.
+ */
 template<int dim,
          int n_components,
          typename Number,
          typename VectorizedArrayType = dealii::VectorizedArray<Number>>
-using CellIntegrator = dealii::FEEvaluation<dim, -1, 0, n_components, Number, VectorizedArrayType>;
+class FERemotePointEvaluationData
+{
+public:
+  using integrator_type =
+    dealii::FEEvaluation<dim, -1, 0, n_components, Number, VectorizedArrayType>;
 
-template<int dim,
-         int n_components,
-         typename Number,
-         typename VectorizedArrayType = dealii::VectorizedArray<Number>>
-using FaceIntegrator =
-  dealii::FEFaceEvaluation<dim, -1, 0, n_components, Number, VectorizedArrayType>;
+  using value_type    = typename integrator_type::value_type;
+  using gradient_type = typename integrator_type::gradient_type;
 
-template<int dim,
-         int n_components,
-         typename Number,
-         typename VectorizedArrayType = dealii::VectorizedArray<Number>>
-using RemoteFaceIntegrator =
-  ExaDG::FERemotePointEvaluation<dim, n_components, Number, VectorizedArrayType>;
-
-#endif
+  std::vector<value_type>    values;
+  std::vector<gradient_type> gradients;
+};
+} // namespace ExaDG
+#endif /*INCLUDE_COUPLING_FE_REMOTE_POINT_EVALUATION_DATA_H_*/

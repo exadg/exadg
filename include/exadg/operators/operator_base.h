@@ -79,6 +79,9 @@ struct OperatorBaseData
   // block Jacobi preconditioner
   bool implement_block_diagonal_preconditioner_matrix_free;
 
+  // overset faces
+  std::map<dealii::types::boundary_id, dealii::types::boundary_id> overset_face_pairs;
+
   // elementwise iterative solution of block Jacobi problems
   Elementwise::Solver         solver_block_diagonal;
   Elementwise::Preconditioner preconditioner_block_diagonal;
@@ -95,6 +98,8 @@ public:
   typedef std::pair<unsigned int, unsigned int>              Range;
   typedef CellIntegrator<dim, n_components, Number>          IntegratorCell;
   typedef FaceIntegrator<dim, n_components, Number>          IntegratorFace;
+
+  typedef RemoteFaceIntegrator<dim, n_components, Number> RemoteIntegratorFace;
 
   static unsigned int const vectorization_length = dealii::VectorizedArray<Number>::size();
 
@@ -317,6 +322,10 @@ protected:
   do_face_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
 
   virtual void
+  do_overset_integral(IntegratorFace &       integrator_m,
+                      RemoteIntegratorFace & overset_integrator_p) const;
+
+  virtual void
   do_boundary_integral(IntegratorFace &                   integrator,
                        OperatorType const &               operator_type,
                        dealii::types::boundary_id const & boundary_id) const;
@@ -381,6 +390,18 @@ protected:
    * Is the discretization based on discontinuous Galerkin method?
    */
   bool is_dg;
+
+  /*
+   * Check if face is overset face
+   */
+  bool
+  is_overset_face(unsigned int const face) const;
+
+  std::set<dealii::types::boundary_id>
+  get_overset_faces() const
+  {
+    return overset_face_ids;
+  }
 
   std::shared_ptr<IntegratorCell> integrator;
   std::shared_ptr<IntegratorFace> integrator_m;
@@ -615,6 +636,23 @@ private:
    */
   bool
   evaluate_face_integrals() const;
+
+  /*
+   * Overset Faces
+   */
+  void
+  setup_overset_integrators(
+    std::map<dealii::types::boundary_id, dealii::types::boundary_id> const & overset_face_pairs);
+
+  // currently overset_integrator_m is integrator_m (point to point map)
+  std::shared_ptr<RemoteIntegratorFace> overset_integrator_p;
+
+  // Overset...
+  bool has_overset_faces;
+
+  std::set<dealii::types::boundary_id> overset_face_ids;
+
+  FERemotePointEvaluationCommunicator<dim, Number> overset_comm;
 
   /*
    * Data structure containing all operator-specific data.

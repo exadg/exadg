@@ -45,7 +45,8 @@ void
 calculate_penalty_parameter(
   dealii::AlignedVector<dealii::VectorizedArray<Number>> & array_penalty_parameter,
   dealii::MatrixFree<dim, Number> const &                  matrix_free,
-  unsigned int const                                       dof_index = 0)
+  unsigned int const                                       dof_index     = 0,
+  std::set<dealii::types::boundary_id> const &             overset_faces = {})
 {
   unsigned int n_cells = matrix_free.n_cell_batches() + matrix_free.n_ghost_cell_batches();
   array_penalty_parameter.resize(n_cells);
@@ -65,6 +66,15 @@ calculate_penalty_parameter(
     reference_cells[0].face_reference_cell(0).template get_gauss_type_quadrature<dim - 1>(degree +
                                                                                           1);
   dealii::FEFaceValues<dim> fe_face_values(mapping, fe, face_quadrature, dealii::update_JxW_values);
+
+  // check if face is at boundary (no periodicy and not an overset face)
+  auto is_true_boundary_face = [&](auto const & cell, unsigned int const f) {
+    // if face is non periodic boundary face, check if it is overset face
+    if(cell->at_boundary(f) && !cell->has_periodic_neighbor(f))
+      return overset_faces.find(cell->face(f)->boundary_id()) == overset_faces.end();
+    else
+      return false;
+  };
 
   for(unsigned int i = 0; i < n_cells; ++i)
   {
@@ -86,7 +96,7 @@ calculate_penalty_parameter(
       for(unsigned int const f : cell->face_indices())
       {
         fe_face_values.reinit(cell, f);
-        Number const factor = (cell->at_boundary(f) && !cell->has_periodic_neighbor(f)) ? 1. : 0.5;
+        Number const factor = is_true_boundary_face(cell, f) ? 1. : 0.5;
         for(unsigned int q = 0; q < face_quadrature.size(); ++q)
         {
           surface_area += fe_face_values.JxW(q) * factor;

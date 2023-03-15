@@ -1,0 +1,25 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "Resolution": {
+        "RunType": "RefineHAndP",
+        "DegreeMin": "3",
+        "DegreeMax": "3",
+        "RefineSpaceMin": "2",
+        "RefineSpaceMax": "2",
+        "DofsMin": "1000",
+        "DofsMax": "10000"
+    },
+    "Application": {
+        "MeshType": "Overset",
+        "Preconditioner": "Multigrid"
+    },
+    "Output": {
+        "OutputDirectory": "output/overset_grids2/",
+        "OutputName": "solution",
+        "WriteOutput": "true"
+    }
+}

@@ -78,6 +78,9 @@ enum_to_string(Solver const enum_type)
     case Solver::CG:
       string_type = "CG";
       break;
+    case Solver::GMRES:
+      string_type = "GMRES";
+      break;
     case Solver::FGMRES:
       string_type = "FGMRES";
       break;

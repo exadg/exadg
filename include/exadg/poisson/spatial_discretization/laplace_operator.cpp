@@ -41,7 +41,7 @@ LaplaceOperator<dim, Number, n_components>::initialize(
 
   Base::reinit(matrix_free, affine_constraints, data);
 
-  kernel.reinit(matrix_free, data.kernel_data, data.dof_index);
+  kernel.reinit(matrix_free, data.kernel_data, data.dof_index, this->get_overset_faces());
 
   this->integrator_flags = kernel.get_integrator_flags(this->is_dg);
 }
@@ -49,17 +49,20 @@ LaplaceOperator<dim, Number, n_components>::initialize(
 template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::calculate_penalty_parameter(
-  dealii::MatrixFree<dim, Number> const & matrix_free,
-  unsigned int const                      dof_index)
+  dealii::MatrixFree<dim, Number> const &      matrix_free,
+  unsigned int const                           dof_index,
+  std::set<dealii::types::boundary_id> const & overset_faces)
 {
-  kernel.calculate_penalty_parameter(matrix_free, dof_index);
+  kernel.calculate_penalty_parameter(matrix_free, dof_index, overset_faces);
 }
 
 template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::update_penalty_parameter()
 {
-  calculate_penalty_parameter(this->get_matrix_free(), this->get_data().dof_index);
+  calculate_penalty_parameter(this->get_matrix_free(),
+                              this->get_data().dof_index,
+                              this->get_overset_faces());
 }
 
 template<int dim, typename Number, int n_components>
@@ -149,6 +152,31 @@ LaplaceOperator<dim, Number, n_components>::do_face_integral(IntegratorFace & in
 
     integrator_m.submit_value(-value_flux, q);
     integrator_p.submit_value(value_flux, q); // + sign since n⁺ = -n⁻
+  }
+}
+
+template<int dim, typename Number, int n_components>
+void
+LaplaceOperator<dim, Number, n_components>::do_overset_integral(
+  IntegratorFace &       integrator_m,
+  RemoteIntegratorFace & integrator_p) const
+{
+  for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+  {
+    value value_m = integrator_m.get_value(q);
+    value value_p = integrator_p.get_value(q);
+
+    value gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
+
+    value normal_gradient_m = integrator_m.get_gradient(q) * integrator_m.get_normal_vector(q);
+    value normal_gradient_p = integrator_p.get_gradient(q) * integrator_m.get_normal_vector(q);
+
+    value value_flux =
+      kernel.calculate_value_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
+
+    integrator_m.submit_normal_derivative(gradient_flux, q);
+
+    integrator_m.submit_value(-value_flux, q);
   }
 }
 
@@ -297,6 +325,9 @@ LaplaceOperator<dim, Number, n_components>::
 {
   for(unsigned int face = range.first; face < range.second; face++)
   {
+    if(this->is_overset_face(face))
+      continue;
+
     this->reinit_boundary_face(face);
 
     // deviating from the standard function boundary_face_loop_inhom_operator()
