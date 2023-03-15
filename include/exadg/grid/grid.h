@@ -47,7 +47,15 @@ public:
   /**
    * Constructor.
    */
-  Grid(GridData const & data, MPI_Comm const & mpi_comm);
+  Grid()
+  {
+  }
+
+  /**
+   * Initialize function
+   */
+  void
+  initialize(GridData const & data, MPI_Comm const & mpi_comm);
 
   /**
    * dealii::Triangulation.

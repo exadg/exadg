@@ -102,7 +102,7 @@ public:
     param.print(pcout, "List of parameters:");
 
     // grid
-    grid = std::make_shared<Grid<dim>>(param.grid, mpi_comm);
+    grid->initialize(param.grid, mpi_comm);
     create_grid();
     print_grid_info(pcout, *grid);
 
@@ -329,7 +329,7 @@ public:
                 dealii::ExcMessage("start_with_low_order has to be true for two-domain solver."));
 
     // grid
-    grid_pre = std::make_shared<Grid<dim>>(param_pre.grid, this->mpi_comm);
+    grid_pre->initialize(param_pre.grid, this->mpi_comm);
     create_grid_precursor();
     print_grid_info(this->pcout, *grid_pre);
 
