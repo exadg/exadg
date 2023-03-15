@@ -1381,7 +1381,7 @@ SpatialOperatorBase<dim, Number>::evaluate_velocity_divergence_term(VectorType &
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::update_viscosity(VectorType const & velocity)
+SpatialOperatorBase<dim, Number>::update_viscosity(VectorType const & velocity) const
 {
   // calculate apparent viscosity for LES turbulence and/or generalized Newtonian models in each
   // cell and face quadrature point

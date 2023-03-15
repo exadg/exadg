@@ -50,7 +50,7 @@ public:
   }
 
   void
-  initialize(PDEOperator & pde_operator)
+  initialize(PDEOperator const & pde_operator)
   {
     this->pde_operator = &pde_operator;
   }
@@ -68,13 +68,13 @@ public:
    * 'evaluate_residual'.
    */
   void
-  evaluate_residual(BlockVectorType & dst, BlockVectorType const & src)
+  evaluate_residual(BlockVectorType & dst, BlockVectorType const & src) const
   {
     pde_operator->evaluate_nonlinear_residual(dst, src, rhs_vector, time, scaling_factor_mass);
   }
 
 private:
-  PDEOperator * pde_operator;
+  PDEOperator const * pde_operator;
 
   VectorType const * rhs_vector;
   double             time;
@@ -282,7 +282,7 @@ public:
                               BlockVectorType const & src,
                               VectorType const *      rhs_vector,
                               double const &          time,
-                              double const &          scaling_factor_mass);
+                              double const &          scaling_factor_mass) const;
 
   /*
    * This function evaluates the nonlinear residual of the steady Navier-Stokes equations.
@@ -293,7 +293,7 @@ public:
   void
   evaluate_nonlinear_residual_steady(BlockVectorType &       dst,
                                      BlockVectorType const & src,
-                                     double const &          time);
+                                     double const &          time) const;
 
   /*
    * This function calculates the matrix-vector product for the linear(ized) problem.

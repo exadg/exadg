@@ -353,7 +353,7 @@ public:
    * viscosity.
    */
   void
-  update_viscosity(VectorType const & velocity);
+  update_viscosity(VectorType const & velocity) const;
 
   /*
    * Projection step.
@@ -654,7 +654,7 @@ private:
   /*
    * LES turbulence and generalized Newtonian models.
    */
-  ViscosityModel<dim, Number> viscosity_model;
+  mutable ViscosityModel<dim, Number> viscosity_model;
 };
 
 } // namespace IncNS

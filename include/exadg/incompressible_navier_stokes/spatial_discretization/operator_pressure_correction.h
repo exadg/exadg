@@ -48,7 +48,7 @@ public:
   }
 
   void
-  initialize(PDEOperator & pde_operator)
+  initialize(PDEOperator const & pde_operator)
   {
     this->pde_operator = &pde_operator;
   }
@@ -72,7 +72,7 @@ public:
   }
 
 private:
-  PDEOperator * pde_operator;
+  PDEOperator const * pde_operator;
 
   VectorType const * rhs_vector;
   double             time;
@@ -168,7 +168,7 @@ public:
                               VectorType const & src,
                               VectorType const * rhs_vector,
                               double const &     time,
-                              double const &     scaling_factor_mass);
+                              double const &     scaling_factor_mass) const;
 
   /*
    * This function evaluates the nonlinear residual of the steady Navier-Stokes equations (momentum
@@ -179,7 +179,7 @@ public:
                                      VectorType &       dst_p,
                                      VectorType const & src_u,
                                      VectorType const & src_p,
-                                     double const &     time);
+                                     double const &     time) const;
 
   /*
    * This function applies the linearized momentum operator and is used for throughput measurements.

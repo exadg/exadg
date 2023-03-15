@@ -279,14 +279,14 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &     
                                                           BlockVectorType const & src,
                                                           VectorType const *      rhs_vector,
                                                           double const &          time,
-                                                          double const & scaling_factor_mass)
+                                                          double const & scaling_factor_mass) const
 {
   // update implicitly coupled variable viscosity
   if(this->param.viscous_term_is_nonlinear() &&
      this->param.viscosity_model_data.treatment_of_nonlinear_viscosity ==
        TreatmentOfNonlinearViscosity::Implicit)
   {
-    this->update_viscosity(src.block(0));
+//    this->update_viscosity(src.block(0));
   }
 
   // velocity-block
@@ -335,7 +335,7 @@ template<int dim, typename Number>
 void
 OperatorCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVectorType &       dst,
                                                                  BlockVectorType const & src,
-                                                                 double const &          time)
+                                                                 double const &          time) const
 {
   // update implicitly coupled variable viscosity
   if(this->param.viscous_term_is_nonlinear() &&
