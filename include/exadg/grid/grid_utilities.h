@@ -91,6 +91,86 @@ get_mesh_smoothing(bool const use_local_smoothing_multigrid, ElementType const &
 }
 
 /**
+ * This function can be seen as some form of "copy constructor" for periodic face pairs,
+ * transforming the template argument of dealii::GridTools::PeriodicFacePair from
+ * Triangulation::cell_iterator to DoFHandler::cell_iterator.
+ */
+template<int dim>
+std::vector<dealii::GridTools::PeriodicFacePair<typename dealii::DoFHandler<dim>::cell_iterator>>
+transform_periodic_face_pairs_to_dof_cell_iterator(
+  std::vector<dealii::GridTools::PeriodicFacePair<
+    typename dealii::Triangulation<dim>::cell_iterator>> const & periodic_faces,
+  dealii::Triangulation<dim> const &                             triangulation,
+  dealii::DoFHandler<dim> const &                                dof_handler)
+{
+  typedef typename std::vector<
+    dealii::GridTools::PeriodicFacePair<typename dealii::DoFHandler<dim>::cell_iterator>>
+    PeriodicFacesDoF;
+
+  PeriodicFacesDoF periodic_faces_dof;
+
+  for(auto it : periodic_faces)
+  {
+    dealii::GridTools::PeriodicFacePair<typename dealii::DoFHandler<dim>::cell_iterator>
+      face_pair_dof_hander;
+
+    face_pair_dof_hander.cell[0] = typename dealii::DoFHandler<dim>::cell_iterator(
+      &triangulation, it.cell[0]->level(), it.cell[0]->index(), &dof_handler);
+    face_pair_dof_hander.cell[1] = typename dealii::DoFHandler<dim>::cell_iterator(
+      &triangulation, it.cell[1]->level(), it.cell[1]->index(), &dof_handler);
+
+    face_pair_dof_hander.face_idx[0] = it.face_idx[0];
+    face_pair_dof_hander.face_idx[1] = it.face_idx[1];
+
+    face_pair_dof_hander.orientation = it.orientation;
+    face_pair_dof_hander.matrix      = it.matrix;
+
+    periodic_faces_dof.push_back(face_pair_dof_hander);
+  }
+
+  return periodic_faces_dof;
+}
+
+/**
+ * This function can be seen as some form of "copy constructor" for periodic face pairs,
+ * transforming the template argument of dealii::GridTools::PeriodicFacePair from
+ * DoFHandler::cell_iterator to Triangulation::cell_iterator.
+ */
+template<int dim>
+std::vector<dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>>
+transform_periodic_face_pairs_to_tria_cell_iterator(
+  std::vector<
+    dealii::GridTools::PeriodicFacePair<typename dealii::DoFHandler<dim>::cell_iterator>> const &
+    periodic_faces)
+{
+  typedef typename std::vector<
+    dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>>
+    PeriodicFacesTria;
+
+  PeriodicFacesTria periodic_faces_tria;
+
+  for(auto it : periodic_faces)
+  {
+    dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>
+      face_pair_tria;
+
+    // works "automatically" from DoFHandler::cell_iterator to Triangulation::cell_iterator
+    face_pair_tria.cell[0] = typename dealii::Triangulation<dim>::cell_iterator(it.cell[0]);
+    face_pair_tria.cell[1] = typename dealii::Triangulation<dim>::cell_iterator(it.cell[1]);
+
+    face_pair_tria.face_idx[0] = it.face_idx[0];
+    face_pair_tria.face_idx[1] = it.face_idx[1];
+
+    face_pair_tria.orientation = it.orientation;
+    face_pair_tria.matrix      = it.matrix;
+
+    periodic_faces_tria.push_back(face_pair_tria);
+  }
+
+  return periodic_faces_tria;
+}
+
+/**
  * This function creates a triangulation based on a lambda function and refinement parameters for
  * global and local mesh refinements. This function is used to create the fine triangulation on the
  * one hand and the coarse triangulations required for global-coarsening multigrid on the other
