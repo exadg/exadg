@@ -286,7 +286,7 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &     
      this->param.viscosity_model_data.treatment_of_nonlinear_viscosity ==
        TreatmentOfNonlinearViscosity::Implicit)
   {
-//    this->update_viscosity(src.block(0));
+    //    this->update_viscosity(src.block(0));
   }
 
   // velocity-block
