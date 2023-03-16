@@ -138,6 +138,10 @@ Operator<dim, n_components, Number>::distribute_dofs()
   {
     affine_constraints.clear();
 
+    dealii::IndexSet locally_relevant_dofs;
+    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+    affine_constraints.reinit(locally_relevant_dofs);
+
     // hanging nodes (needs to be done before imposing periodicity constraints and boundary
     // conditions)
     if(this->grid->triangulation->has_hanging_nodes())
@@ -146,7 +150,7 @@ Operator<dim, n_components, Number>::distribute_dofs()
     if(not(this->grid->periodic_faces.empty()))
     {
       auto periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
-        this->grid->periodic_faces, *this->grid->triangulation, dof_handler);
+        this->grid->periodic_faces, dof_handler);
 
       dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(periodic_faces_dof,
                                                                        affine_constraints);

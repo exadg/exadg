@@ -100,7 +100,6 @@ std::vector<dealii::GridTools::PeriodicFacePair<typename dealii::DoFHandler<dim>
 transform_periodic_face_pairs_to_dof_cell_iterator(
   std::vector<dealii::GridTools::PeriodicFacePair<
     typename dealii::Triangulation<dim>::cell_iterator>> const & periodic_faces,
-  dealii::Triangulation<dim> const &                             triangulation,
   dealii::DoFHandler<dim> const &                                dof_handler)
 {
   typedef typename std::vector<
@@ -114,10 +113,8 @@ transform_periodic_face_pairs_to_dof_cell_iterator(
     dealii::GridTools::PeriodicFacePair<typename dealii::DoFHandler<dim>::cell_iterator>
       face_pair_dof_hander;
 
-    face_pair_dof_hander.cell[0] = typename dealii::DoFHandler<dim>::cell_iterator(
-      &triangulation, it.cell[0]->level(), it.cell[0]->index(), &dof_handler);
-    face_pair_dof_hander.cell[1] = typename dealii::DoFHandler<dim>::cell_iterator(
-      &triangulation, it.cell[1]->level(), it.cell[1]->index(), &dof_handler);
+    face_pair_dof_hander.cell[0] = it.cell[0]->as_dof_handler_iterator(dof_handler);
+    face_pair_dof_hander.cell[1] = it.cell[1]->as_dof_handler_iterator(dof_handler);
 
     face_pair_dof_hander.face_idx[0] = it.face_idx[0];
     face_pair_dof_hander.face_idx[1] = it.face_idx[1];
