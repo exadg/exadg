@@ -28,7 +28,12 @@ namespace ExaDG
 {
 struct SolverResult
 {
-  SolverResult() : degree(1), dofs(1), n_10(0), tau_10(0.0)
+  SolverResult() : degree(1), dofs(1), n_10(0), tau_10(0.0), print_10(false)
+  {
+  }
+
+  SolverResult(unsigned int const degree_, dealii::types::global_dof_index const dofs_)
+    : degree(degree_), dofs(dofs_), print_10(false)
   {
   }
 
@@ -36,7 +41,7 @@ struct SolverResult
                dealii::types::global_dof_index const dofs_,
                double const                          n_10_,
                double const                          tau_10_)
-    : degree(degree_), dofs(dofs_), n_10(n_10_), tau_10(tau_10_)
+    : degree(degree_), dofs(dofs_), n_10(n_10_), tau_10(tau_10_), print_10(true)
   {
   }
 
@@ -46,17 +51,23 @@ struct SolverResult
     // names
     pcout << std::setw(7) << "degree";
     pcout << std::setw(15) << "dofs";
-    pcout << std::setw(8) << "n_10";
-    pcout << std::setw(15) << "tau_10";
-    pcout << std::setw(15) << "throughput";
+    if(print_10)
+    {
+      pcout << std::setw(8) << "n_10";
+      pcout << std::setw(15) << "tau_10";
+      pcout << std::setw(15) << "throughput";
+    }
     pcout << std::endl;
 
     // units
     pcout << std::setw(7) << " ";
     pcout << std::setw(15) << " ";
-    pcout << std::setw(8) << " ";
-    pcout << std::setw(15) << "in s*core/DoF";
-    pcout << std::setw(15) << "in DoF/s/core";
+    if(print_10)
+    {
+      pcout << std::setw(8) << " ";
+      pcout << std::setw(15) << "in s*core/DoF";
+      pcout << std::setw(15) << "in DoF/s/core";
+    }
     pcout << std::endl;
 
     pcout << std::endl;
@@ -67,9 +78,12 @@ struct SolverResult
   {
     pcout << std::setw(7) << std::fixed << degree;
     pcout << std::setw(15) << std::fixed << dofs;
-    pcout << std::setw(8) << std::fixed << std::setprecision(1) << n_10;
-    pcout << std::setw(15) << std::scientific << std::setprecision(2) << tau_10;
-    pcout << std::setw(15) << std::scientific << std::setprecision(2) << 1.0 / tau_10;
+    if(print_10)
+    {
+      pcout << std::setw(8) << std::fixed << std::setprecision(1) << n_10;
+      pcout << std::setw(15) << std::scientific << std::setprecision(2) << tau_10;
+      pcout << std::setw(15) << std::scientific << std::setprecision(2) << 1.0 / tau_10;
+    }
     pcout << std::endl;
   }
 
@@ -77,6 +91,7 @@ struct SolverResult
   dealii::types::global_dof_index dofs;
   double                          n_10;
   double                          tau_10;
+  bool                            print_10;
 };
 
 inline void

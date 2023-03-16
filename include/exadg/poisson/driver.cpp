@@ -127,11 +127,14 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
     // Iterations
     this->pcout << std::endl << "Number of iterations:" << std::endl;
 
-    this->pcout << "  Iterations n         = " << std::fixed << iterations << std::endl
-                << "  Iterations n_10      = " << std::fixed << std::setprecision(1) << n_10
-                << std::endl
-                << "  Convergence rate rho = " << std::fixed << std::setprecision(4)
-                << poisson->pde_operator->get_average_convergence_rate() << std::endl;
+    this->pcout << "  Iterations n         = " << std::fixed << iterations << std::endl;
+    if(application->get_parameters().compute_performance_metrics)
+    {
+      this->pcout << "  Iterations n_10      = " << std::fixed << std::setprecision(1) << n_10
+                  << std::endl
+                  << "  Convergence rate rho = " << std::fixed << std::setprecision(4)
+                  << poisson->pde_operator->get_average_convergence_rate() << std::endl;
+    }
 
     // wall times
     timer_tree.insert({"Poisson"}, total_time);
@@ -139,17 +142,17 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
     // insert sub-tree for Krylov solver
     timer_tree.insert({"Poisson"}, poisson->pde_operator->get_timings());
 
-    pcout << std::endl << "Timings for level 1:" << std::endl;
-    timer_tree.print_level(pcout, 1);
+    for(unsigned int l = 1; l <= timer_tree.get_max_level(); ++l)
+    {
+      pcout << std::endl << "Timings for level " + std::to_string(l) + ":" << std::endl;
+      timer_tree.print_level(pcout, l);
+    }
 
-    pcout << std::endl << "Timings for level 2:" << std::endl;
-    timer_tree.print_level(pcout, 2);
-
-    pcout << std::endl << "Timings for level 3:" << std::endl;
-    timer_tree.print_level(pcout, 3);
-
-    // Throughput of linear solver in DoFs/s per core
-    print_throughput_10(pcout, DoFs, t_10, N_mpi_processes);
+    if(application->get_parameters().compute_performance_metrics)
+    {
+      // Throughput of linear solver in DoFs/s per core
+      print_throughput_10(pcout, DoFs, t_10, N_mpi_processes);
+    }
 
     // Throughput in DoFs/s per core (overall costs)
     dealii::Utilities::MPI::MinMaxAvg overall_time_data =
@@ -163,7 +166,10 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
     this->pcout << print_horizontal_line() << std::endl << std::endl;
   }
 
-  return SolverResult(application->get_parameters().degree, DoFs, n_10, tau_10);
+  if(application->get_parameters().compute_performance_metrics)
+    return SolverResult(application->get_parameters().degree, DoFs, n_10, tau_10);
+  else
+    return SolverResult(application->get_parameters().degree, DoFs);
 }
 
 template<int dim, typename Number>
