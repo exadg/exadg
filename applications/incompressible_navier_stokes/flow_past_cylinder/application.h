@@ -325,9 +325,12 @@ private:
   create_grid() final
   {
     auto const lambda_create_triangulation =
-      [&](dealii::Triangulation<dim, dim> & tria,
-          unsigned int const                global_refinements,
-          std::vector<unsigned int> const & vector_local_refinements) {
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
         create_coarse_grid<dim>(tria, this->grid->periodic_face_pairs, cylinder_type_string);
 
         if(vector_local_refinements.size() > 0)
