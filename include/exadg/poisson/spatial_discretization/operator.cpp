@@ -147,6 +147,7 @@ Operator<dim, n_components, Number>::distribute_dofs()
     if(this->grid->triangulation->has_hanging_nodes())
       dealii::DoFTools::make_hanging_node_constraints(dof_handler, affine_constraints);
 
+    // constraints from periodic boundary conditions
     if(not(this->grid->periodic_faces.empty()))
     {
       auto periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(

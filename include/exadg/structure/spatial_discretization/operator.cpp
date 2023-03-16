@@ -25,6 +25,7 @@
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
+#include <exadg/grid/grid_utilities.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_amg.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
@@ -129,6 +130,26 @@ Operator<dim, Number>::distribute_dofs()
   // affine constraints
   affine_constraints.clear();
 
+  dealii::IndexSet locally_relevant_dofs;
+  dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+  affine_constraints.reinit(locally_relevant_dofs);
+
+  // hanging nodes (needs to be done before imposing periodicity constraints and boundary
+  // conditions)
+  if(this->grid->triangulation->has_hanging_nodes())
+    dealii::DoFTools::make_hanging_node_constraints(dof_handler, affine_constraints);
+
+  // constraints from periodic boundary conditions
+  if(not(this->grid->periodic_faces.empty()))
+  {
+    auto periodic_faces_dof =
+      GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(this->grid->periodic_faces,
+                                                                        dof_handler);
+
+    dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(periodic_faces_dof,
+                                                                     affine_constraints);
+  }
+
   // standard Dirichlet boundaries
   for(auto it : this->boundary_descriptor->dirichlet_bc)
   {
@@ -156,9 +177,34 @@ Operator<dim, Number>::distribute_dofs()
 
   affine_constraints.close();
 
-  // no constraints for mass operator
-  constraints_mass.clear();
-  constraints_mass.close();
+  // affine constraints for mass operator
+  if(param.problem_type == ProblemType::Unsteady)
+  {
+    constraints_mass.clear();
+
+    dealii::IndexSet locally_relevant_dofs;
+    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+    constraints_mass.reinit(locally_relevant_dofs);
+
+    // hanging nodes (needs to be done before imposing periodicity constraints and boundary
+    // conditions)
+    if(this->grid->triangulation->has_hanging_nodes())
+      dealii::DoFTools::make_hanging_node_constraints(dof_handler, constraints_mass);
+
+    // constraints from periodic boundary conditions
+    if(not(this->grid->periodic_faces.empty()))
+    {
+      auto periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
+        this->grid->periodic_faces, dof_handler);
+
+      dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(periodic_faces_dof,
+                                                                       constraints_mass);
+    }
+
+    // no constraints from Dirichlet boundary conditions for mass operator
+
+    constraints_mass.close();
+  }
 
   pcout << std::endl
         << "Continuous Galerkin finite element discretization:" << std::endl

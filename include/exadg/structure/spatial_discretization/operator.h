@@ -372,7 +372,8 @@ private:
   std::shared_ptr<dealii::FiniteElement<dim>> fe;
   dealii::DoFHandler<dim>                     dof_handler;
   dealii::AffineConstraints<Number>           affine_constraints;
-  // constraints for mass operator (i.e., do not apply any constraints)
+  // constraints for mass operator (we use a separate AffineConstraints object, because we do not
+  // apply constraints from Dirichlet boundary conditions here)
   dealii::AffineConstraints<Number> constraints_mass;
 
   std::string const dof_index                = "dof";
