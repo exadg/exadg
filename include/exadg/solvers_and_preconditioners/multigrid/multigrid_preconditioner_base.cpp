@@ -32,6 +32,7 @@
 
 // ExaDG
 #include <deal.II/fe/mapping_fe.h>
+#include <exadg/grid/grid_utilities.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/matrix_free/categorization.h>
 #include <exadg/solvers_and_preconditioners/multigrid/coarse_grid_solvers.h>
@@ -490,19 +491,25 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
 
       auto affine_constraints_own = new dealii::AffineConstraints<MultigridNumber>();
 
-      // TODO: integrate periodic constraints into initialize_affine_constraints
-
       AssertThrow(is_singular == false, dealii::ExcNotImplemented());
-      AssertThrow(periodic_face_pairs.empty(),
-                  dealii::ExcMessage(
-                    "Multigrid transfer option use_global_coarsening "
-                    "is currently not available for problems with periodic boundaries."));
 
       dealii::IndexSet locally_relevant_dofs;
       dealii::DoFTools::extract_locally_relevant_dofs(*dof_handler, locally_relevant_dofs);
       affine_constraints_own->reinit(locally_relevant_dofs);
 
+      // hanging nodes (needs to be done before imposing periodicity constraints and boundary
+      // conditions)
       dealii::DoFTools::make_hanging_node_constraints(*dof_handler, *affine_constraints_own);
+
+      // constraints from periodic boundary conditions
+      if(not(this->coarse_periodic_face_pairs[level.h_level()].empty()))
+      {
+        auto periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
+          this->coarse_periodic_face_pairs[level.h_level()], *dof_handler);
+
+        dealii::DoFTools::make_periodicity_constraints<dim, dim, MultigridNumber>(
+          periodic_faces_dof, *affine_constraints_own);
+      }
 
       // collect all boundary functions and translate to format understood by
       // deal.II to cover all boundaries at once
