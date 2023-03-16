@@ -125,7 +125,7 @@ public:
     return param;
   }
 
-  std::shared_ptr<GridManager<dim> const>
+  std::shared_ptr<Grid<dim> const>
   get_grid() const
   {
     return grid;
@@ -208,7 +208,7 @@ protected:
 
   Parameters param;
 
-  std::shared_ptr<GridManager<dim>> grid;
+  std::shared_ptr<Grid<dim>> grid;
 
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
@@ -352,7 +352,7 @@ public:
     return param_pre;
   }
 
-  std::shared_ptr<GridManager<dim> const>
+  std::shared_ptr<Grid<dim> const>
   get_grid_precursor() const
   {
     return grid_pre;
@@ -373,7 +373,7 @@ public:
 protected:
   Parameters param_pre;
 
-  std::shared_ptr<GridManager<dim>> grid_pre;
+  std::shared_ptr<Grid<dim>> grid_pre;
 
   std::shared_ptr<FieldFunctions<dim>>     field_functions_pre;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_pre;

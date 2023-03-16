@@ -31,7 +31,7 @@ namespace IncNS
 {
 template<int dim, typename Number>
 OperatorDualSplitting<dim, Number>::OperatorDualSplitting(
-  std::shared_ptr<GridManager<dim> const>           grid_in,
+  std::shared_ptr<Grid<dim> const>                  grid_in,
   std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion_in,
   std::shared_ptr<BoundaryDescriptor<dim> const>    boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim> const>        field_functions_in,
@@ -139,15 +139,16 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
     mg_preconditioner->initialize(this->param.multigrid_data_viscous,
                                   this->param.grid.multigrid,
                                   &this->get_dof_handler_u().get_triangulation(),
+                                  this->grid->periodic_face_pairs,
                                   this->grid->coarse_triangulations,
+                                  this->grid->coarse_periodic_face_pairs,
                                   this->get_dof_handler_u().get_fe(),
                                   this->get_mapping(),
                                   this->momentum_operator,
                                   MultigridOperatorType::ReactionDiffusion,
                                   this->param.ale_formulation,
                                   dirichlet_boundary_conditions,
-                                  dirichlet_bc_component_mask,
-                                  this->grid->periodic_faces);
+                                  dirichlet_bc_component_mask);
   }
   else
   {

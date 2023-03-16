@@ -116,7 +116,7 @@ struct BoundaryDescriptor
 template<int dim, typename Number>
 inline void
 verify_boundary_conditions(BoundaryDescriptor<dim> const & boundary_descriptor,
-                           GridManager<dim> const &        grid)
+                           Grid<dim> const &               grid)
 {
   ExaDG::verify_boundary_conditions(boundary_descriptor.density, grid);
   ExaDG::verify_boundary_conditions(boundary_descriptor.velocity, grid);

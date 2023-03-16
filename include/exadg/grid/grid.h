@@ -45,37 +45,9 @@ public:
     PeriodicFacePairs;
 
   /**
-   * dealii::Triangulation.
-   */
-  std::shared_ptr<dealii::Triangulation<dim>> triangulation;
-
-  /**
-   * dealii::GridTools::PeriodicFacePair's.
-   */
-  PeriodicFacePairs periodic_faces;
-
-  /**
-   * dealii::Mapping.
-   */
-  std::shared_ptr<dealii::Mapping<dim>> mapping;
-};
-
-/**
- * A grid manager class that we need in order to support global-coarsening multigrid and keep
- * interfaces lean.
- */
-template<int dim>
-class GridManager
-{
-public:
-  typedef typename std::vector<
-    dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>>
-    PeriodicFaces;
-
-  /**
    * Constructor.
    */
-  GridManager()
+  Grid()
   {
   }
 
@@ -93,7 +65,7 @@ public:
   /**
    * dealii::GridTools::PeriodicFacePair's.
    */
-  PeriodicFaces periodic_faces;
+  PeriodicFacePairs periodic_face_pairs;
 
   /**
    * dealii::Mapping.
@@ -101,21 +73,15 @@ public:
   std::shared_ptr<dealii::Mapping<dim>> mapping;
 
   /**
-   * a vector of coarse triangulations required for global coarsening multigrid
+   * A vector of coarse triangulations required for global coarsening multigrid.
    */
   std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> coarse_triangulations;
 
   /**
-   * a vector of dealii::GridTools::PeriodicFacePair's for the coarse triangulations required for
+   * A vector of dealii::GridTools::PeriodicFacePair's for the coarse triangulations required for
    * global coarsening multigrid.
    */
-  std::vector<PeriodicFaces> coarse_periodic_faces;
-
-  /**
-   * a vector of dealii::Mapping's for the coarse triangulations required for global coarsening
-   * multigrid.
-   */
-  std::vector<std::shared_ptr<dealii::Mapping<dim>>> coarse_mapping;
+  std::vector<PeriodicFacePairs> coarse_periodic_face_pairs;
 };
 
 } // namespace ExaDG

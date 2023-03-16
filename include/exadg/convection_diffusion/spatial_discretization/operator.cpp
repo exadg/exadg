@@ -40,7 +40,7 @@ namespace ConvDiff
 {
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
-  std::shared_ptr<GridManager<dim> const>           grid_in,
+  std::shared_ptr<Grid<dim> const>                  grid_in,
   std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion_in,
   std::shared_ptr<BoundaryDescriptor<dim> const>    boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim> const>        field_functions_in,
@@ -483,15 +483,16 @@ Operator<dim, Number>::initialize_preconditioner()
     mg_preconditioner->initialize(mg_data,
                                   param.grid.multigrid,
                                   &dof_handler.get_triangulation(),
+                                  grid->periodic_face_pairs,
                                   grid->coarse_triangulations,
+                                  grid->coarse_periodic_face_pairs,
                                   dof_handler.get_fe(),
                                   get_mapping(),
                                   combined_operator,
                                   param.mg_operator_type,
                                   param.ale_formulation,
                                   dirichlet_boundary_conditions,
-                                  dirichlet_bc_component_mask,
-                                  grid->periodic_faces);
+                                  dirichlet_bc_component_mask);
   }
   else
   {

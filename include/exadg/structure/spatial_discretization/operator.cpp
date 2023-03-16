@@ -39,7 +39,7 @@ namespace Structure
 {
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
-  std::shared_ptr<GridManager<dim> const>        grid_in,
+  std::shared_ptr<Grid<dim> const>               grid_in,
   std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
   std::shared_ptr<MaterialDescriptor const>      material_descriptor_in,
@@ -501,14 +501,15 @@ Operator<dim, Number>::initialize_preconditioner()
       mg_preconditioner->initialize(param.multigrid_data,
                                     param.grid.multigrid,
                                     &dof_handler.get_triangulation(),
+                                    grid->periodic_face_pairs,
                                     grid->coarse_triangulations,
+                                    grid->coarse_periodic_face_pairs,
                                     dof_handler.get_fe(),
                                     grid->mapping,
                                     elasticity_operator_nonlinear,
                                     param.large_deformation,
                                     dirichlet_boundary_conditions,
-                                    dirichlet_bc_component_mask,
-                                    grid->periodic_faces);
+                                    dirichlet_bc_component_mask);
     }
     else
     {
@@ -548,14 +549,15 @@ Operator<dim, Number>::initialize_preconditioner()
       mg_preconditioner->initialize(param.multigrid_data,
                                     param.grid.multigrid,
                                     &dof_handler.get_triangulation(),
+                                    grid->periodic_face_pairs,
                                     grid->coarse_triangulations,
+                                    grid->coarse_periodic_face_pairs,
                                     dof_handler.get_fe(),
                                     grid->mapping,
                                     elasticity_operator_linear,
                                     param.large_deformation,
                                     dirichlet_boundary_conditions,
-                                    dirichlet_bc_component_mask,
-                                    grid->periodic_faces);
+                                    dirichlet_bc_component_mask);
     }
   }
   else if(param.preconditioner == Preconditioner::AMG)

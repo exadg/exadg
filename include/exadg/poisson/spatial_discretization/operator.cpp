@@ -49,7 +49,7 @@ namespace Poisson
 {
 template<int dim, int n_components, typename Number>
 Operator<dim, n_components, Number>::Operator(
-  std::shared_ptr<GridManager<dim> const>              grid_in,
+  std::shared_ptr<Grid<dim> const>                     grid_in,
   std::shared_ptr<BoundaryDescriptor<rank, dim> const> boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim> const>           field_functions_in,
   Parameters const &                                   param_in,
@@ -393,14 +393,15 @@ Operator<dim, n_components, Number>::setup_solver()
     mg_preconditioner->initialize(mg_data,
                                   param.grid.multigrid,
                                   &dof_handler.get_triangulation(),
+                                  grid->periodic_face_pairs,
                                   grid->coarse_triangulations,
+                                  grid->coarse_periodic_face_pairs,
                                   dof_handler.get_fe(),
                                   grid->mapping,
                                   laplace_operator.get_data(),
                                   false /* moving_mesh */,
                                   dirichlet_boundary_conditions,
-                                  dirichlet_bc_component_mask,
-                                  grid->periodic_faces);
+                                  dirichlet_bc_component_mask);
   }
   else
   {

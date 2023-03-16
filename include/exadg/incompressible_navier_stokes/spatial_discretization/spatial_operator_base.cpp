@@ -37,7 +37,7 @@ namespace IncNS
 {
 template<int dim, typename Number>
 SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
-  std::shared_ptr<GridManager<dim> const>           grid_in,
+  std::shared_ptr<Grid<dim> const>                  grid_in,
   std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion_in,
   std::shared_ptr<BoundaryDescriptor<dim> const>    boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim> const>        field_functions_in,
@@ -283,8 +283,7 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
     dealii::DoFTools::extract_locally_relevant_dofs(dof_handler_u, relevant_dofs);
     constraint_u.reinit(relevant_dofs);
 
-    auto const & periodic_face_pair = grid->periodic_faces;
-    for(auto const & face : periodic_face_pair)
+    for(auto const & face : grid->periodic_face_pairs)
       dealii::DoFTools::make_periodicity_constraints(
         dof_handler_u,
         face.cell[0]->face(face.face_idx[0])->boundary_id(),
@@ -1282,14 +1281,15 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   mg_preconditioner->initialize(mg_data,
                                 param.grid.multigrid,
                                 &dof_handler_u_scalar.get_triangulation(),
+                                grid->periodic_face_pairs,
                                 grid->coarse_triangulations,
+                                grid->coarse_periodic_face_pairs,
                                 dof_handler_u_scalar.get_fe(),
                                 get_dynamic_mapping<dim, Number>(grid, grid_motion),
                                 laplace_operator.get_data(),
                                 param.ale_formulation,
                                 laplace_operator.get_data().bc->dirichlet_bc,
-                                dirichlet_bc_component_mask,
-                                grid->periodic_faces);
+                                dirichlet_bc_component_mask);
 
   // setup solver
   Krylov::SolverDataCG solver_data;
@@ -1633,14 +1633,15 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       mg_preconditioner->initialize(this->param.multigrid_data_projection,
                                     this->param.grid.multigrid,
                                     &dof_handler.get_triangulation(),
+                                    grid->periodic_face_pairs,
                                     grid->coarse_triangulations,
+                                    grid->coarse_periodic_face_pairs,
                                     dof_handler.get_fe(),
                                     this->get_mapping(),
                                     *this->projection_operator,
                                     this->param.ale_formulation,
                                     dirichlet_boundary_conditions,
-                                    dirichlet_bc_component_mask,
-                                    grid->periodic_faces);
+                                    dirichlet_bc_component_mask);
     }
     else
     {

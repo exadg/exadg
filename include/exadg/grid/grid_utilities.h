@@ -339,7 +339,7 @@ create_coarse_triangulations(
 template<int dim>
 inline void
 create_fine_and_coarse_triangulations(
-  GridManager<dim> &                                             grid,
+  Grid<dim> &                                                    grid,
   GridData const &                                               data,
   bool const                                                     involves_h_multigrid,
   std::function<void(dealii::Triangulation<dim> &,

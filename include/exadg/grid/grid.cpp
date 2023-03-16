@@ -35,7 +35,7 @@ namespace ExaDG
 {
 template<int dim>
 void
-GridManager<dim>::initialize(GridData const & data, MPI_Comm const & mpi_comm)
+Grid<dim>::initialize(GridData const & data, MPI_Comm const & mpi_comm)
 {
   // triangulation
   if(data.triangulation_type == TriangulationType::Serial)
@@ -92,7 +92,7 @@ GridManager<dim>::initialize(GridData const & data, MPI_Comm const & mpi_comm)
   }
 }
 
-template class GridManager<2>;
-template class GridManager<3>;
+template class Grid<2>;
+template class Grid<3>;
 
 } // namespace ExaDG

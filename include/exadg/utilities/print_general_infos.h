@@ -90,7 +90,7 @@ print_matrixfree_info(dealii::ConditionalOStream const & pcout)
 
 template<int dim>
 inline void
-print_grid_info(dealii::ConditionalOStream const & pcout, GridManager<dim> const & grid)
+print_grid_info(dealii::ConditionalOStream const & pcout, Grid<dim> const & grid)
 {
   pcout << std::endl
         << "Generating grid for " << dim << "-dimensional problem:" << std::endl

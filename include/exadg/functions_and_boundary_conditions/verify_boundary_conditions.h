@@ -29,12 +29,11 @@ namespace ExaDG
 {
 template<int dim, typename BoundaryDescriptor>
 void
-verify_boundary_conditions(BoundaryDescriptor const & boundary_descriptor,
-                           GridManager<dim> const &   grid)
+verify_boundary_conditions(BoundaryDescriptor const & boundary_descriptor, Grid<dim> const & grid)
 {
   // fill set with periodic boundary ids
   std::set<dealii::types::boundary_id> periodic_boundary_ids;
-  for(auto periodic_pair : grid.periodic_faces)
+  for(auto periodic_pair : grid.periodic_face_pairs)
   {
     AssertThrow(periodic_pair.cell[0]->level() == 0,
                 dealii::ExcMessage("Received periodic face pair on non-zero level"));

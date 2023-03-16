@@ -191,7 +191,7 @@ private:
 
     create_periodic_box(this->grid->triangulation,
                         this->param.grid.n_refine_global,
-                        this->grid->periodic_faces,
+                        this->grid->periodic_face_pairs,
                         this->n_subdivisions_1d_hypercube,
                         left,
                         right,

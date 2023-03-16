@@ -99,14 +99,15 @@ public:
   initialize(
     MultigridData const &                                                  data,
     MultigridVariant const &                                               multigrid_variant,
-    dealii::Triangulation<dim> const *                                     tria,
+    dealii::Triangulation<dim> const *                                     triangulation,
+    PeriodicFacePairs const &                                              periodic_face_pairs,
     std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations,
-    dealii::FiniteElement<dim> const &                                     fe,
-    std::shared_ptr<dealii::Mapping<dim> const>                            mapping,
-    bool const                                                             operator_is_singular,
-    Map_DBC const &                                                        dirichlet_bc,
-    Map_DBC_ComponentMask const & dirichlet_bc_component_mask,
-    PeriodicFacePairs const &     periodic_face_pairs);
+    std::vector<PeriodicFacePairs> const &      coarse_periodic_face_pairs,
+    dealii::FiniteElement<dim> const &          fe,
+    std::shared_ptr<dealii::Mapping<dim> const> mapping,
+    bool const                                  operator_is_singular,
+    Map_DBC const &                             dirichlet_bc,
+    Map_DBC_ComponentMask const &               dirichlet_bc_component_mask);
 
   /*
    * This function applies the multigrid preconditioner dst = P^{-1} src.
