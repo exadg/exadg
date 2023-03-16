@@ -144,7 +144,7 @@ using PeriodicFacePairs = std::vector<
 template<int dim>
 inline void
 create_triangulation(
-  std::shared_ptr<dealii::Triangulation<dim>>                    tria,
+  dealii::Triangulation<dim> &                                   triangulation,
   PeriodicFacePairs<dim> &                                       periodic_face_pairs,
   GridData const &                                               data,
   std::function<void(dealii::Triangulation<dim> &,
@@ -165,7 +165,7 @@ create_triangulation(
   if(data.triangulation_type == TriangulationType::Serial or
      data.triangulation_type == TriangulationType::Distributed)
   {
-    lambda_create_triangulation(*tria,
+    lambda_create_triangulation(triangulation,
                                 periodic_face_pairs,
                                 global_refinements,
                                 vector_local_refinements);
@@ -231,12 +231,12 @@ create_triangulation(
     auto const description = dealii::TriangulationDescription::Utilities::
       create_description_from_triangulation_in_groups<dim, dim>(serial_grid_generator,
                                                                 serial_grid_partitioner,
-                                                                tria->get_communicator(),
+                                                                triangulation.get_communicator(),
                                                                 group_size,
                                                                 mesh_smoothing,
                                                                 triangulation_description_setting);
 
-    tria->create_triangulation(description);
+    triangulation.create_triangulation(description);
   }
   else
   {
@@ -311,17 +311,18 @@ create_coarse_triangulations(
       [&](PeriodicFacePairs<dim> &  level_periodic_face_pairs,
           unsigned int              refine_global,
           std::vector<unsigned int> refine_local) {
-        auto level_tria = std::make_shared<dealii::parallel::fullydistributed::Triangulation<dim>>(
-          fine_triangulation.get_communicator());
+        auto level_triangulation =
+          std::make_shared<dealii::parallel::fullydistributed::Triangulation<dim>>(
+            fine_triangulation.get_communicator());
 
-        GridUtilities::create_triangulation<dim>(level_tria,
+        GridUtilities::create_triangulation<dim>(*level_triangulation,
                                                  level_periodic_face_pairs,
                                                  data,
                                                  lambda_create_triangulation,
                                                  refine_global,
                                                  refine_local);
 
-        return level_tria;
+        return level_triangulation;
       };
 
     // we start with the finest level
@@ -387,7 +388,7 @@ create_fine_and_coarse_triangulations(
                      std::vector<unsigned int> const &)> const & lambda_create_triangulation,
   std::vector<unsigned int> const vector_local_refinements = std::vector<unsigned int>())
 {
-  GridUtilities::create_triangulation(grid.triangulation,
+  GridUtilities::create_triangulation(*grid.triangulation,
                                       grid.periodic_face_pairs,
                                       data,
                                       lambda_create_triangulation,
