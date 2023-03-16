@@ -180,18 +180,14 @@ protected:
    */
   virtual void
   initialize_dof_handler_and_constraints(bool                               is_singular,
-                                         PeriodicFacePairs const &          periodic_face_pairs,
                                          dealii::FiniteElement<dim> const & fe,
-                                         dealii::Triangulation<dim> const * tria,
                                          Map_DBC const &                    dirichlet_bc,
                                          Map_DBC_ComponentMask const & dirichlet_bc_component_mask);
 
   void
   do_initialize_dof_handler_and_constraints(
     bool                                  is_singular,
-    PeriodicFacePairs const &             periodic_face_pairs,
     dealii::FiniteElement<dim> const &    fe,
-    dealii::Triangulation<dim> const *    tria,
     Map_DBC const &                       dirichlet_bc,
     Map_DBC_ComponentMask const &         dirichlet_bc_component_mask,
     std::vector<MGLevelInfo> &            level_info,
@@ -307,10 +303,12 @@ private:
   MultigridVariant multigrid_variant;
 
   dealii::Triangulation<dim> const * triangulation;
+  PeriodicFacePairs                  periodic_face_pairs;
 
   // Only relevant for global coarsening, where this vector contains coarse level triangulations,
   // and the fine level triangulation as the last element of the vector.
   std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> coarse_triangulations;
+  std::vector<PeriodicFacePairs>                                 coarse_periodic_face_pairs;
 
   // In case of global coarsening, this is the mapping associated to the fine level triangulation.
   std::shared_ptr<dealii::Mapping<dim> const> mapping;

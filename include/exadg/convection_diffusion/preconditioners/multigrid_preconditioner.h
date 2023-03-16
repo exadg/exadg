@@ -97,9 +97,7 @@ private:
   void
   initialize_dof_handler_and_constraints(
     bool const                         operator_is_singular,
-    PeriodicFacePairs const &          periodic_face_pairs,
     dealii::FiniteElement<dim> const & fe,
-    dealii::Triangulation<dim> const * tria,
     Map_DBC const &                    dirichlet_bc,
     Map_DBC_ComponentMask const &      dirichlet_bc_component_mask) override;
 

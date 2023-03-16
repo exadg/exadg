@@ -212,14 +212,14 @@ template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
   bool const                         operator_is_singular,
-  PeriodicFacePairs const &          periodic_face_pairs,
   dealii::FiniteElement<dim> const & fe,
-  dealii::Triangulation<dim> const * tria,
   Map_DBC const &                    dirichlet_bc,
   Map_DBC_ComponentMask const &      dirichlet_bc_component_mask)
 {
-  Base::initialize_dof_handler_and_constraints(
-    operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc, dirichlet_bc_component_mask);
+  Base::initialize_dof_handler_and_constraints(operator_is_singular,
+                                               fe,
+                                               dirichlet_bc,
+                                               dirichlet_bc_component_mask);
 
   if(data.convective_problem &&
      data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
@@ -229,9 +229,7 @@ MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
     Map_DBC               dirichlet_bc_velocity;
     Map_DBC_ComponentMask dirichlet_bc_velocity_component_mask;
     this->do_initialize_dof_handler_and_constraints(false,
-                                                    periodic_face_pairs,
                                                     fe_velocity,
-                                                    tria,
                                                     dirichlet_bc_velocity,
                                                     dirichlet_bc_velocity_component_mask,
                                                     this->level_info,
