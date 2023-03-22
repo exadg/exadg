@@ -58,6 +58,7 @@ public:
       parameter_file(parameter_file),
       n_subdivisions_1d_hypercube(1)
   {
+    grid = std::make_shared<Grid<dim>>();
   }
 
   virtual ~ApplicationBase()

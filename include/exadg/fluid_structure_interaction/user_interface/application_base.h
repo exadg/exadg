@@ -67,6 +67,7 @@ public:
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       parameter_file(parameter_file)
   {
+    grid = std::make_shared<Grid<dim>>();
   }
 
   virtual ~ApplicationBase()
@@ -209,6 +210,7 @@ public:
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       parameter_file(parameter_file)
   {
+    grid = std::make_shared<Grid<dim>>();
   }
 
   virtual ~ApplicationBase()
