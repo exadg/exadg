@@ -129,8 +129,9 @@ Operator<dim, Number>::distribute_dofs()
   // The AffineConstraints object is used to initialize MatrixFree. Here, we apply homogeneous
   // boundary conditions as needed by vmult() in iterative solvers for linear(ized) systems of
   // equations, implemented via dealii::MatrixFree and FEEvaluation::read_dof_values() (or
-  // gather_evaluate()). The actual inhomogeneous boundary data needs to be imposed separately and
-  // explicitly in ExaDG.
+  // gather_evaluate()). The actual inhomogeneous boundary data needs to be imposed separately due
+  // to the implementation in deal.II that can not handle multiple AffineConstraints. Hence, we need
+  // to do this explicitly in ExaDG.
 
   // affine constraints
   affine_constraints.clear();

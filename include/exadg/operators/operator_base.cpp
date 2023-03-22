@@ -81,13 +81,6 @@ OperatorBase<dim, Number, n_components>::reinit(
                                                   this->data.dof_index,
                                                   this->data.quad_index);
 
-  if(not(is_dg))
-  {
-    constrained_indices.clear();
-    for(auto i : this->matrix_free->get_constrained_dofs(this->data.dof_index))
-      constrained_indices.push_back(i);
-  }
-
   // set multigrid level
   this->level = this->matrix_free->get_mg_level();
 
@@ -234,9 +227,10 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::set_constrained_values_to_zero(VectorType & vector) const
 {
-  for(unsigned int i = 0; i < constrained_indices.size(); ++i)
+  for(unsigned int const constrained_index :
+      matrix_free->get_constrained_dofs(this->data.dof_index))
   {
-    vector.local_element(constrained_indices[i]) = 0.0;
+    vector.local_element(constrained_index) = 0.0;
   }
 }
 
@@ -285,10 +279,9 @@ OperatorBase<dim, Number, n_components>::apply(VectorType & dst, VectorType cons
     // Instead, we set the diagonal entries of the matrix to 1 for these constrained
     // degrees of freedom. This means that we simply copy the constrained values to the
     // dst vector.
-    for(unsigned int i = 0; i < constrained_indices.size(); ++i)
-    {
-      dst.local_element(constrained_indices[i]) = src.local_element(constrained_indices[i]);
-    }
+    for(unsigned int const constrained_index :
+        matrix_free->get_constrained_dofs(this->data.dof_index))
+      dst.local_element(constrained_index) = src.local_element(constrained_index);
   }
 }
 
@@ -314,10 +307,9 @@ OperatorBase<dim, Number, n_components>::apply_add(VectorType & dst, VectorType 
     // Note that MatrixFree will not touch constrained degrees of freedom in the dst-vector.
     matrix_free->cell_loop(&This::cell_loop, this, dst, src);
 
-    for(unsigned int i = 0; i < constrained_indices.size(); ++i)
-    {
-      dst.local_element(constrained_indices[i]) += src.local_element(constrained_indices[i]);
-    }
+    for(unsigned int const constrained_index :
+        matrix_free->get_constrained_dofs(this->data.dof_index))
+      dst.local_element(constrained_index) += src.local_element(constrained_index);
   }
 }
 
