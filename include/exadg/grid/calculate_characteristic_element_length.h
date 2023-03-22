@@ -23,6 +23,7 @@
 #define INCLUDE_FUNCTIONALITIES_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_
 
 // deal.II
+#include <deal.II/base/mpi.h>
 #include <deal.II/grid/tria.h>
 
 namespace ExaDG
