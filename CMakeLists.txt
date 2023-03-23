@@ -25,7 +25,7 @@
 #
 #########################################################################
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.1.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.16)
 
 SET(CMAKE_CXX_STANDARD 17)
 
