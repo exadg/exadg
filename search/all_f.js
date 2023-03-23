@@ -3,7 +3,7 @@ var searchData=
   ['p_5fu_5ft_5fcalculator_0',['p_u_T_Calculator',['../classExaDG_1_1CompNS_1_1p__u__T__Calculator.html',1,'ExaDG::CompNS']]],
   ['parameters_1',['Parameters',['../classExaDG_1_1CompNS_1_1Parameters.html',1,'ExaDG::CompNS::Parameters'],['../classExaDG_1_1ConvDiff_1_1Parameters.html',1,'ExaDG::ConvDiff::Parameters'],['../structExaDG_1_1FSI_1_1Parameters.html',1,'ExaDG::FSI::Parameters'],['../classExaDG_1_1IncNS_1_1Parameters.html',1,'ExaDG::IncNS::Parameters'],['../classExaDG_1_1Poisson_1_1Parameters.html',1,'ExaDG::Poisson::Parameters'],['../classExaDG_1_1Structure_1_1Parameters.html',1,'ExaDG::Structure::Parameters']]],
   ['partitionedsolver_2',['PartitionedSolver',['../classExaDG_1_1FSI_1_1PartitionedSolver.html',1,'ExaDG::FSI']]],
-  ['periodic_5ffaces_3',['periodic_faces',['../classExaDG_1_1Grid.html#a7150098ee6126c7c3b8e4645b3ab59a1',1,'ExaDG::Grid']]],
+  ['periodic_5fface_5fpairs_3',['periodic_face_pairs',['../classExaDG_1_1Grid.html#a16608469e0a6b5c1bdfb42c4790b8b9c',1,'ExaDG::Grid']]],
   ['permutator_4',['Permutator',['../classdealspectrum_1_1Permutator.html',1,'dealspectrum::Permutator'],['../classdealspectrum_1_1Permutator.html#a09ac0bcb0a25a7e89afadcb1850b3233',1,'dealspectrum::Permutator::Permutator()']]],
   ['pointwiseoutputdata_5',['PointwiseOutputData',['../structExaDG_1_1CompNS_1_1PointwiseOutputData.html',1,'ExaDG::CompNS']]],
   ['pointwiseoutputdatabase_6',['PointwiseOutputDataBase',['../structExaDG_1_1PointwiseOutputDataBase.html',1,'ExaDG']]],
