@@ -34,16 +34,7 @@ ADD_SUBDIRECTORY(cmake)
 PRINT_EXADG_HEADER()
 
 # deal.II
-FIND_PACKAGE(deal.II 9.3 QUIET
-  HINTS ${deal.II_DIR} ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
-  )
-IF(NOT ${deal.II_FOUND})
-  MESSAGE(FATAL_ERROR "\n"
-    "*** Could not locate deal.II. ***\n\n"
-    "You may want to either pass a flag -DDEAL_II_DIR=/path/to/deal.II to cmake\n"
-    "or set an environment variable \"DEAL_II_DIR\" that contains this path."
-    )
-ENDIF()
+FIND_PACKAGE(deal.II 9.3 REQUIRED HINTS ${deal.II_DIR} ${DEAL_II_DIR} $ENV{DEAL_II_DIR})
 
 # p4est
 IF(NOT DEAL_II_WITH_P4EST)
@@ -51,8 +42,6 @@ IF(NOT DEAL_II_WITH_P4EST)
     "\nExaDG requires a deal.II installation built with support for p4est but it appears to be missing!\n"
     )
 ENDIF()
-
-DEAL_II_INITIALIZE_CACHED_VARIABLES()
 
 # Add info of git branch 
 DEAL_II_QUERY_GIT_INFORMATION(EXADG)
@@ -211,6 +200,10 @@ ADD_LIBRARY(exadg ${TARGET_SRC})
 # Set the include directories
 SET(EXADG_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include)
 TARGET_INCLUDE_DIRECTORIES(exadg PUBLIC ${EXADG_INCLUDE_DIRS})
+TARGET_INCLUDE_DIRECTORIES(exadg PUBLIC ${DEAL_II_INCLUDE_DIRS})
+
+#deal.II
+TARGET_LINK_LIBRARIES(exadg PUBLIC ${DEAL_II_LIBRARIES})
 
 # FFTW
 OPTION(EXADG_WITH_FFTW "Use FFTW" OFF)
@@ -226,7 +219,7 @@ IF(${EXADG_WITH_FFTW})
     ENDIF()
     MESSAGE(STATUS "Found FFTW lib at ${FFTW3}")
     MESSAGE(STATUS "Found FFTW mpi lib at ${FFTW3_MPI}")
-    TARGET_LINK_FFTW(exadg)
+    TARGET_LINK_LIBRARIES(exadg PUBLIC ${FFTW3} ${FFTW3_MPI})
 ENDIF()
 
 # LIKWID
@@ -239,7 +232,7 @@ IF(${EXADG_WITH_LIKWID})
     # that precise macro into the Likwid machinery for compilation.
     TARGET_COMPILE_DEFINITIONS(exadg PUBLIC LIKWID_PERFMON)
     TARGET_INCLUDE_DIRECTORIES(exadg PUBLIC ${LIKWID_INCLUDE})
-    TARGET_LINK_LIBRARIES(exadg ${LIKWID})
+    TARGET_LINK_LIBRARIES(exadg PUBLIC ${LIKWID})
 ENDIF()
 
 # preCICE
@@ -258,7 +251,7 @@ IF(${EXADG_WITH_PRECICE})
     ENDIF()
     ADD_DEFINITIONS(-DEXADG_WITH_PRECICE)
     MESSAGE(STATUS "Found preCICE version ${precice_VERSION} at ${precice_DIR}")
-    TARGET_LINK_LIBRARIES(exadg precice::precice)
+    TARGET_LINK_LIBRARIES(exadg PUBLIC precice::precice)
 ENDIF()
 
 # DEBUG vs. RELEASE
@@ -271,10 +264,6 @@ ADD_CUSTOM_TARGET(release
   COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Release ${CMAKE_SOURCE_DIR}
   COMMENT "Switch CMAKE_BUILD_TYPE to Release\nPlease call 'make' to build the release project"
   )
-
-DEAL_II_INITIALIZE_CACHED_VARIABLES()
-
-DEAL_II_SETUP_TARGET(exadg)
 
 ENABLE_TESTING()
 
