@@ -640,13 +640,6 @@ private:
   mutable bool block_diagonal_preconditioner_is_initialized;
 
   unsigned int n_mpi_processes;
-
-  /*
-   * for CG
-   */
-  std::vector<unsigned int>   constrained_indices;
-  mutable std::vector<Number> constrained_values_src;
-  mutable std::vector<Number> constrained_values_dst;
 };
 } // namespace ExaDG
 

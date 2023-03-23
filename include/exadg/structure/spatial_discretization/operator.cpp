@@ -126,6 +126,13 @@ Operator<dim, Number>::distribute_dofs()
   // enumerate degrees of freedom
   dof_handler.distribute_dofs(*fe);
 
+  // The AffineConstraints object is used to initialize MatrixFree. Here, we apply homogeneous
+  // boundary conditions as needed by vmult() in iterative solvers for linear(ized) systems of
+  // equations, implemented via dealii::MatrixFree and FEEvaluation::read_dof_values() (or
+  // gather_evaluate()). The actual inhomogeneous boundary data needs to be imposed separately due
+  // to the implementation in deal.II that can not handle multiple AffineConstraints. Hence, we need
+  // to do this explicitly in ExaDG.
+
   // affine constraints
   affine_constraints.clear();
 
@@ -737,7 +744,8 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
                                                    double const       factor,
                                                    double const       time) const
 {
-  // elasticity operator
+  // elasticity operator: make sure that constrained degrees of freedom have been set correctly
+  // before evaluating the elasticity operator.
   elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
   elasticity_operator_nonlinear.set_time(time);
   elasticity_operator_nonlinear.evaluate_nonlinear(dst, src);
@@ -819,7 +827,8 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   residual_operator.update(rhs, factor, time);
   linearized_operator.update(factor, time);
 
-  // set inhomogeneous Dirichlet values
+  // set inhomogeneous Dirichlet values (this is necessary since we use
+  // FEEvaluation::read_dof_values_plain() to evaluate the operator)
   elasticity_operator_nonlinear.set_constrained_values(sol, time);
 
   // call Newton solver
