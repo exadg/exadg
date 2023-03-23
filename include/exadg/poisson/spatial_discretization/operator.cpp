@@ -154,10 +154,10 @@ Operator<dim, n_components, Number>::distribute_dofs()
       dealii::DoFTools::make_hanging_node_constraints(dof_handler, affine_constraints);
 
     // constraints from periodic boundary conditions
-    if(not(this->grid->periodic_faces.empty()))
+    if(not(this->grid->periodic_face_pairs.empty()))
     {
       auto periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
-        this->grid->periodic_faces, dof_handler);
+        this->grid->periodic_face_pairs, dof_handler);
 
       dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(periodic_faces_dof,
                                                                        affine_constraints);
@@ -393,14 +393,15 @@ Operator<dim, n_components, Number>::setup_solver()
     mg_preconditioner->initialize(mg_data,
                                   param.grid.multigrid,
                                   &dof_handler.get_triangulation(),
+                                  grid->periodic_face_pairs,
                                   grid->coarse_triangulations,
+                                  grid->coarse_periodic_face_pairs,
                                   dof_handler.get_fe(),
                                   grid->mapping,
                                   laplace_operator.get_data(),
                                   false /* moving_mesh */,
                                   dirichlet_boundary_conditions,
-                                  dirichlet_bc_component_mask,
-                                  grid->periodic_faces);
+                                  dirichlet_bc_component_mask);
   }
   else
   {

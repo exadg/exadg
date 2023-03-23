@@ -67,6 +67,7 @@ public:
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       parameter_file(parameter_file)
   {
+    grid = std::make_shared<Grid<dim>>();
   }
 
   virtual ~ApplicationBase()
@@ -104,7 +105,7 @@ public:
     param.print(pcout, "List of parameters for structure:");
 
     // grid
-    grid = std::make_shared<Grid<dim>>(param.grid, mpi_comm);
+    grid->initialize(param.grid, mpi_comm);
     create_grid();
     print_grid_info(pcout, *grid);
 
@@ -209,6 +210,7 @@ public:
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       parameter_file(parameter_file)
   {
+    grid = std::make_shared<Grid<dim>>();
   }
 
   virtual ~ApplicationBase()
@@ -249,7 +251,7 @@ public:
                 dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
     // grid
-    grid = std::make_shared<Grid<dim>>(param.grid, mpi_comm);
+    grid->initialize(param.grid, mpi_comm);
     create_grid();
     print_grid_info(pcout, *grid);
 

@@ -269,10 +269,10 @@ private:
     this->grid->triangulation->begin()->face(3)->set_all_boundary_ids(3);
 
     dealii::GridTools::collect_periodic_faces(
-      *this->grid->triangulation, 0, 1, 0, this->grid->periodic_faces);
+      *this->grid->triangulation, 0, 1, 0, this->grid->periodic_face_pairs);
     dealii::GridTools::collect_periodic_faces(
-      *this->grid->triangulation, 2, 3, 1, this->grid->periodic_faces);
-    this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
+      *this->grid->triangulation, 2, 3, 1, this->grid->periodic_face_pairs);
+    this->grid->triangulation->add_periodicity(this->grid->periodic_face_pairs);
 
 
     bool curvilinear_mesh = false;

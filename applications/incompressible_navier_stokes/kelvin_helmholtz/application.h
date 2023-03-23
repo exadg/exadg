@@ -218,8 +218,8 @@ private:
     }
 
     dealii::GridTools::collect_periodic_faces(
-      *this->grid->triangulation, 1, 2, 0, this->grid->periodic_faces);
-    this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
+      *this->grid->triangulation, 1, 2, 0, this->grid->periodic_face_pairs);
+    this->grid->triangulation->add_periodicity(this->grid->periodic_face_pairs);
 
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }

@@ -42,12 +42,20 @@ class Grid
 public:
   typedef typename std::vector<
     dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>>
-    PeriodicFaces;
+    PeriodicFacePairs;
 
   /**
    * Constructor.
    */
-  Grid(GridData const & data, MPI_Comm const & mpi_comm);
+  Grid()
+  {
+  }
+
+  /**
+   * Initialize function
+   */
+  void
+  initialize(GridData const & data, MPI_Comm const & mpi_comm);
 
   /**
    * dealii::Triangulation.
@@ -55,19 +63,25 @@ public:
   std::shared_ptr<dealii::Triangulation<dim>> triangulation;
 
   /**
-   * a vector of coarse triangulations required for global coarsening multigrid
-   */
-  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> coarse_triangulations;
-
-  /**
    * dealii::GridTools::PeriodicFacePair's.
    */
-  PeriodicFaces periodic_faces;
+  PeriodicFacePairs periodic_face_pairs;
 
   /**
    * dealii::Mapping.
    */
   std::shared_ptr<dealii::Mapping<dim>> mapping;
+
+  /**
+   * A vector of coarse triangulations required for global coarsening multigrid.
+   */
+  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> coarse_triangulations;
+
+  /**
+   * A vector of dealii::GridTools::PeriodicFacePair's for the coarse triangulations required for
+   * global coarsening multigrid.
+   */
+  std::vector<PeriodicFacePairs> coarse_periodic_face_pairs;
 };
 
 } // namespace ExaDG

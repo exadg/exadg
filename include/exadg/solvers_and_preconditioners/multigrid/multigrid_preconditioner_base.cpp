@@ -32,6 +32,7 @@
 
 // ExaDG
 #include <deal.II/fe/mapping_fe.h>
+#include <exadg/grid/grid_utilities.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/matrix_free/categorization.h>
 #include <exadg/solvers_and_preconditioners/multigrid/coarse_grid_solvers.h>
@@ -65,22 +66,27 @@ void
 MultigridPreconditionerBase<dim, Number>::initialize(
   MultigridData const &                                                  data,
   MultigridVariant const &                                               multigrid_variant,
-  dealii::Triangulation<dim> const *                                     tria,
+  dealii::Triangulation<dim> const *                                     triangulation,
+  PeriodicFacePairs const &                                              periodic_face_pairs,
   std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations,
+  std::vector<PeriodicFacePairs> const &                                 coarse_periodic_face_pairs,
   dealii::FiniteElement<dim> const &                                     fe,
   std::shared_ptr<dealii::Mapping<dim> const>                            mapping,
   bool const                                                             operator_is_singular,
   Map_DBC const &                                                        dirichlet_bc,
-  Map_DBC_ComponentMask const & dirichlet_bc_component_mask,
-  PeriodicFacePairs const &     periodic_face_pairs)
+  Map_DBC_ComponentMask const & dirichlet_bc_component_mask)
 {
   this->data = data;
 
   this->multigrid_variant = multigrid_variant;
 
-  this->triangulation = tria;
+  this->triangulation = triangulation;
+
+  this->periodic_face_pairs = periodic_face_pairs;
 
   this->coarse_triangulations = coarse_triangulations;
+
+  this->coarse_periodic_face_pairs = coarse_periodic_face_pairs;
 
   this->mapping = mapping;
 
@@ -91,9 +97,7 @@ MultigridPreconditionerBase<dim, Number>::initialize(
   this->initialize_mapping();
 
   this->initialize_dof_handler_and_constraints(operator_is_singular,
-                                               periodic_face_pairs,
                                                fe,
-                                               this->triangulation,
                                                dirichlet_bc,
                                                dirichlet_bc_component_mask);
 
@@ -416,16 +420,12 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_dof_handler_and_constraints(
   bool const                         operator_is_singular,
-  PeriodicFacePairs const &          periodic_face_pairs,
   dealii::FiniteElement<dim> const & fe,
-  dealii::Triangulation<dim> const * tria,
   Map_DBC const &                    dirichlet_bc,
   Map_DBC_ComponentMask const &      dirichlet_bc_component_mask)
 {
   this->do_initialize_dof_handler_and_constraints(operator_is_singular,
-                                                  periodic_face_pairs,
                                                   fe,
-                                                  tria,
                                                   dirichlet_bc,
                                                   dirichlet_bc_component_mask,
                                                   this->level_info,
@@ -439,9 +439,7 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constraints(
   bool                                  is_singular,
-  PeriodicFacePairs const &             periodic_face_pairs,
   dealii::FiniteElement<dim> const &    fe,
-  dealii::Triangulation<dim> const *    tria,
   Map_DBC const &                       dirichlet_bc,
   Map_DBC_ComponentMask const &         dirichlet_bc_component_mask,
   std::vector<MGLevelInfo> &            level_info,
@@ -462,12 +460,13 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
     {
       auto const & level = level_info[i];
 
-      auto dof_handler =
-        new dealii::DoFHandler<dim>((level.h_level() + 1 == triangulation->n_global_levels()) ?
-                                      *(dynamic_cast<dealii::Triangulation<dim> const *>(tria)) :
-                                      *(coarse_triangulations[level.h_level()]));
+      AssertThrow(level.h_level() < coarse_triangulations.size(),
+                  dealii::ExcMessage(
+                    "Vector of coarse_triangulations does not seem to be initialized correctly."));
 
-      if(tria->all_reference_cells_are_hyper_cube())
+      auto dof_handler = new dealii::DoFHandler<dim>(*coarse_triangulations[level.h_level()]);
+
+      if(triangulation->all_reference_cells_are_hyper_cube())
       {
         if(level.is_dg())
           dof_handler->distribute_dofs(
@@ -476,7 +475,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
           dof_handler->distribute_dofs(
             dealii::FESystem<dim>(dealii::FE_Q<dim>(level.degree()), fe.n_components()));
       }
-      else if(tria->all_reference_cells_are_simplex())
+      else if(triangulation->all_reference_cells_are_simplex())
       {
         if(level.is_dg())
           dof_handler->distribute_dofs(
@@ -492,19 +491,25 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
 
       auto affine_constraints_own = new dealii::AffineConstraints<MultigridNumber>();
 
-      // TODO: integrate periodic constraints into initialize_affine_constraints
-
       AssertThrow(is_singular == false, dealii::ExcNotImplemented());
-      AssertThrow(periodic_face_pairs.empty(),
-                  dealii::ExcMessage(
-                    "Multigrid transfer option use_global_coarsening "
-                    "is currently not available for problems with periodic boundaries."));
 
       dealii::IndexSet locally_relevant_dofs;
       dealii::DoFTools::extract_locally_relevant_dofs(*dof_handler, locally_relevant_dofs);
       affine_constraints_own->reinit(locally_relevant_dofs);
 
+      // hanging nodes (needs to be done before imposing periodicity constraints and boundary
+      // conditions)
       dealii::DoFTools::make_hanging_node_constraints(*dof_handler, *affine_constraints_own);
+
+      // constraints from periodic boundary conditions
+      if(not(this->coarse_periodic_face_pairs[level.h_level()].empty()))
+      {
+        auto periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
+          this->coarse_periodic_face_pairs[level.h_level()], *dof_handler);
+
+        dealii::DoFTools::make_periodicity_constraints<dim, dim, MultigridNumber>(
+          periodic_faces_dof, *affine_constraints_own);
+      }
 
       // collect all boundary functions and translate to format understood by
       // deal.II to cover all boundaries at once
@@ -533,10 +538,10 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
   }
   else if(multigrid_variant == MultigridVariant::LocalSmoothing)
   {
-    AssertThrow(tria->has_hanging_nodes() == false,
+    AssertThrow(triangulation->has_hanging_nodes() == false,
                 dealii::ExcMessage("Hanging nodes are only supported with the option "
                                    "use_global_coarsening enabled."));
-    AssertThrow(tria->all_reference_cells_are_hyper_cube(),
+    AssertThrow(triangulation->all_reference_cells_are_hyper_cube(),
                 dealii::ExcMessage("This multigrid implementation is currently only available for "
                                    "hyper-cube elements. Other grids need to enable the option "
                                    "use_global_coarsening."));
@@ -553,7 +558,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
     for(auto level : p_levels)
     {
       // setup dof_handler
-      auto dof_handler = new dealii::DoFHandler<dim>(*tria);
+      auto dof_handler = new dealii::DoFHandler<dim>(*triangulation);
 
       // distribute dofs
       if(level.is_dg)

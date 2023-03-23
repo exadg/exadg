@@ -34,7 +34,8 @@
 namespace ExaDG
 {
 template<int dim>
-Grid<dim>::Grid(GridData const & data, MPI_Comm const & mpi_comm)
+void
+Grid<dim>::initialize(GridData const & data, MPI_Comm const & mpi_comm)
 {
   // triangulation
   if(data.triangulation_type == TriangulationType::Serial)
