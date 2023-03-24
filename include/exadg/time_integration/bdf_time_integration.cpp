@@ -27,12 +27,9 @@
 
 namespace ExaDG
 {
-BDFTimeIntegratorConstants::BDFTimeIntegratorConstants(unsigned int const order_time_integrator,
-                                                       bool const start_with_low_order_method)
-  : order(order_time_integrator),
-    start_with_low_order(start_with_low_order_method),
-    gamma0(-1.0),
-    alpha(order)
+BDFTimeIntegratorConstants::BDFTimeIntegratorConstants(unsigned int const order,
+                                                       bool const         start_with_low_order)
+  : TimeIntegratorConstantsBase(order, start_with_low_order), gamma0(-1.0), alpha(order)
 {
   AssertThrow(order >= 1 && order <= 4,
               dealii::ExcMessage("Specified order of BDF scheme not implemented."));
@@ -184,37 +181,6 @@ BDFTimeIntegratorConstants::set_adaptive_time_step(unsigned int const          c
   for(unsigned int i = current_order; i < order; ++i)
   {
     alpha[i] = 0.0;
-  }
-}
-
-void
-BDFTimeIntegratorConstants::update(unsigned int const current_order)
-{
-  // when starting the time integrator with a low order method, ensure that
-  // the time integrator constants are set properly
-  if(current_order <= order && start_with_low_order == true)
-  {
-    set_constant_time_step(current_order);
-  }
-  else
-  {
-    set_constant_time_step(order);
-  }
-}
-
-void
-BDFTimeIntegratorConstants::update(unsigned int const          current_order,
-                                   std::vector<double> const & time_steps)
-{
-  // when starting the time integrator with a low order method, ensure that
-  // the time integrator constants are set properly
-  if(current_order <= order && start_with_low_order == true)
-  {
-    set_adaptive_time_step(current_order, time_steps);
-  }
-  else // adjust time integrator constants since this is adaptive time stepping
-  {
-    set_adaptive_time_step(order, time_steps);
   }
 }
 

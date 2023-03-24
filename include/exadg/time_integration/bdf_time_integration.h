@@ -28,13 +28,15 @@
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
 
+// ExaDG
+#include <exadg/time_integration/time_integration_constants_base.h>
+
 namespace ExaDG
 {
-class BDFTimeIntegratorConstants
+class BDFTimeIntegratorConstants : public TimeIntegratorConstantsBase
 {
 public:
-  BDFTimeIntegratorConstants(unsigned int const order_time_integrator,
-                             bool const         start_with_low_order_method);
+  BDFTimeIntegratorConstants(unsigned int const order, bool const start_with_low_order);
 
   double
   get_gamma0() const;
@@ -42,47 +44,16 @@ public:
   double
   get_alpha(unsigned int const i) const;
 
-  /*
-   *  This function updates the time integrator constants of the BDF scheme
-   *  in case of constant time step sizes.
-   */
   void
-  update(unsigned int const current_order);
-
-  /*
-   *  This function updates the time integrator constants of the BDF scheme
-   *  in case of adaptive time step sizes.
-   */
-  void
-  update(unsigned int const current_order, std::vector<double> const & time_steps);
-
-  /*
-   *  This function prints the time integrator constants
-   */
-  void
-  print(dealii::ConditionalOStream & pcout) const;
-
+  print(dealii::ConditionalOStream & pcout) const final;
 
 private:
-  /*
-   *  This function calculates the time integrator constants of the BDF scheme
-   *  in case of constant time step sizes.
-   */
   void
-  set_constant_time_step(unsigned int const current_order);
+  set_constant_time_step(unsigned int const current_order) final;
 
-  /*
-   *  This function calculates time integrator constants
-   *  in case of varying time step sizes (adaptive time stepping).
-   */
   void
-  set_adaptive_time_step(unsigned int const current_order, std::vector<double> const & time_steps);
-
-  // order of time integrator
-  unsigned int const order;
-
-  // use a low order time integration scheme to start the time integrator?
-  bool const start_with_low_order;
+  set_adaptive_time_step(unsigned int const          current_order,
+                         std::vector<double> const & time_steps) final;
 
   /*
    *  BDF time integrator constants:

@@ -30,11 +30,9 @@
 
 namespace ExaDG
 {
-ExtrapolationConstants::ExtrapolationConstants(unsigned int const order_extrapolation_scheme,
-                                               bool const         start_with_low_order_method)
-  : order(order_extrapolation_scheme),
-    start_with_low_order(start_with_low_order_method),
-    beta(order)
+ExtrapolationConstants::ExtrapolationConstants(unsigned int const order,
+                                               bool const         start_with_low_order)
+  : TimeIntegratorConstantsBase(order, start_with_low_order), beta(order)
 {
   AssertThrow(order <= 4,
               dealii::ExcMessage("Specified order of extrapolation scheme not implemented."));
@@ -51,12 +49,6 @@ ExtrapolationConstants::get_beta(unsigned int const i) const
                                  "has to be smaller than the order of the scheme."));
 
   return beta[i];
-}
-
-unsigned int
-ExtrapolationConstants::get_order() const
-{
-  return order;
 }
 
 void
@@ -162,37 +154,6 @@ ExtrapolationConstants::set_adaptive_time_step(unsigned int const          curre
   for(unsigned int i = current_order; i < order; ++i)
   {
     beta[i] = 0.0;
-  }
-}
-
-void
-ExtrapolationConstants::update(unsigned int const current_order)
-{
-  // when starting the time integrator with a low order method, ensure that
-  // the time integrator constants are set properly
-  if(current_order <= order && start_with_low_order == true)
-  {
-    set_constant_time_step(current_order);
-  }
-  else
-  {
-    set_constant_time_step(order);
-  }
-}
-
-void
-ExtrapolationConstants::update(unsigned int const          current_order,
-                               std::vector<double> const & time_steps)
-{
-  // when starting the time integrator with a low order method, ensure that
-  // the time integrator constants are set properly
-  if(current_order <= order && start_with_low_order == true)
-  {
-    set_adaptive_time_step(current_order, time_steps);
-  }
-  else // adjust time integrator constants since this is adaptive time stepping
-  {
-    set_adaptive_time_step(order, time_steps);
   }
 }
 
