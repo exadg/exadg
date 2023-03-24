@@ -41,36 +41,19 @@ public:
    *  This function updates the time integrator constants in case of constant time step sizes.
    */
   void
-  update(unsigned int const current_order)
+  update(unsigned int const          current_order,
+         bool const                  adaptive_time_stepping,
+         std::vector<double> const & time_steps)
   {
     // when starting the time integrator with a low order method, ensure that
     // the time integrator constants are set properly
-    if(current_order <= order && start_with_low_order == true)
-    {
-      set_constant_time_step(current_order);
-    }
-    else
-    {
-      set_constant_time_step(order);
-    }
-  }
+    unsigned int const update_order =
+      (current_order <= order && start_with_low_order == true) ? current_order : order;
 
-  /*
-   *  This function updates the time integrator constants in case of adaptive time step sizes.
-   */
-  void
-  update(unsigned int const current_order, std::vector<double> const & time_steps)
-  {
-    // when starting the time integrator with a low order method, ensure that
-    // the time integrator constants are set properly
-    if(current_order <= order && start_with_low_order == true)
-    {
-      set_adaptive_time_step(current_order, time_steps);
-    }
-    else // adjust time integrator constants since this is adaptive time stepping
-    {
-      set_adaptive_time_step(order, time_steps);
-    }
+    if(adaptive_time_stepping)
+      set_adaptive_time_step(update_order, time_steps);
+    else
+      set_constant_time_step(update_order);
   }
 
   unsigned int

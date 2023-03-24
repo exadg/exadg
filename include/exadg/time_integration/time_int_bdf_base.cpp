@@ -255,16 +255,8 @@ template<typename Number>
 void
 TimeIntBDFBase<Number>::update_time_integrator_constants()
 {
-  if(adaptive_time_stepping == false) // constant time steps
-  {
-    bdf.update(time_step_number);
-    extra.update(time_step_number);
-  }
-  else // adaptive time stepping
-  {
-    bdf.update(time_step_number, time_steps);
-    extra.update(time_step_number, time_steps);
-  }
+  bdf.update(time_step_number, adaptive_time_stepping, time_steps);
+  extra.update(time_step_number, adaptive_time_stepping, time_steps);
 
   // use this function to check the correctness of the time integrator constants
   //  std::cout << std::endl << "Time step " << time_step_number << std::endl << std::endl;
