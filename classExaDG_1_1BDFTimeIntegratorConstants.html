@@ -79,28 +79,85 @@ $(function() {
   <div class="headertitle"><div class="title">ExaDG::BDFTimeIntegratorConstants Class Reference</div></div>
 </div><!--header-->
 <div class="contents">
+<div class="dynheader">
+Inheritance diagram for ExaDG::BDFTimeIntegratorConstants:</div>
+<div class="dyncontent">
+ <div class="center">
+  <img src="classExaDG_1_1BDFTimeIntegratorConstants.png" usemap="#ExaDG::BDFTimeIntegratorConstants_map" alt=""/>
+  <map id="ExaDG::BDFTimeIntegratorConstants_map" name="ExaDG::BDFTimeIntegratorConstants_map">
+<area href="classExaDG_1_1TimeIntegratorConstantsBase.html" alt="ExaDG::TimeIntegratorConstantsBase" shape="rect" coords="0,0,220,24"/>
+  </map>
+</div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ab6ee3bbe76bc9fd424462357e8006cd3"><td class="memItemLeft" align="right" valign="top"><a id="ab6ee3bbe76bc9fd424462357e8006cd3" name="ab6ee3bbe76bc9fd424462357e8006cd3"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>BDFTimeIntegratorConstants</b> (unsigned int const order_time_integrator, bool const start_with_low_order_method)</td></tr>
-<tr class="separator:ab6ee3bbe76bc9fd424462357e8006cd3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:affd919d6529359266a8f1e409690b615"><td class="memItemLeft" align="right" valign="top"><a id="affd919d6529359266a8f1e409690b615" name="affd919d6529359266a8f1e409690b615"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>BDFTimeIntegratorConstants</b> (unsigned int const order, bool const start_with_low_order)</td></tr>
+<tr class="separator:affd919d6529359266a8f1e409690b615"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a309c6f484621f69b476040134e310c9b"><td class="memItemLeft" align="right" valign="top"><a id="a309c6f484621f69b476040134e310c9b" name="a309c6f484621f69b476040134e310c9b"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>get_gamma0</b> () const</td></tr>
 <tr class="separator:a309c6f484621f69b476040134e310c9b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae3d2ebff27d1848a41d9b9492156bbab"><td class="memItemLeft" align="right" valign="top"><a id="ae3d2ebff27d1848a41d9b9492156bbab" name="ae3d2ebff27d1848a41d9b9492156bbab"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>get_alpha</b> (unsigned int const i) const</td></tr>
 <tr class="separator:ae3d2ebff27d1848a41d9b9492156bbab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aead8b108e1fb8ea0cb5d85cd5535e695"><td class="memItemLeft" align="right" valign="top"><a id="aead8b108e1fb8ea0cb5d85cd5535e695" name="aead8b108e1fb8ea0cb5d85cd5535e695"></a>
+<tr class="memitem:a233677740433547de5b3c262d87ff77e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1BDFTimeIntegratorConstants.html#a233677740433547de5b3c262d87ff77e">print</a> (dealii::ConditionalOStream &amp;pcout) const final</td></tr>
+<tr class="separator:a233677740433547de5b3c262d87ff77e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classExaDG_1_1TimeIntegratorConstantsBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1TimeIntegratorConstantsBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1TimeIntegratorConstantsBase.html">ExaDG::TimeIntegratorConstantsBase</a></td></tr>
+<tr class="memitem:a35ce1e4d0717d9dd6ec80062f9e59cef inherit pub_methods_classExaDG_1_1TimeIntegratorConstantsBase"><td class="memItemLeft" align="right" valign="top"><a id="a35ce1e4d0717d9dd6ec80062f9e59cef" name="a35ce1e4d0717d9dd6ec80062f9e59cef"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>TimeIntegratorConstantsBase</b> (unsigned int const order, bool const start_with_low_order)</td></tr>
+<tr class="separator:a35ce1e4d0717d9dd6ec80062f9e59cef inherit pub_methods_classExaDG_1_1TimeIntegratorConstantsBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5935b0100b1d315be3abcddfdfc2f3e5 inherit pub_methods_classExaDG_1_1TimeIntegratorConstantsBase"><td class="memItemLeft" align="right" valign="top"><a id="a5935b0100b1d315be3abcddfdfc2f3e5" name="a5935b0100b1d315be3abcddfdfc2f3e5"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update</b> (unsigned int const current_order)</td></tr>
-<tr class="separator:aead8b108e1fb8ea0cb5d85cd5535e695"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aae6ca6e28415ba5e56a8612fe255cc47"><td class="memItemLeft" align="right" valign="top"><a id="aae6ca6e28415ba5e56a8612fe255cc47" name="aae6ca6e28415ba5e56a8612fe255cc47"></a>
+<tr class="separator:a5935b0100b1d315be3abcddfdfc2f3e5 inherit pub_methods_classExaDG_1_1TimeIntegratorConstantsBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2a104c3a012b63283d95694c5b03217 inherit pub_methods_classExaDG_1_1TimeIntegratorConstantsBase"><td class="memItemLeft" align="right" valign="top"><a id="ad2a104c3a012b63283d95694c5b03217" name="ad2a104c3a012b63283d95694c5b03217"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update</b> (unsigned int const current_order, std::vector&lt; double &gt; const &amp;time_steps)</td></tr>
-<tr class="separator:aae6ca6e28415ba5e56a8612fe255cc47"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2e31e22516156bc7e15a47acfe1a165a"><td class="memItemLeft" align="right" valign="top"><a id="a2e31e22516156bc7e15a47acfe1a165a" name="a2e31e22516156bc7e15a47acfe1a165a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>print</b> (dealii::ConditionalOStream &amp;pcout) const</td></tr>
-<tr class="separator:a2e31e22516156bc7e15a47acfe1a165a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:ad2a104c3a012b63283d95694c5b03217 inherit pub_methods_classExaDG_1_1TimeIntegratorConstantsBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6b54489afd26b04c7817507faa11acbb inherit pub_methods_classExaDG_1_1TimeIntegratorConstantsBase"><td class="memItemLeft" align="right" valign="top"><a id="a6b54489afd26b04c7817507faa11acbb" name="a6b54489afd26b04c7817507faa11acbb"></a>
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_order</b> () const</td></tr>
+<tr class="separator:a6b54489afd26b04c7817507faa11acbb inherit pub_methods_classExaDG_1_1TimeIntegratorConstantsBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4548589c396803865dfebcc4af601418 inherit pub_methods_classExaDG_1_1TimeIntegratorConstantsBase"><td class="memItemLeft" align="right" valign="top"><a id="a4548589c396803865dfebcc4af601418" name="a4548589c396803865dfebcc4af601418"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>print</b> (dealii::ConditionalOStream &amp;pcout) const =0</td></tr>
+<tr class="separator:a4548589c396803865dfebcc4af601418 inherit pub_methods_classExaDG_1_1TimeIntegratorConstantsBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
+Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pro_attribs_classExaDG_1_1TimeIntegratorConstantsBase"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classExaDG_1_1TimeIntegratorConstantsBase')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classExaDG_1_1TimeIntegratorConstantsBase.html">ExaDG::TimeIntegratorConstantsBase</a></td></tr>
+<tr class="memitem:ae72b133575587c8601d5d93e84b9b8d1 inherit pro_attribs_classExaDG_1_1TimeIntegratorConstantsBase"><td class="memItemLeft" align="right" valign="top"><a id="ae72b133575587c8601d5d93e84b9b8d1" name="ae72b133575587c8601d5d93e84b9b8d1"></a>
+unsigned int const&#160;</td><td class="memItemRight" valign="bottom"><b>order</b></td></tr>
+<tr class="separator:ae72b133575587c8601d5d93e84b9b8d1 inherit pro_attribs_classExaDG_1_1TimeIntegratorConstantsBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a05069eafea0e2feb181446c35a05a072 inherit pro_attribs_classExaDG_1_1TimeIntegratorConstantsBase"><td class="memItemLeft" align="right" valign="top"><a id="a05069eafea0e2feb181446c35a05a072" name="a05069eafea0e2feb181446c35a05a072"></a>
+bool const&#160;</td><td class="memItemRight" valign="bottom"><b>start_with_low_order</b></td></tr>
+<tr class="separator:a05069eafea0e2feb181446c35a05a072 inherit pro_attribs_classExaDG_1_1TimeIntegratorConstantsBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a233677740433547de5b3c262d87ff77e" name="a233677740433547de5b3c262d87ff77e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a233677740433547de5b3c262d87ff77e">&#9670;&#160;</a></span>print()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ExaDG::BDFTimeIntegratorConstants::print </td>
+          <td>(</td>
+          <td class="paramtype">dealii::ConditionalOStream &amp;&#160;</td>
+          <td class="paramname"><em>pcout</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1TimeIntegratorConstantsBase.html">ExaDG::TimeIntegratorConstantsBase</a>.</p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/exadg/time_integration/<a class="el" href="bdf__time__integration_8h_source.html">bdf_time_integration.h</a></li>
 <li>include/exadg/time_integration/bdf_time_integration.cpp</li>
