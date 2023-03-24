@@ -1,8 +1,22 @@
-/*
- * time_integration_constants_base.h
+/*  ______________________________________________________________________
  *
- *  Created on: Mar 24, 2023
- *      Author: fehn
+ *  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
+ *
+ *  Copyright (C) 2021 by the ExaDG authors
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  ______________________________________________________________________
  */
 
 #ifndef INCLUDE_EXADG_TIME_INTEGRATION_TIME_INTEGRATION_CONSTANTS_BASE_H_
@@ -14,8 +28,10 @@ namespace ExaDG
 class TimeIntegratorConstantsBase
 {
 public:
-  TimeIntegratorConstantsBase(unsigned int const order_time_integrator,
-                              bool const         start_with_low_order_method);
+  TimeIntegratorConstantsBase(unsigned int const order, bool const start_with_low_order)
+    : order(order), start_with_low_order(start_with_low_order)
+  {
+  }
 
   virtual ~TimeIntegratorConstantsBase()
   {
@@ -57,12 +73,24 @@ public:
     }
   }
 
+  unsigned int
+  get_order() const
+  {
+    return order;
+  }
+
   /*
    *  This function prints the time integrator constants
    */
   virtual void
   print(dealii::ConditionalOStream & pcout) const = 0;
 
+protected:
+  // order of time integrator
+  unsigned int const order;
+
+  // use a low order time integration scheme to start the time integrator?
+  bool const start_with_low_order;
 
 private:
   /*
@@ -78,13 +106,8 @@ private:
   virtual void
   set_adaptive_time_step(unsigned int const          current_order,
                          std::vector<double> const & time_steps) = 0;
-
-  // order of time integrator
-  unsigned int const order;
-
-  // use a low order time integration scheme to start the time integrator?
-  bool const start_with_low_order;
 };
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_EXADG_TIME_INTEGRATION_TIME_INTEGRATION_CONSTANTS_BASE_H_ */
