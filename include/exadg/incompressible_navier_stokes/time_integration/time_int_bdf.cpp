@@ -177,6 +177,59 @@ TimeIntBDF<dim, Number>::advance_one_timestep_partitioned_solve(bool const use_e
 
 template<int dim, typename Number>
 void
+TimeIntBDF<dim, Number>::get_quantities_and_times(
+  std::vector<VectorType const *> &                             quantities,
+  std::vector<double> &                                         times,
+  std::function<VectorType const *(unsigned int const)> const & get_quantity) const
+{
+  /*
+   *
+   *   time t
+   *  -------->   t_{n-2}        t_{n-1}         t_{n}         t_{n+1}
+   *  _______________|______________|______________|______________|___________\
+   *                 |              |              |              |           /
+   *           quantities[2]  quantities[1]  quantities[0]
+   *              times[2]       times[1]       times[0]
+   */
+
+  unsigned int const current_order = this->get_current_order();
+
+  quantities.resize(current_order);
+  times.resize(current_order);
+
+  for(unsigned int i = 0; i < current_order; ++i)
+  {
+    quantities[i] = get_quantity(i);
+    times[i]      = this->get_previous_time(i);
+  }
+}
+
+template<int dim, typename Number>
+void
+TimeIntBDF<dim, Number>::get_quantities_and_times_np(
+  std::vector<VectorType const *> &                             quantities,
+  std::vector<double> &                                         times,
+  std::function<VectorType const *(unsigned int const)> const & get_quantity,
+  std::function<VectorType const *()> const &                   get_quantity_np) const
+{
+  /*
+   *
+   *   time t
+   *  -------->   t_{n-2}        t_{n-1}         t_{n}         t_{n+1}
+   *  _______________|______________|______________|______________|___________\
+   *                 |              |              |              |           /
+   *           quantities[3]  quantities[2]  quantities[1]  quantities[0]
+   *              times[3]       times[2]       times[1]       times[0]
+   */
+
+  get_quantities_and_times(quantities, times, get_quantity);
+
+  quantities.insert(quantities.begin(), get_quantity_np());
+  times.insert(times.begin(), this->get_next_time());
+}
+
+template<int dim, typename Number>
+void
 TimeIntBDF<dim, Number>::initialize_vec_convective_term()
 {
   this->operator_base->evaluate_convective_term(vec_convective_term[0],
@@ -383,34 +436,7 @@ void
 TimeIntBDF<dim, Number>::get_velocities_and_times(std::vector<VectorType const *> & velocities,
                                                   std::vector<double> &             times) const
 {
-  /*
-   * the convective term is nonlinear, so we have to initialize the transport velocity
-   * and the discrete time instants that can be used for interpolation
-   *
-   *   time t
-   *  -------->   t_{n-2}   t_{n-1}   t_{n}     t_{n+1}
-   *  _______________|_________|________|___________|___________\
-   *                 |         |        |           |           /
-   *               sol[2]    sol[1]   sol[0]
-   *             times[2]  times[1]  times[0]
-   */
-  unsigned int current_order = this->order;
-  if(this->time_step_number <= this->order and this->param.start_with_low_order == true)
-  {
-    current_order = this->time_step_number;
-  }
-
-  AssertThrow(current_order > 0 and current_order <= this->order,
-              dealii::ExcMessage("Invalid parameter current_order"));
-
-  velocities.resize(current_order);
-  times.resize(current_order);
-
-  for(unsigned int i = 0; i < current_order; ++i)
-  {
-    velocities.at(i) = &get_velocity(i);
-    times.at(i)      = this->get_previous_time(i);
-  }
+  get_quantities_and_times(velocities, times, [&](const auto i) { return &get_velocity(i); });
 }
 
 template<int dim, typename Number>
@@ -418,37 +444,33 @@ void
 TimeIntBDF<dim, Number>::get_velocities_and_times_np(std::vector<VectorType const *> & velocities,
                                                      std::vector<double> &             times) const
 {
-  /*
-   * the convective term is nonlinear, so we have to initialize the transport velocity
-   * and the discrete time instants that can be used for interpolation
-   *
-   *   time t
-   *  -------->     t_{n-2}   t_{n-1}   t_{n}     t_{n+1}
-   *  _______________|_________|________|___________|___________\
-   *                 |         |        |           |           /
-   *               sol[3]   sol[2]    sol[1]     sol[0]
-   *              times[3] times[2]  times[1]   times[0]
-   */
-  unsigned int current_order = this->order;
-  if(this->time_step_number <= this->order and this->param.start_with_low_order == true)
-  {
-    current_order = this->time_step_number;
-  }
-
-  AssertThrow(current_order > 0 and current_order <= this->order,
-              dealii::ExcMessage("Invalid parameter current_order"));
-
-  velocities.resize(current_order + 1);
-  times.resize(current_order + 1);
-
-  velocities.at(0) = &get_velocity_np();
-  times.at(0)      = this->get_next_time();
-  for(unsigned int i = 0; i < current_order; ++i)
-  {
-    velocities.at(i + 1) = &get_velocity(i);
-    times.at(i + 1)      = this->get_previous_time(i);
-  }
+  get_quantities_and_times_np(
+    velocities,
+    times,
+    [&](const auto i) { return &get_velocity(i); },
+    [&]() { return &get_velocity_np(); });
 }
+
+template<int dim, typename Number>
+void
+TimeIntBDF<dim, Number>::get_pressures_and_times(std::vector<VectorType const *> & pressures,
+                                                 std::vector<double> &             times) const
+{
+  get_quantities_and_times(pressures, times, [&](const auto i) { return &get_pressure(i); });
+}
+
+template<int dim, typename Number>
+void
+TimeIntBDF<dim, Number>::get_pressures_and_times_np(std::vector<VectorType const *> & pressures,
+                                                    std::vector<double> &             times) const
+{
+  get_quantities_and_times_np(
+    pressures,
+    times,
+    [&](const auto i) { return &get_pressure(i); },
+    [&]() { return &get_pressure_np(); });
+}
+
 
 template<int dim, typename Number>
 void

@@ -140,6 +140,14 @@ TimeIntBDFBase::get_previous_time(int const i /* t_{n-i} */) const
   return t;
 }
 
+unsigned int
+TimeIntBDFBase::get_current_order() const
+{
+  if(start_with_low_order == true and time_step_number <= order)
+    return this->time_step_number;
+  return order;
+}
+
 double
 TimeIntBDFBase::get_time_step_size() const
 {
