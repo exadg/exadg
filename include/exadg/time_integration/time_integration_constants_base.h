@@ -38,7 +38,8 @@ public:
   }
 
   /*
-   *  This function updates the time integrator constants in case of constant time step sizes.
+   *  This function updates the time integrator constants. The argument time_steps is only used in
+   * case of adaptive time stepping.
    */
   void
   update(unsigned int const          current_order,
