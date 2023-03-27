@@ -181,12 +181,13 @@ Parameters::Parameters()
     // PRESSURE-CORRECTION SCHEME
 
     // momentum step
-    newton_solver_data_momentum(Newton::SolverData(1e2, 1.e-12, 1.e-6)),
+    nonlinear_solver_data_momentum(
+      NonlinearSolver::SolverData(1e2, 1.e-12, 1.e-6, NonlinearSolver::SolverType::Newton)),
     solver_momentum(SolverMomentum::GMRES),
     solver_data_momentum(SolverData(1e4, 1.e-12, 1.e-6, 100)),
     preconditioner_momentum(MomentumPreconditioner::InverseMassMatrix),
     update_preconditioner_momentum(false),
-    update_preconditioner_momentum_every_newton_iter(1),
+    update_preconditioner_momentum_every_nonlinear_iter(1),
     update_preconditioner_momentum_every_time_steps(1),
     multigrid_data_momentum(MultigridData()),
     multigrid_operator_type_momentum(MultigridOperatorType::Undefined),
@@ -202,8 +203,9 @@ Parameters::Parameters()
     use_scaling_continuity(false),
     scaling_factor_continuity(1.0),
 
-    // nonlinear solver (Newton solver)
-    newton_solver_data_coupled(Newton::SolverData(1e2, 1.e-12, 1.e-6)),
+    // nonlinear solver
+    nonlinear_solver_data_coupled(
+      NonlinearSolver::SolverData(1e2, 1.e-12, 1.e-6, NonlinearSolver::SolverType::Newton)),
 
     // linear solver
     solver_coupled(SolverCoupled::GMRES),
@@ -212,7 +214,7 @@ Parameters::Parameters()
     // preconditioning linear solver
     preconditioner_coupled(PreconditionerCoupled::BlockTriangular),
     update_preconditioner_coupled(false),
-    update_preconditioner_coupled_every_newton_iter(1),
+    update_preconditioner_coupled_every_nonlinear_iter(1),
     update_preconditioner_coupled_every_time_steps(1),
 
     // preconditioner velocity/momentum block
@@ -1114,13 +1116,13 @@ Parameters::print_parameters_pressure_correction(dealii::ConditionalOStream cons
   // Momentum step
   pcout << std::endl << "  Momentum step:" << std::endl;
 
-  // Newton solver
+  // nonlinear solver
   if(equation_type == EquationType::NavierStokes &&
      treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
   {
-    pcout << "  Newton solver:" << std::endl;
+    pcout << "  Nonlinear solver:" << std::endl;
 
-    newton_solver_data_momentum.print(pcout);
+    nonlinear_solver_data_momentum.print(pcout);
 
     pcout << std::endl;
   }
@@ -1143,8 +1145,8 @@ Parameters::print_parameters_pressure_correction(dealii::ConditionalOStream cons
        treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
     {
       print_parameter(pcout,
-                      "Update every Newton iterations",
-                      update_preconditioner_momentum_every_newton_iter);
+                      "Update every nonlinear iterations",
+                      update_preconditioner_momentum_every_nonlinear_iter);
     }
 
     print_parameter(pcout,
@@ -1181,15 +1183,15 @@ Parameters::print_parameters_coupled_solver(dealii::ConditionalOStream const & p
 
   pcout << std::endl;
 
-  // Newton solver
+  // nonlinear solver
 
   // if a nonlinear problem has to be solved
   if(equation_type == EquationType::NavierStokes &&
      treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
   {
-    pcout << "Newton solver:" << std::endl;
+    pcout << "Nonlinear solver:" << std::endl;
 
-    newton_solver_data_coupled.print(pcout);
+    nonlinear_solver_data_coupled.print(pcout);
 
     pcout << std::endl;
   }
@@ -1212,8 +1214,8 @@ Parameters::print_parameters_coupled_solver(dealii::ConditionalOStream const & p
        treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
     {
       print_parameter(pcout,
-                      "Update every Newton iterations",
-                      update_preconditioner_coupled_every_newton_iter);
+                      "Update every nonlinear iterations",
+                      update_preconditioner_coupled_every_nonlinear_iter);
     }
 
     print_parameter(pcout,

@@ -304,6 +304,21 @@ Operator<dim, Number>::setup_operators()
   operator_data.material_descriptor = material_descriptor;
   operator_data.unsteady            = (param.problem_type == ProblemType::Unsteady);
   operator_data.density             = param.density;
+
+  // set linearization variant dependent on solver type chosen
+  if(param.nonlinear_solver_data.nonlinear_solver_type ==
+     ExaDG::NonlinearSolver::SolverType::Newton)
+  {
+    operator_data.linearization_type = LinearizationType::Newton;
+  }
+  else
+  {
+    Assert(
+      false,
+      dealii::ExcMessage(
+        "Operators for this nonlinear solver/linearization type not implemented in structure module."));
+  }
+
   if(param.large_deformation)
   {
     operator_data.pull_back_traction = param.pull_back_traction;
@@ -346,9 +361,9 @@ Operator<dim, Number>::setup_operators()
     // use the same solver tolerances as for solving the momentum equation
     if(param.large_deformation)
     {
-      solver_data.solver_tolerance_abs = param.newton_solver_data.abs_tol;
-      solver_data.solver_tolerance_rel = param.newton_solver_data.rel_tol;
-      solver_data.max_iter             = param.newton_solver_data.max_iter;
+      solver_data.solver_tolerance_abs = param.nonlinear_solver_data.abs_tol;
+      solver_data.solver_tolerance_rel = param.nonlinear_solver_data.rel_tol;
+      solver_data.max_iter             = param.nonlinear_solver_data.max_iter;
     }
     else
     {
@@ -594,16 +609,16 @@ Operator<dim, Number>::initialize_solver()
     AssertThrow(false, dealii::ExcMessage("Specified solver is not implemented!"));
   }
 
-  // initialize Newton solver
+  // initialize nonlinear solver
   if(param.large_deformation)
   {
     residual_operator.initialize(*this);
     linearized_operator.initialize(*this);
 
-    newton_solver = std::make_shared<NewtonSolver>(param.newton_solver_data,
-                                                   residual_operator,
-                                                   linearized_operator,
-                                                   *linear_solver);
+    nonlinear_solver = std::make_shared<NonlinearSolver>(param.nonlinear_solver_data,
+                                                         residual_operator,
+                                                         linearized_operator,
+                                                         *linear_solver);
   }
 }
 
@@ -757,7 +772,7 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
     dst -= body_forces;
   }
 
-  // To ensure convergence of the Newton solver, the residual has to be zero
+  // To ensure convergence of the nonlinear solver, the residual has to be zero
   // for constrained degrees of freedom as well, which might not be the case
   // in general, e.g. due to const_vector. Hence, we set the constrained
   // degrees of freedom explicitly to zero.
@@ -822,18 +837,18 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   // set inhomogeneous Dirichlet values
   elasticity_operator_nonlinear.set_constrained_values(sol, time);
 
-  // call Newton solver
-  Newton::UpdateData update;
-  update.do_update                = update_preconditioner;
-  update.update_every_newton_iter = param.update_preconditioner_every_newton_iterations;
-  update.update_once_converged    = param.update_preconditioner_once_newton_converged;
+  // call nonlinear solver
+  ExaDG::NonlinearSolver::UpdateData update;
+  update.do_update                   = update_preconditioner;
+  update.update_every_nonlinear_iter = param.update_preconditioner_every_nonlinear_iterations;
+  update.update_once_converged       = param.update_preconditioner_once_nonlinear_solver_converged;
 
   // solve nonlinear problem
-  auto const iter = newton_solver->solve(sol, update);
+  auto const iter = nonlinear_solver->solve(sol, update);
 
   // This step should actually be optional: The constraints have already been set
   // before the nonlinear solver is called and no contributions to the constrained
-  // degrees of freedom should be added in the Newton solver by the linearized solver
+  // degrees of freedom should be added in the nonlinear solver by the linearized solver
   // (because the residual vector forming the rhs of the linearized problem is zero
   // for constrained degrees of freedom, the initial solution of the linearized
   // solver is also zero, and the linearized operator contains values of 1 on the

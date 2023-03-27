@@ -135,16 +135,20 @@ OperatorCoupled<dim, Number>::initialize_solver_coupled()
                 dealii::ExcMessage("Specified solver for linearized problem is not implemented."));
   }
 
-  // setup Newton solver
+  // setup nonlinear solver
   if(this->param.nonlinear_problem_has_to_be_solved())
   {
     nonlinear_operator.initialize(*this);
 
-    newton_solver = std::make_shared<Newton::Solver<BlockVectorType,
-                                                    NonlinearOperatorCoupled<dim, Number>,
-                                                    LinearOperatorCoupled<dim, Number>,
-                                                    Krylov::SolverBase<BlockVectorType>>>(
-      this->param.newton_solver_data_coupled, nonlinear_operator, linear_operator, *linear_solver);
+    nonlinear_solver =
+      std::make_shared<NonlinearSolver::Solver<BlockVectorType,
+                                               NonlinearOperatorCoupled<dim, Number>,
+                                               LinearOperatorCoupled<dim, Number>,
+                                               Krylov::SolverBase<BlockVectorType>>>(
+        this->param.nonlinear_solver_data_coupled,
+        nonlinear_operator,
+        linear_operator,
+        *linear_solver);
   }
 }
 
@@ -264,11 +268,12 @@ OperatorCoupled<dim, Number>::solve_nonlinear_problem(BlockVectorType &  dst,
   linear_operator.update(time, scaling_factor_mass);
 
   // Solve nonlinear problem
-  Newton::UpdateData update;
-  update.do_update                = update_preconditioner;
-  update.update_every_newton_iter = this->param.update_preconditioner_coupled_every_newton_iter;
+  ExaDG::NonlinearSolver::UpdateData update;
+  update.do_update = update_preconditioner;
+  update.update_every_nonlinear_iter =
+    this->param.update_preconditioner_coupled_every_nonlinear_iter;
 
-  auto const iter = newton_solver->solve(dst, update);
+  auto const iter = nonlinear_solver->solve(dst, update);
 
   return iter;
 }
@@ -317,6 +322,45 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &     
   // pressure-block
 
   this->divergence_operator.evaluate(dst.block(1), src.block(0), time);
+  // multiply by -1.0 since we use a formulation with symmetric saddle point matrix
+  // with respect to pressure gradient term and velocity divergence term
+  // scale by scaling_factor_continuity
+  dst.block(1) *= -scaling_factor_continuity;
+}
+
+template<int dim, typename Number>
+void
+OperatorCoupled<dim, Number>::evaluate_rhs_picard_linearized(BlockVectorType &  dst,
+                                                             VectorType const * rhs_vector,
+                                                             double const &     time) const
+{
+  // velocity-block
+  this->gradient_operator.rhs(dst.block(0), time);
+  dst.block(0) *= scaling_factor_continuity;
+
+  if(this->param.convective_problem())
+  {
+    this->convective_operator.set_time(time);
+    this->convective_operator.rhs_add(dst.block(0));
+  }
+
+  if(this->param.viscous_problem())
+  {
+    this->viscous_operator.set_time(time);
+    this->viscous_operator.rhs_add(dst.block(0));
+  }
+
+  if(this->param.apply_penalty_terms_in_postprocessing_step == false)
+  {
+    if(this->param.use_continuity_penalty == true)
+      this->conti_penalty_operator.rhs_add(dst.block(0), time);
+  }
+
+  // constant right-hand side vector (body force vector and sum_alphai_ui term)
+  dst.block(0).add(1.0, *rhs_vector);
+
+  // pressure-block
+  this->divergence_operator.rhs(dst.block(1), time);
   // multiply by -1.0 since we use a formulation with symmetric saddle point matrix
   // with respect to pressure gradient term and velocity divergence term
   // scale by scaling_factor_continuity

@@ -425,7 +425,7 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
     AssertThrow(this->param.nonlinear_problem_has_to_be_solved(),
                 dealii::ExcMessage("Logical error."));
 
-    // solve non-linear system of equations
+    // solve nonlinear system of equations
     auto const iter = pde_operator->solve_nonlinear_momentum_equation(
       velocity_np,
       rhs,

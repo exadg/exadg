@@ -110,7 +110,7 @@ private:
   // iteration counts
   std::pair<
     unsigned int /* calls */,
-    std::tuple<unsigned long long, unsigned long long> /* iteration counts {Newton, linear} */>
+    std::tuple<unsigned long long, unsigned long long> /* iteration counts {nonlinear, linear} */>
     iterations;
 };
 

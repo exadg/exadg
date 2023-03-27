@@ -226,15 +226,16 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_solver()
     // nonlinear_operator;
     nonlinear_operator.initialize(*this);
 
-    // setup Newton solver
-    momentum_newton_solver = std::make_shared<Newton::Solver<VectorType,
-                                                             NonlinearMomentumOperator<dim, Number>,
-                                                             MomentumOperator<dim, Number>,
-                                                             Krylov::SolverBase<VectorType>>>(
-      this->param.newton_solver_data_momentum,
-      nonlinear_operator,
-      this->momentum_operator,
-      *momentum_linear_solver);
+    // setup nonlinear solver
+    momentum_nonlinear_solver =
+      std::make_shared<NonlinearSolver::Solver<VectorType,
+                                               NonlinearMomentumOperator<dim, Number>,
+                                               MomentumOperator<dim, Number>,
+                                               Krylov::SolverBase<VectorType>>>(
+        this->param.nonlinear_solver_data_momentum,
+        nonlinear_operator,
+        this->momentum_operator,
+        *momentum_linear_solver);
   }
 }
 
@@ -295,11 +296,12 @@ OperatorPressureCorrection<dim, Number>::solve_nonlinear_momentum_equation(
   this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
 
   // Solve nonlinear problem
-  Newton::UpdateData update;
-  update.do_update                = update_preconditioner;
-  update.update_every_newton_iter = this->param.update_preconditioner_momentum_every_newton_iter;
+  ExaDG::NonlinearSolver::UpdateData update;
+  update.do_update = update_preconditioner;
+  update.update_every_nonlinear_iter =
+    this->param.update_preconditioner_momentum_every_nonlinear_iter;
 
-  std::tuple<unsigned int, unsigned int> iter = momentum_newton_solver->solve(dst, update);
+  std::tuple<unsigned int, unsigned int> iter = momentum_nonlinear_solver->solve(dst, update);
 
   return iter;
 }
@@ -327,6 +329,33 @@ OperatorPressureCorrection<dim, Number>::evaluate_nonlinear_residual(
   // rhs vector
   dst.add(-1.0, *rhs_vector);
 }
+
+template<int dim, typename Number>
+void
+OperatorPressureCorrection<dim, Number>::evaluate_rhs_picard_linearized(
+  VectorType &       dst,
+  VectorType const * rhs_vector,
+  double const &     time) const
+{
+  dst = 0.0;
+
+  if(this->param.viscous_problem())
+  {
+    this->viscous_operator.set_time(time);
+    this->viscous_operator.rhs_add(dst);
+  }
+
+  if(this->param.convective_problem())
+  {
+    this->convective_operator.set_time(time);
+    this->convective_operator.rhs_add(dst);
+  }
+
+  // constant right-hand side vector (body force vector, sum_alphai_ui term and extrapolated
+  // pressure gradient)
+  dst.add(1.0, *rhs_vector);
+}
+
 
 template<int dim, typename Number>
 void

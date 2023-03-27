@@ -23,7 +23,7 @@
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_PRESSURE_CORRECTION_H_
 
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_projection_methods.h>
-#include <exadg/solvers_and_preconditioners/newton/newton_solver.h>
+#include <exadg/solvers_and_preconditioners/nonlinear_solvers/newton_solver.h>
 
 namespace ExaDG
 {
@@ -62,13 +62,24 @@ public:
   }
 
   /*
-   * The implementation of the Newton solver requires a function called
+   * The implementation of the nonlinear solver requires a function called
    * 'evaluate_residual'.
    */
   void
   evaluate_residual(VectorType & dst, VectorType const & src)
   {
     pde_operator->evaluate_nonlinear_residual(dst, src, rhs_vector, time, scaling_factor_mass);
+  }
+
+
+  /*
+   * The implementation of the nonlinear (Picard) solver requires a function called
+   * 'rhs_picard_linearized_problem'.
+   */
+  void
+  evaluate_rhs_picard(VectorType & dst)
+  {
+    pde_operator->evaluate_rhs_picard_linearized(dst, rhs_vector, time);
   }
 
 private:
@@ -151,7 +162,7 @@ public:
   rhs_add_viscous_term(VectorType & dst, double const time) const;
 
   /*
-   * Convective term treated implicitly: solve non-linear system of equations
+   * Convective term treated implicitly: solve nonlinear system of equations
    */
   std::tuple<unsigned int, unsigned int>
   solve_nonlinear_momentum_equation(VectorType &       dst,
@@ -169,6 +180,16 @@ public:
                               VectorType const * rhs_vector,
                               double const &     time,
                               double const &     scaling_factor_mass) const;
+
+  /*
+   * This function calculates the right-hand side of the (un-)steady Navier-Stokes equations
+   * within a Picard scheme.
+   */
+  void
+  evaluate_rhs_picard_linearized(VectorType &       dst,
+                                 VectorType const * rhs_vector,
+                                 double const &     time) const;
+
 
   /*
    * This function evaluates the nonlinear residual of the steady Navier-Stokes equations (momentum
@@ -275,11 +296,11 @@ private:
   // Nonlinear operator and solver
   NonlinearMomentumOperator<dim, Number> nonlinear_operator;
 
-  std::shared_ptr<Newton::Solver<VectorType,
-                                 NonlinearMomentumOperator<dim, Number>,
-                                 MomentumOperator<dim, Number>,
-                                 Krylov::SolverBase<VectorType>>>
-    momentum_newton_solver;
+  std::shared_ptr<NonlinearSolver::Solver<VectorType,
+                                          NonlinearMomentumOperator<dim, Number>,
+                                          MomentumOperator<dim, Number>,
+                                          Krylov::SolverBase<VectorType>>>
+    momentum_nonlinear_solver;
 
   // linear solver (momentum_operator serves as linear operator)
   std::shared_ptr<PreconditionerBase<Number>>     momentum_preconditioner;

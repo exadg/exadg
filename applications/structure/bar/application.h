@@ -239,7 +239,8 @@ private:
 
     this->param.load_increment = 0.1;
 
-    this->param.newton_solver_data                   = Newton::SolverData(1e2, 1.e-9, 1.e-9);
+    this->param.nonlinear_solver_data =
+      NonlinearSolver::SolverData(1e2, 1.e-9, 1.e-9, NonlinearSolver::SolverType::Newton);
     this->param.solver                               = Solver::FGMRES;
     this->param.solver_data                          = SolverData(1e3, 1.e-12, 1.e-8, 100);
     this->param.preconditioner                       = Preconditioner::Multigrid;
@@ -250,9 +251,9 @@ private:
 
     this->param.update_preconditioner                  = true;
     this->param.update_preconditioner_every_time_steps = 1;
-    this->param.update_preconditioner_every_newton_iterations =
-      this->param.newton_solver_data.max_iter;
-    this->param.update_preconditioner_once_newton_converged = true;
+    this->param.update_preconditioner_every_nonlinear_iterations =
+      this->param.nonlinear_solver_data.max_iter;
+    this->param.update_preconditioner_once_nonlinear_solver_converged = true;
   }
 
   void

@@ -19,18 +19,18 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_H_
+#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_NONLINEAR_SOLVER_H_
+#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_NONLINEAR_SOLVER_H_
 
 // deal.II
 #include <deal.II/base/exceptions.h>
 
 // ExaDG
-#include <exadg/solvers_and_preconditioners/newton/newton_solver_data.h>
+#include <exadg/solvers_and_preconditioners/nonlinear_solvers/newton_solver_data.h>
 
 namespace ExaDG
 {
-namespace Newton
+namespace NonlinearSolver
 {
 template<typename VectorType,
          typename NonlinearOperator,
@@ -50,45 +50,63 @@ public:
   {
   }
 
-  std::tuple<unsigned int /* Newton iter */, unsigned int /* accumulated linear iter */>
+  std::tuple<unsigned int /* nonlinear iter */, unsigned int /* accumulated linear iter */>
   solve(VectorType & solution, UpdateData const & update)
   {
-    unsigned int newton_iterations = 0, linear_iterations = 0;
+    unsigned int nonlinear_iterations = 0, linear_iterations = 0;
 
-    VectorType residual, increment, temporary;
-    residual.reinit(solution);
-    increment.reinit(solution);
-    temporary.reinit(solution);
+    VectorType residual_rhs, nonlinear_solver_output, temporary_solution;
+    residual_rhs.reinit(solution);
+    nonlinear_solver_output.reinit(solution);
+    temporary_solution.reinit(solution);
 
     // evaluate residual using initial guess of solution
-    nonlinear_operator.evaluate_residual(residual, solution);
+    nonlinear_operator.evaluate_residual(residual_rhs, solution);
 
-    double norm_r   = residual.l2_norm();
+    double norm_r   = residual_rhs.l2_norm();
     double norm_r_0 = norm_r;
 
     while(norm_r > this->solver_data.abs_tol && norm_r / norm_r_0 > solver_data.rel_tol &&
-          newton_iterations < solver_data.max_iter)
+          nonlinear_iterations < solver_data.max_iter)
     {
-      // reset increment
-      increment = 0.0;
+      // reset iterate and rhs of nonlinear solver
+      if(solver_data.nonlinear_solver_type == SolverType::Newton)
+      {
+        // reset increment
+        nonlinear_solver_output = 0.0;
 
-      // multiply by -1.0 since the linearized problem is "linear_operator * increment = - residual"
-      residual *= -1.0;
+        // overwrite residual with right-hand side for Newton solver
+        // multiply by -1.0 since the linearized problem is "linear_operator * increment = -
+        // residual"
+        residual_rhs *= -1.0;
+      }
+      else if(solver_data.nonlinear_solver_type == SolverType::Picard)
+      {
+        // set initial guess
+        nonlinear_solver_output = solution;
+
+        // overwrite residual with right-hand side for Picard solver
+        nonlinear_operator.evaluate_rhs_picard(residual_rhs);
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("Nonlinear solver not defined."));
+      }
 
       // update linear operator (set linearization point)
       linear_operator.set_solution_linearization(solution);
 
       // determine whether to update the operator/preconditioner of the linearized problem
       bool const update_now =
-        update.do_update and (newton_iterations % update.update_every_newton_iter == 0);
+        update.do_update and (nonlinear_iterations % update.update_every_nonlinear_iter == 0);
 
       // update the preconditioner
       linear_solver.update_preconditioner(update_now);
 
       // solve linear problem
-      unsigned int const n_iter_linear = linear_solver.solve(increment, residual);
+      unsigned int const n_iter_linear = linear_solver.solve(nonlinear_solver_output, residual_rhs);
 
-      // damped Newton scheme
+      // damped nonlinear scheme
       double             omega         = 1.0; // damping factor (begin with 1)
       double             norm_r_damp   = 1.0; // norm of residual using temporary solution
       unsigned int       n_iter_damp   = 0;   // counts iteration of damping scheme
@@ -97,14 +115,27 @@ public:
       do
       {
         // add increment to solution vector but scale by a factor omega <= 1
-        temporary = solution;
-        temporary.add(omega, increment);
+        temporary_solution = solution;
+        if(solver_data.nonlinear_solver_type == SolverType::Newton)
+        {
+          // x^{*} = x^{k} + omega * (x^{k+1} - x^{k})
+          temporary_solution.add(omega, nonlinear_solver_output);
+        }
+        else if(solver_data.nonlinear_solver_type == SolverType::Picard)
+        {
+          // x^{*} = (1 - omega) * x^{k} + omega * x^{k+1}
+          temporary_solution.sadd((1.0 - omega), omega, nonlinear_solver_output);
+        }
+        else
+        {
+          AssertThrow(false, dealii::ExcMessage("Nonlinear solver not defined."));
+        }
 
         // evaluate residual using the temporary solution
-        nonlinear_operator.evaluate_residual(residual, temporary);
+        nonlinear_operator.evaluate_residual(residual_rhs, temporary_solution);
 
         // calculate norm of residual (for temporary solution)
-        norm_r_damp = residual.l2_norm();
+        norm_r_damp = residual_rhs.l2_norm();
 
         // reduce step length
         omega = omega / 2.0;
@@ -114,21 +145,22 @@ public:
       } while(norm_r_damp >= (1.0 - tau * omega) * norm_r && n_iter_damp < max_iter_damp);
 
       AssertThrow(norm_r_damp < (1.0 - tau * omega) * norm_r,
-                  dealii::ExcMessage("Damped Newton iteration did not converge. "
-                                     "Maximum number of iterations exceeded!"));
+                  dealii::ExcMessage("Damped nonlinear iteration did not converge. "
+                                     "Maximum number of iterations (" +
+                                     std::to_string(max_iter_damp) + ") exceeded!"));
 
       // update solution and residual
-      solution = temporary;
+      solution = temporary_solution;
       norm_r   = norm_r_damp;
 
       // increment iteration counter
-      ++newton_iterations;
+      ++nonlinear_iterations;
       linear_iterations += n_iter_linear;
     }
 
     AssertThrow(norm_r <= this->solver_data.abs_tol || norm_r / norm_r_0 <= solver_data.rel_tol,
                 dealii::ExcMessage(
-                  "Newton solver failed to solve nonlinear problem to given tolerance. "
+                  "Nonlinear solver failed to solve nonlinear problem to given tolerance. "
                   "Maximum number of iterations exceeded!"));
 
     if(update.do_update and update.update_once_converged)
@@ -139,7 +171,7 @@ public:
       linear_solver.update_preconditioner(true);
     }
 
-    return std::tuple<unsigned int, unsigned int>(newton_iterations, linear_iterations);
+    return std::tuple<unsigned int, unsigned int>(nonlinear_iterations, linear_iterations);
   }
 
 private:
@@ -149,7 +181,7 @@ private:
   LinearSolver &      linear_solver;
 };
 
-} // namespace Newton
+} // namespace NonlinearSolver
 } // namespace ExaDG
 
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_H_ */
+#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_NONLINEAR_SOLVER_H_ */

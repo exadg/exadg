@@ -196,6 +196,18 @@ public:
                         apply_symmetry_bc,
                         "Apply symmetry boundary condition.",
                         dealii::Patterns::Bool());
+      prm.add_parameter("UseNewtonElsePicard",
+    		            use_newton_else_picard,
+						"Linearization strategy/nonlinear solver for nonlinear problems.",
+						dealii::Patterns::Bool());
+      prm.add_parameter("UseCoupledSolverElsePressureCorrection",
+          		        use_coupled_solver_else_pressure_correction,
+      				    "Use a monolithic solver or a pressure-correction scheme.",
+      				    dealii::Patterns::Bool());
+      prm.add_parameter("UseDivergenceFormulationElseConvectiveFormulationConvectiveTerm",
+					    use_divergence_formulation_else_convective_formulation_convective_term,
+					    "Divergence or convective formulationf or convective term.",
+					    dealii::Patterns::Bool());
     prm.leave_subsection();
     // clang-format on
   }
@@ -212,14 +224,17 @@ private:
   set_parameters() final
   {
     // MATHEMATICAL MODEL
-    this->param.problem_type                   = ProblemType::Unsteady;
-    this->param.equation_type                  = EquationType::NavierStokes;
-    this->param.formulation_viscous_term       = formulation_viscous_term;
-    this->param.formulation_convective_term    = FormulationConvectiveTerm::ConvectiveFormulation;
+    this->param.problem_type             = ProblemType::Unsteady;
+    this->param.equation_type            = EquationType::NavierStokes;
+    this->param.formulation_viscous_term = formulation_viscous_term;
+
+    this->param.formulation_convective_term =
+      use_divergence_formulation_else_convective_formulation_convective_term ?
+        FormulationConvectiveTerm::DivergenceFormulation :
+        FormulationConvectiveTerm::ConvectiveFormulation;
     this->param.use_outflow_bc_convective_term = false;
     // prescribe body force in x-direction in case of periodic BC's
     this->param.right_hand_side = (boundary_condition == BoundaryCondition::Periodic);
-
 
     // PHYSICAL QUANTITIES
     this->param.start_time = start_time;
@@ -228,9 +243,12 @@ private:
 
 
     // TEMPORAL DISCRETIZATION
-    this->param.solver_type                   = SolverType::Unsteady;
-    this->param.temporal_discretization       = TemporalDiscretization::BDFDualSplittingScheme;
-    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
+    this->param.solver_type = SolverType::Unsteady;
+    TemporalDiscretization temporal_discretization =
+      use_coupled_solver_else_pressure_correction ? TemporalDiscretization::BDFCoupledSolution :
+                                                    TemporalDiscretization::BDFPressureCorrection;
+    this->param.temporal_discretization       = temporal_discretization;
+    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Implicit;
     this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
     this->param.adaptive_time_stepping        = true;
     this->param.max_velocity                  = max_velocity;
@@ -246,12 +264,14 @@ private:
 
     // output of solver information
     this->param.solver_info_data.interval_time =
-      (this->param.end_time - this->param.start_time) / 10;
+      (this->param.end_time - this->param.start_time) / 100000;
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.grid.mapping_degree     = this->param.degree_u;
-    this->param.degree_p                = DegreePressure::MixedOrder;
+    this->param.grid.triangulation_type   = TriangulationType::Distributed;
+    this->param.grid.mapping_degree       = this->param.degree_u;
+    this->param.degree_p                  = DegreePressure::MixedOrder;
+    this->param.use_cell_based_face_loops = true;
+    this->param.implement_block_diagonal_preconditioner_matrix_free = true;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -264,12 +284,12 @@ private:
 
     // pressure Poisson equation
     this->param.solver_pressure_poisson         = SolverPressurePoisson::CG;
-    this->param.solver_data_pressure_poisson    = SolverData(1000, 1.e-20, 1.e-6, 100);
+    this->param.solver_data_pressure_poisson    = SolverData(1000, 1.e-12, 1.e-4, 100);
     this->param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
 
     // projection step
     this->param.solver_projection         = SolverProjection::CG;
-    this->param.solver_data_projection    = SolverData(1000, 1.e-20, 1.e-12);
+    this->param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-4);
     this->param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
 
@@ -281,7 +301,7 @@ private:
 
     // viscous step
     this->param.solver_viscous         = SolverViscous::CG;
-    this->param.solver_data_viscous    = SolverData(1000, 1.e-20, 1.e-6);
+    this->param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-4);
     this->param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; // Multigrid;
 
     // PRESSURE-CORRECTION SCHEME
@@ -292,20 +312,25 @@ private:
 
     // momentum step
 
-    // Newton solver
-    this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-14, 1.e-6);
+    // Nonlinear solver
+    NonlinearSolver::SolverType nonlinear_solver_type = use_newton_else_picard ?
+                                                          NonlinearSolver::SolverType::Newton :
+                                                          NonlinearSolver::SolverType::Picard;
+    this->param.nonlinear_solver_data_momentum =
+      NonlinearSolver::SolverData(100, 1.e-10, 1.e-4, nonlinear_solver_type);
 
     // linear solver
     this->param.solver_momentum                = SolverMomentum::GMRES;
-    this->param.solver_data_momentum           = SolverData(1e4, 1.e-20, 1.e-6, 100);
+    this->param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-4, 100);
     this->param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
     this->param.update_preconditioner_momentum = false;
 
 
     // COUPLED NAVIER-STOKES SOLVER
 
-    // nonlinear solver (Newton solver)
-    this->param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-10, 1.e-6);
+    // nonlinear solver
+    this->param.nonlinear_solver_data_coupled =
+      NonlinearSolver::SolverData(100, 1.e-10, 1.e-4, nonlinear_solver_type);
 
     // linear solver
     this->param.solver_coupled      = SolverCoupled::FGMRES; // GMRES;
@@ -519,12 +544,15 @@ private:
   std::string       boundary_condition_string = "ParabolicInflow";
   BoundaryCondition boundary_condition        = BoundaryCondition::ParabolicInflow;
 
-  bool apply_symmetry_bc = false;
+  bool apply_symmetry_bc                                                      = false;
+  bool use_newton_else_picard                                                 = true;
+  bool use_coupled_solver_else_pressure_correction                            = false;
+  bool use_divergence_formulation_else_convective_formulation_convective_term = true;
 
   FormulationViscousTerm const formulation_viscous_term =
     FormulationViscousTerm::LaplaceFormulation;
 
-  double const max_velocity = 1.0;
+  double const max_velocity = 1.0e-1;
   double const viscosity    = 1.0e-1;
 
   double const H = 2.0;

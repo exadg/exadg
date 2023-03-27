@@ -23,6 +23,7 @@ struct ConvectiveKernelData
 {
   ConvectiveKernelData()
     : formulation(FormulationConvectiveTerm::DivergenceFormulation),
+      linearization_type(LinearizationType::Newton),
       upwind_factor(1.0),
       use_outflow_bc(false),
       type_dirichlet_bc(TypeDirichletBCs::Mirror),
@@ -31,6 +32,8 @@ struct ConvectiveKernelData
   }
 
   FormulationConvectiveTerm formulation;
+
+  LinearizationType linearization_type;
 
   double upwind_factor;
 
@@ -324,8 +327,8 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     tensor
-    get_volume_flux_linearized_divergence_formulation(vector const &     delta_u,
-                                                      unsigned int const q) const
+    get_volume_flux_Newton_linearized_divergence_formulation(vector const &     delta_u,
+                                                             unsigned int const q) const
   {
     vector u = get_velocity_cell(q);
     tensor F = outer_product(u, delta_u);
@@ -335,10 +338,22 @@ public:
   }
 
   inline DEAL_II_ALWAYS_INLINE //
+    tensor
+    get_volume_flux_Picard_linearized_divergence_formulation(vector const &     delta_u,
+                                                             unsigned int const q) const
+  {
+    vector u = get_velocity_cell(q);
+    tensor F = outer_product(u, delta_u);
+
+    // minus sign due to integration by parts
+    return -F;
+  }
+
+  inline DEAL_II_ALWAYS_INLINE //
     vector
-    get_volume_flux_linearized_convective_formulation(vector const &     delta_u,
-                                                      tensor const &     grad_delta_u,
-                                                      unsigned int const q) const
+    get_volume_flux_Newton_linearized_convective_formulation(vector const &     delta_u,
+                                                             tensor const &     grad_delta_u,
+                                                             unsigned int const q) const
   {
     // w = u
     vector w      = get_velocity_cell(q);
@@ -351,6 +366,25 @@ public:
     // plus sign since the strong formulation is used, i.e.
     // integration by parts is performed twice
     vector F = grad_u * delta_u + grad_delta_u * w;
+
+    return F;
+  }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    vector
+    get_volume_flux_Picard_linearized_convective_formulation(tensor const &     grad_delta_u,
+                                                             unsigned int const q) const
+  {
+    // w = u
+    vector w = get_velocity_cell(q);
+
+    // w = u - u_grid
+    if(data.ale)
+      w -= get_grid_velocity_cell(q);
+
+    // plus sign since the strong formulation is used, i.e.
+    // integration by parts is performed twice
+    vector F = grad_delta_u * w;
 
     return F;
   }
@@ -457,18 +491,18 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     std::tuple<vector, vector>
-    calculate_flux_linearized_interior_and_neighbor(vector const &     uM,
-                                                    vector const &     uP,
-                                                    vector const &     delta_uM,
-                                                    vector const &     delta_uP,
-                                                    vector const &     normalM,
-                                                    unsigned int const q) const
+    calculate_flux_Newton_linearized_interior_and_neighbor(vector const &     uM,
+                                                           vector const &     uP,
+                                                           vector const &     delta_uM,
+                                                           vector const &     delta_uP,
+                                                           vector const &     normalM,
+                                                           unsigned int const q) const
   {
     vector fluxM, fluxP;
 
     if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
     {
-      fluxM = calculate_lax_friedrichs_flux_linearized(uM, uP, delta_uM, delta_uP, normalM);
+      fluxM = calculate_lax_friedrichs_flux_Newton_linearized(uM, uP, delta_uM, delta_uP, normalM);
       fluxP = -fluxM;
     }
     else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
@@ -477,7 +511,8 @@ public:
       if(data.ale)
         u_grid = get_grid_velocity_face(q);
 
-      vector flux = calculate_upwind_flux_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);
+      vector flux =
+        calculate_upwind_flux_Newton_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);
 
       scalar average_u_normal = 0.5 * (uM + uP) * normalM;
       if(data.ale)
@@ -499,24 +534,21 @@ public:
     return std::make_tuple(fluxM, fluxP);
   }
 
-  /*
-   *  Calculates the flux for linearized operator on interior faces. Only the flux on element e⁻ is
-   * computed.
-   */
   inline DEAL_II_ALWAYS_INLINE //
-    vector
-    calculate_flux_linearized_interior(vector const &     uM,
-                                       vector const &     uP,
-                                       vector const &     delta_uM,
-                                       vector const &     delta_uP,
-                                       vector const &     normalM,
-                                       unsigned int const q) const
+    std::tuple<vector, vector>
+    calculate_flux_Picard_linearized_interior_and_neighbor(vector const &     uM,
+                                                           vector const &     uP,
+                                                           vector const &     delta_uM,
+                                                           vector const &     delta_uP,
+                                                           vector const &     normalM,
+                                                           unsigned int const q) const
   {
-    vector flux;
+    vector fluxM, fluxP;
 
     if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
     {
-      flux = calculate_lax_friedrichs_flux_linearized(uM, uP, delta_uM, delta_uP, normalM);
+      fluxM = calculate_lax_friedrichs_flux_Picard_linearized(uM, uP, delta_uM, delta_uP, normalM);
+      fluxP = -fluxM;
     }
     else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
     {
@@ -524,7 +556,53 @@ public:
       if(data.ale)
         u_grid = get_grid_velocity_face(q);
 
-      flux = calculate_upwind_flux_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);
+      vector flux =
+        calculate_upwind_flux_Picard_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);
+
+      scalar average_u_normal = 0.5 * (uM + uP) * normalM;
+      if(data.ale)
+        average_u_normal -= u_grid * normalM;
+
+      // second term appears since the strong formulation is implemented (integration by parts
+      // is performed twice)
+      fluxM = flux - average_u_normal * delta_uM;
+      // opposite signs since n⁺ = - n⁻
+      fluxP = -flux + average_u_normal * delta_uP;
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+    }
+
+    return std::make_tuple(fluxM, fluxP);
+  }
+
+  /*
+   *  Calculates the flux for linearized operator on interior faces. Only the flux on element e⁻ is
+   * computed.
+   */
+  inline DEAL_II_ALWAYS_INLINE //
+    vector
+    calculate_flux_Newton_linearized_interior(vector const &     uM,
+                                              vector const &     uP,
+                                              vector const &     delta_uM,
+                                              vector const &     delta_uP,
+                                              vector const &     normalM,
+                                              unsigned int const q) const
+  {
+    vector flux;
+
+    if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
+    {
+      flux = calculate_lax_friedrichs_flux_Newton_linearized(uM, uP, delta_uM, delta_uP, normalM);
+    }
+    else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
+    {
+      vector u_grid;
+      if(data.ale)
+        u_grid = get_grid_velocity_face(q);
+
+      flux = calculate_upwind_flux_Newton_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);
 
       scalar average_u_normal = 0.5 * (uM + uP) * normalM;
 
@@ -545,6 +623,46 @@ public:
     return flux;
   }
 
+  inline DEAL_II_ALWAYS_INLINE //
+    vector
+    calculate_flux_Picard_linearized_interior(vector const &     uM,
+                                              vector const &     uP,
+                                              vector const &     delta_uM,
+                                              vector const &     delta_uP,
+                                              vector const &     normalM,
+                                              unsigned int const q) const
+  {
+    vector flux;
+
+    if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
+    {
+      flux = calculate_lax_friedrichs_flux_Picard_linearized(uM, uP, delta_uM, delta_uP, normalM);
+    }
+    else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
+    {
+      vector u_grid;
+      if(data.ale)
+        u_grid = get_grid_velocity_face(q);
+
+      flux = calculate_upwind_flux_Picard_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);
+
+      scalar average_u_normal = 0.5 * (uM + uP) * normalM;
+
+      if(data.ale)
+        average_u_normal -= u_grid * normalM;
+
+      // second term appears since the strong formulation is implemented (integration by parts
+      // is performed twice)
+      flux = flux - average_u_normal * delta_uM;
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+    }
+
+    return flux;
+  }
+
   /*
    *  Calculates the flux for linearized operator on boundary faces. The only reason why this
    * function has to be implemented separately is the fact that the flux computation used on
@@ -553,19 +671,19 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    calculate_flux_linearized_boundary(vector const &        uM,
-                                       vector const &        uP,
-                                       vector const &        delta_uM,
-                                       vector const &        delta_uP,
-                                       vector const &        normalM,
-                                       BoundaryTypeU const & boundary_type,
-                                       unsigned int const    q) const
+    calculate_flux_Newton_linearized_boundary(vector const &        uM,
+                                              vector const &        uP,
+                                              vector const &        delta_uM,
+                                              vector const &        delta_uP,
+                                              vector const &        normalM,
+                                              BoundaryTypeU const & boundary_type,
+                                              unsigned int const    q) const
   {
     vector flux;
 
     if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
     {
-      flux = calculate_lax_friedrichs_flux_linearized(uM, uP, delta_uM, delta_uP, normalM);
+      flux = calculate_lax_friedrichs_flux_Newton_linearized(uM, uP, delta_uM, delta_uP, normalM);
 
       if(boundary_type == BoundaryTypeU::Neumann && data.use_outflow_bc == true)
         apply_outflow_bc(flux, uM * normalM);
@@ -576,7 +694,7 @@ public:
       if(data.ale)
         u_grid = get_grid_velocity_face(q);
 
-      flux = calculate_upwind_flux_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);
+      flux = calculate_upwind_flux_Newton_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);
 
       if(boundary_type == BoundaryTypeU::Neumann && data.use_outflow_bc == true)
         apply_outflow_bc(flux, uM * normalM);
@@ -590,6 +708,52 @@ public:
       // second term appears since the strong formulation is implemented (integration by parts
       // is performed twice)
       flux = flux - average_u_normal * delta_uM - average_delta_u_normal * uM;
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+    }
+
+    return flux;
+  }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    vector
+    calculate_flux_Picard_linearized_boundary(vector const &        uM,
+                                              vector const &        uP,
+                                              vector const &        delta_uM,
+                                              vector const &        delta_uP,
+                                              vector const &        normalM,
+                                              BoundaryTypeU const & boundary_type,
+                                              unsigned int const    q) const
+  {
+    vector flux;
+
+    if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
+    {
+      flux = calculate_lax_friedrichs_flux_Picard_linearized(uM, uP, delta_uM, delta_uP, normalM);
+
+      if(boundary_type == BoundaryTypeU::Neumann && data.use_outflow_bc == true)
+        apply_outflow_bc(flux, uM * normalM);
+    }
+    else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
+    {
+      vector u_grid;
+      if(data.ale)
+        u_grid = get_grid_velocity_face(q);
+
+      flux = calculate_upwind_flux_Picard_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);
+
+      if(boundary_type == BoundaryTypeU::Neumann && data.use_outflow_bc == true)
+        apply_outflow_bc(flux, uM * normalM);
+
+      scalar average_u_normal = 0.5 * (uM + uP) * normalM;
+      if(data.ale)
+        average_u_normal -= u_grid * normalM;
+
+      // second term appears since the strong formulation is implemented (integration by parts
+      // is performed twice)
+      flux = flux - average_u_normal * delta_uM;
     }
     else
     {
@@ -663,11 +827,11 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    calculate_lax_friedrichs_flux_linearized(vector const & uM,
-                                             vector const & uP,
-                                             vector const & delta_uM,
-                                             vector const & delta_uP,
-                                             vector const & normalM) const
+    calculate_lax_friedrichs_flux_Newton_linearized(vector const & uM,
+                                                    vector const & uP,
+                                                    vector const & delta_uM,
+                                                    vector const & delta_uP,
+                                                    vector const & normalM) const
   {
     scalar uM_n = uM * normalM;
     scalar uP_n = uP * normalM;
@@ -678,6 +842,27 @@ public:
     vector average_normal_flux =
       dealii::make_vectorized_array<Number>(0.5) *
       (uM * delta_uM_n + delta_uM * uM_n + uP * delta_uP_n + delta_uP * uP_n);
+
+    vector jump_value = delta_uM - delta_uP;
+
+    scalar lambda = calculate_lambda(uM_n, uP_n);
+
+    return (average_normal_flux + 0.5 * lambda * jump_value);
+  }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    vector
+    calculate_lax_friedrichs_flux_Picard_linearized(vector const & uM,
+                                                    vector const & uP,
+                                                    vector const & delta_uM,
+                                                    vector const & delta_uP,
+                                                    vector const & normalM) const
+  {
+    scalar uM_n = uM * normalM;
+    scalar uP_n = uP * normalM;
+
+    vector average_normal_flux =
+      dealii::make_vectorized_array<Number>(0.5) * (delta_uM * uM_n + delta_uP * uP_n);
 
     vector jump_value = delta_uM - delta_uP;
 
@@ -731,12 +916,12 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    calculate_upwind_flux_linearized(vector const & uM,
-                                     vector const & uP,
-                                     vector const & u_grid,
-                                     vector const & delta_uM,
-                                     vector const & delta_uP,
-                                     vector const & normalM) const
+    calculate_upwind_flux_Newton_linearized(vector const & uM,
+                                            vector const & uP,
+                                            vector const & u_grid,
+                                            vector const & delta_uM,
+                                            vector const & delta_uP,
+                                            vector const & normalM) const
   {
     vector average_velocity       = 0.5 * (uM + uP);
     vector delta_average_velocity = 0.5 * (delta_uM + delta_uP);
@@ -754,17 +939,39 @@ public:
             data.upwind_factor * 0.5 * std::abs(average_normal_velocity) * jump_value);
   }
 
+  inline DEAL_II_ALWAYS_INLINE //
+    vector
+    calculate_upwind_flux_Picard_linearized(vector const & uM,
+                                            vector const & uP,
+                                            vector const & u_grid,
+                                            vector const & delta_uM,
+                                            vector const & delta_uP,
+                                            vector const & normalM) const
+  {
+    vector average_velocity       = 0.5 * (uM + uP);
+    vector delta_average_velocity = 0.5 * (delta_uM + delta_uP);
+
+    scalar average_normal_velocity = average_velocity * normalM;
+    if(data.ale)
+      average_normal_velocity -= u_grid * normalM;
+
+    vector jump_value = delta_uM - delta_uP;
+
+    return (average_normal_velocity * delta_average_velocity +
+            data.upwind_factor * 0.5 * std::abs(average_normal_velocity) * jump_value);
+  }
+
   /*
    * Velocity:
    *
-   *  Linearized convective operator (= homogeneous operator):
+   *  Linearized convective operator (= homogeneous operator for Newton):
    *  Dirichlet boundary: delta_u⁺ = - delta_u⁻ or 0
    *  Neumann boundary:   delta_u⁺ = + delta_u⁻
    *  symmetry boundary:  delta_u⁺ = delta_u⁻ - 2 (delta_u⁻*n)n
    */
   inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
-    calculate_exterior_value_linearized(
+    calculate_exterior_value_Newton_linearized(
       dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> & delta_uM,
       unsigned int const                                        q,
       FaceIntegrator<dim, dim, Number> &                        integrator,
@@ -808,8 +1015,104 @@ public:
                   dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
     }
 
+
     return delta_uP;
   }
+
+  /*
+   * Velocity:
+   *
+   *  Linearized convective operator (= inhomogeneous operator for Picard):
+   *  Dirichlet boundary: delta_u⁺ = - delta_u⁻ + 2 g or g
+   *  Neumann boundary:   delta_u⁺ = + delta_u⁻
+   *  symmetry boundary:  delta_u⁺ = delta_u⁻ - 2 (delta_u⁻*n)n
+   */
+  inline DEAL_II_ALWAYS_INLINE //
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
+    calculate_exterior_value_Picard_linearized(
+      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> & delta_uM,
+      unsigned int const                                        q,
+      FaceIntegrator<dim, dim, Number> &                        integrator,
+      OperatorType const &                                      operator_type,
+      BoundaryTypeU const &                                     boundary_type,
+      dealii::types::boundary_id const                          boundary_id,
+      std::shared_ptr<BoundaryDescriptorU<dim> const>           boundary_descriptor,
+      double const &                                            time) const
+  {
+    // element e⁺
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> delta_uP;
+
+    if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)
+    {
+      if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
+      {
+        dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> g;
+
+        if(boundary_type == BoundaryTypeU::Dirichlet)
+        {
+          auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
+          auto q_points = integrator.quadrature_point(q);
+
+          g = FunctionEvaluator<1, dim, Number>::value(bc, q_points, time);
+        }
+        else if(boundary_type == BoundaryTypeU::DirichletCached)
+        {
+          auto bc = boundary_descriptor->dirichlet_cached_bc.find(boundary_id)->second;
+          g       = FunctionEvaluator<1, dim, Number>::value(bc,
+                                                       integrator.get_current_cell_index(),
+                                                       q,
+                                                       integrator.get_quadrature_index());
+        }
+        else
+        {
+          AssertThrow(false, dealii::ExcMessage("Not implemented."));
+        }
+
+        if(data.type_dirichlet_bc == TypeDirichletBCs::Mirror)
+        {
+          delta_uP = -delta_uM + dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>(2.0 * g);
+        }
+        else if(data.type_dirichlet_bc == TypeDirichletBCs::Direct)
+        {
+          delta_uP = dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>(g);
+        }
+        else
+        {
+          AssertThrow(
+            false,
+            dealii::ExcMessage(
+              "Type of imposition of Dirichlet BC's for convective term is not implemented."));
+        }
+      }
+      else if(operator_type == OperatorType::homogeneous)
+      {
+        delta_uP = -delta_uM;
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("Specified OperatorType is not implemented!"));
+      }
+    }
+    else if(boundary_type == BoundaryTypeU::Neumann)
+    {
+      delta_uP = delta_uM;
+    }
+    else if(boundary_type == BoundaryTypeU::Symmetry)
+    {
+      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normalM =
+        integrator.get_normal_vector(q);
+      delta_uP = delta_uM - 2. * (delta_uM * normalM) * normalM;
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
+
+
+    return delta_uP;
+  }
+
 
 private:
   ConvectiveKernelData data;
@@ -901,14 +1204,15 @@ public:
                                   VectorType const & src,
                                   Number const       time) const;
 
-  // these functions are not implemented for the convective operator. They only have to exist
-  // due to the definition of the base class.
+  // evaluate the right hand side to be used within Picard linearization
   void
   rhs(VectorType & dst) const;
 
   void
   rhs_add(VectorType & dst) const;
 
+  // these functions are not implemented for the convective operator. They only have to exist
+  // due to the definition of the base class.
   void
   evaluate(VectorType & dst, VectorType const & src) const;
 
@@ -1004,6 +1308,24 @@ private:
   do_boundary_integral(IntegratorFace &                   integrator,
                        OperatorType const &               operator_type,
                        dealii::types::boundary_id const & boundary_id) const;
+
+  void
+  cell_loop_inhom_operator(dealii::MatrixFree<dim, Number> const &,
+                           VectorType &,
+                           VectorType const &,
+                           Range const &) const;
+
+  void
+  face_loop_inhom_operator(dealii::MatrixFree<dim, Number> const &,
+                           VectorType &,
+                           VectorType const &,
+                           Range const &) const;
+
+  void
+  boundary_face_loop_inhom_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                    VectorType &                            dst,
+                                    VectorType const &                      src,
+                                    Range const &                           face_range) const;
 
   ConvectiveOperatorData<dim> operator_data;
 

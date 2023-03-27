@@ -389,6 +389,30 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   convective_kernel_data.use_outflow_bc    = param.use_outflow_bc_convective_term;
   convective_kernel_data.type_dirichlet_bc = param.type_dirichlet_bc_convective;
   convective_kernel_data.ale               = param.ale_formulation;
+
+  // set linearization variant dependent on solver type chosen
+  if(param.nonlinear_solver_data_coupled.nonlinear_solver_type ==
+     ExaDG::NonlinearSolver::SolverType::Newton)
+  {
+    convective_kernel_data.linearization_type = LinearizationType::Newton;
+  }
+  else if(param.nonlinear_solver_data_coupled.nonlinear_solver_type ==
+          ExaDG::NonlinearSolver::SolverType::Picard)
+  {
+    convective_kernel_data.linearization_type = LinearizationType::Picard;
+  }
+  else if(param.nonlinear_solver_data_coupled.nonlinear_solver_type ==
+          ExaDG::NonlinearSolver::SolverType::Undefined)
+  {
+    Assert(false,
+           dealii::ExcMessage(
+             "Undefined nonlinear solver type does not allow deduction of linearization variant."));
+  }
+  else
+  {
+    Assert(false, dealii::ExcMessage("Not implemented."));
+  }
+
   convective_kernel = std::make_shared<Operators::ConvectiveKernel<dim, Number>>();
   convective_kernel->reinit(*matrix_free,
                             convective_kernel_data,

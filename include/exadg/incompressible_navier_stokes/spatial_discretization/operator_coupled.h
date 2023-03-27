@@ -24,7 +24,7 @@
 
 #include <exadg/convection_diffusion/spatial_discretization/operators/combined_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
-#include <exadg/solvers_and_preconditioners/newton/newton_solver.h>
+#include <exadg/solvers_and_preconditioners/nonlinear_solvers/newton_solver.h>
 
 namespace ExaDG
 {
@@ -64,13 +64,23 @@ public:
   }
 
   /*
-   * The implementation of the Newton solver requires a function called
+   * The implementation of the nonlinear solver requires a function called
    * 'evaluate_residual'.
    */
   void
   evaluate_residual(BlockVectorType & dst, BlockVectorType const & src) const
   {
     pde_operator->evaluate_nonlinear_residual(dst, src, rhs_vector, time, scaling_factor_mass);
+  }
+
+  /*
+   * The implementation of the nonlinear (Picard) solver requires a function called
+   * 'rhs_picard_linearized_problem'.
+   */
+  void
+  evaluate_rhs_picard(BlockVectorType & dst) const
+  {
+    pde_operator->evaluate_rhs_picard_linearized(dst, rhs_vector, time);
   }
 
 private:
@@ -102,7 +112,7 @@ public:
   }
 
   /*
-   * The implementation of the Newton solver requires a function called
+   * The implementation of the nonlinear solver requires a function called
    * 'set_solution_linearization'.
    */
   void
@@ -260,7 +270,7 @@ public:
                               double const &          scaling_factor_mass = 1.0);
 
   /*
-   * Convective term treated implicitly: solve non-linear system of equations
+   * Convective term treated implicitly: solve nonlinear system of equations
    */
 
   /*
@@ -294,6 +304,15 @@ public:
   evaluate_nonlinear_residual_steady(BlockVectorType &       dst,
                                      BlockVectorType const & src,
                                      double const &          time) const;
+
+  /*
+   * This function calculates the right-hand side of the (un-)steady Navier-Stokes equations
+   * within a Picard scheme.
+   */
+  void
+  evaluate_rhs_picard_linearized(BlockVectorType &  dst,
+                                 VectorType const * rhs_vector,
+                                 double const &     time) const;
 
   /*
    * This function calculates the matrix-vector product for the linear(ized) problem.
@@ -366,7 +385,7 @@ private:
   apply_inverse_negative_laplace_operator(VectorType & dst, VectorType const & src) const;
 
   /*
-   * Newton-Krylov solver for (non-)linear problem
+   * Nonlinear solver for (non-)linear problem
    */
 
   // temporary vector needed to evaluate both the nonlinear residual and the linearized operator
@@ -377,12 +396,12 @@ private:
   // Nonlinear operator
   NonlinearOperatorCoupled<dim, Number> nonlinear_operator;
 
-  // Newton solver
-  std::shared_ptr<Newton::Solver<BlockVectorType,
-                                 NonlinearOperatorCoupled<dim, Number>,
-                                 LinearOperatorCoupled<dim, Number>,
-                                 Krylov::SolverBase<BlockVectorType>>>
-    newton_solver;
+  // Nonlinear solver
+  std::shared_ptr<NonlinearSolver::Solver<BlockVectorType,
+                                          NonlinearOperatorCoupled<dim, Number>,
+                                          LinearOperatorCoupled<dim, Number>,
+                                          Krylov::SolverBase<BlockVectorType>>>
+    nonlinear_solver;
 
   // Linear operator
   LinearOperatorCoupled<dim, Number> linear_operator;

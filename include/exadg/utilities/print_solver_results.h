@@ -161,7 +161,7 @@ print_solver_info_nonlinear(dealii::ConditionalOStream const & pcout,
 
   // clang-format off
   pcout << std::endl
-        << "  Newton iterations:      " << std::setw(12) << std::right << N_iter_nonlinear << std::endl
+        << "  Nonlinear iterations:   " << std::setw(12) << std::right << N_iter_nonlinear << std::endl
         << "  Linear iterations (avg):" << std::setw(12) << std::fixed << std::setprecision(1) << std::right << N_iter_linear_avg << std::endl
         << "  Linear iterations (tot):" << std::setw(12) << std::right << N_iter_linear << std::endl
         << "  Wall time [s]:          " << std::setw(12) << std::scientific << std::setprecision(2) << std::right << wall_time << std::endl

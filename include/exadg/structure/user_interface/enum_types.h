@@ -131,6 +131,19 @@ enum class Preconditioner
 std::string
 enum_to_string(Preconditioner const enum_type);
 
+/*
+ *  Nonlinear solver
+ */
+
+enum class LinearizationType
+{
+  Undefined,
+  Newton
+};
+
+std::string
+enum_to_string(LinearizationType const enum_type);
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                               OUTPUT AND POSTPROCESSING                            */

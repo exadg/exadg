@@ -106,7 +106,7 @@ private:
   VectorType rhs_vector;
 
   // We need to store a vector in order to extrapolate the solution to the next
-  // load step and obtain an accurate initial guess for the Newton solver.
+  // load step and obtain an accurate initial guess for the nonlinear solver.
   VectorType displacement_increment;
 
   // For the purpose of extrapolating the displacements, we also need to store the
@@ -119,7 +119,7 @@ private:
 
   std::pair<
     unsigned int /* calls */,
-    std::tuple<unsigned long long, unsigned long long> /* iteration counts {Newton, linear}*/>
+    std::tuple<unsigned long long, unsigned long long> /* iteration counts {nonlinear, linear}*/>
     iterations;
 };
 

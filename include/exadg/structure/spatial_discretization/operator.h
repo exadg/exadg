@@ -30,7 +30,7 @@
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
 #include <exadg/operators/mass_operator.h>
-#include <exadg/solvers_and_preconditioners/newton/newton_solver.h>
+#include <exadg/solvers_and_preconditioners/nonlinear_solvers/newton_solver.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 #include <exadg/structure/spatial_discretization/interface.h>
 #include <exadg/structure/spatial_discretization/operators/body_force_operator.h>
@@ -49,7 +49,7 @@ template<int dim, typename Number>
 class Operator;
 
 /*
- * This operator provides the interface required by the non-linear Newton solver.
+ * This operator provides the interface required by the nonlinear solver.
  * Requests to evaluate the residual for example are simply handed over to the
  * operators that implement the physics.
  */
@@ -82,13 +82,24 @@ public:
   }
 
   /*
-   * The implementation of the Newton solver requires a function called
+   * The implementation of the nonlinear solver requires a function called
    * 'evaluate_residual'.
    */
   void
   evaluate_residual(VectorType & dst, VectorType const & src) const
   {
     pde_operator->evaluate_nonlinear_residual(dst, src, *const_vector, scaling_factor_mass, time);
+  }
+
+  /*
+   * The implementation of the nonlinear (Picard) solver requires a function called
+   * 'rhs_picard_linearized_problem'.
+   */
+  void
+  evaluate_rhs_picard(VectorType & /*dst*/)
+  {
+    AssertThrow(
+      false, dealii::ExcMessage("Nonlinear Picard solver not implemented for structure module."));
   }
 
 private:
@@ -101,7 +112,7 @@ private:
 };
 
 /*
- * This operator implements the interface required by the non-linear Newton solver.
+ * This operator implements the interface required by the nonlinear solver.
  * Requests to apply the linearized operator are simply handed over to the
  * operators that implement the physics.
  */
@@ -126,7 +137,7 @@ public:
   }
 
   /*
-   * The implementation of the Newton solver requires a function called
+   * The implementation of the nonlinear solver requires a function called
    * 'set_solution_linearization'.
    */
   void
@@ -229,7 +240,7 @@ public:
 
   /*
    * This function evaluates the nonlinear residual which is required by
-   * the Newton solver.
+   * the nonlinear solver.
    */
   void
   evaluate_nonlinear_residual(VectorType &       dst,
@@ -412,17 +423,17 @@ private:
    * Solution of nonlinear systems of equations
    */
 
-  // operators required for Newton solver
+  // operators required for nonlinear solver
   mutable ResidualOperator<dim, Number>   residual_operator;
   mutable LinearizedOperator<dim, Number> linearized_operator;
 
-  typedef Newton::Solver<VectorType,
-                         ResidualOperator<dim, Number>,
-                         LinearizedOperator<dim, Number>,
-                         Krylov::SolverBase<VectorType>>
-    NewtonSolver;
+  typedef NonlinearSolver::Solver<VectorType,
+                                  ResidualOperator<dim, Number>,
+                                  LinearizedOperator<dim, Number>,
+                                  Krylov::SolverBase<VectorType>>
+    NonlinearSolver;
 
-  std::shared_ptr<NewtonSolver> newton_solver;
+  std::shared_ptr<NonlinearSolver> nonlinear_solver;
 
   /*
    * Solution of linear systems of equations

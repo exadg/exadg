@@ -177,7 +177,7 @@ DriverQuasiStatic<dim, Number>::do_solve()
         // reduce load increment by factor of 2
         load_increment *= 0.5;
         pcout << std::endl
-              << "  Could not solve non-linear problem. Reduce load increment to " << load_increment
+              << "  Could not solve nonlinear problem. Reduce load increment to " << load_increment
               << "." << std::endl
               << std::flush;
       }
@@ -243,7 +243,7 @@ DriverQuasiStatic<dim, Number>::output_solver_info_header(double const load_fact
   pcout << std::endl
         << print_horizontal_line() << std::endl
         << std::endl
-        << " Solve non-linear problem for load factor = " << std::scientific << std::setprecision(4)
+        << " Solve nonlinear problem for load factor = " << std::scientific << std::setprecision(4)
         << load_factor << std::endl
         << print_horizontal_line() << std::endl;
 }

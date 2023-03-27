@@ -7,8 +7,8 @@
     "SpatialResolution": {
         "DegreeMin": "2",
         "DegreeMax": "2",
-        "RefineSpaceMin": "0",
-        "RefineSpaceMax": "0"
+        "RefineSpaceMin": "1",
+        "RefineSpaceMax": "1"
     },
     "TemporalResolution": {
         "RefineTimeMin": "0",
@@ -16,11 +16,14 @@
     },
     "Application": {
         "BoundaryConditionType": "ParabolicInflow",
-        "ApplySymmetryBC": "false"
+        "ApplySymmetryBC": "true",
+        "UseNewtonElsePicard": "true",
+        "UseCoupledSolverElsePressureCorrection": "true",
+        "UseDivergenceFormulationElseConvectiveFormulationConvectiveTerm": "true"
     },
     "Output": {
         "OutputDirectory": "output/poiseuille/",
         "OutputName": "l0_k2",
-        "WriteOutput": "false"
+        "WriteOutput": "true"
     }
 }

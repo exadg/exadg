@@ -144,7 +144,7 @@ private:
 
   std::pair<
     unsigned int /* number of calls */,
-    std::tuple<unsigned long long, unsigned long long> /* iteration counts {Newton, linear}*/>
+    std::tuple<unsigned long long, unsigned long long> /* iteration counts {nonlinear, linear}*/>
     iterations;
 };
 
