@@ -50,9 +50,9 @@ do_cell_based_loops(dealii::Triangulation<dim> const & tria,
   else
     data.cell_vectorization_category.resize(tria.n_active_cells());
 
-  unsigned int const n_faces_per_cell = tria.get_reference_cells()[0].n_faces();
   AssertThrow(tria.get_reference_cells().size() == 1,
               dealii::ExcMessage("No mixed meshes allowed."));
+  unsigned int const n_faces_per_cell = tria.get_reference_cells()[0].n_faces();
 
   // ... setup scaling factor
   std::vector<unsigned int> factors(n_faces_per_cell);
