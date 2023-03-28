@@ -72,12 +72,12 @@ public:
       // reset iterate and rhs of nonlinear solver
       if(solver_data.nonlinear_solver_type == SolverType::Newton)
       {
-        // reset increment, zero initial guess for Newton
+        // zero increment as initial guess for Newton
         nonlinear_solver_output = 0.0;
 
         // overwrite residual with right-hand side for Newton solver
         // multiply by -1.0 since the linearized problem is
-        // "linear_operator * increment = -residual"
+        // "linear_operator * increment = - residual"
         residual_rhs *= -1.0;
       }
       else if(solver_data.nonlinear_solver_type == SolverType::Picard)

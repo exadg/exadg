@@ -293,39 +293,16 @@ MomentumOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
       if(operator_data.convective_kernel_data.formulation ==
          FormulationConvectiveTerm::DivergenceFormulation)
       {
-        if(operator_data.convective_kernel_data.linearization_type == LinearizationType::Newton)
-        {
-          gradient_flux +=
-            convective_kernel->get_volume_flux_Newton_linearized_divergence_formulation(value, q);
-        }
-        else if(operator_data.convective_kernel_data.linearization_type ==
-                LinearizationType::Picard)
-        {
-          gradient_flux +=
-            convective_kernel->get_volume_flux_Picard_linearized_divergence_formulation(value, q);
-        }
-        else
-          AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+        gradient_flux +=
+          convective_kernel->get_volume_flux_linearized_divergence_formulation(value, q);
       }
       else if(operator_data.convective_kernel_data.formulation ==
               FormulationConvectiveTerm::ConvectiveFormulation)
       {
-        if(operator_data.convective_kernel_data.linearization_type == LinearizationType::Newton)
-        {
-          value_flux +=
-            convective_kernel->get_volume_flux_Newton_linearized_convective_formulation(value,
-                                                                                        gradient,
-                                                                                        q);
-        }
-        else if(operator_data.convective_kernel_data.linearization_type ==
-                LinearizationType::Picard)
-        {
-          value_flux +=
-            convective_kernel->get_volume_flux_Picard_linearized_convective_formulation(gradient,
-                                                                                        q);
-        }
-        else
-          AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+        value_flux +=
+          convective_kernel->get_volume_flux_linearized_convective_formulation(value,
+                                                                               gradient,
+                                                                               q);
       }
       else
       {
@@ -366,24 +343,11 @@ MomentumOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
       vector u_m = convective_kernel->get_velocity_m(q);
       vector u_p = convective_kernel->get_velocity_p(q);
 
-      if(operator_data.convective_kernel_data.linearization_type == LinearizationType::Newton)
-      {
-        std::tuple<vector, vector> flux =
-          convective_kernel->calculate_flux_Newton_linearized_interior_and_neighbor(
-            u_m, u_p, value_m, value_p, normal_m, q);
-        value_flux_m += std::get<0>(flux);
-        value_flux_p += std::get<1>(flux);
-      }
-      else if(operator_data.convective_kernel_data.linearization_type == LinearizationType::Picard)
-      {
-        std::tuple<vector, vector> flux =
-          convective_kernel->calculate_flux_Picard_linearized_interior_and_neighbor(
-            u_m, u_p, value_m, value_p, normal_m, q);
-        value_flux_m += std::get<0>(flux);
-        value_flux_p += std::get<1>(flux);
-      }
-      else
-        AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+      std::tuple<vector, vector> flux =
+        convective_kernel->calculate_flux_linearized_interior_and_neighbor(
+          u_m, u_p, value_m, value_p, normal_m, q);
+      value_flux_m += std::get<0>(flux);
+      value_flux_p += std::get<1>(flux);
     }
 
     if(operator_data.viscous_problem)
@@ -436,18 +400,8 @@ MomentumOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_
       vector u_m = convective_kernel->get_velocity_m(q);
       vector u_p = convective_kernel->get_velocity_p(q);
 
-      if(operator_data.convective_kernel_data.linearization_type == LinearizationType::Newton)
-      {
-        value_flux_m += convective_kernel->calculate_flux_Newton_linearized_interior(
-          u_m, u_p, value_m, value_p, normal_m, q);
-      }
-      else if(operator_data.convective_kernel_data.linearization_type == LinearizationType::Picard)
-      {
-        value_flux_m += convective_kernel->calculate_flux_Picard_linearized_interior(
-          u_m, u_p, value_m, value_p, normal_m, q);
-      }
-      else
-        AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+      value_flux_m += convective_kernel->calculate_flux_linearized_interior(
+        u_m, u_p, value_m, value_p, normal_m, q);
     }
 
     if(operator_data.viscous_problem)
@@ -501,18 +455,8 @@ MomentumOperator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & 
       // are not calculated exactly.
       vector u_p = u_m;
 
-      if(operator_data.convective_kernel_data.linearization_type == LinearizationType::Newton)
-      {
-        value_flux_m += convective_kernel->calculate_flux_Newton_linearized_interior(
-          u_m, u_p, value_m, value_p, normal_m, q);
-      }
-      else if(operator_data.convective_kernel_data.linearization_type == LinearizationType::Picard)
-      {
-        value_flux_m += convective_kernel->calculate_flux_Picard_linearized_interior(
-          u_m, u_p, value_m, value_p, normal_m, q);
-      }
-      else
-        AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+      value_flux_m += convective_kernel->calculate_flux_linearized_interior(
+        u_m, u_p, value_m, value_p, normal_m, q);
     }
 
     if(operator_data.viscous_problem)
@@ -563,18 +507,8 @@ MomentumOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_
       vector u_m = convective_kernel->get_velocity_m(q);
       vector u_p = convective_kernel->get_velocity_p(q);
 
-      if(operator_data.convective_kernel_data.linearization_type == LinearizationType::Newton)
-      {
-        value_flux_p += convective_kernel->calculate_flux_Newton_linearized_interior(
-          u_p, u_m, value_p, value_m, normal_p, q);
-      }
-      else if(operator_data.convective_kernel_data.linearization_type == LinearizationType::Picard)
-      {
-        value_flux_p += convective_kernel->calculate_flux_Picard_linearized_interior(
-          u_p, u_m, value_p, value_m, normal_p, q);
-      }
-      else
-        AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+      value_flux_p += convective_kernel->calculate_flux_linearized_interior(
+        u_p, u_m, value_p, value_m, normal_p, q);
     }
 
     if(operator_data.viscous_problem)
@@ -632,28 +566,14 @@ MomentumOperator<dim, Number>::do_boundary_integral(
     if(operator_data.convective_problem)
     {
       // value_p is calculated differently for the convective term and the viscous term
-      if(operator_data.convective_kernel_data.linearization_type == LinearizationType::Newton)
-      {
-        value_p = convective_kernel->calculate_exterior_value_Newton_linearized(value_m,
-                                                                                q,
-                                                                                integrator,
-                                                                                boundary_type);
-      }
-      else if(operator_data.convective_kernel_data.linearization_type == LinearizationType::Picard)
-      {
-        value_p = convective_kernel->calculate_exterior_value_Picard_linearized(value_m,
-                                                                                q,
-                                                                                integrator,
-                                                                                operator_type,
-                                                                                boundary_type,
-                                                                                boundary_id,
-                                                                                operator_data.bc,
-                                                                                this->time);
-      }
-      else
-      {
-        AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
-      }
+      value_p = convective_kernel->calculate_exterior_value_linearized(value_m,
+                                                                       q,
+                                                                       integrator,
+                                                                       operator_type,
+                                                                       boundary_type,
+                                                                       boundary_id,
+                                                                       operator_data.bc,
+                                                                       this->time);
 
       vector u_m = convective_kernel->get_velocity_m(q);
       vector u_p =
@@ -666,20 +586,8 @@ MomentumOperator<dim, Number>::do_boundary_integral(
                                            operator_data.bc,
                                            this->time);
 
-      if(operator_data.convective_kernel_data.linearization_type == LinearizationType::Newton)
-      {
-        value_flux_m += convective_kernel->calculate_flux_Newton_linearized_boundary(
+      value_flux_m += convective_kernel->calculate_flux_linearized_boundary(
           u_m, u_p, value_m, value_p, normal_m, boundary_type, q);
-      }
-      else if(operator_data.convective_kernel_data.linearization_type == LinearizationType::Picard)
-      {
-        value_flux_m += convective_kernel->calculate_flux_Picard_linearized_boundary(
-          u_m, u_p, value_m, value_p, normal_m, boundary_type, q);
-      }
-      else
-      {
-        AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
-      }
     }
 
     if(operator_data.viscous_problem)

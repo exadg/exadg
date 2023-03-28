@@ -17,7 +17,7 @@
     "Application": {
         "BoundaryConditionType": "ParabolicInflow",
         "ApplySymmetryBC": "true",
-        "UseNewtonElsePicard": "true",
+        "UseNewtonElsePicard": "false",
         "UseCoupledSolverElsePressureCorrection": "true",
         "UseDivergenceFormulationElseConvectiveFormulationConvectiveTerm": "true"
     },

@@ -103,8 +103,8 @@ ConvectiveOperator<dim, Number>::rhs_add(VectorType & dst) const
   VectorType tmp;
   tmp.reinit(dst, false /* init with 0 */);
 
-  this->matrix_free->loop(&This::cell_loop_inhom_operator,
-                          &This::face_loop_inhom_operator,
+  this->matrix_free->loop(&This::cell_loop_empty,
+                          &This::face_loop_empty,
                           &This::boundary_face_loop_inhom_operator,
                           this,
                           tmp,
@@ -117,19 +117,19 @@ ConvectiveOperator<dim, Number>::rhs_add(VectorType & dst) const
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::cell_loop_inhom_operator(dealii::MatrixFree<dim, Number> const &,
-                                                          VectorType &,
-                                                          VectorType const &,
-                                                          Range const &) const
+ConvectiveOperator<dim, Number>::cell_loop_empty(dealii::MatrixFree<dim, Number> const &,
+												  VectorType &,
+												  VectorType const &,
+												  Range const &) const
 {
 }
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::face_loop_inhom_operator(dealii::MatrixFree<dim, Number> const &,
-                                                          VectorType &,
-                                                          VectorType const &,
-                                                          Range const &) const
+ConvectiveOperator<dim, Number>::face_loop_empty(dealii::MatrixFree<dim, Number> const &,
+												  VectorType &,
+												  VectorType const &,
+												  Range const &) const
 {
 }
 
@@ -153,7 +153,7 @@ ConvectiveOperator<dim, Number>::boundary_face_loop_inhom_operator(
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
     integrator_m.reinit(face);
-    this->reinit_boundary_face(face);
+    kernel->reinit_boundary_face(face);
 
     integrator_m.gather_evaluate(src, this->integrator_flags.face_evaluate);
 
@@ -460,19 +460,7 @@ ConvectiveOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) c
 
     if(operator_data.kernel_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
     {
-      tensor flux;
-      if(operator_data.kernel_data.linearization_type == LinearizationType::Newton)
-      {
-    	flux = kernel->get_volume_flux_Newton_linearized_divergence_formulation(delta_u, q);
-      }
-      else if(operator_data.kernel_data.linearization_type == LinearizationType::Picard)
-      {
-    	flux = kernel->get_volume_flux_Picard_linearized_divergence_formulation(delta_u, q);
-      }
-      else
-      {
-    	AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
-      }
+      tensor flux = kernel->get_volume_flux_linearized_divergence_formulation(delta_u, q);
 
       integrator.submit_gradient(flux, q);
     }
@@ -481,22 +469,9 @@ ConvectiveOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) c
     {
       tensor grad_delta_u = integrator.get_gradient(q);
 
-      vector flux;
-
-      if(operator_data.kernel_data.linearization_type == LinearizationType::Newton)
-      {
-        flux = kernel->get_volume_flux_Newton_linearized_convective_formulation(delta_u,
-                                                                                grad_delta_u,
-                                                                                q);
-      }
-      else if(operator_data.kernel_data.linearization_type == LinearizationType::Picard)
-      {
-    	flux = kernel->get_volume_flux_Picard_linearized_convective_formulation(grad_delta_u, q);
-      }
-      else
-      {
-    	AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
-      }
+      vector flux = kernel->get_volume_flux_linearized_convective_formulation(delta_u,
+                                                                              grad_delta_u,
+                                                                              q);
 
       integrator.submit_value(flux, q);
     }
@@ -522,26 +497,11 @@ ConvectiveOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
 
     vector normal_m = integrator_m.get_normal_vector(q);
 
-    if(operator_data.kernel_data.linearization_type == LinearizationType::Newton)
-    {
-      std::tuple<vector, vector> flux =
-        kernel->calculate_flux_Newton_linearized_interior_and_neighbor(
-          u_m, u_p, delta_u_m, delta_u_p, normal_m, q);
-      integrator_m.submit_value(std::get<0>(flux) /* flux_m */, q);
-      integrator_p.submit_value(std::get<1>(flux) /* flux_p */, q);
-    }
-    else if(operator_data.kernel_data.linearization_type == LinearizationType::Picard)
-    {
-      std::tuple<vector, vector> flux =
-        kernel->calculate_flux_Picard_linearized_interior_and_neighbor(
-          u_m, u_p, delta_u_m, delta_u_p, normal_m, q);
-      integrator_m.submit_value(std::get<0>(flux) /* flux_m */, q);
-      integrator_p.submit_value(std::get<1>(flux) /* flux_p */, q);
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
-    }
+    std::tuple<vector, vector> flux =
+      kernel->calculate_flux_linearized_interior_and_neighbor(
+        u_m, u_p, delta_u_m, delta_u_p, normal_m, q);
+    integrator_m.submit_value(std::get<0>(flux) /* flux_m */, q);
+    integrator_p.submit_value(std::get<1>(flux) /* flux_p */, q);
   }
 }
 
@@ -562,21 +522,8 @@ ConvectiveOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrato
 
     vector normal_m = integrator_m.get_normal_vector(q);
 
-    vector flux;
-    if(operator_data.kernel_data.linearization_type == LinearizationType::Newton)
-    {
-      flux = kernel->calculate_flux_Newton_linearized_interior(
-        u_m, u_p, delta_u_m, delta_u_p, normal_m, q);
-    }
-    else if(operator_data.kernel_data.linearization_type == LinearizationType::Picard)
-    {
-      flux = kernel->calculate_flux_Picard_linearized_interior(
-        u_m, u_p, delta_u_m, delta_u_p, normal_m, q);
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
-    }
+    vector flux = kernel->calculate_flux_linearized_interior(
+      u_m, u_p, delta_u_m, delta_u_p, normal_m, q);
 
     integrator_m.submit_value(flux, q);
   }
@@ -604,22 +551,8 @@ ConvectiveOperator<dim, Number>::do_face_int_integral_cell_based(
 
     vector normal_m = integrator_m.get_normal_vector(q);
 
-    vector flux;
-
-    if(operator_data.kernel_data.linearization_type == LinearizationType::Newton)
-    {
-      flux = kernel->calculate_flux_Newton_linearized_interior(
+    vector flux = kernel->calculate_flux_linearized_interior(
         u_m, u_p, delta_u_m, delta_u_p, normal_m, q);
-    }
-    else if(operator_data.kernel_data.linearization_type == LinearizationType::Picard)
-    {
-      flux = kernel->calculate_flux_Picard_linearized_interior(
-        u_m, u_p, delta_u_m, delta_u_p, normal_m, q);
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
-    }
 
     integrator_m.submit_value(flux, q);
   }
@@ -642,21 +575,8 @@ ConvectiveOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrato
 
     vector normal_p = -integrator_p.get_normal_vector(q);
 
-    vector flux;
-    if(operator_data.kernel_data.linearization_type == LinearizationType::Newton)
-    {
-      flux = kernel->calculate_flux_Newton_linearized_interior(
-        u_p, u_m, delta_u_p, delta_u_m, normal_p, q);
-    }
-    else if(operator_data.kernel_data.linearization_type == LinearizationType::Picard)
-    {
-      flux = kernel->calculate_flux_Picard_linearized_interior(
-        u_p, u_m, delta_u_p, delta_u_m, normal_p, q);
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
-    }
+    vector flux = kernel->calculate_flux_linearized_interior(
+      u_p, u_m, delta_u_p, delta_u_m, normal_p, q);
 
     integrator_p.submit_value(flux, q);
   }
@@ -688,34 +608,17 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(
 
     vector normal_m = integrator.get_normal_vector(q);
 
-    vector flux;
+    vector delta_u_p = kernel->calculate_exterior_value_linearized(delta_u_m,
+																   q,
+																   integrator,
+																   operator_type,
+																   boundary_type,
+																   boundary_id,
+																   operator_data.bc,
+																   this->time);
 
-    if(operator_data.kernel_data.linearization_type == LinearizationType::Newton)
-    {
-      vector delta_u_p =
-        kernel->calculate_exterior_value_Newton_linearized(delta_u_m, q, integrator, boundary_type);
-
-      flux = kernel->calculate_flux_Newton_linearized_boundary(
-        u_m, u_p, delta_u_m, delta_u_p, normal_m, boundary_type, q);
-    }
-    else if(operator_data.kernel_data.linearization_type == LinearizationType::Picard)
-    {
-      vector delta_u_p = kernel->calculate_exterior_value_Picard_linearized(delta_u_m,
-                                                                            q,
-                                                                            integrator,
-                                                                            operator_type,
-                                                                            boundary_type,
-                                                                            boundary_id,
-                                                                            operator_data.bc,
-                                                                            this->time);
-
-      flux = kernel->calculate_flux_Picard_linearized_boundary(
-        u_m, u_p, delta_u_m, delta_u_p, normal_m, boundary_type, q);
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
-    }
+    vector flux = kernel->calculate_flux_linearized_boundary(
+      u_m, u_p, delta_u_m, delta_u_p, normal_m, boundary_type, q);
 
     integrator.submit_value(flux, q);
   }
