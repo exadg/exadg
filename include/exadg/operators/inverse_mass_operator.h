@@ -50,7 +50,11 @@ private:
   typedef std::pair<unsigned int, unsigned int> Range;
 
 public:
-  InverseMassOperator() : matrix_free(nullptr), dof_index(0), quad_index(0)
+  InverseMassOperator()
+    : matrix_free(nullptr),
+      dof_index(0),
+      quad_index(0),
+      explicit_matrix_free_inverse_mass_available(false)
   {
   }
 
@@ -63,9 +67,14 @@ public:
     dof_index         = dof_index_in;
     quad_index        = quad_index_in;
 
-    explicit_matrix_free_inverse_mass_available = matrix_free->get_dof_handler(dof_index)
-                                                    .get_triangulation()
-                                                    .all_reference_cells_are_hyper_cube();
+    dealii::FiniteElement<dim> const & fe = matrix_free->get_dof_handler(dof_index).get_fe();
+    // this checks if we have a tensor-product element
+    if(fe.base_element(0).dofs_per_cell == dealii::Utilities::pow(fe.degree + 1, dim))
+    {
+      // this checks if we have a DG element
+      if(fe.dofs_per_vertex == 0)
+        explicit_matrix_free_inverse_mass_available = true;
+    }
 
     if(not(explicit_matrix_free_inverse_mass_available))
     {
