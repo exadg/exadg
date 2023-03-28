@@ -33,6 +33,19 @@
 
 namespace ExaDG
 {
+struct InverseMassOperatorData
+{
+  unsigned int dof_index;
+  unsigned int quad_index;
+
+  // only relevant if an explicit matrix-free inverse mass operator is not available
+  bool implement_block_diagonal_preconditioner_matrix_free = true;
+
+  // only relevant if elementwise mass operators are inverted by elementwise
+  // iterative solvers with matrix-free implementation
+  SolverData solver_data_block_diagonal = SolverData(1000, 1e-12, 1e-6);
+};
+
 template<int dim, int n_components, typename Number>
 class InverseMassOperator
 {
@@ -60,12 +73,11 @@ public:
 
   void
   initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
-             unsigned int const                      dof_index_in,
-             unsigned int const                      quad_index_in)
+             InverseMassOperatorData const           inverse_mass_operator_data)
   {
     this->matrix_free = &matrix_free_in;
-    dof_index         = dof_index_in;
-    quad_index        = quad_index_in;
+    dof_index         = inverse_mass_operator_data.dof_index;
+    quad_index        = inverse_mass_operator_data.quad_index;
 
     dealii::FiniteElement<dim> const & fe = matrix_free->get_dof_handler(dof_index).get_fe();
     // this checks if we have a tensor-product element
@@ -86,6 +98,12 @@ public:
       MassOperatorData<dim> mass_operator_data;
       mass_operator_data.dof_index  = dof_index;
       mass_operator_data.quad_index = quad_index;
+      mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+        inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free;
+      mass_operator_data.solver_block_diagonal         = Elementwise::Solver::GMRES;
+      mass_operator_data.preconditioner_block_diagonal = Elementwise::Preconditioner::None;
+      mass_operator_data.solver_data_block_diagonal =
+        inverse_mass_operator_data.solver_data_block_diagonal;
 
       mass_operator.initialize(*matrix_free, constraint, mass_operator_data);
 
@@ -135,7 +153,8 @@ private:
 
   unsigned int dof_index, quad_index;
 
-  // BlockJacobi Preconditoner to be used when the MatrixFreeInverseMass is not available
+  // ExplicitMatrixFreeInverseMass is only available for tensor-product DG elements. For other DG
+  // elements, we use a BlockJacobiPreconditioner
   bool explicit_matrix_free_inverse_mass_available;
 
   MassOperator<dim, n_components, Number> mass_operator;

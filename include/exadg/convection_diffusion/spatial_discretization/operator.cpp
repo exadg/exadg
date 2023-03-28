@@ -147,7 +147,10 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> ma
   mass_operator.initialize(*matrix_free, affine_constraints, mass_operator_data);
 
   // inverse mass operator
-  inverse_mass_operator.initialize(*matrix_free, get_dof_index(), get_quad_index());
+  InverseMassOperatorData inverse_mass_operator_data;
+  inverse_mass_operator_data.dof_index  = get_dof_index();
+  inverse_mass_operator_data.quad_index = get_quad_index();
+  inverse_mass_operator.initialize(*matrix_free, inverse_mass_operator_data);
 
   // convective operator
   unsigned int const quad_index_convective =
@@ -425,9 +428,11 @@ Operator<dim, Number>::initialize_preconditioner()
 {
   if(param.preconditioner == Preconditioner::InverseMassMatrix)
   {
-    preconditioner = std::make_shared<InverseMassPreconditioner<dim, 1, Number>>(*matrix_free,
-                                                                                 get_dof_index(),
-                                                                                 get_quad_index());
+    InverseMassOperatorData inverse_mass_data;
+    inverse_mass_data.dof_index  = get_dof_index();
+    inverse_mass_data.quad_index = get_quad_index();
+    preconditioner =
+      std::make_shared<InverseMassPreconditioner<dim, 1, Number>>(*matrix_free, inverse_mass_data);
   }
   else if(param.preconditioner == Preconditioner::PointJacobi)
   {

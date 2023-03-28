@@ -90,10 +90,12 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix)
   {
-    helmholtz_preconditioner = std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(
-      this->get_matrix_free(),
-      this->get_dof_index_velocity(),
-      this->get_quad_index_velocity_linear());
+    InverseMassOperatorData inverse_mass_data;
+    inverse_mass_data.dof_index  = this->get_dof_index_velocity();
+    inverse_mass_data.quad_index = this->get_quad_index_velocity_linear();
+    helmholtz_preconditioner =
+      std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(this->get_matrix_free(),
+                                                                    inverse_mass_data);
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi)
   {

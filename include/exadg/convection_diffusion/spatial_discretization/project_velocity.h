@@ -61,7 +61,10 @@ public:
 
     // apply M^{-1}
     InverseMassOperator<dim, dim, Number> inverse_mass;
-    inverse_mass.initialize(matrix_free, dof_index, quad_index);
+    InverseMassOperatorData               inverse_mass_data;
+    inverse_mass_data.dof_index  = dof_index;
+    inverse_mass_data.quad_index = quad_index;
+    inverse_mass.initialize(matrix_free, inverse_mass_data);
     inverse_mass.apply(vector, vector);
   }
 
