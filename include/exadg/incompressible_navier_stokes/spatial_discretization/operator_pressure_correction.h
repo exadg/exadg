@@ -74,7 +74,7 @@ public:
 
   /*
    * The implementation of the nonlinear (Picard) solver requires a function called
-   * 'rhs_picard_linearized_problem'.
+   * 'evaluate_rhs_picard'.
    */
   void
   evaluate_rhs_picard(VectorType & dst)

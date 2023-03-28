@@ -462,11 +462,17 @@ ConvectiveOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) c
     {
       tensor flux;
       if(operator_data.kernel_data.linearization_type == LinearizationType::Newton)
-        flux = kernel->get_volume_flux_Newton_linearized_divergence_formulation(delta_u, q);
+      {
+    	flux = kernel->get_volume_flux_Newton_linearized_divergence_formulation(delta_u, q);
+      }
       else if(operator_data.kernel_data.linearization_type == LinearizationType::Picard)
-        flux = kernel->get_volume_flux_Picard_linearized_divergence_formulation(delta_u, q);
+      {
+    	flux = kernel->get_volume_flux_Picard_linearized_divergence_formulation(delta_u, q);
+      }
       else
-        AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+      {
+    	AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+      }
 
       integrator.submit_gradient(flux, q);
     }
@@ -478,13 +484,19 @@ ConvectiveOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) c
       vector flux;
 
       if(operator_data.kernel_data.linearization_type == LinearizationType::Newton)
+      {
         flux = kernel->get_volume_flux_Newton_linearized_convective_formulation(delta_u,
                                                                                 grad_delta_u,
                                                                                 q);
+      }
       else if(operator_data.kernel_data.linearization_type == LinearizationType::Picard)
-        flux = kernel->get_volume_flux_Picard_linearized_convective_formulation(grad_delta_u, q);
+      {
+    	flux = kernel->get_volume_flux_Picard_linearized_convective_formulation(grad_delta_u, q);
+      }
       else
-        AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+      {
+    	AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+      }
 
       integrator.submit_value(flux, q);
     }
@@ -527,7 +539,9 @@ ConvectiveOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
       integrator_p.submit_value(std::get<1>(flux) /* flux_p */, q);
     }
     else
+    {
       AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+    }
   }
 }
 
@@ -550,13 +564,19 @@ ConvectiveOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrato
 
     vector flux;
     if(operator_data.kernel_data.linearization_type == LinearizationType::Newton)
+    {
       flux = kernel->calculate_flux_Newton_linearized_interior(
         u_m, u_p, delta_u_m, delta_u_p, normal_m, q);
+    }
     else if(operator_data.kernel_data.linearization_type == LinearizationType::Picard)
+    {
       flux = kernel->calculate_flux_Picard_linearized_interior(
         u_m, u_p, delta_u_m, delta_u_p, normal_m, q);
+    }
     else
+    {
       AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+    }
 
     integrator_m.submit_value(flux, q);
   }
@@ -587,13 +607,19 @@ ConvectiveOperator<dim, Number>::do_face_int_integral_cell_based(
     vector flux;
 
     if(operator_data.kernel_data.linearization_type == LinearizationType::Newton)
+    {
       flux = kernel->calculate_flux_Newton_linearized_interior(
         u_m, u_p, delta_u_m, delta_u_p, normal_m, q);
+    }
     else if(operator_data.kernel_data.linearization_type == LinearizationType::Picard)
+    {
       flux = kernel->calculate_flux_Picard_linearized_interior(
         u_m, u_p, delta_u_m, delta_u_p, normal_m, q);
+    }
     else
+    {
       AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+    }
 
     integrator_m.submit_value(flux, q);
   }
@@ -618,13 +644,19 @@ ConvectiveOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrato
 
     vector flux;
     if(operator_data.kernel_data.linearization_type == LinearizationType::Newton)
+    {
       flux = kernel->calculate_flux_Newton_linearized_interior(
         u_p, u_m, delta_u_p, delta_u_m, normal_p, q);
+    }
     else if(operator_data.kernel_data.linearization_type == LinearizationType::Picard)
+    {
       flux = kernel->calculate_flux_Picard_linearized_interior(
         u_p, u_m, delta_u_p, delta_u_m, normal_p, q);
+    }
     else
+    {
       AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+    }
 
     integrator_p.submit_value(flux, q);
   }

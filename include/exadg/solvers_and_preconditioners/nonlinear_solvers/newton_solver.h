@@ -72,17 +72,17 @@ public:
       // reset iterate and rhs of nonlinear solver
       if(solver_data.nonlinear_solver_type == SolverType::Newton)
       {
-        // reset increment
+        // reset increment, zero initial guess for Newton
         nonlinear_solver_output = 0.0;
 
         // overwrite residual with right-hand side for Newton solver
-        // multiply by -1.0 since the linearized problem is "linear_operator * increment = -
-        // residual"
+        // multiply by -1.0 since the linearized problem is
+        // "linear_operator * increment = -residual"
         residual_rhs *= -1.0;
       }
       else if(solver_data.nonlinear_solver_type == SolverType::Picard)
       {
-        // set initial guess
+        // last solution as initial guess for Picard solver
         nonlinear_solver_output = solution;
 
         // overwrite residual with right-hand side for Picard solver
@@ -138,7 +138,7 @@ public:
         norm_r_damp = residual_rhs.l2_norm();
 
         // reduce step length
-        omega = omega / 2.0;
+        omega = omega * 0.5;
 
         // increment counter
         n_iter_damp++;
@@ -161,7 +161,8 @@ public:
     AssertThrow(norm_r <= this->solver_data.abs_tol || norm_r / norm_r_0 <= solver_data.rel_tol,
                 dealii::ExcMessage(
                   "Nonlinear solver failed to solve nonlinear problem to given tolerance. "
-                  "Maximum number of iterations exceeded!"));
+                  "Maximum number of iterations (" +
+				  std::to_string(solver_data.max_iter) + ") exceeded!"));
 
     if(update.do_update and update.update_once_converged)
     {

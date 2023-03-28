@@ -313,7 +313,7 @@ Operator<dim, Number>::setup_operators()
   }
   else
   {
-    Assert(
+    AssertThrow(
       false,
       dealii::ExcMessage(
         "Operators for this nonlinear solver/linearization type not implemented in structure module."));

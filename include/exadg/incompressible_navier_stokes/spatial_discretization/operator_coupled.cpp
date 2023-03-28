@@ -268,7 +268,7 @@ OperatorCoupled<dim, Number>::solve_nonlinear_problem(BlockVectorType &  dst,
   linear_operator.update(time, scaling_factor_mass);
 
   // Solve nonlinear problem
-  ExaDG::NonlinearSolver::UpdateData update;
+  NonlinearSolver::UpdateData update;
   update.do_update = update_preconditioner;
   update.update_every_nonlinear_iter =
     this->param.update_preconditioner_coupled_every_nonlinear_iter;

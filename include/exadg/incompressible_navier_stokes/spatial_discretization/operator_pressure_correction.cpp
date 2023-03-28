@@ -296,7 +296,7 @@ OperatorPressureCorrection<dim, Number>::solve_nonlinear_momentum_equation(
   this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
 
   // Solve nonlinear problem
-  ExaDG::NonlinearSolver::UpdateData update;
+  NonlinearSolver::UpdateData update;
   update.do_update = update_preconditioner;
   update.update_every_nonlinear_iter =
     this->param.update_preconditioner_momentum_every_nonlinear_iter;
