@@ -25,7 +25,7 @@ Mathematical model:
   Problem type:                              Unsteady
   Equation type:                             NavierStokes
   Formulation of viscous term:               LaplaceFormulation
-  Formulation of convective term:            ConvectiveFormulation
+  Formulation of convective term:            DivergenceFormulation
   Outflow BC for convective term:            false
   Right-hand side:                           false
   Boussinesq term:                           false
@@ -39,8 +39,8 @@ Physical quantities:
   Density:                                   1.0000e+00
 
 Temporal discretization:
-  Temporal discretization method:            BDF dual splitting scheme
-  Treatment of convective term:              Explicit
+  Temporal discretization method:            BDF pressure-correction scheme
+  Treatment of convective term:              Implicit
   Calculation of time step size:             CFL
   Adaptive time stepping:                    true
   Adaptive time stepping limiting factor:    1.2000e+00
@@ -67,7 +67,7 @@ Spatial discretization:
   Element type:                              L2 - Discontinuous Galerkin
   Polynomial degree velocity:                2
   Polynomial degree pressure:                Mixed-order
-  Convective term - Upwind factor:           1.0000e+00
+  Convective term - Upwind factor:           5.0000e-01
   Convective term - Type of Dirichlet BC's:  Mirror
   Viscous term - IP formulation:             SIPG
   Viscous term - IP factor:                  1.0000e+00
@@ -81,7 +81,6 @@ Spatial discretization:
   Use divergence penalty term:               true
   Penalty factor divergence:                 1.0000e+00
   Use continuity penalty term:               true
-  Apply penalty terms in postprocessing step:true
   Use boundary data:                         false
   Penalty factor continuity:                 1.0000e+00
   Continuity penalty term components:        Normal
@@ -91,20 +90,42 @@ Turbulence:
   Use turbulence model:                      false
 
 Numerical parameters:
-  Block Jacobi matrix-free:                  false
-  Use cell-based face loops:                 false
+  Block Jacobi matrix-free:                  true
+  Use cell-based face loops:                 true
+  Maximum number of iterations:              1000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-02
+  Maximum size of Krylov space:              1000
   Quadrature rule linearization:             Over-integration (3/2k)
 
-High-order dual splitting scheme:
-  Order of extrapolation pressure NBC:       2
-  Formulation convective term in BC:         ConvectiveFormulation
+Pressure-correction scheme:
+
+  Formulation of pressure-correction scheme:
+  Order of pressure extrapolation:           1
+  Rotational formulation:                    true
+
+  Momentum step:
+  Nonlinear solver:
+  Solver type:                               Newton
+  Maximum number of iterations:              100
+  Absolute solver tolerance:                 1.0000e-10
+  Relative solver tolerance:                 1.0000e-04
+
+  Linear solver:
+  Solver:                                    GMRES
+  Maximum number of iterations:              10000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-04
+  Maximum size of Krylov space:              100
+  Preconditioner:                            InverseMassMatrix
+  Update of preconditioner:                  false
 
   Pressure Poisson equation (PPE):
   interior penalty factor:                   1.0000e+00
   Solver:                                    CG
   Maximum number of iterations:              1000
-  Absolute solver tolerance:                 1.0000e-20
-  Relative solver tolerance:                 1.0000e-06
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-04
   Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
   Update preconditioner pressure step:       false
@@ -124,20 +145,11 @@ High-order dual splitting scheme:
   Projection step:
   Solver projection step:                    CG
   Maximum number of iterations:              1000
-  Absolute solver tolerance:                 1.0000e-20
-  Relative solver tolerance:                 1.0000e-12
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-04
   Maximum size of Krylov space:              30
   Preconditioner projection step:            InverseMassMatrix
   Update preconditioner projection step:     false
-
-  Viscous step:
-  Solver viscous step:                       CG
-  Maximum number of iterations:              1000
-  Absolute solver tolerance:                 1.0000e-20
-  Relative solver tolerance:                 1.0000e-06
-  Maximum size of Krylov space:              30
-  Preconditioner viscous step:               InverseMassMatrix
-  Update preconditioner viscous:             false
 
 Generating grid for 2-dimensional problem:
 
@@ -169,8 +181,8 @@ Setup BDF time integrator ...
 Calculation of time step size according to CFL condition:
 
   CFL:                                       2.0000e-01
-  Time step size (global):                   5.0000e-02
-  Time step size (adaptive):                 5.0000e-02
+  Time step size (global):                   5.0000e-01
+  Time step size (adaptive):                 5.0000e-01
 
 ... done!
 
@@ -181,117 +193,117 @@ Setup incompressible Navier-Stokes solver ...
 Starting time loop ...
 
 Calculate error for velocity at time t = 0.0000e+00:
-  Absolute error (L2-norm): 1.46059e+00
+  Absolute error (L2-norm): 1.46059e-01
 
 Calculate error for pressure at time t = 0.0000e+00:
-  Absolute error (L2-norm): 9.23760e-01
+  Absolute error (L2-norm): 9.23760e-02
 
 ________________________________________________________________________________
 
- Time step number = 1       t = 0.00000e+00 -> t + dt = 5.00000e-02
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 5.00000e-01
 ________________________________________________________________________________
 
-Calculate error for velocity at time t = 1.0100e+01:
-  Absolute error (L2-norm): 7.04100e-16
+Calculate error for velocity at time t = 1.0715e+01:
+  Absolute error (L2-norm): 3.22904e-05
 
-Calculate error for pressure at time t = 1.0100e+01:
-  Absolute error (L2-norm): 1.92048e-14
-
-________________________________________________________________________________
-
- Time step number = 102     t = 1.01004e+01 -> t + dt = 1.02017e+01
-________________________________________________________________________________
-
-Calculate error for velocity at time t = 2.0026e+01:
-  Absolute error (L2-norm): 7.41684e-16
-
-Calculate error for pressure at time t = 2.0026e+01:
-  Absolute error (L2-norm): 6.84190e-15
+Calculate error for pressure at time t = 1.0715e+01:
+  Absolute error (L2-norm): 3.83626e-05
 
 ________________________________________________________________________________
 
- Time step number = 200     t = 2.00259e+01 -> t + dt = 2.01272e+01
+ Time step number = 13      t = 1.07148e+01 -> t + dt = 1.17274e+01
 ________________________________________________________________________________
 
-Calculate error for velocity at time t = 3.0053e+01:
-  Absolute error (L2-norm): 1.16240e-15
+Calculate error for velocity at time t = 2.0842e+01:
+  Absolute error (L2-norm): 5.38327e-07
 
-Calculate error for pressure at time t = 3.0053e+01:
-  Absolute error (L2-norm): 2.16416e-14
-
-________________________________________________________________________________
-
- Time step number = 299     t = 3.00526e+01 -> t + dt = 3.01539e+01
-________________________________________________________________________________
-
-Calculate error for velocity at time t = 4.0079e+01:
-  Absolute error (L2-norm): 5.98553e-16
-
-Calculate error for pressure at time t = 4.0079e+01:
-  Absolute error (L2-norm): 7.01908e-15
+Calculate error for pressure at time t = 2.0842e+01:
+  Absolute error (L2-norm): 7.91313e-07
 
 ________________________________________________________________________________
 
- Time step number = 398     t = 4.00793e+01 -> t + dt = 4.01806e+01
+ Time step number = 23      t = 2.08418e+01 -> t + dt = 2.18546e+01
 ________________________________________________________________________________
 
-Calculate error for velocity at time t = 5.0005e+01:
-  Absolute error (L2-norm): 7.54478e-16
+Calculate error for velocity at time t = 3.0970e+01:
+  Absolute error (L2-norm): 1.55025e-08
 
-Calculate error for pressure at time t = 5.0005e+01:
-  Absolute error (L2-norm): 1.07629e-14
-
-________________________________________________________________________________
-
- Time step number = 496     t = 5.00048e+01 -> t + dt = 5.01060e+01
-________________________________________________________________________________
-
-Calculate error for velocity at time t = 6.0031e+01:
-  Absolute error (L2-norm): 9.15800e-16
-
-Calculate error for pressure at time t = 6.0031e+01:
-  Absolute error (L2-norm): 1.02575e-14
+Calculate error for pressure at time t = 3.0970e+01:
+  Absolute error (L2-norm): 2.16103e-08
 
 ________________________________________________________________________________
 
- Time step number = 595     t = 6.00315e+01 -> t + dt = 6.01328e+01
+ Time step number = 33      t = 3.09698e+01 -> t + dt = 3.19826e+01
 ________________________________________________________________________________
 
-Calculate error for velocity at time t = 7.0058e+01:
-  Absolute error (L2-norm): 7.98491e-16
+Calculate error for velocity at time t = 4.0085e+01:
+  Absolute error (L2-norm): 6.84694e-10
 
-Calculate error for pressure at time t = 7.0058e+01:
-  Absolute error (L2-norm): 8.30501e-15
-
-________________________________________________________________________________
-
- Time step number = 694     t = 7.00582e+01 -> t + dt = 7.01595e+01
-________________________________________________________________________________
-
-Calculate error for velocity at time t = 8.0085e+01:
-  Absolute error (L2-norm): 6.74563e-16
-
-Calculate error for pressure at time t = 8.0085e+01:
-  Absolute error (L2-norm): 1.07353e-14
+Calculate error for pressure at time t = 4.0085e+01:
+  Absolute error (L2-norm): 8.94511e-10
 
 ________________________________________________________________________________
 
- Time step number = 793     t = 8.00849e+01 -> t + dt = 8.01862e+01
+ Time step number = 42      t = 4.00850e+01 -> t + dt = 4.10978e+01
 ________________________________________________________________________________
 
-Calculate error for velocity at time t = 9.0010e+01:
-  Absolute error (L2-norm): 7.86777e-16
+Calculate error for velocity at time t = 5.0213e+01:
+  Absolute error (L2-norm): 1.61890e-11
 
-Calculate error for pressure at time t = 9.0010e+01:
-  Absolute error (L2-norm): 1.18448e-14
+Calculate error for pressure at time t = 5.0213e+01:
+  Absolute error (L2-norm): 3.46356e-11
 
 ________________________________________________________________________________
 
- Time step number = 891     t = 9.00104e+01 -> t + dt = 9.01116e+01
+ Time step number = 52      t = 5.02130e+01 -> t + dt = 5.12258e+01
 ________________________________________________________________________________
 
-Calculate error for velocity at time t = 1.0004e+02:
-  Absolute error (L2-norm): 7.24404e-16
+Calculate error for velocity at time t = 6.0341e+01:
+  Absolute error (L2-norm): 1.03135e-11
 
-Calculate error for pressure at time t = 1.0004e+02:
-  Absolute error (L2-norm): 6.84439e-15
+Calculate error for pressure at time t = 6.0341e+01:
+  Absolute error (L2-norm): 6.52311e-12
+
+________________________________________________________________________________
+
+ Time step number = 62      t = 6.03410e+01 -> t + dt = 6.13538e+01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 7.0469e+01:
+  Absolute error (L2-norm): 7.33904e-12
+
+Calculate error for pressure at time t = 7.0469e+01:
+  Absolute error (L2-norm): 1.95078e-12
+
+________________________________________________________________________________
+
+ Time step number = 72      t = 7.04690e+01 -> t + dt = 7.14818e+01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 8.0597e+01:
+  Absolute error (L2-norm): 9.27230e-13
+
+Calculate error for pressure at time t = 8.0597e+01:
+  Absolute error (L2-norm): 9.37341e-13
+
+________________________________________________________________________________
+
+ Time step number = 82      t = 8.05970e+01 -> t + dt = 8.16098e+01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 9.0725e+01:
+  Absolute error (L2-norm): 4.95304e-12
+
+Calculate error for pressure at time t = 9.0725e+01:
+  Absolute error (L2-norm): 7.14667e-13
+
+________________________________________________________________________________
+
+ Time step number = 92      t = 9.07250e+01 -> t + dt = 9.17378e+01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 1.0085e+02:
+  Absolute error (L2-norm): 1.00285e-12
+
+Calculate error for pressure at time t = 1.0085e+02:
+  Absolute error (L2-norm): 3.50038e-13
