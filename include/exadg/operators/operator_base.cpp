@@ -562,7 +562,7 @@ OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditione
     typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<Number>> IDENTITY;
 
     elementwise_preconditioner =
-      std::make_shared<IDENTITY>(elementwise_operator->get_problem_size());
+      std::make_shared<IDENTITY>(integrator->dofs_per_cell);
   }
   else if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::InverseMassMatrix)
   {
