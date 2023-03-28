@@ -300,9 +300,7 @@ MomentumOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
               FormulationConvectiveTerm::ConvectiveFormulation)
       {
         value_flux +=
-          convective_kernel->get_volume_flux_linearized_convective_formulation(value,
-                                                                               gradient,
-                                                                               q);
+          convective_kernel->get_volume_flux_linearized_convective_formulation(value, gradient, q);
       }
       else
       {
@@ -587,7 +585,7 @@ MomentumOperator<dim, Number>::do_boundary_integral(
                                            this->time);
 
       value_flux_m += convective_kernel->calculate_flux_linearized_boundary(
-          u_m, u_p, value_m, value_p, normal_m, boundary_type, q);
+        u_m, u_p, value_m, value_p, normal_m, boundary_type, q);
     }
 
     if(operator_data.viscous_problem)

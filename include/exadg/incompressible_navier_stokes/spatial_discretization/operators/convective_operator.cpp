@@ -118,18 +118,18 @@ ConvectiveOperator<dim, Number>::rhs_add(VectorType & dst) const
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::cell_loop_empty(dealii::MatrixFree<dim, Number> const &,
-												  VectorType &,
-												  VectorType const &,
-												  Range const &) const
+                                                 VectorType &,
+                                                 VectorType const &,
+                                                 Range const &) const
 {
 }
 
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::face_loop_empty(dealii::MatrixFree<dim, Number> const &,
-												  VectorType &,
-												  VectorType const &,
-												  Range const &) const
+                                                 VectorType &,
+                                                 VectorType const &,
+                                                 Range const &) const
 {
 }
 
@@ -469,9 +469,8 @@ ConvectiveOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) c
     {
       tensor grad_delta_u = integrator.get_gradient(q);
 
-      vector flux = kernel->get_volume_flux_linearized_convective_formulation(delta_u,
-                                                                              grad_delta_u,
-                                                                              q);
+      vector flux =
+        kernel->get_volume_flux_linearized_convective_formulation(delta_u, grad_delta_u, q);
 
       integrator.submit_value(flux, q);
     }
@@ -497,9 +496,8 @@ ConvectiveOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
 
     vector normal_m = integrator_m.get_normal_vector(q);
 
-    std::tuple<vector, vector> flux =
-      kernel->calculate_flux_linearized_interior_and_neighbor(
-        u_m, u_p, delta_u_m, delta_u_p, normal_m, q);
+    std::tuple<vector, vector> flux = kernel->calculate_flux_linearized_interior_and_neighbor(
+      u_m, u_p, delta_u_m, delta_u_p, normal_m, q);
     integrator_m.submit_value(std::get<0>(flux) /* flux_m */, q);
     integrator_p.submit_value(std::get<1>(flux) /* flux_p */, q);
   }
@@ -522,8 +520,8 @@ ConvectiveOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrato
 
     vector normal_m = integrator_m.get_normal_vector(q);
 
-    vector flux = kernel->calculate_flux_linearized_interior(
-      u_m, u_p, delta_u_m, delta_u_p, normal_m, q);
+    vector flux =
+      kernel->calculate_flux_linearized_interior(u_m, u_p, delta_u_m, delta_u_p, normal_m, q);
 
     integrator_m.submit_value(flux, q);
   }
@@ -551,8 +549,8 @@ ConvectiveOperator<dim, Number>::do_face_int_integral_cell_based(
 
     vector normal_m = integrator_m.get_normal_vector(q);
 
-    vector flux = kernel->calculate_flux_linearized_interior(
-        u_m, u_p, delta_u_m, delta_u_p, normal_m, q);
+    vector flux =
+      kernel->calculate_flux_linearized_interior(u_m, u_p, delta_u_m, delta_u_p, normal_m, q);
 
     integrator_m.submit_value(flux, q);
   }
@@ -575,8 +573,8 @@ ConvectiveOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrato
 
     vector normal_p = -integrator_p.get_normal_vector(q);
 
-    vector flux = kernel->calculate_flux_linearized_interior(
-      u_p, u_m, delta_u_p, delta_u_m, normal_p, q);
+    vector flux =
+      kernel->calculate_flux_linearized_interior(u_p, u_m, delta_u_p, delta_u_m, normal_p, q);
 
     integrator_p.submit_value(flux, q);
   }
@@ -594,7 +592,6 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
     vector u_m = kernel->get_velocity_m(q);
-
     vector u_p = calculate_exterior_value_nonlinear(u_m,
                                                     q,
                                                     integrator,
@@ -605,17 +602,16 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(
                                                     this->time);
 
     vector delta_u_m = integrator.get_value(q);
+    vector delta_u_p = kernel->calculate_exterior_value_linearized(delta_u_m,
+                                                                   q,
+                                                                   integrator,
+                                                                   operator_type,
+                                                                   boundary_type,
+                                                                   boundary_id,
+                                                                   operator_data.bc,
+                                                                   this->time);
 
     vector normal_m = integrator.get_normal_vector(q);
-
-    vector delta_u_p = kernel->calculate_exterior_value_linearized(delta_u_m,
-																   q,
-																   integrator,
-																   operator_type,
-																   boundary_type,
-																   boundary_id,
-																   operator_data.bc,
-																   this->time);
 
     vector flux = kernel->calculate_flux_linearized_boundary(
       u_m, u_p, delta_u_m, delta_u_p, normal_m, boundary_type, q);

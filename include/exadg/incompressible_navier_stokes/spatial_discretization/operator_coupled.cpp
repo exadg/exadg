@@ -357,7 +357,7 @@ OperatorCoupled<dim, Number>::evaluate_rhs_picard_linearized(BlockVectorType &  
   }
 
   // constant right-hand side vector (body force vector and sum_alphai_ui term)
-  dst.block(0).add(1.0, *rhs_vector);
+  dst.block(0) += *rhs_vector;
 
   // pressure-block
   this->divergence_operator.rhs(dst.block(1), time);

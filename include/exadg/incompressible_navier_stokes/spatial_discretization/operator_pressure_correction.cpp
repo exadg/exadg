@@ -353,7 +353,8 @@ OperatorPressureCorrection<dim, Number>::evaluate_rhs_picard_linearized(
 
   // constant right-hand side vector (body force vector, sum_alphai_ui term and extrapolated
   // pressure gradient)
-  dst.add(1.0, *rhs_vector);
+  //  dst.add(1.0, *rhs_vector);
+  dst += *rhs_vector;
 }
 
 

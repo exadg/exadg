@@ -138,7 +138,7 @@ public:
         norm_r_damp = residual_rhs.l2_norm();
 
         // reduce step length
-        omega = omega * 0.5;
+        omega = omega / 2.0;
 
         // increment counter
         n_iter_damp++;
@@ -162,7 +162,7 @@ public:
                 dealii::ExcMessage(
                   "Nonlinear solver failed to solve nonlinear problem to given tolerance. "
                   "Maximum number of iterations (" +
-				  std::to_string(solver_data.max_iter) + ") exceeded!"));
+                  std::to_string(solver_data.max_iter) + ") exceeded!"));
 
     if(update.do_update and update.update_once_converged)
     {

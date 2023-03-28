@@ -18,12 +18,12 @@
         "BoundaryConditionType": "ParabolicInflow",
         "ApplySymmetryBC": "true",
         "UseNewtonElsePicard": "false",
-        "UseCoupledSolverElsePressureCorrection": "true",
-        "UseDivergenceFormulationElseConvectiveFormulationConvectiveTerm": "true"
+        "UseCoupledSolverElsePressureCorrection": "false",
+        "UseDivergenceFormulationElseConvectiveFormulationConvectiveTerm": "false"
     },
     "Output": {
         "OutputDirectory": "output/poiseuille/",
         "OutputName": "l0_k2",
-        "WriteOutput": "true"
+        "WriteOutput": "false"
     }
 }

@@ -339,11 +339,11 @@ public:
     {
       F = outer_product(u, delta_u);
       F = -(F + transpose(F));
-  	}
+    }
     else if(data.linearization_type == LinearizationType::Picard)
     {
       F = -outer_product(u, delta_u);
-  	}
+    }
     else
     {
       AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
@@ -372,7 +372,7 @@ public:
     if(data.linearization_type == LinearizationType::Newton)
     {
       tensor grad_u = get_velocity_gradient_cell(q);
-      F = grad_u * delta_u + grad_delta_u * w;
+      F             = grad_u * delta_u + grad_delta_u * w;
     }
     else if(data.linearization_type == LinearizationType::Picard)
     {
@@ -380,7 +380,7 @@ public:
     }
     else
     {
-  	  AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
     }
 
     return F;
@@ -489,11 +489,11 @@ public:
   inline DEAL_II_ALWAYS_INLINE //
     std::tuple<vector, vector>
     calculate_flux_linearized_interior_and_neighbor(vector const &     uM,
-                                                           vector const &     uP,
-                                                           vector const &     delta_uM,
-                                                           vector const &     delta_uP,
-                                                           vector const &     normalM,
-                                                           unsigned int const q) const
+                                                    vector const &     uP,
+                                                    vector const &     delta_uM,
+                                                    vector const &     delta_uP,
+                                                    vector const &     normalM,
+                                                    unsigned int const q) const
   {
     vector fluxM, fluxP;
 
@@ -534,7 +534,7 @@ public:
       }
       else
       {
-    	AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+        AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
       }
     }
     else
@@ -552,11 +552,11 @@ public:
   inline DEAL_II_ALWAYS_INLINE //
     vector
     calculate_flux_linearized_interior(vector const &     uM,
-                                              vector const &     uP,
-                                              vector const &     delta_uM,
-                                              vector const &     delta_uP,
-                                              vector const &     normalM,
-                                              unsigned int const q) const
+                                       vector const &     uP,
+                                       vector const &     delta_uM,
+                                       vector const &     delta_uP,
+                                       vector const &     normalM,
+                                       unsigned int const q) const
   {
     vector flux;
 
@@ -579,11 +579,11 @@ public:
 
       if(data.linearization_type == LinearizationType::Newton)
       {
-		scalar average_delta_u_normal = 0.5 * (delta_uM + delta_uP) * normalM;
+        scalar average_delta_u_normal = 0.5 * (delta_uM + delta_uP) * normalM;
 
-		// second term appears since the strong formulation is implemented (integration by parts
-		// is performed twice)
-		flux = flux - average_u_normal * delta_uM - average_delta_u_normal * uM;
+        // second term appears since the strong formulation is implemented (integration by parts
+        // is performed twice)
+        flux = flux - average_u_normal * delta_uM - average_delta_u_normal * uM;
       }
       else if(data.linearization_type == LinearizationType::Picard)
       {
@@ -593,7 +593,7 @@ public:
       }
       else
       {
-    	AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+        AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
       }
     }
     else
@@ -613,12 +613,12 @@ public:
   inline DEAL_II_ALWAYS_INLINE //
     vector
     calculate_flux_linearized_boundary(vector const &        uM,
-                                              vector const &        uP,
-                                              vector const &        delta_uM,
-                                              vector const &        delta_uP,
-                                              vector const &        normalM,
-                                              BoundaryTypeU const & boundary_type,
-                                              unsigned int const    q) const
+                                       vector const &        uP,
+                                       vector const &        delta_uM,
+                                       vector const &        delta_uP,
+                                       vector const &        normalM,
+                                       BoundaryTypeU const & boundary_type,
+                                       unsigned int const    q) const
   {
     vector flux;
 
@@ -660,7 +660,7 @@ public:
       }
       else
       {
-    	AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+        AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
       }
     }
     else
@@ -745,7 +745,7 @@ public:
     scalar uP_n = uP * normalM;
 
     vector jump_value = delta_uM - delta_uP;
-    scalar lambda = calculate_lambda(uM_n, uP_n);
+    scalar lambda     = calculate_lambda(uM_n, uP_n);
 
     vector average_normal_flux;
     if(data.linearization_type == LinearizationType::Newton)
@@ -753,14 +753,13 @@ public:
       scalar delta_uM_n = delta_uM * normalM;
       scalar delta_uP_n = delta_uP * normalM;
 
-      average_normal_flux =
-        dealii::make_vectorized_array<Number>(0.5) *
-        (uM * delta_uM_n + delta_uM * uM_n + uP * delta_uP_n + delta_uP * uP_n);
+      average_normal_flux = dealii::make_vectorized_array<Number>(0.5) *
+                            (uM * delta_uM_n + delta_uM * uM_n + uP * delta_uP_n + delta_uP * uP_n);
     }
     else if(data.linearization_type == LinearizationType::Picard)
     {
       average_normal_flux =
-    	dealii::make_vectorized_array<Number>(0.5) * (delta_uM * uM_n + delta_uP * uP_n);
+        dealii::make_vectorized_array<Number>(0.5) * (delta_uM * uM_n + delta_uP * uP_n);
     }
     else
     {
@@ -832,18 +831,18 @@ public:
     vector jump_value = delta_uM - delta_uP;
 
     vector flux;
-    if (data.linearization_type == LinearizationType::Newton)
+    if(data.linearization_type == LinearizationType::Newton)
     {
       scalar delta_average_normal_velocity = delta_average_velocity * normalM;
 
-	  flux = average_normal_velocity * delta_average_velocity +
-	    delta_average_normal_velocity * average_velocity +
-	    (data.upwind_factor * 0.5 * std::abs(average_normal_velocity)) * jump_value;
+      flux = average_normal_velocity * delta_average_velocity +
+             delta_average_normal_velocity * average_velocity +
+             (data.upwind_factor * 0.5 * std::abs(average_normal_velocity)) * jump_value;
     }
     else if(data.linearization_type == LinearizationType::Picard)
     {
       flux = average_normal_velocity * delta_average_velocity +
-        (data.upwind_factor * 0.5 * std::abs(average_normal_velocity)) * jump_value;
+             (data.upwind_factor * 0.5 * std::abs(average_normal_velocity)) * jump_value;
     }
     else
     {
@@ -903,9 +902,9 @@ public:
           {
             auto bc = boundary_descriptor->dirichlet_cached_bc.find(boundary_id)->second;
             g       = FunctionEvaluator<1, dim, Number>::value(bc,
-                                                       integrator.get_current_cell_index(),
-                                                       q,
-                                                       integrator.get_quadrature_index());
+                                                         integrator.get_current_cell_index(),
+                                                         q,
+                                                         integrator.get_quadrature_index());
           }
           else
           {
@@ -914,12 +913,13 @@ public:
         }
         else
         {
-	      AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+          AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
         }
 
         if(data.type_dirichlet_bc == TypeDirichletBCs::Mirror)
         {
-          delta_uP = -delta_uM + 2.0 * g; // dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>(2.0 * g);
+          delta_uP = -delta_uM +
+                     2.0 * g; // dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>(2.0 * g);
         }
         else if(data.type_dirichlet_bc == TypeDirichletBCs::Direct)
         {
@@ -958,10 +958,8 @@ public:
                   dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
     }
 
-
     return delta_uP;
   }
-
 
 private:
   ConvectiveKernelData data;
@@ -1160,15 +1158,15 @@ private:
 
   void
   cell_loop_empty(dealii::MatrixFree<dim, Number> const &,
-                           VectorType &,
-                           VectorType const &,
-                           Range const &) const;
+                  VectorType &,
+                  VectorType const &,
+                  Range const &) const;
 
   void
   face_loop_empty(dealii::MatrixFree<dim, Number> const &,
-                           VectorType &,
-                           VectorType const &,
-                           Range const &) const;
+                  VectorType &,
+                  VectorType const &,
+                  Range const &) const;
 
   void
   boundary_face_loop_inhom_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
