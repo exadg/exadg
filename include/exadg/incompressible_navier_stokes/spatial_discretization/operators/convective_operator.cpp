@@ -92,22 +92,77 @@ template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::rhs(VectorType & dst) const
 {
-  (void)dst;
-
-  AssertThrow(false,
-              dealii::ExcMessage(
-                "The function rhs() does not make sense for the convective operator."));
+  dst = 0;
+  rhs_add(dst);
 }
 
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::rhs_add(VectorType & dst) const
 {
-  (void)dst;
+  VectorType tmp;
+  tmp.reinit(dst, false /* init with 0 */);
 
-  AssertThrow(false,
+  this->matrix_free->loop(&This::cell_loop_empty,
+                          &This::face_loop_empty,
+                          &This::boundary_face_loop_inhom_operator,
+                          this,
+                          tmp,
+                          tmp,
+                          false /*zero_dst_vector = false*/);
+
+  // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
+  dst.add(-1.0, tmp);
+}
+
+template<int dim, typename Number>
+void
+ConvectiveOperator<dim, Number>::cell_loop_empty(dealii::MatrixFree<dim, Number> const &,
+                                                 VectorType &,
+                                                 VectorType const &,
+                                                 Range const &) const
+{
+}
+
+template<int dim, typename Number>
+void
+ConvectiveOperator<dim, Number>::face_loop_empty(dealii::MatrixFree<dim, Number> const &,
+                                                 VectorType &,
+                                                 VectorType const &,
+                                                 Range const &) const
+{
+}
+
+template<int dim, typename Number>
+void
+ConvectiveOperator<dim, Number>::boundary_face_loop_inhom_operator(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           face_range) const
+{
+  AssertThrow(operator_data.kernel_data.linearization_type == LinearizationType::Picard,
               dealii::ExcMessage(
-                "The function rhs_add() does not make sense for the convective operator."));
+                "Inhomogeneous right-hand side defined for Picard linearization only."));
+
+  IntegratorFace integrator_m(matrix_free,
+                              true,
+                              operator_data.dof_index,
+                              operator_data.quad_index_nonlinear);
+
+  for(unsigned int face = face_range.first; face < face_range.second; face++)
+  {
+    integrator_m.reinit(face);
+    kernel->reinit_boundary_face(face);
+
+    integrator_m.gather_evaluate(src, this->integrator_flags.face_evaluate);
+
+    do_boundary_integral(integrator_m,
+                         OperatorType::inhomogeneous,
+                         matrix_free.get_boundary_id(face));
+
+    integrator_m.integrate_scatter(this->integrator_flags.face_integrate, dst);
+  }
 }
 
 template<int dim, typename Number>
@@ -443,7 +498,6 @@ ConvectiveOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
 
     std::tuple<vector, vector> flux = kernel->calculate_flux_linearized_interior_and_neighbor(
       u_m, u_p, delta_u_m, delta_u_p, normal_m, q);
-
     integrator_m.submit_value(std::get<0>(flux) /* flux_m */, q);
     integrator_p.submit_value(std::get<1>(flux) /* flux_p */, q);
   }
@@ -533,12 +587,6 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(
   OperatorType const &               operator_type,
   dealii::types::boundary_id const & boundary_id) const
 {
-  // make sure that this function is only accessed for OperatorType::homogeneous
-  AssertThrow(
-    operator_type == OperatorType::homogeneous,
-    dealii::ExcMessage(
-      "For the linearized convective operator, only OperatorType::homogeneous makes sense."));
-
   BoundaryTypeU boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
@@ -554,8 +602,14 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(
                                                     this->time);
 
     vector delta_u_m = integrator.get_value(q);
-    vector delta_u_p =
-      kernel->calculate_exterior_value_linearized(delta_u_m, q, integrator, boundary_type);
+    vector delta_u_p = kernel->calculate_exterior_value_linearized(delta_u_m,
+                                                                   q,
+                                                                   integrator,
+                                                                   operator_type,
+                                                                   boundary_type,
+                                                                   boundary_id,
+                                                                   operator_data.bc,
+                                                                   this->time);
 
     vector normal_m = integrator.get_normal_vector(q);
 

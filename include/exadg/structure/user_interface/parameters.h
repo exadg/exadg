@@ -26,7 +26,7 @@
 #include <exadg/grid/enum_types.h>
 #include <exadg/grid/grid_data.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
-#include <exadg/solvers_and_preconditioners/newton/newton_solver_data.h>
+#include <exadg/solvers_and_preconditioners/nonlinear_solvers/newton_solver_data.h>
 #include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
 #include <exadg/structure/user_interface/enum_types.h>
 #include <exadg/time_integration/enum_types.h>
@@ -181,8 +181,8 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // Newton solver data (only relevant for nonlinear problems)
-  Newton::SolverData newton_solver_data;
+  // Data for nonlinear solver (only relevant for nonlinear problems)
+  NonlinearSolver::SolverData nonlinear_solver_data;
 
   // description: see enum declaration
   Solver solver;
@@ -203,11 +203,11 @@ public:
   // - every ... time steps (or load steps for QuasiStatic problems)
   unsigned int update_preconditioner_every_time_steps;
   // and within a time step or load step:
-  // - every ... Newton iterations (first update is invoked in the first Newton iteration)
-  unsigned int update_preconditioner_every_newton_iterations;
-  // - or once the Newton solver converged successfully (this option is currently used
-  // in order to avoid invalid deformation states in non-converged Newton iterations)
-  bool update_preconditioner_once_newton_converged;
+  // - every ... nonlinear iterations (first update is invoked in the first nonlinear iteration)
+  unsigned int update_preconditioner_every_nonlinear_iterations;
+  // - or once the nonlinear solver converged successfully (this option is currently used
+  // in order to avoid invalid deformation states in non-converged nonlinear iterations)
+  bool update_preconditioner_once_nonlinear_solver_converged;
 
   // description: see declaration of MultigridData
   MultigridData multigrid_data;

@@ -53,7 +53,8 @@ Spatial Discretization:
 
 Solver:
 
-Newton:
+Nonlinear solver:
+  Solver type:                               Newton
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-10
   Relative solver tolerance:                 1.0000e-10
@@ -174,7 +175,8 @@ Spatial Discretization:
 
 Solver:
 
-Newton:
+Nonlinear solver:
+  Solver type:                               Newton
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-10
   Relative solver tolerance:                 1.0000e-10
@@ -295,7 +297,8 @@ Spatial Discretization:
 
 Solver:
 
-Newton:
+Nonlinear solver:
+  Solver type:                               Newton
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-10
   Relative solver tolerance:                 1.0000e-10
@@ -416,7 +419,8 @@ Spatial Discretization:
 
 Solver:
 
-Newton:
+Nonlinear solver:
+  Solver type:                               Newton
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-10
   Relative solver tolerance:                 1.0000e-10
@@ -537,7 +541,8 @@ Spatial Discretization:
 
 Solver:
 
-Newton:
+Nonlinear solver:
+  Solver type:                               Newton
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-10
   Relative solver tolerance:                 1.0000e-10
@@ -658,7 +663,8 @@ Spatial Discretization:
 
 Solver:
 
-Newton:
+Nonlinear solver:
+  Solver type:                               Newton
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-10
   Relative solver tolerance:                 1.0000e-10
@@ -779,7 +785,8 @@ Spatial Discretization:
 
 Solver:
 
-Newton:
+Nonlinear solver:
+  Solver type:                               Newton
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-10
   Relative solver tolerance:                 1.0000e-10
@@ -900,7 +907,8 @@ Spatial Discretization:
 
 Solver:
 
-Newton:
+Nonlinear solver:
+  Solver type:                               Newton
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-10
   Relative solver tolerance:                 1.0000e-10
@@ -1021,7 +1029,8 @@ Spatial Discretization:
 
 Solver:
 
-Newton:
+Nonlinear solver:
+  Solver type:                               Newton
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-10
   Relative solver tolerance:                 1.0000e-10

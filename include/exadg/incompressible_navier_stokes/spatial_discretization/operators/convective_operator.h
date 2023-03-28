@@ -23,6 +23,7 @@ struct ConvectiveKernelData
 {
   ConvectiveKernelData()
     : formulation(FormulationConvectiveTerm::DivergenceFormulation),
+      linearization_type(LinearizationType::Newton),
       upwind_factor(1.0),
       use_outflow_bc(false),
       type_dirichlet_bc(TypeDirichletBCs::Mirror),
@@ -31,6 +32,8 @@ struct ConvectiveKernelData
   }
 
   FormulationConvectiveTerm formulation;
+
+  LinearizationType linearization_type;
 
   double upwind_factor;
 
@@ -328,10 +331,25 @@ public:
                                                       unsigned int const q) const
   {
     vector u = get_velocity_cell(q);
-    tensor F = outer_product(u, delta_u);
+
+    tensor F;
 
     // minus sign due to integration by parts
-    return -(F + transpose(F));
+    if(data.linearization_type == LinearizationType::Newton)
+    {
+      F = outer_product(u, delta_u);
+      F = -(F + transpose(F));
+    }
+    else if(data.linearization_type == LinearizationType::Picard)
+    {
+      F = -outer_product(u, delta_u);
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+    }
+
+    return F;
   }
 
   inline DEAL_II_ALWAYS_INLINE //
@@ -341,16 +359,29 @@ public:
                                                       unsigned int const q) const
   {
     // w = u
-    vector w      = get_velocity_cell(q);
-    tensor grad_u = get_velocity_gradient_cell(q);
+    vector w = get_velocity_cell(q);
 
     // w = u - u_grid
     if(data.ale)
       w -= get_grid_velocity_cell(q);
 
+    vector F;
+
     // plus sign since the strong formulation is used, i.e.
     // integration by parts is performed twice
-    vector F = grad_u * delta_u + grad_delta_u * w;
+    if(data.linearization_type == LinearizationType::Newton)
+    {
+      tensor grad_u = get_velocity_gradient_cell(q);
+      F             = grad_u * delta_u + grad_delta_u * w;
+    }
+    else if(data.linearization_type == LinearizationType::Picard)
+    {
+      F = grad_delta_u * w;
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+    }
 
     return F;
   }
@@ -483,13 +514,28 @@ public:
       if(data.ale)
         average_u_normal -= u_grid * normalM;
 
-      scalar average_delta_u_normal = 0.5 * (delta_uM + delta_uP) * normalM;
+      if(data.linearization_type == LinearizationType::Newton)
+      {
+        scalar average_delta_u_normal = 0.5 * (delta_uM + delta_uP) * normalM;
 
-      // second term appears since the strong formulation is implemented (integration by parts
-      // is performed twice)
-      fluxM = flux - average_u_normal * delta_uM - average_delta_u_normal * uM;
-      // opposite signs since n⁺ = - n⁻
-      fluxP = -flux + average_u_normal * delta_uP + average_delta_u_normal * uP;
+        // second term appears since the strong formulation is implemented (integration by parts
+        // is performed twice)
+        fluxM = flux - average_u_normal * delta_uM - average_delta_u_normal * uM;
+        // opposite signs since n⁺ = - n⁻
+        fluxP = -flux + average_u_normal * delta_uP + average_delta_u_normal * uP;
+      }
+      else if(data.linearization_type == LinearizationType::Picard)
+      {
+        // second term appears since the strong formulation is implemented (integration by parts
+        // is performed twice)
+        fluxM = flux - average_u_normal * delta_uM;
+        // opposite signs since n⁺ = - n⁻
+        fluxP = -flux + average_u_normal * delta_uP;
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+      }
     }
     else
     {
@@ -531,11 +577,24 @@ public:
       if(data.ale)
         average_u_normal -= u_grid * normalM;
 
-      scalar average_delta_u_normal = 0.5 * (delta_uM + delta_uP) * normalM;
+      if(data.linearization_type == LinearizationType::Newton)
+      {
+        scalar average_delta_u_normal = 0.5 * (delta_uM + delta_uP) * normalM;
 
-      // second term appears since the strong formulation is implemented (integration by parts
-      // is performed twice)
-      flux = flux - average_u_normal * delta_uM - average_delta_u_normal * uM;
+        // second term appears since the strong formulation is implemented (integration by parts
+        // is performed twice)
+        flux = flux - average_u_normal * delta_uM - average_delta_u_normal * uM;
+      }
+      else if(data.linearization_type == LinearizationType::Picard)
+      {
+        // second term appears since the strong formulation is implemented (integration by parts
+        // is performed twice)
+        flux = flux - average_u_normal * delta_uM;
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+      }
     }
     else
     {
@@ -585,11 +644,24 @@ public:
       if(data.ale)
         average_u_normal -= u_grid * normalM;
 
-      scalar average_delta_u_normal = 0.5 * (delta_uM + delta_uP) * normalM;
+      if(data.linearization_type == LinearizationType::Newton)
+      {
+        scalar average_delta_u_normal = 0.5 * (delta_uM + delta_uP) * normalM;
 
-      // second term appears since the strong formulation is implemented (integration by parts
-      // is performed twice)
-      flux = flux - average_u_normal * delta_uM - average_delta_u_normal * uM;
+        // second term appears since the strong formulation is implemented (integration by parts
+        // is performed twice)
+        flux = flux - average_u_normal * delta_uM - average_delta_u_normal * uM;
+      }
+      else if(data.linearization_type == LinearizationType::Picard)
+      {
+        // second term appears since the strong formulation is implemented (integration by parts
+        // is performed twice)
+        flux = flux - average_u_normal * delta_uM;
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+      }
     }
     else
     {
@@ -672,16 +744,27 @@ public:
     scalar uM_n = uM * normalM;
     scalar uP_n = uP * normalM;
 
-    scalar delta_uM_n = delta_uM * normalM;
-    scalar delta_uP_n = delta_uP * normalM;
-
-    vector average_normal_flux =
-      dealii::make_vectorized_array<Number>(0.5) *
-      (uM * delta_uM_n + delta_uM * uM_n + uP * delta_uP_n + delta_uP * uP_n);
-
     vector jump_value = delta_uM - delta_uP;
+    scalar lambda     = calculate_lambda(uM_n, uP_n);
 
-    scalar lambda = calculate_lambda(uM_n, uP_n);
+    vector average_normal_flux;
+    if(data.linearization_type == LinearizationType::Newton)
+    {
+      scalar delta_uM_n = delta_uM * normalM;
+      scalar delta_uP_n = delta_uP * normalM;
+
+      average_normal_flux = dealii::make_vectorized_array<Number>(0.5) *
+                            (uM * delta_uM_n + delta_uM * uM_n + uP * delta_uP_n + delta_uP * uP_n);
+    }
+    else if(data.linearization_type == LinearizationType::Picard)
+    {
+      average_normal_flux =
+        dealii::make_vectorized_array<Number>(0.5) * (delta_uM * uM_n + delta_uP * uP_n);
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+    }
 
     return (average_normal_flux + 0.5 * lambda * jump_value);
   }
@@ -745,22 +828,41 @@ public:
     if(data.ale)
       average_normal_velocity -= u_grid * normalM;
 
-    scalar delta_average_normal_velocity = delta_average_velocity * normalM;
-
     vector jump_value = delta_uM - delta_uP;
 
-    return (average_normal_velocity * delta_average_velocity +
-            delta_average_normal_velocity * average_velocity +
-            data.upwind_factor * 0.5 * std::abs(average_normal_velocity) * jump_value);
+    vector flux;
+    if(data.linearization_type == LinearizationType::Newton)
+    {
+      scalar delta_average_normal_velocity = delta_average_velocity * normalM;
+
+      flux = average_normal_velocity * delta_average_velocity +
+             delta_average_normal_velocity * average_velocity +
+             (data.upwind_factor * 0.5 * std::abs(average_normal_velocity)) * jump_value;
+    }
+    else if(data.linearization_type == LinearizationType::Picard)
+    {
+      flux = average_normal_velocity * delta_average_velocity +
+             (data.upwind_factor * 0.5 * std::abs(average_normal_velocity)) * jump_value;
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+    }
+
+    return flux;
   }
 
   /*
    * Velocity:
    *
-   *  Linearized convective operator (= homogeneous operator):
-   *  Dirichlet boundary: delta_u⁺ = - delta_u⁻ or 0
+   *  Linearized convective operator
+   *  homogeneous operator for Newton linearization (g = 0)
+   *  inhomogeneous operator for Picard linearization
+   *
+   *  Dirichlet boundary: delta_u⁺ = - delta_u⁻ + 2 g or g
    *  Neumann boundary:   delta_u⁺ = + delta_u⁻
    *  symmetry boundary:  delta_u⁺ = delta_u⁻ - 2 (delta_u⁻*n)n
+   *
    */
   inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
@@ -768,28 +870,76 @@ public:
       dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> & delta_uM,
       unsigned int const                                        q,
       FaceIntegrator<dim, dim, Number> &                        integrator,
-      BoundaryTypeU const &                                     boundary_type) const
+      OperatorType const &                                      operator_type,
+      BoundaryTypeU const &                                     boundary_type,
+      dealii::types::boundary_id const                          boundary_id,
+      std::shared_ptr<BoundaryDescriptorU<dim> const>           boundary_descriptor,
+      double const &                                            time) const
   {
     // element e⁺
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> delta_uP;
 
     if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)
     {
-      if(data.type_dirichlet_bc == TypeDirichletBCs::Mirror)
+      if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
+      {
+        dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> g;
+
+        if(data.linearization_type == LinearizationType::Newton)
+        {
+          // g is initialized with 0
+        }
+        else if(data.linearization_type == LinearizationType::Picard)
+        {
+          if(boundary_type == BoundaryTypeU::Dirichlet)
+          {
+            auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
+            auto q_points = integrator.quadrature_point(q);
+
+            g = FunctionEvaluator<1, dim, Number>::value(bc, q_points, time);
+          }
+          else if(boundary_type == BoundaryTypeU::DirichletCached)
+          {
+            auto bc = boundary_descriptor->dirichlet_cached_bc.find(boundary_id)->second;
+            g       = FunctionEvaluator<1, dim, Number>::value(bc,
+                                                         integrator.get_current_cell_index(),
+                                                         q,
+                                                         integrator.get_quadrature_index());
+          }
+          else
+          {
+            AssertThrow(false, dealii::ExcMessage("Not implemented."));
+          }
+        }
+        else
+        {
+          AssertThrow(false, dealii::ExcMessage("Linearization type not implemented."));
+        }
+
+        if(data.type_dirichlet_bc == TypeDirichletBCs::Mirror)
+        {
+          delta_uP = -delta_uM +
+                     2.0 * g; // dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>(2.0 * g);
+        }
+        else if(data.type_dirichlet_bc == TypeDirichletBCs::Direct)
+        {
+          delta_uP = g; // dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>(g);
+        }
+        else
+        {
+          AssertThrow(
+            false,
+            dealii::ExcMessage(
+              "Type of imposition of Dirichlet BC's for convective term is not implemented."));
+        }
+      }
+      else if(operator_type == OperatorType::homogeneous)
       {
         delta_uP = -delta_uM;
       }
-      else if(data.type_dirichlet_bc == TypeDirichletBCs::Direct)
-      {
-        // delta_uP = 0
-        // do nothing, delta_uP is already initialized with zero
-      }
       else
       {
-        AssertThrow(
-          false,
-          dealii::ExcMessage(
-            "Type of imposition of Dirichlet BC's for convective term is not implemented."));
+        AssertThrow(false, dealii::ExcMessage("Specified OperatorType is not implemented!"));
       }
     }
     else if(boundary_type == BoundaryTypeU::Neumann)
@@ -901,14 +1051,15 @@ public:
                                   VectorType const & src,
                                   Number const       time) const;
 
-  // these functions are not implemented for the convective operator. They only have to exist
-  // due to the definition of the base class.
+  // evaluate the right hand side to be used within Picard linearization
   void
   rhs(VectorType & dst) const;
 
   void
   rhs_add(VectorType & dst) const;
 
+  // these functions are not implemented for the convective operator. They only have to exist
+  // due to the definition of the base class.
   void
   evaluate(VectorType & dst, VectorType const & src) const;
 
@@ -1004,6 +1155,24 @@ private:
   do_boundary_integral(IntegratorFace &                   integrator,
                        OperatorType const &               operator_type,
                        dealii::types::boundary_id const & boundary_id) const;
+
+  void
+  cell_loop_empty(dealii::MatrixFree<dim, Number> const &,
+                  VectorType &,
+                  VectorType const &,
+                  Range const &) const;
+
+  void
+  face_loop_empty(dealii::MatrixFree<dim, Number> const &,
+                  VectorType &,
+                  VectorType const &,
+                  Range const &) const;
+
+  void
+  boundary_face_loop_inhom_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                    VectorType &                            dst,
+                                    VectorType const &                      src,
+                                    Range const &                           face_range) const;
 
   ConvectiveOperatorData<dim> operator_data;
 

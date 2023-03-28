@@ -223,7 +223,8 @@ private:
     // momentum step
 
     // Newton solver
-    param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
+    param.nonlinear_solver_data_momentum =
+      NonlinearSolver::SolverData(100, ABS_TOL, REL_TOL, NonlinearSolver::SolverType::Newton);
 
     // linear solver
     param.solver_momentum = SolverMomentum::FGMRES;
@@ -244,7 +245,8 @@ private:
     param.use_scaling_continuity = false;
 
     // nonlinear solver (Newton solver)
-    param.newton_solver_data_coupled = Newton::SolverData(100, ABS_TOL, REL_TOL);
+    param.nonlinear_solver_data_coupled =
+      NonlinearSolver::SolverData(100, ABS_TOL, REL_TOL, NonlinearSolver::SolverType::Newton);
 
     // linear solver
     param.solver_coupled = SolverCoupled::FGMRES;
@@ -518,8 +520,9 @@ private:
 
     param.degree = this->param.grid.mapping_degree;
 
-    param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
-    param.solver             = Structure::Solver::FGMRES;
+    param.nonlinear_solver_data =
+      NonlinearSolver::SolverData(1e4, ABS_TOL, REL_TOL, NonlinearSolver::SolverType::Newton);
+    param.solver = Structure::Solver::FGMRES;
     if(param.large_deformation)
       param.solver_data = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
     else
@@ -529,8 +532,8 @@ private:
     param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
     param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
 
-    param.update_preconditioner                         = param.large_deformation;
-    param.update_preconditioner_every_newton_iterations = 10;
+    param.update_preconditioner                            = param.large_deformation;
+    param.update_preconditioner_every_nonlinear_iterations = 10;
   }
 
   void
@@ -632,8 +635,9 @@ private:
     param.grid.triangulation_type = TriangulationType::Distributed;
     param.grid.mapping_degree     = MAPPING_DEGREE;
 
-    param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
-    param.solver             = Structure::Solver::FGMRES;
+    param.nonlinear_solver_data =
+      NonlinearSolver::SolverData(1e4, ABS_TOL, REL_TOL, NonlinearSolver::SolverType::Newton);
+    param.solver = Structure::Solver::FGMRES;
     if(param.large_deformation)
       param.solver_data = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
     else
@@ -643,9 +647,9 @@ private:
     param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
     param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
 
-    param.update_preconditioner                         = true;
-    param.update_preconditioner_every_time_steps        = 10;
-    param.update_preconditioner_every_newton_iterations = 10;
+    param.update_preconditioner                            = true;
+    param.update_preconditioner_every_time_steps           = 10;
+    param.update_preconditioner_every_nonlinear_iterations = 10;
   }
 
   void

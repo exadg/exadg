@@ -61,14 +61,15 @@ Parameters::Parameters()
     degree(1),
 
     // SOLVER
-    newton_solver_data(Newton::SolverData(1e4, 1.e-12, 1.e-6)),
+    nonlinear_solver_data(
+      NonlinearSolver::SolverData(1e4, 1.e-12, 1.e-6, NonlinearSolver::SolverType::Newton)),
     solver(Solver::Undefined),
     solver_data(SolverData(1e4, 1.e-12, 1.e-6, 100)),
     preconditioner(Preconditioner::AMG),
     update_preconditioner(false),
     update_preconditioner_every_time_steps(1),
-    update_preconditioner_every_newton_iterations(10),
-    update_preconditioner_once_newton_converged(false),
+    update_preconditioner_every_nonlinear_iterations(10),
+    update_preconditioner_once_nonlinear_solver_converged(false),
     multigrid_data(MultigridData())
 {
 }
@@ -203,8 +204,8 @@ Parameters::print_parameters_solver(dealii::ConditionalOStream const & pcout) co
   // nonlinear solver
   if(large_deformation)
   {
-    pcout << std::endl << "Newton:" << std::endl;
-    newton_solver_data.print(pcout);
+    pcout << std::endl << "Nonlinear solver:" << std::endl;
+    nonlinear_solver_data.print(pcout);
   }
 
   // linear solver

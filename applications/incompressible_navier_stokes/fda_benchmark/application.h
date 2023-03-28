@@ -315,7 +315,8 @@ private:
     // momentum step
 
     // Newton solver
-    param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-3);
+    param.nonlinear_solver_data_momentum =
+      NonlinearSolver::SolverData(100, 1.e-12, 1.e-3, NonlinearSolver::SolverType::Newton);
 
     // linear solver
     if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
@@ -331,7 +332,8 @@ private:
     param.use_scaling_continuity = false;
 
     // nonlinear solver (Newton solver)
-    param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-20, 1.e-3);
+    param.nonlinear_solver_data_coupled =
+      NonlinearSolver::SolverData(100, 1.e-20, 1.e-3, NonlinearSolver::SolverType::Newton);
 
     // linear solver
     param.solver_coupled = SolverCoupled::GMRES; // GMRES; //FGMRES;

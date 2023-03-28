@@ -195,6 +195,27 @@ enum_to_string(Preconditioner const enum_type)
   return string_type;
 }
 
+std::string
+enum_to_string(LinearizationType const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    case LinearizationType::Undefined:
+      string_type = "Undefined";
+      break;
+    case LinearizationType::Newton:
+      string_type = "Newton";
+      break;
+    default:
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      break;
+  }
+
+  return string_type;
+}
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                               OUTPUT AND POSTPROCESSING                            */

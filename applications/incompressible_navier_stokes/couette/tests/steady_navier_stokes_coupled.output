@@ -76,7 +76,8 @@ Numerical parameters:
 Coupled Navier-Stokes solver:
   Use scaling of continuity equation:        false
 
-Newton solver:
+Nonlinear solver:
+  Solver type:                               Newton
   Maximum number of iterations:              100
   Absolute solver tolerance:                 1.0000e-14
   Relative solver tolerance:                 1.0000e-14
@@ -89,7 +90,7 @@ Linear solver:
   Maximum size of Krylov space:              100
   Preconditioner:                            BlockTriangular
   Update preconditioner:                     true
-  Update every Newton iterations:            1
+  Update every nonlinear iterations:         1
   Update every time steps:                   1
 
   Velocity/momentum block:
@@ -244,7 +245,8 @@ Numerical parameters:
 Coupled Navier-Stokes solver:
   Use scaling of continuity equation:        false
 
-Newton solver:
+Nonlinear solver:
+  Solver type:                               Newton
   Maximum number of iterations:              100
   Absolute solver tolerance:                 1.0000e-14
   Relative solver tolerance:                 1.0000e-14
@@ -257,7 +259,7 @@ Linear solver:
   Maximum size of Krylov space:              100
   Preconditioner:                            BlockTriangular
   Update preconditioner:                     true
-  Update every Newton iterations:            1
+  Update every nonlinear iterations:         1
   Update every time steps:                   1
 
   Velocity/momentum block:
@@ -412,7 +414,8 @@ Numerical parameters:
 Coupled Navier-Stokes solver:
   Use scaling of continuity equation:        false
 
-Newton solver:
+Nonlinear solver:
+  Solver type:                               Newton
   Maximum number of iterations:              100
   Absolute solver tolerance:                 1.0000e-14
   Relative solver tolerance:                 1.0000e-14
@@ -425,7 +428,7 @@ Linear solver:
   Maximum size of Krylov space:              100
   Preconditioner:                            BlockTriangular
   Update preconditioner:                     true
-  Update every Newton iterations:            1
+  Update every nonlinear iterations:         1
   Update every time steps:                   1
 
   Velocity/momentum block:
@@ -580,7 +583,8 @@ Numerical parameters:
 Coupled Navier-Stokes solver:
   Use scaling of continuity equation:        false
 
-Newton solver:
+Nonlinear solver:
+  Solver type:                               Newton
   Maximum number of iterations:              100
   Absolute solver tolerance:                 1.0000e-14
   Relative solver tolerance:                 1.0000e-14
@@ -593,7 +597,7 @@ Linear solver:
   Maximum size of Krylov space:              100
   Preconditioner:                            BlockTriangular
   Update preconditioner:                     true
-  Update every Newton iterations:            1
+  Update every nonlinear iterations:         1
   Update every time steps:                   1
 
   Velocity/momentum block:

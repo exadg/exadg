@@ -53,7 +53,7 @@ public:
              OperatorData<dim> const &                 data) override;
 
   /*
-   * Evaluates the non-linear operator.
+   * Evaluates the nonlinear operator.
    */
   void
   evaluate_nonlinear(VectorType & dst, VectorType const & src) const;
@@ -75,7 +75,7 @@ public:
 
 private:
   /*
-   * Non-linear operator.
+   * Nonlinear operator.
    */
   void
   reinit_cell_nonlinear(IntegratorCell & integrator, unsigned int const cell) const;

@@ -325,7 +325,8 @@ private:
     this->param.grid.triangulation_type = TriangulationType::Distributed;
     this->param.grid.mapping_degree     = 1;
 
-    this->param.newton_solver_data  = Newton::SolverData(1e4, 1.e-10, 1.e-10);
+    this->param.nonlinear_solver_data =
+      NonlinearSolver::SolverData(1e4, 1.e-10, 1.e-10, NonlinearSolver::SolverType::Newton);
     this->param.solver              = Solver::CG;
     this->param.solver_data         = SolverData(1e4, 1.e-12, 1.e-6, 100);
     this->param.preconditioner      = Preconditioner::Multigrid;
@@ -333,9 +334,9 @@ private:
 
     this->param.update_preconditioner                  = true;
     this->param.update_preconditioner_every_time_steps = 1;
-    this->param.update_preconditioner_every_newton_iterations =
-      this->param.newton_solver_data.max_iter;
-    this->param.update_preconditioner_once_newton_converged = true;
+    this->param.update_preconditioner_every_nonlinear_iterations =
+      this->param.nonlinear_solver_data.max_iter;
+    this->param.update_preconditioner_once_nonlinear_solver_converged = true;
   }
 
   void

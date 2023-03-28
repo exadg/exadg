@@ -344,7 +344,6 @@ MomentumOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
       std::tuple<vector, vector> flux =
         convective_kernel->calculate_flux_linearized_interior_and_neighbor(
           u_m, u_p, value_m, value_p, normal_m, q);
-
       value_flux_m += std::get<0>(flux);
       value_flux_p += std::get<1>(flux);
     }
@@ -568,7 +567,11 @@ MomentumOperator<dim, Number>::do_boundary_integral(
       value_p = convective_kernel->calculate_exterior_value_linearized(value_m,
                                                                        q,
                                                                        integrator,
-                                                                       boundary_type);
+                                                                       operator_type,
+                                                                       boundary_type,
+                                                                       boundary_id,
+                                                                       operator_data.bc,
+                                                                       this->time);
 
       vector u_m = convective_kernel->get_velocity_m(q);
       vector u_p =

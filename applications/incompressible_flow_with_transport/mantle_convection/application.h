@@ -199,7 +199,8 @@ private:
     // momentum step
 
     // Newton solver
-    this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-30, reltol);
+    this->param.nonlinear_solver_data_momentum =
+      NonlinearSolver::SolverData(100, 1.e-30, reltol, NonlinearSolver::SolverType::Newton);
 
     // linear solver
     this->param.solver_momentum                  = SolverMomentum::CG;
@@ -211,7 +212,8 @@ private:
     // COUPLED NAVIER-STOKES SOLVER
 
     // nonlinear solver (Newton solver)
-    this->param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-30, reltol);
+    this->param.nonlinear_solver_data_coupled =
+      NonlinearSolver::SolverData(100, 1.e-30, reltol, NonlinearSolver::SolverType::Newton);
 
     // linear solver
     this->param.solver_coupled         = SolverCoupled::GMRES;

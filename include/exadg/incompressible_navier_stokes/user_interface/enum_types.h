@@ -92,6 +92,19 @@ enum class FormulationConvectiveTerm
 std::string
 enum_to_string(FormulationConvectiveTerm const enum_type);
 
+/*
+ * Linearization variant: Picard or Newton method
+ */
+enum class LinearizationType
+{
+  Undefined,
+  Newton,
+  Picard
+};
+
+std::string
+enum_to_string(LinearizationType const enum_type);
+
 enum class MeshMovementType
 {
   Function,

@@ -39,7 +39,8 @@ struct OperatorData : public OperatorBaseData
       pull_back_traction(false),
       unsteady(false),
       density(1.0),
-      quad_index_gauss_lobatto(0)
+      quad_index_gauss_lobatto(0),
+      linearization_type(LinearizationType::Newton)
   {
   }
 
@@ -60,6 +61,9 @@ struct OperatorData : public OperatorBaseData
   // for DirichletCached boundary conditions, another quadrature rule
   // is needed to set the constrained DoFs.
   unsigned int quad_index_gauss_lobatto;
+
+  // solution strategy for (non-)linear problems
+  LinearizationType linearization_type;
 };
 
 template<int dim, typename Number>

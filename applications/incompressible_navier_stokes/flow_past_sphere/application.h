@@ -203,15 +203,16 @@ public:
     // momentum step
 
     // Newton solver
-    this->param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
+    this->param.nonlinear_solver_data_momentum =
+      NonlinearSolver::SolverData(100, ABS_TOL, REL_TOL, NonlinearSolver::SolverType::Newton);
 
     // linear solver
     this->param.solver_momentum      = SolverMomentum::FGMRES;
     this->param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
 
-    this->param.update_preconditioner_momentum                   = true;
-    this->param.update_preconditioner_momentum_every_newton_iter = 10;
-    this->param.update_preconditioner_momentum_every_time_steps  = 10;
+    this->param.update_preconditioner_momentum                      = true;
+    this->param.update_preconditioner_momentum_every_nonlinear_iter = 10;
+    this->param.update_preconditioner_momentum_every_time_steps     = 10;
 
     this->param.preconditioner_momentum = MomentumPreconditioner::Multigrid;
     this->param.multigrid_operator_type_momentum =
@@ -229,15 +230,16 @@ public:
     // COUPLED NAVIER-STOKES SOLVER
 
     // nonlinear solver (Newton solver)
-    this->param.newton_solver_data_coupled = Newton::SolverData(100, ABS_TOL, REL_TOL);
+    this->param.nonlinear_solver_data_coupled =
+      NonlinearSolver::SolverData(100, ABS_TOL, REL_TOL, NonlinearSolver::SolverType::Newton);
 
     // linear solver
     this->param.solver_coupled      = SolverCoupled::FGMRES;
     this->param.solver_data_coupled = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
 
-    this->param.update_preconditioner_coupled                   = true;
-    this->param.update_preconditioner_coupled_every_newton_iter = 10;
-    this->param.update_preconditioner_coupled_every_time_steps  = 10;
+    this->param.update_preconditioner_coupled                      = true;
+    this->param.update_preconditioner_coupled_every_nonlinear_iter = 10;
+    this->param.update_preconditioner_coupled_every_time_steps     = 10;
 
     // preconditioning linear solver
     this->param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;

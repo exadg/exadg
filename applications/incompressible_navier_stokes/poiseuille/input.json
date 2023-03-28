@@ -16,7 +16,10 @@
     },
     "Application": {
         "BoundaryConditionType": "ParabolicInflow",
-        "ApplySymmetryBC": "false"
+        "ApplySymmetryBC": "true",
+        "UseNewtonElsePicard": "false",
+        "UseCoupledSolverElsePressureCorrection": "false",
+        "UseDivergenceFormulationElseConvectiveFormulationConvectiveTerm": "false"
     },
     "Output": {
         "OutputDirectory": "output/poiseuille/",

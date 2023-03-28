@@ -80,7 +80,7 @@ public:
   get_velocity() const;
 
   /*
-   * Interface required by Newton solver.
+   * Interface required by nonlinear solver.
    */
   void
   set_solution_linearization(VectorType const & velocity);
