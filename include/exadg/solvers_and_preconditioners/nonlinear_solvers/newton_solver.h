@@ -110,7 +110,7 @@ public:
       double             omega         = 1.0; // damping factor (begin with 1)
       double             norm_r_damp   = 1.0; // norm of residual using temporary solution
       unsigned int       n_iter_damp   = 0;   // counts iteration of damping scheme
-      unsigned int const max_iter_damp = 10;   // max iterations of damping scheme
+      unsigned int const max_iter_damp = 10;  // max iterations of damping scheme
       double const       tau           = 0.5; // a parameter (has to be smaller than 1)
       do
       {
