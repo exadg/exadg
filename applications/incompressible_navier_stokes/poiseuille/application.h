@@ -33,17 +33,6 @@ enum class BoundaryCondition
   Periodic
 };
 
-inline void
-string_to_enum(BoundaryCondition & enum_type, std::string const string_type)
-{
-  // clang-format off
-  if     (string_type == "ParabolicInflow") enum_type = BoundaryCondition::ParabolicInflow;
-  else if(string_type == "PressureInflow")  enum_type = BoundaryCondition::PressureInflow;
-  else if(string_type == "Periodic")        enum_type = BoundaryCondition::Periodic;
-  else AssertThrow(false, dealii::ExcMessage("Unknown operator type. Not implemented."));
-  // clang-format on
-}
-
 template<int dim>
 class AnalyticalSolutionVelocity : public dealii::Function<dim>
 {
@@ -206,7 +195,7 @@ private:
   {
     ApplicationBase<dim, Number>::parse_parameters();
 
-    string_to_enum(boundary_condition, boundary_condition_string);
+    Utilities::string_to_enum(boundary_condition, boundary_condition_string);
   }
   void
   set_parameters() final

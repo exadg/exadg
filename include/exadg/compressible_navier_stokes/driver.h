@@ -50,44 +50,6 @@ enum class OperatorType
   EvaluateOperatorExplicit
 };
 
-inline std::string
-enum_to_string(OperatorType const enum_type)
-{
-  std::string string_type;
-
-  switch(enum_type)
-  {
-    // clang-format off
-    case OperatorType::ConvectiveTerm:            string_type = "ConvectiveTerm";           break;
-    case OperatorType::ViscousTerm:               string_type = "ViscousTerm";              break;
-    case OperatorType::ViscousAndConvectiveTerms: string_type = "ViscousAndConvectiveTerms";break;
-    case OperatorType::InverseMassOperator:       string_type = "InverseMassOperator";      break;
-    case OperatorType::InverseMassOperatorDstDst: string_type = "InverseMassOperatorDstDst";break;
-    case OperatorType::VectorUpdate:              string_type = "VectorUpdate";             break;
-    case OperatorType::EvaluateOperatorExplicit:  string_type = "EvaluateOperatorExplicit"; break;
-
-    default:AssertThrow(false, dealii::ExcMessage("Not implemented.")); break;
-      // clang-format on
-  }
-
-  return string_type;
-}
-
-inline void
-string_to_enum(OperatorType & enum_type, std::string const string_type)
-{
-  // clang-format off
-  if     (string_type == "ConvectiveTerm")            enum_type = OperatorType::ConvectiveTerm;
-  else if(string_type == "ViscousTerm")               enum_type = OperatorType::ViscousTerm;
-  else if(string_type == "ViscousAndConvectiveTerms") enum_type = OperatorType::ViscousAndConvectiveTerms;
-  else if(string_type == "InverseMassOperator")       enum_type = OperatorType::InverseMassOperator;
-  else if(string_type == "InverseMassOperatorDstDst") enum_type = OperatorType::InverseMassOperatorDstDst;
-  else if(string_type == "VectorUpdate")              enum_type = OperatorType::VectorUpdate;
-  else if(string_type == "EvaluateOperatorExplicit")  enum_type = OperatorType::EvaluateOperatorExplicit;
-  else AssertThrow(false, dealii::ExcMessage("Unknown operator type. Not implemented."));
-  // clang-format on
-}
-
 inline unsigned int
 get_dofs_per_element(std::string const & input_file,
                      unsigned int const  dim,

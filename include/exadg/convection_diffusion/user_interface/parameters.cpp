@@ -417,8 +417,8 @@ Parameters::print_parameters_mathematical_model(dealii::ConditionalOStream const
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
-  print_parameter(pcout, "Problem type", enum_to_string(problem_type));
-  print_parameter(pcout, "Equation type", enum_to_string(equation_type));
+  print_parameter(pcout, "Problem type", problem_type);
+  print_parameter(pcout, "Equation type", equation_type);
   print_parameter(pcout, "Right-hand side", right_hand_side);
 
   if(equation_type == EquationType::Convection ||
@@ -426,9 +426,7 @@ Parameters::print_parameters_mathematical_model(dealii::ConditionalOStream const
   {
     print_parameter(pcout, "Analytical velocity field", analytical_velocity_field);
     print_parameter(pcout, "ALE formulation", ale_formulation);
-    print_parameter(pcout,
-                    "Formulation convective term",
-                    enum_to_string(formulation_convective_term));
+    print_parameter(pcout, "Formulation convective term", formulation_convective_term);
   }
 }
 
@@ -455,11 +453,11 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
 {
   pcout << std::endl << "Temporal discretization:" << std::endl;
 
-  print_parameter(pcout, "Temporal discretization method", enum_to_string(temporal_discretization));
+  print_parameter(pcout, "Temporal discretization method", temporal_discretization);
 
   if(temporal_discretization == TemporalDiscretization::ExplRK)
   {
-    print_parameter(pcout, "Explicit time integrator", enum_to_string(time_integrator_rk));
+    print_parameter(pcout, "Explicit time integrator", time_integrator_rk);
   }
 
   print_parameter(pcout, "Maximum number of time steps", max_number_of_time_steps);
@@ -470,14 +468,10 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
   {
     print_parameter(pcout, "Order of time integrator", order_time_integrator);
     print_parameter(pcout, "Start with low order method", start_with_low_order);
-    print_parameter(pcout,
-                    "Treatment of convective term",
-                    enum_to_string(treatment_of_convective_term));
+    print_parameter(pcout, "Treatment of convective term", treatment_of_convective_term);
   }
 
-  print_parameter(pcout,
-                  "Calculation of time step size",
-                  enum_to_string(calculation_of_time_step_size));
+  print_parameter(pcout, "Calculation of time step size", calculation_of_time_step_size);
 
   print_parameter(pcout, "Adaptive time stepping", adaptive_time_stepping);
 
@@ -489,9 +483,7 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
 
     print_parameter(pcout, "Maximum allowable time step size", time_step_size_max);
 
-    print_parameter(pcout,
-                    "Type of CFL condition",
-                    enum_to_string(adaptive_time_stepping_cfl_type));
+    print_parameter(pcout, "Type of CFL condition", adaptive_time_stepping_cfl_type);
   }
 
 
@@ -516,9 +508,7 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
   if(equation_type == EquationType::Convection ||
      equation_type == EquationType::ConvectionDiffusion)
   {
-    print_parameter(pcout,
-                    "Numerical flux convective term",
-                    enum_to_string(numerical_flux_convective_operator));
+    print_parameter(pcout, "Numerical flux convective term", numerical_flux_convective_operator);
   }
 
   if(equation_type == EquationType::Diffusion || equation_type == EquationType::ConvectionDiffusion)
@@ -532,11 +522,11 @@ Parameters::print_parameters_solver(dealii::ConditionalOStream const & pcout) co
 {
   pcout << std::endl << "Solver:" << std::endl;
 
-  print_parameter(pcout, "Solver", enum_to_string(solver));
+  print_parameter(pcout, "Solver", solver);
 
   solver_data.print(pcout);
 
-  print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner));
+  print_parameter(pcout, "Preconditioner", preconditioner);
 
   if(preconditioner != Preconditioner::None)
   {
@@ -552,18 +542,16 @@ Parameters::print_parameters_solver(dealii::ConditionalOStream const & pcout) co
 
   if(implement_block_diagonal_preconditioner_matrix_free)
   {
-    print_parameter(pcout, "Solver block diagonal", enum_to_string(solver_block_diagonal));
+    print_parameter(pcout, "Solver block diagonal", solver_block_diagonal);
 
-    print_parameter(pcout,
-                    "Preconditioner block diagonal",
-                    enum_to_string(preconditioner_block_diagonal));
+    print_parameter(pcout, "Preconditioner block diagonal", preconditioner_block_diagonal);
 
     solver_data_block_diagonal.print(pcout);
   }
 
   if(preconditioner == Preconditioner::Multigrid)
   {
-    print_parameter(pcout, "Multigrid operator type", enum_to_string(mg_operator_type));
+    print_parameter(pcout, "Multigrid operator type", mg_operator_type);
     multigrid_data.print(pcout);
   }
 

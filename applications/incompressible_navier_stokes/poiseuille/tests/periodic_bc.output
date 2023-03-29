@@ -39,7 +39,7 @@ Physical quantities:
   Density:                                   1.0000e+00
 
 Temporal discretization:
-  Temporal discretization method:            BDF dual splitting scheme
+  Temporal discretization method:            BDFDualSplittingScheme
   Treatment of convective term:              Explicit
   Calculation of time step size:             CFL
   Adaptive time stepping:                    true
@@ -64,9 +64,9 @@ Spatial discretization:
   Multigrid variant:                         LocalSmoothing
   Global refinements:                        0
   Mapping degree:                            2
-  Element type:                              L2 - Discontinuous Galerkin
+  Element type:                              L2
   Polynomial degree velocity:                2
-  Polynomial degree pressure:                Mixed-order
+  Polynomial degree pressure:                MixedOrder
   Convective term - Upwind factor:           1.0000e+00
   Convective term - Type of Dirichlet BC's:  Mirror
   Viscous term - IP formulation:             SIPG
@@ -93,7 +93,7 @@ Turbulence:
 Numerical parameters:
   Block Jacobi matrix-free:                  false
   Use cell-based face loops:                 false
-  Quadrature rule linearization:             Over-integration (3/2k)
+  Quadrature rule linearization:             Overintegration32k
 
 High-order dual splitting scheme:
   Order of extrapolation pressure NBC:       2
@@ -108,7 +108,7 @@ High-order dual splitting scheme:
   Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
   Update preconditioner pressure step:       false
-  Multigrid type:                            h-MG
+  Multigrid type:                            hMG
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5

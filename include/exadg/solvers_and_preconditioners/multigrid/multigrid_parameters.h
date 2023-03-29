@@ -56,10 +56,6 @@ enum class MultigridType
   phcMG
 };
 
-std::string
-enum_to_string(MultigridType const enum_type);
-
-
 enum class PSequenceType
 {
   GoToOne,
@@ -67,9 +63,6 @@ enum class PSequenceType
   Bisect,
   Manual
 };
-
-std::string
-enum_to_string(PSequenceType const enum_type);
 
 enum class MultigridSmoother
 {
@@ -79,17 +72,11 @@ enum class MultigridSmoother
   Jacobi
 };
 
-std::string
-enum_to_string(MultigridSmoother const enum_type);
-
 enum class AMGType
 {
   ML,
   BoomerAMG
 };
-
-std::string
-enum_to_string(AMGType const enum_type);
 
 enum class MultigridCoarseGridSolver
 {
@@ -99,10 +86,6 @@ enum class MultigridCoarseGridSolver
   AMG
 };
 
-std::string
-enum_to_string(MultigridCoarseGridSolver const enum_type);
-
-
 enum class MultigridCoarseGridPreconditioner
 {
   None,
@@ -110,9 +93,6 @@ enum class MultigridCoarseGridPreconditioner
   BlockJacobi,
   AMG
 };
-
-std::string
-enum_to_string(MultigridCoarseGridPreconditioner const enum_type);
 
 struct AMGData
 {
@@ -141,7 +121,7 @@ struct AMGData
   void
   print(dealii::ConditionalOStream const & pcout) const
   {
-    print_parameter(pcout, "    AMG type", enum_to_string(amg_type));
+    print_parameter(pcout, "    AMG type", amg_type);
 
     if(amg_type == AMGType::ML)
     {
@@ -156,10 +136,9 @@ struct AMGData
 #ifdef DEAL_II_WITH_PETSC
       print_parameter(pcout, "    Smoother sweeps", boomer_data.n_sweeps_coarse);
       print_parameter(pcout, "    Number of cycles", boomer_data.max_iter);
-      // TODO: add enum_to_string function (in dealii?)
-      print_parameter(pcout, "    Smoother type down", (int)boomer_data.relaxation_type_down);
-      print_parameter(pcout, "    Smoother type up", (int)boomer_data.relaxation_type_up);
-      print_parameter(pcout, "    Smoother type coarse", (int)boomer_data.relaxation_type_coarse);
+      print_parameter(pcout, "    Smoother type down", boomer_data.relaxation_type_down);
+      print_parameter(pcout, "    Smoother type up", boomer_data.relaxation_type_up);
+      print_parameter(pcout, "    Smoother type coarse", boomer_data.relaxation_type_coarse);
 #endif
     }
     else
@@ -186,9 +165,6 @@ enum class PreconditionerSmoother
   BlockJacobi
 };
 
-std::string
-enum_to_string(PreconditionerSmoother const enum_type);
-
 struct SmootherData
 {
   SmootherData()
@@ -204,8 +180,8 @@ struct SmootherData
   void
   print(dealii::ConditionalOStream const & pcout) const
   {
-    print_parameter(pcout, "Smoother", enum_to_string(smoother));
-    print_parameter(pcout, "Preconditioner smoother", enum_to_string(preconditioner));
+    print_parameter(pcout, "Smoother", smoother);
+    print_parameter(pcout, "Preconditioner smoother", preconditioner);
     print_parameter(pcout, "Iterations smoother", iterations);
 
     if(smoother == MultigridSmoother::Jacobi)
@@ -252,8 +228,8 @@ struct CoarseGridData
   void
   print(dealii::ConditionalOStream const & pcout) const
   {
-    print_parameter(pcout, "Coarse grid solver", enum_to_string(solver));
-    print_parameter(pcout, "Coarse grid preconditioner", enum_to_string(preconditioner));
+    print_parameter(pcout, "Coarse grid solver", solver);
+    print_parameter(pcout, "Coarse grid preconditioner", preconditioner);
 
     solver_data.print(pcout);
 
@@ -291,11 +267,11 @@ struct MultigridData
   void
   print(dealii::ConditionalOStream const & pcout) const
   {
-    print_parameter(pcout, "Multigrid type", enum_to_string(type));
+    print_parameter(pcout, "Multigrid type", type);
 
     if(involves_p_transfer())
     {
-      print_parameter(pcout, "p-sequence", enum_to_string(p_sequence));
+      print_parameter(pcout, "p-sequence", p_sequence);
     }
 
     smoother_data.print(pcout);

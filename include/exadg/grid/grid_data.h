@@ -49,18 +49,14 @@ struct GridData
   void
   print(dealii::ConditionalOStream const & pcout) const
   {
-    print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
+    print_parameter(pcout, "Triangulation type", triangulation_type);
 
-    print_parameter(pcout, "Element type", enum_to_string(element_type));
+    print_parameter(pcout, "Element type", element_type);
 
     if(triangulation_type == TriangulationType::FullyDistributed)
-    {
-      print_parameter(pcout,
-                      "Partitioning type (fully-distributed)",
-                      enum_to_string(partitioning_type));
-    }
+      print_parameter(pcout, "Partitioning type (fully-distributed)", partitioning_type);
 
-    print_parameter(pcout, "Multigrid variant", enum_to_string(multigrid));
+    print_parameter(pcout, "Multigrid variant", multigrid);
 
     print_parameter(pcout, "Global refinements", n_refine_global);
 

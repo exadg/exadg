@@ -42,9 +42,6 @@ enum class SpatialDiscretization
   CG
 };
 
-std::string
-enum_to_string(SpatialDiscretization const enum_type);
-
 /**************************************************************************************/
 /*                                                                                    */
 /*                                       SOLVER                                       */
@@ -61,9 +58,6 @@ enum class Solver
   FGMRES
 };
 
-std::string
-enum_to_string(Solver const enum_type);
-
 /*
  *  Preconditioner type for solution of linear system of equations
  */
@@ -76,9 +70,6 @@ enum class Preconditioner
   AMG,
   Multigrid
 };
-
-std::string
-enum_to_string(Preconditioner const enum_type);
 
 /**************************************************************************************/
 /*                                                                                    */

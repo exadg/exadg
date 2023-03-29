@@ -35,16 +35,6 @@ enum class MeshType
   Curvilinear
 };
 
-void
-string_to_enum(MeshType & enum_type, std::string const & string_type)
-{
-  // clang-format off
-  if     (string_type == "Cartesian")   enum_type = MeshType::Cartesian;
-  else if(string_type == "Curvilinear") enum_type = MeshType::Curvilinear;
-  else AssertThrow(false, dealii::ExcMessage("Not implemented."));
-  // clang-format on
-}
-
 template<int dim>
 class AnalyticalSolutionVelocity : public dealii::Function<dim>
 {
@@ -124,7 +114,7 @@ private:
   {
     ApplicationBase<dim, Number>::parse_parameters();
 
-    string_to_enum(mesh_type, mesh_type_string);
+    Utilities::string_to_enum(mesh_type, mesh_type_string);
   }
 
   void

@@ -45,28 +45,6 @@ enum class QuantityType
   PressureCoefficient
 };
 
-inline std::string
-enum_to_string(QuantityType const enum_type)
-{
-  std::string string_type;
-
-  switch(enum_type)
-  {
-    // clang-format off
-    case QuantityType::Undefined:           string_type = "Undefined";           break;
-    case QuantityType::Velocity:            string_type = "Velocity";            break;
-    case QuantityType::Pressure:            string_type = "Pressure";            break;
-    case QuantityType::SkinFriction:        string_type = "SkinFriction";        break;
-    case QuantityType::ReynoldsStresses:    string_type = "ReynoldsStresses";    break;
-    case QuantityType::PressureCoefficient: string_type = "PressureCoefficient"; break;
-
-    default:AssertThrow(false, dealii::ExcMessage("Not implemented."));          break;
-      // clang-format on
-  }
-
-  return string_type;
-}
-
 struct Quantity
 {
   Quantity() : type(QuantityType::Undefined)
@@ -207,7 +185,7 @@ struct LinePlotDataBase
     print_parameter(pcout, "Directory", directory);
     print_parameter(pcout, "Precision", precision);
     print_parameter(pcout, "Line", lines.name);
-    print_parameter(pcout, "  Quantity", enum_to_string(lines.quantity));
+    print_parameter(pcout, "  Quantity", lines.quantity);
   }
 
   /*

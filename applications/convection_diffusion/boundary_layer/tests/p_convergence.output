@@ -65,7 +65,7 @@ Solver:
   Update preconditioner:                     false
   Block Jacobi matrix-free:                  false
   Multigrid operator type:                   ReactionConvectionDiffusion
-  Multigrid type:                            ph-MG
+  Multigrid type:                            phMG
   p-sequence:                                Bisect
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
@@ -187,7 +187,7 @@ Solver:
   Update preconditioner:                     false
   Block Jacobi matrix-free:                  false
   Multigrid operator type:                   ReactionConvectionDiffusion
-  Multigrid type:                            ph-MG
+  Multigrid type:                            phMG
   p-sequence:                                Bisect
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
@@ -309,7 +309,7 @@ Solver:
   Update preconditioner:                     false
   Block Jacobi matrix-free:                  false
   Multigrid operator type:                   ReactionConvectionDiffusion
-  Multigrid type:                            ph-MG
+  Multigrid type:                            phMG
   p-sequence:                                Bisect
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
@@ -431,7 +431,7 @@ Solver:
   Update preconditioner:                     false
   Block Jacobi matrix-free:                  false
   Multigrid operator type:                   ReactionConvectionDiffusion
-  Multigrid type:                            ph-MG
+  Multigrid type:                            phMG
   p-sequence:                                Bisect
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
@@ -553,7 +553,7 @@ Solver:
   Update preconditioner:                     false
   Block Jacobi matrix-free:                  false
   Multigrid operator type:                   ReactionConvectionDiffusion
-  Multigrid type:                            ph-MG
+  Multigrid type:                            phMG
   p-sequence:                                Bisect
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
