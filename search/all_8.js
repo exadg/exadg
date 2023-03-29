@@ -3,7 +3,7 @@ var searchData=
   ['indices_5fproc_5frows_0',['indices_proc_rows',['../classdealspectrum_1_1SpectralAnalysis.html#a8fb6777753107adc77cf190694975440',1,'dealspectrum::SpectralAnalysis']]],
   ['inflowdata_1',['InflowData',['../structExaDG_1_1IncNS_1_1InflowData.html',1,'ExaDG::IncNS']]],
   ['inflowdatacalculator_2',['InflowDataCalculator',['../classExaDG_1_1IncNS_1_1InflowDataCalculator.html',1,'ExaDG::IncNS']]],
-  ['init_3',['init',['../classdealspectrum_1_1Permutator.html#a2fea88701b1a931ebb36a16f355bf016',1,'dealspectrum::Permutator::init()'],['../classdealspectrum_1_1SpectralAnalysis.html#a39967b76a35b86a876bace4b3e31db6d',1,'dealspectrum::SpectralAnalysis::init()'],['../classdealspectrum_1_1Setup.html#abbba7f9e1ab4ffe23af459475fef618a',1,'dealspectrum::Setup::init()']]],
+  ['init_3',['init',['../classdealspectrum_1_1Setup.html#abbba7f9e1ab4ffe23af459475fef618a',1,'dealspectrum::Setup::init()'],['../classdealspectrum_1_1SpectralAnalysis.html#a39967b76a35b86a876bace4b3e31db6d',1,'dealspectrum::SpectralAnalysis::init()'],['../classdealspectrum_1_1Permutator.html#a2fea88701b1a931ebb36a16f355bf016',1,'dealspectrum::Permutator::init()']]],
   ['initialize_4',['initialize',['../classExaDG_1_1Grid.html#afd62287523bfb336f31b90dad241febd',1,'ExaDG::Grid']]],
   ['initialize_5fmapping_5fq_5fcache_5',['initialize_mapping_q_cache',['../classExaDG_1_1MappingDoFVector.html#a9510d45913412d22edd455db3f91d3e2',1,'ExaDG::MappingDoFVector']]],
   ['initialize_5fprecice_6',['initialize_precice',['../classExaDG_1_1preCICE_1_1Adapter.html#a354da3e6f864bb6f65a03d1b20305bd6',1,'ExaDG::preCICE::Adapter']]],
@@ -27,8 +27,9 @@ var searchData=
   ['io_24',['io',['../classdealspectrum_1_1Interpolator.html#af628c6a95bdf35330f9eea3e10c221e7',1,'dealspectrum::Interpolator']]],
   ['ipermute_25',['ipermute',['../classdealspectrum_1_1Permutator.html#a5676ead692118f167b72d5eade208a2f',1,'dealspectrum::Permutator']]],
   ['is_5fcoupling_5fongoing_26',['is_coupling_ongoing',['../classExaDG_1_1preCICE_1_1Adapter.html#acd75a0a0d95f49c6a44ecfff5e72497b',1,'ExaDG::preCICE::Adapter']]],
-  ['is_5ftime_5fwindow_5fcomplete_27',['is_time_window_complete',['../classExaDG_1_1preCICE_1_1Adapter.html#af2409b1817f17d6c7754664d3cd073c6',1,'ExaDG::preCICE::Adapter']]],
-  ['iterativesolver_28',['IterativeSolver',['../classExaDG_1_1Elementwise_1_1IterativeSolver.html',1,'ExaDG::Elementwise']]],
-  ['iterativesolverdata_29',['IterativeSolverData',['../structExaDG_1_1Elementwise_1_1IterativeSolverData.html',1,'ExaDG::Elementwise']]],
-  ['iwait_30',['iwait',['../classdealspectrum_1_1Permutator.html#a2d3b0db2ac65d628b201ea9475342685',1,'dealspectrum::Permutator']]]
+  ['is_5fenum_27',['is_enum',['../namespaceExaDG_1_1Utilities.html#a51f3067c518a233b7f58b2b52d7da930',1,'ExaDG::Utilities']]],
+  ['is_5ftime_5fwindow_5fcomplete_28',['is_time_window_complete',['../classExaDG_1_1preCICE_1_1Adapter.html#af2409b1817f17d6c7754664d3cd073c6',1,'ExaDG::preCICE::Adapter']]],
+  ['iterativesolver_29',['IterativeSolver',['../classExaDG_1_1Elementwise_1_1IterativeSolver.html',1,'ExaDG::Elementwise']]],
+  ['iterativesolverdata_30',['IterativeSolverData',['../structExaDG_1_1Elementwise_1_1IterativeSolverData.html',1,'ExaDG::Elementwise']]],
+  ['iwait_31',['iwait',['../classdealspectrum_1_1Permutator.html#a2d3b0db2ac65d628b201ea9475342685',1,'dealspectrum::Permutator']]]
 ];
