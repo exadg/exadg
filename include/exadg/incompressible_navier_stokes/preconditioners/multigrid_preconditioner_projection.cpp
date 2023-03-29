@@ -107,8 +107,7 @@ MultigridPreconditionerProjection<dim, Number>::fill_matrix_free_data(
 
   if(data.use_cell_based_loops && this->level_info[level].is_dg())
   {
-    auto tria = dynamic_cast<dealii::parallel::distributed::Triangulation<dim> const *>(
-      &this->dof_handlers[level]->get_triangulation());
+    auto tria = &this->dof_handlers[level]->get_triangulation();
     Categorization::do_cell_based_loops(*tria, matrix_free_data.data, h_level);
   }
 
