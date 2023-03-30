@@ -36,8 +36,7 @@ namespace ExaDG
 namespace IncNS
 {
 /*
- *  Algebraic subgrid-scale turbulence models for LES of incompressible flows
- *  and generalized Newtonian fluids.
+ *  Variable viscosity models.
  */
 template<int dim, typename Number>
 class ViscosityModel

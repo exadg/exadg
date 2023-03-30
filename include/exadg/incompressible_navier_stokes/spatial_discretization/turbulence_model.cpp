@@ -59,7 +59,7 @@ ViscosityModel<dim, Number>::initialize(
   quad_index_velocity_linear      = quad_index_velocity_linear_in;
   degree_u                        = degree_u_in;
 
-  // viscosity in the Newtonian limit.
+  // viscosity in the Newtonian limit
   Operators::ViscousKernelData viscous_kernel_data = viscous_kernel->get_data();
   viscosity_newtonian_limit                        = viscous_kernel_data.viscosity;
 
@@ -114,7 +114,7 @@ ViscosityModel<dim, Number>::cell_loop_set_coefficients(
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      // calculate needed quantities for this cell
+      // calculate velocity gradient
       tensor velocity_gradient = integrator.get_gradient(q);
 
       if(use_generalized_newtonian_model)
@@ -179,7 +179,7 @@ ViscosityModel<dim, Number>::face_loop_set_coefficients(
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
     {
-      // calculate needed quantities for both elements adjacent to the current face
+      // calculate velocity gradient for both elements adjacent to the current face
       tensor velocity_gradient          = integrator_m.get_gradient(q);
       tensor velocity_gradient_neighbor = integrator_p.get_gradient(q);
 
@@ -245,7 +245,7 @@ ViscosityModel<dim, Number>::boundary_face_loop_set_coefficients(
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      // calculate needed quantities for this face
+      // calculate velocity gradient
       tensor velocity_gradient = integrator.get_gradient(q);
 
       if(use_generalized_newtonian_model)
@@ -307,7 +307,7 @@ ViscosityModel<dim, Number>::calculate_filter_width(dealii::Mapping<dim> const &
 
       // take polynomial degree of shape functions into account:
       // h/(k_u + 1)
-      h /= double(degree_u + 1);
+      h /= (double)(degree_u + 1);
 
       filter_width_vector[i][v] = h;
     }
@@ -358,10 +358,9 @@ ViscosityModel<dim, Number>::smagorinsky_turbulence_model(scalar const & filter_
     dealii::make_vectorized_array<Number>(0.5) * (velocity_gradient + transpose(velocity_gradient));
 
   scalar rate_of_strain = 2.0 * scalar_product(symmetric_gradient, symmetric_gradient);
+  rate_of_strain        = std::exp(0.5 * std::log(rate_of_strain));
 
   scalar factor = C * filter_width;
-
-  rate_of_strain = std::exp(0.5 * std::log(rate_of_strain));
 
   viscosity += factor * factor * rate_of_strain;
 }

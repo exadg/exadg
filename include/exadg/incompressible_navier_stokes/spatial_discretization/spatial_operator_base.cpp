@@ -203,7 +203,6 @@ SpatialOperatorBase<dim, Number>::setup(
 
   initialize_calculators_for_derived_quantities();
 
-  // turbulence and generalized Newtonian models depend on MatrixFree and ViscousOperator
   if(param.viscosity_is_variable())
   {
     pcout << std::endl << "... initializing viscosity model ..." << std::endl << std::flush;
@@ -524,13 +523,9 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
 
   data.unsteady_problem = unsteady_problem_has_to_be_solved();
   if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
     data.convective_problem = false;
-  }
   else
-  {
     data.convective_problem = param.convective_term_is_solved_implicitly();
-  }
   data.viscous_problem = param.viscous_problem();
 
   data.convective_kernel_data = convective_kernel_data;
