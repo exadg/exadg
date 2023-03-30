@@ -105,6 +105,31 @@ private:
                                       Range const &      face_range) const;
 
   /*
+   *  Compute the symmetric velocity gradient.
+   */
+
+  inline DEAL_II_ALWAYS_INLINE //
+    tensor
+    calculate_symmetric_velocity_gradient(tensor const & velocity_gradient) const
+  {
+    return (0.5 * (velocity_gradient + transpose(velocity_gradient)));
+  }
+
+  /*
+   *  Compute the shear rate from the velocity gradient.
+   */
+
+  inline DEAL_II_ALWAYS_INLINE //
+    scalar
+    calculate_shear_rate(tensor const & velocity_gradient) const
+  {
+    tensor symmetric_velocity_gradient = calculate_symmetric_velocity_gradient(velocity_gradient);
+    scalar shear_rate_squared =
+      2.0 * scalar_product(symmetric_velocity_gradient, symmetric_velocity_gradient);
+    return std::sqrt(shear_rate_squared);
+  }
+
+  /*
    *  This function adds the turbulent eddy-viscosity to the laminar viscosity
    *  by using one of the implemented models.
    */
@@ -112,8 +137,6 @@ private:
   add_turbulent_viscosity(scalar &       viscosity,
                           scalar const & filter_width,
                           tensor const & velocity_gradient,
-                          tensor const & symmetric_velocity_gradient,
-                          scalar const & shear_rate_squared,
                           double const & model_constant) const;
 
   /*
@@ -132,7 +155,7 @@ private:
    */
   void
   smagorinsky_turbulence_model(scalar const & filter_width,
-                               scalar const & shear_rate_squared,
+                               tensor const & velocity_gradient,
                                double const & C,
                                scalar &       viscosity) const;
 
@@ -163,8 +186,7 @@ private:
   void
   vreman_turbulence_model(scalar const & filter_width,
                           tensor const & velocity_gradient,
-                          tensor const & symmetric_velocity_gradient,
-                          double const & C,
+                          double const & c,
                           scalar &       viscosity) const;
 
   /*
@@ -195,8 +217,7 @@ private:
   void
   wale_turbulence_model(scalar const & filter_width,
                         tensor const & velocity_gradient,
-                        scalar const & shear_rate_squared,
-                        double const & C,
+                        double const & c,
                         scalar &       viscosity) const;
 
   /*
@@ -218,7 +239,7 @@ private:
    */
   void
   sigma_turbulence_model(scalar const & filter_width,
-                         tensor const & symmetric_velocity_gradient,
+                         tensor const & velocity_gradient,
                          double const & C,
                          scalar &       viscosity) const;
 
@@ -236,17 +257,17 @@ private:
    *  a    = generalized_newtonian_a
    *  b    = generalized_newtonian_b
    *  we have the apparent viscosity
-   *  viscosity = e_oo + (e_0-e_oo) * [k + (l*y)^a]^[(n-1)/a]
+   *  viscosity = e_oo + (e_0 - e_oo) * [k + (l * y)^a]^[(n - 1) / a]
    *
    *  We distinguish the cases:
    *  GeneralizedCarreauYasuda, // no assumptions
    *  Carreau,                  // k = 1, a = 2
    *  Cross,                    // k = 1, n = 1 - a
    *  SimplifiedCross,          // k = 1, a = 1, n = 0
-   *  PowerLaw                  // e_00 = 0, k = 0
+   *  PowerLaw                  // k = 0 (e_00 for numerical reasons)
    */
   void
-  set_generalized_newtonian_viscosity(scalar const & shear_rate_squared, scalar & viscosity) const;
+  set_generalized_newtonian_viscosity(tensor const & velocity_gradient, scalar & viscosity) const;
 
   void
   generalized_carreau_yasuda_generalized_newtonian_model(scalar const & shear_rate_squared,
@@ -271,6 +292,7 @@ private:
   unsigned int                  dof_index_velocity;
   unsigned int                  quad_index_velocity_linear;
   unsigned int                  degree_u;
+  double                        viscosity_newtonian_limit;
   TurbulenceModelData           turbulence_model_data;
   GeneralizedNewtonianModelData generalized_newtonian_model_data;
 

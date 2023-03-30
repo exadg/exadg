@@ -282,11 +282,9 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &     
                                                           double const & scaling_factor_mass) const
 {
   // update implicitly coupled variable viscosity
-  if(this->param.viscous_term_is_nonlinear() &&
-     this->param.viscosity_model_data.treatment_of_nonlinear_viscosity ==
-       TreatmentOfNonlinearViscosity::Implicit)
+  if(this->param.nonlinear_viscous_term_is_solved_implicitly())
   {
-    //    this->update_viscosity(src.block(0));
+    this->update_viscosity(src.block(0));
   }
 
   // velocity-block
@@ -296,9 +294,10 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &     
   else
     dst.block(0) = 0.0;
 
-  AssertThrow(this->param.convective_problem() == true, dealii::ExcMessage("Invalid parameters."));
-
-  this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0), src.block(0), time);
+  if(this->param.convective_problem())
+  {
+    this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0), src.block(0), time);
+  }
 
   if(this->param.viscous_problem())
   {
@@ -338,9 +337,7 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVectorType
                                                                  double const &          time) const
 {
   // update implicitly coupled variable viscosity
-  if(this->param.viscous_term_is_nonlinear() &&
-     this->param.viscosity_model_data.treatment_of_nonlinear_viscosity ==
-       TreatmentOfNonlinearViscosity::Implicit)
+  if(this->param.nonlinear_viscous_term_is_solved_implicitly())
   {
     this->update_viscosity(src.block(0));
   }

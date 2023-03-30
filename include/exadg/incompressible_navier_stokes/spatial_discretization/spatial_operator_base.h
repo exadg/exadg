@@ -349,8 +349,7 @@ public:
   apply_inverse_mass_operator(VectorType & dst, VectorType const & src) const;
 
   /*
-   * Update viscosity, i.e., calculate apparent viscosity from turbulent and generalized Newtonian
-   * viscosity.
+   * Update the variable viscosity.
    */
   void
   update_viscosity(VectorType const & velocity) const;
@@ -652,7 +651,7 @@ private:
   mutable VectorType const * pressure_ptr;
 
   /*
-   * LES turbulence and generalized Newtonian models.
+   * Variable viscosity models.
    */
   mutable ViscosityModel<dim, Number> viscosity_model;
 };

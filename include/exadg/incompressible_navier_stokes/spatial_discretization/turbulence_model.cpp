@@ -32,6 +32,7 @@ ViscosityModel<dim, Number>::ViscosityModel()
     dof_index_velocity(0),
     quad_index_velocity_linear(0),
     degree_u(0),
+    viscosity_newtonian_limit(0),
     matrix_free(nullptr)
 {
 }
@@ -57,6 +58,10 @@ ViscosityModel<dim, Number>::initialize(
   dof_index_velocity              = dof_index_velocity_in;
   quad_index_velocity_linear      = quad_index_velocity_linear_in;
   degree_u                        = degree_u_in;
+
+  // viscosity in the Newtonian limit.
+  Operators::ViscousKernelData viscous_kernel_data = viscous_kernel->get_data();
+  viscosity_newtonian_limit                        = viscous_kernel_data.viscosity;
 
   if(use_turbulence_model)
   {
@@ -110,20 +115,15 @@ ViscosityModel<dim, Number>::cell_loop_set_coefficients(
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
       // calculate needed quantities for this cell
-      tensor velocity_gradient           = integrator.get_gradient(q);
-      tensor symmetric_velocity_gradient = dealii::make_vectorized_array<Number>(0.5) *
-                                           (velocity_gradient + transpose(velocity_gradient));
-      scalar shear_rate_squared =
-        dealii::make_vectorized_array<Number>(2.0) *
-        scalar_product(symmetric_velocity_gradient, symmetric_velocity_gradient);
+      tensor velocity_gradient = integrator.get_gradient(q);
 
       if(use_generalized_newtonian_model)
       {
-        set_generalized_newtonian_viscosity(shear_rate_squared, viscosity);
+        set_generalized_newtonian_viscosity(velocity_gradient, viscosity);
       }
       else
       {
-        viscosity = dealii::make_vectorized_array<Number>(turbulence_model_data.viscosity);
+        viscosity = dealii::make_vectorized_array<Number>(viscosity_newtonian_limit);
       }
 
       if(use_turbulence_model)
@@ -131,10 +131,9 @@ ViscosityModel<dim, Number>::cell_loop_set_coefficients(
         add_turbulent_viscosity(viscosity /*might use generalized Newtonian viscosity*/,
                                 filter_width,
                                 velocity_gradient,
-                                symmetric_velocity_gradient,
-                                shear_rate_squared,
                                 turbulence_model_data.constant);
       }
+
       // set the coefficients
       viscous_kernel->set_coefficient_cell(cell, q, viscosity);
     }
@@ -184,28 +183,15 @@ ViscosityModel<dim, Number>::face_loop_set_coefficients(
       tensor velocity_gradient          = integrator_m.get_gradient(q);
       tensor velocity_gradient_neighbor = integrator_p.get_gradient(q);
 
-      tensor symmetric_velocity_gradient = dealii::make_vectorized_array<Number>(0.5) *
-                                           (velocity_gradient + transpose(velocity_gradient));
-      tensor symmetric_velocity_gradient_neighbor =
-        dealii::make_vectorized_array<Number>(0.5) *
-        (velocity_gradient_neighbor + transpose(velocity_gradient_neighbor));
-
-      scalar shear_rate_squared =
-        dealii::make_vectorized_array<Number>(2.0) *
-        scalar_product(symmetric_velocity_gradient, symmetric_velocity_gradient);
-      scalar shear_rate_squared_neighbor =
-        dealii::make_vectorized_array<Number>(2.0) *
-        scalar_product(symmetric_velocity_gradient_neighbor, symmetric_velocity_gradient_neighbor);
-
       if(use_generalized_newtonian_model)
       {
-        set_generalized_newtonian_viscosity(shear_rate_squared, viscosity);
-        set_generalized_newtonian_viscosity(shear_rate_squared_neighbor, viscosity_neighbor);
+        set_generalized_newtonian_viscosity(velocity_gradient, viscosity);
+        set_generalized_newtonian_viscosity(velocity_gradient_neighbor, viscosity_neighbor);
       }
       else
       {
-        viscosity          = dealii::make_vectorized_array<Number>(turbulence_model_data.viscosity);
-        viscosity_neighbor = dealii::make_vectorized_array<Number>(turbulence_model_data.viscosity);
+        viscosity          = dealii::make_vectorized_array<Number>(viscosity_newtonian_limit);
+        viscosity_neighbor = dealii::make_vectorized_array<Number>(viscosity_newtonian_limit);
       }
 
       if(use_turbulence_model)
@@ -213,15 +199,11 @@ ViscosityModel<dim, Number>::face_loop_set_coefficients(
         add_turbulent_viscosity(viscosity /*might use generalized Newtonian viscosity*/,
                                 filter_width,
                                 velocity_gradient,
-                                symmetric_velocity_gradient,
-                                shear_rate_squared,
                                 turbulence_model_data.constant);
 
         add_turbulent_viscosity(viscosity_neighbor /*might use generalized Newtonian viscosity*/,
                                 filter_width_neighbor,
                                 velocity_gradient_neighbor,
-                                symmetric_velocity_gradient_neighbor,
-                                shear_rate_squared_neighbor,
                                 turbulence_model_data.constant);
       }
 
@@ -242,7 +224,6 @@ ViscosityModel<dim, Number>::boundary_face_loop_set_coefficients(
 {
   FaceIntegratorU integrator(matrix_free, true, dof_index_velocity, quad_index_velocity_linear);
 
-  // containers needed dependent on template parameters
   scalar filter_width;
   scalar viscosity;
 
@@ -265,20 +246,15 @@ ViscosityModel<dim, Number>::boundary_face_loop_set_coefficients(
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
       // calculate needed quantities for this face
-      tensor velocity_gradient           = integrator.get_gradient(q);
-      tensor symmetric_velocity_gradient = dealii::make_vectorized_array<Number>(0.5) *
-                                           (velocity_gradient + transpose(velocity_gradient));
-      scalar shear_rate_squared =
-        dealii::make_vectorized_array<Number>(2.0) *
-        scalar_product(symmetric_velocity_gradient, symmetric_velocity_gradient);
+      tensor velocity_gradient = integrator.get_gradient(q);
 
       if(use_generalized_newtonian_model)
       {
-        set_generalized_newtonian_viscosity(shear_rate_squared, viscosity);
+        set_generalized_newtonian_viscosity(velocity_gradient, viscosity);
       }
       else
       {
-        viscosity = dealii::make_vectorized_array<Number>(turbulence_model_data.viscosity);
+        viscosity = dealii::make_vectorized_array<Number>(viscosity_newtonian_limit);
       }
 
       if(use_turbulence_model)
@@ -286,8 +262,6 @@ ViscosityModel<dim, Number>::boundary_face_loop_set_coefficients(
         add_turbulent_viscosity(viscosity,
                                 filter_width,
                                 velocity_gradient,
-                                symmetric_velocity_gradient,
-                                shear_rate_squared,
                                 turbulence_model_data.constant);
       }
 
@@ -345,8 +319,6 @@ void
 ViscosityModel<dim, Number>::add_turbulent_viscosity(scalar &       viscosity,
                                                      scalar const & filter_width,
                                                      tensor const & velocity_gradient,
-                                                     tensor const & symmetric_velocity_gradient,
-                                                     scalar const & shear_rate_squared,
                                                      double const & model_constant) const
 {
   switch(turbulence_model_data.turbulence_model)
@@ -356,18 +328,16 @@ ViscosityModel<dim, Number>::add_turbulent_viscosity(scalar &       viscosity,
                   dealii::ExcMessage("Parameter must be defined."));
       break;
     case TurbulenceEddyViscosityModel::Smagorinsky:
-      smagorinsky_turbulence_model(filter_width, shear_rate_squared, model_constant, viscosity);
+      smagorinsky_turbulence_model(filter_width, velocity_gradient, model_constant, viscosity);
       break;
     case TurbulenceEddyViscosityModel::Vreman:
-      vreman_turbulence_model(
-        filter_width, velocity_gradient, symmetric_velocity_gradient, model_constant, viscosity);
+      vreman_turbulence_model(filter_width, velocity_gradient, model_constant, viscosity);
       break;
     case TurbulenceEddyViscosityModel::WALE:
-      wale_turbulence_model(
-        filter_width, velocity_gradient, shear_rate_squared, model_constant, viscosity);
+      wale_turbulence_model(filter_width, velocity_gradient, model_constant, viscosity);
       break;
     case TurbulenceEddyViscosityModel::Sigma:
-      sigma_turbulence_model(filter_width, symmetric_velocity_gradient, model_constant, viscosity);
+      sigma_turbulence_model(filter_width, velocity_gradient, model_constant, viscosity);
       break;
     default:
       AssertThrow(
@@ -380,28 +350,33 @@ ViscosityModel<dim, Number>::add_turbulent_viscosity(scalar &       viscosity,
 template<int dim, typename Number>
 void
 ViscosityModel<dim, Number>::smagorinsky_turbulence_model(scalar const & filter_width,
-                                                          scalar const & shear_rate_squared,
+                                                          tensor const & velocity_gradient,
                                                           double const & C,
                                                           scalar &       viscosity) const
 {
+  tensor symmetric_gradient =
+    dealii::make_vectorized_array<Number>(0.5) * (velocity_gradient + transpose(velocity_gradient));
+
+  scalar rate_of_strain = 2.0 * scalar_product(symmetric_gradient, symmetric_gradient);
+
   scalar factor = C * filter_width;
-  factor *= factor;
-  factor *= std::sqrt(shear_rate_squared);
-  viscosity += factor;
+
+  rate_of_strain = std::exp(0.5 * std::log(rate_of_strain));
+
+  viscosity += factor * factor * rate_of_strain;
 }
 
 template<int dim, typename Number>
 void
 ViscosityModel<dim, Number>::vreman_turbulence_model(scalar const & filter_width,
                                                      tensor const & velocity_gradient,
-                                                     tensor const & symmetric_velocity_gradient,
                                                      double const & C,
                                                      scalar &       viscosity) const
 {
   scalar       velocity_gradient_norm_square = scalar_product(velocity_gradient, velocity_gradient);
   Number const tolerance                     = 1.0e-12;
 
-  tensor tensor = dealii::make_vectorized_array<Number>(2.0) * symmetric_velocity_gradient;
+  tensor tensor = velocity_gradient * transpose(velocity_gradient);
 
   AssertThrow(dim == 3,
               dealii::ExcMessage(
@@ -431,11 +406,12 @@ template<int dim, typename Number>
 void
 ViscosityModel<dim, Number>::wale_turbulence_model(scalar const & filter_width,
                                                    tensor const & velocity_gradient,
-                                                   scalar const & shear_rate_squared,
                                                    double const & C,
                                                    scalar &       viscosity) const
 {
-  scalar S_norm_square = dealii::make_vectorized_array<Number>(0.5) * shear_rate_squared;
+  tensor S =
+    dealii::make_vectorized_array<Number>(0.5) * (velocity_gradient + transpose(velocity_gradient));
+  scalar S_norm_square = scalar_product(S, S);
 
   tensor square_gradient       = velocity_gradient * velocity_gradient;
   scalar trace_square_gradient = trace(square_gradient);
@@ -472,7 +448,7 @@ ViscosityModel<dim, Number>::wale_turbulence_model(scalar const & filter_width,
 template<int dim, typename Number>
 void
 ViscosityModel<dim, Number>::sigma_turbulence_model(scalar const & filter_width,
-                                                    tensor const & symmetric_velocity_gradient,
+                                                    tensor const & velocity_gradient,
                                                     double const & C,
                                                     scalar &       viscosity) const
 {
@@ -487,7 +463,7 @@ ViscosityModel<dim, Number>::sigma_turbulence_model(scalar const & filter_width,
    */
   scalar D = dealii::make_vectorized_array<Number>(0.0);
 
-  tensor G = dealii::make_vectorized_array<Number>(2.0) * symmetric_velocity_gradient;
+  tensor G = transpose(velocity_gradient) * velocity_gradient;
 
   scalar invariant1 = trace(G);
   scalar invariant2 = 0.5 * (invariant1 * invariant1 - trace(G * G));
@@ -650,9 +626,11 @@ ViscosityModel<dim, Number>::sigma_turbulence_model(scalar const & filter_width,
 
 template<int dim, typename Number>
 void
-ViscosityModel<dim, Number>::set_generalized_newtonian_viscosity(scalar const & shear_rate_squared,
+ViscosityModel<dim, Number>::set_generalized_newtonian_viscosity(tensor const & velocity_gradient,
                                                                  scalar &       viscosity) const
 {
+  scalar shear_rate = calculate_shear_rate(velocity_gradient);
+
   switch(generalized_newtonian_model_data.generalized_newtonian_model)
   {
     case GeneralizedNewtonianModel::Undefined:
@@ -661,19 +639,19 @@ ViscosityModel<dim, Number>::set_generalized_newtonian_viscosity(scalar const & 
                   dealii::ExcMessage("parameter must be defined"));
       break;
     case GeneralizedNewtonianModel::GeneralizedCarreauYasuda:
-      generalized_carreau_yasuda_generalized_newtonian_model(shear_rate_squared, viscosity);
+      generalized_carreau_yasuda_generalized_newtonian_model(shear_rate, viscosity);
       break;
     case GeneralizedNewtonianModel::Carreau:
-      carreau_generalized_newtonian_model(shear_rate_squared, viscosity);
+      carreau_generalized_newtonian_model(shear_rate, viscosity);
       break;
     case GeneralizedNewtonianModel::Cross:
-      cross_generalized_newtonian_model(shear_rate_squared, viscosity);
+      cross_generalized_newtonian_model(shear_rate, viscosity);
       break;
     case GeneralizedNewtonianModel::SimplifiedCross:
-      simplified_cross_generalized_newtonian_model(shear_rate_squared, viscosity);
+      simplified_cross_generalized_newtonian_model(shear_rate, viscosity);
       break;
     case GeneralizedNewtonianModel::PowerLaw:
-      power_law_generalized_newtonian_model(shear_rate_squared, viscosity);
+      power_law_generalized_newtonian_model(shear_rate, viscosity);
       break;
     default:
       AssertThrow(false,
@@ -685,124 +663,107 @@ ViscosityModel<dim, Number>::set_generalized_newtonian_viscosity(scalar const & 
 template<int dim, typename Number>
 void
 ViscosityModel<dim, Number>::generalized_carreau_yasuda_generalized_newtonian_model(
-  scalar const & shear_rate_squared,
+  scalar const & shear_rate,
   scalar &       viscosity) const
 {
   // eta = eta_oo + (eta_0 - eta_oo) * [k + (l * y)^a]^[(n-1)/a]
-  viscosity = shear_rate_squared *
-              dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.lambda *
-                                                    generalized_newtonian_model_data.lambda);
   viscosity =
-    std::pow(viscosity,
-             dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.a * 0.5));
+    shear_rate * dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.lambda);
+  viscosity =
+    std::pow(viscosity, dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.a));
   viscosity += dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.kappa);
   viscosity =
     std::pow(viscosity,
              dealii::make_vectorized_array<Number>((generalized_newtonian_model_data.n - 1.0) /
                                                    generalized_newtonian_model_data.a));
-
-  viscosity *=
-    dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.viscosity_upper_limit -
-                                          generalized_newtonian_model_data.viscosity_lower_limit);
-  viscosity +=
-    dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.viscosity_lower_limit);
+  viscosity *= dealii::make_vectorized_array<Number>(
+    generalized_newtonian_model_data.viscosity_upper_limit - viscosity_newtonian_limit);
+  viscosity += dealii::make_vectorized_array<Number>(viscosity_newtonian_limit);
 }
 
 template<int dim, typename Number>
 void
-ViscosityModel<dim, Number>::carreau_generalized_newtonian_model(scalar const & shear_rate_squared,
+ViscosityModel<dim, Number>::carreau_generalized_newtonian_model(scalar const & shear_rate,
                                                                  scalar &       viscosity) const
 {
   // eta = eta_oo + (eta_0 - eta_oo) * [k + (l * y)^a]^[(n-1)/a]
   // with k = 1 and a = 2
   // eta = eta_oo + (eta_0 - eta_oo) * [1 + l^2 * y^2]^[(n-1)/2]
-  viscosity = shear_rate_squared *
+  viscosity = shear_rate * shear_rate *
               dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.lambda *
                                                     generalized_newtonian_model_data.lambda);
 
-  // here we can skip one std::pow() call
   viscosity += dealii::make_vectorized_array<Number>(1.0);
+
   viscosity = std::pow(viscosity,
                        dealii::make_vectorized_array<Number>(
                          (generalized_newtonian_model_data.n - 1.0) / 2.0));
 
-  viscosity *=
-    dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.viscosity_upper_limit -
-                                          generalized_newtonian_model_data.viscosity_lower_limit);
-  viscosity +=
-    dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.viscosity_lower_limit);
+  viscosity *= dealii::make_vectorized_array<Number>(
+    generalized_newtonian_model_data.viscosity_upper_limit - viscosity_newtonian_limit);
+  viscosity += dealii::make_vectorized_array<Number>(viscosity_newtonian_limit);
 }
 
 template<int dim, typename Number>
 void
-ViscosityModel<dim, Number>::cross_generalized_newtonian_model(scalar const & shear_rate_squared,
+ViscosityModel<dim, Number>::cross_generalized_newtonian_model(scalar const & shear_rate,
                                                                scalar &       viscosity) const
 {
   // eta = eta_oo + (eta_0 - eta_oo) * [k + (l * y)^a]^[(n-1)/a]
   // with k = 1 and n = 1 - a
   // eta = eta_oo + (eta_0 - eta_oo) * [1 + (l * y)^a]^(-1)
-  viscosity = shear_rate_squared *
-              dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.lambda *
-                                                    generalized_newtonian_model_data.lambda);
   viscosity =
-    std::pow(viscosity,
-             dealii::make_vectorized_array<Number>((generalized_newtonian_model_data.a) * 0.5));
-  viscosity += dealii::make_vectorized_array<Number>(1.0);
+    shear_rate * dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.lambda);
 
-  // here we can replace the second std::pow() call with a ^(-1)
+  viscosity =
+    std::pow(viscosity, dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.a));
+
+  viscosity += dealii::make_vectorized_array<Number>(1.0);
   viscosity = dealii::make_vectorized_array<Number>(1.0) / viscosity;
 
-  viscosity *=
-    dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.viscosity_upper_limit -
-                                          generalized_newtonian_model_data.viscosity_lower_limit);
-  viscosity +=
-    dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.viscosity_lower_limit);
+  viscosity *= dealii::make_vectorized_array<Number>(
+    generalized_newtonian_model_data.viscosity_upper_limit - viscosity_newtonian_limit);
+  viscosity += dealii::make_vectorized_array<Number>(viscosity_newtonian_limit);
 }
 
 template<int dim, typename Number>
 void
-ViscosityModel<dim, Number>::simplified_cross_generalized_newtonian_model(
-  scalar const & shear_rate_squared,
-  scalar &       viscosity) const
+ViscosityModel<dim, Number>::simplified_cross_generalized_newtonian_model(scalar const & shear_rate,
+                                                                          scalar & viscosity) const
 {
   // eta = eta_oo + (eta_0 - eta_oo) * [k + (l * y)^a]^[(n-1)/a]
   // with k = 1, a = 1 and n = 0
   // eta = eta_oo + (eta_0 - eta_oo) * [1 + l * y]^(-1)
-  viscosity = shear_rate_squared *
-              dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.lambda *
-                                                    generalized_newtonian_model_data.lambda);
+  viscosity =
+    shear_rate * dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.lambda);
 
-  // here we can use std::sqrt() instead of std::pow()
-  viscosity = std::sqrt(viscosity);
   viscosity += dealii::make_vectorized_array<Number>(1.0);
 
-  // here we can replace the second std::pow() call with a ^(-1)
   viscosity = dealii::make_vectorized_array<Number>(1.0) / viscosity;
 
-  viscosity *=
-    dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.viscosity_upper_limit -
-                                          generalized_newtonian_model_data.viscosity_lower_limit);
-  viscosity +=
-    dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.viscosity_lower_limit);
+  viscosity *= dealii::make_vectorized_array<Number>(
+    generalized_newtonian_model_data.viscosity_upper_limit - viscosity_newtonian_limit);
+  viscosity += dealii::make_vectorized_array<Number>(viscosity_newtonian_limit);
 }
 
 template<int dim, typename Number>
 void
-ViscosityModel<dim, Number>::power_law_generalized_newtonian_model(
-  scalar const & shear_rate_squared,
-  scalar &       viscosity) const
+ViscosityModel<dim, Number>::power_law_generalized_newtonian_model(scalar const & shear_rate,
+                                                                   scalar &       viscosity) const
 {
   // eta = eta_oo + (eta_0 - eta_oo) * [k + (l * y)^a]^[(n-1)/a]
-  // with k = 0, eta_oo = 0
-  // eta = eta_0 * (l * y)^(n-1)
-  viscosity = shear_rate_squared *
-              dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.lambda *
-                                                    generalized_newtonian_model_data.lambda);
+  // with k = 0
+  // eta = eta_oo + (eta_0 - eta_oo) * (l * y)^(n-1)
+  viscosity =
+    shear_rate * dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.lambda);
+
   viscosity =
     std::pow(viscosity,
              dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.n - 1.0));
-  viscosity *=
-    dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.viscosity_upper_limit);
+
+  viscosity *= dealii::make_vectorized_array<Number>(
+    generalized_newtonian_model_data.viscosity_upper_limit - viscosity_newtonian_limit);
+  viscosity += dealii::make_vectorized_array<Number>(viscosity_newtonian_limit);
 }
 
 template class ViscosityModel<2, float>;

@@ -694,9 +694,8 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
 
   if(this->param.viscous_problem())
   {
-    //  if a variable viscosity is used: update
-    //  LES turbulence or generalized Newtonian model
-    //  before calculating rhs_viscous
+    // if a variable viscosity is used: update
+    // viscosity model before calculating rhs_viscous
     if(this->param.viscosity_is_variable())
     {
       dealii::Timer timer_viscosity_update;

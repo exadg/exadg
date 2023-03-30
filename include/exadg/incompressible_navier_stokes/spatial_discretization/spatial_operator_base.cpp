@@ -529,11 +529,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   }
   else
   {
-    data.convective_problem =
-      param.convective_problem() &&
-      (param.solver_type == SolverType::Steady ||
-       (param.solver_type == SolverType::Unsteady &&
-        (param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)));
+    data.convective_problem = param.convective_term_is_solved_implicitly();
   }
   data.viscous_problem = param.viscous_problem();
 
@@ -642,8 +638,10 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::initialize_viscosity_model()
 {
-  // initialize viscosity model data
+  // initialize and check viscosity model data
   ViscosityModelData viscosity_model_data = param.viscosity_model_data;
+
+  viscosity_model_data.check();
 
   viscosity_model.initialize(*matrix_free,
                              *get_mapping(),
@@ -878,7 +876,7 @@ dealii::VectorizedArray<Number>
 SpatialOperatorBase<dim, Number>::get_viscosity_boundary_face(unsigned int const face,
                                                               unsigned int const q) const
 {
-  if(param.viscosity_is_variable() == true)
+  if(param.viscosity_is_variable())
   {
     return viscous_kernel->get_coefficient_face(face, q);
   }
@@ -1383,8 +1381,6 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::update_viscosity(VectorType const & velocity) const
 {
-  // calculate apparent viscosity for LES turbulence and/or generalized Newtonian models in each
-  // cell and face quadrature point
   viscosity_model.calculate_viscosity(velocity);
 }
 

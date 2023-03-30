@@ -543,16 +543,14 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
     AssertThrow(viscosity_model_data.turbulence_model_data.turbulence_model !=
                   TurbulenceEddyViscosityModel::Undefined,
                 dealii::ExcMessage("Parameter must be defined."));
-    AssertThrow(viscosity_model_data.turbulence_model_data.constant > 0,
-                dealii::ExcMessage("Parameter must be greater than zero."));
-    AssertThrow(viscosity_model_data.treatment_of_nonlinear_viscosity !=
-                  TreatmentOfNonlinearViscosity::Undefined,
+    AssertThrow(viscosity_model_data.treatment_of_variable_viscosity !=
+                  TreatmentOfVariableViscosity::Undefined,
                 dealii::ExcMessage("Parameter must be defined."));
 
     if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
-      AssertThrow(viscosity_model_data.treatment_of_nonlinear_viscosity !=
-                    TreatmentOfNonlinearViscosity::Implicit,
+      AssertThrow(viscosity_model_data.treatment_of_variable_viscosity ==
+                    TreatmentOfVariableViscosity::LinearizedInTimeImplicit,
                   dealii::ExcMessage(
                     "An implicit-in-time treatment of the nonlinear diffusive term is not possible "
                     "in combination with the dual splitting scheme."));
@@ -565,64 +563,9 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
     AssertThrow(viscosity_model_data.generalized_newtonian_model_data.generalized_newtonian_model !=
                   GeneralizedNewtonianModel::Undefined,
                 dealii::ExcMessage("Parameter must be defined."));
-    AssertThrow(viscosity_model_data.treatment_of_nonlinear_viscosity !=
-                  TreatmentOfNonlinearViscosity::Undefined,
+    AssertThrow(viscosity_model_data.treatment_of_variable_viscosity !=
+                  TreatmentOfVariableViscosity::Undefined,
                 dealii::ExcMessage("Parameter must be defined."));
-
-    // check assumptions of rheological models and enforce user to set the parameters
-    // accordingly in the generalized Carreau-Yasuda model
-    if(viscosity_model_data.generalized_newtonian_model_data.generalized_newtonian_model ==
-         GeneralizedNewtonianModel::Carreau ||
-       viscosity_model_data.generalized_newtonian_model_data.generalized_newtonian_model ==
-         GeneralizedNewtonianModel::Cross ||
-       viscosity_model_data.generalized_newtonian_model_data.generalized_newtonian_model ==
-         GeneralizedNewtonianModel::SimplifiedCross)
-    {
-      AssertThrow(std::abs(viscosity_model_data.generalized_newtonian_model_data.kappa - 1.0) <
-                    1e-20,
-                  dealii::ExcMessage("generalized_newtonian_kappa == 1 required for "
-                                     "this GeneralizedNewtonianModel."));
-    }
-
-    if(viscosity_model_data.generalized_newtonian_model_data.generalized_newtonian_model ==
-       GeneralizedNewtonianModel::Carreau)
-    {
-      AssertThrow(std::abs(viscosity_model_data.generalized_newtonian_model_data.a - 2.0) < 1e-20,
-                  dealii::ExcMessage("generalized_newtonian_a == 2 required for"
-                                     "GeneralizedNewtonianModel::Carreau."));
-    }
-
-    if(viscosity_model_data.generalized_newtonian_model_data.generalized_newtonian_model ==
-       GeneralizedNewtonianModel::Cross)
-    {
-      AssertThrow(std::abs(viscosity_model_data.generalized_newtonian_model_data.n - 1.0 +
-                           viscosity_model_data.generalized_newtonian_model_data.a) < 1e-20,
-                  dealii::ExcMessage("generalized_newtonian_n - 1 == generalized_newtonian_a "
-                                     "required for GeneralizedNewtonianModel::Cross."));
-    }
-
-    if(viscosity_model_data.generalized_newtonian_model_data.generalized_newtonian_model ==
-       GeneralizedNewtonianModel::SimplifiedCross)
-    {
-      AssertThrow(std::abs(viscosity_model_data.generalized_newtonian_model_data.a - 1.0) < 1e-20,
-                  dealii::ExcMessage("generalized_newtonian_a == 1 "
-                                     "required for GeneralizedNewtonianModel::SimplifiedCross."));
-      AssertThrow(std::abs(viscosity_model_data.generalized_newtonian_model_data.n) < 1e-20,
-                  dealii::ExcMessage("generalized_newtonian_n == 0 "
-                                     "required for GeneralizedNewtonianModel::SimplifiedCross."));
-    }
-
-    if(viscosity_model_data.generalized_newtonian_model_data.generalized_newtonian_model ==
-       GeneralizedNewtonianModel::PowerLaw)
-    {
-      AssertThrow(std::abs(viscosity) < 1e-20,
-                  dealii::ExcMessage(
-                    "viscosity (= generalized_newtonian_kinematic_viscosity_lower_limit) == 0 "
-                    "required for GeneralizedNewtonianModel::PowerLaw."));
-      AssertThrow(std::abs(viscosity_model_data.generalized_newtonian_model_data.kappa) < 1e-20,
-                  dealii::ExcMessage("generalized_newtonian_kappa == 0 required for "
-                                     "required for GeneralizedNewtonianModel::PowerLaw."));
-    }
   }
 }
 
@@ -636,25 +579,20 @@ bool
 Parameters::viscous_problem() const
 {
   return (equation_type == EquationType::Stokes || equation_type == EquationType::NavierStokes ||
-          viscosity_model_data.use_turbulence_model == true);
+          viscosity_model_data.use_turbulence_model);
 }
 
 bool
 Parameters::viscous_term_is_linear() const
 {
-  if(viscosity_is_variable() && viscosity_model_data.treatment_of_nonlinear_viscosity ==
-                                  TreatmentOfNonlinearViscosity::Implicit)
-  {
-    return false;
-  }
-
-  return true;
+  return not viscous_term_is_nonlinear();
 }
 
 bool
 Parameters::viscous_term_is_nonlinear() const
 {
-  return (viscous_term_is_linear() == false);
+  return (viscosity_is_variable() && viscosity_model_data.treatment_of_variable_viscosity ==
+                                       TreatmentOfVariableViscosity::Implicit);
 }
 
 bool
@@ -665,7 +603,7 @@ Parameters::viscosity_is_variable() const
 }
 
 bool
-Parameters::nonlinear_problem_has_to_be_solved() const
+Parameters::convective_term_is_solved_implicitly() const
 {
   if(convective_problem())
   {
@@ -677,20 +615,34 @@ Parameters::nonlinear_problem_has_to_be_solved() const
     }
   }
 
-  if(viscous_problem() && viscous_term_is_nonlinear() &&
-     viscosity_model_data.treatment_of_nonlinear_viscosity ==
-       TreatmentOfNonlinearViscosity::Implicit)
+  return false;
+}
+
+bool
+Parameters::nonlinear_viscous_term_is_solved_implicitly() const
+{
+  if(viscous_problem())
   {
-    return true;
+    if(viscous_term_is_nonlinear() && viscosity_model_data.treatment_of_variable_viscosity ==
+                                        TreatmentOfVariableViscosity::Implicit)
+    {
+      return true;
+    }
   }
 
   return false;
 }
 
 bool
+Parameters::nonlinear_problem_has_to_be_solved() const
+{
+  return (convective_term_is_solved_implicitly() || nonlinear_viscous_term_is_solved_implicitly());
+}
+
+bool
 Parameters::linear_problem_has_to_be_solved() const
 {
-  return (nonlinear_problem_has_to_be_solved() == false);
+  return not nonlinear_problem_has_to_be_solved();
 }
 
 bool
@@ -1087,7 +1039,7 @@ Parameters::print_parameters_generalized_newtonian(dealii::ConditionalOStream co
                   viscosity_model_data.use_generalized_newtonian_model);
   print_parameter(pcout,
                   "Treatment of nonlinear viscosity",
-                  enum_to_string(viscosity_model_data.treatment_of_nonlinear_viscosity));
+                  enum_to_string(viscosity_model_data.treatment_of_variable_viscosity));
 
   if(viscosity_model_data.use_generalized_newtonian_model)
   {
@@ -1095,9 +1047,6 @@ Parameters::print_parameters_generalized_newtonian(dealii::ConditionalOStream co
                     "Generalized Newtonian model",
                     enum_to_string(viscosity_model_data.generalized_newtonian_model_data
                                      .generalized_newtonian_model));
-    print_parameter(pcout,
-                    "lower viscosity limit eta_oo",
-                    viscosity_model_data.generalized_newtonian_model_data.viscosity_lower_limit);
     print_parameter(pcout,
                     "upper viscosity limit eta_0",
                     viscosity_model_data.generalized_newtonian_model_data.viscosity_upper_limit);

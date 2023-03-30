@@ -683,33 +683,22 @@ enum_to_string(TurbulenceEddyViscosityModel const enum_type);
 /**************************************************************************************/
 
 /*
- *  Generalized Newtonian models, see, e.g., Galdi et al., 2008
- *  ("Hemodynamical Flows: Modeling, Analysis and Simulation").
- *  With
- *  y    = sqrt(2*sym_grad_velocity : sym_grad_velocity)
- *  e_oo = generalized_newtonian_kinematic_viscosity_lower_limit
- *  e_0  = generalized_newtonian_kinematic_viscosity_upper_limit
- *  k    = generalized_newtonian_kappa
- *  l    = generalized_newtonian_lambda
- *  a    = generalized_newtonian_a
- *  b    = generalized_newtonian_b
- *  we have the apparent viscosity
- *  viscosity = e_oo + (e_0-e_oo) * [k + (l*y)^a]^[(n-1)/a]
+ *  Generalized Newtonian models
  */
 enum class GeneralizedNewtonianModel
 {
   Undefined,
   GeneralizedCarreauYasuda,
-  Carreau,         // k = 1, a = 2
-  Cross,           // k = 1, n = 1 - a
-  SimplifiedCross, // k = 1, a = 1, n = 0
-  PowerLaw         // e_00 = 0, k = 0
+  Carreau,
+  Cross,
+  SimplifiedCross,
+  PowerLaw
 };
 
 std::string
 enum_to_string(GeneralizedNewtonianModel const enum_type);
 
-enum class TreatmentOfNonlinearViscosity
+enum class TreatmentOfVariableViscosity
 {
   Undefined,
   LinearizedInTimeImplicit,
@@ -717,7 +706,7 @@ enum class TreatmentOfNonlinearViscosity
 };
 
 std::string
-enum_to_string(TreatmentOfNonlinearViscosity const enum_type);
+enum_to_string(TreatmentOfVariableViscosity const enum_type);
 
 } // namespace IncNS
 } // namespace ExaDG

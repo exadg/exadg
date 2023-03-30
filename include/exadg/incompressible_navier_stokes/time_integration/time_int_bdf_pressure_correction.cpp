@@ -356,8 +356,7 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
 
   /*
    *  if a variable viscosity is used: update
-   *  LES turbulence or generalized Newtonian model
-   *  before calculating rhs_momentum
+   *  viscosity model before calculating rhs_viscous
    */
   if(this->param.viscosity_is_variable())
   {

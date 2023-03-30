@@ -142,7 +142,7 @@ DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_pro
   }
 
   // update viscosity
-  if(this->param.viscous_problem() && this->param.viscosity_is_variable())
+  if(this->param.viscosity_is_variable())
   {
     dealii::Timer timer_viscosity_update;
     timer_viscosity_update.restart();

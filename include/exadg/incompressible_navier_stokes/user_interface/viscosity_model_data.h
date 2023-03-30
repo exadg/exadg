@@ -31,8 +31,7 @@ namespace IncNS
  */
 struct TurbulenceModelData
 {
-  TurbulenceModelData()
-    : turbulence_model(TurbulenceEddyViscosityModel::Undefined), constant(0.0), viscosity(0.0)
+  TurbulenceModelData() : turbulence_model(TurbulenceEddyViscosityModel::Undefined), constant(0.0)
   {
   }
 
@@ -40,7 +39,12 @@ struct TurbulenceModelData
 
   // model constant and the fluid's kinematic (physical) viscosity
   double constant;
-  double viscosity;
+
+  void
+  check()
+  {
+    AssertThrow(constant > 0, dealii::ExcMessage("Parameter must be greater than zero."));
+  }
 };
 
 /*
@@ -50,7 +54,6 @@ struct GeneralizedNewtonianModelData
 {
   GeneralizedNewtonianModelData()
     : generalized_newtonian_model(GeneralizedNewtonianModel::Undefined),
-      viscosity_lower_limit(0.0),
       viscosity_upper_limit(0.0),
       kappa(0.0),
       lambda(0.0),
@@ -62,12 +65,57 @@ struct GeneralizedNewtonianModelData
   GeneralizedNewtonianModel generalized_newtonian_model;
 
   // parameters in generalized Carreau-Yasuda model
-  double viscosity_lower_limit;
   double viscosity_upper_limit;
   double kappa;
   double lambda;
   double a;
   double n;
+
+  void
+  check()
+  {
+    // check assumptions of rheological models and enforce user to set the parameters
+    // accordingly in the generalized Carreau-Yasuda model
+    if(generalized_newtonian_model == GeneralizedNewtonianModel::Carreau ||
+       generalized_newtonian_model == GeneralizedNewtonianModel::Cross ||
+       generalized_newtonian_model == GeneralizedNewtonianModel::SimplifiedCross)
+    {
+      AssertThrow(std::abs(kappa - 1.0) < 1e-20,
+                  dealii::ExcMessage("generalized_newtonian_kappa == 1 required for "
+                                     "this GeneralizedNewtonianModel."));
+    }
+
+    if(generalized_newtonian_model == GeneralizedNewtonianModel::Carreau)
+    {
+      AssertThrow(std::abs(a - 2.0) < 1e-20,
+                  dealii::ExcMessage("generalized_newtonian_a == 2 required for"
+                                     "GeneralizedNewtonianModel::Carreau."));
+    }
+
+    if(generalized_newtonian_model == GeneralizedNewtonianModel::Cross)
+    {
+      AssertThrow(std::abs(n - 1.0 + a) < 1e-20,
+                  dealii::ExcMessage("generalized_newtonian_n - 1 == generalized_newtonian_a "
+                                     "required for GeneralizedNewtonianModel::Cross."));
+    }
+
+    if(generalized_newtonian_model == GeneralizedNewtonianModel::SimplifiedCross)
+    {
+      AssertThrow(std::abs(a - 1.0) < 1e-20,
+                  dealii::ExcMessage("generalized_newtonian_a == 1 "
+                                     "required for GeneralizedNewtonianModel::SimplifiedCross."));
+      AssertThrow(std::abs(n) < 1e-20,
+                  dealii::ExcMessage("generalized_newtonian_n == 0 "
+                                     "required for GeneralizedNewtonianModel::SimplifiedCross."));
+    }
+
+    if(generalized_newtonian_model == GeneralizedNewtonianModel::PowerLaw)
+    {
+      AssertThrow(std::abs(kappa) < 1e-20,
+                  dealii::ExcMessage("generalized_newtonian_kappa == 0 required for "
+                                     "required for GeneralizedNewtonianModel::PowerLaw."));
+    }
+  }
 };
 
 /*
@@ -76,7 +124,7 @@ struct GeneralizedNewtonianModelData
 struct ViscosityModelData
 {
   ViscosityModelData()
-    : treatment_of_nonlinear_viscosity(TreatmentOfNonlinearViscosity::Undefined),
+    : treatment_of_variable_viscosity(TreatmentOfVariableViscosity::Undefined),
       use_turbulence_model(false),
       use_generalized_newtonian_model(false)
   {
@@ -84,9 +132,23 @@ struct ViscosityModelData
   TurbulenceModelData           turbulence_model_data;
   GeneralizedNewtonianModelData generalized_newtonian_model_data;
 
-  TreatmentOfNonlinearViscosity treatment_of_nonlinear_viscosity;
-  bool                          use_turbulence_model;
-  bool                          use_generalized_newtonian_model;
+  TreatmentOfVariableViscosity treatment_of_variable_viscosity;
+  bool                         use_turbulence_model;
+  bool                         use_generalized_newtonian_model;
+
+  void
+  check()
+  {
+    if(use_turbulence_model)
+    {
+      turbulence_model_data.check();
+    }
+
+    if(use_generalized_newtonian_model)
+    {
+      generalized_newtonian_model_data.check();
+    }
+  }
 };
 
 } // namespace IncNS

@@ -308,19 +308,15 @@ OperatorPressureCorrection<dim, Number>::evaluate_nonlinear_residual(
   double const &     scaling_factor_mass) const
 {
   // update implicitly coupled viscosity
-  if(this->param.viscous_term_is_nonlinear() &&
-     this->param.viscosity_model_data.treatment_of_nonlinear_viscosity ==
-       TreatmentOfNonlinearViscosity::Implicit)
+  if(this->param.nonlinear_viscous_term_is_solved_implicitly())
   {
     this->update_viscosity(src);
   }
 
   this->mass_operator.apply_scale(dst, scaling_factor_mass, src);
 
-  // always evaluate convective term since this function is only called
-  // if a nonlinear problem has to be solved, i.e., if the convective operator
-  // has to be considered
-  this->convective_operator.evaluate_nonlinear_operator_add(dst, src, time);
+  if(this->param.convective_problem())
+    this->convective_operator.evaluate_nonlinear_operator_add(dst, src, time);
 
   // viscous term
   this->viscous_operator.set_time(time);
@@ -340,9 +336,7 @@ OperatorPressureCorrection<dim, Number>::evaluate_nonlinear_residual_steady(
   double const &     time) const
 {
   // update implicitly coupled viscosity
-  if(this->param.viscous_term_is_nonlinear() &&
-     this->param.viscosity_model_data.treatment_of_nonlinear_viscosity ==
-       TreatmentOfNonlinearViscosity::Implicit)
+  if(this->param.nonlinear_viscous_term_is_solved_implicitly())
   {
     this->update_viscosity(src_u);
   }

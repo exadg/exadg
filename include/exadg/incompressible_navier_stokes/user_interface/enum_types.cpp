@@ -945,19 +945,19 @@ enum_to_string(GeneralizedNewtonianModel const enum_type)
 }
 
 std::string
-enum_to_string(TreatmentOfNonlinearViscosity const enum_type)
+enum_to_string(TreatmentOfVariableViscosity const enum_type)
 {
   std::string string_type;
 
   switch(enum_type)
   {
-    case TreatmentOfNonlinearViscosity::Undefined:
+    case TreatmentOfVariableViscosity::Undefined:
       string_type = "Undefined";
       break;
-    case TreatmentOfNonlinearViscosity::LinearizedInTimeImplicit:
+    case TreatmentOfVariableViscosity::LinearizedInTimeImplicit:
       string_type = "LinearizedInTimeImplicit";
       break;
-    case TreatmentOfNonlinearViscosity::Implicit:
+    case TreatmentOfVariableViscosity::Implicit:
       string_type = "Implicit";
       break;
     default:
