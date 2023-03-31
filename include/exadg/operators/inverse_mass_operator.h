@@ -100,7 +100,7 @@ public:
       mass_operator_data.quad_index = quad_index;
       mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
         inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free;
-      mass_operator_data.solver_block_diagonal         = Elementwise::Solver::GMRES;
+      mass_operator_data.solver_block_diagonal         = Elementwise::Solver::CG;
       mass_operator_data.preconditioner_block_diagonal = Elementwise::Preconditioner::None;
       mass_operator_data.solver_data_block_diagonal =
         inverse_mass_operator_data.solver_data_block_diagonal;
