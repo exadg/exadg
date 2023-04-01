@@ -38,6 +38,7 @@
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/streamfunction_calculator_rhs_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/velocity_magnitude_calculator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/vorticity_calculator.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/generalized_newtonian_model.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/convective_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/divergence_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/gradient_operator.h>
@@ -46,6 +47,7 @@
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/rhs_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/turbulence_model.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/viscosity_model_base.h>
 #include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
@@ -349,7 +351,7 @@ public:
   apply_inverse_mass_operator(VectorType & dst, VectorType const & src) const;
 
   /*
-   * Update the variable viscosity.
+   * Update variable viscosity.
    */
   void
   update_viscosity(VectorType const & velocity) const;
@@ -617,6 +619,9 @@ private:
   initialize_viscosity_model();
 
   void
+  set_constant_viscosity(Number const & constant_coefficient) const;
+
+  void
   initialize_calculators_for_derived_quantities();
 
   void
@@ -653,7 +658,8 @@ private:
   /*
    * Variable viscosity models.
    */
-  mutable ViscosityModel<dim, Number> viscosity_model;
+  mutable TurbulenceModel<dim, Number>           turbulence_model;
+  mutable GeneralizedNewtonianModel<dim, Number> generalized_newtonian_model;
 };
 
 } // namespace IncNS

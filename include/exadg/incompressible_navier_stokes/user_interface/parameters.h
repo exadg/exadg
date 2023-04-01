@@ -421,7 +421,9 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  ViscosityModelData viscosity_model_data;
+  TreatmentOfVariableViscosity  treatment_of_variable_viscosity;
+  TurbulenceModelData           turbulence_model_data;
+  GeneralizedNewtonianModelData generalized_newtonian_model_data;
 
   /**************************************************************************************/
   /*                                                                                    */

@@ -31,19 +31,20 @@ namespace IncNS
  */
 struct TurbulenceModelData
 {
-  TurbulenceModelData() : turbulence_model(TurbulenceEddyViscosityModel::Undefined), constant(0.0)
+  TurbulenceModelData()
+    : turbulence_model(TurbulenceEddyViscosityModel::Undefined), is_active(false), constant(0.0)
   {
   }
 
   TurbulenceEddyViscosityModel turbulence_model;
-
-  // model constant and the fluid's kinematic (physical) viscosity
-  double constant;
+  bool                         is_active;
+  double                       constant; // model constant
 
   void
   check()
   {
-    AssertThrow(constant > 0, dealii::ExcMessage("Parameter must be greater than zero."));
+    AssertThrow(is_active, dealii::ExcMessage("Turbulence model is inactive."));
+    AssertThrow(constant > 1e-20, dealii::ExcMessage("Parameter must be greater than zero."));
   }
 };
 
@@ -53,8 +54,9 @@ struct TurbulenceModelData
 struct GeneralizedNewtonianModelData
 {
   GeneralizedNewtonianModelData()
-    : generalized_newtonian_model(GeneralizedNewtonianModel::Undefined),
-      viscosity_upper_limit(0.0),
+    : generalized_newtonian_model(GeneralizedNewtonianViscosityModel::Undefined),
+      is_active(false),
+      viscosity_margin(0.0),
       kappa(0.0),
       lambda(0.0),
       a(0.0),
@@ -62,10 +64,11 @@ struct GeneralizedNewtonianModelData
   {
   }
 
-  GeneralizedNewtonianModel generalized_newtonian_model;
+  GeneralizedNewtonianViscosityModel generalized_newtonian_model;
+  bool                               is_active;
 
-  // parameters in generalized Carreau-Yasuda model
-  double viscosity_upper_limit;
+  // parameters of generalized Carreau-Yasuda model
+  double viscosity_margin;
   double kappa;
   double lambda;
   double a;
@@ -74,79 +77,50 @@ struct GeneralizedNewtonianModelData
   void
   check()
   {
+    AssertThrow(is_active, dealii::ExcMessage("Generalized Newtonian model is inactive."));
+
     // check assumptions of rheological models and enforce user to set the parameters
     // accordingly in the generalized Carreau-Yasuda model
-    if(generalized_newtonian_model == GeneralizedNewtonianModel::Carreau ||
-       generalized_newtonian_model == GeneralizedNewtonianModel::Cross ||
-       generalized_newtonian_model == GeneralizedNewtonianModel::SimplifiedCross)
+    if(generalized_newtonian_model == GeneralizedNewtonianViscosityModel::Carreau ||
+       generalized_newtonian_model == GeneralizedNewtonianViscosityModel::Cross ||
+       generalized_newtonian_model == GeneralizedNewtonianViscosityModel::SimplifiedCross)
     {
       AssertThrow(std::abs(kappa - 1.0) < 1e-20,
                   dealii::ExcMessage("generalized_newtonian_kappa == 1 required for "
-                                     "this GeneralizedNewtonianModel."));
+                                     "this GeneralizedNewtonianViscosityModel."));
     }
 
-    if(generalized_newtonian_model == GeneralizedNewtonianModel::Carreau)
+    if(generalized_newtonian_model == GeneralizedNewtonianViscosityModel::Carreau)
     {
       AssertThrow(std::abs(a - 2.0) < 1e-20,
                   dealii::ExcMessage("generalized_newtonian_a == 2 required for"
-                                     "GeneralizedNewtonianModel::Carreau."));
+                                     "GeneralizedNewtonianViscosityModel::Carreau."));
     }
 
-    if(generalized_newtonian_model == GeneralizedNewtonianModel::Cross)
+    if(generalized_newtonian_model == GeneralizedNewtonianViscosityModel::Cross)
     {
       AssertThrow(std::abs(n - 1.0 + a) < 1e-20,
                   dealii::ExcMessage("generalized_newtonian_n - 1 == generalized_newtonian_a "
-                                     "required for GeneralizedNewtonianModel::Cross."));
+                                     "required for GeneralizedNewtonianViscosityModel::Cross."));
     }
 
-    if(generalized_newtonian_model == GeneralizedNewtonianModel::SimplifiedCross)
+    if(generalized_newtonian_model == GeneralizedNewtonianViscosityModel::SimplifiedCross)
     {
       AssertThrow(std::abs(a - 1.0) < 1e-20,
-                  dealii::ExcMessage("generalized_newtonian_a == 1 "
-                                     "required for GeneralizedNewtonianModel::SimplifiedCross."));
+                  dealii::ExcMessage(
+                    "generalized_newtonian_a == 1 "
+                    "required for GeneralizedNewtonianViscosityModel::SimplifiedCross."));
       AssertThrow(std::abs(n) < 1e-20,
-                  dealii::ExcMessage("generalized_newtonian_n == 0 "
-                                     "required for GeneralizedNewtonianModel::SimplifiedCross."));
+                  dealii::ExcMessage(
+                    "generalized_newtonian_n == 0 "
+                    "required for GeneralizedNewtonianViscosityModel::SimplifiedCross."));
     }
 
-    if(generalized_newtonian_model == GeneralizedNewtonianModel::PowerLaw)
+    if(generalized_newtonian_model == GeneralizedNewtonianViscosityModel::PowerLaw)
     {
       AssertThrow(std::abs(kappa) < 1e-20,
                   dealii::ExcMessage("generalized_newtonian_kappa == 0 required for "
-                                     "required for GeneralizedNewtonianModel::PowerLaw."));
-    }
-  }
-};
-
-/*
- * Variable viscosity model data.
- */
-struct ViscosityModelData
-{
-  ViscosityModelData()
-    : treatment_of_variable_viscosity(TreatmentOfVariableViscosity::Undefined),
-      use_turbulence_model(false),
-      use_generalized_newtonian_model(false)
-  {
-  }
-  TurbulenceModelData           turbulence_model_data;
-  GeneralizedNewtonianModelData generalized_newtonian_model_data;
-
-  TreatmentOfVariableViscosity treatment_of_variable_viscosity;
-  bool                         use_turbulence_model;
-  bool                         use_generalized_newtonian_model;
-
-  void
-  check()
-  {
-    if(use_turbulence_model)
-    {
-      turbulence_model_data.check();
-    }
-
-    if(use_generalized_newtonian_model)
-    {
-      generalized_newtonian_model_data.check();
+                                     "required for GeneralizedNewtonianViscosityModel::PowerLaw."));
     }
   }
 };

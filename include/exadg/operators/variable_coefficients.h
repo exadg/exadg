@@ -38,6 +38,12 @@ public:
     fill(constant_coefficient);
   }
 
+  void
+  set_constant_coefficient(coefficient_type const & constant_coefficient)
+  {
+    fill(constant_coefficient);
+  }
+
   coefficient_type
   get_coefficient(unsigned int const cell, unsigned int const q) const
   {
@@ -80,6 +86,12 @@ public:
   {
     reinit(matrix_free, quad_index);
 
+    fill(constant_coefficient);
+  }
+
+  void
+  set_constant_coefficient(coefficient_type const & constant_coefficient)
+  {
     fill(constant_coefficient);
   }
 

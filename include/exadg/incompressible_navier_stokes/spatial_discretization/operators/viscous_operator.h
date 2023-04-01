@@ -96,6 +96,12 @@ public:
   }
 
   void
+  set_constant_coefficient(Number const & constant_coefficient)
+  {
+    viscosity_coefficients.set_constant_coefficient(constant_coefficient);
+  }
+
+  void
   set_coefficient_cell(unsigned int const cell, unsigned int const q, scalar const & value)
   {
     viscosity_coefficients.set_coefficient_cell(cell, q, value);
@@ -111,6 +117,12 @@ public:
   set_coefficient_face(unsigned int const face, unsigned int const q, scalar const & value)
   {
     viscosity_coefficients.set_coefficient_face(face, q, value);
+  }
+
+  scalar
+  get_coefficient_face_neighbor(unsigned int const face, unsigned int const q)
+  {
+    return viscosity_coefficients.get_coefficient_face_neighbor(face, q);
   }
 
   void

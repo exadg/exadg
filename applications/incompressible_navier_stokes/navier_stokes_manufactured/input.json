@@ -28,7 +28,7 @@
          "TemporalDiscretizationBDFCoupledSolution" : "true",
          "TreatmentOfCOnvectiveTermImplicit" : "false",
          "TreatmentOfVariableViscosityImplicit" : "true",
-         "GeneralizedNewtonianKinematicViscosityUpperLimit": "10e-6",
+         "GeneralizedNewtonianViscosityMargin": "49e-6",
          "GeneralizedNewtonianKappa": "1.0",
          "GeneralizedNewtonianLambda": "1.0",
          "GeneralizedNewtonianA": "2.0",

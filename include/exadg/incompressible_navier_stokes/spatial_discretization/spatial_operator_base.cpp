@@ -631,20 +631,36 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
 
 template<int dim, typename Number>
 void
+SpatialOperatorBase<dim, Number>::set_constant_viscosity(Number const & constant_coefficient) const
+{
+  viscous_kernel->set_constant_coefficient(constant_coefficient);
+}
+
+template<int dim, typename Number>
+void
 SpatialOperatorBase<dim, Number>::initialize_viscosity_model()
 {
-  // initialize and check viscosity model data
-  ViscosityModelData viscosity_model_data = param.viscosity_model_data;
+  // initialize and check turbulence model data
+  if(param.turbulence_model_data.is_active)
+  {
+    turbulence_model.initialize(*matrix_free,
+                                *get_mapping(),
+                                viscous_kernel,
+                                param.turbulence_model_data,
+                                get_dof_index_velocity(),
+                                get_quad_index_velocity_linear(),
+                                param.degree_u);
+  }
 
-  viscosity_model_data.check();
-
-  viscosity_model.initialize(*matrix_free,
-                             *get_mapping(),
-                             viscous_kernel,
-                             viscosity_model_data,
-                             get_dof_index_velocity(),
-                             get_quad_index_velocity_linear(),
-                             param.degree_u);
+  // initialize and check turbulence model data
+  if(param.generalized_newtonian_model_data.is_active)
+  {
+    generalized_newtonian_model.initialize(*matrix_free,
+                                           viscous_kernel,
+                                           param.generalized_newtonian_model_data,
+                                           get_dof_index_velocity(),
+                                           get_quad_index_velocity_linear());
+  }
 }
 
 template<int dim, typename Number>
@@ -1376,7 +1392,26 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::update_viscosity(VectorType const & velocity) const
 {
-  viscosity_model.calculate_viscosity(velocity);
+  AssertThrow(param.viscous_problem() and param.viscosity_is_variable(),
+              dealii::ExcMessage(
+                "Updating viscosity reasonable for variable viscosity models only."));
+
+  // reset the viscosity stored
+  // viscosity = viscosity_newtonian_limit
+  set_constant_viscosity(viscous_kernel_data.viscosity);
+
+  // add contribution from generalized Newtonian model
+  // viscosity += generalized_newtonian_viscosity(viscosity_newtonian_limit)
+  if(param.generalized_newtonian_model_data.is_active)
+    generalized_newtonian_model.add_viscosity(velocity);
+
+  // add contribution from turbulence model
+  // viscosity += turbulent_viscosity(viscosity)
+  // note that the apparent viscosity is used to
+  // compute the turbulent viscosity, such that the
+  // sequence of calls *matters* here
+  if(param.turbulence_model_data.is_active)
+    turbulence_model.add_viscosity(velocity);
 }
 
 template<int dim, typename Number>
@@ -1479,10 +1514,10 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::update_after_grid_motion()
 {
-  if(param.viscosity_model_data.use_turbulence_model)
+  if(param.turbulence_model_data.is_active)
   {
     // the mesh (and hence the filter width) changes in case of an ALE formulation
-    viscosity_model.calculate_filter_width(*get_mapping());
+    turbulence_model.calculate_filter_width(*get_mapping());
   }
 
   if(this->param.viscous_problem())

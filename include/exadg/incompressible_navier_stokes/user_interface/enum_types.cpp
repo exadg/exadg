@@ -912,28 +912,28 @@ enum_to_string(TurbulenceEddyViscosityModel const enum_type)
 /**************************************************************************************/
 
 std::string
-enum_to_string(GeneralizedNewtonianModel const enum_type)
+enum_to_string(GeneralizedNewtonianViscosityModel const enum_type)
 {
   std::string string_type;
 
   switch(enum_type)
   {
-    case GeneralizedNewtonianModel::Undefined:
+    case GeneralizedNewtonianViscosityModel::Undefined:
       string_type = "Undefined";
       break;
-    case GeneralizedNewtonianModel::GeneralizedCarreauYasuda:
+    case GeneralizedNewtonianViscosityModel::GeneralizedCarreauYasuda:
       string_type = "GeneralizedCarreauYasuda";
       break;
-    case GeneralizedNewtonianModel::Carreau:
+    case GeneralizedNewtonianViscosityModel::Carreau:
       string_type = "Carreau";
       break;
-    case GeneralizedNewtonianModel::Cross:
+    case GeneralizedNewtonianViscosityModel::Cross:
       string_type = "Cross";
       break;
-    case GeneralizedNewtonianModel::SimplifiedCross:
+    case GeneralizedNewtonianViscosityModel::SimplifiedCross:
       string_type = "SimplifiedCross";
       break;
-    case GeneralizedNewtonianModel::PowerLaw:
+    case GeneralizedNewtonianViscosityModel::PowerLaw:
       string_type = "PowerLaw";
       break;
     default:

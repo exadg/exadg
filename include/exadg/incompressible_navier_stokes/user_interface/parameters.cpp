@@ -131,7 +131,7 @@ Parameters::Parameters()
     type_penalty_parameter(TypePenaltyParameter::ConvectiveTerm),
 
     // VARIABLE VISCOSITY MODELS
-    // initialized already
+    treatment_of_variable_viscosity(TreatmentOfVariableViscosity::Undefined),
 
     // NUMERICAL PARAMETERS
     implement_block_diagonal_preconditioner_matrix_free(false),
@@ -423,9 +423,7 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
     }
   }
 
-  bool const variable_viscosity = viscosity_model_data.use_turbulence_model ||
-                                  viscosity_model_data.use_generalized_newtonian_model;
-  if(variable_viscosity and nonlinear_problem_has_to_be_solved())
+  if(viscosity_is_variable() and nonlinear_problem_has_to_be_solved())
     AssertThrow(quad_rule_linearization == QuadratureRuleLinearization::Standard,
                 dealii::ExcMessage(
                   "Only the standard integration rule is supported for variable viscosity. "
@@ -538,33 +536,30 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
   }
 
   // TURBULENCE
-  if(viscosity_model_data.use_turbulence_model)
+  if(turbulence_model_data.is_active)
   {
-    AssertThrow(viscosity_model_data.turbulence_model_data.turbulence_model !=
-                  TurbulenceEddyViscosityModel::Undefined,
+    AssertThrow(turbulence_model_data.turbulence_model != TurbulenceEddyViscosityModel::Undefined,
                 dealii::ExcMessage("Parameter must be defined."));
-    AssertThrow(viscosity_model_data.treatment_of_variable_viscosity !=
-                  TreatmentOfVariableViscosity::Undefined,
+    AssertThrow(treatment_of_variable_viscosity != TreatmentOfVariableViscosity::Undefined,
                 dealii::ExcMessage("Parameter must be defined."));
 
     if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
-      AssertThrow(viscosity_model_data.treatment_of_variable_viscosity ==
+      AssertThrow(treatment_of_variable_viscosity ==
                     TreatmentOfVariableViscosity::LinearizedInTimeImplicit,
                   dealii::ExcMessage(
-                    "An implicit-in-time treatment of the nonlinear diffusive term is not possible "
+                    "An implicit (nonlinear) treatment of variable viscosity term is not possible "
                     "in combination with the dual splitting scheme."));
     }
   }
 
   // GENERALIZED NEWTONIAN MODEL
-  if(viscosity_model_data.use_generalized_newtonian_model)
+  if(generalized_newtonian_model_data.is_active)
   {
-    AssertThrow(viscosity_model_data.generalized_newtonian_model_data.generalized_newtonian_model !=
-                  GeneralizedNewtonianModel::Undefined,
+    AssertThrow(generalized_newtonian_model_data.generalized_newtonian_model !=
+                  GeneralizedNewtonianViscosityModel::Undefined,
                 dealii::ExcMessage("Parameter must be defined."));
-    AssertThrow(viscosity_model_data.treatment_of_variable_viscosity !=
-                  TreatmentOfVariableViscosity::Undefined,
+    AssertThrow(treatment_of_variable_viscosity != TreatmentOfVariableViscosity::Undefined,
                 dealii::ExcMessage("Parameter must be defined."));
   }
 }
@@ -579,7 +574,7 @@ bool
 Parameters::viscous_problem() const
 {
   return (equation_type == EquationType::Stokes || equation_type == EquationType::NavierStokes ||
-          viscosity_model_data.use_turbulence_model);
+          turbulence_model_data.is_active);
 }
 
 bool
@@ -591,15 +586,14 @@ Parameters::viscous_term_is_linear() const
 bool
 Parameters::viscous_term_is_nonlinear() const
 {
-  return (viscosity_is_variable() && viscosity_model_data.treatment_of_variable_viscosity ==
-                                       TreatmentOfVariableViscosity::Implicit);
+  return (viscosity_is_variable() &&
+          treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Implicit);
 }
 
 bool
 Parameters::viscosity_is_variable() const
 {
-  return viscosity_model_data.use_turbulence_model ||
-         viscosity_model_data.use_generalized_newtonian_model;
+  return turbulence_model_data.is_active || generalized_newtonian_model_data.is_active;
 }
 
 bool
@@ -623,8 +617,8 @@ Parameters::nonlinear_viscous_term_is_solved_implicitly() const
 {
   if(viscous_problem())
   {
-    if(viscous_term_is_nonlinear() && viscosity_model_data.treatment_of_variable_viscosity ==
-                                        TreatmentOfVariableViscosity::Implicit)
+    if(viscous_term_is_nonlinear() &&
+       treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Implicit)
     {
       return true;
     }
@@ -862,6 +856,11 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
                   "Treatment of convective term",
                   enum_to_string(treatment_of_convective_term));
 
+  if(turbulence_model_data.is_active || generalized_newtonian_model_data.is_active)
+    print_parameter(pcout,
+                    "Treatment of nonlinear viscosity",
+                    enum_to_string(treatment_of_variable_viscosity));
+
   print_parameter(pcout,
                   "Calculation of time step size",
                   enum_to_string(calculation_of_time_step_size));
@@ -1016,16 +1015,14 @@ Parameters::print_parameters_turbulence(dealii::ConditionalOStream const & pcout
 {
   pcout << std::endl << "Turbulence:" << std::endl;
 
-  print_parameter(pcout, "Use turbulence model", viscosity_model_data.use_turbulence_model);
+  print_parameter(pcout, "Use turbulence model", turbulence_model_data.is_active);
 
-  if(viscosity_model_data.use_turbulence_model)
+  if(turbulence_model_data.is_active)
   {
     print_parameter(pcout,
                     "Turbulence model",
-                    enum_to_string(viscosity_model_data.turbulence_model_data.turbulence_model));
-    print_parameter(pcout,
-                    "Turbulence model constant",
-                    viscosity_model_data.turbulence_model_data.constant);
+                    enum_to_string(turbulence_model_data.turbulence_model));
+    print_parameter(pcout, "Turbulence model constant", turbulence_model_data.constant);
   }
 }
 
@@ -1036,28 +1033,20 @@ Parameters::print_parameters_generalized_newtonian(dealii::ConditionalOStream co
 
   print_parameter(pcout,
                   "Use generalized Newtonian model",
-                  viscosity_model_data.use_generalized_newtonian_model);
-  print_parameter(pcout,
-                  "Treatment of nonlinear viscosity",
-                  enum_to_string(viscosity_model_data.treatment_of_variable_viscosity));
+                  generalized_newtonian_model_data.is_active);
 
-  if(viscosity_model_data.use_generalized_newtonian_model)
+  if(generalized_newtonian_model_data.is_active)
   {
     print_parameter(pcout,
                     "Generalized Newtonian model",
-                    enum_to_string(viscosity_model_data.generalized_newtonian_model_data
-                                     .generalized_newtonian_model));
+                    enum_to_string(generalized_newtonian_model_data.generalized_newtonian_model));
     print_parameter(pcout,
                     "upper viscosity limit eta_0",
-                    viscosity_model_data.generalized_newtonian_model_data.viscosity_upper_limit);
-    print_parameter(pcout,
-                    "parameter kappa",
-                    viscosity_model_data.generalized_newtonian_model_data.kappa);
-    print_parameter(pcout,
-                    "parameter lambda",
-                    viscosity_model_data.generalized_newtonian_model_data.lambda);
-    print_parameter(pcout, "parameter a", viscosity_model_data.generalized_newtonian_model_data.a);
-    print_parameter(pcout, "parameter n", viscosity_model_data.generalized_newtonian_model_data.n);
+                    generalized_newtonian_model_data.viscosity_margin);
+    print_parameter(pcout, "parameter kappa", generalized_newtonian_model_data.kappa);
+    print_parameter(pcout, "parameter lambda", generalized_newtonian_model_data.lambda);
+    print_parameter(pcout, "parameter a", generalized_newtonian_model_data.a);
+    print_parameter(pcout, "parameter n", generalized_newtonian_model_data.n);
   }
 }
 

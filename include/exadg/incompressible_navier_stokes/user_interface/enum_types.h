@@ -685,7 +685,7 @@ enum_to_string(TurbulenceEddyViscosityModel const enum_type);
 /*
  *  Generalized Newtonian models
  */
-enum class GeneralizedNewtonianModel
+enum class GeneralizedNewtonianViscosityModel
 {
   Undefined,
   GeneralizedCarreauYasuda,
@@ -696,7 +696,7 @@ enum class GeneralizedNewtonianModel
 };
 
 std::string
-enum_to_string(GeneralizedNewtonianModel const enum_type);
+enum_to_string(GeneralizedNewtonianViscosityModel const enum_type);
 
 enum class TreatmentOfVariableViscosity
 {

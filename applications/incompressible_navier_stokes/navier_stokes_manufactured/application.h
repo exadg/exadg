@@ -127,7 +127,7 @@ public:
                           double const &                 normal_x,
                           double const &                 normal_y,
                           double const &                 nu_oo,
-                          double const &                 nu_0,
+                          double const &                 nu_margin,
                           double const &                 kappa,
                           double const &                 lambda,
                           double const &                 a,
@@ -137,7 +137,7 @@ public:
       normal_x(normal_x),
       normal_y(normal_y),
       nu_oo(nu_oo),
-      nu_0(nu_0),
+      nu_0(nu_margin - nu_oo),
       kappa(kappa),
       lambda(lambda),
       a(a),
@@ -229,7 +229,7 @@ public:
                 double const & normal_x,
                 double const & normal_y,
                 double const & nu_oo,
-                double const & nu_0,
+                double const & nu_margin,
                 double const & kappa,
                 double const & lambda,
                 double const & a,
@@ -239,7 +239,7 @@ public:
       normal_x(normal_x),
       normal_y(normal_y),
       nu_oo(nu_oo),
-      nu_0(nu_0),
+      nu_0(nu_margin - nu_oo),
       kappa(kappa),
       lambda(lambda),
       a(a),
@@ -415,9 +415,9 @@ public:
 			            treatment_of_variable_viscosity_implicit,
 						"Treat the variable viscosity implicit or extrapolate in time.",
 						dealii::Patterns::Bool());
-      prm.add_parameter("GeneralizedNewtonianKinematicViscosityUpperLimit",
-    		            generalized_newtonian_kinematic_viscosity_upper_limit,
-					    "Generalized Newtonian models: kinematic_viscosity upper limit.",
+      prm.add_parameter("GeneralizedNewtonianViscosityMargin",
+    		            generalized_newtonian_viscosity_margin,
+					    "Generalized Newtonian models: viscosity margin.",
 					    dealii::Patterns::Double());
       prm.add_parameter("GeneralizedNewtonianKappa",
     		             generalized_newtonian_kappa,
@@ -517,35 +517,31 @@ private:
     this->param.apply_penalty_terms_in_postprocessing_step = true;
 
     // TURBULENCE
-    this->param.viscosity_model_data.use_turbulence_model = use_turbulence_model;
-    this->param.viscosity_model_data.turbulence_model_data.turbulence_model =
-      TurbulenceEddyViscosityModel::Sigma;
+    this->param.turbulence_model_data.is_active        = use_turbulence_model;
+    this->param.turbulence_model_data.turbulence_model = TurbulenceEddyViscosityModel::Sigma;
     // Smagorinsky: 0.165
     // Vreman: 0.28
     // WALE: 0.50
     // Sigma: 1.35
-    this->param.viscosity_model_data.turbulence_model_data.constant = 1.35;
+    this->param.turbulence_model_data.constant = 1.35;
+
+    this->param.treatment_of_variable_viscosity =
+      treatment_of_variable_viscosity_implicit ?
+        TreatmentOfVariableViscosity::Implicit :
+        TreatmentOfVariableViscosity::LinearizedInTimeImplicit;
 
     // GENERALIZED NEWTONIAN MODEL
-    this->param.viscosity_model_data.use_generalized_newtonian_model =
-      use_generalized_newtonian_model;
+    this->param.generalized_newtonian_model_data.is_active = use_generalized_newtonian_model;
     if(use_generalized_newtonian_model)
     {
-      this->param.viscosity_model_data.generalized_newtonian_model_data
-        .generalized_newtonian_model = generalized_newtonian_model;
-      this->param.viscosity_model_data.treatment_of_variable_viscosity =
-        treatment_of_variable_viscosity_implicit ?
-          TreatmentOfVariableViscosity::Implicit :
-          TreatmentOfVariableViscosity::LinearizedInTimeImplicit;
-
-      this->param.viscosity_model_data.generalized_newtonian_model_data.viscosity_upper_limit =
-        generalized_newtonian_kinematic_viscosity_upper_limit;
-      this->param.viscosity_model_data.generalized_newtonian_model_data.kappa =
-        generalized_newtonian_kappa;
-      this->param.viscosity_model_data.generalized_newtonian_model_data.lambda =
-        generalized_newtonian_lambda;
-      this->param.viscosity_model_data.generalized_newtonian_model_data.a = generalized_newtonian_a;
-      this->param.viscosity_model_data.generalized_newtonian_model_data.n = generalized_newtonian_n;
+      this->param.generalized_newtonian_model_data.generalized_newtonian_model =
+        generalized_newtonian_model;
+      this->param.generalized_newtonian_model_data.viscosity_margin =
+        generalized_newtonian_viscosity_margin;
+      this->param.generalized_newtonian_model_data.kappa  = generalized_newtonian_kappa;
+      this->param.generalized_newtonian_model_data.lambda = generalized_newtonian_lambda;
+      this->param.generalized_newtonian_model_data.a      = generalized_newtonian_a;
+      this->param.generalized_newtonian_model_data.n      = generalized_newtonian_n;
     }
 
     if(use_turbulence_model || use_generalized_newtonian_model)
@@ -664,17 +660,17 @@ private:
       if(i == 0 && pure_dirichlet_problem == false)
       {
         // Neumann boundary condition for boundary with id 0.
-        this->boundary_descriptor->velocity->neumann_bc.insert(pair(
-          i,
-          new NeumannBoundaryVelocity<dim>(this->param.formulation_viscous_term,
-                                           normal_x,
-                                           normal_y,
-                                           kinematic_viscosity,
-                                           generalized_newtonian_kinematic_viscosity_upper_limit,
-                                           generalized_newtonian_kappa,
-                                           generalized_newtonian_lambda,
-                                           generalized_newtonian_a,
-                                           generalized_newtonian_n)));
+        this->boundary_descriptor->velocity->neumann_bc.insert(
+          pair(i,
+               new NeumannBoundaryVelocity<dim>(this->param.formulation_viscous_term,
+                                                normal_x,
+                                                normal_y,
+                                                kinematic_viscosity,
+                                                generalized_newtonian_viscosity_margin,
+                                                generalized_newtonian_kappa,
+                                                generalized_newtonian_lambda,
+                                                generalized_newtonian_a,
+                                                generalized_newtonian_n)));
 
         this->boundary_descriptor->pressure->dirichlet_bc.insert(
           pair(i, new AnalyticalSolutionPressure<dim>()));
@@ -707,7 +703,7 @@ private:
                              normal_x,
                              normal_y,
                              kinematic_viscosity,
-                             generalized_newtonian_kinematic_viscosity_upper_limit,
+                             generalized_newtonian_viscosity_margin,
                              generalized_newtonian_kappa,
                              generalized_newtonian_lambda,
                              generalized_newtonian_a,
@@ -767,16 +763,16 @@ private:
   bool   treatment_of_convective_term_implicit        = false;
   bool   treatment_of_variable_viscosity_implicit     = false;
 
-  double generalized_newtonian_kinematic_viscosity_upper_limit = 50.0e-6;
-  double generalized_newtonian_kappa                           = 1.1;
-  double generalized_newtonian_lambda                          = 10.0;
-  double generalized_newtonian_a                               = 2.1;
-  double generalized_newtonian_n                               = 0.25;
-  double interval_start                                        = 0.0;
-  double interval_end                                          = 0.1;
+  double generalized_newtonian_viscosity_margin = 49.0e-6;
+  double generalized_newtonian_kappa            = 1.1;
+  double generalized_newtonian_lambda           = 10.0;
+  double generalized_newtonian_a                = 2.1;
+  double generalized_newtonian_n                = 0.25;
+  double interval_start                         = 0.0;
+  double interval_end                           = 0.1;
 
-  GeneralizedNewtonianModel const generalized_newtonian_model =
-    GeneralizedNewtonianModel::GeneralizedCarreauYasuda;
+  GeneralizedNewtonianViscosityModel const generalized_newtonian_model =
+    GeneralizedNewtonianViscosityModel::GeneralizedCarreauYasuda;
 };
 
 } // namespace IncNS

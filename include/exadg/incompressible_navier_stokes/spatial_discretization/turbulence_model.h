@@ -22,27 +22,22 @@
 #ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_TURBULENCE_MODEL_H_
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_TURBULENCE_MODEL_H_
 
-// deal.II
-#include <deal.II/lac/la_parallel_vector.h>
-
 // ExaDG
-#include <exadg/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.h>
-#include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
-#include <exadg/incompressible_navier_stokes/user_interface/viscosity_model_data.h>
-#include <exadg/matrix_free/integrators.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/viscosity_model_base.h>
 
 namespace ExaDG
 {
 namespace IncNS
 {
 /*
- *  Variable viscosity models.
+ *  Turbulence model.
  */
 template<int dim, typename Number>
-class ViscosityModel
+class TurbulenceModel : public ViscosityModelBase<dim, Number>
 {
 private:
-  typedef ViscosityModel<dim, Number> This;
+  typedef TurbulenceModel<dim, Number>    This;
+  typedef ViscosityModelBase<dim, Number> Base;
 
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
@@ -58,7 +53,12 @@ public:
   /*
    *  Constructor.
    */
-  ViscosityModel();
+  TurbulenceModel();
+
+  /*
+   * Destructor.
+   */
+  virtual ~TurbulenceModel();
 
   /*
    * Initialization function.
@@ -67,16 +67,22 @@ public:
   initialize(dealii::MatrixFree<dim, Number> const &                matrix_free_in,
              dealii::Mapping<dim> const &                           mapping_in,
              std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
-             ViscosityModelData const &                             viscosity_model_data_in,
+             TurbulenceModelData const &                            turbulence_model_data_in,
              unsigned int                                           dof_index_velocity_in,
              unsigned int                                           quad_index_velocity_linear_in,
              unsigned int                                           degree_u_in);
 
   /*
-   *  This function calculates the turbulent viscosity for a given velocity field.
+   *  Function for *setting* the viscosity taking the viscosity_newtonian_limit as a basis.
    */
   void
-  calculate_viscosity(VectorType const & velocity) const;
+  set_viscosity(VectorType const & velocity) const;
+
+  /*
+   *  Function for *adding to* the viscosity taking the currently stored viscosity as a basis.
+   */
+  void
+  add_viscosity(VectorType const & velocity) const;
 
   /*
    *  This function calculates the filter width for each cell.
@@ -102,31 +108,6 @@ private:
                                       VectorType &,
                                       VectorType const & src,
                                       Range const &      face_range) const;
-
-  /*
-   *  Compute the symmetric velocity gradient.
-   */
-
-  inline DEAL_II_ALWAYS_INLINE //
-    tensor
-    calculate_symmetric_velocity_gradient(tensor const & velocity_gradient) const
-  {
-    return (0.5 * (velocity_gradient + transpose(velocity_gradient)));
-  }
-
-  /*
-   *  Compute the shear rate from the velocity gradient.
-   */
-
-  inline DEAL_II_ALWAYS_INLINE //
-    scalar
-    calculate_shear_rate(tensor const & velocity_gradient) const
-  {
-    tensor symmetric_velocity_gradient = calculate_symmetric_velocity_gradient(velocity_gradient);
-    scalar shear_rate_squared =
-      2.0 * scalar_product(symmetric_velocity_gradient, symmetric_velocity_gradient);
-    return std::sqrt(shear_rate_squared);
-  }
 
   /*
    *  This function adds the turbulent eddy-viscosity to the laminar viscosity
@@ -242,63 +223,8 @@ private:
                          double const & C,
                          scalar &       viscosity) const;
 
-  /*
-   *  This function computes the kinematic viscosity for
-   *  generalized Newtonian fluids, i.e., based on the shear rate.
-   *  All models can be found in , e.g., Galdi et al., 2008
-   *  ("Hemodynamical Flows: Modeling, Analysis and Simulation").
-   *  With
-   *  y    = sqrt(2*sym_grad_velocity : sym_grad_velocity)
-   *  e_oo = generalized_newtonian_kinematic_viscosity_lower_limit
-   *  e_0  = generalized_newtonian_kinematic_viscosity_upper_limit
-   *  k    = generalized_newtonian_kappa
-   *  l    = generalized_newtonian_lambda
-   *  a    = generalized_newtonian_a
-   *  b    = generalized_newtonian_b
-   *  we have the apparent viscosity
-   *  viscosity = e_oo + (e_0 - e_oo) * [k + (l * y)^a]^[(n - 1) / a]
-   *
-   *  We distinguish the cases:
-   *  GeneralizedCarreauYasuda, // no assumptions
-   *  Carreau,                  // k = 1, a = 2
-   *  Cross,                    // k = 1, n = 1 - a
-   *  SimplifiedCross,          // k = 1, a = 1, n = 0
-   *  PowerLaw                  // k = 0 (e_00 for numerical reasons)
-   */
-  void
-  set_generalized_newtonian_viscosity(tensor const & velocity_gradient, scalar & viscosity) const;
-
-  void
-  generalized_carreau_yasuda_generalized_newtonian_model(scalar const & shear_rate_squared,
-                                                         scalar &       viscosity) const;
-
-  void
-  carreau_generalized_newtonian_model(scalar const & shear_rate_squared, scalar & viscosity) const;
-
-  void
-  cross_generalized_newtonian_model(scalar const & shear_rate_squared, scalar & viscosity) const;
-
-  void
-  simplified_cross_generalized_newtonian_model(scalar const & shear_rate_squared,
-                                               scalar &       viscosity) const;
-
-  void
-  power_law_generalized_newtonian_model(scalar const & shear_rate_squared,
-                                        scalar &       viscosity) const;
-
-  bool                          use_turbulence_model;
-  bool                          use_generalized_newtonian_model;
-  unsigned int                  dof_index_velocity;
-  unsigned int                  quad_index_velocity_linear;
   unsigned int                  degree_u;
-  double                        viscosity_newtonian_limit;
   TurbulenceModelData           turbulence_model_data;
-  GeneralizedNewtonianModelData generalized_newtonian_model_data;
-
-  dealii::MatrixFree<dim, Number> const * matrix_free;
-
-  std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel;
-
   dealii::AlignedVector<scalar> filter_width_vector;
 };
 
