@@ -131,15 +131,13 @@ DEAL_II_ALWAYS_INLINE scalar&#160;</td><td class="memItemRight" valign="bottom">
 <tr class="memitem:ab75f7c0a8fdf558e8a38290155bb03ad"><td class="memItemLeft" align="right" valign="top"><a id="ab75f7c0a8fdf558e8a38290155bb03ad" name="ab75f7c0a8fdf558e8a38290155bb03ad"></a>
 DEAL_II_ALWAYS_INLINE tensor&#160;</td><td class="memItemRight" valign="bottom"><b>get_volume_flux</b> (tensor const &amp;gradient, scalar const &amp;viscosity) const</td></tr>
 <tr class="separator:ab75f7c0a8fdf558e8a38290155bb03ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a231e82673d1fd134748a4605aed289dd"><td class="memItemLeft" align="right" valign="top"><a id="a231e82673d1fd134748a4605aed289dd" name="a231e82673d1fd134748a4605aed289dd"></a>
-DEAL_II_ALWAYS_INLINE tensor&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_gradient_flux</b> (vector const &amp;value_m, vector const &amp;value_p, vector const &amp;normal, scalar const &amp;viscosity) const</td></tr>
+<tr class="memitem:a231e82673d1fd134748a4605aed289dd"><td class="memItemLeft" align="right" valign="top">DEAL_II_ALWAYS_INLINE tensor&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html#a231e82673d1fd134748a4605aed289dd">calculate_gradient_flux</a> (vector const &amp;value_m, vector const &amp;value_p, vector const &amp;normal, scalar const &amp;viscosity) const</td></tr>
 <tr class="separator:a231e82673d1fd134748a4605aed289dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab7eb06b3ec44b86c1ee57495a6f56ef3"><td class="memTemplParams" colspan="2"><a id="ab7eb06b3ec44b86c1ee57495a6f56ef3" name="ab7eb06b3ec44b86c1ee57495a6f56ef3"></a>
 template&lt;typename Integrator &gt; </td></tr>
 <tr class="memitem:ab7eb06b3ec44b86c1ee57495a6f56ef3"><td class="memTemplItemLeft" align="right" valign="top">DEAL_II_ALWAYS_INLINE vector&#160;</td><td class="memTemplItemRight" valign="bottom"><b>calculate_normal_gradient</b> (unsigned int const q, Integrator &amp;integrator) const</td></tr>
 <tr class="separator:ab7eb06b3ec44b86c1ee57495a6f56ef3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a068b47893755fa37fe567bf3c01c021a"><td class="memItemLeft" align="right" valign="top"><a id="a068b47893755fa37fe567bf3c01c021a" name="a068b47893755fa37fe567bf3c01c021a"></a>
-DEAL_II_ALWAYS_INLINE vector&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_value_flux</b> (vector const &amp;normal_gradient_m, vector const &amp;normal_gradient_p, vector const &amp;value_m, vector const &amp;value_p, vector const &amp;normal, scalar const &amp;viscosity) const</td></tr>
+<tr class="memitem:a068b47893755fa37fe567bf3c01c021a"><td class="memItemLeft" align="right" valign="top">DEAL_II_ALWAYS_INLINE vector&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html#a068b47893755fa37fe567bf3c01c021a">calculate_value_flux</a> (vector const &amp;normal_gradient_m, vector const &amp;normal_gradient_p, vector const &amp;value_m, vector const &amp;value_p, vector const &amp;normal, scalar const &amp;viscosity) const</td></tr>
 <tr class="separator:a068b47893755fa37fe567bf3c01c021a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8b8ff11caa6ee190bc4c2043c7f5225c"><td class="memTemplParams" colspan="2"><a id="a8b8ff11caa6ee190bc4c2043c7f5225c" name="a8b8ff11caa6ee190bc4c2043c7f5225c"></a>
 template&lt;typename Integrator &gt; </td></tr>
@@ -152,6 +150,121 @@ Static Public Member Functions</h2></td></tr>
 static <a class="el" href="structExaDG_1_1MappingFlags.html">MappingFlags</a>&#160;</td><td class="memItemRight" valign="bottom"><b>get_mapping_flags</b> (bool const compute_interior_face_integrals, bool const compute_boundary_face_integrals)</td></tr>
 <tr class="separator:a0e2984cfed1c9a9f13b63b7471ce2b61"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a231e82673d1fd134748a4605aed289dd" name="a231e82673d1fd134748a4605aed289dd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a231e82673d1fd134748a4605aed289dd">&#9670;&#160;</a></span>calculate_gradient_flux()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">DEAL_II_ALWAYS_INLINE tensor <a class="el" href="classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html">ExaDG::IncNS::Operators::ViscousKernel</a>&lt; dim, Number &gt;::calculate_gradient_flux </td>
+          <td>(</td>
+          <td class="paramtype">vector const &amp;&#160;</td>
+          <td class="paramname"><em>value_m</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vector const &amp;&#160;</td>
+          <td class="paramname"><em>value_p</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vector const &amp;&#160;</td>
+          <td class="paramname"><em>normal</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">scalar const &amp;&#160;</td>
+          <td class="paramname"><em>viscosity</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Calculates the <code>gradient flux</code>, i.e. the numerical flux that is tested with the shape function gradients. </p>
+
+</div>
+</div>
+<a id="a068b47893755fa37fe567bf3c01c021a" name="a068b47893755fa37fe567bf3c01c021a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a068b47893755fa37fe567bf3c01c021a">&#9670;&#160;</a></span>calculate_value_flux()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">DEAL_II_ALWAYS_INLINE vector <a class="el" href="classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html">ExaDG::IncNS::Operators::ViscousKernel</a>&lt; dim, Number &gt;::calculate_value_flux </td>
+          <td>(</td>
+          <td class="paramtype">vector const &amp;&#160;</td>
+          <td class="paramname"><em>normal_gradient_m</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vector const &amp;&#160;</td>
+          <td class="paramname"><em>normal_gradient_p</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vector const &amp;&#160;</td>
+          <td class="paramname"><em>value_m</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vector const &amp;&#160;</td>
+          <td class="paramname"><em>value_p</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vector const &amp;&#160;</td>
+          <td class="paramname"><em>normal</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">scalar const &amp;&#160;</td>
+          <td class="paramname"><em>viscosity</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Calculates the <code>value flux</code>, i.e. the flux that is tested with the shape function values. Strictly speaking, this is not a numerical flux, but the right-hand side of the L2 product notation of the integral. In this case it is the inner product of the numerical flux and the the normal vector of element e⁻. </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/incompressible_navier_stokes/spatial_discretization/operators/<a class="el" href="viscous__operator_8h_source.html">viscous_operator.h</a></li>
 </ul>
