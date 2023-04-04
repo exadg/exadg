@@ -26,7 +26,7 @@ namespace ExaDG
 namespace IncNS
 {
 template<int dim, typename Number>
-TurbulenceModel<dim, Number>::TurbulenceModel() : Base(), degree_u(0)
+TurbulenceModel<dim, Number>::TurbulenceModel() : Base(), degree_velocity(0)
 {
 }
 
@@ -44,7 +44,7 @@ TurbulenceModel<dim, Number>::initialize(
   TurbulenceModelData const &                            turbulence_model_data_in,
   unsigned int                                           dof_index_velocity_in,
   unsigned int                                           quad_index_velocity_linear_in,
-  unsigned int                                           degree_u_in)
+  unsigned int                                           degree_velocity_in)
 {
   Base::initialize(matrix_free_in,
                    viscous_kernel_in,
@@ -52,7 +52,7 @@ TurbulenceModel<dim, Number>::initialize(
                    quad_index_velocity_linear_in);
 
   turbulence_model_data = turbulence_model_data_in;
-  degree_u              = degree_u_in;
+  degree_velocity       = degree_velocity_in;
 
   turbulence_model_data.check();
 
@@ -167,7 +167,7 @@ TurbulenceModel<dim, Number>::face_loop_set_coefficients(
       tensor velocity_gradient          = integrator_m.get_gradient(q);
       tensor velocity_gradient_neighbor = integrator_p.get_gradient(q);
 
-      // get the current viscosity
+      // get the coefficients
       scalar viscosity          = Base::viscous_kernel->get_coefficient_face(face, q);
       scalar viscosity_neighbor = Base::viscous_kernel->get_coefficient_face_neighbor(face, q);
 
@@ -242,7 +242,7 @@ TurbulenceModel<dim, Number>::calculate_filter_width(dealii::Mapping<dim> const 
 
   filter_width_vector.resize(n_cells);
 
-  dealii::QGauss<dim> quadrature(degree_u + 1);
+  dealii::QGauss<dim> quadrature(degree_velocity + 1);
 
   dealii::FEValues<dim> fe_values(
     mapping,
@@ -271,7 +271,7 @@ TurbulenceModel<dim, Number>::calculate_filter_width(dealii::Mapping<dim> const 
 
       // take polynomial degree of shape functions into account:
       // h/(k_u + 1)
-      h /= (double)(degree_u + 1);
+      h /= (double)(degree_velocity + 1);
 
       filter_width_vector[i][v] = h;
     }
@@ -292,16 +292,16 @@ TurbulenceModel<dim, Number>::add_turbulent_viscosity(scalar &       viscosity,
                   dealii::ExcMessage("Parameter must be defined."));
       break;
     case TurbulenceEddyViscosityModel::Smagorinsky:
-      smagorinsky_turbulence_model(filter_width, velocity_gradient, model_constant, viscosity);
+      smagorinsky_model(filter_width, velocity_gradient, model_constant, viscosity);
       break;
     case TurbulenceEddyViscosityModel::Vreman:
-      vreman_turbulence_model(filter_width, velocity_gradient, model_constant, viscosity);
+      vreman_model(filter_width, velocity_gradient, model_constant, viscosity);
       break;
     case TurbulenceEddyViscosityModel::WALE:
-      wale_turbulence_model(filter_width, velocity_gradient, model_constant, viscosity);
+      wale_model(filter_width, velocity_gradient, model_constant, viscosity);
       break;
     case TurbulenceEddyViscosityModel::Sigma:
-      sigma_turbulence_model(filter_width, velocity_gradient, model_constant, viscosity);
+      sigma_model(filter_width, velocity_gradient, model_constant, viscosity);
       break;
     default:
       AssertThrow(
@@ -313,10 +313,10 @@ TurbulenceModel<dim, Number>::add_turbulent_viscosity(scalar &       viscosity,
 
 template<int dim, typename Number>
 void
-TurbulenceModel<dim, Number>::smagorinsky_turbulence_model(scalar const & filter_width,
-                                                           tensor const & velocity_gradient,
-                                                           double const & C,
-                                                           scalar &       viscosity) const
+TurbulenceModel<dim, Number>::smagorinsky_model(scalar const & filter_width,
+                                                tensor const & velocity_gradient,
+                                                double const & C,
+                                                scalar &       viscosity) const
 {
   tensor symmetric_gradient =
     dealii::make_vectorized_array<Number>(0.5) * (velocity_gradient + transpose(velocity_gradient));
@@ -331,10 +331,10 @@ TurbulenceModel<dim, Number>::smagorinsky_turbulence_model(scalar const & filter
 
 template<int dim, typename Number>
 void
-TurbulenceModel<dim, Number>::vreman_turbulence_model(scalar const & filter_width,
-                                                      tensor const & velocity_gradient,
-                                                      double const & C,
-                                                      scalar &       viscosity) const
+TurbulenceModel<dim, Number>::vreman_model(scalar const & filter_width,
+                                           tensor const & velocity_gradient,
+                                           double const & C,
+                                           scalar &       viscosity) const
 {
   scalar       velocity_gradient_norm_square = scalar_product(velocity_gradient, velocity_gradient);
   Number const tolerance                     = 1.0e-12;
@@ -367,10 +367,10 @@ TurbulenceModel<dim, Number>::vreman_turbulence_model(scalar const & filter_widt
 
 template<int dim, typename Number>
 void
-TurbulenceModel<dim, Number>::wale_turbulence_model(scalar const & filter_width,
-                                                    tensor const & velocity_gradient,
-                                                    double const & C,
-                                                    scalar &       viscosity) const
+TurbulenceModel<dim, Number>::wale_model(scalar const & filter_width,
+                                         tensor const & velocity_gradient,
+                                         double const & C,
+                                         scalar &       viscosity) const
 {
   tensor S =
     dealii::make_vectorized_array<Number>(0.5) * (velocity_gradient + transpose(velocity_gradient));
@@ -410,10 +410,10 @@ TurbulenceModel<dim, Number>::wale_turbulence_model(scalar const & filter_width,
 
 template<int dim, typename Number>
 void
-TurbulenceModel<dim, Number>::sigma_turbulence_model(scalar const & filter_width,
-                                                     tensor const & velocity_gradient,
-                                                     double const & C,
-                                                     scalar &       viscosity) const
+TurbulenceModel<dim, Number>::sigma_model(scalar const & filter_width,
+                                          tensor const & velocity_gradient,
+                                          double const & C,
+                                          scalar &       viscosity) const
 {
   AssertThrow(dim == 3,
               dealii::ExcMessage(

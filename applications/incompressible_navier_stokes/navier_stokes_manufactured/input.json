@@ -26,7 +26,7 @@
          "UseGeneralizedNewtonianModel": "true",
          "FormulationViscousTermLaplaceFormulation" : "true",
          "TemporalDiscretizationBDFCoupledSolution" : "true",
-         "TreatmentOfCOnvectiveTermImplicit" : "false",
+         "TreatmentOfConvectiveTermImplicit" : "false",
          "TreatmentOfVariableViscosityImplicit" : "true",
          "GeneralizedNewtonianViscosityMargin": "49e-6",
          "GeneralizedNewtonianKappa": "1.0",

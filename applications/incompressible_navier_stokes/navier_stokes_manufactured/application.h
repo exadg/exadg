@@ -407,7 +407,7 @@ public:
 			            temporal_discretization_bdf_coupled_solution,
 						"Use BdfCoupledSolution, else BDFPressureCorrection scheme.",
 						dealii::Patterns::Bool());
-	  prm.add_parameter("TreatmentOfCOnvectiveTermImplicit",
+	  prm.add_parameter("TreatmentOfConvectiveTermImplicit",
 			            treatment_of_convective_term_implicit,
 						"Treat convective term implicit, else explicit",
 						dealii::Patterns::Bool());

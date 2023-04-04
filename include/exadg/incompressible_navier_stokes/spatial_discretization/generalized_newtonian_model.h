@@ -71,7 +71,7 @@ public:
              unsigned int                          quad_index_velocity_linear_in);
 
   /*
-   *  Function for *setting* the viscosity taking the viscosity_newtonian_limit as a basis.
+   *  Function for *setting* the viscosity to viscosity_newtonian_limit.
    */
   void
   set_viscosity(VectorType const & velocity) const;
@@ -135,23 +135,26 @@ private:
    * and hence only compute the factor [k + (l * y)^a]^[(n - 1) / a] .
    */
   void
-  generalized_carreau_yasuda_generalized_newtonian_model(scalar &       viscosity_factor,
-                                                         scalar const & shear_rate) const;
+  generalized_carreau_yasuda_model(scalar & viscosity_factor, scalar const & shear_rate) const;
 
   void
-  carreau_generalized_newtonian_model(scalar & viscosity_factor, scalar const & shear_rate) const;
+  carreau_model(scalar & viscosity_factor, scalar const & shear_rate) const;
 
   void
-  cross_generalized_newtonian_model(scalar & viscosity_factor, scalar const & shear_rate) const;
+  cross_model(scalar & viscosity_factor, scalar const & shear_rate) const;
 
   void
-  simplified_cross_generalized_newtonian_model(scalar &       viscosity_factor,
-                                               scalar const & shear_rate) const;
+  simplified_cross_model(scalar & viscosity_factor, scalar const & shear_rate) const;
 
   void
-  power_law_generalized_newtonian_model(scalar & viscosity_factor, scalar const & shear_rate) const;
+  power_law_model(scalar & viscosity_factor, scalar const & shear_rate) const;
 
-  GeneralizedNewtonianModelData generalized_newtonian_model_data;
+  GeneralizedNewtonianViscosityModel generalized_newtonian_model;
+  Number                             viscosity_margin;
+  Number                             a;
+  Number                             n;
+  Number                             kappa;
+  Number                             lambda;
 };
 
 } // namespace IncNS

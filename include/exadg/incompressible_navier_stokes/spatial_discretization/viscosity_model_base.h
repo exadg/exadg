@@ -65,8 +65,7 @@ public:
              unsigned int                                           quad_index_velocity_linear_in);
 
   /*
-   *  Pure virtual function for *setting* the viscosity taking the viscosity_newtonian_limit as a
-   * basis.
+   *  Pure virtual function for *setting* the viscosity to viscosity_newtonian_limit.
    */
   virtual void
   set_viscosity(VectorType const & velocity) const = 0;

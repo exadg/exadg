@@ -41,7 +41,7 @@ struct TurbulenceModelData
   double                       constant; // model constant
 
   void
-  check()
+  check() const
   {
     AssertThrow(is_active, dealii::ExcMessage("Turbulence model is inactive."));
     AssertThrow(constant > 1e-20, dealii::ExcMessage("Parameter must be greater than zero."));
@@ -75,7 +75,7 @@ struct GeneralizedNewtonianModelData
   double n;
 
   void
-  check()
+  check() const
   {
     AssertThrow(is_active, dealii::ExcMessage("Generalized Newtonian model is inactive."));
 

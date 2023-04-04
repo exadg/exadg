@@ -26,7 +26,8 @@ namespace ExaDG
 namespace IncNS
 {
 template<int dim, typename Number>
-GeneralizedNewtonianModel<dim, Number>::GeneralizedNewtonianModel() : Base()
+GeneralizedNewtonianModel<dim, Number>::GeneralizedNewtonianModel()
+  : Base(), generalized_newtonian_model(GeneralizedNewtonianViscosityModel::Undefined)
 {
 }
 
@@ -49,8 +50,14 @@ GeneralizedNewtonianModel<dim, Number>::initialize(
                    dof_index_velocity_in,
                    quad_index_velocity_linear_in);
 
-  generalized_newtonian_model_data = generalized_newtonian_model_data_in;
-  generalized_newtonian_model_data.check();
+  generalized_newtonian_model_data_in.check();
+
+  generalized_newtonian_model = generalized_newtonian_model_data_in.generalized_newtonian_model;
+  viscosity_margin = static_cast<Number>(generalized_newtonian_model_data_in.viscosity_margin);
+  a                = static_cast<Number>(generalized_newtonian_model_data_in.a);
+  n                = static_cast<Number>(generalized_newtonian_model_data_in.n);
+  kappa            = static_cast<Number>(generalized_newtonian_model_data_in.kappa);
+  lambda           = static_cast<Number>(generalized_newtonian_model_data_in.lambda);
 }
 
 template<int dim, typename Number>
@@ -210,15 +217,15 @@ GeneralizedNewtonianModel<dim, Number>::add_generalized_newtonian_viscosity(
   scalar &       viscosity,
   tensor const & velocity_gradient) const
 {
-
   tensor symmetric_velocity_gradient = 0.5 * (velocity_gradient + transpose(velocity_gradient));
 
-  scalar shear_rate = std::sqrt(2.0 * scalar_product(symmetric_velocity_gradient, symmetric_velocity_gradient));
+  scalar shear_rate =
+    std::sqrt(2.0 * scalar_product(symmetric_velocity_gradient, symmetric_velocity_gradient));
 
   scalar viscosity_factor;
   compute_viscosity_factor(viscosity_factor, shear_rate);
 
-  viscosity += viscosity_factor * generalized_newtonian_model_data.viscosity_margin;
+  viscosity += viscosity_factor * viscosity_margin;
 }
 
 template<int dim, typename Number>
@@ -226,27 +233,26 @@ void
 GeneralizedNewtonianModel<dim, Number>::compute_viscosity_factor(scalar &       viscosity_factor,
                                                                  scalar const & shear_rate) const
 {
-  switch(generalized_newtonian_model_data.generalized_newtonian_model)
+  switch(generalized_newtonian_model)
   {
     case GeneralizedNewtonianViscosityModel::Undefined:
-      AssertThrow(generalized_newtonian_model_data.generalized_newtonian_model !=
-                    GeneralizedNewtonianViscosityModel::Undefined,
+      AssertThrow(generalized_newtonian_model != GeneralizedNewtonianViscosityModel::Undefined,
                   dealii::ExcMessage("parameter must be defined"));
       break;
     case GeneralizedNewtonianViscosityModel::GeneralizedCarreauYasuda:
-      generalized_carreau_yasuda_generalized_newtonian_model(viscosity_factor, shear_rate);
+      generalized_carreau_yasuda_model(viscosity_factor, shear_rate);
       break;
     case GeneralizedNewtonianViscosityModel::Carreau:
-      carreau_generalized_newtonian_model(viscosity_factor, shear_rate);
+      carreau_model(viscosity_factor, shear_rate);
       break;
     case GeneralizedNewtonianViscosityModel::Cross:
-      cross_generalized_newtonian_model(viscosity_factor, shear_rate);
+      cross_model(viscosity_factor, shear_rate);
       break;
     case GeneralizedNewtonianViscosityModel::SimplifiedCross:
-      simplified_cross_generalized_newtonian_model(viscosity_factor, shear_rate);
+      simplified_cross_model(viscosity_factor, shear_rate);
       break;
     case GeneralizedNewtonianViscosityModel::PowerLaw:
-      power_law_generalized_newtonian_model(viscosity_factor, shear_rate);
+      power_law_model(viscosity_factor, shear_rate);
       break;
     default:
       AssertThrow(
@@ -256,95 +262,67 @@ GeneralizedNewtonianModel<dim, Number>::compute_viscosity_factor(scalar &       
 
 template<int dim, typename Number>
 void
-GeneralizedNewtonianModel<dim, Number>::generalized_carreau_yasuda_generalized_newtonian_model(
+GeneralizedNewtonianModel<dim, Number>::generalized_carreau_yasuda_model(
   scalar &       viscosity_factor,
   scalar const & shear_rate) const
 {
   // eta = eta_oo + (eta_0 - eta_oo) * [k + (l * y)^a]^[(n-1)/a]
-  viscosity_factor =
-    shear_rate * dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.lambda);
-  viscosity_factor =
-    std::pow(viscosity_factor,
-             dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.a));
-  viscosity_factor += dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.kappa);
-  viscosity_factor =
-    std::pow(viscosity_factor,
-             dealii::make_vectorized_array<Number>((generalized_newtonian_model_data.n - 1.0) /
-                                                   generalized_newtonian_model_data.a));
+  viscosity_factor = shear_rate * lambda;
+  viscosity_factor = pow(viscosity_factor, a);
+  viscosity_factor += kappa;
+  viscosity_factor = pow(viscosity_factor, static_cast<Number>((n - 1.0) / a));
 }
 
 template<int dim, typename Number>
 void
-GeneralizedNewtonianModel<dim, Number>::carreau_generalized_newtonian_model(
-  scalar &       viscosity_factor,
-  scalar const & shear_rate) const
+GeneralizedNewtonianModel<dim, Number>::carreau_model(scalar &       viscosity_factor,
+                                                      scalar const & shear_rate) const
 {
   // eta = eta_oo + (eta_0 - eta_oo) * [k + (l * y)^a]^[(n-1)/a]
   // with k = 1 and a = 2
   // eta = eta_oo + (eta_0 - eta_oo) * [1 + l^2 * y^2]^[(n-1)/2]
-  viscosity_factor = shear_rate * shear_rate *
-                     dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.lambda *
-                                                           generalized_newtonian_model_data.lambda);
-
-  viscosity_factor += dealii::make_vectorized_array<Number>(1.0);
-
-  viscosity_factor = std::pow(viscosity_factor,
-                              dealii::make_vectorized_array<Number>(
-                                (generalized_newtonian_model_data.n - 1.0) / 2.0));
+  viscosity_factor = shear_rate * shear_rate * (lambda * lambda);
+  viscosity_factor += 1.0;
+  viscosity_factor = pow(viscosity_factor, static_cast<Number>((n - 1.0) * 0.5));
 }
 
 template<int dim, typename Number>
 void
-GeneralizedNewtonianModel<dim, Number>::cross_generalized_newtonian_model(
-  scalar &       viscosity_factor,
-  scalar const & shear_rate) const
+GeneralizedNewtonianModel<dim, Number>::cross_model(scalar &       viscosity_factor,
+                                                    scalar const & shear_rate) const
 {
   // eta = eta_oo + (eta_0 - eta_oo) * [k + (l * y)^a]^[(n-1)/a]
   // with k = 1 and n = 1 - a
   // eta = eta_oo + (eta_0 - eta_oo) * [1 + (l * y)^a]^(-1)
-  viscosity_factor =
-    shear_rate * dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.lambda);
-
-  viscosity_factor =
-    std::pow(viscosity_factor,
-             dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.a));
-
-  viscosity_factor += dealii::make_vectorized_array<Number>(1.0);
-  viscosity_factor = dealii::make_vectorized_array<Number>(1.0) / viscosity_factor;
+  viscosity_factor = shear_rate * lambda;
+  viscosity_factor = pow(viscosity_factor, a);
+  viscosity_factor += 1.0;
+  viscosity_factor = 1.0 / viscosity_factor;
 }
 
 template<int dim, typename Number>
 void
-GeneralizedNewtonianModel<dim, Number>::simplified_cross_generalized_newtonian_model(
-  scalar &       viscosity_factor,
-  scalar const & shear_rate) const
+GeneralizedNewtonianModel<dim, Number>::simplified_cross_model(scalar &       viscosity_factor,
+                                                               scalar const & shear_rate) const
 {
   // eta = eta_oo + (eta_0 - eta_oo) * [k + (l * y)^a]^[(n-1)/a]
   // with k = 1, a = 1 and n = 0
   // eta = eta_oo + (eta_0 - eta_oo) * [1 + l * y]^(-1)
-  viscosity_factor =
-    shear_rate * dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.lambda);
-
-  viscosity_factor += dealii::make_vectorized_array<Number>(1.0);
-
-  viscosity_factor = dealii::make_vectorized_array<Number>(1.0) / viscosity_factor;
+  viscosity_factor = shear_rate * lambda;
+  viscosity_factor += 1.0;
+  viscosity_factor = 1.0 / viscosity_factor;
 }
 
 template<int dim, typename Number>
 void
-GeneralizedNewtonianModel<dim, Number>::power_law_generalized_newtonian_model(
-  scalar &       viscosity_factor,
-  scalar const & shear_rate) const
+GeneralizedNewtonianModel<dim, Number>::power_law_model(scalar &       viscosity_factor,
+                                                        scalar const & shear_rate) const
 {
   // eta = eta_oo + (eta_0 - eta_oo) * [k + (l * y)^a]^[(n-1)/a]
   // with k = 0
   // eta = eta_oo + (eta_0 - eta_oo) * (l * y)^(n-1)
-  viscosity_factor =
-    shear_rate * dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.lambda);
-
-  viscosity_factor =
-    std::pow(viscosity_factor,
-             dealii::make_vectorized_array<Number>(generalized_newtonian_model_data.n - 1.0));
+  viscosity_factor = shear_rate * lambda;
+  viscosity_factor = pow(viscosity_factor, static_cast<Number>(n - 1.0));
 }
 
 template class GeneralizedNewtonianModel<2, float>;

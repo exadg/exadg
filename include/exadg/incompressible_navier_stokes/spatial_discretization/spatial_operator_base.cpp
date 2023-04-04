@@ -525,7 +525,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     data.convective_problem = false;
   else
-    data.convective_problem = param.convective_term_is_solved_implicitly();
+    data.convective_problem = param.convective_term_is_treated_implicitly();
   data.viscous_problem = param.viscous_problem();
 
   data.convective_kernel_data = convective_kernel_data;
@@ -1409,7 +1409,7 @@ SpatialOperatorBase<dim, Number>::update_viscosity(VectorType const & velocity) 
   // viscosity += turbulent_viscosity(viscosity)
   // note that the apparent viscosity is used to
   // compute the turbulent viscosity, such that the
-  // sequence of calls *matters* here
+  // *sequence of calls matters*
   if(param.turbulence_model_data.is_active)
     turbulence_model.add_viscosity(velocity);
 }
@@ -1783,9 +1783,6 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
   FaceIntegratorU integrator_u(matrix_free, true, dof_index_u, quad_index);
   FaceIntegratorP integrator_p(matrix_free, true, dof_index_p, quad_index);
 
-  bool const viscosity_is_variable = param.viscosity_is_variable();
-  scalar     viscosity             = dealii::make_vectorized_array<Number>(param.viscosity);
-
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
     dealii::types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
@@ -1815,10 +1812,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
         tensor grad_u = integrator_u.get_gradient(q);
         scalar p      = integrator_p.get_value(q);
 
-        if(viscosity_is_variable)
-        {
-          viscosity = get_viscosity_boundary_face(integrator_u.get_current_cell_index(), q);
-        }
+        scalar viscosity = get_viscosity_boundary_face(face, q);
 
         // incompressible flow solver is formulated in terms of kinematic viscosity and kinematic
         // pressure

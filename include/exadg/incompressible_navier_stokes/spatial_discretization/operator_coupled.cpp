@@ -282,7 +282,7 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &     
                                                           double const & scaling_factor_mass) const
 {
   // update implicitly coupled variable viscosity
-  if(this->param.nonlinear_viscous_term_is_solved_implicitly())
+  if(this->param.nonlinear_viscous_term_is_treated_implicitly())
   {
     this->update_viscosity(src.block(0));
   }
@@ -337,7 +337,7 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVectorType
                                                                  double const &          time) const
 {
   // update implicitly coupled variable viscosity
-  if(this->param.nonlinear_viscous_term_is_solved_implicitly())
+  if(this->param.nonlinear_viscous_term_is_treated_implicitly())
   {
     this->update_viscosity(src.block(0));
   }

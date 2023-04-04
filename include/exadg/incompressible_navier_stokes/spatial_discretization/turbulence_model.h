@@ -70,10 +70,10 @@ public:
              TurbulenceModelData const &                            turbulence_model_data_in,
              unsigned int                                           dof_index_velocity_in,
              unsigned int                                           quad_index_velocity_linear_in,
-             unsigned int                                           degree_u_in);
+             unsigned int                                           degree_velocity_in);
 
   /*
-   *  Function for *setting* the viscosity taking the viscosity_newtonian_limit as a basis.
+   *  Function for *setting* the viscosity to viscosity_newtonian_limit.
    */
   void
   set_viscosity(VectorType const & velocity) const;
@@ -134,10 +134,10 @@ private:
    *      C = 0.18  (Toda et al. (2010))
    */
   void
-  smagorinsky_turbulence_model(scalar const & filter_width,
-                               tensor const & velocity_gradient,
-                               double const & C,
-                               scalar &       viscosity) const;
+  smagorinsky_model(scalar const & filter_width,
+                    tensor const & velocity_gradient,
+                    double const & C,
+                    scalar &       viscosity) const;
 
   /*
    *  Vreman model (2004): Note that we only consider the isotropic variant of the Vreman model:
@@ -164,10 +164,10 @@ private:
    *
    */
   void
-  vreman_turbulence_model(scalar const & filter_width,
-                          tensor const & velocity_gradient,
-                          double const & c,
-                          scalar &       viscosity) const;
+  vreman_model(scalar const & filter_width,
+               tensor const & velocity_gradient,
+               double const & C,
+               scalar &       viscosity) const;
 
   /*
    *  WALE (wall-adapting local eddy-viscosity) model (Nicoud & Ducros 1999):
@@ -195,10 +195,10 @@ private:
    *
    */
   void
-  wale_turbulence_model(scalar const & filter_width,
-                        tensor const & velocity_gradient,
-                        double const & c,
-                        scalar &       viscosity) const;
+  wale_model(scalar const & filter_width,
+             tensor const & velocity_gradient,
+             double const & C,
+             scalar &       viscosity) const;
 
   /*
    *  Sigma model (Toda et al. 2010, Nicoud et al. 2011):
@@ -218,12 +218,12 @@ private:
    *      C = 1.5  (Toda et al. (2010)) .
    */
   void
-  sigma_turbulence_model(scalar const & filter_width,
-                         tensor const & velocity_gradient,
-                         double const & C,
-                         scalar &       viscosity) const;
+  sigma_model(scalar const & filter_width,
+              tensor const & velocity_gradient,
+              double const & C,
+              scalar &       viscosity) const;
 
-  unsigned int                  degree_u;
+  unsigned int                  degree_velocity;
   TurbulenceModelData           turbulence_model_data;
   dealii::AlignedVector<scalar> filter_width_vector;
 };

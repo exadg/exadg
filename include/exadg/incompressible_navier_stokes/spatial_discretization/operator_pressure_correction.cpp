@@ -308,7 +308,7 @@ OperatorPressureCorrection<dim, Number>::evaluate_nonlinear_residual(
   double const &     scaling_factor_mass) const
 {
   // update implicitly coupled viscosity
-  if(this->param.nonlinear_viscous_term_is_solved_implicitly())
+  if(this->param.nonlinear_viscous_term_is_treated_implicitly())
   {
     this->update_viscosity(src);
   }
@@ -336,7 +336,7 @@ OperatorPressureCorrection<dim, Number>::evaluate_nonlinear_residual_steady(
   double const &     time) const
 {
   // update implicitly coupled viscosity
-  if(this->param.nonlinear_viscous_term_is_solved_implicitly())
+  if(this->param.nonlinear_viscous_term_is_treated_implicitly())
   {
     this->update_viscosity(src_u);
   }

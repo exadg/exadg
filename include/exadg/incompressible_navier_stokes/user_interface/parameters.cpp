@@ -597,7 +597,7 @@ Parameters::viscosity_is_variable() const
 }
 
 bool
-Parameters::convective_term_is_solved_implicitly() const
+Parameters::convective_term_is_treated_implicitly() const
 {
   if(convective_problem())
   {
@@ -613,7 +613,7 @@ Parameters::convective_term_is_solved_implicitly() const
 }
 
 bool
-Parameters::nonlinear_viscous_term_is_solved_implicitly() const
+Parameters::nonlinear_viscous_term_is_treated_implicitly() const
 {
   if(viscous_problem())
   {
@@ -630,7 +630,8 @@ Parameters::nonlinear_viscous_term_is_solved_implicitly() const
 bool
 Parameters::nonlinear_problem_has_to_be_solved() const
 {
-  return (convective_term_is_solved_implicitly() || nonlinear_viscous_term_is_solved_implicitly());
+  return (convective_term_is_treated_implicitly() ||
+          nonlinear_viscous_term_is_treated_implicitly());
 }
 
 bool
@@ -1040,9 +1041,7 @@ Parameters::print_parameters_generalized_newtonian(dealii::ConditionalOStream co
     print_parameter(pcout,
                     "Generalized Newtonian model",
                     enum_to_string(generalized_newtonian_model_data.generalized_newtonian_model));
-    print_parameter(pcout,
-                    "upper viscosity limit eta_0",
-                    generalized_newtonian_model_data.viscosity_margin);
+    print_parameter(pcout, "viscosity margin", generalized_newtonian_model_data.viscosity_margin);
     print_parameter(pcout, "parameter kappa", generalized_newtonian_model_data.kappa);
     print_parameter(pcout, "parameter lambda", generalized_newtonian_model_data.lambda);
     print_parameter(pcout, "parameter a", generalized_newtonian_model_data.a);
