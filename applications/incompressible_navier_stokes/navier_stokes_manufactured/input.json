@@ -25,7 +25,7 @@
          "KinematicViscosity": "1e-6",
          "UseGeneralizedNewtonianModel": "true",
          "FormulationViscousTermLaplaceFormulation" : "true",
-         "TemporalDiscretizationBDFCoupledSolution" : "true",
+         "TemporalDiscretization" : "BDFCoupledSolution",
          "TreatmentOfConvectiveTermImplicit" : "false",
          "TreatmentOfVariableViscosityImplicit" : "true",
          "GeneralizedNewtonianViscosityMargin": "49e-6",

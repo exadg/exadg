@@ -22,6 +22,9 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_NAVIER_STOKES_MANUFACTURED_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_NAVIER_STOKES_MANUFACTURED_H_
 
+// ExaDG
+#include <exadg/incompressible_navier_stokes/user_interface/enum_types.h>
+
 namespace ExaDG
 {
 namespace IncNS
@@ -403,10 +406,10 @@ public:
 			            formulation_viscous_term_laplace_formulation,
 						"Use Laplace or Divergence formulation for viscous term.",
 						dealii::Patterns::Bool());
-	  prm.add_parameter("TemporalDiscretizationBDFCoupledSolution",
-			            temporal_discretization_bdf_coupled_solution,
-						"Use BdfCoupledSolution, else BDFPressureCorrection scheme.",
-						dealii::Patterns::Bool());
+	  prm.add_parameter("TemporalDiscretization",
+			            temporal_discretization_string,
+						"Temporal discretization.",
+						dealii::Patterns::Selection("BDFCoupledSolution|BDFPressureCorrection|BDFDualSplittingScheme"));
 	  prm.add_parameter("TreatmentOfConvectiveTermImplicit",
 			            treatment_of_convective_term_implicit,
 						"Treat convective term implicit, else explicit",
@@ -441,6 +444,18 @@ public:
 
 private:
   void
+  parse_parameters() final
+  {
+    ApplicationBase<dim, Number>::parse_parameters();
+
+    // clang-format off
+    if     (temporal_discretization_string == "BDFCoupledSolution")     temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
+    else if(temporal_discretization_string == "BDFPressureCorrection")  temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
+    else if(temporal_discretization_string == "BDFDualSplittingScheme") temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+    else AssertThrow(false, dealii::ExcMessage("Unknown temporal discretization. Not implemented."));
+    // clang-format on
+  }
+  void
   set_parameters() final
   {
     // MATHEMATICAL MODEL
@@ -468,9 +483,7 @@ private:
 
     // TEMPORAL DISCRETIZATION
     this->param.solver_type                   = SolverType::Unsteady;
-    this->param.temporal_discretization       = temporal_discretization_bdf_coupled_solution ?
-                                                  TemporalDiscretization::BDFCoupledSolution :
-                                                  TemporalDiscretization::BDFPressureCorrection;
+    this->param.temporal_discretization       = temporal_discretization;
     this->param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
     this->param.time_step_size                = this->param.end_time;
     this->param.order_time_integrator         = 2;     // 1; // 2; // 3;
@@ -750,18 +763,19 @@ private:
     return pp;
   }
 
-  bool   include_convective_term                      = true;
-  bool   pure_dirichlet_problem                       = true;
-  double start_time                                   = 0.0;
-  double end_time                                     = 0.1;
-  double density                                      = 1000.0;
-  double kinematic_viscosity                          = 5e-6;
-  bool   use_turbulence_model                         = false;
-  bool   use_generalized_newtonian_model              = true;
-  bool   formulation_viscous_term_laplace_formulation = true;
-  bool   temporal_discretization_bdf_coupled_solution = false;
-  bool   treatment_of_convective_term_implicit        = false;
-  bool   treatment_of_variable_viscosity_implicit     = false;
+  bool                   include_convective_term                      = true;
+  bool                   pure_dirichlet_problem                       = true;
+  double                 start_time                                   = 0.0;
+  double                 end_time                                     = 0.1;
+  double                 density                                      = 1000.0;
+  double                 kinematic_viscosity                          = 5e-6;
+  bool                   use_turbulence_model                         = false;
+  bool                   use_generalized_newtonian_model              = true;
+  bool                   formulation_viscous_term_laplace_formulation = true;
+  TemporalDiscretization temporal_discretization               = TemporalDiscretization::Undefined;
+  std::string            temporal_discretization_string        = "";
+  bool                   treatment_of_convective_term_implicit = false;
+  bool                   treatment_of_variable_viscosity_implicit = false;
 
   double generalized_newtonian_viscosity_margin = 49.0e-6;
   double generalized_newtonian_kappa            = 1.1;
