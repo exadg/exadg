@@ -15,7 +15,7 @@
         "RefineTimeMax": "2"
     },
     "Application": {
-         "IncludeConvectiveTerm": "false",
+         "IncludeConvectiveTerm": "true",
          "PureDirichletProblem": "true",
          "StartTime": "0.0",
          "EndTime": "0.0001",
@@ -28,7 +28,7 @@
          "TemporalDiscretization" : "BDFCoupledSolution",
          "TreatmentOfConvectiveTermImplicit" : "false",
          "TreatmentOfVariableViscosityImplicit" : "true",
-         "GeneralizedNewtonianViscosityMargin": "49e-6",
+         "GeneralizedNewtonianViscosityMargin": "4900e-6",
          "GeneralizedNewtonianKappa": "1.0",
          "GeneralizedNewtonianLambda": "1.0",
          "GeneralizedNewtonianA": "2.0",

@@ -773,7 +773,7 @@ private:
   bool                   use_generalized_newtonian_model              = true;
   bool                   formulation_viscous_term_laplace_formulation = true;
   TemporalDiscretization temporal_discretization               = TemporalDiscretization::Undefined;
-  std::string            temporal_discretization_string        = "";
+  std::string            temporal_discretization_string = "BDFCoupledSolution";
   bool                   treatment_of_convective_term_implicit = false;
   bool                   treatment_of_variable_viscosity_implicit = false;
 
