@@ -304,10 +304,8 @@ TurbulenceModel<dim, Number>::add_turbulent_viscosity(scalar &       viscosity,
       sigma_model(filter_width, velocity_gradient, model_constant, viscosity);
       break;
     default:
-      AssertThrow(
-        false,
-        dealii::ExcMessage(
-          "This TurbulenceEddyViscosityModel is not implemented."));
+      AssertThrow(false,
+                  dealii::ExcMessage("This TurbulenceEddyViscosityModel is not implemented."));
   }
 }
 

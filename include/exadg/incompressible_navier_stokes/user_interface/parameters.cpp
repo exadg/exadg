@@ -854,9 +854,7 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
   print_parameter(pcout, "Treatment of convective term", treatment_of_convective_term);
 
   if(turbulence_model_data.is_active || generalized_newtonian_model_data.is_active)
-    print_parameter(pcout,
-                    "Treatment of nonlinear viscosity",
-                    treatment_of_variable_viscosity);
+    print_parameter(pcout, "Treatment of nonlinear viscosity", treatment_of_variable_viscosity);
 
   print_parameter(pcout, "Calculation of time step size", calculation_of_time_step_size);
 
@@ -1006,9 +1004,7 @@ Parameters::print_parameters_turbulence(dealii::ConditionalOStream const & pcout
 
   if(turbulence_model_data.is_active)
   {
-    print_parameter(pcout,
-                    "Turbulence model",
-                    turbulence_model_data.turbulence_model);
+    print_parameter(pcout, "Turbulence model", turbulence_model_data.turbulence_model);
     print_parameter(pcout, "Turbulence model constant", turbulence_model_data.constant);
   }
 }
