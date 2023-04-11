@@ -307,7 +307,7 @@ TurbulenceModel<dim, Number>::add_turbulent_viscosity(scalar &       viscosity,
       AssertThrow(
         false,
         dealii::ExcMessage(
-          "This TurbulenceEddyViscosityModel is not implemented in viscosity_model.cpp ."));
+          "This TurbulenceEddyViscosityModel is not implemented."));
   }
 }
 
