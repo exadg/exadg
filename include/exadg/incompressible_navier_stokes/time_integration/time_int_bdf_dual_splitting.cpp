@@ -60,14 +60,9 @@ TimeIntBDFDualSplitting<dim, Number>::update_time_integrator_constants()
   Base::update_time_integrator_constants();
 
   // update time integrator constants for extrapolation scheme of pressure Neumann bc
-  if(this->adaptive_time_stepping == false)
-  {
-    extra_pressure_nbc.update(this->get_time_step_number());
-  }
-  else // adaptive time stepping
-  {
-    extra_pressure_nbc.update(this->get_time_step_number(), this->get_time_step_vector());
-  }
+  extra_pressure_nbc.update(this->get_time_step_number(),
+                            this->adaptive_time_stepping,
+                            this->get_time_step_vector());
 
   // use this function to check the correctness of the time integrator constants
   //    std::cout << "Coefficients extrapolation scheme pressure NBC:" << std::endl;

@@ -38,14 +38,16 @@ void
 MultigridPreconditionerProjection<dim, Number>::initialize(
   MultigridData const &                                                  mg_data,
   MultigridVariant const &                                               multigrid_variant,
-  dealii::Triangulation<dim> const *                                     tria,
+  dealii::Triangulation<dim> const *                                     triangulation,
+  PeriodicFacePairs const &                                              periodic_face_pairs,
   std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations,
+  std::vector<PeriodicFacePairs> const &                                 coarse_periodic_face_pairs,
   dealii::FiniteElement<dim> const &                                     fe,
   std::shared_ptr<dealii::Mapping<dim> const>                            mapping,
   PDEOperator const &                                                    pde_operator,
   bool const                                                             mesh_is_moving,
-  Map const &                                                            dirichlet_bc,
-  PeriodicFacePairs const &                                              periodic_face_pairs)
+  Map_DBC const &                                                        dirichlet_bc,
+  Map_DBC_ComponentMask const & dirichlet_bc_component_mask)
 {
   this->pde_operator = &pde_operator;
 
@@ -55,13 +57,15 @@ MultigridPreconditionerProjection<dim, Number>::initialize(
 
   Base::initialize(mg_data,
                    multigrid_variant,
-                   tria,
+                   triangulation,
+                   periodic_face_pairs,
                    coarse_triangulations,
+                   coarse_periodic_face_pairs,
                    fe,
                    mapping,
                    false /*operator_is_singular*/,
                    dirichlet_bc,
-                   periodic_face_pairs);
+                   dirichlet_bc_component_mask);
 }
 
 template<int dim, typename Number>
@@ -103,8 +107,7 @@ MultigridPreconditionerProjection<dim, Number>::fill_matrix_free_data(
 
   if(data.use_cell_based_loops && this->level_info[level].is_dg())
   {
-    auto tria = dynamic_cast<dealii::parallel::distributed::Triangulation<dim> const *>(
-      &this->dof_handlers[level]->get_triangulation());
+    auto tria = &this->dof_handlers[level]->get_triangulation();
     Categorization::do_cell_based_loops(*tria, matrix_free_data.data, h_level);
   }
 

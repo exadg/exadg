@@ -793,19 +793,17 @@ Parameters::print_parameters_mathematical_model(dealii::ConditionalOStream const
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
-  print_parameter(pcout, "Problem type", enum_to_string(problem_type));
-  print_parameter(pcout, "Equation type", enum_to_string(equation_type));
+  print_parameter(pcout, "Problem type", problem_type);
+  print_parameter(pcout, "Equation type", equation_type);
 
   if(this->viscous_problem())
   {
-    print_parameter(pcout, "Formulation of viscous term", enum_to_string(formulation_viscous_term));
+    print_parameter(pcout, "Formulation of viscous term", formulation_viscous_term);
   }
 
   if(this->convective_problem())
   {
-    print_parameter(pcout,
-                    "Formulation of convective term",
-                    enum_to_string(formulation_convective_term));
+    print_parameter(pcout, "Formulation of convective term", formulation_convective_term);
     print_parameter(pcout, "Outflow BC for convective term", use_outflow_bc_convective_term);
   }
 
@@ -816,7 +814,7 @@ Parameters::print_parameters_mathematical_model(dealii::ConditionalOStream const
   print_parameter(pcout, "Use ALE formulation", ale_formulation);
   if(ale_formulation)
   {
-    print_parameter(pcout, "Mesh movement type", enum_to_string(mesh_movement_type));
+    print_parameter(pcout, "Mesh movement type", mesh_movement_type);
     print_parameter(pcout, "NBC with variable normal vector", neumann_with_variable_normal_vector);
   }
 }
@@ -852,19 +850,15 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
 {
   pcout << std::endl << "Temporal discretization:" << std::endl;
 
-  print_parameter(pcout, "Temporal discretization method", enum_to_string(temporal_discretization));
-  print_parameter(pcout,
-                  "Treatment of convective term",
-                  enum_to_string(treatment_of_convective_term));
+  print_parameter(pcout, "Temporal discretization method", temporal_discretization);
+  print_parameter(pcout, "Treatment of convective term", treatment_of_convective_term);
 
   if(turbulence_model_data.is_active || generalized_newtonian_model_data.is_active)
     print_parameter(pcout,
                     "Treatment of nonlinear viscosity",
-                    enum_to_string(treatment_of_variable_viscosity));
+                    treatment_of_variable_viscosity);
 
-  print_parameter(pcout,
-                  "Calculation of time step size",
-                  enum_to_string(calculation_of_time_step_size));
+  print_parameter(pcout, "Calculation of time step size", calculation_of_time_step_size);
 
   print_parameter(pcout, "Adaptive time stepping", adaptive_time_stepping);
 
@@ -876,9 +870,7 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
 
     print_parameter(pcout, "Maximum allowable time step size", time_step_size_max);
 
-    print_parameter(pcout,
-                    "Type of CFL condition",
-                    enum_to_string(adaptive_time_stepping_cfl_type));
+    print_parameter(pcout, "Type of CFL condition", adaptive_time_stepping_cfl_type);
   }
 
 
@@ -895,7 +887,7 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
   {
     print_parameter(pcout,
                     "Convergence criterion steady problems",
-                    enum_to_string(convergence_criterion_steady_problem));
+                    convergence_criterion_steady_problem);
 
     print_parameter(pcout, "Absolute tolerance", abs_tol_steady);
     print_parameter(pcout, "Relative tolerance", rel_tol_steady);
@@ -916,7 +908,7 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
 
   grid.print(pcout);
 
-  print_parameter(pcout, "Element type", enum_to_string(spatial_discretization));
+  print_parameter(pcout, "Element type", spatial_discretization);
 
   if(spatial_discretization == SpatialDiscretization::L2)
   {
@@ -932,26 +924,24 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
     AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
-  print_parameter(pcout, "Polynomial degree pressure", enum_to_string(degree_p));
+  print_parameter(pcout, "Polynomial degree pressure", degree_p);
 
   if(this->convective_problem())
   {
     print_parameter(pcout, "Convective term - Upwind factor", upwind_factor);
     print_parameter(pcout,
                     "Convective term - Type of Dirichlet BC's",
-                    enum_to_string(type_dirichlet_bc_convective));
+                    type_dirichlet_bc_convective);
   }
 
   if(this->viscous_problem())
   {
-    print_parameter(pcout, "Viscous term - IP formulation", enum_to_string(IP_formulation_viscous));
+    print_parameter(pcout, "Viscous term - IP formulation", IP_formulation_viscous);
     print_parameter(pcout, "Viscous term - IP factor", IP_factor_viscous);
 
     if(formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
     {
-      print_parameter(pcout,
-                      "Penalty term formulation viscous term",
-                      enum_to_string(penalty_term_div_formulation));
+      print_parameter(pcout, "Penalty term formulation viscous term", penalty_term_div_formulation);
     }
   }
 
@@ -959,7 +949,7 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
   print_parameter(pcout, "Grad(p) - integration by parts", gradp_integrated_by_parts);
   if(gradp_integrated_by_parts)
   {
-    print_parameter(pcout, "Grad(p) - formulation", enum_to_string(gradp_formulation));
+    print_parameter(pcout, "Grad(p) - formulation", gradp_formulation);
     print_parameter(pcout, "Grad(p) - use boundary data", gradp_use_boundary_data);
   }
 
@@ -967,13 +957,11 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
   print_parameter(pcout, "Div(u) . integration by parts", divu_integrated_by_parts);
   if(divu_integrated_by_parts)
   {
-    print_parameter(pcout, "Div(u) - formulation", enum_to_string(divu_formulation));
+    print_parameter(pcout, "Div(u) - formulation", divu_formulation);
     print_parameter(pcout, "Div(u) - use boundary data", divu_use_boundary_data);
   }
 
-  print_parameter(pcout,
-                  "Adjust pressure level (if undefined)",
-                  enum_to_string(adjust_pressure_level));
+  print_parameter(pcout, "Adjust pressure level (if undefined)", adjust_pressure_level);
 
   print_parameter(pcout, "Use divergence penalty term", use_divergence_penalty);
 
@@ -1000,14 +988,12 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
     print_parameter(pcout, "Use boundary data", continuity_penalty_use_boundary_data);
     print_parameter(pcout, "Penalty factor continuity", continuity_penalty_factor);
 
-    print_parameter(pcout,
-                    "Continuity penalty term components",
-                    enum_to_string(continuity_penalty_components));
+    print_parameter(pcout, "Continuity penalty term components", continuity_penalty_components);
   }
 
   if(use_divergence_penalty == true || use_continuity_penalty == true)
   {
-    print_parameter(pcout, "Type of penalty parameter", enum_to_string(type_penalty_parameter));
+    print_parameter(pcout, "Type of penalty parameter", type_penalty_parameter);
   }
 }
 
@@ -1022,7 +1008,7 @@ Parameters::print_parameters_turbulence(dealii::ConditionalOStream const & pcout
   {
     print_parameter(pcout,
                     "Turbulence model",
-                    enum_to_string(turbulence_model_data.turbulence_model));
+                    turbulence_model_data.turbulence_model);
     print_parameter(pcout, "Turbulence model constant", turbulence_model_data.constant);
   }
 }
@@ -1040,7 +1026,7 @@ Parameters::print_parameters_generalized_newtonian(dealii::ConditionalOStream co
   {
     print_parameter(pcout,
                     "Generalized Newtonian model",
-                    enum_to_string(generalized_newtonian_model_data.generalized_newtonian_model));
+                    generalized_newtonian_model_data.generalized_newtonian_model);
     print_parameter(pcout, "viscosity margin", generalized_newtonian_model_data.viscosity_margin);
     print_parameter(pcout, "parameter kappa", generalized_newtonian_model_data.kappa);
     print_parameter(pcout, "parameter lambda", generalized_newtonian_model_data.lambda);
@@ -1065,7 +1051,7 @@ Parameters::print_parameters_numerical_parameters(dealii::ConditionalOStream con
     solver_data_block_diagonal.print(pcout);
   }
 
-  print_parameter(pcout, "Quadrature rule linearization", enum_to_string(quad_rule_linearization));
+  print_parameter(pcout, "Quadrature rule linearization", quad_rule_linearization);
 }
 
 void
@@ -1076,11 +1062,11 @@ Parameters::print_parameters_pressure_poisson(dealii::ConditionalOStream const &
 
   print_parameter(pcout, "interior penalty factor", IP_factor_pressure);
 
-  print_parameter(pcout, "Solver", enum_to_string(solver_pressure_poisson));
+  print_parameter(pcout, "Solver", solver_pressure_poisson);
 
   solver_data_pressure_poisson.print(pcout);
 
-  print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner_pressure_poisson));
+  print_parameter(pcout, "Preconditioner", preconditioner_pressure_poisson);
 
   print_parameter(pcout,
                   "Update preconditioner pressure step",
@@ -1104,15 +1090,13 @@ Parameters::print_parameters_projection_step(dealii::ConditionalOStream const & 
 {
   if(use_divergence_penalty == true)
   {
-    print_parameter(pcout, "Solver projection step", enum_to_string(solver_projection));
+    print_parameter(pcout, "Solver projection step", solver_projection);
 
     solver_data_projection.print(pcout);
 
     if(use_divergence_penalty == true && use_continuity_penalty == true)
     {
-      print_parameter(pcout,
-                      "Preconditioner projection step",
-                      enum_to_string(preconditioner_projection));
+      print_parameter(pcout, "Preconditioner projection step", preconditioner_projection);
 
       print_parameter(pcout,
                       "Update preconditioner projection step",
@@ -1130,7 +1114,7 @@ Parameters::print_parameters_projection_step(dealii::ConditionalOStream const & 
       {
         print_parameter(pcout,
                         "Preconditioner block diagonal",
-                        enum_to_string(preconditioner_block_diagonal_projection));
+                        preconditioner_block_diagonal_projection);
 
         solver_data_block_diagonal_projection.print(pcout);
       }
@@ -1153,9 +1137,7 @@ Parameters::print_parameters_dual_splitting(dealii::ConditionalOStream const & p
 
   if(this->convective_problem())
   {
-    print_parameter(pcout,
-                    "Formulation convective term in BC",
-                    enum_to_string(formulation_convective_term_bc));
+    print_parameter(pcout, "Formulation convective term in BC", formulation_convective_term_bc);
   }
 
   // projection method
@@ -1170,11 +1152,11 @@ Parameters::print_parameters_dual_splitting(dealii::ConditionalOStream const & p
   {
     pcout << std::endl << "  Viscous step:" << std::endl;
 
-    print_parameter(pcout, "Solver viscous step", enum_to_string(solver_viscous));
+    print_parameter(pcout, "Solver viscous step", solver_viscous);
 
     solver_data_viscous.print(pcout);
 
-    print_parameter(pcout, "Preconditioner viscous step", enum_to_string(preconditioner_viscous));
+    print_parameter(pcout, "Preconditioner viscous step", preconditioner_viscous);
 
     print_parameter(pcout, "Update preconditioner viscous", update_preconditioner_viscous);
 
@@ -1219,11 +1201,11 @@ Parameters::print_parameters_pressure_correction(dealii::ConditionalOStream cons
   // Solver linear(ized) problem
   pcout << "  Linear solver:" << std::endl;
 
-  print_parameter(pcout, "Solver", enum_to_string(solver_momentum));
+  print_parameter(pcout, "Solver", solver_momentum);
 
   solver_data_momentum.print(pcout);
 
-  print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner_momentum));
+  print_parameter(pcout, "Preconditioner", preconditioner_momentum);
 
   print_parameter(pcout, "Update of preconditioner", update_preconditioner_momentum);
 
@@ -1245,9 +1227,7 @@ Parameters::print_parameters_pressure_correction(dealii::ConditionalOStream cons
 
   if(preconditioner_momentum == MomentumPreconditioner::Multigrid)
   {
-    print_parameter(pcout,
-                    "Multigrid operator type",
-                    enum_to_string(multigrid_operator_type_momentum));
+    print_parameter(pcout, "Multigrid operator type", multigrid_operator_type_momentum);
 
     multigrid_data_momentum.print(pcout);
   }
@@ -1288,11 +1268,11 @@ Parameters::print_parameters_coupled_solver(dealii::ConditionalOStream const & p
   // Solver linearized problem
   pcout << "Linear solver:" << std::endl;
 
-  print_parameter(pcout, "Solver", enum_to_string(solver_coupled));
+  print_parameter(pcout, "Solver", solver_coupled);
 
   solver_data_coupled.print(pcout);
 
-  print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner_coupled));
+  print_parameter(pcout, "Preconditioner", preconditioner_coupled);
 
   print_parameter(pcout, "Update preconditioner", update_preconditioner_coupled);
 
@@ -1314,13 +1294,11 @@ Parameters::print_parameters_coupled_solver(dealii::ConditionalOStream const & p
 
   pcout << std::endl << "  Velocity/momentum block:" << std::endl;
 
-  print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner_velocity_block));
+  print_parameter(pcout, "Preconditioner", preconditioner_velocity_block);
 
   if(preconditioner_velocity_block == MomentumPreconditioner::Multigrid)
   {
-    print_parameter(pcout,
-                    "Multigrid operator type",
-                    enum_to_string(multigrid_operator_type_velocity_block));
+    print_parameter(pcout, "Multigrid operator type", multigrid_operator_type_velocity_block);
 
     multigrid_data_velocity_block.print(pcout);
 
@@ -1334,7 +1312,7 @@ Parameters::print_parameters_coupled_solver(dealii::ConditionalOStream const & p
 
   pcout << std::endl << "  Pressure/Schur-complement block:" << std::endl;
 
-  print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner_pressure_block));
+  print_parameter(pcout, "Preconditioner", preconditioner_pressure_block);
 
   if(preconditioner_pressure_block == SchurComplementPreconditioner::LaplaceOperator ||
      preconditioner_pressure_block == SchurComplementPreconditioner::CahouetChabard ||

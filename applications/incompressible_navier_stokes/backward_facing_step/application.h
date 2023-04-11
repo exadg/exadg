@@ -341,7 +341,7 @@ private:
   {
     Geometry::create_grid(this->grid->triangulation,
                           this->param.grid.n_refine_global,
-                          this->grid->periodic_faces);
+                          this->grid->periodic_face_pairs);
   }
 
   void
@@ -350,7 +350,7 @@ private:
     Geometry::create_grid_precursor(this->grid_pre->triangulation,
                                     this->param_pre.grid.n_refine_global +
                                       additional_refinements_precursor,
-                                    this->grid_pre->periodic_faces);
+                                    this->grid_pre->periodic_face_pairs);
   }
 
   void

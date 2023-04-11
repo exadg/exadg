@@ -35,16 +35,6 @@ enum class MeshType
   Curvilinear
 };
 
-void
-string_to_enum(MeshType & enum_type, std::string const & string_type)
-{
-  // clang-format off
-  if     (string_type == "Cartesian")   enum_type = MeshType::Cartesian;
-  else if(string_type == "Curvilinear") enum_type = MeshType::Curvilinear;
-  else AssertThrow(false, dealii::ExcMessage("Not implemented."));
-  // clang-format on
-}
-
 template<int dim>
 class AnalyticalSolutionVelocity : public dealii::Function<dim>
 {
@@ -124,7 +114,7 @@ private:
   {
     ApplicationBase<dim, Number>::parse_parameters();
 
-    string_to_enum(mesh_type, mesh_type_string);
+    Utilities::string_to_enum(mesh_type, mesh_type_string);
   }
 
   void
@@ -269,10 +259,10 @@ private:
     this->grid->triangulation->begin()->face(3)->set_all_boundary_ids(3);
 
     dealii::GridTools::collect_periodic_faces(
-      *this->grid->triangulation, 0, 1, 0, this->grid->periodic_faces);
+      *this->grid->triangulation, 0, 1, 0, this->grid->periodic_face_pairs);
     dealii::GridTools::collect_periodic_faces(
-      *this->grid->triangulation, 2, 3, 1, this->grid->periodic_faces);
-    this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
+      *this->grid->triangulation, 2, 3, 1, this->grid->periodic_face_pairs);
+    this->grid->triangulation->add_periodicity(this->grid->periodic_face_pairs);
 
 
     bool curvilinear_mesh = false;

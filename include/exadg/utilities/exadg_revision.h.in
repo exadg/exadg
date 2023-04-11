@@ -19,39 +19,22 @@
  *  ______________________________________________________________________
  */
 
-// deal.II
-#include <deal.II/base/exceptions.h>
+#ifndef EXADG_REVISION_H_
+#define EXADG_REVISION_H_
 
-// ExaDG
-#include <exadg/solvers_and_preconditioners/solvers/enum_types.h>
+/**
+ * Name of the local git branch of the source directory.
+ */
+#define EXADG_GIT_BRANCH "@EXADG_GIT_BRANCH@"
 
-namespace ExaDG
-{
-namespace Elementwise
-{
-std::string
-enum_to_string(Solver const enum_type)
-{
-  std::string string_type;
+/**
+ * Full sha1 revision of the current git HEAD.
+ */
+#define EXADG_GIT_REVISION "@EXADG_GIT_REVISION@"
 
-  switch(enum_type)
-  {
-    case Solver::Undefined:
-      string_type = "Undefined";
-      break;
-    case Solver::CG:
-      string_type = "CG";
-      break;
-    case Solver::GMRES:
-      string_type = "GMRES";
-      break;
-    default:
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
-      break;
-  }
+/**
+ * Short sha1 revision of the current git HEAD.
+ */
+#define EXADG_GIT_SHORTREV "@EXADG_GIT_SHORTREV@"
 
-  return string_type;
-}
-
-} // namespace Elementwise
-} // namespace ExaDG
+#endif /*EXADG_REVISION_H_*/

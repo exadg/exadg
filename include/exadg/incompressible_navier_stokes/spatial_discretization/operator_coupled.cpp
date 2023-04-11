@@ -472,9 +472,6 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
   std::shared_ptr<Multigrid> mg_preconditioner =
     std::dynamic_pointer_cast<Multigrid>(preconditioner_momentum);
 
-  typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
-    pair;
-
   std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
     dirichlet_boundary_conditions = this->momentum_operator.get_data().bc->dirichlet_bc;
 
@@ -484,20 +481,29 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
   // about inhomogeneous boundary data, we simply fill the map with
   // dealii::Functions::ZeroFunction for DirichletCached BCs.
   for(auto iter : this->momentum_operator.get_data().bc->dirichlet_cached_bc)
+  {
+    typedef std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> pair;
+
     dirichlet_boundary_conditions.insert(
       pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+  }
+
+  typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
+  Map_DBC_ComponentMask                                               dirichlet_bc_component_mask;
 
   mg_preconditioner->initialize(this->param.multigrid_data_velocity_block,
                                 this->param.grid.multigrid,
                                 &this->get_dof_handler_u().get_triangulation(),
+                                this->grid->periodic_face_pairs,
                                 this->grid->coarse_triangulations,
+                                this->grid->coarse_periodic_face_pairs,
                                 this->get_dof_handler_u().get_fe(),
                                 this->get_mapping(),
                                 this->momentum_operator,
                                 this->param.multigrid_operator_type_velocity_block,
                                 this->param.ale_formulation,
                                 dirichlet_boundary_conditions,
-                                this->grid->periodic_faces);
+                                dirichlet_bc_component_mask);
 }
 
 template<int dim, typename Number>
@@ -614,17 +620,25 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complement()
   std::shared_ptr<MultigridPoisson> mg_preconditioner =
     std::dynamic_pointer_cast<MultigridPoisson>(multigrid_preconditioner_schur_complement);
 
+  std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+    dirichlet_boundary_conditions = laplace_operator_data.bc->dirichlet_bc;
+
+  typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
+  Map_DBC_ComponentMask                                               dirichlet_bc_component_mask;
+
   auto & dof_handler = this->get_dof_handler_p();
   mg_preconditioner->initialize(mg_data,
                                 this->param.grid.multigrid,
                                 &dof_handler.get_triangulation(),
+                                this->grid->periodic_face_pairs,
                                 this->grid->coarse_triangulations,
+                                this->grid->coarse_periodic_face_pairs,
                                 dof_handler.get_fe(),
                                 this->get_mapping(),
                                 laplace_operator_data,
                                 this->param.ale_formulation,
-                                laplace_operator_data.bc->dirichlet_bc,
-                                this->grid->periodic_faces);
+                                dirichlet_boundary_conditions,
+                                dirichlet_bc_component_mask);
 }
 
 template<int dim, typename Number>

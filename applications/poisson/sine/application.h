@@ -28,8 +28,9 @@ namespace ExaDG
 {
 namespace Poisson
 {
-double const FREQUENCY            = 3.0 * dealii::numbers::PI;
-bool const   USE_NEUMANN_BOUNDARY = true;
+double const FREQUENCY             = 3.0 * dealii::numbers::PI;
+bool const   USE_NEUMANN_BOUNDARY  = true;
+bool const   USE_PERIODIC_BOUNDARY = false;
 
 template<int dim>
 class Solution : public dealii::Function<dim>
@@ -103,16 +104,6 @@ enum class MeshType
   Curvilinear
 };
 
-void
-string_to_enum(MeshType & enum_type, std::string const & string_type)
-{
-  // clang-format off
-  if     (string_type == "Cartesian")   enum_type = MeshType::Cartesian;
-  else if(string_type == "Curvilinear") enum_type = MeshType::Curvilinear;
-  else AssertThrow(false, dealii::ExcMessage("Not implemented."));
-  // clang-format on
-}
-
 template<int dim, int n_components, typename Number>
 class Application : public ApplicationBase<dim, n_components, Number>
 {
@@ -140,7 +131,7 @@ private:
   {
     ApplicationBase<dim, n_components, Number>::parse_parameters();
 
-    string_to_enum(mesh_type, mesh_type_string);
+    Utilities::string_to_enum(mesh_type, mesh_type_string);
   }
 
   void
@@ -192,9 +183,11 @@ private:
   create_grid() final
   {
     auto const lambda_create_triangulation =
-      [&](dealii::Triangulation<dim, dim> & tria,
-          unsigned int const                global_refinements,
-          std::vector<unsigned int> const & vector_local_refinements) {
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
         double const length = 1.0;
         double const left = -length, right = length;
         // choose a coarse grid with at least 2^dim elements to obtain a non-trivial coarse grid
@@ -237,6 +230,33 @@ private:
               }
             }
           }
+        }
+
+        if(USE_PERIODIC_BOUNDARY)
+        {
+          AssertThrow(USE_NEUMANN_BOUNDARY == false,
+                      dealii::ExcMessage("Neumann and periodic boundaries may not be combined."));
+
+          for(auto cell : tria)
+          {
+            for(auto const & f : cell.face_indices())
+            {
+              if(std::fabs(cell.face(f)->center()(0) - left) < 1e-12)
+              {
+                cell.face(f)->set_boundary_id(1);
+              }
+
+              if(std::fabs(cell.face(f)->center()(0) - right) < 1e-12)
+              {
+                cell.face(f)->set_boundary_id(2);
+              }
+            }
+          }
+
+          dealii::GridTools::collect_periodic_faces(
+            tria, 1, 2, 0 /*x-direction*/, periodic_face_pairs);
+
+          tria.add_periodicity(periodic_face_pairs);
         }
 
         if(vector_local_refinements.size() > 0)
@@ -293,7 +313,8 @@ private:
       pair;
 
     this->boundary_descriptor->dirichlet_bc.insert(pair(0, new Solution<dim>()));
-    this->boundary_descriptor->neumann_bc.insert(pair(1, new NeumannBoundary<dim>()));
+    if(USE_NEUMANN_BOUNDARY)
+      this->boundary_descriptor->neumann_bc.insert(pair(1, new NeumannBoundary<dim>()));
   }
 
   void

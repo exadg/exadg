@@ -37,17 +37,6 @@ enum class RunType
   IncreasingProblemSize // run at fixed polynomial degree
 };
 
-void
-string_to_enum(RunType & enum_type, std::string const string_type)
-{
-  // clang-format off
-  if     (string_type == "RefineHAndP")           enum_type = RunType::RefineHAndP;
-  else if(string_type == "FixedProblemSize")      enum_type = RunType::FixedProblemSize;
-  else if(string_type == "IncreasingProblemSize") enum_type = RunType::IncreasingProblemSize;
-  else AssertThrow(false, dealii::ExcMessage("Not implemented."));
-  // clang-format on
-}
-
 /*
  * Determines mesh refinement level l and number of subdivisions in 1d of hyper_cube mesh for a
  * given number of minimum and maximum number of unknowns and a given RunType.
@@ -177,7 +166,7 @@ struct HypercubeResolutionParameters
     add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
 
-    string_to_enum(run_type, run_type_string);
+    Utilities::string_to_enum(run_type, run_type_string);
 
     verify_parameters();
   }

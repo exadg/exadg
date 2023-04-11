@@ -45,9 +45,6 @@ enum class EquationType
   NavierStokes
 };
 
-std::string
-enum_to_string(EquationType const enum_type);
-
 /*
  *  For energy boundary conditions, one can prescribe the temperature or the energy
  */
@@ -92,9 +89,6 @@ enum class TemporalDiscretization
   SSPRK // specify order and stages of time integration scheme
 };
 
-std::string
-enum_to_string(TemporalDiscretization const enum_type);
-
 /*
  * calculation of time step size
  */
@@ -106,9 +100,6 @@ enum class TimeStepCalculation
   Diffusion,
   CFLAndDiffusion
 };
-
-std::string
-enum_to_string(TimeStepCalculation const enum_type);
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -125,9 +116,6 @@ enum class QuadratureRule
   Overintegration32k,
   Overintegration2k
 };
-
-std::string
-enum_to_string(QuadratureRule const enum_type);
 
 
 /**************************************************************************************/

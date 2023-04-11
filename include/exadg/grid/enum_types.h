@@ -42,9 +42,6 @@ enum class TriangulationType
   FullyDistributed
 };
 
-std::string
-enum_to_string(TriangulationType const enum_type);
-
 /*
  * deal.II provides different multigrid variants, which is to be specified by this parameter.
  */
@@ -53,9 +50,6 @@ enum class MultigridVariant
   LocalSmoothing,
   GlobalCoarsening
 };
-
-std::string
-enum_to_string(MultigridVariant const enum_type);
 
 /*
  * Element type
@@ -66,9 +60,6 @@ enum class ElementType
   Simplex
 };
 
-std::string
-enum_to_string(ElementType const enum_type);
-
 /*
  * Partitioning type (relevant for fully-distributed triangulation)
  */
@@ -77,9 +68,6 @@ enum class PartitioningType
   Metis,
   z_order
 };
-
-std::string
-enum_to_string(PartitioningType const enum_type);
 
 /*
  *  Mapping type (polynomial degree)
@@ -91,9 +79,6 @@ enum class MappingType
   Cubic,
   Isoparametric
 };
-
-std::string
-enum_to_string(MappingType const enum_type);
 
 } // namespace ExaDG
 

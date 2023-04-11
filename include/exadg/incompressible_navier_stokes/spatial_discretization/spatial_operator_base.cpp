@@ -283,8 +283,7 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
     dealii::DoFTools::extract_locally_relevant_dofs(dof_handler_u, relevant_dofs);
     constraint_u.reinit(relevant_dofs);
 
-    auto const & periodic_face_pair = grid->periodic_faces;
-    for(auto const & face : periodic_face_pair)
+    for(auto const & face : grid->periodic_face_pairs)
       dealii::DoFTools::make_periodicity_constraints(
         dof_handler_u,
         face.cell[0]->face(face.face_idx[0])->boundary_id(),
@@ -678,14 +677,15 @@ SpatialOperatorBase<dim, Number>::initialize_calculators_for_derived_quantities(
                                    get_dof_index_velocity(),
                                    get_dof_index_velocity_scalar(),
                                    get_quad_index_velocity_linear());
-  velocity_magnitude_calculator.initialize(*matrix_free,
-                                           get_dof_index_velocity(),
-                                           get_dof_index_velocity_scalar(),
-                                           get_quad_index_velocity_linear());
+  magnitude_calculator.initialize(*matrix_free,
+                                  get_dof_index_velocity(),
+                                  get_dof_index_velocity_scalar(),
+                                  get_quad_index_velocity_linear());
   q_criterion_calculator.initialize(*matrix_free,
                                     get_dof_index_velocity(),
                                     get_dof_index_velocity_scalar(),
-                                    get_quad_index_velocity_linear());
+                                    get_quad_index_velocity_linear(),
+                                    false /*compressible_flow*/);
 }
 
 template<int dim, typename Number>
@@ -1202,7 +1202,7 @@ void
 SpatialOperatorBase<dim, Number>::compute_velocity_magnitude(VectorType &       dst,
                                                              VectorType const & src) const
 {
-  velocity_magnitude_calculator.compute(dst, src);
+  magnitude_calculator.compute(dst, src);
 
   inverse_mass_velocity_scalar.apply(dst, dst);
 }
@@ -1212,7 +1212,7 @@ void
 SpatialOperatorBase<dim, Number>::compute_vorticity_magnitude(VectorType &       dst,
                                                               VectorType const & src) const
 {
-  velocity_magnitude_calculator.compute(dst, src);
+  magnitude_calculator.compute(dst, src);
 
   inverse_mass_velocity_scalar.apply(dst, dst);
 }
@@ -1287,16 +1287,21 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   std::shared_ptr<MultigridPoisson> mg_preconditioner =
     std::dynamic_pointer_cast<MultigridPoisson>(preconditioner);
 
+  typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
+  Map_DBC_ComponentMask                                               dirichlet_bc_component_mask;
+
   mg_preconditioner->initialize(mg_data,
                                 param.grid.multigrid,
                                 &dof_handler_u_scalar.get_triangulation(),
+                                grid->periodic_face_pairs,
                                 grid->coarse_triangulations,
+                                grid->coarse_periodic_face_pairs,
                                 dof_handler_u_scalar.get_fe(),
                                 get_dynamic_mapping<dim, Number>(grid, grid_motion),
                                 laplace_operator.get_data(),
                                 param.ale_formulation,
                                 laplace_operator.get_data().bc->dirichlet_bc,
-                                grid->periodic_faces);
+                                dirichlet_bc_component_mask);
 
   // setup solver
   Krylov::SolverDataCG solver_data;
@@ -1651,17 +1656,22 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
         dirichlet_boundary_conditions.insert(
           pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
 
+      typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
+      Map_DBC_ComponentMask dirichlet_bc_component_mask;
+
       auto const & dof_handler = this->get_dof_handler_u();
       mg_preconditioner->initialize(this->param.multigrid_data_projection,
                                     this->param.grid.multigrid,
                                     &dof_handler.get_triangulation(),
+                                    grid->periodic_face_pairs,
                                     grid->coarse_triangulations,
+                                    grid->coarse_periodic_face_pairs,
                                     dof_handler.get_fe(),
                                     this->get_mapping(),
                                     *this->projection_operator,
                                     this->param.ale_formulation,
                                     dirichlet_boundary_conditions,
-                                    grid->periodic_faces);
+                                    dirichlet_bc_component_mask);
     }
     else
     {

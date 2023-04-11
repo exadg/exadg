@@ -25,6 +25,7 @@
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
+#include <exadg/grid/grid_utilities.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_amg.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
@@ -126,14 +127,43 @@ Operator<dim, Number>::distribute_dofs()
   // enumerate degrees of freedom
   dof_handler.distribute_dofs(*fe);
 
+  // The AffineConstraints object is used to initialize MatrixFree. Here, we apply homogeneous
+  // boundary conditions as needed by vmult() in iterative solvers for linear(ized) systems of
+  // equations, implemented via dealii::MatrixFree and FEEvaluation::read_dof_values() (or
+  // gather_evaluate()). The actual inhomogeneous boundary data needs to be imposed separately due
+  // to the implementation in deal.II that can not handle multiple AffineConstraints. Hence, we need
+  // to do this explicitly in ExaDG.
+
   // affine constraints
   affine_constraints.clear();
+
+  dealii::IndexSet locally_relevant_dofs;
+  dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+  affine_constraints.reinit(locally_relevant_dofs);
+
+  // hanging nodes (needs to be done before imposing periodicity constraints and boundary
+  // conditions)
+  if(this->grid->triangulation->has_hanging_nodes())
+    dealii::DoFTools::make_hanging_node_constraints(dof_handler, affine_constraints);
+
+  // constraints from periodic boundary conditions
+  if(not(this->grid->periodic_face_pairs.empty()))
+  {
+    auto periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
+      this->grid->periodic_face_pairs, dof_handler);
+
+    dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(periodic_faces_dof,
+                                                                     affine_constraints);
+  }
 
   // standard Dirichlet boundaries
   for(auto it : this->boundary_descriptor->dirichlet_bc)
   {
-    dealii::ComponentMask mask =
-      this->boundary_descriptor->dirichlet_bc_component_mask.find(it.first)->second;
+    dealii::ComponentMask mask = dealii::ComponentMask();
+
+    auto it_mask = this->boundary_descriptor->dirichlet_bc_component_mask.find(it.first);
+    if(it_mask != this->boundary_descriptor->dirichlet_bc_component_mask.end())
+      mask = it_mask->second;
 
     dealii::DoFTools::make_zero_boundary_constraints(this->dof_handler,
                                                      it.first,
@@ -153,9 +183,34 @@ Operator<dim, Number>::distribute_dofs()
 
   affine_constraints.close();
 
-  // no constraints for mass operator
-  constraints_mass.clear();
-  constraints_mass.close();
+  // affine constraints for mass operator
+  if(param.problem_type == ProblemType::Unsteady)
+  {
+    constraints_mass.clear();
+
+    dealii::IndexSet locally_relevant_dofs;
+    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+    constraints_mass.reinit(locally_relevant_dofs);
+
+    // hanging nodes (needs to be done before imposing periodicity constraints and boundary
+    // conditions)
+    if(this->grid->triangulation->has_hanging_nodes())
+      dealii::DoFTools::make_hanging_node_constraints(dof_handler, constraints_mass);
+
+    // constraints from periodic boundary conditions
+    if(not(this->grid->periodic_face_pairs.empty()))
+    {
+      auto periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
+        this->grid->periodic_face_pairs, dof_handler);
+
+      dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(periodic_faces_dof,
+                                                                       constraints_mass);
+    }
+
+    // no constraints from Dirichlet boundary conditions for mass operator
+
+    constraints_mass.close();
+  }
 
   pcout << std::endl
         << "Continuous Galerkin finite element discretization:" << std::endl
@@ -415,11 +470,12 @@ Operator<dim, Number>::initialize_preconditioner()
       std::shared_ptr<Multigrid> mg_preconditioner =
         std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
-      typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
-        pair;
-
       std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
         dirichlet_boundary_conditions = elasticity_operator_nonlinear.get_data().bc->dirichlet_bc;
+
+      typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
+      Map_DBC_ComponentMask dirichlet_bc_component_mask =
+        elasticity_operator_nonlinear.get_data().bc->dirichlet_bc_component_mask;
 
       // We also need to add DirichletCached boundary conditions. From the
       // perspective of multigrid, there is no difference between standard
@@ -427,19 +483,32 @@ Operator<dim, Number>::initialize_preconditioner()
       // about inhomogeneous boundary data, we simply fill the map with
       // dealii::Functions::ZeroFunction for DirichletCached BCs.
       for(auto iter : elasticity_operator_nonlinear.get_data().bc->dirichlet_cached_bc)
+      {
+        typedef
+          typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+            pair;
+
         dirichlet_boundary_conditions.insert(
           pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+
+        typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
+
+        std::vector<bool> default_mask = std::vector<bool>(dim, true);
+        dirichlet_bc_component_mask.insert(pair_mask(iter.first, default_mask));
+      }
 
       mg_preconditioner->initialize(param.multigrid_data,
                                     param.grid.multigrid,
                                     &dof_handler.get_triangulation(),
+                                    grid->periodic_face_pairs,
                                     grid->coarse_triangulations,
+                                    grid->coarse_periodic_face_pairs,
                                     dof_handler.get_fe(),
                                     grid->mapping,
                                     elasticity_operator_nonlinear,
                                     param.large_deformation,
                                     dirichlet_boundary_conditions,
-                                    grid->periodic_faces);
+                                    dirichlet_bc_component_mask);
     }
     else
     {
@@ -449,11 +518,12 @@ Operator<dim, Number>::initialize_preconditioner()
       std::shared_ptr<Multigrid> mg_preconditioner =
         std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
-      typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
-        pair;
-
       std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
         dirichlet_boundary_conditions = elasticity_operator_linear.get_data().bc->dirichlet_bc;
+
+      typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
+      Map_DBC_ComponentMask dirichlet_bc_component_mask =
+        elasticity_operator_linear.get_data().bc->dirichlet_bc_component_mask;
 
       // We also need to add DirichletCached boundary conditions. From the
       // perspective of multigrid, there is no difference between standard
@@ -461,19 +531,32 @@ Operator<dim, Number>::initialize_preconditioner()
       // about inhomogeneous boundary data, we simply fill the map with
       // dealii::Functions::ZeroFunction for DirichletCached BCs.
       for(auto iter : elasticity_operator_linear.get_data().bc->dirichlet_cached_bc)
+      {
+        typedef
+          typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+            pair;
+
         dirichlet_boundary_conditions.insert(
           pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+
+        typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
+
+        std::vector<bool> default_mask = std::vector<bool>(dim, true);
+        dirichlet_bc_component_mask.insert(pair_mask(iter.first, default_mask));
+      }
 
       mg_preconditioner->initialize(param.multigrid_data,
                                     param.grid.multigrid,
                                     &dof_handler.get_triangulation(),
+                                    grid->periodic_face_pairs,
                                     grid->coarse_triangulations,
+                                    grid->coarse_periodic_face_pairs,
                                     dof_handler.get_fe(),
                                     grid->mapping,
                                     elasticity_operator_linear,
                                     param.large_deformation,
                                     dirichlet_boundary_conditions,
-                                    grid->periodic_faces);
+                                    dirichlet_bc_component_mask);
     }
   }
   else if(param.preconditioner == Preconditioner::AMG)
@@ -708,7 +791,8 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
                                                    double const       factor,
                                                    double const       time) const
 {
-  // elasticity operator
+  // elasticity operator: make sure that constrained degrees of freedom have been set correctly
+  // before evaluating the elasticity operator.
   elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
   elasticity_operator_nonlinear.set_time(time);
   elasticity_operator_nonlinear.evaluate_nonlinear(dst, src);
@@ -790,7 +874,8 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   residual_operator.update(rhs, factor, time);
   linearized_operator.update(factor, time);
 
-  // set inhomogeneous Dirichlet values
+  // set inhomogeneous Dirichlet values (this is necessary since we use
+  // FEEvaluation::read_dof_values_plain() to evaluate the operator)
   elasticity_operator_nonlinear.set_constrained_values(sol, time);
 
   // call Newton solver

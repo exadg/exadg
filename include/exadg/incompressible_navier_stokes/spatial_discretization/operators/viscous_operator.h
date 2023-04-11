@@ -316,8 +316,9 @@ public:
     }
   }
 
-  /*
-   *  Calculation of "gradient_flux".
+  /**
+   * Calculates the `gradient flux`, i.e. the numerical flux that is tested with the shape function
+   * gradients.
    */
   inline DEAL_II_ALWAYS_INLINE //
     tensor
@@ -326,7 +327,7 @@ public:
                             vector const & normal,
                             scalar const & viscosity) const
   {
-    tensor value_flux;
+    tensor flux;
 
     vector jump_value  = value_m - value_p;
     tensor jump_tensor = outer_product(jump_value, normal);
@@ -335,11 +336,11 @@ public:
     {
       if(data.IP_formulation == InteriorPenaltyFormulation::NIPG)
       {
-        value_flux = 0.5 * viscosity * jump_tensor;
+        flux = 0.5 * viscosity * jump_tensor;
       }
       else if(data.IP_formulation == InteriorPenaltyFormulation::SIPG)
       {
-        value_flux = -0.5 * viscosity * jump_tensor;
+        flux = -0.5 * viscosity * jump_tensor;
       }
       else
       {
@@ -351,11 +352,11 @@ public:
     {
       if(data.IP_formulation == InteriorPenaltyFormulation::NIPG)
       {
-        value_flux = 0.5 * viscosity * (jump_tensor + transpose(jump_tensor));
+        flux = 0.5 * viscosity * (jump_tensor + transpose(jump_tensor));
       }
       else if(data.IP_formulation == InteriorPenaltyFormulation::SIPG)
       {
-        value_flux = -0.5 * viscosity * (jump_tensor + transpose(jump_tensor));
+        flux = -0.5 * viscosity * (jump_tensor + transpose(jump_tensor));
       }
       else
       {
@@ -369,7 +370,7 @@ public:
                   dealii::ExcMessage("Specified formulation of viscous term is not implemented."));
     }
 
-    return value_flux;
+    return flux;
   }
 
   /*
@@ -410,10 +411,12 @@ public:
     return normal_gradient;
   }
 
-  /*
-   *  Calculation of "value_flux". Strictly speaking, this value is not a numerical flux since
-   *  the flux is multiplied by the normal vector, i.e., "gradient_flux" = numerical_flux * normal,
-   *  where normal denotes the normal vector of element e⁻.
+
+  /**
+   * Calculates the `value flux`, i.e. the flux that is tested with the shape function values.
+   * Strictly speaking, this is not a numerical flux, but the right-hand side of the L2 product
+   * notation of the integral. In this case it is the inner product of the numerical flux and the
+   * the normal vector of element e⁻.
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
@@ -424,7 +427,7 @@ public:
                          vector const & normal,
                          scalar const & viscosity) const
   {
-    vector gradient_flux;
+    vector flux;
 
     vector jump_value              = value_m - value_p;
     vector average_normal_gradient = 0.5 * (normal_gradient_m + normal_gradient_p);
@@ -433,12 +436,12 @@ public:
     {
       if(data.penalty_term_div_formulation == PenaltyTermDivergenceFormulation::Symmetrized)
       {
-        gradient_flux = viscosity * average_normal_gradient -
-                        viscosity * tau * (jump_value + (jump_value * normal) * normal);
+        flux = viscosity * average_normal_gradient -
+               viscosity * tau * (jump_value + (jump_value * normal) * normal);
       }
       else if(data.penalty_term_div_formulation == PenaltyTermDivergenceFormulation::NotSymmetrized)
       {
-        gradient_flux = viscosity * average_normal_gradient - viscosity * tau * jump_value;
+        flux = viscosity * average_normal_gradient - viscosity * tau * jump_value;
       }
       else
       {
@@ -450,7 +453,7 @@ public:
     }
     else if(data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
     {
-      gradient_flux = viscosity * average_normal_gradient - viscosity * tau * jump_value;
+      flux = viscosity * average_normal_gradient - viscosity * tau * jump_value;
     }
     else
     {
@@ -459,7 +462,7 @@ public:
                   dealii::ExcMessage("Specified formulation of viscous term is not implemented."));
     }
 
-    return gradient_flux;
+    return flux;
   }
 
   // clang-format off

@@ -27,6 +27,7 @@
 
 // ExaDG
 #include <exadg/fluid_structure_interaction/precice/coupling_base.h>
+#include <exadg/utilities/enum_utilities.h>
 
 namespace ExaDG
 {
@@ -58,9 +59,6 @@ struct ConfigurationParameters
 
   void
   add_parameters(dealii::ParameterHandler & prm);
-
-  void
-  string_to_enum(WriteDataType & enum_out, std::string const & string_in);
 };
 
 
@@ -71,7 +69,7 @@ ConfigurationParameters::ConfigurationParameters(std::string const & input_file)
   add_parameters(prm);
   prm.parse_input(input_file, "", true, true);
 
-  string_to_enum(write_data_type, write_data_specification);
+  Utilities::string_to_enum(write_data_type, write_data_specification);
 }
 
 
@@ -125,23 +123,6 @@ ConfigurationParameters::add_parameters(dealii::ParameterHandler & prm)
                       dealii::Patterns::Anything());
   }
   prm.leave_subsection();
-}
-
-void
-ConfigurationParameters::string_to_enum(WriteDataType & enum_out, std::string const & string_in)
-{
-  if(string_in == "values_on_dofs")
-    enum_out = WriteDataType::values_on_dofs;
-  else if(string_in == "values_on_other_mesh")
-    enum_out = WriteDataType::values_on_other_mesh;
-  else if(string_in == "gradients_on_other_mesh")
-    enum_out = WriteDataType::gradients_on_other_mesh;
-  else if(string_in == "values_on_q_points")
-    enum_out = WriteDataType::values_on_q_points;
-  else if(string_in == "normal_gradients_on_q_points")
-    enum_out = WriteDataType::normal_gradients_on_q_points;
-  else
-    AssertThrow(false, dealii::ExcMessage("Unknwon write data type."));
 }
 
 } // namespace preCICE

@@ -123,9 +123,6 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
     std::shared_ptr<Multigrid> mg_preconditioner =
       std::dynamic_pointer_cast<Multigrid>(momentum_preconditioner);
 
-    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
-      pair;
-
     std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
       dirichlet_boundary_conditions = this->momentum_operator.get_data().bc->dirichlet_bc;
 
@@ -135,20 +132,30 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
     // about inhomogeneous boundary data, we simply fill the map with
     // dealii::Functions::ZeroFunction for DirichletCached BCs.
     for(auto iter : this->momentum_operator.get_data().bc->dirichlet_cached_bc)
+    {
+      typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+        pair;
+
       dirichlet_boundary_conditions.insert(
         pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+    }
+
+    typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
+    Map_DBC_ComponentMask                                               dirichlet_bc_component_mask;
 
     mg_preconditioner->initialize(this->param.multigrid_data_momentum,
                                   this->param.grid.multigrid,
                                   &this->get_dof_handler_u().get_triangulation(),
+                                  this->grid->periodic_face_pairs,
                                   this->grid->coarse_triangulations,
+                                  this->grid->coarse_periodic_face_pairs,
                                   this->get_dof_handler_u().get_fe(),
                                   this->get_mapping(),
                                   this->momentum_operator,
                                   this->param.multigrid_operator_type_momentum,
                                   this->param.ale_formulation,
                                   dirichlet_boundary_conditions,
-                                  this->grid->periodic_faces);
+                                  dirichlet_bc_component_mask);
   }
   else
   {

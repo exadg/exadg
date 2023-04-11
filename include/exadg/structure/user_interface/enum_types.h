@@ -46,9 +46,6 @@ enum class ProblemType
   Unsteady
 };
 
-std::string
-enum_to_string(ProblemType const enum_type);
-
 enum class Type2D
 {
   Undefined,
@@ -56,17 +53,11 @@ enum class Type2D
   PlaneStrain
 };
 
-std::string
-enum_to_string(Type2D const enum_type);
-
 enum class MaterialType
 {
   Undefined,
   StVenantKirchhoff
 };
-
-std::string
-enum_to_string(MaterialType const enum_type);
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -114,9 +105,6 @@ enum class Solver
   FGMRES
 };
 
-std::string
-enum_to_string(Solver const enum_type);
-
 /*
  *  Preconditioner type for solution of linear system of equations
  */
@@ -127,9 +115,6 @@ enum class Preconditioner
   Multigrid,
   AMG
 };
-
-std::string
-enum_to_string(Preconditioner const enum_type);
 
 /**************************************************************************************/
 /*                                                                                    */

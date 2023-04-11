@@ -137,7 +137,7 @@ Parameters::print_parameters_mathematical_model(dealii::ConditionalOStream const
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
-  print_parameter(pcout, "Problem type", enum_to_string(problem_type));
+  print_parameter(pcout, "Problem type", problem_type);
 
   print_parameter(pcout, "Body force", body_force);
 
@@ -177,7 +177,7 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
     print_parameter(pcout, "End time", end_time);
     print_parameter(pcout, "Max. number of time steps", max_number_of_time_steps);
     print_parameter(pcout, "Temporal refinements", n_refine_time);
-    print_parameter(pcout, "Time integration type", enum_to_string(gen_alpha_type));
+    print_parameter(pcout, "Time integration type", gen_alpha_type);
     print_parameter(pcout, "Spectral radius", spectral_radius);
     solver_info_data.print(pcout);
     if(restarted_simulation)
@@ -209,11 +209,11 @@ Parameters::print_parameters_solver(dealii::ConditionalOStream const & pcout) co
 
   // linear solver
   pcout << std::endl << "Linear solver:" << std::endl;
-  print_parameter(pcout, "Solver", enum_to_string(solver));
+  print_parameter(pcout, "Solver", solver);
   solver_data.print(pcout);
 
   // preconditioner for linear system of equations
-  print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner));
+  print_parameter(pcout, "Preconditioner", preconditioner);
 
   if(preconditioner == Preconditioner::Multigrid)
   {

@@ -47,33 +47,6 @@ enum class OperatorType
   Linearized
 };
 
-inline std::string
-enum_to_string(OperatorType const enum_type)
-{
-  std::string string_type;
-
-  switch(enum_type)
-  {
-    // clang-format off
-    case OperatorType::Nonlinear:  string_type = "Nonlinear";  break;
-    case OperatorType::Linearized: string_type = "Linearized"; break;
-    default: AssertThrow(false, dealii::ExcMessage("Not implemented.")); break;
-      // clang-format on
-  }
-
-  return string_type;
-}
-
-inline void
-string_to_enum(OperatorType & enum_type, std::string const string_type)
-{
-  // clang-format off
-  if     (string_type == "Nonlinear")  enum_type = OperatorType::Nonlinear;
-  else if(string_type == "Linearized") enum_type = OperatorType::Linearized;
-  else AssertThrow(false, dealii::ExcMessage("Unknown operator type. Not implemented."));
-  // clang-format on
-}
-
 inline unsigned int
 get_dofs_per_element(std::string const & input_file,
                      unsigned int const  dim,

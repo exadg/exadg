@@ -31,6 +31,43 @@
 namespace ExaDG
 {
 template<int dim, typename Number>
+class DivergenceCalculator
+{
+public:
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef DivergenceCalculator<dim, Number> This;
+
+  typedef CellIntegrator<dim, dim, Number> CellIntegratorVector;
+  typedef CellIntegrator<dim, 1, Number>   CellIntegratorScalar;
+
+  typedef dealii::VectorizedArray<Number> scalar;
+
+  DivergenceCalculator();
+
+  void
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+             unsigned int const                      dof_index_vector_in,
+             unsigned int const                      dof_index_scalar_in,
+             unsigned int const                      quad_index_in);
+  void
+  compute_divergence(VectorType & dst, VectorType const & src) const;
+
+private:
+  void
+  cell_loop(dealii::MatrixFree<dim, Number> const &       matrix_free,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & cell_range) const;
+
+  dealii::MatrixFree<dim, Number> const * matrix_free;
+
+  unsigned int dof_index_vector;
+  unsigned int dof_index_scalar;
+  unsigned int quad_index;
+};
+
+template<int dim, typename Number>
 class ShearRateCalculator
 {
 private:
@@ -70,6 +107,127 @@ private:
   unsigned int dof_index_u;
   unsigned int dof_index_u_scalar;
   unsigned int quad_index;
+};
+
+template<int dim, typename Number>
+class VorticityCalculator
+{
+public:
+  static unsigned int const number_vorticity_components = (dim == 2) ? 1 : dim;
+
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef VorticityCalculator<dim, Number> This;
+
+  typedef CellIntegrator<dim, dim, Number> CellIntegratorVector;
+
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
+
+  VorticityCalculator();
+
+  void
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+             unsigned int const                      dof_index_in,
+             unsigned int const                      quad_index_in);
+
+  void
+  compute_vorticity(VectorType & dst, VectorType const & src) const;
+
+private:
+  void
+  cell_loop(dealii::MatrixFree<dim, Number> const &       matrix_free,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & cell_range) const;
+
+  dealii::MatrixFree<dim, Number> const * matrix_free;
+  unsigned int                            dof_index;
+  unsigned int                            quad_index;
+};
+
+template<int dim, typename Number>
+class MagnitudeCalculator
+{
+private:
+  typedef MagnitudeCalculator<dim, Number> This;
+
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef dealii::VectorizedArray<Number> scalar;
+
+  typedef std::pair<unsigned int, unsigned int> Range;
+
+  typedef CellIntegrator<dim, dim, Number> IntegratorVector;
+  typedef CellIntegrator<dim, 1, Number>   IntegratorScalar;
+
+public:
+  MagnitudeCalculator();
+
+  void
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+             unsigned int const                      dof_index_u_in,
+             unsigned int const                      dof_index_u_scalar_in,
+             unsigned int const                      quad_index_in);
+
+  void
+  compute(VectorType & dst, VectorType const & src) const;
+
+private:
+  void
+  cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType &                            dst,
+            VectorType const &                      src,
+            Range const &                           cell_range) const;
+
+  dealii::MatrixFree<dim, Number> const * matrix_free;
+
+  unsigned int dof_index_u;
+  unsigned int dof_index_u_scalar;
+  unsigned int quad_index;
+};
+
+template<int dim, typename Number>
+class QCriterionCalculator
+{
+private:
+  typedef QCriterionCalculator<dim, Number> This;
+
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
+
+  typedef std::pair<unsigned int, unsigned int> Range;
+
+  typedef CellIntegrator<dim, dim, Number> CellIntegratorVector;
+  typedef CellIntegrator<dim, 1, Number>   CellIntegratorScalar;
+
+public:
+  QCriterionCalculator();
+
+  void
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+             unsigned int const                      dof_index_u_in,
+             unsigned int const                      dof_index_u_scalar_in,
+             unsigned int const                      quad_index_in,
+             bool const                              compressible_flow);
+
+  void
+  compute(VectorType & dst, VectorType const & src) const;
+
+private:
+  void
+  cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType &                            dst,
+            VectorType const &                      src,
+            Range const &                           cell_range) const;
+
+  dealii::MatrixFree<dim, Number> const * matrix_free;
+
+  unsigned int dof_index_u;
+  unsigned int dof_index_u_scalar;
+  unsigned int quad_index;
+  bool         compressible_flow;
 };
 
 } // namespace ExaDG

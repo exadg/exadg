@@ -41,7 +41,7 @@ Solver:
   Relative solver tolerance:                 1.0000e-10
   Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
-  Multigrid type:                            cph-MG
+  Multigrid type:                            cphMG
   p-sequence:                                Bisect
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
@@ -135,7 +135,7 @@ Solver:
   Relative solver tolerance:                 1.0000e-10
   Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
-  Multigrid type:                            cph-MG
+  Multigrid type:                            cphMG
   p-sequence:                                Bisect
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
@@ -229,7 +229,7 @@ Solver:
   Relative solver tolerance:                 1.0000e-10
   Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
-  Multigrid type:                            cph-MG
+  Multigrid type:                            cphMG
   p-sequence:                                Bisect
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
@@ -323,7 +323,7 @@ Solver:
   Relative solver tolerance:                 1.0000e-10
   Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
-  Multigrid type:                            cph-MG
+  Multigrid type:                            cphMG
   p-sequence:                                Bisect
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
@@ -417,7 +417,7 @@ Solver:
   Relative solver tolerance:                 1.0000e-10
   Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
-  Multigrid type:                            cph-MG
+  Multigrid type:                            cphMG
   p-sequence:                                Bisect
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
@@ -511,7 +511,7 @@ Solver:
   Relative solver tolerance:                 1.0000e-10
   Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
-  Multigrid type:                            cph-MG
+  Multigrid type:                            cphMG
   p-sequence:                                Bisect
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
@@ -605,7 +605,7 @@ Solver:
   Relative solver tolerance:                 1.0000e-10
   Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
-  Multigrid type:                            cph-MG
+  Multigrid type:                            cphMG
   p-sequence:                                Bisect
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi

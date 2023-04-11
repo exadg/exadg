@@ -74,7 +74,7 @@ private:
   {
     FDANozzle::create_grid_and_set_boundary_ids_nozzle(this->grid->triangulation,
                                                        this->param.grid.n_refine_global,
-                                                       this->grid->periodic_faces);
+                                                       this->grid->periodic_face_pairs);
   }
 
   void

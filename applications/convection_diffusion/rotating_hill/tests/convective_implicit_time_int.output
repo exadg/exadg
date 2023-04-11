@@ -66,7 +66,7 @@ Solver:
   Update every time steps:                   1
   Block Jacobi matrix-free:                  false
   Multigrid operator type:                   ReactionConvection
-  Multigrid type:                            h-MG
+  Multigrid type:                            hMG
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
   Iterations smoother:                       5

@@ -49,10 +49,11 @@ private:
   typedef MultigridOperatorBase<dim, MultigridNumber>            MGOperatorBase;
   typedef MultigridOperator<dim, MultigridNumber, PDEOperatorMG> MGOperator;
 
-  typedef typename Base::Map               Map;
-  typedef typename Base::PeriodicFacePairs PeriodicFacePairs;
-  typedef typename Base::VectorType        VectorType;
-  typedef typename Base::VectorTypeMG      VectorTypeMG;
+  typedef typename Base::Map_DBC               Map_DBC;
+  typedef typename Base::Map_DBC_ComponentMask Map_DBC_ComponentMask;
+  typedef typename Base::PeriodicFacePairs     PeriodicFacePairs;
+  typedef typename Base::VectorType            VectorType;
+  typedef typename Base::VectorTypeMG          VectorTypeMG;
 
 public:
   MultigridPreconditioner(MPI_Comm const & mpi_comm);
@@ -66,15 +67,17 @@ public:
   initialize(
     MultigridData const &                                                  mg_data,
     MultigridVariant const &                                               multigrid_variant,
-    dealii::Triangulation<dim> const *                                     tria,
+    dealii::Triangulation<dim> const *                                     triangulation,
+    PeriodicFacePairs const &                                              periodic_face_pairs,
     std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations,
-    dealii::FiniteElement<dim> const &                                     fe,
-    std::shared_ptr<dealii::Mapping<dim> const>                            mapping,
-    PDEOperator const &                                                    pde_operator,
-    MultigridOperatorType const &                                          mg_operator_type,
-    bool const                                                             mesh_is_moving,
-    Map const &                                                            dirichlet_bc,
-    PeriodicFacePairs const &                                              periodic_face_pairs);
+    std::vector<PeriodicFacePairs> const &      coarse_periodic_face_pairs,
+    dealii::FiniteElement<dim> const &          fe,
+    std::shared_ptr<dealii::Mapping<dim> const> mapping,
+    PDEOperator const &                         pde_operator,
+    MultigridOperatorType const &               mg_operator_type,
+    bool const                                  mesh_is_moving,
+    Map_DBC const &                             dirichlet_bc,
+    Map_DBC_ComponentMask const &               dirichlet_bc_component_mask);
 
   /*
    *  This function updates the multigrid preconditioner.
@@ -92,11 +95,11 @@ private:
   initialize_operator(unsigned int const level) override;
 
   void
-  initialize_dof_handler_and_constraints(bool const                         operator_is_singular,
-                                         PeriodicFacePairs const &          periodic_face_pairs,
-                                         dealii::FiniteElement<dim> const & fe,
-                                         dealii::Triangulation<dim> const * tria,
-                                         Map const &                        dirichlet_bc) override;
+  initialize_dof_handler_and_constraints(
+    bool const                         operator_is_singular,
+    dealii::FiniteElement<dim> const & fe,
+    Map_DBC const &                    dirichlet_bc,
+    Map_DBC_ComponentMask const &      dirichlet_bc_component_mask) override;
 
   void
   initialize_transfer_operators() override;

@@ -38,9 +38,6 @@ enum class Solver
   GMRES
 };
 
-std::string
-enum_to_string(Solver const enum_type);
-
 } // namespace Elementwise
 } // namespace ExaDG
 

@@ -46,8 +46,9 @@ private:
   static unsigned int const rank =
     (n_components == 1) ? 0 : ((n_components == dim) ? 1 : dealii::numbers::invalid_unsigned_int);
 
-  typedef typename Base::Map               Map;
-  typedef typename Base::PeriodicFacePairs PeriodicFacePairs;
+  typedef typename Base::Map_DBC               Map_DBC;
+  typedef typename Base::Map_DBC_ComponentMask Map_DBC_ComponentMask;
+  typedef typename Base::PeriodicFacePairs     PeriodicFacePairs;
 
   typedef LaplaceOperator<dim, MultigridNumber, n_components> Laplace;
 
@@ -61,14 +62,16 @@ public:
   initialize(
     MultigridData const &                                                  mg_data,
     MultigridVariant const &                                               multigrid_variant,
-    dealii::Triangulation<dim> const *                                     tria,
+    dealii::Triangulation<dim> const *                                     triangulation,
+    PeriodicFacePairs const &                                              periodic_face_pairs,
     std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations,
-    dealii::FiniteElement<dim> const &                                     fe,
-    std::shared_ptr<dealii::Mapping<dim> const>                            mapping,
-    LaplaceOperatorData<rank, dim> const &                                 data_in,
-    bool const                                                             mesh_is_moving,
-    Map const &                                                            dirichlet_bc,
-    PeriodicFacePairs const &                                              periodic_face_pairs);
+    std::vector<PeriodicFacePairs> const &      coarse_periodic_face_pairs,
+    dealii::FiniteElement<dim> const &          fe,
+    std::shared_ptr<dealii::Mapping<dim> const> mapping,
+    LaplaceOperatorData<rank, dim> const &      data_in,
+    bool const                                  mesh_is_moving,
+    Map_DBC const &                             dirichlet_bc,
+    Map_DBC_ComponentMask const &               dirichlet_bc_component_mask);
 
   void
   update() override;
@@ -78,15 +81,6 @@ private:
   fill_matrix_free_data(MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
                         unsigned int const                     level,
                         unsigned int const                     h_level) override;
-
-  /*
-   * Has to be overwritten since we want to use dealii::ComponentMask here
-   */
-  void
-  initialize_constrained_dofs(dealii::DoFHandler<dim> const & dof_handler,
-                              dealii::MGConstrainedDoFs &     constrained_dofs,
-                              Map const &                     dirichlet_bc) override;
-
 
   std::shared_ptr<MGOperatorBase>
   initialize_operator(unsigned int const level) override;

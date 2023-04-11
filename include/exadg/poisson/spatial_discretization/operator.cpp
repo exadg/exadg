@@ -20,6 +20,7 @@
  */
 
 // deal.II
+#include <deal.II/dofs/dof_tools.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_simplex_p.h>
@@ -30,6 +31,7 @@
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
+#include <exadg/grid/grid_utilities.h>
 #include <exadg/poisson/preconditioners/multigrid_preconditioner.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
@@ -131,16 +133,42 @@ Operator<dim, n_components, Number>::distribute_dofs()
 
   dof_handler.distribute_dofs(*fe);
 
-  // affine constraints only relevant for continuous FE discretization
+  // Affine constraints are only relevant for continuous Galerin discretization.
+  // The AffineConstraints object is used to initialize MatrixFree. Here, we apply homogeneous
+  // boundary conditions as needed by vmult() in iterative solvers for linear systems of equations,
+  // implemented via dealii::MatrixFree and FEEvaluation::read_dof_values() (or gather_evaluate()).
+  // The actual inhomogeneous boundary data needs to be imposed separately due to the implementation
+  // in deal.II that can not handle multiple AffineConstraints. Hence, we need to do this explicitly
+  // in ExaDG.
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
     affine_constraints.clear();
+
+    dealii::IndexSet locally_relevant_dofs;
+    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+    affine_constraints.reinit(locally_relevant_dofs);
+
+    // hanging nodes (needs to be done before imposing periodicity constraints and boundary
+    // conditions)
+    if(this->grid->triangulation->has_hanging_nodes())
+      dealii::DoFTools::make_hanging_node_constraints(dof_handler, affine_constraints);
+
+    // constraints from periodic boundary conditions
+    if(not(this->grid->periodic_face_pairs.empty()))
+    {
+      auto periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
+        this->grid->periodic_face_pairs, dof_handler);
+
+      dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(periodic_faces_dof,
+                                                                       affine_constraints);
+    }
 
     // standard Dirichlet boundaries
     for(auto it : this->boundary_descriptor->dirichlet_bc)
     {
       dealii::ComponentMask mask = dealii::ComponentMask();
-      auto it_mask               = boundary_descriptor->dirichlet_bc_component_mask.find(it.first);
+
+      auto it_mask = boundary_descriptor->dirichlet_bc_component_mask.find(it.first);
       if(it_mask != boundary_descriptor->dirichlet_bc_component_mask.end())
         mask = it_mask->second;
 
@@ -336,11 +364,12 @@ Operator<dim, n_components, Number>::setup_solver()
     std::shared_ptr<Multigrid> mg_preconditioner =
       std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
-    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
-      pair;
-
     std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
       dirichlet_boundary_conditions = laplace_operator.get_data().bc->dirichlet_bc;
+
+    typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
+    Map_DBC_ComponentMask dirichlet_bc_component_mask =
+      laplace_operator.get_data().bc->dirichlet_bc_component_mask;
 
     // We also need to add DirichletCached boundary conditions. From the
     // perspective of multigrid, there is no difference between standard
@@ -348,19 +377,31 @@ Operator<dim, n_components, Number>::setup_solver()
     // about inhomogeneous boundary data, we simply fill the map with
     // dealii::Functions::ZeroFunction for DirichletCached BCs.
     for(auto iter : laplace_operator.get_data().bc->dirichlet_cached_bc)
+    {
+      typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+        pair;
+
       dirichlet_boundary_conditions.insert(
         pair(iter.first, new dealii::Functions::ZeroFunction<dim>(n_components)));
+
+      typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
+
+      std::vector<bool> default_mask = std::vector<bool>(n_components, true);
+      dirichlet_bc_component_mask.insert(pair_mask(iter.first, default_mask));
+    }
 
     mg_preconditioner->initialize(mg_data,
                                   param.grid.multigrid,
                                   &dof_handler.get_triangulation(),
+                                  grid->periodic_face_pairs,
                                   grid->coarse_triangulations,
+                                  grid->coarse_periodic_face_pairs,
                                   dof_handler.get_fe(),
                                   grid->mapping,
                                   laplace_operator.get_data(),
                                   false /* moving_mesh */,
                                   dirichlet_boundary_conditions,
-                                  grid->periodic_faces);
+                                  dirichlet_bc_component_mask);
   }
   else
   {

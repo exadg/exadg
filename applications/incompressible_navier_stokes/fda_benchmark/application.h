@@ -374,7 +374,7 @@ private:
   {
     FDANozzle::create_grid_and_set_boundary_ids_nozzle(this->grid->triangulation,
                                                        this->param.grid.n_refine_global,
-                                                       this->grid->periodic_faces);
+                                                       this->grid->periodic_face_pairs);
   }
 
   void
@@ -461,8 +461,8 @@ private:
     }
 
     dealii::GridTools::collect_periodic_faces(
-      *this->grid_pre->triangulation, 0 + 10, 1 + 10, 2, this->grid_pre->periodic_faces);
-    this->grid_pre->triangulation->add_periodicity(this->grid_pre->periodic_faces);
+      *this->grid_pre->triangulation, 0 + 10, 1 + 10, 2, this->grid_pre->periodic_face_pairs);
+    this->grid_pre->triangulation->add_periodicity(this->grid_pre->periodic_face_pairs);
 
     // perform global refinements
     this->grid_pre->triangulation->refine_global(this->param_pre.grid.n_refine_global +

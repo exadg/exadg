@@ -44,33 +44,6 @@ enum class OperatorType
   MatrixBased
 };
 
-inline std::string
-enum_to_string(OperatorType const enum_type)
-{
-  std::string string_type;
-
-  switch(enum_type)
-  {
-    // clang-format off
-    case OperatorType::MatrixFree:  string_type = "MatrixFree";  break;
-    case OperatorType::MatrixBased: string_type = "MatrixBased"; break;
-    default: AssertThrow(false, dealii::ExcMessage("Not implemented.")); break;
-      // clang-format on
-  }
-
-  return string_type;
-}
-
-inline void
-string_to_enum(OperatorType & enum_type, std::string const string_type)
-{
-  // clang-format off
-  if     (string_type == "MatrixFree")  enum_type = OperatorType::MatrixFree;
-  else if(string_type == "MatrixBased") enum_type = OperatorType::MatrixBased;
-  else AssertThrow(false, dealii::ExcMessage("Unknown operator type. Not implemented."));
-  // clang-format on
-}
-
 inline unsigned int
 get_dofs_per_element(std::string const & input_file,
                      unsigned int const  dim,

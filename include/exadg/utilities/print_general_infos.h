@@ -24,9 +24,9 @@
 
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
-#include <deal.II/base/revision.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/distributed/tria_base.h>
+#include <deal.II/fe/mapping_q.h>
 
 // ExaDG
 #include <exadg/grid/grid.h>
@@ -34,32 +34,12 @@
 
 namespace ExaDG
 {
-inline void
-print_exadg_header(dealii::ConditionalOStream const & pcout)
-{
-  // clang-format off
-  pcout << std::endl << std::endl << std::endl
-  << print_horizontal_line() << std::endl
-  << "                                                                                " << std::endl
-  << "                ////////                      ///////   ////////                " << std::endl
-  << "                ///                           ///  ///  ///                     " << std::endl
-  << "                //////    ///  ///  ///////   ///  ///  /// ////                " << std::endl
-  << "                ///         ////    //   //   ///  ///  ///  ///                " << std::endl
-  << "                ////////  ///  ///  ///////// ///////   ////////                " << std::endl
-  << "                                                                                " << std::endl
-  << "               High-Order Discontinuous Galerkin for the Exa-Scale              " << std::endl
-  << print_horizontal_line() << std::endl
-  << std::endl;
-  // clang-format on
-}
+void
+print_exadg_header(dealii::ConditionalOStream const & pcout);
 
 // print MPI info
-inline void
-print_MPI_info(dealii::ConditionalOStream const & pcout, MPI_Comm const & mpi_comm)
-{
-  pcout << std::endl << "MPI info:" << std::endl << std::endl;
-  print_parameter(pcout, "Number of processes", dealii::Utilities::MPI::n_mpi_processes(mpi_comm));
-}
+void
+print_MPI_info(dealii::ConditionalOStream const & pcout, MPI_Comm const & mpi_comm);
 
 template<typename Number>
 inline std::string get_type(Number)
@@ -79,19 +59,13 @@ get_type(double)
   return "double";
 }
 
-
 // print deal.II info
-inline void
-print_dealii_info(dealii::ConditionalOStream const & pcout)
-{
-  // clang-format off
-  pcout << std::endl
-        << "deal.II info:" << std::endl
-        << std::endl
-        << "  deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch " << DEAL_II_GIT_BRANCH
-        << std::endl;
-  // clang-format on
-}
+void
+print_dealii_info(dealii::ConditionalOStream const & pcout);
+
+// print ExaDG info
+void
+print_exadg_info(dealii::ConditionalOStream const & pcout);
 
 template<typename Number>
 inline void
@@ -141,6 +115,7 @@ print_general_info(dealii::ConditionalOStream const & pcout,
 
   if(not(is_test))
   {
+    print_exadg_info(pcout);
     print_dealii_info(pcout);
     print_matrixfree_info<Number>(pcout);
   }

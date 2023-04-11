@@ -50,8 +50,12 @@ do_cell_based_loops(dealii::Triangulation<dim> const & tria,
   else
     data.cell_vectorization_category.resize(tria.n_active_cells());
 
+  AssertThrow(tria.get_reference_cells().size() == 1,
+              dealii::ExcMessage("No mixed meshes allowed."));
+  unsigned int const n_faces_per_cell = tria.get_reference_cells()[0].n_faces();
+
   // ... setup scaling factor
-  std::vector<unsigned int> factors(dim * 2);
+  std::vector<unsigned int> factors(n_faces_per_cell);
 
   std::map<unsigned int, unsigned int> bid_map;
   for(unsigned int i = 0; i < tria.get_boundary_ids().size(); i++)
@@ -60,13 +64,13 @@ do_cell_based_loops(dealii::Triangulation<dim> const & tria,
   {
     unsigned int bids   = tria.get_boundary_ids().size() + 1;
     int          offset = 1;
-    for(unsigned int i = 0; i < dim * 2; i++, offset = offset * bids)
+    for(unsigned int i = 0; i < n_faces_per_cell; i++, offset = offset * bids)
       factors[i] = offset;
   }
 
   auto to_category = [&](auto & cell) {
     unsigned int c_num = 0;
-    for(unsigned int i = 0; i < dim * 2; i++)
+    for(unsigned int i = 0; i < n_faces_per_cell; i++)
     {
       auto & face = *cell->face(i);
       if(face.at_boundary())

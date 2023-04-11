@@ -172,17 +172,25 @@ OperatorProjectionMethods<dim, Number>::initialize_preconditioner_pressure_poiss
     std::shared_ptr<Multigrid> mg_preconditioner =
       std::dynamic_pointer_cast<Multigrid>(preconditioner_pressure_poisson);
 
+    std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      dirichlet_boundary_conditions = laplace_operator.get_data().bc->dirichlet_bc;
+
+    typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
+    Map_DBC_ComponentMask                                               dirichlet_bc_component_mask;
+
     auto & dof_handler = this->get_dof_handler_p();
     mg_preconditioner->initialize(mg_data,
                                   this->param.grid.multigrid,
                                   &dof_handler.get_triangulation(),
+                                  this->grid->periodic_face_pairs,
                                   this->grid->coarse_triangulations,
+                                  this->grid->coarse_periodic_face_pairs,
                                   dof_handler.get_fe(),
                                   this->get_mapping(),
                                   laplace_operator.get_data(),
                                   this->param.ale_formulation,
-                                  laplace_operator.get_data().bc->dirichlet_bc,
-                                  this->grid->periodic_faces);
+                                  dirichlet_boundary_conditions,
+                                  dirichlet_bc_component_mask);
   }
   else
   {

@@ -81,15 +81,6 @@ OperatorBase<dim, Number, n_components>::reinit(
                                                   this->data.dof_index,
                                                   this->data.quad_index);
 
-  if(!is_dg)
-  {
-    constrained_indices.clear();
-    for(auto i : this->matrix_free->get_constrained_dofs(this->data.dof_index))
-      constrained_indices.push_back(i);
-    constrained_values_src.resize(constrained_indices.size());
-    constrained_values_dst.resize(constrained_indices.size());
-  }
-
   // set multigrid level
   this->level = this->matrix_free->get_mg_level();
 
@@ -236,9 +227,10 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::set_constrained_values_to_zero(VectorType & vector) const
 {
-  for(unsigned int i = 0; i < constrained_indices.size(); ++i)
+  for(unsigned int const constrained_index :
+      matrix_free->get_constrained_dofs(this->data.dof_index))
   {
-    vector.local_element(constrained_indices[i]) = 0.0;
+    vector.local_element(constrained_index) = 0.0;
   }
 }
 
@@ -262,6 +254,7 @@ OperatorBase<dim, Number, n_components>::apply(VectorType & dst, VectorType cons
   if(is_dg)
   {
     if(evaluate_face_integrals())
+    {
       matrix_free->loop(&This::cell_loop,
                         &This::face_loop,
                         &This::boundary_face_loop_hom_operator,
@@ -269,39 +262,26 @@ OperatorBase<dim, Number, n_components>::apply(VectorType & dst, VectorType cons
                         dst,
                         src,
                         true);
+    }
     else
+    {
       matrix_free->cell_loop(&This::cell_loop, this, dst, src, true);
+    }
   }
   else
   {
-    // We need to zero constrained degrees of freedom. The contribution of these
-    // degrees of freedom to the matrix-vector product has already been taken into account
-    // in the right-hand side vector. Put differently, setting the constrained degrees of
-    // freedom to zero is equivalent to the idea of eliminating those columns of the matrix
-    // that correspond to constrained degrees of freedom.
-    for(unsigned int i = 0; i < constrained_indices.size(); ++i)
-    {
-      constrained_values_src[i] = src.local_element(constrained_indices[i]);
-      const_cast<VectorType &>(src).local_element(constrained_indices[i]) = 0.;
-    }
-
-    // Compute matrix-vector product. Constrained degrees of freedom will not have
-    // an effect since they have been zeroed before.
+    // Compute matrix-vector product. Constrained degrees of freedom in the src-vector will not be
+    // used. The function read_dof_values() (or gather_evaluate()) uses the homogeneous boundary
+    // data passed to MatrixFree via AffineConstraints.
     matrix_free->cell_loop(&This::cell_loop, this, dst, src, true);
 
     // Constrained degree of freedom are not removed from the system of equations.
     // Instead, we set the diagonal entries of the matrix to 1 for these constrained
     // degrees of freedom. This means that we simply copy the constrained values to the
-    // dst vector. Since we have already computed the matrix-vector product, the
-    // constrained values can be written back to the src vector, i.e. having completed
-    // the function apply(), the src vector should be the same as before calling this
-    // function.
-    for(unsigned int i = 0; i < constrained_indices.size(); ++i)
-    {
-      const_cast<VectorType &>(src).local_element(constrained_indices[i]) =
-        constrained_values_src[i];
-      dst.local_element(constrained_indices[i]) = constrained_values_src[i];
-    }
+    // dst vector.
+    for(unsigned int const constrained_index :
+        matrix_free->get_constrained_dofs(this->data.dof_index))
+      dst.local_element(constrained_index) = src.local_element(constrained_index);
   }
 }
 
@@ -312,32 +292,24 @@ OperatorBase<dim, Number, n_components>::apply_add(VectorType & dst, VectorType 
   if(is_dg)
   {
     if(evaluate_face_integrals())
+    {
       matrix_free->loop(
         &This::cell_loop, &This::face_loop, &This::boundary_face_loop_hom_operator, this, dst, src);
+    }
     else
+    {
       matrix_free->cell_loop(&This::cell_loop, this, dst, src);
+    }
   }
   else
   {
-    // See function apply() for comments.
-
-    for(unsigned int i = 0; i < constrained_indices.size(); ++i)
-    {
-      constrained_values_dst[i] =
-        src.local_element(constrained_indices[i]) + dst.local_element(constrained_indices[i]);
-      constrained_values_src[i] = src.local_element(constrained_indices[i]);
-
-      const_cast<VectorType &>(src).local_element(constrained_indices[i]) = 0.;
-    }
-
+    // See function apply() for additional comments.
+    // Note that MatrixFree will not touch constrained degrees of freedom in the dst-vector.
     matrix_free->cell_loop(&This::cell_loop, this, dst, src);
 
-    for(unsigned int i = 0; i < constrained_indices.size(); ++i)
-    {
-      const_cast<VectorType &>(src).local_element(constrained_indices[i]) =
-        constrained_values_src[i];
-      dst.local_element(constrained_indices[i]) = constrained_values_dst[i];
-    }
+    for(unsigned int const constrained_index :
+        matrix_free->get_constrained_dofs(this->data.dof_index))
+      dst.local_element(constrained_index) += src.local_element(constrained_index);
   }
 }
 
@@ -366,7 +338,7 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
   // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
   rhs.add(-1.0, tmp);
 
-  if(!is_dg)
+  if(not(is_dg))
   {
     // Set constrained degrees of freedom according to Dirichlet boundary conditions. The rest of
     // the vector contains zeros.
@@ -374,14 +346,11 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
     matrix_free->initialize_dof_vector(temp1, data.dof_index);
     set_constrained_values(temp1, time);
 
-    // Perform matrix-vector product using temp1 as source vector and shift the resulting vector to
-    // the right-hand side. N.B.: Due to the coupling of degrees of freedom, constrained degrees of
-    // freedom also impact entries of the result vector (equivalently: rows of the matrix-vector
-    // product) corresponding to non-constrained degrees of freedom. This implies that we have to
-    // set vector entries of constrained degrees of freedom to zero when computing matrix-vector
-    // products in iterative solvers, since their contribution has already been taken into account
-    // in the rhs vector. Note that this procedure is equivalent to eliminating "columns" of the
-    // associated "matrix" representing the linear operator.
+    // Perform matrix-vector product using read_dof_values_plain() with temp1 as src-vector to
+    // obtain the inhomogeneous action of the operator. Subsequently, we shift the resulting vector
+    // to the right-hand side. Note that constrained degrees of freedom in the dst-vector will not
+    // be touched and remain zero. Hence, the constrained degrees of freedom in the rhs-vector will
+    // not be changed.
     VectorType temp2;
     matrix_free->initialize_dof_vector(temp2, data.dof_index);
     matrix_free->cell_loop(&This::cell_loop_dbc, this, temp2, temp1);
