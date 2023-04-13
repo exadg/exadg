@@ -118,8 +118,15 @@ transform_periodic_face_pairs_to_dof_cell_iterator(
     dealii::GridTools::PeriodicFacePair<typename dealii::DoFHandler<dim>::cell_iterator>
       face_pair_dof_hander;
 
+#if DEAL_II_VERSION_GTE(9, 5, 0)
     face_pair_dof_hander.cell[0] = it.cell[0]->as_dof_handler_iterator(dof_handler);
     face_pair_dof_hander.cell[1] = it.cell[1]->as_dof_handler_iterator(dof_handler);
+#else
+    face_pair_dof_hander.cell[0] = typename dealii::DoFHandler<dim>::cell_iterator(
+      &dof_handler.get_triangulation(), it.cell[0]->level(), it.cell[0]->index(), &dof_handler);
+    face_pair_dof_hander.cell[1] = typename dealii::DoFHandler<dim>::cell_iterator(
+      &dof_handler.get_triangulation(), it.cell[1]->level(), it.cell[1]->index(), &dof_handler);
+#endif
 
     face_pair_dof_hander.face_idx[0] = it.face_idx[0];
     face_pair_dof_hander.face_idx[1] = it.face_idx[1];
