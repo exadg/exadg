@@ -104,6 +104,13 @@ ElasticityOperatorBase<dim, Number>::set_scaling_factor_mass_operator(
 }
 
 template<int dim, typename Number>
+double
+ElasticityOperatorBase<dim, Number>::get_scaling_factor_mass_operator() const
+{
+  return scaling_factor_mass;
+}
+
+template<int dim, typename Number>
 void
 ElasticityOperatorBase<dim, Number>::set_constrained_values(VectorType & dst,
                                                             double const time) const

@@ -75,7 +75,8 @@ public:
   solve_linear(VectorType &       sol,
                VectorType const & rhs,
                double const       factor,
-               double const       time) const = 0;
+               double const       time,
+               bool const         update_preconditioner) const = 0;
 };
 
 } // namespace Interface

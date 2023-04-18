@@ -70,7 +70,7 @@ template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::update()
 {
-  if(nonlinear)
+  if(nonlinear or data.unsteady)
   {
     update_operators();
 
@@ -79,11 +79,32 @@ MultigridPreconditioner<dim, Number>::update()
     // singular operators do not occur for this operator
     this->update_coarse_solver(false /* operator_is_singular */);
   }
-  else
+}
+
+template<int dim, typename Number>
+void
+MultigridPreconditioner<dim, Number>::set_time(double const & time)
+{
+  for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
   {
-    AssertThrow(false,
-                dealii::ExcMessage(
-                  "Update of multigrid preconditioner is not implemented for linear elasticity."));
+    if(nonlinear)
+      get_operator_nonlinear(level)->set_time(time);
+    else
+      get_operator_linear(level)->set_time(time);
+  }
+}
+
+template<int dim, typename Number>
+void
+MultigridPreconditioner<dim, Number>::set_scaling_factor_mass_operator(
+  double const & scaling_factor_mass)
+{
+  for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
+  {
+    if(nonlinear)
+      get_operator_nonlinear(level)->set_scaling_factor_mass_operator(scaling_factor_mass);
+    else
+      get_operator_linear(level)->set_scaling_factor_mass_operator(scaling_factor_mass);
   }
 }
 
@@ -128,25 +149,34 @@ template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::update_operators()
 {
-  PDEOperatorNonlinear const * pde_operator_nonlinear =
-    dynamic_cast<PDEOperatorNonlinear const *>(pde_operator);
-
-  VectorType const & vector_linearization = pde_operator_nonlinear->get_solution_linearization();
-
-  // convert Number --> MultigridNumber, e.g., double --> float, but only if necessary
-  VectorTypeMG         vector_multigrid_type_copy;
-  VectorTypeMG const * vector_multigrid_type_ptr;
-  if(std::is_same<MultigridNumber, Number>::value)
+  if(data.unsteady)
   {
-    vector_multigrid_type_ptr = reinterpret_cast<VectorTypeMG const *>(&vector_linearization);
-  }
-  else
-  {
-    vector_multigrid_type_copy = vector_linearization;
-    vector_multigrid_type_ptr  = &vector_multigrid_type_copy;
+    set_time(pde_operator->get_time());
+    set_scaling_factor_mass_operator(pde_operator->get_scaling_factor_mass_operator());
   }
 
-  set_solution_linearization(*vector_multigrid_type_ptr);
+  if(nonlinear)
+  {
+    PDEOperatorNonlinear const * pde_operator_nonlinear =
+      dynamic_cast<PDEOperatorNonlinear const *>(pde_operator);
+
+    VectorType const & vector_linearization = pde_operator_nonlinear->get_solution_linearization();
+
+    // convert Number --> MultigridNumber, e.g., double --> float, but only if necessary
+    VectorTypeMG         vector_multigrid_type_copy;
+    VectorTypeMG const * vector_multigrid_type_ptr;
+    if(std::is_same<MultigridNumber, Number>::value)
+    {
+      vector_multigrid_type_ptr = reinterpret_cast<VectorTypeMG const *>(&vector_linearization);
+    }
+    else
+    {
+      vector_multigrid_type_copy = vector_linearization;
+      vector_multigrid_type_ptr  = &vector_multigrid_type_copy;
+    }
+
+    set_solution_linearization(*vector_multigrid_type_ptr);
+  }
 }
 
 template<int dim, typename Number>
@@ -182,6 +212,17 @@ MultigridPreconditioner<dim, Number>::get_operator_nonlinear(unsigned int level)
 
 template<int dim, typename Number>
 std::shared_ptr<
+  LinearOperator<dim, typename MultigridPreconditionerBase<dim, Number>::MultigridNumber>>
+MultigridPreconditioner<dim, Number>::get_operator_linear(unsigned int level)
+{
+  std::shared_ptr<MGOperatorLinear> mg_operator =
+    std::dynamic_pointer_cast<MGOperatorLinear>(this->operators[level]);
+
+  return mg_operator->get_pde_operator();
+}
+
+template<int dim, typename Number>
+std::shared_ptr<
   MultigridOperatorBase<dim, typename MultigridPreconditionerBase<dim, Number>::MultigridNumber>>
 MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const level)
 {
@@ -193,6 +234,14 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
   if(nonlinear)
   {
     std::shared_ptr<PDEOperatorNonlinearMG> pde_operator_level(new PDEOperatorNonlinearMG());
+
+    if(data.unsteady)
+    {
+      pde_operator_level->set_time(pde_operator->get_time());
+      pde_operator_level->set_scaling_factor_mass_operator(
+        pde_operator->get_scaling_factor_mass_operator());
+    }
+
     pde_operator_level->initialize(*this->matrix_free_objects[level],
                                    *this->constraints[level],
                                    data);
@@ -202,6 +251,14 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
   else // linear
   {
     std::shared_ptr<PDEOperatorLinearMG> pde_operator_level(new PDEOperatorLinearMG());
+
+    if(data.unsteady)
+    {
+      pde_operator_level->set_time(pde_operator->get_time());
+      pde_operator_level->set_scaling_factor_mass_operator(
+        pde_operator->get_scaling_factor_mass_operator());
+    }
+
     pde_operator_level->initialize(*this->matrix_free_objects[level],
                                    *this->constraints[level],
                                    data);

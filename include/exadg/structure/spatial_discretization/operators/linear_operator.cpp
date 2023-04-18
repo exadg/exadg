@@ -45,9 +45,11 @@ LinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
     integrator.submit_gradient(sigma, q);
 
     if(this->operator_data.unsteady)
+    {
       integrator.submit_value(this->scaling_factor_mass * this->operator_data.density *
                                 integrator.get_value(q),
                               q);
+    }
   }
 }
 
