@@ -718,15 +718,14 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       accelerat
   VectorType rhs(acceleration);
   rhs = 0.0;
 
-  double scaling_factor_mass_operator_tmp_store;
+  double scaling_factor_mass;
 
   if(param.large_deformation) // nonlinear case
   {
     // elasticity operator
     elasticity_operator_nonlinear.set_time(time);
     // NB: we have to deactivate the mass operator term
-    scaling_factor_mass_operator_tmp_store =
-      elasticity_operator_nonlinear.get_scaling_factor_mass_operator();
+    scaling_factor_mass = elasticity_operator_nonlinear.get_scaling_factor_mass_operator();
     elasticity_operator_nonlinear.set_scaling_factor_mass_operator(0.0);
     // evaluate nonlinear operator including Neumann BCs
     elasticity_operator_nonlinear.evaluate_nonlinear(rhs, displacement);
@@ -744,8 +743,7 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       accelerat
     // elasticity operator
     elasticity_operator_linear.set_time(time);
     // NB: we have to deactivate the mass operator
-    scaling_factor_mass_operator_tmp_store =
-      elasticity_operator_linear.get_scaling_factor_mass_operator();
+    scaling_factor_mass = elasticity_operator_linear.get_scaling_factor_mass_operator();
     elasticity_operator_linear.set_scaling_factor_mass_operator(0.0);
 
     // compute action of homogeneous operator
@@ -771,11 +769,9 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       accelerat
 
   // revert scaling factor to initialized value
   if(param.large_deformation)
-    elasticity_operator_nonlinear.set_scaling_factor_mass_operator(
-      scaling_factor_mass_operator_tmp_store);
+    elasticity_operator_nonlinear.set_scaling_factor_mass_operator(scaling_factor_mass);
   else
-    elasticity_operator_linear.set_scaling_factor_mass_operator(
-      scaling_factor_mass_operator_tmp_store);
+    elasticity_operator_linear.set_scaling_factor_mass_operator(scaling_factor_mass);
 }
 
 template<int dim, typename Number>
