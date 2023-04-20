@@ -43,7 +43,7 @@ struct InverseMassOperatorData
 
   // only relevant if elementwise mass operators are inverted by elementwise
   // iterative solvers with matrix-free implementation
-  SolverData solver_data_block_diagonal = SolverData(1000, 1e-12, 1e-6);
+  SolverData solver_data_block_diagonal = SolverData(1000, 1e-12, 1e-20);
 };
 
 template<int dim, int n_components, typename Number>
