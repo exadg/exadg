@@ -76,7 +76,11 @@ Parameters::Parameters()
 
     // NUMERICAL PARAMETERS
     detect_instabilities(true),
-    use_combined_operator(false)
+    use_combined_operator(false),
+
+    // only relevant if an explicit matrix-free inverse mass operator is not available
+    solve_elementwise_mass_system_matrix_free(true),
+    solver_data_elementwise_inverse_mass(SolverData(1e3, 1.e-12, 1.e-20, 100))
 {
 }
 
