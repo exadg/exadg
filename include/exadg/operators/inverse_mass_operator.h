@@ -80,13 +80,15 @@ public:
     quad_index        = inverse_mass_operator_data.quad_index;
 
     dealii::FiniteElement<dim> const & fe = matrix_free->get_dof_handler(dof_index).get_fe();
-    // this checks if we have a tensor-product element, e.g. simplex is out
-    if(fe.base_element(0).dofs_per_cell == dealii::Utilities::pow(fe.degree + 1, dim))
+
+    if(fe.conforms(dealii::FiniteElementData<dim>::L2))
     {
-      // this checks if all unknows are on the interior of the face, e.g. continuous elements out
-      if((dim == 2 && fe.first_quad_index == 0) || (dim == 3 && fe.first_hex_index == 0))
+      // this checks if we have a tensor-product element
+      if(fe.base_element(0).dofs_per_cell == dealii::Utilities::pow(fe.degree + 1, dim))
         explicit_matrix_free_inverse_mass_available = true;
     }
+    else
+      AssertThrow(false, dealii::ExcMessage("InverseMassOperator only implemented for DG!"));
 
     if(not(explicit_matrix_free_inverse_mass_available))
     {
