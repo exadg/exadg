@@ -88,7 +88,11 @@ Parameters::Parameters()
     use_cell_based_face_loops(false),
     use_combined_operator(true),
     store_analytical_velocity_in_dof_vector(false),
-    use_overintegration(false)
+    use_overintegration(false),
+
+    // only relevant if an explicit matrix-free inverse mass operator is not available
+    solve_elementwise_mass_system_matrix_free(true),
+    solver_data_elementwise_inverse_mass(SolverData(1e3, 1.e-12, 1.e-20, 100))
 {
 }
 
