@@ -45,9 +45,9 @@ StVenantKirchhoff<dim, Number>::StVenantKirchhoff(
   if(E_is_variable)
   {
     // allocate vectors for variable coefficients and initialize with constant values
-    f0_coefficients.initialize(matrix_free, quad_index, get_f0_factor() * E);
-    f1_coefficients.initialize(matrix_free, quad_index, get_f1_factor() * E);
-    f2_coefficients.initialize(matrix_free, quad_index, get_f2_factor() * E);
+    f0_coefficients.initialize(matrix_free, quad_index, false, false, false, get_f0_factor() * E);
+    f1_coefficients.initialize(matrix_free, quad_index, false, false, false, get_f1_factor() * E);
+    f2_coefficients.initialize(matrix_free, quad_index, false, false, false, get_f2_factor() * E);
 
     VectorType dummy;
     matrix_free.cell_loop(&StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients,
@@ -119,9 +119,9 @@ StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients(
                                                  0.0 /*time*/);
 
       // set the coefficients
-      f0_coefficients.set_coefficient(cell, q, get_f0_factor() * E_vec);
-      f1_coefficients.set_coefficient(cell, q, get_f1_factor() * E_vec);
-      f2_coefficients.set_coefficient(cell, q, get_f2_factor() * E_vec);
+      f0_coefficients.set_coefficient_cell(cell, q, get_f0_factor() * E_vec);
+      f1_coefficients.set_coefficient_cell(cell, q, get_f1_factor() * E_vec);
+      f2_coefficients.set_coefficient_cell(cell, q, get_f2_factor() * E_vec);
     }
   }
 }
@@ -137,9 +137,9 @@ StVenantKirchhoff<dim, Number>::evaluate_stress(
 
   if(E_is_variable)
   {
-    f0 = f0_coefficients.get_coefficient(cell, q);
-    f1 = f1_coefficients.get_coefficient(cell, q);
-    f2 = f2_coefficients.get_coefficient(cell, q);
+    f0 = f0_coefficients.get_coefficient_cell(cell, q);
+    f1 = f1_coefficients.get_coefficient_cell(cell, q);
+    f2 = f2_coefficients.get_coefficient_cell(cell, q);
   }
 
   if(dim == 3)

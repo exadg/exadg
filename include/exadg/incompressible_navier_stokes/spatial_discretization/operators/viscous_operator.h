@@ -78,7 +78,7 @@ public:
     if(data.viscosity_is_variable)
     {
       // allocate vectors for variable coefficients and initialize with constant viscosity
-      viscosity_coefficients.initialize(matrix_free, quad_index, data.viscosity);
+      viscosity_coefficients.initialize(matrix_free, quad_index, true, true, false, data.viscosity);
     }
   }
 
