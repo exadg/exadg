@@ -90,6 +90,9 @@ Spatial discretization:
 Turbulence:
   Use turbulence model:                      false
 
+Rheology:
+  Use generalized Newtonian model:           false
+
 Numerical parameters:
   Block Jacobi matrix-free:                  false
   Use cell-based face loops:                 false
