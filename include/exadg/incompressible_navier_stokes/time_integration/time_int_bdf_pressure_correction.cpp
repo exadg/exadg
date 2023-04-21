@@ -350,7 +350,7 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
 
   /*
    *  if a variable viscosity is used: update
-   *  viscosity model before calculating rhs_viscous
+   *  viscosity model before calculating rhs_momentum
    */
   if(this->param.viscosity_is_variable())
   {

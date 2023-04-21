@@ -39,7 +39,7 @@ public:
   }
 
   void
-  set_constant_coefficient(coefficient_type const & constant_coefficient)
+  set_coefficients(coefficient_type const & constant_coefficient)
   {
     fill(constant_coefficient);
   }
@@ -90,7 +90,7 @@ public:
   }
 
   void
-  set_constant_coefficient(coefficient_type const & constant_coefficient)
+  set_coefficients(coefficient_type const & constant_coefficient)
   {
     fill(constant_coefficient);
   }

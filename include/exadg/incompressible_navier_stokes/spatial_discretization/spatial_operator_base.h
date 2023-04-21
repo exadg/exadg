@@ -615,9 +615,6 @@ private:
   initialize_viscosity_model();
 
   void
-  set_constant_viscosity(Number const & constant_coefficient) const;
-
-  void
   initialize_calculators_for_derived_quantities();
 
   void

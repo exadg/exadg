@@ -98,7 +98,7 @@ public:
   void
   set_constant_coefficient(Number const & constant_coefficient)
   {
-    viscosity_coefficients.set_constant_coefficient(constant_coefficient);
+    viscosity_coefficients.set_coefficients(constant_coefficient);
   }
 
   void

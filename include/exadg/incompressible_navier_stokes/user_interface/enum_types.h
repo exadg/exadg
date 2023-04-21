@@ -578,17 +578,13 @@ enum class TurbulenceEddyViscosityModel
 enum class GeneralizedNewtonianViscosityModel
 {
   Undefined,
-  GeneralizedCarreauYasuda,
-  Carreau,
-  Cross,
-  SimplifiedCross,
-  PowerLaw
+  GeneralizedCarreauYasuda
 };
 
 enum class TreatmentOfVariableViscosity
 {
   Undefined,
-  LinearizedInTimeImplicit,
+  Explicit,
   Implicit
 };
 

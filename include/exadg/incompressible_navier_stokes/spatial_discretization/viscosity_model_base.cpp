@@ -29,7 +29,7 @@ template<int dim, typename Number>
 ViscosityModelBase<dim, Number>::ViscosityModelBase()
   : dealii::Subscriptor(),
     dof_index_velocity(0),
-    quad_index_velocity_linear(0),
+    quad_index_velocity(0),
     viscosity_newtonian_limit(0),
     matrix_free(nullptr)
 {
@@ -40,18 +40,14 @@ void
 ViscosityModelBase<dim, Number>::initialize(
   dealii::MatrixFree<dim, Number> const &                matrix_free_in,
   std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
-  unsigned int                                           dof_index_velocity_in,
-  unsigned int                                           quad_index_velocity_linear_in)
+  unsigned int const                                     dof_index_velocity_in,
+  unsigned int const                                     quad_index_velocity_in)
 {
   matrix_free    = &matrix_free_in;
   viscous_kernel = viscous_kernel_in;
 
-  dof_index_velocity         = dof_index_velocity_in;
-  quad_index_velocity_linear = quad_index_velocity_linear_in;
-
-  // viscosity in the Newtonian limit
-  Operators::ViscousKernelData viscous_kernel_data = viscous_kernel->get_data();
-  viscosity_newtonian_limit                        = viscous_kernel_data.viscosity;
+  dof_index_velocity  = dof_index_velocity_in;
+  quad_index_velocity = quad_index_velocity_in;
 }
 
 template class ViscosityModelBase<2, float>;

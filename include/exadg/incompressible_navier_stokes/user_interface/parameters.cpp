@@ -545,11 +545,9 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
 
     if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
-      AssertThrow(treatment_of_variable_viscosity ==
-                    TreatmentOfVariableViscosity::LinearizedInTimeImplicit,
+      AssertThrow(treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit,
                   dealii::ExcMessage(
-                    "An implicit (nonlinear) treatment of variable viscosity term is not possible "
-                    "in combination with the dual splitting scheme."));
+                    "An implicit treatment of the variable viscosity field (rendering the viscous step of the dual splitting scheme nonlinear regarding the unknown velocity field) is currently not implemented for the dual splitting scheme."));
     }
   }
 
@@ -597,7 +595,7 @@ Parameters::viscosity_is_variable() const
 }
 
 bool
-Parameters::convective_term_is_treated_implicitly() const
+Parameters::implicit_convective_problem() const
 {
   if(convective_problem())
   {
@@ -613,25 +611,15 @@ Parameters::convective_term_is_treated_implicitly() const
 }
 
 bool
-Parameters::nonlinear_viscous_term_is_treated_implicitly() const
+Parameters::nonlinear_viscous_problem() const
 {
-  if(viscous_problem())
-  {
-    if(viscous_term_is_nonlinear() &&
-       treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Implicit)
-    {
-      return true;
-    }
-  }
-
-  return false;
+  return viscous_problem() && viscous_term_is_nonlinear();
 }
 
 bool
 Parameters::nonlinear_problem_has_to_be_solved() const
 {
-  return (convective_term_is_treated_implicitly() ||
-          nonlinear_viscous_term_is_treated_implicitly());
+  return implicit_convective_problem() || nonlinear_viscous_problem();
 }
 
 bool
@@ -853,7 +841,7 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
   print_parameter(pcout, "Temporal discretization method", temporal_discretization);
   print_parameter(pcout, "Treatment of convective term", treatment_of_convective_term);
 
-  if(turbulence_model_data.is_active || generalized_newtonian_model_data.is_active)
+  if(this->viscosity_is_variable())
     print_parameter(pcout, "Treatment of nonlinear viscosity", treatment_of_variable_viscosity);
 
   print_parameter(pcout, "Calculation of time step size", calculation_of_time_step_size);

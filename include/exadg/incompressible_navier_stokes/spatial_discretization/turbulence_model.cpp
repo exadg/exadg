@@ -26,7 +26,7 @@ namespace ExaDG
 namespace IncNS
 {
 template<int dim, typename Number>
-TurbulenceModel<dim, Number>::TurbulenceModel() : Base(), degree_velocity(0)
+TurbulenceModel<dim, Number>::TurbulenceModel() : degree_velocity(0)
 {
 }
 
@@ -42,14 +42,14 @@ TurbulenceModel<dim, Number>::initialize(
   dealii::Mapping<dim> const &                           mapping_in,
   std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
   TurbulenceModelData const &                            turbulence_model_data_in,
-  unsigned int                                           dof_index_velocity_in,
-  unsigned int                                           quad_index_velocity_linear_in,
-  unsigned int                                           degree_velocity_in)
+  unsigned int const                                     dof_index_velocity_in,
+  unsigned int const                                     quad_index_velocity_in,
+  unsigned int const                                     degree_velocity_in)
 {
   Base::initialize(matrix_free_in,
                    viscous_kernel_in,
                    dof_index_velocity_in,
-                   quad_index_velocity_linear_in);
+                   quad_index_velocity_in);
 
   turbulence_model_data = turbulence_model_data_in;
   degree_velocity       = degree_velocity_in;
@@ -63,7 +63,7 @@ template<int dim, typename Number>
 void
 TurbulenceModel<dim, Number>::set_viscosity(VectorType const & velocity) const
 {
-  Base::viscous_kernel->set_constant_coefficient(Base::viscosity_newtonian_limit);
+  this->viscous_kernel->set_constant_coefficient(this->viscous_kernel->get_data().viscosity);
 
   this->add_viscosity(velocity);
 }
@@ -74,7 +74,7 @@ TurbulenceModel<dim, Number>::add_viscosity(VectorType const & velocity) const
 {
   VectorType dummy;
 
-  Base::matrix_free->loop(&This::cell_loop_set_coefficients,
+  this->matrix_free->loop(&This::cell_loop_set_coefficients,
                           &This::face_loop_set_coefficients,
                           &This::boundary_face_loop_set_coefficients,
                           this,
@@ -90,9 +90,7 @@ TurbulenceModel<dim, Number>::cell_loop_set_coefficients(
   VectorType const & src,
   Range const &      cell_range) const
 {
-  CellIntegratorU integrator(matrix_free,
-                             Base::dof_index_velocity,
-                             Base::quad_index_velocity_linear);
+  CellIntegratorU integrator(matrix_free, this->dof_index_velocity, this->quad_index_velocity);
 
   // loop over all cells
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
@@ -113,7 +111,7 @@ TurbulenceModel<dim, Number>::cell_loop_set_coefficients(
       tensor velocity_gradient = integrator.get_gradient(q);
 
       // get the current viscosity
-      scalar viscosity = Base::viscous_kernel->get_viscosity_cell(cell, q);
+      scalar viscosity = this->viscous_kernel->get_viscosity_cell(cell, q);
 
       add_turbulent_viscosity(viscosity,
                               filter_width,
@@ -121,7 +119,7 @@ TurbulenceModel<dim, Number>::cell_loop_set_coefficients(
                               turbulence_model_data.constant);
 
       // set the coefficients
-      Base::viscous_kernel->set_coefficient_cell(cell, q, viscosity);
+      this->viscous_kernel->set_coefficient_cell(cell, q, viscosity);
     }
   }
 }
@@ -136,12 +134,12 @@ TurbulenceModel<dim, Number>::face_loop_set_coefficients(
 {
   FaceIntegratorU integrator_m(matrix_free,
                                true,
-                               Base::dof_index_velocity,
-                               Base::quad_index_velocity_linear);
+                               this->dof_index_velocity,
+                               this->quad_index_velocity);
   FaceIntegratorU integrator_p(matrix_free,
                                false,
-                               Base::dof_index_velocity,
-                               Base::quad_index_velocity_linear);
+                               this->dof_index_velocity,
+                               this->quad_index_velocity);
 
   // loop over all interior faces
   for(unsigned int face = face_range.first; face < face_range.second; face++)
@@ -168,8 +166,8 @@ TurbulenceModel<dim, Number>::face_loop_set_coefficients(
       tensor velocity_gradient_neighbor = integrator_p.get_gradient(q);
 
       // get the coefficients
-      scalar viscosity          = Base::viscous_kernel->get_coefficient_face(face, q);
-      scalar viscosity_neighbor = Base::viscous_kernel->get_coefficient_face_neighbor(face, q);
+      scalar viscosity          = this->viscous_kernel->get_coefficient_face(face, q);
+      scalar viscosity_neighbor = this->viscous_kernel->get_coefficient_face_neighbor(face, q);
 
       add_turbulent_viscosity(viscosity,
                               filter_width,
@@ -182,8 +180,8 @@ TurbulenceModel<dim, Number>::face_loop_set_coefficients(
                               turbulence_model_data.constant);
 
       // set the coefficients
-      Base::viscous_kernel->set_coefficient_face(face, q, viscosity);
-      Base::viscous_kernel->set_coefficient_face_neighbor(face, q, viscosity_neighbor);
+      this->viscous_kernel->set_coefficient_face(face, q, viscosity);
+      this->viscous_kernel->set_coefficient_face_neighbor(face, q, viscosity_neighbor);
     }
   }
 }
@@ -198,8 +196,8 @@ TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients(
 {
   FaceIntegratorU integrator(matrix_free,
                              true,
-                             Base::dof_index_velocity,
-                             Base::quad_index_velocity_linear);
+                             this->dof_index_velocity,
+                             this->quad_index_velocity);
 
   // loop over all boundary faces
   for(unsigned int face = face_range.first; face < face_range.second; face++)
@@ -220,7 +218,7 @@ TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients(
       tensor velocity_gradient = integrator.get_gradient(q);
 
       // get the coefficients
-      scalar viscosity = Base::viscous_kernel->get_coefficient_face(face, q);
+      scalar viscosity = this->viscous_kernel->get_coefficient_face(face, q);
 
       add_turbulent_viscosity(viscosity,
                               filter_width,
@@ -228,7 +226,7 @@ TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients(
                               turbulence_model_data.constant);
 
       // set the coefficients
-      Base::viscous_kernel->set_coefficient_face(face, q, viscosity);
+      this->viscous_kernel->set_coefficient_face(face, q, viscosity);
     }
   }
 }
@@ -238,7 +236,7 @@ void
 TurbulenceModel<dim, Number>::calculate_filter_width(dealii::Mapping<dim> const & mapping)
 {
   unsigned int n_cells =
-    Base::matrix_free->n_cell_batches() + Base::matrix_free->n_ghost_cell_batches();
+    this->matrix_free->n_cell_batches() + this->matrix_free->n_ghost_cell_batches();
 
   filter_width_vector.resize(n_cells);
 
@@ -246,17 +244,17 @@ TurbulenceModel<dim, Number>::calculate_filter_width(dealii::Mapping<dim> const 
 
   dealii::FEValues<dim> fe_values(
     mapping,
-    Base::matrix_free->get_dof_handler(Base::dof_index_velocity).get_fe(),
+    this->matrix_free->get_dof_handler(this->dof_index_velocity).get_fe(),
     quadrature,
     dealii::update_JxW_values);
 
   // loop over all cells
   for(unsigned int i = 0; i < n_cells; ++i)
   {
-    for(unsigned int v = 0; v < Base::matrix_free->n_active_entries_per_cell_batch(i); ++v)
+    for(unsigned int v = 0; v < this->matrix_free->n_active_entries_per_cell_batch(i); ++v)
     {
       typename dealii::DoFHandler<dim>::cell_iterator cell =
-        Base::matrix_free->get_cell_iterator(i, v, Base::dof_index_velocity);
+        this->matrix_free->get_cell_iterator(i, v, this->dof_index_velocity);
       fe_values.reinit(cell);
 
       // calculate cell volume

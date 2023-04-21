@@ -68,9 +68,9 @@ public:
              dealii::Mapping<dim> const &                           mapping_in,
              std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
              TurbulenceModelData const &                            turbulence_model_data_in,
-             unsigned int                                           dof_index_velocity_in,
-             unsigned int                                           quad_index_velocity_linear_in,
-             unsigned int                                           degree_velocity_in);
+             unsigned int const                                     dof_index_velocity_in,
+             unsigned int const                                     quad_index_velocity_in,
+             unsigned int const                                     degree_velocity_in);
 
   /*
    *  Function for *setting* the viscosity to viscosity_newtonian_limit.

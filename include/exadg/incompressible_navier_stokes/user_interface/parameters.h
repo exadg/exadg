@@ -58,19 +58,13 @@ public:
   viscous_problem() const;
 
   bool
-  viscous_term_is_linear() const;
-
-  bool
-  viscous_term_is_nonlinear() const;
-
-  bool
   viscosity_is_variable() const;
 
   bool
-  convective_term_is_treated_implicitly() const;
+  implicit_convective_problem() const;
 
   bool
-  nonlinear_viscous_term_is_treated_implicitly() const;
+  nonlinear_viscous_problem() const;
 
   bool
   nonlinear_problem_has_to_be_solved() const;
@@ -88,6 +82,12 @@ public:
   print(dealii::ConditionalOStream const & pcout, std::string const & name) const;
 
 private:
+  bool
+  viscous_term_is_linear() const;
+
+  bool
+  viscous_term_is_nonlinear() const;
+
   void
   print_parameters_mathematical_model(dealii::ConditionalOStream const & pcout) const;
 

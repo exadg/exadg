@@ -50,33 +50,33 @@ private:
   typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
 
 public:
-  /*
+  /**
    *  Constructor.
    */
   GeneralizedNewtonianModel();
 
-  /*
+  /**
    * Destructor.
    */
   virtual ~GeneralizedNewtonianModel();
 
-  /*
+  /**
    * Initialization function.
    */
   void
   initialize(dealii::MatrixFree<dim, Number> const &                matrix_free_in,
              std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
              GeneralizedNewtonianModelData const & generalized_newtonian_model_data_in,
-             unsigned int                          dof_index_velocity_in,
-             unsigned int                          quad_index_velocity_linear_in);
+             unsigned int const                    dof_index_velocity_in,
+             unsigned int const                    quad_index_velocity_in);
 
-  /*
+  /**
    *  Function for *setting* the viscosity to viscosity_newtonian_limit.
    */
   void
   set_viscosity(VectorType const & velocity) const;
 
-  /*
+  /**
    *  Function for *adding to* the viscosity taking the currently stored viscosity as a basis.
    */
   void
@@ -101,60 +101,40 @@ private:
                                       VectorType const & src,
                                       Range const &      face_range) const;
 
-  /*
+  /**
    *  This function computes the kinematic viscosity for
    *  generalized Newtonian fluids, i.e., based on the shear rate.
-   *  All models can be found in , e.g., Galdi et al., 2008
+   *  Such models can be found in , e.g., Galdi et al., 2008
    *  ("Hemodynamical Flows: Modeling, Analysis and Simulation").
    *  With
    *  y    = sqrt(2*sym_grad_velocity : sym_grad_velocity)
-   *  e_oo = generalized_newtonian_kinematic_viscosity_lower_limit
-   *  e_0  = generalized_newtonian_kinematic_viscosity_upper_limit
-   *  k    = generalized_newtonian_kappa
-   *  l    = generalized_newtonian_lambda
-   *  a    = generalized_newtonian_a
-   *  b    = generalized_newtonian_b
+   *  e_oo = lower viscosity limit
+   *  e_0  = upper viscosity limit
+   *  and fitting parameters
+   *  k    = kappa
+   *  l    = lambda
+   *  a
+   *  b.
    *  we have the apparent viscosity
    *  viscosity = e_oo + (e_0 - e_oo) * [k + (l * y)^a]^[(n - 1) / a]
-   *
-   *  We distinguish the cases:
-   *  GeneralizedCarreauYasuda, // no assumptions
-   *  Carreau,                  // k = 1, a = 2
-   *  Cross,                    // k = 1, n = 1 - a
-   *  SimplifiedCross,          // k = 1, a = 1, n = 0
-   *  PowerLaw                  // k = 0 (e_00 for numerical reasons)
    */
   void
   add_generalized_newtonian_viscosity(scalar & viscosity, tensor const & velocity_gradient) const;
 
-  void
-  compute_viscosity_factor(scalar & viscosity_factor, scalar const & shear_rate) const;
-
-  /*
-   * The rheological models below differ in the factor scaling the margin, (e_0 - e_oo),
-   * and hence only compute the factor [k + (l * y)^a]^[(n - 1) / a] .
+  /**
+   * Many rheological models differ in the factor scaling the margin
+   * between upper and lower viscosity limits
+   * e_0 - e_oo,
+   * which we denote here as `viscosity_margin`. This margin is multiplied
+   * with a factor [k + (l * y)^a]^[(n - 1) / a], which we denote as `viscosity_factor`.
    */
+  scalar
+  compute_viscosity_factor(scalar const & shear_rate) const;
+
   void
   generalized_carreau_yasuda_model(scalar & viscosity_factor, scalar const & shear_rate) const;
 
-  void
-  carreau_model(scalar & viscosity_factor, scalar const & shear_rate) const;
-
-  void
-  cross_model(scalar & viscosity_factor, scalar const & shear_rate) const;
-
-  void
-  simplified_cross_model(scalar & viscosity_factor, scalar const & shear_rate) const;
-
-  void
-  power_law_model(scalar & viscosity_factor, scalar const & shear_rate) const;
-
-  GeneralizedNewtonianViscosityModel generalized_newtonian_model;
-  Number                             viscosity_margin;
-  Number                             a;
-  Number                             n;
-  Number                             kappa;
-  Number                             lambda;
+  GeneralizedNewtonianModelData data;
 };
 
 } // namespace IncNS

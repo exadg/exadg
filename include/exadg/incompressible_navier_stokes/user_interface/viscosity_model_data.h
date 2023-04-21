@@ -32,13 +32,12 @@ namespace IncNS
 struct TurbulenceModelData
 {
   TurbulenceModelData()
-    : turbulence_model(TurbulenceEddyViscosityModel::Undefined), is_active(false), constant(0.0)
   {
   }
 
-  TurbulenceEddyViscosityModel turbulence_model;
-  bool                         is_active;
-  double                       constant; // model constant
+  TurbulenceEddyViscosityModel turbulence_model{TurbulenceEddyViscosityModel::Undefined};
+  bool                         is_active{false};
+  double                       constant{0.0}; // model constant
 
   void
   check() const
@@ -54,74 +53,25 @@ struct TurbulenceModelData
 struct GeneralizedNewtonianModelData
 {
   GeneralizedNewtonianModelData()
-    : generalized_newtonian_model(GeneralizedNewtonianViscosityModel::Undefined),
-      is_active(false),
-      viscosity_margin(0.0),
-      kappa(0.0),
-      lambda(0.0),
-      a(0.0),
-      n(0.0)
   {
   }
 
-  GeneralizedNewtonianViscosityModel generalized_newtonian_model;
-  bool                               is_active;
+  GeneralizedNewtonianViscosityModel generalized_newtonian_model {GeneralizedNewtonianViscosityModel::Undefined};
+  bool                               is_active{false};
 
   // parameters of generalized Carreau-Yasuda model
-  double viscosity_margin;
-  double kappa;
-  double lambda;
-  double a;
-  double n;
+  double viscosity_margin{0.0};
+  double kappa{0.0};
+  double lambda{0.0};
+  double a{0.0};
+  double n{0.0};
 
   void
   check() const
   {
     AssertThrow(is_active, dealii::ExcMessage("Generalized Newtonian model is inactive."));
-
-    // check assumptions of rheological models and enforce user to set the parameters
-    // accordingly in the generalized Carreau-Yasuda model
-    if(generalized_newtonian_model == GeneralizedNewtonianViscosityModel::Carreau ||
-       generalized_newtonian_model == GeneralizedNewtonianViscosityModel::Cross ||
-       generalized_newtonian_model == GeneralizedNewtonianViscosityModel::SimplifiedCross)
-    {
-      AssertThrow(std::abs(kappa - 1.0) < 1e-20,
-                  dealii::ExcMessage("generalized_newtonian_kappa == 1 required for "
-                                     "this GeneralizedNewtonianViscosityModel."));
-    }
-
-    if(generalized_newtonian_model == GeneralizedNewtonianViscosityModel::Carreau)
-    {
-      AssertThrow(std::abs(a - 2.0) < 1e-20,
-                  dealii::ExcMessage("generalized_newtonian_a == 2 required for"
-                                     "GeneralizedNewtonianViscosityModel::Carreau."));
-    }
-
-    if(generalized_newtonian_model == GeneralizedNewtonianViscosityModel::Cross)
-    {
-      AssertThrow(std::abs(n - 1.0 + a) < 1e-20,
-                  dealii::ExcMessage("generalized_newtonian_n - 1 == generalized_newtonian_a "
-                                     "required for GeneralizedNewtonianViscosityModel::Cross."));
-    }
-
-    if(generalized_newtonian_model == GeneralizedNewtonianViscosityModel::SimplifiedCross)
-    {
-      AssertThrow(std::abs(a - 1.0) < 1e-20,
-                  dealii::ExcMessage(
-                    "generalized_newtonian_a == 1 "
-                    "required for GeneralizedNewtonianViscosityModel::SimplifiedCross."));
-      AssertThrow(std::abs(n) < 1e-20,
-                  dealii::ExcMessage(
-                    "generalized_newtonian_n == 0 "
-                    "required for GeneralizedNewtonianViscosityModel::SimplifiedCross."));
-    }
-
-    if(generalized_newtonian_model == GeneralizedNewtonianViscosityModel::PowerLaw)
-    {
-      AssertThrow(std::abs(kappa) < 1e-20,
-                  dealii::ExcMessage("generalized_newtonian_kappa == 0 required for "
-                                     "required for GeneralizedNewtonianViscosityModel::PowerLaw."));
-    }
+    AssertThrow(generalized_newtonian_model != GeneralizedNewtonianViscosityModel::Undefined,
+                dealii::ExcMessage("GenerelizedNewtonianViscosityModel not defined."));
   }
 };
 

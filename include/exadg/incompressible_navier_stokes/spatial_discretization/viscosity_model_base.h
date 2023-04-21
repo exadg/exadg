@@ -61,8 +61,8 @@ public:
   void
   initialize(dealii::MatrixFree<dim, Number> const &                matrix_free_in,
              std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
-             unsigned int                                           dof_index_velocity_in,
-             unsigned int                                           quad_index_velocity_linear_in);
+             unsigned int const                                     dof_index_velocity_in,
+             unsigned int const                                     quad_index_velocity_in);
 
   /*
    *  Pure virtual function for *setting* the viscosity to viscosity_newtonian_limit.
@@ -79,7 +79,7 @@ public:
 
 protected:
   unsigned int dof_index_velocity;
-  unsigned int quad_index_velocity_linear;
+  unsigned int quad_index_velocity;
   double       viscosity_newtonian_limit;
 
   dealii::MatrixFree<dim, Number> const * matrix_free;

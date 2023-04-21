@@ -8,7 +8,7 @@
 #
 #  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
 #
-#  Copyright (C) 2021 by the ExaDG authors
+#  Copyright (C) 2023 by the ExaDG authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by

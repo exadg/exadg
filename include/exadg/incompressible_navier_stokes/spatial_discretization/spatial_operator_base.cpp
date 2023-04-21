@@ -524,7 +524,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     data.convective_problem = false;
   else
-    data.convective_problem = param.convective_term_is_treated_implicitly();
+    data.convective_problem = param.implicit_convective_problem();
   data.viscous_problem = param.viscous_problem();
 
   data.convective_kernel_data = convective_kernel_data;
@@ -626,13 +626,6 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
         *matrix_free, constraint_dummy, data, div_penalty_kernel, conti_penalty_kernel);
     }
   }
-}
-
-template<int dim, typename Number>
-void
-SpatialOperatorBase<dim, Number>::set_constant_viscosity(Number const & constant_coefficient) const
-{
-  viscous_kernel->set_constant_coefficient(constant_coefficient);
 }
 
 template<int dim, typename Number>
@@ -1403,7 +1396,7 @@ SpatialOperatorBase<dim, Number>::update_viscosity(VectorType const & velocity) 
 
   // reset the viscosity stored
   // viscosity = viscosity_newtonian_limit
-  set_constant_viscosity(viscous_kernel_data.viscosity);
+  viscous_kernel->set_constant_coefficient(viscous_kernel_data.viscosity);
 
   // add contribution from generalized Newtonian model
   // viscosity += generalized_newtonian_viscosity(viscosity_newtonian_limit)
@@ -1412,9 +1405,9 @@ SpatialOperatorBase<dim, Number>::update_viscosity(VectorType const & velocity) 
 
   // add contribution from turbulence model
   // viscosity += turbulent_viscosity(viscosity)
-  // note that the apparent viscosity is used to
-  // compute the turbulent viscosity, such that the
-  // *sequence of calls matters*
+  // note that the apparent viscosity is used to compute the turbulent viscosity, such that the
+  // *sequence of calls matters*, i.e., we can only compute the turbulent viscosity once the laminar
+  // viscosity has been computed
   if(param.turbulence_model_data.is_active)
     turbulence_model.add_viscosity(velocity);
 }
