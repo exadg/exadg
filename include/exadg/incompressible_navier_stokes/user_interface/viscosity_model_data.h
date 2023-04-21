@@ -56,8 +56,9 @@ struct GeneralizedNewtonianModelData
   {
   }
 
-  GeneralizedNewtonianViscosityModel generalized_newtonian_model {GeneralizedNewtonianViscosityModel::Undefined};
-  bool                               is_active{false};
+  GeneralizedNewtonianViscosityModel generalized_newtonian_model{
+    GeneralizedNewtonianViscosityModel::Undefined};
+  bool is_active{false};
 
   // parameters of generalized Carreau-Yasuda model
   double viscosity_margin{0.0};

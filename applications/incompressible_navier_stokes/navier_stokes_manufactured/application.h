@@ -538,10 +538,9 @@ private:
     // Sigma: 1.35
     this->param.turbulence_model_data.constant = 1.35;
 
-    this->param.treatment_of_variable_viscosity =
-      treatment_of_variable_viscosity_implicit ?
-        TreatmentOfVariableViscosity::Implicit :
-        TreatmentOfVariableViscosity::Explicit;
+    this->param.treatment_of_variable_viscosity = treatment_of_variable_viscosity_implicit ?
+                                                    TreatmentOfVariableViscosity::Implicit :
+                                                    TreatmentOfVariableViscosity::Explicit;
 
     // GENERALIZED NEWTONIAN MODEL
     this->param.generalized_newtonian_model_data.is_active = use_generalized_newtonian_model;

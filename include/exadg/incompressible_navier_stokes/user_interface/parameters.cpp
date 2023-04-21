@@ -545,9 +545,10 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
 
     if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
-      AssertThrow(treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit,
-                  dealii::ExcMessage(
-                    "An implicit treatment of the variable viscosity field (rendering the viscous step of the dual splitting scheme nonlinear regarding the unknown velocity field) is currently not implemented for the dual splitting scheme."));
+      AssertThrow(
+        treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit,
+        dealii::ExcMessage(
+          "An implicit treatment of the variable viscosity field (rendering the viscous step of the dual splitting scheme nonlinear regarding the unknown velocity field) is currently not implemented for the dual splitting scheme."));
     }
   }
 
