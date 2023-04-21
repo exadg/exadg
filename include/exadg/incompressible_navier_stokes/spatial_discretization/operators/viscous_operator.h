@@ -56,7 +56,7 @@ private:
   typedef FaceIntegrator<dim, dim, Number> IntegratorFace;
 
 public:
-  ViscousKernel() : degree(1), tau(dealii::make_vectorized_array<Number>(0.0))
+  ViscousKernel() : quad_index(0), degree(1), tau(dealii::make_vectorized_array<Number>(0.0))
   {
   }
 
@@ -68,8 +68,10 @@ public:
   {
     this->data = data;
 
+    this->quad_index = quad_index;
+
     dealii::FiniteElement<dim> const & fe = matrix_free.get_dof_handler(dof_index).get_fe();
-    degree                                = fe.degree;
+    this->degree                          = fe.degree;
 
     calculate_penalty_parameter(matrix_free, dof_index);
 
@@ -93,6 +95,18 @@ public:
   get_data() const
   {
     return this->data;
+  }
+
+  unsigned int
+  get_quad_index() const
+  {
+    return this->quad_index;
+  }
+
+  unsigned int
+  get_degree() const
+  {
+    return this->degree;
   }
 
   void
@@ -504,6 +518,8 @@ public:
 
 private:
   ViscousKernelData data;
+
+  unsigned int quad_index;
 
   unsigned int degree;
 

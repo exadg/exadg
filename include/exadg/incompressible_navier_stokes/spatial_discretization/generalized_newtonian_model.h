@@ -50,25 +50,24 @@ private:
   typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
 
 public:
-  /**
+  /*
    *  Constructor.
    */
   GeneralizedNewtonianModel();
 
-  /**
+  /*
    * Destructor.
    */
   virtual ~GeneralizedNewtonianModel();
 
-  /**
+  /*
    * Initialization function.
    */
   void
   initialize(dealii::MatrixFree<dim, Number> const &                matrix_free_in,
              std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
              GeneralizedNewtonianModelData const & generalized_newtonian_model_data_in,
-             unsigned int const                    dof_index_velocity_in,
-             unsigned int const                    quad_index_velocity_in);
+             unsigned int const                    dof_index_velocity_in);
 
   /**
    *  Function for *setting* the viscosity to viscosity_newtonian_limit.

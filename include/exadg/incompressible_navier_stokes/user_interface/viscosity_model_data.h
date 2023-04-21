@@ -2,7 +2,7 @@
  *
  *  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
  *
- *  Copyright (C) 2021 by the ExaDG authors
+ *  Copyright (C) 2023 by the ExaDG authors
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,16 +19,34 @@
  *  ______________________________________________________________________
  */
 
+// ExaDG
+#include <exadg/utilities/print_functions.h>
+
 #ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_VISCOSITY_MODEL_DATA_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_VISCOSITY_MODEL_DATA_H_
+#  define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_VISCOSITY_MODEL_DATA_H_
 
 namespace ExaDG
 {
 namespace IncNS
 {
-/*
- *  Turbulence model data.
+/**
+ *  Algebraic subgrid-scale turbulence models for LES
+ *
+ *  Standard constants according to literature:
+ *    Smagorinsky: 0.165
+ *    Vreman: 0.28
+ *    WALE: 0.50
+ *    Sigma: 1.35
  */
+enum class TurbulenceEddyViscosityModel
+{
+  Undefined,
+  Smagorinsky,
+  Vreman,
+  WALE,
+  Sigma
+};
+
 struct TurbulenceModelData
 {
   TurbulenceModelData()
@@ -45,11 +63,31 @@ struct TurbulenceModelData
     AssertThrow(is_active, dealii::ExcMessage("Turbulence model is inactive."));
     AssertThrow(constant > 1e-20, dealii::ExcMessage("Parameter must be greater than zero."));
   }
+
+  void
+  print(dealii::ConditionalOStream const & pcout) const
+  {
+    pcout << std::endl << "Turbulence:" << std::endl;
+
+    print_parameter(pcout, "Use turbulence model", is_active);
+
+    if(is_active)
+    {
+      print_parameter(pcout, "Turbulence model", turbulence_model);
+      print_parameter(pcout, "Turbulence model constant", constant);
+    }
+  }
 };
 
-/*
- * Generalized Newtonian model data.
+/**
+ *  Generalized Newtonian models
  */
+enum class GeneralizedNewtonianViscosityModel
+{
+  Undefined,
+  GeneralizedCarreauYasuda
+};
+
 struct GeneralizedNewtonianModelData
 {
   GeneralizedNewtonianModelData()
@@ -73,6 +111,24 @@ struct GeneralizedNewtonianModelData
     AssertThrow(is_active, dealii::ExcMessage("Generalized Newtonian model is inactive."));
     AssertThrow(generalized_newtonian_model != GeneralizedNewtonianViscosityModel::Undefined,
                 dealii::ExcMessage("GenerelizedNewtonianViscosityModel not defined."));
+  }
+
+  void
+  print(dealii::ConditionalOStream const & pcout) const
+  {
+    pcout << std::endl << "Rheology:" << std::endl;
+
+    print_parameter(pcout, "Use generalized Newtonian model", is_active);
+
+    if(is_active)
+    {
+      print_parameter(pcout, "Generalized Newtonian model", generalized_newtonian_model);
+      print_parameter(pcout, "viscosity margin", viscosity_margin);
+      print_parameter(pcout, "parameter kappa", kappa);
+      print_parameter(pcout, "parameter lambda", lambda);
+      print_parameter(pcout, "parameter a", a);
+      print_parameter(pcout, "parameter n", n);
+    }
   }
 };
 

@@ -639,9 +639,7 @@ SpatialOperatorBase<dim, Number>::initialize_viscosity_model()
                                 *get_mapping(),
                                 viscous_kernel,
                                 param.turbulence_model_data,
-                                get_dof_index_velocity(),
-                                get_quad_index_velocity_linear(),
-                                param.degree_u);
+                                get_dof_index_velocity());
   }
 
   // initialize and check turbulence model data
@@ -650,8 +648,7 @@ SpatialOperatorBase<dim, Number>::initialize_viscosity_model()
     generalized_newtonian_model.initialize(*matrix_free,
                                            viscous_kernel,
                                            param.generalized_newtonian_model_data,
-                                           get_dof_index_velocity(),
-                                           get_quad_index_velocity_linear());
+                                           get_dof_index_velocity());
   }
 }
 

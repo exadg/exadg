@@ -68,24 +68,22 @@ public:
              dealii::Mapping<dim> const &                           mapping_in,
              std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
              TurbulenceModelData const &                            turbulence_model_data_in,
-             unsigned int const                                     dof_index_velocity_in,
-             unsigned int const                                     quad_index_velocity_in,
-             unsigned int const                                     degree_velocity_in);
+             unsigned int const                                     dof_index_velocity_in);
 
-  /*
-   *  Function for *setting* the viscosity to viscosity_newtonian_limit.
+  /**
+   * Function for *setting* the viscosity to viscosity_newtonian_limit.
    */
   void
   set_viscosity(VectorType const & velocity) const;
 
-  /*
-   *  Function for *adding to* the viscosity taking the currently stored viscosity as a basis.
+  /**
+   * Function for *adding to* the viscosity taking the currently stored viscosity as a basis.
    */
   void
   add_viscosity(VectorType const & velocity) const;
 
-  /*
-   *  This function calculates the filter width for each cell.
+  /**
+   * This function calculates the filter width for each cell.
    */
   void
   calculate_filter_width(dealii::Mapping<dim> const & mapping);
@@ -109,7 +107,7 @@ private:
                                       VectorType const & src,
                                       Range const &      face_range) const;
 
-  /*
+  /**
    *  This function adds the turbulent eddy-viscosity to the laminar viscosity
    *  by using one of the implemented models.
    */
@@ -119,7 +117,7 @@ private:
                           tensor const & velocity_gradient,
                           double const & model_constant) const;
 
-  /*
+  /**
    *  Smagorinsky model (1963):
    *
    *    nu_SGS = (C * filter_width)^{2} * sqrt(2 * S:S)
@@ -139,7 +137,7 @@ private:
                     double const & C,
                     scalar &       viscosity) const;
 
-  /*
+  /**
    *  Vreman model (2004): Note that we only consider the isotropic variant of the Vreman model:
    *
    *    nu_SGS = (C * filter_width)^{2} * D
@@ -169,7 +167,7 @@ private:
                double const & C,
                scalar &       viscosity) const;
 
-  /*
+  /**
    *  WALE (wall-adapting local eddy-viscosity) model (Nicoud & Ducros 1999):
    *
    *    nu_SGS = (C * filter_width)^{2} * D ,
@@ -200,7 +198,7 @@ private:
              double const & C,
              scalar &       viscosity) const;
 
-  /*
+  /**
    *  Sigma model (Toda et al. 2010, Nicoud et al. 2011):
    *
    *    nu_SGS = (C * filter_width)^{2} * D
@@ -223,7 +221,6 @@ private:
               double const & C,
               scalar &       viscosity) const;
 
-  unsigned int                  degree_velocity;
   TurbulenceModelData           turbulence_model_data;
   dealii::AlignedVector<scalar> filter_width_vector;
 };

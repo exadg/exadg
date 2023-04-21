@@ -757,7 +757,10 @@ Parameters::print(dealii::ConditionalOStream const & pcout, std::string const & 
   print_parameters_spatial_discretization(pcout);
 
   // TURBULENCE
-  print_parameters_turbulence(pcout);
+  turbulence_model_data.print(pcout);
+
+  // GENERALIZED NEWTONIAN MODELS
+  generalized_newtonian_model_data.print(pcout);
 
   // NUMERICAL PARAMTERS
   print_parameters_numerical_parameters(pcout);
@@ -981,42 +984,6 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
   if(use_divergence_penalty == true || use_continuity_penalty == true)
   {
     print_parameter(pcout, "Type of penalty parameter", type_penalty_parameter);
-  }
-}
-
-void
-Parameters::print_parameters_turbulence(dealii::ConditionalOStream const & pcout) const
-{
-  pcout << std::endl << "Turbulence:" << std::endl;
-
-  print_parameter(pcout, "Use turbulence model", turbulence_model_data.is_active);
-
-  if(turbulence_model_data.is_active)
-  {
-    print_parameter(pcout, "Turbulence model", turbulence_model_data.turbulence_model);
-    print_parameter(pcout, "Turbulence model constant", turbulence_model_data.constant);
-  }
-}
-
-void
-Parameters::print_parameters_generalized_newtonian(dealii::ConditionalOStream const & pcout) const
-{
-  pcout << std::endl << "Rheology:" << std::endl;
-
-  print_parameter(pcout,
-                  "Use generalized Newtonian model",
-                  generalized_newtonian_model_data.is_active);
-
-  if(generalized_newtonian_model_data.is_active)
-  {
-    print_parameter(pcout,
-                    "Generalized Newtonian model",
-                    generalized_newtonian_model_data.generalized_newtonian_model);
-    print_parameter(pcout, "viscosity margin", generalized_newtonian_model_data.viscosity_margin);
-    print_parameter(pcout, "parameter kappa", generalized_newtonian_model_data.kappa);
-    print_parameter(pcout, "parameter lambda", generalized_newtonian_model_data.lambda);
-    print_parameter(pcout, "parameter a", generalized_newtonian_model_data.a);
-    print_parameter(pcout, "parameter n", generalized_newtonian_model_data.n);
   }
 }
 

@@ -101,12 +101,6 @@ private:
   print_parameters_spatial_discretization(dealii::ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_turbulence(dealii::ConditionalOStream const & pcout) const;
-
-  void
-  print_parameters_generalized_newtonian(dealii::ConditionalOStream const & pcout) const;
-
-  void
   print_parameters_numerical_parameters(dealii::ConditionalOStream const & pcout) const;
 
   void

@@ -41,13 +41,9 @@ GeneralizedNewtonianModel<dim, Number>::initialize(
   dealii::MatrixFree<dim, Number> const &                matrix_free_in,
   std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
   GeneralizedNewtonianModelData const &                  generalized_newtonian_model_data_in,
-  unsigned int const                                     dof_index_velocity_in,
-  unsigned int const                                     quad_index_velocity_in)
+  unsigned int const                                     dof_index_velocity_in)
 {
-  Base::initialize(matrix_free_in,
-                   viscous_kernel_in,
-                   dof_index_velocity_in,
-                   quad_index_velocity_in);
+  Base::initialize(matrix_free_in, viscous_kernel_in, dof_index_velocity_in);
 
   data = generalized_newtonian_model_data_in;
 
@@ -85,7 +81,9 @@ GeneralizedNewtonianModel<dim, Number>::cell_loop_set_coefficients(
   VectorType const & src,
   Range const &      cell_range) const
 {
-  CellIntegratorU integrator(matrix_free, this->dof_index_velocity, this->quad_index_velocity);
+  CellIntegratorU integrator(matrix_free,
+                             this->dof_index_velocity,
+                             this->viscous_kernel->get_quad_index());
 
   // loop over all cells
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
@@ -124,11 +122,11 @@ GeneralizedNewtonianModel<dim, Number>::face_loop_set_coefficients(
   FaceIntegratorU integrator_m(matrix_free,
                                true,
                                this->dof_index_velocity,
-                               this->quad_index_velocity);
+                               this->viscous_kernel->get_quad_index());
   FaceIntegratorU integrator_p(matrix_free,
                                false,
                                this->dof_index_velocity,
-                               this->quad_index_velocity);
+                               this->viscous_kernel->get_quad_index());
 
   // loop over all interior faces
   for(unsigned int face = face_range.first; face < face_range.second; face++)
@@ -175,7 +173,7 @@ GeneralizedNewtonianModel<dim, Number>::boundary_face_loop_set_coefficients(
   FaceIntegratorU integrator(matrix_free,
                              true,
                              this->dof_index_velocity,
-                             this->quad_index_velocity);
+                             this->viscous_kernel->get_quad_index());
 
   // loop over all boundary faces
   for(unsigned int face = face_range.first; face < face_range.second; face++)

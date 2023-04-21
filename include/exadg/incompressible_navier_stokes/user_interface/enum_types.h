@@ -139,6 +139,16 @@ enum class TreatmentOfConvectiveTerm
 };
 
 /*
+ *  The possibly variable viscosity can be treated explicitly (Explicit) or implicitly (Implicit).
+ */
+enum class TreatmentOfVariableViscosity
+{
+  Undefined,
+  Explicit,
+  Implicit
+};
+
+/*
  * calculation of time step size
  */
 enum class TimeStepCalculation
@@ -540,52 +550,6 @@ enum class PreconditionerMass
 {
   None,
   PointJacobi
-};
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                                     TURBULENCE                                     */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- *  Algebraic subgrid-scale turbulence models for LES
- *
- *  Standard constants according to literature:
- *    Smagorinsky: 0.165
- *    Vreman: 0.28
- *    WALE: 0.50
- *    Sigma: 1.35
- */
-enum class TurbulenceEddyViscosityModel
-{
-  Undefined,
-  Smagorinsky,
-  Vreman,
-  WALE,
-  Sigma
-};
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                            GENERALIZED NEWTONIAN MODELS                            */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- *  Generalized Newtonian models
- */
-enum class GeneralizedNewtonianViscosityModel
-{
-  Undefined,
-  GeneralizedCarreauYasuda
-};
-
-enum class TreatmentOfVariableViscosity
-{
-  Undefined,
-  Explicit,
-  Implicit
 };
 
 } // namespace IncNS

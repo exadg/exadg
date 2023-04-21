@@ -35,8 +35,8 @@ namespace ExaDG
 {
 namespace IncNS
 {
-/*
- *  Variable viscosity models.
+/**
+ *  Base class for variable viscosity models.
  */
 template<int dim, typename Number>
 class ViscosityModelBase : public dealii::Subscriptor
@@ -61,17 +61,16 @@ public:
   void
   initialize(dealii::MatrixFree<dim, Number> const &                matrix_free_in,
              std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
-             unsigned int const                                     dof_index_velocity_in,
-             unsigned int const                                     quad_index_velocity_in);
+             unsigned int const                                     dof_index_velocity_in);
 
-  /*
-   *  Pure virtual function for *setting* the viscosity to viscosity_newtonian_limit.
+  /**
+   * Pure virtual function for *setting* the viscosity to viscosity_newtonian_limit.
    */
   virtual void
   set_viscosity(VectorType const & velocity) const = 0;
 
-  /*
-   *  Pure virtual function for *adding to* the viscosity taking the currently stored viscosity as a
+  /**
+   * Pure virtual function for *adding to* the viscosity taking the currently stored viscosity as a
    * basis.
    */
   virtual void
@@ -79,8 +78,6 @@ public:
 
 protected:
   unsigned int dof_index_velocity;
-  unsigned int quad_index_velocity;
-  double       viscosity_newtonian_limit;
 
   dealii::MatrixFree<dim, Number> const * matrix_free;
 

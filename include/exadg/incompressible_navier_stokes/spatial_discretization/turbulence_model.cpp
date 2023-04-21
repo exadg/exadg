@@ -26,7 +26,7 @@ namespace ExaDG
 namespace IncNS
 {
 template<int dim, typename Number>
-TurbulenceModel<dim, Number>::TurbulenceModel() : degree_velocity(0)
+TurbulenceModel<dim, Number>::TurbulenceModel()
 {
 }
 
@@ -42,17 +42,11 @@ TurbulenceModel<dim, Number>::initialize(
   dealii::Mapping<dim> const &                           mapping_in,
   std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
   TurbulenceModelData const &                            turbulence_model_data_in,
-  unsigned int const                                     dof_index_velocity_in,
-  unsigned int const                                     quad_index_velocity_in,
-  unsigned int const                                     degree_velocity_in)
+  unsigned int const                                     dof_index_velocity_in)
 {
-  Base::initialize(matrix_free_in,
-                   viscous_kernel_in,
-                   dof_index_velocity_in,
-                   quad_index_velocity_in);
+  Base::initialize(matrix_free_in, viscous_kernel_in, dof_index_velocity_in);
 
   turbulence_model_data = turbulence_model_data_in;
-  degree_velocity       = degree_velocity_in;
 
   turbulence_model_data.check();
 
@@ -90,7 +84,9 @@ TurbulenceModel<dim, Number>::cell_loop_set_coefficients(
   VectorType const & src,
   Range const &      cell_range) const
 {
-  CellIntegratorU integrator(matrix_free, this->dof_index_velocity, this->quad_index_velocity);
+  CellIntegratorU integrator(matrix_free,
+                             this->dof_index_velocity,
+                             this->viscous_kernel->get_quad_index());
 
   // loop over all cells
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
@@ -135,11 +131,11 @@ TurbulenceModel<dim, Number>::face_loop_set_coefficients(
   FaceIntegratorU integrator_m(matrix_free,
                                true,
                                this->dof_index_velocity,
-                               this->quad_index_velocity);
+                               this->viscous_kernel->get_quad_index());
   FaceIntegratorU integrator_p(matrix_free,
                                false,
                                this->dof_index_velocity,
-                               this->quad_index_velocity);
+                               this->viscous_kernel->get_quad_index());
 
   // loop over all interior faces
   for(unsigned int face = face_range.first; face < face_range.second; face++)
@@ -197,7 +193,7 @@ TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients(
   FaceIntegratorU integrator(matrix_free,
                              true,
                              this->dof_index_velocity,
-                             this->quad_index_velocity);
+                             this->viscous_kernel->get_quad_index());
 
   // loop over all boundary faces
   for(unsigned int face = face_range.first; face < face_range.second; face++)
@@ -240,7 +236,7 @@ TurbulenceModel<dim, Number>::calculate_filter_width(dealii::Mapping<dim> const 
 
   filter_width_vector.resize(n_cells);
 
-  dealii::QGauss<dim> quadrature(degree_velocity + 1);
+  dealii::QGauss<dim> quadrature(this->viscous_kernel->get_degree() + 1);
 
   dealii::FEValues<dim> fe_values(
     mapping,
@@ -269,7 +265,7 @@ TurbulenceModel<dim, Number>::calculate_filter_width(dealii::Mapping<dim> const 
 
       // take polynomial degree of shape functions into account:
       // h/(k_u + 1)
-      h /= (double)(degree_velocity + 1);
+      h /= (double)(this->viscous_kernel->get_degree() + 1);
 
       filter_width_vector[i][v] = h;
     }
