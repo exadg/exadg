@@ -45,9 +45,14 @@ StVenantKirchhoff<dim, Number>::StVenantKirchhoff(
   if(E_is_variable)
   {
     // allocate vectors for variable coefficients and initialize with constant values
-    f0_coefficients.initialize(matrix_free, quad_index, false, false, false, get_f0_factor() * E);
-    f1_coefficients.initialize(matrix_free, quad_index, false, false, false, get_f1_factor() * E);
-    f2_coefficients.initialize(matrix_free, quad_index, false, false, false, get_f2_factor() * E);
+    f0_coefficients.initialize(matrix_free, quad_index, false, false);
+    f0_coefficients.set_coefficients(get_f0_factor() * E);
+
+    f1_coefficients.initialize(matrix_free, quad_index, false, false);
+    f1_coefficients.set_coefficients(get_f1_factor() * E);
+
+    f2_coefficients.initialize(matrix_free, quad_index, false, false);
+    f2_coefficients.set_coefficients(get_f2_factor() * E);
 
     VectorType dummy;
     matrix_free.cell_loop(&StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients,

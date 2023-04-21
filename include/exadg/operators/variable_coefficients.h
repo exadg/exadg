@@ -44,52 +44,40 @@ class VariableCoefficients
 public:
   /**
    * Initializes the variable coefficients object based on @p matrix_free and @p quad_index
-   * according to the desired properties @p use_face_loops_in, @p use_neighbor_faces_in,
-   * and @p use_cell_based_face_loops_in, i.e. resizes the desired tables to the required number of
-   * cells, faces, and quadrature points.
+   * according to the desired properties @p use_faces_in, and @p use_cell_based_face_loops_in,
+   * i.e. resizes the desired tables to the required number of cells, faces, and quadrature points.
    *
    * @param matrix_free Underlying matrix-free description
    * @param quad_index Quadrature index in the matrix-free description to create the
    * coefficient tables according to the quadrature points
-   * @param use_face_loops_in Boolean switch to use a coefficient table for faces
-   * @param use_neighbor_faces_in Boolean switch to use a coefficient table for neighbors, in case
-   * the coefficients can differ on the two sides of a face
-   * @param use_cell_based_face_loops_in Boolean switch to use a coefficient table for cell-based
+   * @param use_faces_in Boolean switch to use a coefficient table for faces (and neighbors)
+   * @param use_cell_based_faces_in Boolean switch to use a coefficient table for cell-based
    * face access
    */
   template<int dim, typename Number>
   void
   initialize(dealii::MatrixFree<dim, Number> const & matrix_free,
              unsigned int const                      quad_index,
-             bool const                              use_face_loops_in,
-             bool const                              use_neighbor_faces_in,
-             bool const                              use_cell_based_face_loops_in)
+             bool const                              use_faces_in,
+             bool const                              use_cell_based_faces_in)
   {
-    use_face_loops            = use_face_loops_in;
-    use_neighbor_faces        = use_neighbor_faces_in;
-    use_cell_based_face_loops = use_cell_based_face_loops_in;
+    if(not use_faces_in)
+      AssertThrow(not use_cell_based_faces_in,
+                  dealii::ExcMessage("Using cell-based faces does not make sense if using faces"
+                                     " is disabled."));
+
+    use_faces            = use_faces_in;
+    use_cell_based_faces = use_cell_based_faces_in;
 
     reinit(matrix_free, quad_index);
   }
 
   /**
-   * Same as above, but fills the coefficient tables with the given @p constant_coefficient.
+   * Sets the coefficient @p constant_coefficient everywhere.
    */
-  template<int dim, typename Number>
   void
-  initialize(dealii::MatrixFree<dim, Number> const & matrix_free,
-             unsigned int const                      quad_index,
-             bool const                              use_face_loops_in,
-             bool const                              use_neighbor_faces_in,
-             bool const                              use_cell_based_face_loops_in,
-             coefficient_type const &                constant_coefficient)
+  set_coefficients(coefficient_type const & constant_coefficient)
   {
-    initialize(matrix_free,
-               quad_index,
-               use_face_loops_in,
-               use_neighbor_faces_in,
-               use_cell_based_face_loops_in);
-
     fill(constant_coefficient);
   }
 
@@ -188,22 +176,22 @@ private:
   {
     coefficients_cell.reinit(matrix_free.n_cell_batches(), matrix_free.get_n_q_points(quad_index));
 
-    if(use_face_loops)
+    if(use_faces)
+    {
       coefficients_face.reinit(matrix_free.n_inner_face_batches() +
                                  matrix_free.n_boundary_face_batches(),
                                matrix_free.get_n_q_points_face(quad_index));
-
-    if(use_neighbor_faces)
       coefficients_face_neighbor.reinit(matrix_free.n_inner_face_batches(),
                                         matrix_free.get_n_q_points_face(quad_index));
 
-    if(use_cell_based_face_loops)
-    {
-      unsigned int const n_faces_per_cell =
-        matrix_free.get_dof_handler().get_triangulation().get_reference_cells()[0].n_faces();
+      if(use_cell_based_faces)
+      {
+        unsigned int const n_faces_per_cell =
+          matrix_free.get_dof_handler().get_triangulation().get_reference_cells()[0].n_faces();
 
-      coefficients_face_cell_based.reinit(matrix_free.n_cell_batches() * n_faces_per_cell,
-                                          matrix_free.get_n_q_points_face(quad_index));
+        coefficients_face_cell_based.reinit(matrix_free.n_cell_batches() * n_faces_per_cell,
+                                            matrix_free.get_n_q_points_face(quad_index));
+      }
     }
   }
 
@@ -215,14 +203,14 @@ private:
   {
     coefficients_cell.fill(constant_coefficient);
 
-    if(use_face_loops)
+    if(use_faces)
+    {
       coefficients_face.fill(constant_coefficient);
-
-    if(use_neighbor_faces)
       coefficients_face_neighbor.fill(constant_coefficient);
 
-    if(use_cell_based_face_loops)
-      coefficients_face_cell_based.fill(constant_coefficient);
+      if(use_cell_based_faces)
+        coefficients_face_cell_based.fill(constant_coefficient);
+    }
   }
 
   //! Coefficient table for cells
@@ -238,16 +226,10 @@ private:
   dealii::Table<2, coefficient_type> coefficients_face_cell_based;
 
   //! Boolean switch to use a coefficient table for faces
-  bool use_face_loops{false};
-
-  /**
-   * @brief Boolean switch to use a coefficient table for neighbors, in case the coefficients
-   * can differ on the two sides of a face.
-   */
-  bool use_neighbor_faces{false};
+  bool use_faces{false};
 
   //! Boolean switch to use a coefficient table for cell-based face access
-  bool use_cell_based_face_loops{false};
+  bool use_cell_based_faces{false};
 };
 
 } // namespace ExaDG
