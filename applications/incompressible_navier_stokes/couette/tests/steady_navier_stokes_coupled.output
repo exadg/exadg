@@ -68,6 +68,9 @@ Spatial discretization:
 Turbulence:
   Use turbulence model:                      false
 
+Rheology:
+  Use generalized Newtonian model:           false
+
 Numerical parameters:
   Block Jacobi matrix-free:                  false
   Use cell-based face loops:                 false
@@ -162,10 +165,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 7.77864e-13
+  Absolute error (L2-norm): 7.79220e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 2.10240e-11
+  Absolute error (L2-norm): 2.10738e-11
 
 
 
@@ -235,6 +238,9 @@ Spatial discretization:
 
 Turbulence:
   Use turbulence model:                      false
+
+Rheology:
+  Use generalized Newtonian model:           false
 
 Numerical parameters:
   Block Jacobi matrix-free:                  false
@@ -330,10 +336,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 6.48165e-13
+  Absolute error (L2-norm): 7.20768e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 1.24791e-11
+  Absolute error (L2-norm): 1.37313e-11
 
 
 
@@ -403,6 +409,9 @@ Spatial discretization:
 
 Turbulence:
   Use turbulence model:                      false
+
+Rheology:
+  Use generalized Newtonian model:           false
 
 Numerical parameters:
   Block Jacobi matrix-free:                  false
@@ -498,10 +507,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 2.87520e-14
+  Absolute error (L2-norm): 3.02718e-14
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 7.90487e-13
+  Absolute error (L2-norm): 8.02726e-13
 
 
 
@@ -571,6 +580,9 @@ Spatial discretization:
 
 Turbulence:
   Use turbulence model:                      false
+
+Rheology:
+  Use generalized Newtonian model:           false
 
 Numerical parameters:
   Block Jacobi matrix-free:                  false
@@ -666,7 +678,7 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 9.55255e-12
+  Absolute error (L2-norm): 9.26348e-12
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 2.37835e-10
+  Absolute error (L2-norm): 2.29836e-10
