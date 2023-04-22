@@ -428,16 +428,17 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_velocity_block()
   }
   else if(type == MomentumPreconditioner::InverseMassMatrix)
   {
-    InverseMassOperatorData inverse_mass_data;
-    inverse_mass_data.dof_index  = this->get_dof_index_velocity();
-    inverse_mass_data.quad_index = this->get_quad_index_velocity_linear();
-    inverse_mass_data.implement_block_diagonal_preconditioner_matrix_free =
+    InverseMassOperatorData inverse_mass_operator_data;
+    inverse_mass_operator_data.dof_index  = this->get_dof_index_velocity();
+    inverse_mass_operator_data.quad_index = this->get_quad_index_velocity_linear();
+    inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
       this->param.solve_elementwise_mass_system_matrix_free;
-    inverse_mass_data.solver_data_block_diagonal = this->param.solver_data_elementwise_inverse_mass;
+    inverse_mass_operator_data.solver_data_block_diagonal =
+      this->param.solver_data_elementwise_inverse_mass;
 
     preconditioner_momentum =
       std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(this->get_matrix_free(),
-                                                                    inverse_mass_data);
+                                                                    inverse_mass_operator_data);
   }
   else if(type == MomentumPreconditioner::Multigrid)
   {
@@ -527,15 +528,16 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
 
   if(type == SchurComplementPreconditioner::InverseMassMatrix)
   {
-    InverseMassOperatorData inverse_mass_data;
-    inverse_mass_data.dof_index  = this->get_dof_index_pressure();
-    inverse_mass_data.quad_index = this->get_quad_index_pressure();
-    inverse_mass_data.implement_block_diagonal_preconditioner_matrix_free =
+    InverseMassOperatorData inverse_mass_operator_data;
+    inverse_mass_operator_data.dof_index  = this->get_dof_index_pressure();
+    inverse_mass_operator_data.quad_index = this->get_quad_index_pressure();
+    inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
       this->param.solve_elementwise_mass_system_matrix_free;
-    inverse_mass_data.solver_data_block_diagonal = this->param.solver_data_elementwise_inverse_mass;
+    inverse_mass_operator_data.solver_data_block_diagonal =
+      this->param.solver_data_elementwise_inverse_mass;
     inverse_mass_preconditioner_schur_complement =
       std::make_shared<InverseMassPreconditioner<dim, 1, Number>>(this->get_matrix_free(),
-                                                                  inverse_mass_data);
+                                                                  inverse_mass_operator_data);
   }
   else if(type == SchurComplementPreconditioner::LaplaceOperator)
   {
@@ -561,15 +563,16 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
 
     // inverse mass operator to also include the part of the preconditioner that is beneficial when
     // using large time steps and large viscosities.
-    InverseMassOperatorData inverse_mass_data;
-    inverse_mass_data.dof_index  = this->get_quad_index_pressure();
-    inverse_mass_data.quad_index = this->get_quad_index_pressure();
-    inverse_mass_data.implement_block_diagonal_preconditioner_matrix_free =
+    InverseMassOperatorData inverse_mass_operator_data;
+    inverse_mass_operator_data.dof_index  = this->get_quad_index_pressure();
+    inverse_mass_operator_data.quad_index = this->get_quad_index_pressure();
+    inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
       this->param.solve_elementwise_mass_system_matrix_free;
-    inverse_mass_data.solver_data_block_diagonal = this->param.solver_data_elementwise_inverse_mass;
+    inverse_mass_operator_data.solver_data_block_diagonal =
+      this->param.solver_data_elementwise_inverse_mass;
     inverse_mass_preconditioner_schur_complement =
       std::make_shared<InverseMassPreconditioner<dim, 1, Number>>(this->get_matrix_free(),
-                                                                  inverse_mass_data);
+                                                                  inverse_mass_operator_data);
 
     // initialize tmp vector
     this->initialize_vector_pressure(tmp_scp_pressure);
@@ -590,15 +593,16 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
     setup_pressure_convection_diffusion_operator();
 
     // III. inverse pressure mass operator
-    InverseMassOperatorData inverse_mass_data;
-    inverse_mass_data.dof_index  = this->get_dof_index_pressure();
-    inverse_mass_data.quad_index = this->get_quad_index_pressure();
-    inverse_mass_data.implement_block_diagonal_preconditioner_matrix_free =
+    InverseMassOperatorData inverse_mass_operator_data;
+    inverse_mass_operator_data.dof_index  = this->get_dof_index_pressure();
+    inverse_mass_operator_data.quad_index = this->get_quad_index_pressure();
+    inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
       this->param.solve_elementwise_mass_system_matrix_free;
-    inverse_mass_data.solver_data_block_diagonal = this->param.solver_data_elementwise_inverse_mass;
+    inverse_mass_operator_data.solver_data_block_diagonal =
+      this->param.solver_data_elementwise_inverse_mass;
     inverse_mass_preconditioner_schur_complement =
       std::make_shared<InverseMassPreconditioner<dim, 1, Number>>(this->get_matrix_free(),
-                                                                  inverse_mass_data);
+                                                                  inverse_mass_operator_data);
 
     // initialize tmp vector
     this->initialize_vector_pressure(tmp_scp_pressure);

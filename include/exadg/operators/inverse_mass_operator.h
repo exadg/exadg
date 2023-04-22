@@ -155,8 +155,6 @@ private:
 
   unsigned int dof_index, quad_index;
 
-  // ExplicitMatrixFreeInverseMass is only available for tensor-product DG elements. For other DG
-  // elements, we use a BlockJacobiPreconditioner
   bool explicit_matrix_free_inverse_mass_available;
 
   MassOperator<dim, n_components, Number> mass_operator;

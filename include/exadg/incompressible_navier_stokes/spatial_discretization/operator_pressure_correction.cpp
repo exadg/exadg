@@ -251,14 +251,14 @@ OperatorPressureCorrection<dim, Number>::setup_inverse_mass_operator_pressure()
 {
   // inverse mass operator pressure (needed for pressure update in case of rotational
   // formulation)
-  InverseMassOperatorData inverse_mass_data_pressure;
-  inverse_mass_data_pressure.dof_index  = this->get_dof_index_pressure();
-  inverse_mass_data_pressure.quad_index = this->get_quad_index_pressure();
-  inverse_mass_data_pressure.implement_block_diagonal_preconditioner_matrix_free =
+  InverseMassOperatorData inverse_mass_operator_data_pressure;
+  inverse_mass_operator_data_pressure.dof_index  = this->get_dof_index_pressure();
+  inverse_mass_operator_data_pressure.quad_index = this->get_quad_index_pressure();
+  inverse_mass_operator_data_pressure.implement_block_diagonal_preconditioner_matrix_free =
     this->param.solve_elementwise_mass_system_matrix_free;
-  inverse_mass_data_pressure.solver_data_block_diagonal =
+  inverse_mass_operator_data_pressure.solver_data_block_diagonal =
     this->param.solver_data_elementwise_inverse_mass;
-  inverse_mass_pressure.initialize(this->get_matrix_free(), inverse_mass_data_pressure);
+  inverse_mass_pressure.initialize(this->get_matrix_free(), inverse_mass_operator_data_pressure);
 }
 
 template<int dim, typename Number>
