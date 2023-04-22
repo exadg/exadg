@@ -115,8 +115,6 @@ template<int dim, typename Number>
 void
 TimeIntGenAlpha<dim, Number>::do_timestep_solve()
 {
-  std::cout << "\n\n\n START do_timestep_solve() \n\n\n";
-
   // compute right-hand side in case of linear problems or "constant vector"
   // in case of nonlinear problems
   dealii::Timer timer;
@@ -204,8 +202,6 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
     acceleration_np, displacement_np, displacement_n, velocity_n, acceleration_n);
 
   this->timer_tree->insert({"Timeloop", "Update vectors"}, timer.wall_time());
-
-  std::cout << "\n\n\n END do_timestep_solve() \n\n\n";
 }
 
 template<int dim, typename Number>

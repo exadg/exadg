@@ -15,7 +15,7 @@ ________________________________________________________________________________
 
 MPI info:
 
-  Number of processes:                       1
+  Number of processes:                       2
 
 Setting up elasticity solver:
 
@@ -136,7 +136,7 @@ ________________________________________________________________________________
 
 MPI info:
 
-  Number of processes:                       1
+  Number of processes:                       2
 
 Setting up elasticity solver:
 
@@ -257,7 +257,7 @@ ________________________________________________________________________________
 
 MPI info:
 
-  Number of processes:                       1
+  Number of processes:                       2
 
 Setting up elasticity solver:
 
@@ -378,7 +378,7 @@ ________________________________________________________________________________
 
 MPI info:
 
-  Number of processes:                       1
+  Number of processes:                       2
 
 Setting up elasticity solver:
 
@@ -499,7 +499,7 @@ ________________________________________________________________________________
 
 MPI info:
 
-  Number of processes:                       1
+  Number of processes:                       2
 
 Setting up elasticity solver:
 
@@ -620,7 +620,7 @@ ________________________________________________________________________________
 
 MPI info:
 
-  Number of processes:                       1
+  Number of processes:                       2
 
 Setting up elasticity solver:
 
@@ -741,7 +741,7 @@ ________________________________________________________________________________
 
 MPI info:
 
-  Number of processes:                       1
+  Number of processes:                       2
 
 Setting up elasticity solver:
 
@@ -862,7 +862,7 @@ ________________________________________________________________________________
 
 MPI info:
 
-  Number of processes:                       1
+  Number of processes:                       2
 
 Setting up elasticity solver:
 
@@ -983,7 +983,7 @@ ________________________________________________________________________________
 
 MPI info:
 
-  Number of processes:                       1
+  Number of processes:                       2
 
 Setting up elasticity solver:
 
