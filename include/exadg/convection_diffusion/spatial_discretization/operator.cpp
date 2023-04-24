@@ -626,8 +626,11 @@ Operator<dim, Number>::project_velocity(VectorType & velocity, double const time
   inverse_mass_operator_data_l2_projection.solver_data_block_diagonal =
     param.solver_data_elementwise_inverse_mass;
 
-  l2_projection.apply(
-    *matrix_free, inverse_mass_operator_data_l2_projection, field_functions->velocity, time, velocity);
+  l2_projection.apply(*matrix_free,
+                      inverse_mass_operator_data_l2_projection,
+                      field_functions->velocity,
+                      time,
+                      velocity);
 }
 
 template<int dim, typename Number>
