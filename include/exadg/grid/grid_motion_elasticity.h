@@ -65,7 +65,7 @@ public:
    * Updates the mapping, i.e., moves the grid by solving a pseudo-solid problem.
    */
   void
-  update(double const time, bool const print_solver_info) override
+  update(double const time, bool const print_solver_info, bool const update_preconditioner) override
   {
     dealii::Timer timer;
     timer.restart();
@@ -75,7 +75,7 @@ public:
       VectorType const_vector;
 
       auto const iter = pde_operator->solve_nonlinear(
-        displacement, const_vector, 0.0 /* no mass term */, time, param.update_preconditioner);
+        displacement, const_vector, 0.0 /* no mass term */, time, update_preconditioner);
 
       iterations.first += 1;
       std::get<0>(iterations.second) += std::get<0>(iter);
@@ -95,7 +95,7 @@ public:
       pde_operator->compute_rhs_linear(rhs, time);
 
       auto const iter = pde_operator->solve_linear(
-        displacement, rhs, 0.0 /* no mass term */, time, param.update_preconditioner);
+        displacement, rhs, 0.0 /* no mass term */, time, false /* do not update preconditioner */);
 
       iterations.first += 1;
       std::get<1>(iterations.second) += iter;

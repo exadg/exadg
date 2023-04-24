@@ -176,7 +176,7 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
                                  rhs,
                                  this->get_scaling_factor_mass(),
                                  this->get_mid_time(),
-                                 update_preconditioner && (this->time_step_number > 1));
+                                 update_preconditioner);
 
     iterations.first += 1;
     std::get<1>(iterations.second) += iter;

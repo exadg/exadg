@@ -105,11 +105,11 @@ public:
 
   // needed for ALE-type problems
   virtual void
-  move_grid(double const & time) const = 0;
+  move_grid(double const & time, bool const update_preconditioner) const = 0;
 
   // needed for ALE-type problems
   virtual void
-  move_grid_and_update_dependent_data_structures(double const & time) = 0;
+  move_grid_and_update_dependent_data_structures(double const & time, bool const update_preconditioner) = 0;
 
   // needed for ALE-type problems
   virtual void

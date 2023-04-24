@@ -46,6 +46,8 @@ Parameters::Parameters()
     ale_formulation(false),
     mesh_movement_type(MeshMovementType::Function),
     neumann_with_variable_normal_vector(false),
+    update_preconditioner_grid_motion(false),
+    update_preconditioner_grid_motion_every_time_steps(1),
 
     // PHYSICAL QUANTITIES
     start_time(0.),

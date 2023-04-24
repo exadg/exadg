@@ -730,14 +730,14 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       accelerat
     // shift to right-hand side
     rhs *= -1.0;
 
+    // revert scaling factor to initialized value
+    elasticity_operator_nonlinear.set_scaling_factor_mass_operator(scaling_factor_mass);
+
     // body forces
     if(param.body_force)
     {
       body_force_operator.evaluate_add(rhs, displacement, time);
     }
-
-    // revert scaling factor to initialized value
-    elasticity_operator_nonlinear.set_scaling_factor_mass_operator(scaling_factor_mass);
   }
   else // linear case
   {
@@ -754,6 +754,9 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       accelerat
     // shift to right-hand side
     rhs *= -1.0;
 
+    // revert scaling factor to initialized value
+    elasticity_operator_linear.set_scaling_factor_mass_operator(scaling_factor_mass);
+
     // Neumann BCs and inhomogeneous Dirichlet BCs
     // (has already the correct sign, since rhs_add())
     elasticity_operator_linear.rhs_add(rhs);
@@ -765,9 +768,6 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       accelerat
       // pull_back_body_force = false in this case.
       body_force_operator.evaluate_add(rhs, displacement, time);
     }
-
-    // revert scaling factor to initialized value
-    elasticity_operator_linear.set_scaling_factor_mass_operator(scaling_factor_mass);
   }
 
   // invert mass operator to get acceleration

@@ -180,10 +180,14 @@ void
 Driver<dim, Number>::ale_update() const
 {
   // move the mesh and update dependent data structures
-  grid_motion->update(time_integrator->get_next_time(), false);
+  bool const update_preconditioner = application->get_parameters().update_preconditioner &&
+		  (this->time_integrator->get_number_of_time_steps() % application->get_parameters().update_preconditioner_every_time_steps == 0);
+  grid_motion->update(time_integrator->get_next_time(), false /* print_solver_info */, update_preconditioner);
+
   std::shared_ptr<dealii::Mapping<dim> const> mapping =
     get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
   matrix_free->update_mapping(*mapping);
+
   pde_operator->update_after_grid_motion();
   std::shared_ptr<TimeIntBDF<dim, Number>> time_int_bdf =
     std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);

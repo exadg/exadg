@@ -199,13 +199,13 @@ public:
    * Moves the grid for ALE-type problems.
    */
   void
-  move_grid(double const & time) const;
+  move_grid(double const & time, bool const update_preconditioner) const;
 
   /*
    * Moves the grid and updates dependent data structures for ALE-type problems.
    */
   void
-  move_grid_and_update_dependent_data_structures(double const & time);
+  move_grid_and_update_dependent_data_structures(double const & time, bool const update_preconditioner);
 
   /*
    * Fills a dof-vector with grid coordinates for ALE-type problems.

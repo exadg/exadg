@@ -49,7 +49,7 @@ public:
    * Updates the mapping, i.e., moves the grid.
    */
   virtual void
-  update(double const time, bool const print_solver_info) = 0;
+  update(double const time, bool const print_solver_info, bool const update_preconditioner) = 0;
 
   /**
    * Print the number of iterations for PDE type grid motion problems.
