@@ -65,8 +65,8 @@ public:
   void
   update(double const time, bool const print_solver_info, bool const update_preconditioner) override
   {
-	// preconditioner update has no effect
-	(void)update_preconditioner;
+    // preconditioner update has no effect
+    (void)update_preconditioner;
 
     dealii::Timer timer;
     timer.restart();

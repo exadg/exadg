@@ -171,12 +171,11 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
   else // linear case
   {
     // solve linear system of equations
-    unsigned int const iter =
-      pde_operator->solve_linear(displacement_np,
-                                 rhs,
-                                 this->get_scaling_factor_mass(),
-                                 this->get_mid_time(),
-                                 update_preconditioner);
+    unsigned int const iter = pde_operator->solve_linear(displacement_np,
+                                                         rhs,
+                                                         this->get_scaling_factor_mass(),
+                                                         this->get_mid_time(),
+                                                         update_preconditioner);
 
     iterations.first += 1;
     std::get<1>(iterations.second) += iter;

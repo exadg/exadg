@@ -825,7 +825,9 @@ Operator<dim, Number>::move_grid(double const & time, bool const update_precondi
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::move_grid_and_update_dependent_data_structures(double const & time, bool const update_preconditioner)
+Operator<dim, Number>::move_grid_and_update_dependent_data_structures(
+  double const & time,
+  bool const     update_preconditioner)
 {
   grid_motion->update(time, false /* print_solver_info */, update_preconditioner);
   matrix_free->update_mapping(*get_mapping());

@@ -507,9 +507,14 @@ Driver<dim, Number>::ale_update() const
   dealii::Timer sub_timer;
 
   sub_timer.restart();
-  bool const update_preconditioner = application->get_parameters().update_preconditioner_grid_motion &&
-	(this->fluid_time_integrator->get_number_of_time_steps() % application->get_parameters().update_preconditioner_grid_motion_every_time_steps == 0);
-  grid_motion->update(fluid_time_integrator->get_next_time(), false /* print_solver_info */, update_preconditioner);
+  bool const update_preconditioner =
+    application->get_parameters().update_preconditioner_grid_motion &&
+    (this->fluid_time_integrator->get_number_of_time_steps() %
+       application->get_parameters().update_preconditioner_grid_motion_every_time_steps ==
+     0);
+  grid_motion->update(fluid_time_integrator->get_next_time(),
+                      false /* print_solver_info */,
+                      update_preconditioner);
   timer_tree.insert({"Flow + transport", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
