@@ -176,13 +176,6 @@ public:
 
   bool neumann_with_variable_normal_vector;
 
-  // Update preconditioner before solving the linear system of equations.
-  bool update_preconditioner_grid_motion;
-
-  // Update preconditioner every ... time steps.
-  // This variable is only used if update of preconditioner is true.
-  unsigned int update_preconditioner_grid_motion_every_time_steps;
-
   /**************************************************************************************/
   /*                                                                                    */
   /*                                 PHYSICAL QUANTITIES                                */
