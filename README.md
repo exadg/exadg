@@ -60,17 +60,9 @@ A detailed list of publications can be found on the wiki page [Publications](htt
 
 ExaDG's principal developers are:
 
-- [Niklas Fehn](https://www.epc.ed.tum.de/lnm/staff/niklas-fehn/) ([@nfehn](https://github.com/nfehn)), Technical University of Munich, DE
+- [Niklas Fehn](https://www.epc.ed.tum.de/lnm/staff/niklas-fehn/) ([@nfehn](https://github.com/nfehn)), Augsburg University, DE
 - [Martin Kronbichler](https://www.uni-augsburg.de/en/fakultaet/mntf/math/prof/hpc/team/kronbichler/) ([@kronbichler](https://github.com/kronbichler)), Augsburg University, DE
 - [Peter Munch](https://www.uni-augsburg.de/en/fakultaet/mntf/math/prof/hpc/team/munch/) ([@peterrum](https://github.com/peterrum)), Augsburg University, DE
-
-## List of contributors
-
-The following developers contributed to **ExaDG**:
-
-Maximilian Bergbauer, Tim Dockhorn, Elias Dejene, Daniel Dengler, Niklas Fehn, Anian Fuchs, Shahbaz Haider, Christoph Haslinger, Johannes Heinz, Pei-Hsuan Huang, Benjamin Krank, Martin Kronbichler, Stefan Legat, Peter Munch, Fazıl Necioğlu, Oliver Neumann, Leon Riccius, David Schneider, Richard Schussnig, Yingxian Wang, Karl Robert Wichmann, Niklas Wik, Xuhui Zhang
-
-Their contributions are highly appreciated!
 
 ## License
 
