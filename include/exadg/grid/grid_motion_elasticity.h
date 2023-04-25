@@ -73,7 +73,8 @@ public:
       time_step_number % this->param.update_preconditioner_every_time_steps == 0 &&
       time_step_number > time_step_number_last_preconditioner_update;
 
-    time_step_number_last_preconditioner_update = time_step_number;
+    if(update_preconditioner)
+      time_step_number_last_preconditioner_update = time_step_number;
 
     return update_preconditioner;
   }

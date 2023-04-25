@@ -68,6 +68,7 @@ TimeIntBDF<dim, Number>::setup_derived()
   {
     // compute the grid coordinates at start time (and at previous times in case of
     // start_with_low_order == false)
+
     pde_operator->move_grid(this->get_time());
     pde_operator->fill_grid_coordinates_vector(vec_grid_coordinates[0]);
 

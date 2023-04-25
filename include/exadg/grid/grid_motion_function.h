@@ -48,7 +48,7 @@ public:
       mesh_movement_function(mesh_movement_function),
       triangulation(triangulation)
   {
-    update(start_time, false /* print_solver_info */, 0 /* time_step_number */);
+    update(start_time, false, dealii::numbers::invalid_unsigned_int);
   }
 
   /**
