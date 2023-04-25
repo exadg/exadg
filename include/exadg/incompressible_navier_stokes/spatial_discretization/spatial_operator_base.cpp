@@ -1465,9 +1465,11 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::move_grid(double const & time) const
 {
-  grid_motion->update(time,
-                      false /* print_solver_info */,
-                      false /* only update preconditioner prior to ALE update */);
+  // Driver::ale_update() is responsible for the preconditioner update
+  grid_motion->update(
+    time,
+    false /* print_solver_info */,
+    dealii::numbers::invalid_unsigned_int /* time_step_number used for preconditioner update */);
 }
 
 template<int dim, typename Number>
@@ -1475,9 +1477,11 @@ void
 SpatialOperatorBase<dim, Number>::move_grid_and_update_dependent_data_structures(
   double const & time)
 {
-  grid_motion->update(time,
-                      false /* print_solver_info */,
-                      false /* only update preconditioner prior to ALE update */);
+  // Driver::ale_update() is responsible for the preconditioner update
+  grid_motion->update(
+    time,
+    false /* print_solver_info */,
+    dealii::numbers::invalid_unsigned_int /* time_step_number used for preconditioner update */);
   matrix_free->update_mapping(*get_mapping());
   update_after_grid_motion();
 }

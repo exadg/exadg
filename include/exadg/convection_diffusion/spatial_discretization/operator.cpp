@@ -818,18 +818,24 @@ Operator<dim, Number>::update_conv_diff_operator(double const       time,
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::move_grid(double const & time, bool const update_preconditioner) const
+Operator<dim, Number>::move_grid(double const & time) const
 {
-  grid_motion->update(time, false /* print_solver_info */, update_preconditioner);
+  // Driver::ale_update() is responsible for the preconditioner update
+  grid_motion->update(
+    time,
+    false /* print_solver_info */,
+    dealii::numbers::invalid_unsigned_int /* time_step_number used for preconditioner update */);
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::move_grid_and_update_dependent_data_structures(
-  double const & time,
-  bool const     update_preconditioner)
+Operator<dim, Number>::move_grid_and_update_dependent_data_structures(double const & time)
 {
-  grid_motion->update(time, false /* print_solver_info */, update_preconditioner);
+  // Driver::ale_update() is responsible for the preconditioner update
+  grid_motion->update(
+    time,
+    false /* print_solver_info */,
+    dealii::numbers::invalid_unsigned_int /* time_step_number used for preconditioner update */);
   matrix_free->update_mapping(*get_mapping());
   update_after_grid_motion();
 }

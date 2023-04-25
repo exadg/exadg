@@ -24,6 +24,9 @@
 #include <deal.II/fe/mapping.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
+// ExaDG
+#include <exadg/utilities/numbers.h>
+
 #ifndef INCLUDE_EXADG_GRID_GRID_MOTION_INTERFACE_H_
 #  define INCLUDE_EXADG_GRID_GRID_MOTION_INTERFACE_H_
 
@@ -49,7 +52,7 @@ public:
    * Updates the mapping, i.e., moves the grid.
    */
   virtual void
-  update(double const time, bool const print_solver_info, bool const update_preconditioner) = 0;
+  update(double const time, bool const print_solver_info, types::time_step time_step_number) = 0;
 
   /**
    * Print the number of iterations for PDE type grid motion problems.

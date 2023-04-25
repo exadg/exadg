@@ -63,10 +63,12 @@ public:
    * Updates the mapping, i.e., moves the mesh by solving a Poisson-type problem.
    */
   void
-  update(double const time, bool const print_solver_info, bool const update_preconditioner) override
+  update(double const     time,
+         bool const       print_solver_info,
+         types::time_step time_step_number) override
   {
     // preconditioner update has no effect
-    (void)update_preconditioner;
+    (void)time_step_number;
 
     dealii::Timer timer;
     timer.restart();

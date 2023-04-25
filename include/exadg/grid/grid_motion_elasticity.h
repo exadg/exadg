@@ -56,16 +56,35 @@ public:
       pcout(std::cout,
             dealii::Utilities::MPI::this_mpi_process(
               structure_operator->get_dof_handler().get_communicator()) == 0),
-      iterations({0, {0, 0}})
+      iterations({0, {0, 0}}),
+      time_step_number_last_preconditioner_update(0)
   {
     pde_operator->initialize_dof_vector(displacement);
+  }
+
+  /**
+   * Check if the preconditioner should be updated or was updated at this time step already
+   */
+  bool
+  update_preconditioner(types::time_step const time_step_number)
+  {
+    bool const update_preconditioner =
+      this->param.update_preconditioner &&
+      time_step_number % this->param.update_preconditioner_every_time_steps == 0 &&
+      time_step_number > time_step_number_last_preconditioner_update;
+
+    time_step_number_last_preconditioner_update = time_step_number;
+
+    return update_preconditioner;
   }
 
   /**
    * Updates the mapping, i.e., moves the grid by solving a pseudo-solid problem.
    */
   void
-  update(double const time, bool const print_solver_info, bool const update_preconditioner) override
+  update(double const     time,
+         bool const       print_solver_info,
+         types::time_step time_step_number) override
   {
     dealii::Timer timer;
     timer.restart();
@@ -74,8 +93,12 @@ public:
     {
       VectorType const_vector;
 
-      auto const iter = pde_operator->solve_nonlinear(
-        displacement, const_vector, 0.0 /* no mass term */, time, update_preconditioner);
+      auto const iter =
+        pde_operator->solve_nonlinear(displacement,
+                                      const_vector,
+                                      0.0 /* no mass term */,
+                                      time,
+                                      this->update_preconditioner(time_step_number));
 
       iterations.first += 1;
       std::get<0>(iterations.second) += std::get<0>(iter);
@@ -164,6 +187,8 @@ private:
     unsigned int /* calls */,
     std::tuple<unsigned long long, unsigned long long> /* iteration counts {Newton, linear}*/>
     iterations;
+
+  types::time_step time_step_number_last_preconditioner_update;
 };
 
 } // namespace ExaDG

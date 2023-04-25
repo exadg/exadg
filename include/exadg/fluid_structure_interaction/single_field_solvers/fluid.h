@@ -259,14 +259,9 @@ SolverFluid<dim, Number>::solve_ale(
 
   sub_timer.restart();
   bool const print_solver_info = time_integrator->print_solver_info();
-  bool const update_preconditioner =
-    application->get_parameters().update_preconditioner_grid_motion &&
-    (this->time_integrator->get_number_of_time_steps() %
-       application->get_parameters().update_preconditioner_grid_motion_every_time_steps ==
-     0);
   ale_grid_motion->update(time_integrator->get_next_time(),
                           print_solver_info and not(is_test),
-                          update_preconditioner);
+                          this->time_integrator->get_number_of_time_steps());
   timer_tree->insert({"ALE", "Solve and reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();

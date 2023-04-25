@@ -68,8 +68,7 @@ TimeIntBDF<dim, Number>::setup_derived()
   {
     // compute the grid coordinates at start time (and at previous times in case of
     // start_with_low_order == false)
-    pde_operator->move_grid(this->get_time(),
-                            false /* only update preconditioner prior to ALE update */);
+    pde_operator->move_grid(this->get_time());
     pde_operator->fill_grid_coordinates_vector(vec_grid_coordinates[0]);
 
     if(this->start_with_low_order == false)
@@ -77,8 +76,7 @@ TimeIntBDF<dim, Number>::setup_derived()
       // compute grid coordinates at previous times (start with 1!)
       for(unsigned int i = 1; i < this->order; ++i)
       {
-        pde_operator->move_grid(this->get_previous_time(i),
-                                false /* only update preconditioner prior to ALE update */);
+        pde_operator->move_grid(this->get_previous_time(i));
         pde_operator->fill_grid_coordinates_vector(vec_grid_coordinates[i]);
       }
     }
@@ -139,8 +137,7 @@ void
 TimeIntBDF<dim, Number>::initialize_current_solution()
 {
   if(this->param.ale_formulation)
-    pde_operator->move_grid(this->get_time(),
-                            false /* only update preconditioner prior to ALE update */);
+    pde_operator->move_grid(this->get_time());
 
   pde_operator->prescribe_initial_conditions(solution[0], this->get_time());
 }
@@ -153,8 +150,7 @@ TimeIntBDF<dim, Number>::initialize_former_solutions()
   for(unsigned int i = 1; i < solution.size(); ++i)
   {
     if(this->param.ale_formulation)
-      pde_operator->move_grid(this->get_previous_time(i),
-                              false /* only update preconditioner prior to ALE update */);
+      pde_operator->move_grid(this->get_previous_time(i));
 
     pde_operator->prescribe_initial_conditions(solution[i], this->get_previous_time(i));
   }
@@ -560,8 +556,7 @@ TimeIntBDF<dim, Number>::postprocessing() const
   if(this->param.ale_formulation && this->get_time_step_number() == 1 &&
      !this->param.restarted_simulation)
   {
-    pde_operator->move_grid_and_update_dependent_data_structures(
-      this->get_time(), false /* only update preconditioner prior to ALE update */);
+    pde_operator->move_grid_and_update_dependent_data_structures(this->get_time());
   }
 
   postprocessor->do_postprocessing(solution[0], this->get_time(), this->get_time_step_number());
