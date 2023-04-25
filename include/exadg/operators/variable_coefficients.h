@@ -27,11 +27,8 @@ namespace ExaDG
  * This class serves as a manager of several table objects, which hold quadrature-point-level
  * coefficient information for the different matrix-free loop types and access methods.
  *
- * The class provides functionality for cell loops, separate face loops, and cell-based face loops.
- * For the separate face loops, coefficient information from the neighbor cell can also be stored
- * and used.
- *
- * This class is responsible solely for the storage of coefficients. No generic way of computing
+ * The class provides data structures for cell loops, separate face loops, and cell-based face
+ * loops. It is responsible solely for the storage of coefficients. No generic way of computing
  * the coefficients is provided here. This task is left to the owner of a `VariableCoefficients`
  * object.
  *
@@ -50,24 +47,25 @@ public:
    * @param matrix_free Underlying matrix-free description
    * @param quad_index Quadrature index in the matrix-free description to create the
    * coefficient tables according to the quadrature points
-   * @param use_faces_in Boolean switch to use a coefficient table for faces (and neighbors)
-   * @param use_cell_based_faces_in Boolean switch to use a coefficient table for cell-based
-   * face access
+   * @param store_face_data_in Boolean switch to use a coefficient table for faces (and neighbors)
+   * @param store_cell_based_face_data_in Boolean switch to use a coefficient table for cell-based
+   * face access. This is an additional and optional way of accessing the face coefficients and
+   * should be `false` if @p store_face_data_in is `false`.
    */
   template<int dim, typename Number>
   void
   initialize(dealii::MatrixFree<dim, Number> const & matrix_free,
              unsigned int const                      quad_index,
-             bool const                              use_faces_in,
-             bool const                              use_cell_based_faces_in)
+             bool const                              store_face_data_in,
+             bool const                              store_cell_based_face_data_in)
   {
-    if(not use_faces_in)
-      AssertThrow(not use_cell_based_faces_in,
-                  dealii::ExcMessage("Using cell-based faces does not make sense if using faces"
-                                     " is disabled."));
+    if(not store_face_data_in)
+      AssertThrow(not store_cell_based_face_data_in,
+                  dealii::ExcMessage("Storing only cell-based face data does not make sense"
+                                     " if storing face data is disabled."));
 
-    use_faces            = use_faces_in;
-    use_cell_based_faces = use_cell_based_faces_in;
+    store_face_data            = store_face_data_in;
+    store_cell_based_face_data = store_cell_based_face_data_in;
 
     reinit(matrix_free, quad_index);
   }
@@ -176,7 +174,7 @@ private:
   {
     coefficients_cell.reinit(matrix_free.n_cell_batches(), matrix_free.get_n_q_points(quad_index));
 
-    if(use_faces)
+    if(store_face_data)
     {
       coefficients_face.reinit(matrix_free.n_inner_face_batches() +
                                  matrix_free.n_boundary_face_batches(),
@@ -184,7 +182,7 @@ private:
       coefficients_face_neighbor.reinit(matrix_free.n_inner_face_batches(),
                                         matrix_free.get_n_q_points_face(quad_index));
 
-      if(use_cell_based_faces)
+      if(store_cell_based_face_data)
       {
         unsigned int const n_faces_per_cell =
           matrix_free.get_dof_handler().get_triangulation().get_reference_cells()[0].n_faces();
@@ -203,12 +201,12 @@ private:
   {
     coefficients_cell.fill(constant_coefficient);
 
-    if(use_faces)
+    if(store_face_data)
     {
       coefficients_face.fill(constant_coefficient);
       coefficients_face_neighbor.fill(constant_coefficient);
 
-      if(use_cell_based_faces)
+      if(store_cell_based_face_data)
         coefficients_face_cell_based.fill(constant_coefficient);
     }
   }
@@ -226,10 +224,15 @@ private:
   dealii::Table<2, coefficient_type> coefficients_face_cell_based;
 
   //! Boolean switch to use a coefficient table for faces
-  bool use_faces{false};
+  bool store_face_data{false};
 
-  //! Boolean switch to use a coefficient table for cell-based face access
-  bool use_cell_based_faces{false};
+  /**
+   * @brief Boolean switch to use a coefficient table for cell-based face access
+   *
+   * This is an additional/optional data structure which can be used when cell-based face access
+   * is required alongside the separate face access.
+   */
+  bool store_cell_based_face_data{false};
 };
 
 } // namespace ExaDG
