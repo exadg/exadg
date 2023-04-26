@@ -104,10 +104,10 @@ private:
   mutable dealii::VectorizedArray<Number> f2;
 
   // cache coefficients for spatially varying material parameters
-  bool                                                               E_is_variable;
-  mutable VariableCoefficientsCells<dealii::VectorizedArray<Number>> f0_coefficients;
-  mutable VariableCoefficientsCells<dealii::VectorizedArray<Number>> f1_coefficients;
-  mutable VariableCoefficientsCells<dealii::VectorizedArray<Number>> f2_coefficients;
+  bool                                                          E_is_variable;
+  mutable VariableCoefficients<dealii::VectorizedArray<Number>> f0_coefficients;
+  mutable VariableCoefficients<dealii::VectorizedArray<Number>> f1_coefficients;
+  mutable VariableCoefficients<dealii::VectorizedArray<Number>> f2_coefficients;
 };
 } // namespace Structure
 } // namespace ExaDG
