@@ -251,7 +251,7 @@ $(function() {
 <div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  <span class="keywordflow">else</span> <span class="keywordflow">if</span>(application-&gt;get_parameters().mesh_movement_type == IncNS::MeshMovementType::Elasticity)</div>
 <div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>  {</div>
 <div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>    ale_elasticity_operator-&gt;setup(ale_matrix_free, ale_matrix_free_data);</div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>    ale_elasticity_operator-&gt;setup_solver();</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>    ale_elasticity_operator-&gt;setup_solver(0.0 <span class="comment">/*stationary ALE extension only*/</span>);</div>
 <div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  }</div>
 <div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>  <span class="keywordflow">else</span></div>
 <div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>  {</div>
@@ -337,39 +337,41 @@ $(function() {
 <div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span> </div>
 <div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>  sub_timer.restart();</div>
 <div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>  <span class="keywordtype">bool</span> <span class="keyword">const</span> print_solver_info = time_integrator-&gt;print_solver_info();</div>
-<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>  ale_grid_motion-&gt;update(time_integrator-&gt;get_next_time(), print_solver_info and not(is_test));</div>
-<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>  timer_tree-&gt;insert({<span class="stringliteral">&quot;ALE&quot;</span>, <span class="stringliteral">&quot;Solve and reinit mapping&quot;</span>}, sub_timer.wall_time());</div>
-<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span> </div>
-<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>  sub_timer.restart();</div>
-<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; mapping =</div>
-<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>    get_dynamic_mapping&lt;dim, Number&gt;(application-&gt;get_grid(), ale_grid_motion);</div>
-<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>  matrix_free-&gt;update_mapping(*mapping);</div>
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>  timer_tree-&gt;insert({<span class="stringliteral">&quot;ALE&quot;</span>, <span class="stringliteral">&quot;Update matrix-free&quot;</span>}, sub_timer.wall_time());</div>
-<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span> </div>
-<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>  sub_timer.restart();</div>
-<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>  pde_operator-&gt;update_after_grid_motion();</div>
-<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>  timer_tree-&gt;insert({<span class="stringliteral">&quot;ALE&quot;</span>, <span class="stringliteral">&quot;Update operator&quot;</span>}, sub_timer.wall_time());</div>
-<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span> </div>
-<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>  sub_timer.restart();</div>
-<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>  time_integrator-&gt;ale_update();</div>
-<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>  timer_tree-&gt;insert({<span class="stringliteral">&quot;ALE&quot;</span>, <span class="stringliteral">&quot;Update time integrator&quot;</span>}, sub_timer.wall_time());</div>
-<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span> </div>
-<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>  timer_tree-&gt;insert({<span class="stringliteral">&quot;ALE&quot;</span>}, timer.wall_time());</div>
-<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>}</div>
-<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span> </div>
-<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>std::shared_ptr&lt;TimerTree&gt;</div>
-<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>SolverFluid&lt;dim, Number&gt;::get_timings_ale()<span class="keyword"> const</span></div>
-<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span><span class="keyword"></span>{</div>
-<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>  <span class="keywordflow">return</span> timer_tree;</div>
-<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>}</div>
-<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span> </div>
-<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>} <span class="comment">// namespace FSI</span></div>
-<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span> </div>
-<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span> </div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>  ale_grid_motion-&gt;update(time_integrator-&gt;get_next_time(),</div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>                          print_solver_info and not(is_test),</div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>                          this-&gt;time_integrator-&gt;get_number_of_time_steps());</div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>  timer_tree-&gt;insert({<span class="stringliteral">&quot;ALE&quot;</span>, <span class="stringliteral">&quot;Solve and reinit mapping&quot;</span>}, sub_timer.wall_time());</div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span> </div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>  sub_timer.restart();</div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; mapping =</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>    get_dynamic_mapping&lt;dim, Number&gt;(application-&gt;get_grid(), ale_grid_motion);</div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>  matrix_free-&gt;update_mapping(*mapping);</div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>  timer_tree-&gt;insert({<span class="stringliteral">&quot;ALE&quot;</span>, <span class="stringliteral">&quot;Update matrix-free&quot;</span>}, sub_timer.wall_time());</div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span> </div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>  sub_timer.restart();</div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>  pde_operator-&gt;update_after_grid_motion();</div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>  timer_tree-&gt;insert({<span class="stringliteral">&quot;ALE&quot;</span>, <span class="stringliteral">&quot;Update operator&quot;</span>}, sub_timer.wall_time());</div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span> </div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>  sub_timer.restart();</div>
+<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>  time_integrator-&gt;ale_update();</div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>  timer_tree-&gt;insert({<span class="stringliteral">&quot;ALE&quot;</span>, <span class="stringliteral">&quot;Update time integrator&quot;</span>}, sub_timer.wall_time());</div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span> </div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>  timer_tree-&gt;insert({<span class="stringliteral">&quot;ALE&quot;</span>}, timer.wall_time());</div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>}</div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span> </div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>std::shared_ptr&lt;TimerTree&gt;</div>
+<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>SolverFluid&lt;dim, Number&gt;::get_timings_ale()<span class="keyword"> const</span></div>
+<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span><span class="keyword"></span>{</div>
+<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>  <span class="keywordflow">return</span> timer_tree;</div>
+<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>}</div>
+<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span> </div>
+<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>} <span class="comment">// namespace FSI</span></div>
+<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span> </div>
-<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_FLUID_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span> </div>
+<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span> </div>
+<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_FLUID_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1FSI_1_1SolverFluid_html"><div class="ttname"><a href="classExaDG_1_1FSI_1_1SolverFluid.html">ExaDG::FSI::SolverFluid</a></div><div class="ttdef"><b>Definition:</b> fluid.h:55</div></div>
 <div class="ttc" id="aclassExaDG_1_1FluidFSI_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1FluidFSI_1_1ApplicationBase.html">ExaDG::FluidFSI::ApplicationBase</a></div><div class="ttdef"><b>Definition:</b> application_base.h:206</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition:</b> driver.cpp:33</div></div>

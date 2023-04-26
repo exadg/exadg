@@ -100,9 +100,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data
 <tr class="memitem:ab4b0e5786909c74295b7bf1d81bc16cc"><td class="memItemLeft" align="right" valign="top"><a id="ab4b0e5786909c74295b7bf1d81bc16cc" name="ab4b0e5786909c74295b7bf1d81bc16cc"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &gt; matrix_free_data)</td></tr>
 <tr class="separator:ab4b0e5786909c74295b7bf1d81bc16cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acfe7c3f52aeac380763f7d1f428293af"><td class="memItemLeft" align="right" valign="top"><a id="acfe7c3f52aeac380763f7d1f428293af" name="acfe7c3f52aeac380763f7d1f428293af"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_solver</b> ()</td></tr>
-<tr class="separator:acfe7c3f52aeac380763f7d1f428293af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3671a935f6e4c0d9fd6d3633460ff64d"><td class="memItemLeft" align="right" valign="top"><a id="a3671a935f6e4c0d9fd6d3633460ff64d" name="a3671a935f6e4c0d9fd6d3633460ff64d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_solver</b> (double const &amp;scaling_factor_mass)</td></tr>
+<tr class="separator:a3671a935f6e4c0d9fd6d3633460ff64d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a963ed8ea047b50b78211caa86c095e59"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a963ed8ea047b50b78211caa86c095e59">initialize_dof_vector</a> (VectorType &amp;src) const</td></tr>
 <tr class="separator:a963ed8ea047b50b78211caa86c095e59"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3b69b0ab3498affb27371880b41f37ef"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a3b69b0ab3498affb27371880b41f37ef">prescribe_initial_displacement</a> (VectorType &amp;displacement, double const time) const</td></tr>
@@ -132,8 +132,8 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_linear_operator
 <tr class="separator:ab6f503f1d15c2124de109398c4c44c99"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a320b5e723770cc5983378cffeaa39f3b"><td class="memItemLeft" align="right" valign="top">std::tuple&lt; unsigned int, unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a320b5e723770cc5983378cffeaa39f3b">solve_nonlinear</a> (VectorType &amp;sol, VectorType const &amp;rhs, double const factor, double const time, bool const update_preconditioner) const</td></tr>
 <tr class="separator:a320b5e723770cc5983378cffeaa39f3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3a4baf85c90fff27dff3e9ff355a71af"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a3a4baf85c90fff27dff3e9ff355a71af">solve_linear</a> (VectorType &amp;sol, VectorType const &amp;rhs, double const factor, double const time) const</td></tr>
-<tr class="separator:a3a4baf85c90fff27dff3e9ff355a71af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa3ecc106a343bbc8c0af3142475daabf"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#aa3ecc106a343bbc8c0af3142475daabf">solve_linear</a> (VectorType &amp;sol, VectorType const &amp;rhs, double const factor, double const time, bool const update_preconditioner) const</td></tr>
+<tr class="separator:aa3ecc106a343bbc8c0af3142475daabf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ade61817a9249314baa58e46275377c5d"><td class="memItemLeft" align="right" valign="top"><a id="ade61817a9249314baa58e46275377c5d" name="ade61817a9249314baa58e46275377c5d"></a>
 dealii::MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_matrix_free</b> () const</td></tr>
 <tr class="separator:ade61817a9249314baa58e46275377c5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -176,9 +176,9 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>compute_rhs_l
 <tr class="memitem:a85e52327fd16ed653656584aa5448270"><td class="memItemLeft" align="right" valign="top"><a id="a85e52327fd16ed653656584aa5448270" name="a85e52327fd16ed653656584aa5448270"></a>
 virtual std::tuple&lt; unsigned int, unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>solve_nonlinear</b> (VectorType &amp;sol, VectorType const &amp;rhs, double const factor, double const time, bool const update_preconditioner) const =0</td></tr>
 <tr class="separator:a85e52327fd16ed653656584aa5448270"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae7522c956d03e17819f524738196f020"><td class="memItemLeft" align="right" valign="top"><a id="ae7522c956d03e17819f524738196f020" name="ae7522c956d03e17819f524738196f020"></a>
-virtual unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve_linear</b> (VectorType &amp;sol, VectorType const &amp;rhs, double const factor, double const time) const =0</td></tr>
-<tr class="separator:ae7522c956d03e17819f524738196f020"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a623d91e3de48f39ba0d9ac31bbfa1423"><td class="memItemLeft" align="right" valign="top"><a id="a623d91e3de48f39ba0d9ac31bbfa1423" name="a623d91e3de48f39ba0d9ac31bbfa1423"></a>
+virtual unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve_linear</b> (VectorType &amp;sol, VectorType const &amp;rhs, double const factor, double const time, bool const update_preconditioner) const =0</td></tr>
+<tr class="separator:a623d91e3de48f39ba0d9ac31bbfa1423"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
@@ -424,8 +424,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a3a4baf85c90fff27dff3e9ff355a71af" name="a3a4baf85c90fff27dff3e9ff355a71af"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3a4baf85c90fff27dff3e9ff355a71af">&#9670;&#160;</a></span>solve_linear()</h2>
+<a id="aa3ecc106a343bbc8c0af3142475daabf" name="aa3ecc106a343bbc8c0af3142475daabf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa3ecc106a343bbc8c0af3142475daabf">&#9670;&#160;</a></span>solve_linear()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -457,7 +457,13 @@ template&lt;int dim, typename Number &gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">double const&#160;</td>
-          <td class="paramname"><em>time</em>&#160;</td>
+          <td class="paramname"><em>time</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool const&#160;</td>
+          <td class="paramname"><em>update_preconditioner</em>&#160;</td>
         </tr>
         <tr>
           <td></td>

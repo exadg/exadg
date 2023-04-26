@@ -105,8 +105,8 @@ typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ad5df404201def98d5cab4058456c9563"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionInterface.html#ad5df404201def98d5cab4058456c9563">~GridMotionInterface</a> ()</td></tr>
 <tr class="separator:ad5df404201def98d5cab4058456c9563"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aad4132e7fd4f7897015b6ae6a9e7d9a7"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionInterface.html#aad4132e7fd4f7897015b6ae6a9e7d9a7">update</a> (double const time, bool const print_solver_info)=0</td></tr>
-<tr class="separator:aad4132e7fd4f7897015b6ae6a9e7d9a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2a4d5981d13e06675ae67bab39a2c43a"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionInterface.html#a2a4d5981d13e06675ae67bab39a2c43a">update</a> (double const time, bool const print_solver_info, types::time_step time_step_number)=0</td></tr>
+<tr class="separator:a2a4d5981d13e06675ae67bab39a2c43a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7bbc3a866cee232808762fced6f967ca"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionInterface.html#a7bbc3a866cee232808762fced6f967ca">print_iterations</a> () const</td></tr>
 <tr class="separator:a7bbc3a866cee232808762fced6f967ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0148aec9cf89951e4c9130a40ec7e2de"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionInterface.html#a0148aec9cf89951e4c9130a40ec7e2de">fill_grid_coordinates_vector</a> (VectorType &amp;grid_coordinates, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler) const =0</td></tr>
@@ -248,8 +248,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="aad4132e7fd4f7897015b6ae6a9e7d9a7" name="aad4132e7fd4f7897015b6ae6a9e7d9a7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aad4132e7fd4f7897015b6ae6a9e7d9a7">&#9670;&#160;</a></span>update()</h2>
+<a id="a2a4d5981d13e06675ae67bab39a2c43a" name="a2a4d5981d13e06675ae67bab39a2c43a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2a4d5981d13e06675ae67bab39a2c43a">&#9670;&#160;</a></span>update()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -269,7 +269,13 @@ template&lt;int dim, typename Number &gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">bool const&#160;</td>
-          <td class="paramname"><em>print_solver_info</em>&#160;</td>
+          <td class="paramname"><em>print_solver_info</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">types::time_step&#160;</td>
+          <td class="paramname"><em>time_step_number</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -285,7 +291,7 @@ template&lt;int dim, typename Number &gt; </div>
 </div><div class="memdoc">
 <p>Updates the mapping, i.e., moves the grid. </p>
 
-<p>Implemented in <a class="el" href="classExaDG_1_1GridMotionElasticity.html#a907ae6666decbdcaf5e26ab25fa38fcb">ExaDG::GridMotionElasticity&lt; dim, Number &gt;</a>, <a class="el" href="classExaDG_1_1GridMotionFunction.html#a0faf44888e91d38ef47a66d4d07737b1">ExaDG::GridMotionFunction&lt; dim, Number &gt;</a>, and <a class="el" href="classExaDG_1_1GridMotionPoisson.html#a9d0c457bb394d7aa920831a8f3ffd091">ExaDG::GridMotionPoisson&lt; dim, Number &gt;</a>.</p>
+<p>Implemented in <a class="el" href="classExaDG_1_1GridMotionElasticity.html#ad0b2dd250579889fa963ef7dab50148a">ExaDG::GridMotionElasticity&lt; dim, Number &gt;</a>, <a class="el" href="classExaDG_1_1GridMotionFunction.html#add97fc0ff23b0ac36efe9fa9c11c7b49">ExaDG::GridMotionFunction&lt; dim, Number &gt;</a>, and <a class="el" href="classExaDG_1_1GridMotionPoisson.html#ac7aa14c80bfe07b3791af00f00cd4cfe">ExaDG::GridMotionPoisson&lt; dim, Number &gt;</a>.</p>
 
 </div>
 </div>

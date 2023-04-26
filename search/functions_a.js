@@ -9,8 +9,8 @@ var searchData=
   ['set_5fcoefficient_5fface_5fneighbor_6',['set_coefficient_face_neighbor',['../classExaDG_1_1VariableCoefficients.html#aef6d49252b3b89cc167f576cd2171019',1,'ExaDG::VariableCoefficients']]],
   ['set_5fcoefficients_7',['set_coefficients',['../classExaDG_1_1VariableCoefficients.html#ac2463a7113784b16e28c72fa8a091e4d',1,'ExaDG::VariableCoefficients']]],
   ['set_5fwrite_5fdata_5ftype_8',['set_write_data_type',['../classExaDG_1_1preCICE_1_1CouplingBase.html#aae21d6fc764dbd5051ec7c27cc38d11a',1,'ExaDG::preCICE::CouplingBase']]],
-  ['setup_9',['setup',['../classExaDG_1_1InterfaceCoupling.html#a7aa3cfb167de7d9384a7686e7e1f964e',1,'ExaDG::InterfaceCoupling']]],
-  ['setup_10',['Setup',['../classdealspectrum_1_1Setup.html#ae48fcc6968bba36f4300ec7e88009717',1,'dealspectrum::Setup']]],
+  ['setup_9',['Setup',['../classdealspectrum_1_1Setup.html#ae48fcc6968bba36f4300ec7e88009717',1,'dealspectrum::Setup']]],
+  ['setup_10',['setup',['../classExaDG_1_1InterfaceCoupling.html#a7aa3cfb167de7d9384a7686e7e1f964e',1,'ExaDG::InterfaceCoupling']]],
   ['spectralanalysis_11',['SpectralAnalysis',['../classdealspectrum_1_1SpectralAnalysis.html#a34a974fb314f0807d96902741be6e156',1,'dealspectrum::SpectralAnalysis']]],
   ['start_12',['start',['../classdealspectrum_1_1DealSpectrumTimer.html#a140b943f9881e4a1d917941f896cb472',1,'dealspectrum::DealSpectrumTimer']]],
   ['stop_13',['stop',['../classdealspectrum_1_1DealSpectrumTimer.html#ac7f6fa0118b49c8c58f1b8357cc2a371',1,'dealspectrum::DealSpectrumTimer']]]

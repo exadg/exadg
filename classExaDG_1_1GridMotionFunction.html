@@ -111,8 +111,8 @@ typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ae792ee6f20e878e261d1a92337c7da1c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionFunction.html#ae792ee6f20e878e261d1a92337c7da1c">GridMotionFunction</a> (std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping_undeformed, unsigned int const mapping_degree_q_cache, dealii::Triangulation&lt; dim &gt; const &amp;triangulation, std::shared_ptr&lt; dealii::Function&lt; dim &gt; &gt; const mesh_movement_function, double const start_time)</td></tr>
 <tr class="separator:ae792ee6f20e878e261d1a92337c7da1c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0faf44888e91d38ef47a66d4d07737b1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionFunction.html#a0faf44888e91d38ef47a66d4d07737b1">update</a> (double const time, bool const print_solver_info) override</td></tr>
-<tr class="separator:a0faf44888e91d38ef47a66d4d07737b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:add97fc0ff23b0ac36efe9fa9c11c7b49"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionFunction.html#add97fc0ff23b0ac36efe9fa9c11c7b49">update</a> (double const time, bool const print_solver_info, types::time_step time_step_number) override</td></tr>
+<tr class="separator:add97fc0ff23b0ac36efe9fa9c11c7b49"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1GridMotionBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1GridMotionBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1GridMotionBase.html">ExaDG::GridMotionBase&lt; dim, Number &gt;</a></td></tr>
 <tr class="memitem:acda8e7ed786a239bd0ccd3df1c41e649 inherit pub_methods_classExaDG_1_1GridMotionBase"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionBase.html#acda8e7ed786a239bd0ccd3df1c41e649">GridMotionBase</a> (std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping_undeformed, unsigned int const mapping_degree_q_cache, dealii::Triangulation&lt; dim &gt; const &amp;triangulation)</td></tr>
 <tr class="separator:acda8e7ed786a239bd0ccd3df1c41e649 inherit pub_methods_classExaDG_1_1GridMotionBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -123,8 +123,8 @@ Public Member Functions</h2></td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1GridMotionInterface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1GridMotionInterface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1GridMotionInterface.html">ExaDG::GridMotionInterface&lt; dim, Number &gt;</a></td></tr>
 <tr class="memitem:ad5df404201def98d5cab4058456c9563 inherit pub_methods_classExaDG_1_1GridMotionInterface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionInterface.html#ad5df404201def98d5cab4058456c9563">~GridMotionInterface</a> ()</td></tr>
 <tr class="separator:ad5df404201def98d5cab4058456c9563 inherit pub_methods_classExaDG_1_1GridMotionInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aad4132e7fd4f7897015b6ae6a9e7d9a7 inherit pub_methods_classExaDG_1_1GridMotionInterface"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionInterface.html#aad4132e7fd4f7897015b6ae6a9e7d9a7">update</a> (double const time, bool const print_solver_info)=0</td></tr>
-<tr class="separator:aad4132e7fd4f7897015b6ae6a9e7d9a7 inherit pub_methods_classExaDG_1_1GridMotionInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2a4d5981d13e06675ae67bab39a2c43a inherit pub_methods_classExaDG_1_1GridMotionInterface"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionInterface.html#a2a4d5981d13e06675ae67bab39a2c43a">update</a> (double const time, bool const print_solver_info, types::time_step time_step_number)=0</td></tr>
+<tr class="separator:a2a4d5981d13e06675ae67bab39a2c43a inherit pub_methods_classExaDG_1_1GridMotionInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7bbc3a866cee232808762fced6f967ca inherit pub_methods_classExaDG_1_1GridMotionInterface"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionInterface.html#a7bbc3a866cee232808762fced6f967ca">print_iterations</a> () const</td></tr>
 <tr class="separator:a7bbc3a866cee232808762fced6f967ca inherit pub_methods_classExaDG_1_1GridMotionInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0148aec9cf89951e4c9130a40ec7e2de inherit pub_methods_classExaDG_1_1GridMotionInterface"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionInterface.html#a0148aec9cf89951e4c9130a40ec7e2de">fill_grid_coordinates_vector</a> (VectorType &amp;grid_coordinates, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler) const =0</td></tr>
@@ -204,8 +204,8 @@ template&lt;int dim, typename Number &gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a0faf44888e91d38ef47a66d4d07737b1" name="a0faf44888e91d38ef47a66d4d07737b1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0faf44888e91d38ef47a66d4d07737b1">&#9670;&#160;</a></span>update()</h2>
+<a id="add97fc0ff23b0ac36efe9fa9c11c7b49" name="add97fc0ff23b0ac36efe9fa9c11c7b49"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#add97fc0ff23b0ac36efe9fa9c11c7b49">&#9670;&#160;</a></span>update()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -225,7 +225,13 @@ template&lt;int dim, typename Number &gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">bool const&#160;</td>
-          <td class="paramname"><em>print_solver_info</em>&#160;</td>
+          <td class="paramname"><em>print_solver_info</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">types::time_step&#160;</td>
+          <td class="paramname"><em>time_step_number</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -241,7 +247,7 @@ template&lt;int dim, typename Number &gt; </div>
 </div><div class="memdoc">
 <p>Updates the grid coordinates using a dealii::Function&lt;dim&gt; object evaluated at a given time. </p>
 
-<p>Implements <a class="el" href="classExaDG_1_1GridMotionInterface.html#aad4132e7fd4f7897015b6ae6a9e7d9a7">ExaDG::GridMotionInterface&lt; dim, Number &gt;</a>.</p>
+<p>Implements <a class="el" href="classExaDG_1_1GridMotionInterface.html#a2a4d5981d13e06675ae67bab39a2c43a">ExaDG::GridMotionInterface&lt; dim, Number &gt;</a>.</p>
 
 </div>
 </div>
