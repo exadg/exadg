@@ -35,8 +35,8 @@ namespace ExaDG
 {
 struct InverseMassOperatorData
 {
-  unsigned int dof_index;
-  unsigned int quad_index;
+  unsigned int dof_index  = 0;
+  unsigned int quad_index = 0;
 
   // only relevant if an explicit matrix-free inverse mass operator is not available
   bool implement_block_diagonal_preconditioner_matrix_free = true;
