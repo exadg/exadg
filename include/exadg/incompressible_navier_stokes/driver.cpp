@@ -222,7 +222,9 @@ Driver<dim, Number>::ale_update() const
   dealii::Timer sub_timer;
 
   sub_timer.restart();
-  grid_motion->update(time_integrator->get_next_time(), false);
+  grid_motion->update(time_integrator->get_next_time(),
+                      false /* print_solver_info */,
+                      this->time_integrator->get_number_of_time_steps());
   timer_tree.insert({"Incompressible flow", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();

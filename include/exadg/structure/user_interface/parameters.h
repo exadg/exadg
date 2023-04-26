@@ -193,7 +193,7 @@ public:
   // description: see enum declaration
   Preconditioner preconditioner;
 
-  // only relevant for nonlinear problems: update of preconditioner
+  // Applies to time-dependent OR nonlinear problems: update of preconditioner
 
   // Should the preconditioner be updated at all (set to false to never update the
   // preconditioner)?

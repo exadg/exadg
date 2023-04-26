@@ -52,10 +52,10 @@ public:
   void
   set_current_time_step_size(double const & time_step_size) final;
 
-protected:
   double
   get_scaling_factor_mass() const;
 
+protected:
   double
   get_mid_time() const;
 
