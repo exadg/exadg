@@ -109,7 +109,7 @@ public:
 
       mass_operator.initialize(*matrix_free, constraint, mass_operator_data);
 
-      mass_preconditioner =
+      elementwise_inverse_mass =
         std::make_shared<BlockJacobiPreconditioner<MassOperator<dim, n_components, Number>>>(
           mass_operator);
     }
@@ -126,7 +126,7 @@ public:
     }
     else
     {
-      mass_preconditioner->vmult(dst, src);
+      elementwise_inverse_mass->vmult(dst, src);
     }
   }
 
@@ -160,7 +160,7 @@ private:
   MassOperator<dim, n_components, Number> mass_operator;
 
   std::shared_ptr<BlockJacobiPreconditioner<MassOperator<dim, n_components, Number>>>
-    mass_preconditioner;
+    elementwise_inverse_mass;
 };
 
 } // namespace ExaDG
