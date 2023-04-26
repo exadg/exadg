@@ -140,7 +140,8 @@ add_constraints(bool                                is_dg,
                                            affine_constraints_own);
 
   // 2) add Dirichlet BCs
-  affine_constraints_own.add_lines(mg_constrained_dofs.get_boundary_indices(level));
+  if(mg_constrained_dofs.have_boundary_indices())
+    affine_constraints_own.add_lines(mg_constrained_dofs.get_boundary_indices(level));
 
   // constrain zeroth DoF in continuous case (the mean value constraint will
   // be applied in the DG case). In case we have interface matrices, there are
@@ -160,7 +161,8 @@ add_constraints(bool                                is_dg,
         affine_constraints_own.add_line(line_index);
         // add the constraint back to the dealii::MGConstrainedDoFs field. This
         // is potentially dangerous but we know what we are doing... ;-)
-        if(level != dealii::numbers::invalid_unsigned_int)
+        if(mg_constrained_dofs.have_boundary_indices() &&
+           level != dealii::numbers::invalid_unsigned_int)
         {
           if(mg_constrained_dofs.get_boundary_indices(level).size() != dof_handler.n_dofs(level))
             const_cast<dealii::IndexSet &>(mg_constrained_dofs.get_boundary_indices(level))
