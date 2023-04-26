@@ -27,7 +27,6 @@
 #include <exadg/time_integration/restart_data.h>
 #include <exadg/time_integration/solver_info_data.h>
 #include <exadg/utilities/print_functions.h>
-#include "exadg/solvers_and_preconditioners/solvers/solver_data.h"
 
 namespace ExaDG
 {
@@ -193,18 +192,6 @@ public:
   // use combined operator for viscous term and convective term in order to improve run
   // time
   bool use_combined_operator;
-
-  /**************************************************************************************/
-  /*                                                                                    */
-  /*                            ELEMENTWISE INVERSE MASS                                */
-  /*                                                                                    */
-  /**************************************************************************************/
-  // Used when matrix-free inverse mass operator is not available and when the spatial
-  // discretization is DG, e.g. simplex.
-
-  bool solve_elementwise_mass_system_matrix_free;
-
-  SolverData solver_data_elementwise_inverse_mass;
 };
 
 } // namespace CompNS

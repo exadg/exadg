@@ -150,10 +150,6 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> ma
   InverseMassOperatorData inverse_mass_operator_data;
   inverse_mass_operator_data.dof_index  = get_dof_index();
   inverse_mass_operator_data.quad_index = get_quad_index();
-  inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
-    param.solve_elementwise_mass_system_matrix_free;
-  inverse_mass_operator_data.solver_data_block_diagonal =
-    param.solver_data_elementwise_inverse_mass;
   inverse_mass_operator.initialize(*matrix_free, inverse_mass_operator_data);
 
   // convective operator
@@ -435,10 +431,6 @@ Operator<dim, Number>::initialize_preconditioner()
     InverseMassOperatorData inverse_mass_operator_data;
     inverse_mass_operator_data.dof_index  = get_dof_index();
     inverse_mass_operator_data.quad_index = get_quad_index();
-    inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
-      param.solve_elementwise_mass_system_matrix_free;
-    inverse_mass_operator_data.solver_data_block_diagonal =
-      param.solver_data_elementwise_inverse_mass;
     preconditioner =
       std::make_shared<InverseMassPreconditioner<dim, 1, Number>>(*matrix_free,
                                                                   inverse_mass_operator_data);
@@ -621,10 +613,6 @@ Operator<dim, Number>::project_velocity(VectorType & velocity, double const time
   InverseMassOperatorData inverse_mass_operator_data_l2_projection;
   inverse_mass_operator_data_l2_projection.dof_index  = get_dof_index_velocity();
   inverse_mass_operator_data_l2_projection.quad_index = get_quad_index();
-  inverse_mass_operator_data_l2_projection.implement_block_diagonal_preconditioner_matrix_free =
-    param.solve_elementwise_mass_system_matrix_free;
-  inverse_mass_operator_data_l2_projection.solver_data_block_diagonal =
-    param.solver_data_elementwise_inverse_mass;
 
   l2_projection.apply(*matrix_free,
                       inverse_mass_operator_data_l2_projection,
