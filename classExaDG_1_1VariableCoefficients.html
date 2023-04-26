@@ -79,32 +79,471 @@ $(function() {
   <div class="headertitle"><div class="title">ExaDG::VariableCoefficients&lt; coefficient_type &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p><code>#include &lt;<a class="el" href="variable__coefficients_8h_source.html">variable_coefficients.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a3d060e7fdf1f230431957510cfa2f92c"><td class="memTemplParams" colspan="2"><a id="a3d060e7fdf1f230431957510cfa2f92c" name="a3d060e7fdf1f230431957510cfa2f92c"></a>
-template&lt;int dim, typename Number &gt; </td></tr>
-<tr class="memitem:a3d060e7fdf1f230431957510cfa2f92c"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, unsigned int const quad_index, coefficient_type const &amp;constant_coefficient)</td></tr>
-<tr class="separator:a3d060e7fdf1f230431957510cfa2f92c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a46f7dd2e11958b25e6612a0c6fac9f1f"><td class="memItemLeft" align="right" valign="top"><a id="a46f7dd2e11958b25e6612a0c6fac9f1f" name="a46f7dd2e11958b25e6612a0c6fac9f1f"></a>
-coefficient_type&#160;</td><td class="memItemRight" valign="bottom"><b>get_coefficient_cell</b> (unsigned int const cell, unsigned int const q) const</td></tr>
+<tr class="memitem:a7c11c56dbd11cf95e1ea3ec71a8202da"><td class="memTemplParams" colspan="2">template&lt;int dim, typename Number &gt; </td></tr>
+<tr class="memitem:a7c11c56dbd11cf95e1ea3ec71a8202da"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classExaDG_1_1VariableCoefficients.html#a7c11c56dbd11cf95e1ea3ec71a8202da">initialize</a> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, unsigned int const quad_index, bool const store_face_data_in, bool const store_cell_based_face_data_in)</td></tr>
+<tr class="separator:a7c11c56dbd11cf95e1ea3ec71a8202da"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac2463a7113784b16e28c72fa8a091e4d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1VariableCoefficients.html#ac2463a7113784b16e28c72fa8a091e4d">set_coefficients</a> (coefficient_type const &amp;constant_coefficient)</td></tr>
+<tr class="separator:ac2463a7113784b16e28c72fa8a091e4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a46f7dd2e11958b25e6612a0c6fac9f1f"><td class="memItemLeft" align="right" valign="top">coefficient_type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1VariableCoefficients.html#a46f7dd2e11958b25e6612a0c6fac9f1f">get_coefficient_cell</a> (unsigned int const cell, unsigned int const q) const</td></tr>
 <tr class="separator:a46f7dd2e11958b25e6612a0c6fac9f1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a711149d1a18b73b2a39c30b91a255903"><td class="memItemLeft" align="right" valign="top"><a id="a711149d1a18b73b2a39c30b91a255903" name="a711149d1a18b73b2a39c30b91a255903"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_coefficient_cell</b> (unsigned int const cell, unsigned int const q, coefficient_type const &amp;value)</td></tr>
-<tr class="separator:a711149d1a18b73b2a39c30b91a255903"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af9011c9ad2a8f8548abc3145c87adf16"><td class="memItemLeft" align="right" valign="top"><a id="af9011c9ad2a8f8548abc3145c87adf16" name="af9011c9ad2a8f8548abc3145c87adf16"></a>
-coefficient_type&#160;</td><td class="memItemRight" valign="bottom"><b>get_coefficient_face</b> (unsigned int const face, unsigned int const q) const</td></tr>
+<tr class="memitem:aac75b341696a34a88505a352269f5ed6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1VariableCoefficients.html#aac75b341696a34a88505a352269f5ed6">set_coefficient_cell</a> (unsigned int const cell, unsigned int const q, coefficient_type const &amp;coefficient)</td></tr>
+<tr class="separator:aac75b341696a34a88505a352269f5ed6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af9011c9ad2a8f8548abc3145c87adf16"><td class="memItemLeft" align="right" valign="top">coefficient_type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1VariableCoefficients.html#af9011c9ad2a8f8548abc3145c87adf16">get_coefficient_face</a> (unsigned int const face, unsigned int const q) const</td></tr>
 <tr class="separator:af9011c9ad2a8f8548abc3145c87adf16"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a52481931c875899a5993e825ea24d7be"><td class="memItemLeft" align="right" valign="top"><a id="a52481931c875899a5993e825ea24d7be" name="a52481931c875899a5993e825ea24d7be"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_coefficient_face</b> (unsigned int const face, unsigned int const q, coefficient_type const &amp;value)</td></tr>
-<tr class="separator:a52481931c875899a5993e825ea24d7be"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a678d10eeced6f4da25c685c1f74d4dc1"><td class="memItemLeft" align="right" valign="top"><a id="a678d10eeced6f4da25c685c1f74d4dc1" name="a678d10eeced6f4da25c685c1f74d4dc1"></a>
-coefficient_type&#160;</td><td class="memItemRight" valign="bottom"><b>get_coefficient_face_neighbor</b> (unsigned int const face, unsigned int const q) const</td></tr>
+<tr class="memitem:ab5f2f622fa96ed41c6ffecd248ef0ac3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1VariableCoefficients.html#ab5f2f622fa96ed41c6ffecd248ef0ac3">set_coefficient_face</a> (unsigned int const face, unsigned int const q, coefficient_type const &amp;coefficient)</td></tr>
+<tr class="separator:ab5f2f622fa96ed41c6ffecd248ef0ac3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a678d10eeced6f4da25c685c1f74d4dc1"><td class="memItemLeft" align="right" valign="top">coefficient_type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1VariableCoefficients.html#a678d10eeced6f4da25c685c1f74d4dc1">get_coefficient_face_neighbor</a> (unsigned int const face, unsigned int const q) const</td></tr>
 <tr class="separator:a678d10eeced6f4da25c685c1f74d4dc1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a452b4604844922f002369643df0dbeff"><td class="memItemLeft" align="right" valign="top"><a id="a452b4604844922f002369643df0dbeff" name="a452b4604844922f002369643df0dbeff"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_coefficient_face_neighbor</b> (unsigned int const face, unsigned int const q, coefficient_type const &amp;value)</td></tr>
-<tr class="separator:a452b4604844922f002369643df0dbeff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aef6d49252b3b89cc167f576cd2171019"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1VariableCoefficients.html#aef6d49252b3b89cc167f576cd2171019">set_coefficient_face_neighbor</a> (unsigned int const face, unsigned int const q, coefficient_type const &amp;coefficient)</td></tr>
+<tr class="separator:aef6d49252b3b89cc167f576cd2171019"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acdccaa1620ad0d01ad6dfb0399b2a845"><td class="memItemLeft" align="right" valign="top">coefficient_type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1VariableCoefficients.html#acdccaa1620ad0d01ad6dfb0399b2a845">get_coefficient_face_cell_based</a> (unsigned int const cell_based_face, unsigned int const q) const</td></tr>
+<tr class="separator:acdccaa1620ad0d01ad6dfb0399b2a845"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5b82fe6876340c749177f1558fc70ee"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1VariableCoefficients.html#ae5b82fe6876340c749177f1558fc70ee">set_coefficient_face_cell_based</a> (unsigned int const cell_based_face, unsigned int const q, coefficient_type const &amp;coefficient)</td></tr>
+<tr class="separator:ae5b82fe6876340c749177f1558fc70ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><div class="compoundTemplParams">template&lt;typename coefficient_type&gt;<br />
+class ExaDG::VariableCoefficients&lt; coefficient_type &gt;</div><p>This class serves as a manager of several table objects, which hold quadrature-point-level coefficient information for the different matrix-free loop types and access methods.</p>
+<p>The class provides data structures for cell loops, separate face loops, and cell-based face loops. It is responsible solely for the storage of coefficients. No generic way of computing the coefficients is provided here. This task is left to the owner of a <code><a class="el" href="classExaDG_1_1VariableCoefficients.html">VariableCoefficients</a></code> object.</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">coefficient_type</td><td>Type of coefficient stored in the tables. In most cases, this is a <code>dealii::Tensor</code> or a similar object. </td></tr>
+  </table>
+  </dd>
+</dl>
+</div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a46f7dd2e11958b25e6612a0c6fac9f1f" name="a46f7dd2e11958b25e6612a0c6fac9f1f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a46f7dd2e11958b25e6612a0c6fac9f1f">&#9670;&#160;</a></span>get_coefficient_cell()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename coefficient_type &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">coefficient_type <a class="el" href="classExaDG_1_1VariableCoefficients.html">ExaDG::VariableCoefficients</a>&lt; coefficient_type &gt;::get_coefficient_cell </td>
+          <td>(</td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>cell</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>q</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Returns the coefficient in the entry (<code>cell</code> , <code>q</code>) in the cell coefficient table. </p>
+
+</div>
+</div>
+<a id="af9011c9ad2a8f8548abc3145c87adf16" name="af9011c9ad2a8f8548abc3145c87adf16"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af9011c9ad2a8f8548abc3145c87adf16">&#9670;&#160;</a></span>get_coefficient_face()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename coefficient_type &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">coefficient_type <a class="el" href="classExaDG_1_1VariableCoefficients.html">ExaDG::VariableCoefficients</a>&lt; coefficient_type &gt;::get_coefficient_face </td>
+          <td>(</td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>face</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>q</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Returns the coefficient in the entry (<code>face</code> , <code>q</code>) in the face coefficient table. </p>
+
+</div>
+</div>
+<a id="acdccaa1620ad0d01ad6dfb0399b2a845" name="acdccaa1620ad0d01ad6dfb0399b2a845"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acdccaa1620ad0d01ad6dfb0399b2a845">&#9670;&#160;</a></span>get_coefficient_face_cell_based()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename coefficient_type &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">coefficient_type <a class="el" href="classExaDG_1_1VariableCoefficients.html">ExaDG::VariableCoefficients</a>&lt; coefficient_type &gt;::get_coefficient_face_cell_based </td>
+          <td>(</td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>cell_based_face</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>q</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Returns the coefficient in the entry (<code>cell_based_face</code> , <code>q</code>) in the cell-based face coefficient table. </p>
+
+</div>
+</div>
+<a id="a678d10eeced6f4da25c685c1f74d4dc1" name="a678d10eeced6f4da25c685c1f74d4dc1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a678d10eeced6f4da25c685c1f74d4dc1">&#9670;&#160;</a></span>get_coefficient_face_neighbor()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename coefficient_type &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">coefficient_type <a class="el" href="classExaDG_1_1VariableCoefficients.html">ExaDG::VariableCoefficients</a>&lt; coefficient_type &gt;::get_coefficient_face_neighbor </td>
+          <td>(</td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>face</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>q</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Returns the coefficient in the entry (<code>face</code> , <code>q</code>) in the neighbor face coefficient table. </p>
+
+</div>
+</div>
+<a id="a7c11c56dbd11cf95e1ea3ec71a8202da" name="a7c11c56dbd11cf95e1ea3ec71a8202da"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7c11c56dbd11cf95e1ea3ec71a8202da">&#9670;&#160;</a></span>initialize()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename coefficient_type &gt; </div>
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1VariableCoefficients.html">ExaDG::VariableCoefficients</a>&lt; coefficient_type &gt;::initialize </td>
+          <td>(</td>
+          <td class="paramtype">dealii::MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>matrix_free</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>quad_index</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool const&#160;</td>
+          <td class="paramname"><em>store_face_data_in</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool const&#160;</td>
+          <td class="paramname"><em>store_cell_based_face_data_in</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Initializes the variable coefficients object based on <code>matrix_free</code> and <code>quad_index</code> according to the desired properties <code>use_faces_in</code>, and <code>use_cell_based_face_loops_in</code>, i.e. resizes the desired tables to the required number of cells, faces, and quadrature points.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">matrix_free</td><td>Underlying matrix-free description </td></tr>
+    <tr><td class="paramname">quad_index</td><td>Quadrature index in the matrix-free description to create the coefficient tables according to the quadrature points </td></tr>
+    <tr><td class="paramname">store_face_data_in</td><td>Boolean switch to use a coefficient table for faces (and neighbors) </td></tr>
+    <tr><td class="paramname">store_cell_based_face_data_in</td><td>Boolean switch to use a coefficient table for cell-based face access. This is an additional and optional way of accessing the face coefficients and should be <code>false</code> if <code>store_face_data_in</code> is <code>false</code>. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="aac75b341696a34a88505a352269f5ed6" name="aac75b341696a34a88505a352269f5ed6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aac75b341696a34a88505a352269f5ed6">&#9670;&#160;</a></span>set_coefficient_cell()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename coefficient_type &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1VariableCoefficients.html">ExaDG::VariableCoefficients</a>&lt; coefficient_type &gt;::set_coefficient_cell </td>
+          <td>(</td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>cell</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>q</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">coefficient_type const &amp;&#160;</td>
+          <td class="paramname"><em>coefficient</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Sets the specific entry (<code>cell</code> , <code>q</code>) in the cell coefficient table to <code>coefficient</code>. </p>
+
+</div>
+</div>
+<a id="ab5f2f622fa96ed41c6ffecd248ef0ac3" name="ab5f2f622fa96ed41c6ffecd248ef0ac3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab5f2f622fa96ed41c6ffecd248ef0ac3">&#9670;&#160;</a></span>set_coefficient_face()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename coefficient_type &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1VariableCoefficients.html">ExaDG::VariableCoefficients</a>&lt; coefficient_type &gt;::set_coefficient_face </td>
+          <td>(</td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>face</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>q</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">coefficient_type const &amp;&#160;</td>
+          <td class="paramname"><em>coefficient</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Sets the specific entry (<code>face</code> , <code>q</code>) in the face coefficient table to <code>coefficient</code>. </p>
+
+</div>
+</div>
+<a id="ae5b82fe6876340c749177f1558fc70ee" name="ae5b82fe6876340c749177f1558fc70ee"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae5b82fe6876340c749177f1558fc70ee">&#9670;&#160;</a></span>set_coefficient_face_cell_based()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename coefficient_type &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1VariableCoefficients.html">ExaDG::VariableCoefficients</a>&lt; coefficient_type &gt;::set_coefficient_face_cell_based </td>
+          <td>(</td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>cell_based_face</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>q</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">coefficient_type const &amp;&#160;</td>
+          <td class="paramname"><em>coefficient</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Sets the specific entry (<code>cell_based_face</code> , <code>q</code>) in the cell-based face coefficient table to <code>coefficient</code>. </p>
+
+</div>
+</div>
+<a id="aef6d49252b3b89cc167f576cd2171019" name="aef6d49252b3b89cc167f576cd2171019"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aef6d49252b3b89cc167f576cd2171019">&#9670;&#160;</a></span>set_coefficient_face_neighbor()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename coefficient_type &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1VariableCoefficients.html">ExaDG::VariableCoefficients</a>&lt; coefficient_type &gt;::set_coefficient_face_neighbor </td>
+          <td>(</td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>face</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>q</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">coefficient_type const &amp;&#160;</td>
+          <td class="paramname"><em>coefficient</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Sets the specific entry (<code>face</code> , <code>q</code>) in the neighbor face coefficient table to <code>coefficient</code>. </p>
+
+</div>
+</div>
+<a id="ac2463a7113784b16e28c72fa8a091e4d" name="ac2463a7113784b16e28c72fa8a091e4d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac2463a7113784b16e28c72fa8a091e4d">&#9670;&#160;</a></span>set_coefficients()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename coefficient_type &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1VariableCoefficients.html">ExaDG::VariableCoefficients</a>&lt; coefficient_type &gt;::set_coefficients </td>
+          <td>(</td>
+          <td class="paramtype">coefficient_type const &amp;&#160;</td>
+          <td class="paramname"><em>constant_coefficient</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Sets the coefficient <code>constant_coefficient</code> everywhere. </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/operators/<a class="el" href="variable__coefficients_8h_source.html">variable_coefficients.h</a></li>
 </ul>
