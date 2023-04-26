@@ -557,18 +557,21 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
   // VARIABLE VISCOSITY MODELS
   if(viscosity_is_variable())
   {
-	  if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-	  {
-		AssertThrow(
-		  treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit,
-		  dealii::ExcMessage(
-			"An implicit treatment of the variable viscosity field (rendering the viscous step of the dual splitting scheme nonlinear regarding the unknown velocity field) is currently not implemented for the dual splitting scheme."));
-	  }
+    if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      AssertThrow(
+        treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit,
+        dealii::ExcMessage(
+          "An implicit treatment of the variable viscosity field (rendering the viscous step of the dual splitting scheme nonlinear regarding the unknown velocity field) is currently not implemented for the dual splitting scheme."));
+    }
 
-	  if(treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Implicit)
-	  {
-		AssertThrow(implicit_convective_problem(), dealii::ExcMessage("The current implementation only calls a Newton solver, if we have an implicit convective problem. Treat nonlinear convective and viscous terms alike."));
-	  }
+    if(treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Implicit)
+    {
+      AssertThrow(
+        implicit_convective_problem(),
+        dealii::ExcMessage(
+          "The current implementation only calls a Newton solver, if we have an implicit convective problem. Treat nonlinear convective and viscous terms alike."));
+    }
   }
 }
 

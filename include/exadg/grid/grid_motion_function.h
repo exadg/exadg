@@ -48,16 +48,19 @@ public:
       mesh_movement_function(mesh_movement_function),
       triangulation(triangulation)
   {
-    update(start_time, false);
+    update(start_time, false, dealii::numbers::invalid_unsigned_int);
   }
 
   /**
    * Updates the grid coordinates using a dealii::Function<dim> object evaluated at a given time.
    */
   void
-  update(double const time, bool const print_solver_info) override
+  update(double const     time,
+         bool const       print_solver_info,
+         types::time_step time_step_number) override
   {
     (void)print_solver_info;
+    (void)time_step_number;
 
     mesh_movement_function->set_time(time);
 

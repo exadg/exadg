@@ -173,7 +173,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   else if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Elasticity)
   {
     ale_elasticity_operator->setup(ale_matrix_free, ale_matrix_free_data);
-    ale_elasticity_operator->setup_solver();
+    ale_elasticity_operator->setup_solver(0.0 /*stationary ALE extension only*/);
   }
   else
   {
@@ -259,7 +259,9 @@ SolverFluid<dim, Number>::solve_ale(
 
   sub_timer.restart();
   bool const print_solver_info = time_integrator->print_solver_info();
-  ale_grid_motion->update(time_integrator->get_next_time(), print_solver_info and not(is_test));
+  ale_grid_motion->update(time_integrator->get_next_time(),
+                          print_solver_info and not(is_test),
+                          this->time_integrator->get_number_of_time_steps());
   timer_tree->insert({"ALE", "Solve and reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();

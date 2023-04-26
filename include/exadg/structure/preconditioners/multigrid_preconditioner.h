@@ -24,6 +24,7 @@
 
 #include <exadg/operators/multigrid_operator.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h>
+#include <exadg/structure/spatial_discretization/operators/elasticity_operator_base.h>
 #include <exadg/structure/spatial_discretization/operators/linear_operator.h>
 #include <exadg/structure/spatial_discretization/operators/nonlinear_operator.h>
 
@@ -92,6 +93,12 @@ private:
   void
   update_operators();
 
+  void
+  set_time(double const & time);
+
+  void
+  set_scaling_factor_mass_operator(double const & scaling_factor_mass);
+
   /*
    * This function updates solution_linearization.
    * In order to update operators[level] this function has to be called.
@@ -101,6 +108,9 @@ private:
 
   std::shared_ptr<PDEOperatorNonlinearMG>
   get_operator_nonlinear(unsigned int level);
+
+  std::shared_ptr<PDEOperatorLinearMG>
+  get_operator_linear(unsigned int level);
 
   std::shared_ptr<MGOperatorBase>
   initialize_operator(unsigned int const level) override;

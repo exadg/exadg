@@ -428,9 +428,14 @@ Operator<dim, Number>::setup_operators()
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::setup_solver()
+Operator<dim, Number>::setup_solver(double const & scaling_factor_mass)
 {
   pcout << std::endl << "Setup elasticity solver ..." << std::endl;
+
+  if(param.large_deformation)
+    elasticity_operator_nonlinear.set_scaling_factor_mass_operator(scaling_factor_mass);
+  else
+    elasticity_operator_linear.set_scaling_factor_mass_operator(scaling_factor_mass);
 
   initialize_preconditioner();
 
@@ -714,12 +719,19 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       accelerat
   {
     // elasticity operator
     elasticity_operator_nonlinear.set_time(time);
+
     // NB: we have to deactivate the mass operator term
+    double const scaling_factor_mass =
+      elasticity_operator_nonlinear.get_scaling_factor_mass_operator();
     elasticity_operator_nonlinear.set_scaling_factor_mass_operator(0.0);
+
     // evaluate nonlinear operator including Neumann BCs
     elasticity_operator_nonlinear.evaluate_nonlinear(rhs, displacement);
     // shift to right-hand side
     rhs *= -1.0;
+
+    // revert scaling factor to initialized value
+    elasticity_operator_nonlinear.set_scaling_factor_mass_operator(scaling_factor_mass);
 
     // body forces
     if(param.body_force)
@@ -731,13 +743,19 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       accelerat
   {
     // elasticity operator
     elasticity_operator_linear.set_time(time);
+
     // NB: we have to deactivate the mass operator
+    double const scaling_factor_mass =
+      elasticity_operator_linear.get_scaling_factor_mass_operator();
     elasticity_operator_linear.set_scaling_factor_mass_operator(0.0);
 
     // compute action of homogeneous operator
     elasticity_operator_linear.apply(rhs, displacement);
     // shift to right-hand side
     rhs *= -1.0;
+
+    // revert scaling factor to initialized value
+    elasticity_operator_linear.set_scaling_factor_mass_operator(scaling_factor_mass);
 
     // Neumann BCs and inhomogeneous Dirichlet BCs
     // (has already the correct sign, since rhs_add())
@@ -904,11 +922,14 @@ unsigned int
 Operator<dim, Number>::solve_linear(VectorType &       sol,
                                     VectorType const & rhs,
                                     double const       factor,
-                                    double const       time) const
+                                    double const       time,
+                                    bool const         update_preconditioner) const
 {
   // unsteady problems
   elasticity_operator_linear.set_scaling_factor_mass_operator(factor);
   elasticity_operator_linear.set_time(time);
+
+  linear_solver->update_preconditioner(update_preconditioner);
 
   // Set constrained degrees of freedom of rhs vector according to the prescribed
   // Dirichlet boundary conditions.
