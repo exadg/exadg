@@ -382,44 +382,44 @@ public:
                         kinematic_viscosity,
                         "Newtonian model: kinematic_viscosity.",
                         dealii::Patterns::Double());
-	  prm.add_parameter("UseGeneralizedNewtonianModel",
-			            generalized_newtonian_model_data.is_active,
+      prm.add_parameter("UseGeneralizedNewtonianModel",
+                        generalized_newtonian_model_data.is_active,
                         "Use generalized Newtonian model, else Newtonian one.",
                         dealii::Patterns::Bool());
-	  prm.add_parameter("FormulationViscousTermLaplaceFormulation",
+      prm.add_parameter("FormulationViscousTermLaplaceFormulation",
                         formulation_viscous_term_laplace_formulation,
                         "Use Laplace or Divergence formulation for viscous term.",
                         dealii::Patterns::Bool());
-	  prm.add_parameter("TemporalDiscretization",
+      prm.add_parameter("TemporalDiscretization",
                         temporal_discretization_string,
                         "Temporal discretization.",
                         dealii::Patterns::Selection("BDFCoupledSolution|BDFPressureCorrection|BDFDualSplittingScheme"));
-	  prm.add_parameter("TreatmentOfConvectiveTermImplicit",
+      prm.add_parameter("TreatmentOfConvectiveTermImplicit",
                         treatment_of_convective_term_implicit,
                         "Treat convective term implicit, else explicit",
                         dealii::Patterns::Bool());
-	  prm.add_parameter("TreatmentOfVariableViscosityImplicit",
+      prm.add_parameter("TreatmentOfVariableViscosityImplicit",
                         treatment_of_variable_viscosity_implicit,
                         "Treat the variable viscosity implicit or extrapolate in time.",
                         dealii::Patterns::Bool());
       prm.add_parameter("GeneralizedNewtonianViscosityMargin",
-    		            generalized_newtonian_model_data.viscosity_margin,
+                        generalized_newtonian_model_data.viscosity_margin,
                         "Generalized Newtonian models: viscosity margin.",
                         dealii::Patterns::Double());
       prm.add_parameter("GeneralizedNewtonianKappa",
-    		            generalized_newtonian_model_data.kappa,
+                        generalized_newtonian_model_data.kappa,
                         "Generalized Newtonian models: kappa.",
                         dealii::Patterns::Double());
       prm.add_parameter("GeneralizedNewtonianLambda",
-    		            generalized_newtonian_model_data.lambda,
+                        generalized_newtonian_model_data.lambda,
                         "Generalized Newtonian models: lambda.",
                         dealii::Patterns::Double());
       prm.add_parameter("GeneralizedNewtonianA",
-    		            generalized_newtonian_model_data.a,
+                        generalized_newtonian_model_data.a,
                         "Generalized Newtonian models: a.",
                         dealii::Patterns::Double());
       prm.add_parameter("GeneralizedNewtonianN",
-    		            generalized_newtonian_model_data.n,
+                        generalized_newtonian_model_data.n,
                         "Generalized Newtonian models: n.",
                         dealii::Patterns::Double());
     prm.leave_subsection();
