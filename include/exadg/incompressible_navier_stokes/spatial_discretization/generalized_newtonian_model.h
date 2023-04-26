@@ -50,17 +50,17 @@ private:
   typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
 
 public:
-  /*
-   *  Constructor.
+  /**
+   * Constructor.
    */
   GeneralizedNewtonianModel();
 
-  /*
+  /**
    * Destructor.
    */
   virtual ~GeneralizedNewtonianModel();
 
-  /*
+  /**
    * Initialization function.
    */
   void
@@ -70,13 +70,14 @@ public:
              unsigned int const                    dof_index_velocity_in);
 
   /**
-   *  Function for *setting* the viscosity to viscosity_newtonian_limit.
+   * Function for *setting* the viscosity taking the viscosity stored in the viscous kernel's data
+   * as a basis.
    */
   void
   set_viscosity(VectorType const & velocity) const;
 
   /**
-   *  Function for *adding to* the viscosity taking the currently stored viscosity as a basis.
+   * Function for *adding to* the viscosity taking the currently stored viscosity as a basis.
    */
   void
   add_viscosity(VectorType const & velocity) const;
@@ -101,21 +102,21 @@ private:
                                       Range const &      face_range) const;
 
   /**
-   *  This function computes the kinematic viscosity for
-   *  generalized Newtonian fluids, i.e., based on the shear rate.
-   *  Such models can be found in , e.g., Galdi et al., 2008
-   *  ("Hemodynamical Flows: Modeling, Analysis and Simulation").
-   *  With
-   *  y    = sqrt(2*sym_grad_velocity : sym_grad_velocity)
-   *  e_oo = lower viscosity limit
-   *  e_0  = upper viscosity limit
-   *  and fitting parameters
-   *  k    = kappa
-   *  l    = lambda
-   *  a
-   *  b.
-   *  we have the apparent viscosity
-   *  viscosity = e_oo + (e_0 - e_oo) * [k + (l * y)^a]^[(n - 1) / a]
+   * This function computes the kinematic viscosity for
+   * generalized Newtonian fluids, i.e., based on the shear rate.
+   * Such models can be found in , e.g., Galdi et al., 2008
+   * ("Hemodynamical Flows: Modeling, Analysis and Simulation").
+   * With
+   * y    = sqrt(2*sym_grad_velocity : sym_grad_velocity)
+   * e_oo = lower viscosity limit
+   * e_0  = upper viscosity limit
+   * and fitting parameters
+   * k    = kappa
+   * l    = lambda
+   * a
+   * b.
+   * we have the apparent viscosity
+   * viscosity = e_oo + (e_0 - e_oo) * [k + (l * y)^a]^[(n - 1) / a]
    */
   void
   add_generalized_newtonian_viscosity(scalar & viscosity, tensor const & velocity_gradient) const;

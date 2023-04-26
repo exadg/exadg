@@ -642,7 +642,7 @@ SpatialOperatorBase<dim, Number>::initialize_viscosity_model()
                                 get_dof_index_velocity());
   }
 
-  // initialize and check turbulence model data
+  // initialize and check generalized Newtonian model data
   if(param.generalized_newtonian_model_data.is_active)
   {
     generalized_newtonian_model.initialize(*matrix_free,

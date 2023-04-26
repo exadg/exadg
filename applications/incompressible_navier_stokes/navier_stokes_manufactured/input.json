@@ -11,8 +11,8 @@
         "RefineSpaceMax": "4"
     },
     "TemporalResolution": {
-        "RefineTimeMin": "2",
-        "RefineTimeMax": "2"
+        "RefineTimeMin": "4",
+        "RefineTimeMax": "4"
     },
     "Application": {
          "IncludeConvectiveTerm": "true",
@@ -24,11 +24,11 @@
          "Density": "1000.0",
          "KinematicViscosity": "1e-6",
          "UseGeneralizedNewtonianModel": "true",
-         "FormulationViscousTermLaplaceFormulation" : "true",
-         "TemporalDiscretization" : "BDFCoupledSolution",
+         "FormulationViscousTermLaplaceFormulation" : "false",
+         "TemporalDiscretization" : "BDFPressureCorrection",
          "TreatmentOfConvectiveTermImplicit" : "false",
          "TreatmentOfVariableViscosityImplicit" : "true",
-         "GeneralizedNewtonianViscosityMargin": "4900e-6",
+         "GeneralizedNewtonianViscosityMargin": "49e-6",
          "GeneralizedNewtonianKappa": "1.0",
          "GeneralizedNewtonianLambda": "1.0",
          "GeneralizedNewtonianA": "2.0",

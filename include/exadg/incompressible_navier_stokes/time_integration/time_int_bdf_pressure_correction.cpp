@@ -334,7 +334,7 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
   dealii::Timer timer;
   timer.restart();
 
-  // Extrapolate old solutionsto get a good initial estimate for the solver.
+  // Extrapolate old solutions to get a good initial estimate for the solver.
   if(this->use_extrapolation)
   {
     velocity_np = 0.0;

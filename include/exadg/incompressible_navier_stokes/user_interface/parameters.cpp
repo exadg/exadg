@@ -620,7 +620,8 @@ Parameters::nonlinear_viscous_problem() const
 bool
 Parameters::nonlinear_problem_has_to_be_solved() const
 {
-  return implicit_convective_problem() || nonlinear_viscous_problem();
+  // nonlinear_viscous_problem() ignored, i.e., does not trigger a Newton solve
+  return implicit_convective_problem();
 }
 
 bool

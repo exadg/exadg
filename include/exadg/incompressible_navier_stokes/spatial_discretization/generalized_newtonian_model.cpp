@@ -215,7 +215,7 @@ GeneralizedNewtonianModel<dim, Number>::add_generalized_newtonian_viscosity(
   scalar viscosity_factor = compute_viscosity_factor(shear_rate);
 
   // add (eta_0 - eta_oo) * [k + (l * y)^a]^[(n-1)/a]
-  viscosity += viscosity_factor * data.viscosity_margin;
+  viscosity += data.viscosity_margin * viscosity_factor;
 }
 
 template<int dim, typename Number>

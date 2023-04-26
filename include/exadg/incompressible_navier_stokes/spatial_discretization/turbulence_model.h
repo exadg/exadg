@@ -71,7 +71,8 @@ public:
              unsigned int const                                     dof_index_velocity_in);
 
   /**
-   * Function for *setting* the viscosity to viscosity_newtonian_limit.
+   * Function for *setting* the viscosity taking the viscosity stored in the viscous_kernel's data
+   * as a basis.
    */
   void
   set_viscosity(VectorType const & velocity) const;

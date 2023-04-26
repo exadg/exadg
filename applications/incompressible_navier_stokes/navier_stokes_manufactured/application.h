@@ -31,8 +31,7 @@ namespace IncNS
 {
 /*
  * Manufactured solution for incompressible flow of a generalized Newtonian fluid in a hypercube.
- * (Navier-)Stokes equations:
- * c     ... scaling the convective term with c = 0 or c = 1
+ * (Navier-)Stokes equations, where the convective term may be disabled
  * u     ... velocity vector
  * p     ... kinematic pressure
  * nu    ... kinematic viscosity
@@ -40,7 +39,7 @@ namespace IncNS
  * f     ... body force vector
  * sigma ... Cauchy stress
  *
- * d/dt(u) + c (grad(u)) * u - 1/rho * div(sigma) = f
+ * d/dt(u) + (grad(u)) * u - 1/rho * div(sigma) = f
  *
  * with
  *
@@ -48,7 +47,7 @@ namespace IncNS
  *
  * such that with variable viscosity we have
  *
- * d/dt(u) + c (grad(u)) * u + grad(p) - nu * div(grad(u)) - 2 * sym_grad(u) * grad(nu) = f
+ * d/dt(u) + (grad(u)) * u + grad(p) - nu * div(grad(u)) - 2 * sym_grad(u) * grad(nu) = f
  *
  * In 2D, we derive a solution by setting
  *
@@ -80,23 +79,24 @@ public:
   double
   value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
-    double t     = this->get_time();
-    double x     = p[0];
-    double y     = p[1];
-    double sin_x = std::sin(x);
-    double sin_y = std::sin(y);
-    double cos_x = std::cos(x);
-    double cos_y = std::cos(y);
-    double cos_t = std::cos(t);
-
-    double result = 0.0;
+    double const t     = this->get_time();
+    double const x     = p[0];
+    double const y     = p[1];
+    double const sin_x = std::sin(x);
+    double const sin_y = std::sin(y);
+    double const cos_x = std::cos(x);
+    double const cos_y = std::cos(y);
+    double const cos_t = std::cos(t);
 
     if(component == 0)
-      result = sin_x * cos_y * cos_t;
+      return sin_x * cos_y * cos_t;
     else if(component == 1)
-      result = -cos_t * cos_x * sin_y;
-
-    return result;
+      return -cos_t * cos_x * sin_y;
+    else
+    {
+      AssertThrow(component < 2, dealii::ExcMessage("Manufactured solution only valid for 2D."));
+      return 0.0;
+    }
   }
 };
 
@@ -112,11 +112,11 @@ public:
   double
   value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
   {
-    double t      = this->get_time();
-    double x      = p[0];
-    double y      = p[1];
-    double cos_xy = std::cos(x * y);
-    double cos_t  = std::cos(t);
+    double const t      = this->get_time();
+    double const x      = p[0];
+    double const y      = p[1];
+    double const cos_xy = std::cos(x * y);
+    double const cos_t  = std::cos(t);
 
     return cos_xy * cos_t;
   }
@@ -126,25 +126,17 @@ template<int dim>
 class NeumannBoundaryVelocity : public dealii::Function<dim>
 {
 public:
-  NeumannBoundaryVelocity(FormulationViscousTerm const & formulation_viscous_term,
-                          double const &                 normal_x,
-                          double const &                 normal_y,
-                          double const &                 nu_oo,
-                          double const &                 nu_margin,
-                          double const &                 kappa,
-                          double const &                 lambda,
-                          double const &                 a,
-                          double const &                 n)
+  NeumannBoundaryVelocity(FormulationViscousTerm const &        formulation_viscous_term,
+                          double const &                        normal_x,
+                          double const &                        normal_y,
+                          double const &                        nu_oo,
+                          GeneralizedNewtonianModelData const & data)
     : dealii::Function<dim>(dim, 0.0),
       formulation_viscous_term(formulation_viscous_term),
       normal_x(normal_x),
       normal_y(normal_y),
       nu_oo(nu_oo),
-      nu_0(nu_margin - nu_oo),
-      kappa(kappa),
-      lambda(lambda),
-      a(a),
-      n(n)
+      data(data)
   {
   }
 
@@ -162,28 +154,30 @@ public:
      * t* := (-p * I + nu * grad(u)) * n
      */
 
-    double t      = this->get_time();
-    double x      = p[0];
-    double y      = p[1];
-    double sin_x  = std::sin(x);
-    double sin_y  = std::sin(y);
-    double cos_x  = std::cos(x);
-    double cos_y  = std::cos(y);
-    double cos_t  = std::cos(t);
-    double cos_xy = std::cos(x * y);
+    double const t      = this->get_time();
+    double const x      = p[0];
+    double const y      = p[1];
+    double const sin_x  = std::sin(x);
+    double const sin_y  = std::sin(y);
+    double const cos_x  = std::cos(x);
+    double const cos_y  = std::cos(y);
+    double const cos_t  = std::cos(t);
+    double const cos_xy = std::cos(x * y);
 
-    double du1_dx = cos_x * cos_y * cos_t;
-    double du1_dy = -sin_x * sin_y * cos_t;
-    double du2_dx = cos_t * sin_x * sin_y;
-    double du2_dy = -cos_t * cos_x * cos_y;
+    double const du1_dx = cos_x * cos_y * cos_t;
+    double const du1_dy = -sin_x * sin_y * cos_t;
+    double const du2_dx = cos_t * sin_x * sin_y;
+    double const du2_dy = -cos_t * cos_x * cos_y;
 
-    double pressure = cos_xy * cos_t;
+    double const pressure = cos_xy * cos_t;
 
     // rheological law to obtain the kinematic viscosity nu
     // nu = nu_oo + (nu_0 - nu_oo) * [kappa + (lambda*shear_rate)^a]^[(n-1)/a]
-    double shear_rate = 2.0 * cos_t * cos_x * cos_y;
-    double kinematic_viscosity =
-      nu_oo + (nu_0 - nu_oo) * std::pow(kappa + std::pow(lambda * shear_rate, a), (n - 1.0) / a);
+    double const shear_rate = 2.0 * cos_t * cos_x * cos_y;
+    double const kinematic_viscosity =
+      nu_oo +
+      data.viscosity_margin *
+        std::pow(data.kappa + std::pow(data.lambda * shear_rate, data.a), (data.n - 1.0) / data.a);
 
     dealii::Tensor<2, dim> grad_u;
     grad_u[0][0] = du1_dx;
@@ -209,44 +203,34 @@ public:
     traction[0] = -pressure;
     traction[1] = -pressure;
 
+    AssertThrow(component < 2, dealii::ExcMessage("Manufactured solution only valid for 2D."));
+
     return traction[component];
   }
 
 private:
-  FormulationViscousTerm const formulation_viscous_term;
-  double const                 normal_x;
-  double const                 normal_y;
-  double const                 nu_oo;
-  double const                 nu_0;
-  double const                 kappa;
-  double const                 lambda;
-  double const                 a;
-  double const                 n;
+  FormulationViscousTerm const  formulation_viscous_term;
+  double const                  normal_x;
+  double const                  normal_y;
+  double const                  nu_oo;
+  GeneralizedNewtonianModelData data;
 };
 
 template<int dim>
 class RightHandSide : public dealii::Function<dim>
 {
 public:
-  RightHandSide(bool const     include_convective_term,
-                double const & normal_x,
-                double const & normal_y,
-                double const & nu_oo,
-                double const & nu_margin,
-                double const & kappa,
-                double const & lambda,
-                double const & a,
-                double const & n)
+  RightHandSide(bool const                            include_convective_term,
+                double const &                        normal_x,
+                double const &                        normal_y,
+                double const &                        nu_oo,
+                GeneralizedNewtonianModelData const & data)
     : dealii::Function<dim>(dim, 0.0),
       include_convective_term(include_convective_term),
       normal_x(normal_x),
       normal_y(normal_y),
       nu_oo(nu_oo),
-      nu_0(nu_margin - nu_oo),
-      kappa(kappa),
-      lambda(lambda),
-      a(a),
-      n(n)
+      data(data)
   {
   }
 
@@ -254,41 +238,41 @@ public:
   value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     /*
-     * The solution laid out above is inserte into the momentum balance
+     * The solution laid out above is inserted into the momentum balance
      * equation to derive the vector f on the right-hand side.
      *
-     * f = d/dt(u) + c (grad(u)) * u + grad(p)
+     * f = d/dt(u) + (grad(u)) * u + grad(p)
      *     - nu * div(grad(u)) - 2 * sym_grad(u) * grad(nu)
      */
 
-    double t      = this->get_time();
-    double x      = p[0];
-    double y      = p[1];
-    double sin_x  = std::sin(x);
-    double sin_y  = std::sin(y);
-    double cos_x  = std::cos(x);
-    double cos_y  = std::cos(y);
-    double sin_t  = std::sin(t);
-    double cos_t  = std::cos(t);
-    double sin_xy = std::sin(x * y);
+    double const t      = this->get_time();
+    double const x      = p[0];
+    double const y      = p[1];
+    double const sin_x  = std::sin(x);
+    double const sin_y  = std::sin(y);
+    double const cos_x  = std::cos(x);
+    double const cos_y  = std::cos(y);
+    double const sin_t  = std::sin(t);
+    double const cos_t  = std::cos(t);
+    double const sin_xy = std::sin(x * y);
 
-    double u1 = sin_x * cos_y * cos_t;
-    double u2 = -cos_t * cos_x * sin_y;
+    double const u1 = sin_x * cos_y * cos_t;
+    double const u2 = -cos_t * cos_x * sin_y;
 
-    double du1_dt = -sin_x * cos_y * sin_t;
-    double du1_dx = cos_x * cos_y * cos_t;
-    double du1_dy = -sin_x * sin_y * cos_t;
-    double du2_dt = sin_t * cos_x * sin_y;
-    double du2_dx = cos_t * sin_x * sin_y;
-    double du2_dy = -cos_t * cos_x * cos_y;
+    double const du1_dt = -sin_x * cos_y * sin_t;
+    double const du1_dx = cos_x * cos_y * cos_t;
+    double const du1_dy = -sin_x * sin_y * cos_t;
+    double const du2_dt = sin_t * cos_x * sin_y;
+    double const du2_dx = cos_t * sin_x * sin_y;
+    double const du2_dy = -cos_t * cos_x * cos_y;
 
-    double du1_dxx = -sin_x * cos_y * cos_t;
-    double du1_dyy = -sin_x * cos_y * cos_t;
-    double du2_dxx = cos_t * cos_x * sin_y;
-    double du2_dyy = cos_t * cos_x * sin_y;
+    double const du1_dxx = -sin_x * cos_y * cos_t;
+    double const du1_dyy = -sin_x * cos_y * cos_t;
+    double const du2_dxx = cos_t * cos_x * sin_y;
+    double const du2_dyy = cos_t * cos_x * sin_y;
 
-    double dp_dx = -sin_xy * cos_t * y;
-    double dp_dy = -sin_xy * cos_t * x;
+    double const dp_dx = -sin_xy * cos_t * y;
+    double const dp_dy = -sin_xy * cos_t * x;
 
     dealii::Tensor<2, dim> grad_u;
     grad_u[0][0] = du1_dx;
@@ -318,36 +302,36 @@ public:
     rhs[0] += dp_dx;
     rhs[1] += dp_dy;
 
-    // velocity Laplacian respecting the
-    // rheological law to obtain the kinematic viscosity
-    // nu_oo + (nu_0 - nu_oo) * [kappa + (lambda*shear_rate)^a]^[(n-1)/a]
-    double shear_rate = 2.0 * cos_t * cos_x * cos_y;
-    double kinematic_viscosity =
-      nu_oo + (nu_0 - nu_oo) * std::pow(kappa + std::pow(lambda * shear_rate, a), (n - 1.0) / a);
+    // velocity Laplacian respecting the rheological law to obtain the kinematic viscosity
+    double const shear_rate = 2.0 * cos_t * cos_x * cos_y;
+    double const kinematic_viscosity =
+      nu_oo +
+      data.viscosity_margin *
+        std::pow(data.kappa + std::pow(data.lambda * shear_rate, data.a), (data.n - 1.0) / data.a);
     rhs -= kinematic_viscosity * div_grad_u;
 
     // viscous term from variable viscosity
     dealii::Tensor<1, dim> grad_nu;
     grad_nu[0] = -2.0 * cos_t * sin_x * cos_y; // d_shear_rate_dx
     grad_nu[1] = -2.0 * cos_t * cos_x * sin_y; // d_shear_rate_dy
-    grad_nu *= lambda * (n - 1) * std::pow(lambda * shear_rate, a - 1.0) * (nu_0 - nu_oo) *
-               std::pow(kappa + std::pow(lambda * shear_rate, a), (n - 2.0) / a);
+    grad_nu *=
+      data.lambda * (data.n - 1) * std::pow(data.lambda * shear_rate, data.a - 1.0) *
+      data.viscosity_margin *
+      std::pow(data.kappa + std::pow(data.lambda * shear_rate, data.a), (data.n - 2.0) / data.a);
 
     rhs += (grad_u + transpose(grad_u)) * grad_nu;
+
+    AssertThrow(component < 2, dealii::ExcMessage("Manufactured solution only valid for 2D."));
 
     return rhs[component];
   }
 
 private:
-  bool const   include_convective_term;
-  double const normal_x;
-  double const normal_y;
-  double const nu_oo;
-  double const nu_0;
-  double const kappa;
-  double const lambda;
-  double const a;
-  double const n;
+  bool const                    include_convective_term;
+  double const                  normal_x;
+  double const                  normal_y;
+  double const                  nu_oo;
+  GeneralizedNewtonianModelData data;
 };
 
 template<int dim, typename Number>
@@ -371,73 +355,73 @@ public:
                         "Include the nonlinear convective term.",
                         dealii::Patterns::Bool());
       prm.add_parameter("PureDirichletProblem",
-					    pure_dirichlet_problem,
-					    "Solve a pure Dirichlet problem.",
-					    dealii::Patterns::Bool());
+                        pure_dirichlet_problem,
+                        "Solve a pure Dirichlet problem.",
+                        dealii::Patterns::Bool());
       prm.add_parameter("StartTime",
-    		            start_time,
-					    "Simulation start time.",
-					    dealii::Patterns::Double());
+                        start_time,
+                        "Simulation start time.",
+                        dealii::Patterns::Double());
       prm.add_parameter("EndTime",
-    		            end_time,
-					    "Simulation end time.",
-					    dealii::Patterns::Double());
+                        end_time,
+                        "Simulation end time.",
+                        dealii::Patterns::Double());
       prm.add_parameter("IntervalStart",
-    		            interval_start,
-					    "Hypercube domain start.",
-					    dealii::Patterns::Double());
+                        interval_start,
+                        "Hypercube domain start.",
+                        dealii::Patterns::Double());
       prm.add_parameter("IntervalEnd",
-    		            interval_end,
-					    "Hypercube domain end.",
-					    dealii::Patterns::Double());
+                        interval_end,
+                        "Hypercube domain end.",
+                        dealii::Patterns::Double());
       prm.add_parameter("Density",
-          		        density,
-      					"Incompressible model: density.",
-      					dealii::Patterns::Double());
+                        density,
+                        "Incompressible model: density.",
+                        dealii::Patterns::Double());
       prm.add_parameter("KinematicViscosity",
-          		        kinematic_viscosity,
-      					"Newtonian model: kinematic_viscosity.",
-      					dealii::Patterns::Double());
+                        kinematic_viscosity,
+                        "Newtonian model: kinematic_viscosity.",
+                        dealii::Patterns::Double());
 	  prm.add_parameter("UseGeneralizedNewtonianModel",
-			            use_generalized_newtonian_model,
-						"Use generalized Newtonian model, else Newtonian one.",
-						dealii::Patterns::Bool());
+			            generalized_newtonian_model_data.is_active,
+                        "Use generalized Newtonian model, else Newtonian one.",
+                        dealii::Patterns::Bool());
 	  prm.add_parameter("FormulationViscousTermLaplaceFormulation",
-			            formulation_viscous_term_laplace_formulation,
-						"Use Laplace or Divergence formulation for viscous term.",
-						dealii::Patterns::Bool());
+                        formulation_viscous_term_laplace_formulation,
+                        "Use Laplace or Divergence formulation for viscous term.",
+                        dealii::Patterns::Bool());
 	  prm.add_parameter("TemporalDiscretization",
-			            temporal_discretization_string,
-						"Temporal discretization.",
-						dealii::Patterns::Selection("BDFCoupledSolution|BDFPressureCorrection|BDFDualSplittingScheme"));
+                        temporal_discretization_string,
+                        "Temporal discretization.",
+                        dealii::Patterns::Selection("BDFCoupledSolution|BDFPressureCorrection|BDFDualSplittingScheme"));
 	  prm.add_parameter("TreatmentOfConvectiveTermImplicit",
-			            treatment_of_convective_term_implicit,
-						"Treat convective term implicit, else explicit",
-						dealii::Patterns::Bool());
+                        treatment_of_convective_term_implicit,
+                        "Treat convective term implicit, else explicit",
+                        dealii::Patterns::Bool());
 	  prm.add_parameter("TreatmentOfVariableViscosityImplicit",
-			            treatment_of_variable_viscosity_implicit,
-						"Treat the variable viscosity implicit or extrapolate in time.",
-						dealii::Patterns::Bool());
+                        treatment_of_variable_viscosity_implicit,
+                        "Treat the variable viscosity implicit or extrapolate in time.",
+                        dealii::Patterns::Bool());
       prm.add_parameter("GeneralizedNewtonianViscosityMargin",
-    		            generalized_newtonian_viscosity_margin,
-					    "Generalized Newtonian models: viscosity margin.",
-					    dealii::Patterns::Double());
+    		            generalized_newtonian_model_data.viscosity_margin,
+                        "Generalized Newtonian models: viscosity margin.",
+                        dealii::Patterns::Double());
       prm.add_parameter("GeneralizedNewtonianKappa",
-    		             generalized_newtonian_kappa,
-      					 "Generalized Newtonian models: kappa.",
-      					 dealii::Patterns::Double());
+    		            generalized_newtonian_model_data.kappa,
+                        "Generalized Newtonian models: kappa.",
+                        dealii::Patterns::Double());
       prm.add_parameter("GeneralizedNewtonianLambda",
-    		             generalized_newtonian_lambda,
-      					 "Generalized Newtonian models: lambda.",
-      					 dealii::Patterns::Double());
+    		            generalized_newtonian_model_data.lambda,
+                        "Generalized Newtonian models: lambda.",
+                        dealii::Patterns::Double());
       prm.add_parameter("GeneralizedNewtonianA",
-    		             generalized_newtonian_a,
-      					 "Generalized Newtonian models: a.",
-      					 dealii::Patterns::Double());
+    		            generalized_newtonian_model_data.a,
+                        "Generalized Newtonian models: a.",
+                        dealii::Patterns::Double());
       prm.add_parameter("GeneralizedNewtonianN",
-    		             generalized_newtonian_n,
-      					 "Generalized Newtonian models: n.",
-      					 dealii::Patterns::Double());
+    		            generalized_newtonian_model_data.n,
+                        "Generalized Newtonian models: n.",
+                        dealii::Patterns::Double());
     prm.leave_subsection();
     // clang-format on
   }
@@ -467,10 +451,9 @@ private:
 
     this->param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
 
-    FormulationViscousTerm formulation_viscous_term =
-      formulation_viscous_term_laplace_formulation ? FormulationViscousTerm::LaplaceFormulation :
-                                                     FormulationViscousTerm::DivergenceFormulation;
-    this->param.formulation_viscous_term = formulation_viscous_term;
+    this->param.formulation_viscous_term = formulation_viscous_term_laplace_formulation ?
+                                             FormulationViscousTerm::LaplaceFormulation :
+                                             FormulationViscousTerm::DivergenceFormulation;
     this->param.right_hand_side          = true;
 
 
@@ -543,20 +526,11 @@ private:
                                                     TreatmentOfVariableViscosity::Explicit;
 
     // GENERALIZED NEWTONIAN MODEL
-    this->param.generalized_newtonian_model_data.is_active = use_generalized_newtonian_model;
-    if(use_generalized_newtonian_model)
-    {
-      this->param.generalized_newtonian_model_data.generalized_newtonian_model =
-        generalized_newtonian_model;
-      this->param.generalized_newtonian_model_data.viscosity_margin =
-        generalized_newtonian_viscosity_margin;
-      this->param.generalized_newtonian_model_data.kappa  = generalized_newtonian_kappa;
-      this->param.generalized_newtonian_model_data.lambda = generalized_newtonian_lambda;
-      this->param.generalized_newtonian_model_data.a      = generalized_newtonian_a;
-      this->param.generalized_newtonian_model_data.n      = generalized_newtonian_n;
-    }
+    generalized_newtonian_model_data.generalized_newtonian_model =
+      GeneralizedNewtonianViscosityModel::GeneralizedCarreauYasuda;
+    this->param.generalized_newtonian_model_data = generalized_newtonian_model_data;
 
-    if(use_turbulence_model || use_generalized_newtonian_model)
+    if(use_turbulence_model || generalized_newtonian_model_data.is_active)
     {
       this->param.use_cell_based_face_loops = false;
       this->param.quad_rule_linearization   = QuadratureRuleLinearization::Standard;
@@ -647,12 +621,27 @@ private:
   void
   create_grid() final
   {
-    dealii::GridGenerator::hyper_cube(*this->grid->triangulation,
-                                      interval_start,
-                                      interval_end,
-                                      true);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        dealii::GridGenerator::hyper_cube(tria, interval_start, interval_end, true);
+
+        if(vector_local_refinements.size() > 0)
+          refine_local(tria, vector_local_refinements);
+
+        if(global_refinements > 0)
+          tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->param.grid,
+                                                              this->param.involves_h_multigrid(),
+                                                              lambda_create_triangulation);
   }
 
   void
@@ -664,8 +653,8 @@ private:
     typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
       pair;
 
-    double normal_x = 1.0;
-    double normal_y = 0.0;
+    double const normal_x = 1.0;
+    double const normal_y = 0.0;
 
     for(unsigned int i = 0; i < 2 * dim; ++i)
     {
@@ -678,11 +667,7 @@ private:
                                                 normal_x,
                                                 normal_y,
                                                 kinematic_viscosity,
-                                                generalized_newtonian_viscosity_margin,
-                                                generalized_newtonian_kappa,
-                                                generalized_newtonian_lambda,
-                                                generalized_newtonian_a,
-                                                generalized_newtonian_n)));
+                                                generalized_newtonian_model_data)));
 
         this->boundary_descriptor->pressure->dirichlet_bc.insert(
           pair(i, new AnalyticalSolutionPressure<dim>()));
@@ -702,8 +687,9 @@ private:
   {
     AssertThrow(dim == 2,
                 dealii::ExcMessage("Manufactured solution for dim == 2 implemented only."));
-    double normal_x = 1.0;
-    double normal_y = 0.0;
+
+    double const normal_x = 1.0;
+    double const normal_y = 0.0;
 
     this->field_functions->initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
     this->field_functions->initial_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
@@ -715,11 +701,7 @@ private:
                              normal_x,
                              normal_y,
                              kinematic_viscosity,
-                             generalized_newtonian_viscosity_margin,
-                             generalized_newtonian_kappa,
-                             generalized_newtonian_lambda,
-                             generalized_newtonian_a,
-                             generalized_newtonian_n));
+                             generalized_newtonian_model_data));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
@@ -769,23 +751,15 @@ private:
   double                 density                                      = 1000.0;
   double                 kinematic_viscosity                          = 5e-6;
   bool                   use_turbulence_model                         = false;
-  bool                   use_generalized_newtonian_model              = true;
   bool                   formulation_viscous_term_laplace_formulation = true;
   TemporalDiscretization temporal_discretization               = TemporalDiscretization::Undefined;
   std::string            temporal_discretization_string        = "BDFCoupledSolution";
   bool                   treatment_of_convective_term_implicit = false;
   bool                   treatment_of_variable_viscosity_implicit = false;
 
-  double generalized_newtonian_viscosity_margin = 49.0e-6;
-  double generalized_newtonian_kappa            = 1.1;
-  double generalized_newtonian_lambda           = 10.0;
-  double generalized_newtonian_a                = 2.1;
-  double generalized_newtonian_n                = 0.25;
-  double interval_start                         = 0.0;
-  double interval_end                           = 0.1;
-
-  GeneralizedNewtonianViscosityModel const generalized_newtonian_model =
-    GeneralizedNewtonianViscosityModel::GeneralizedCarreauYasuda;
+  GeneralizedNewtonianModelData generalized_newtonian_model_data;
+  double                        interval_start = 0.0;
+  double                        interval_end   = 0.1;
 };
 
 } // namespace IncNS
