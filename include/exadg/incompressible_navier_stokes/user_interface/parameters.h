@@ -693,14 +693,8 @@ public:
   // description: see enum declaration
   PreconditionerMass preconditioner_mass;
 
-  /**************************************************************************************/
-  /*                                                                                    */
-  /*                            ELEMENTWISE INVERSE MASS                                */
-  /*                                                                                    */
-  /**************************************************************************************/
   // Used when matrix-free inverse mass operator is not available and when the spatial
   // discretization is DG, e.g. simplex.
-
   bool solve_elementwise_mass_system_matrix_free;
 
   SolverData solver_data_elementwise_inverse_mass;
