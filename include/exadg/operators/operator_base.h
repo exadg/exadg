@@ -98,7 +98,8 @@ public:
 
   static unsigned int const vectorization_length = dealii::VectorizedArray<Number>::size();
 
-  typedef std::vector<dealii::LAPACKFullMatrix<Number>> BlockMatrix;
+  typedef dealii::LAPACKFullMatrix<Number> CellMatrix;
+  typedef std::vector<CellMatrix>          BlockMatrix;
 
   typedef dealii::FullMatrix<dealii::TrilinosScalar> FullMatrix_;
 
@@ -181,10 +182,12 @@ public:
    * matrix-based implementation.
    */
   void
-  update_block_diagonal_preconditioner() const;
+  update_block_diagonal_preconditioner(BlockMatrix & matrices) const;
 
   void
-  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const;
+  apply_inverse_block_diagonal(const BlockMatrix & matrices,
+                               VectorType &        dst,
+                               VectorType const &  src) const;
 
   /*
    * Algebraic multigrid (AMG): sparse matrix (Trilinos) methods
@@ -263,18 +266,25 @@ public:
    * block Jacobi preconditioner (block-diagonal)
    */
 
+  void
+  initialize_block_diagonal_preconditioner(BlockMatrix & matrices) const;
+
   // matrix-based implementation
   void
-  calculate_block_diagonal_matrices() const;
+  calculate_block_diagonal_matrices(BlockMatrix & matrices) const;
 
   void
   add_block_diagonal_matrices(BlockMatrix & matrices) const;
 
   void
-  apply_block_diagonal_matrix_based(VectorType & dst, VectorType const & src) const;
+  apply_block_diagonal_matrix_based(BlockMatrix &      matrices,
+                                    VectorType &       dst,
+                                    VectorType const & src) const;
 
   void
-  apply_inverse_block_diagonal_matrix_based(VectorType & dst, VectorType const & src) const;
+  apply_inverse_block_diagonal_matrix_based(const BlockMatrix & matrices,
+                                            VectorType &        dst,
+                                            VectorType const &  src) const;
 
   // matrix-free implementation
 
@@ -626,18 +636,6 @@ private:
    * level operator, this variable takes a value of dealii::numbers::invalid_unsigned_int.
    */
   unsigned int level;
-
-  /*
-   * Vector of matrices for block-diagonal preconditioners.
-   */
-  mutable std::vector<dealii::LAPACKFullMatrix<Number>> matrices;
-
-  /*
-   * We want to initialize the block diagonal preconditioner (block diagonal matrices or elementwise
-   * iterative solvers in case of matrix-free implementation) only once, so we store the status of
-   * initialization in a variable.
-   */
-  mutable bool block_diagonal_preconditioner_is_initialized;
 
   unsigned int n_mpi_processes;
 };
