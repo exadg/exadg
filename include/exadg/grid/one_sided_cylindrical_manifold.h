@@ -47,7 +47,7 @@ public:
                               dealii::Point<dim> const &                                 center_in)
     : alpha(1.0), radius(1.0), cell(cell_in), face(face_in), center(center_in)
   {
-    AssertThrow(face >= 0 and face <= 3,
+    AssertThrow(face <= 3,
                 dealii::ExcMessage(
                   "One sided spherical manifold can only be applied to face f=0,1,2,3."));
 
@@ -363,7 +363,7 @@ public:
     AssertThrow(dim == 3,
                 dealii::ExcMessage("OneSidedConicalManifold can only be used for 3D problems."));
 
-    AssertThrow(face >= 0 and face <= 3,
+    AssertThrow(face <= 3,
                 dealii::ExcMessage(
                   "One sided spherical manifold can only be applied to face f=0,1,2,3."));
 
