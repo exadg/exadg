@@ -72,7 +72,7 @@ public:
   void
   evaluate(VectorType const & src)
   {
-    if(!is_available)
+    if(not is_available)
     {
       recompute_solution_field(solution_vector, src);
       is_available = true;

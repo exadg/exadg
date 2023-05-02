@@ -161,7 +161,7 @@ Driver<dim, Number>::setup()
   // setup Navier-Stokes operator
   pde_operator->setup(matrix_free, matrix_free_data);
 
-  if(!is_throughput_study)
+  if(not is_throughput_study)
   {
     // setup postprocessor
     postprocessor = application->create_postprocessor();
@@ -169,7 +169,7 @@ Driver<dim, Number>::setup()
 
     // setup time integrator before calling setup_solvers
     // (this is necessary since the setup of the solvers
-    // depends on quantities such as the time_step_size or gamma0!!!)
+    // depends on quantities such as the time_step_size or gamma0!)
     if(application->get_parameters().solver_type == SolverType::Unsteady)
     {
       time_integrator = create_time_integrator<dim, Number>(
@@ -257,7 +257,7 @@ Driver<dim, Number>::solve() const
 
     if(application->get_parameters().ale_formulation == true)
     {
-      while(not time_integrator->finished())
+      while(not(time_integrator->finished()))
       {
         time_integrator->advance_one_timestep_pre_solve(true);
 

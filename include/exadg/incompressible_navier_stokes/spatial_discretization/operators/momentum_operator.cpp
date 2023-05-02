@@ -495,7 +495,7 @@ MomentumOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_
   {
     vector value_m; // set exterior values to zero
     vector value_p = integrator_p.get_value(q);
-    // multiply by -1.0 to get the correct normal vector !!!
+    // multiply by -1.0 to get the correct normal vector !
     vector normal_p = -integrator_p.get_normal_vector(q);
 
     vector value_flux_p;
@@ -520,7 +520,7 @@ MomentumOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_
 
       // set exterior gradient to zero
       vector normal_gradient_m;
-      // multiply by -1.0 since normal vector n⁺ = -n⁻ !!!
+      // multiply by -1.0 since normal vector n⁺ = -n⁻ !
       vector normal_gradient_p = -viscous_kernel->calculate_normal_gradient(q, integrator_p);
 
       vector value_flux = viscous_kernel->calculate_value_flux(

@@ -89,7 +89,7 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
     {
       ++cell;
     }
-    while(!cell->at_boundary(3))
+    while(not cell->at_boundary(3))
     {
       ++n_cells_y_dir;
       cell = cell->neighbor(3);

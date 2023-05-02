@@ -85,7 +85,7 @@ public:
   virtual ~Interpolator()
   {
     // not initialized -> nothing to clean up
-    if(!initialized)
+    if(not initialized)
       return;
 
     delete[] src;

@@ -135,7 +135,7 @@ weight_residuum(MatrixFree &                                                   d
     for(unsigned int v = 0; v < n_filled_lanes; v++)
     {
       auto cell_i = data_1.get_cell_iterator(cell, v);
-      if(!cell_i->at_boundary(surface))
+      if(not cell_i->at_boundary(surface))
       {
         weights[v]  = 0.5;
         do_not_loop = false;
@@ -236,7 +236,7 @@ MGTransferP<dim, Number, VectorType, components>::do_restrict_and_add(VectorType
 
     fe_eval1.read_dof_values(src);
 
-    if(!is_dg)
+    if(not(is_dg))
       weight_residuum<dim, fe_degree_1, Number>(*matrixfree_1, fe_eval1, cell, this->weights);
 
     dealii::internal::FEEvaluationImplBasisChange<
@@ -289,7 +289,7 @@ MGTransferP<dim, Number, VectorType, components>::do_prolongate(VectorType &    
                                                    fe_eval2.begin_dof_values(),
                                                    fe_eval1.begin_dof_values());
 
-    if(!is_dg)
+    if(not(is_dg))
       weight_residuum<dim, fe_degree_1, Number>(*matrixfree_1, fe_eval1, cell, this->weights);
 
     fe_eval1.distribute_local_to_global(dst);
@@ -359,7 +359,7 @@ MGTransferP<dim, Number, VectorType, components>::reinit(
   fill_shape_values(prolongation_matrix_1d, this->degree_2, this->degree_1, false);
   fill_shape_values(interpolation_matrix_1d, this->degree_2, this->degree_1, true);
 
-  if(!is_dg)
+  if(not(is_dg))
   {
     dealii::LinearAlgebra::distributed::Vector<Number> vec;
     dealii::IndexSet                                   relevant_dofs;
@@ -420,7 +420,7 @@ MGTransferP<dim, Number, VectorType, components>::interpolate(unsigned int const
                                                               VectorType const & src) const
 {
   (void)level;
-  if(!this->is_dg) // only if CG
+  if(not this->is_dg) // only if CG
     src.update_ghost_values();
 
   // clang-format off
@@ -492,7 +492,7 @@ MGTransferP<dim, Number, VectorType, components>::restrict_and_add(unsigned int 
                                                                    VectorType &       dst,
                                                                    VectorType const & src) const
 {
-  if(!this->is_dg) // only if CG
+  if(not this->is_dg) // only if CG
     src.update_ghost_values();
 
   // clang-format off
@@ -557,7 +557,7 @@ MGTransferP<dim, Number, VectorType, components>::restrict_and_add(unsigned int 
   }
   // clang-format on
 
-  if(!this->is_dg) // only if CG
+  if(not this->is_dg) // only if CG
   {
     dst.compress(dealii::VectorOperation::add);
     src.zero_out_ghost_values();
@@ -570,7 +570,7 @@ MGTransferP<dim, Number, VectorType, components>::prolongate_and_add(unsigned in
                                                                      VectorType &       dst,
                                                                      VectorType const & src) const
 {
-  if(!this->is_dg) // only if CG
+  if(not this->is_dg) // only if CG
   {
     src.update_ghost_values();
   }
@@ -637,7 +637,7 @@ MGTransferP<dim, Number, VectorType, components>::prolongate_and_add(unsigned in
   }
   // clang-format on
 
-  if(!this->is_dg) // only if CG
+  if(not this->is_dg) // only if CG
   {
     dst.compress(dealii::VectorOperation::add);
     src.zero_out_ghost_values();

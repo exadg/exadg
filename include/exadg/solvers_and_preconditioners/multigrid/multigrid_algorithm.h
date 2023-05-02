@@ -128,7 +128,7 @@ public:
 
     int  n_iter    = 0;
     bool converged = norm_r_0 < abstol;
-    while(!converged)
+    while(not converged)
     {
       for(unsigned int i = minlevel; i < maxlevel; i++)
       {

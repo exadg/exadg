@@ -200,7 +200,7 @@ template<int dim, typename Number>
 bool
 DriverSteadyProblems<dim, Number>::print_solver_info(double const time, bool unsteady_problem) const
 {
-  return !unsteady_problem or param.solver_info_data.write(this->global_timer.wall_time(),
+  return not(unsteady_problem) or param.solver_info_data.write(this->global_timer.wall_time(),
                                                            time - param.start_time,
                                                            iterations.first + 1);
 }

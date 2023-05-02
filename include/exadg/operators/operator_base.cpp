@@ -435,7 +435,7 @@ OperatorBase<dim, Number, n_components>::calculate_block_diagonal_matrices() con
   AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
 
   // allocate memory only the first time
-  if(!block_diagonal_preconditioner_is_initialized or
+  if(not(block_diagonal_preconditioner_is_initialized) or
      matrix_free->n_cell_batches() * vectorization_length != matrices.size())
   {
     auto dofs =
@@ -654,7 +654,7 @@ OperatorBase<dim, Number, n_components>::update_block_diagonal_preconditioner() 
 
   // initialization
 
-  if(!block_diagonal_preconditioner_is_initialized)
+  if(not(block_diagonal_preconditioner_is_initialized))
   {
     if(data.implement_block_diagonal_preconditioner_matrix_free)
     {
@@ -676,7 +676,7 @@ OperatorBase<dim, Number, n_components>::update_block_diagonal_preconditioner() 
 
   // For the matrix-free variant there is nothing to do.
   // For the matrix-based variant we have to recompute the block matrices.
-  if(!data.implement_block_diagonal_preconditioner_matrix_free)
+  if(not data.implement_block_diagonal_preconditioner_matrix_free)
   {
     // clear matrices
     initialize_block_jacobi_matrices_with_zero(matrices);
@@ -762,11 +762,11 @@ OperatorBase<dim, Number, n_components>::internal_init_system_matrix(
 
   if(is_dg and is_mg)
     dealii::MGTools::make_flux_sparsity_pattern(dof_handler, dsp, this->level);
-  else if(is_dg and !is_mg)
+  else if(is_dg and not is_mg)
     dealii::DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
-  else if(/*!is_dg and*/ is_mg)
+  else if(/*not(is_dg) and*/ is_mg)
     dealii::MGTools::make_sparsity_pattern(dof_handler, dsp, this->level, *this->constraint);
-  else /* if (!is_dg and !is_mg)*/
+  else /* if (not(is_dg) and not(is_mg))*/
     dealii::DoFTools::make_sparsity_pattern(dof_handler, dsp, *this->constraint);
 
   if(my_rank_is_part_of_subcommunicator)
@@ -1707,7 +1707,7 @@ OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix(
       else
         cell_v->get_dof_indices(dof_indices);
 
-      if(!is_dg)
+      if(not(is_dg))
       {
         // in the case of CG: shape functions are not ordered lexicographically
         // see (https://www.dealii.org/8.5.1/doxygen/deal.II/classFE__Q.html)

@@ -99,7 +99,7 @@ run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_tes
   driver->setup();
   driver->solve();
 
-  if(!is_test)
+  if(not is_test)
     driver->print_performance_results(timer.wall_time());
 }
 } // namespace ExaDG

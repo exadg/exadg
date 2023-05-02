@@ -321,7 +321,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::initialize_precice(
   VectorType const & dealii_to_precice)
 {
 #ifdef EXADG_WITH_PRECICE
-  // if(!dealii_to_precice.has_ghost_elements())
+  // if(not dealii_to_precice.has_ghost_elements())
   //   dealii_to_precice.update_ghost_values();
 
   // Initialize preCICE internally

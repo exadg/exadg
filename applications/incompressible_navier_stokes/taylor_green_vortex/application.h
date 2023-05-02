@@ -158,7 +158,7 @@ private:
     this->param.temporal_discretization       = TemporalDiscretization::BDFDualSplittingScheme;
     this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
     this->param.order_time_integrator         = 2;
-    this->param.start_with_low_order          = !read_restart;
+    this->param.start_with_low_order          = not read_restart;
     this->param.adaptive_time_stepping        = true;
     this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
     this->param.adaptive_time_stepping_limiting_factor = 3.0;
@@ -462,7 +462,7 @@ private:
     pp_data.kinetic_energy_data.viscosity                 = viscosity;
     pp_data.kinetic_energy_data.directory                 = this->output_parameters.directory;
     pp_data.kinetic_energy_data.filename                  = name;
-    pp_data.kinetic_energy_data.clear_file                = !read_restart;
+    pp_data.kinetic_energy_data.clear_file                = not read_restart;
 
     // kinetic energy spectrum
     bool const do_fftw_during_simulation                                    = true;
@@ -470,7 +470,7 @@ private:
     pp_data.kinetic_energy_spectrum_data.time_control_data.trigger_interval = 0.5;
     pp_data.kinetic_energy_spectrum_data.time_control_data.start_time       = start_time;
     pp_data.kinetic_energy_spectrum_data.do_fftw                 = do_fftw_during_simulation;
-    pp_data.kinetic_energy_spectrum_data.write_raw_data_to_files = !do_fftw_during_simulation;
+    pp_data.kinetic_energy_spectrum_data.write_raw_data_to_files = not do_fftw_during_simulation;
     pp_data.kinetic_energy_spectrum_data.directory = this->output_parameters.directory;
     pp_data.kinetic_energy_spectrum_data.filename  = name + "_energy_spectrum";
     pp_data.kinetic_energy_spectrum_data.degree    = this->param.degree_u;
@@ -479,7 +479,7 @@ private:
     pp_data.kinetic_energy_spectrum_data.n_cells_1d_coarse_grid     = n_subdivisions_1d_hypercube;
     pp_data.kinetic_energy_spectrum_data.refine_level            = this->param.grid.n_refine_global;
     pp_data.kinetic_energy_spectrum_data.length_symmetric_domain = right;
-    pp_data.kinetic_energy_spectrum_data.clear_file              = !read_restart;
+    pp_data.kinetic_energy_spectrum_data.clear_file              = not read_restart;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));

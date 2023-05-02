@@ -47,7 +47,7 @@ public:
   void
   vmult(VectorType & dst, VectorType const & src) const
   {
-    if(!dealii::PointerComparison::equal(&dst, &src))
+    if(not dealii::PointerComparison::equal(&dst, &src))
       dst = src;
     dst.scale(inverse_diagonal);
   }

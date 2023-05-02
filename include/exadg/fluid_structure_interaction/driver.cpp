@@ -310,7 +310,7 @@ Driver<dim, Number>::solve() const
   }
 
   // The fluid domain is the master that dictates when the time loop is finished
-  while(!fluid->time_integrator->finished())
+  while(not fluid->time_integrator->finished())
   {
     // pre-solve
     fluid->time_integrator->advance_one_timestep_pre_solve(true);

@@ -232,7 +232,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   postprocessor->setup(*pde_operator);
 
   // setup time integrator before calling setup_solvers (this is necessary since the setup
-  // of the solvers depends on quantities such as the time_step_size or gamma0!!!)
+  // of the solvers depends on quantities such as the time_step_size or gamma0!)
   AssertThrow(application->get_parameters().solver_type == IncNS::SolverType::Unsteady,
               dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 

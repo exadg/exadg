@@ -91,7 +91,7 @@ TimeControl::needs_evaluation(double const time, types::time_step const time_ste
     return false;
 
   // steady case
-  if(!Utilities::is_unsteady_timestep(time_step_number))
+  if(not Utilities::is_unsteady_timestep(time_step_number))
   {
     ++counter;
     return true;

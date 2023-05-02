@@ -145,7 +145,7 @@ TimerTree::insert(std::vector<std::string>   ids,
 
     std::shared_ptr<TimerTree> new_tree(new TimerTree());
     new_tree->copy_from(sub_tree);
-    if(!new_name.empty())
+    if(not new_name.empty())
       new_tree->id = new_name;
 
     // Make sure that the new tree does not already exist

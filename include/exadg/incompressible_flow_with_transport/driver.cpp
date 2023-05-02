@@ -189,7 +189,7 @@ Driver<dim, Number>::setup()
 
   // setup time integrator before calling setup_solvers
   // (this is necessary since the setup of the solvers
-  // depends on quantities such as the time_step_size or gamma0!!!)
+  // depends on quantities such as the time_step_size or gamma0!)
   if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
     fluid_time_integrator = IncNS::create_time_integrator<dim, Number>(

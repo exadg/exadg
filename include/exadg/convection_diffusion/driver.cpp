@@ -100,7 +100,7 @@ Driver<dim, Number>::setup()
   // setup convection-diffusion operator
   pde_operator->setup(matrix_free, matrix_free_data);
 
-  if(!is_throughput_study)
+  if(not is_throughput_study)
   {
     // initialize postprocessor
     postprocessor = application->create_postprocessor();
@@ -211,7 +211,7 @@ Driver<dim, Number>::solve()
         time_integrator->advance_one_timestep_solve();
 
         time_integrator->advance_one_timestep_post_solve();
-      } while(!time_integrator->finished());
+      } while(not(time_integrator->finished()));
     }
     else
     {

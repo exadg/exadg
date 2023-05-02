@@ -665,7 +665,7 @@ SolverGMRES<value_type, Matrix, Preconditioner>::solve(Matrix const *         A,
     iterations += k;
 
   } while(
-    !converged(convergence_status, norm_r_abs, ABS_TOL, norm_r_rel, REL_TOL, iterations, MAX_ITER));
+    not converged(convergence_status, norm_r_abs, ABS_TOL, norm_r_rel, REL_TOL, iterations, MAX_ITER));
 
   // output convergence info
   //    std::cout << "Number of iterations = " << iterations << std::endl;
@@ -713,7 +713,7 @@ SolverGMRES<value_type, Matrix, Preconditioner>::do_solve(Matrix const *        
   norm_r_rel = res[0] / norm_r_initial;
 
   while(
-    !converged(convergence_status, norm_r_abs, ABS_TOL, norm_r_rel, REL_TOL, k, MAX_KRYLOV_SIZE))
+    not converged(convergence_status, norm_r_abs, ABS_TOL, norm_r_rel, REL_TOL, k, MAX_KRYLOV_SIZE))
   {
     // normalize vector v^(k)
     if(k == 0)

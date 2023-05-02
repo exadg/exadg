@@ -63,7 +63,7 @@ public:
   void
   start(std::string label)
   {
-    if(!m.count(label))
+    if(not m.count(label))
       m[label] = Instance();
     m[label].temp    = clock();
     m[label].started = true;

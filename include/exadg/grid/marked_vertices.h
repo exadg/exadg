@@ -49,7 +49,7 @@ get_marked_vertices_via_boundary_ids(dealii::Triangulation<dim> const &         
 
   for(auto const & cell : triangulation.active_cell_iterators())
   {
-    if(!cell->is_artificial() and cell->at_boundary())
+    if(not(cell->is_artificial()) and cell->at_boundary())
     {
       for(auto const & f : cell->face_indices())
       {

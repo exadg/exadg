@@ -866,7 +866,7 @@ TimeIntBDFDualSplitting<dim, Number>::solve_steady_problem()
     VectorType velocity_tmp;
     VectorType pressure_tmp;
 
-    while(!converged and this->time < (this->end_time - this->eps) and
+    while(not(converged) and this->time < (this->end_time - this->eps) and
           this->get_time_step_number() <= this->param.max_number_of_time_steps)
     {
       // save solution from previous time step

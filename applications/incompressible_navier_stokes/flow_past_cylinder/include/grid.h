@@ -1157,7 +1157,7 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation, bool is
   dealii::GridGenerator::merge_triangulations(tmp, right_top, right);
 
   // middle part
-  if(!adaptive_mesh_shift)
+  if(not adaptive_mesh_shift)
   {
     // create middle bottom part
     dealii::GridGenerator::subdivided_hyper_rectangle(middle_bottom,

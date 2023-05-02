@@ -294,7 +294,7 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
     // Symmetry boundaries
     // Constraints the normal components of the velocity, where "0" as second argument indicates the
     // first component in the dof_handler.
-    if(!(boundary_descriptor->velocity->symmetry_bc.empty()))
+    if(not(boundary_descriptor->velocity->symmetry_bc.empty()))
     {
       for(auto bc : boundary_descriptor->velocity->symmetry_bc)
         dealii::VectorTools::project_boundary_values_div_conforming(
@@ -302,7 +302,7 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
     }
 
     // Dirichlet boundaries
-    if(!(boundary_descriptor->velocity->dirichlet_bc.empty()))
+    if(not(boundary_descriptor->velocity->dirichlet_bc.empty()))
     {
       AssertThrow(
         false,

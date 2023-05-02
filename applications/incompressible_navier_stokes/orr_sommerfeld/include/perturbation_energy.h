@@ -128,7 +128,7 @@ private:
 
     integrate(*matrix_free, velocity, perturbation_energy);
 
-    if(!initial_perturbation_energy_has_been_calculated)
+    if(not initial_perturbation_energy_has_been_calculated)
     {
       initial_perturbation_energy = perturbation_energy;
 

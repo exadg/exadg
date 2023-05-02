@@ -144,7 +144,7 @@ create_grid_and_set_boundary_ids_nozzle(
         double const       z = cell->vertex(v)[2];
         point_2d[2]          = z;
 
-        // note that this value is only valid for the current dealii implementation of hyper_ball!!!
+        // note that this value is only valid for the current dealii implementation of hyper_ball!
         if(std::abs((cell->vertex(v) - point_2d).norm() - 2.485281374239e-03 / 6.0e-3 * R_OUTER) <
              1.e-10 or
            std::abs((cell->vertex(v) - point_2d).norm() - R_OUTER) < 1.e-10)

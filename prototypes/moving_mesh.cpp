@@ -46,7 +46,7 @@ do_test()
                                     dealii::update_quadrature_points);
     std::vector<dealii::types::global_dof_index> dof_indices(fe.dofs_per_cell);
     for(auto const & cell : dof_handler.active_cell_iterators())
-      if(!cell->is_artificial())
+      if(not(cell->is_artificial()))
       {
         fe_values.reinit(cell);
         cell->get_dof_indices(dof_indices);
