@@ -38,7 +38,7 @@ get_unsteady_evaluation_type(TimeControlData const & data)
   bool const timestep = Utilities::is_valid_timestep(data.trigger_every_time_steps);
 
   // We do not allow users to specify both a time interval and a number of time steps.
-  if(interval && timestep)
+  if(interval and timestep)
     return TimeControlData::UnsteadyEvalType::None;
 
   if(interval)
@@ -62,7 +62,7 @@ TimeControlData::TimeControlData()
 void
 TimeControlData::print(dealii::ConditionalOStream & pcout, bool const unsteady) const
 {
-  if(unsteady || is_active)
+  if(unsteady or is_active)
   {
     print_parameter(pcout, "TimeControl start time", start_time);
     print_parameter(pcout, "TimeControl end_time", end_time);

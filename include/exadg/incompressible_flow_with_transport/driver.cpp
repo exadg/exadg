@@ -259,7 +259,7 @@ Driver<dim, Number>::setup()
                                                     is_test,
                                                     scalar_postprocessor[i]);
 
-    if(application->get_parameters_scalar(i).restarted_simulation == false &&
+    if(application->get_parameters_scalar(i).restarted_simulation == false and
        application->get_parameters_scalar(i).temporal_discretization ==
          ConvDiff::TemporalDiscretization::BDF)
     {
@@ -614,7 +614,7 @@ Driver<dim, Number>::solve() const
       finished = true;
 
     for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
-      finished = finished && scalar_time_integrator[i]->finished();
+      finished = finished and scalar_time_integrator[i]->finished();
 
     ++N_time_steps;
   }

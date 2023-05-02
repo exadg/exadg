@@ -235,7 +235,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   pde_operator->initialize_dof_vector(dst);
   src = 1.0;
 
-  if(application->get_parameters().large_deformation && operator_type == OperatorType::Linearized)
+  if(application->get_parameters().large_deformation and operator_type == OperatorType::Linearized)
   {
     pde_operator->initialize_dof_vector(linearization);
     linearization = 1.0;

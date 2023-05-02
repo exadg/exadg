@@ -306,7 +306,7 @@ DivergenceOperator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const
 
     velocity.reinit(cell);
 
-    if(data.integration_by_parts == true &&
+    if(data.integration_by_parts == true and
        data.formulation == FormulationVelocityDivergenceTerm::Weak)
     {
       velocity.gather_evaluate(src, dealii::EvaluationFlags::values);
@@ -448,7 +448,7 @@ DivergenceOperator<dim, Number>::boundary_face_loop_inhom_operator(
   VectorType const &,
   std::pair<unsigned int, unsigned int> const & face_range) const
 {
-  if(data.integration_by_parts == true && data.use_boundary_data == true)
+  if(data.integration_by_parts == true and data.use_boundary_data == true)
   {
     FaceIntegratorU velocity(matrix_free, true, data.dof_index_velocity, data.quad_index);
 
@@ -477,7 +477,7 @@ DivergenceOperator<dim, Number>::boundary_face_loop_inhom_operator_bc_from_dof_v
   VectorType const &,
   Range const & face_range) const
 {
-  if(data.integration_by_parts == true && data.use_boundary_data == true)
+  if(data.integration_by_parts == true and data.use_boundary_data == true)
   {
     FaceIntegratorU velocity(matrix_free, true, data.dof_index_velocity, data.quad_index);
     FaceIntegratorU velocity_ext(matrix_free, true, data.dof_index_velocity, data.quad_index);

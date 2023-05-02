@@ -164,16 +164,16 @@ main(int argc, char ** argv)
           ++refine_time)
       {
         // run the simulation
-        if(general.dim == 2 && general.precision == "float")
+        if(general.dim == 2 and general.precision == "float")
           ExaDG::run<2, float>(
             input_file, degree, refine_space, refine_time, sub_comm, general.is_test);
-        else if(general.dim == 2 && general.precision == "double")
+        else if(general.dim == 2 and general.precision == "double")
           ExaDG::run<2, double>(
             input_file, degree, refine_space, refine_time, sub_comm, general.is_test);
-        else if(general.dim == 3 && general.precision == "float")
+        else if(general.dim == 3 and general.precision == "float")
           ExaDG::run<3, float>(
             input_file, degree, refine_space, refine_time, sub_comm, general.is_test);
-        else if(general.dim == 3 && general.precision == "double")
+        else if(general.dim == 3 and general.precision == "double")
           ExaDG::run<3, double>(
             input_file, degree, refine_space, refine_time, sub_comm, general.is_test);
         else

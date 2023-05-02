@@ -154,7 +154,7 @@ public:
   void
   set_value(value_type const value, unsigned int const i, unsigned int const j)
   {
-    AssertThrow(i < M && j < M, dealii::ExcMessage("Index exceeds matrix dimensions."));
+    AssertThrow(i < M and j < M, dealii::ExcMessage("Index exceeds matrix dimensions."));
 
     data[i * M + j] = value;
   }

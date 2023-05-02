@@ -144,9 +144,9 @@ main(int argc, char ** argv)
   ExaDG::GeneralParameters general(input_file);
 
   // run the simulation
-  if(general.dim == 2 && general.precision == "double")
+  if(general.dim == 2 and general.precision == "double")
     ExaDG::run<2, double>(input_file, mpi_comm, general.is_test);
-  else if(general.dim == 3 && general.precision == "double")
+  else if(general.dim == 3 and general.precision == "double")
     ExaDG::run<3, double>(input_file, mpi_comm, general.is_test);
   else
     AssertThrow(false, dealii::ExcMessage("Only dim = 2|3 and precision=double implemented."));

@@ -159,7 +159,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(dealii::Triangulatio
   std::vector<unsigned int> h_levels;
 
   // setup h-levels
-  if(mg_type == MultigridType::pMG || mg_type == MultigridType::cpMG ||
+  if(mg_type == MultigridType::pMG or mg_type == MultigridType::cpMG or
      mg_type == MultigridType::pcMG)
   {
     h_levels.push_back(tria->n_global_levels() - 1);
@@ -189,7 +189,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(dealii::Triangulatio
   {
     p_levels.push_back({degree, is_dg});
   }
-  else if(mg_type == MultigridType::cMG || mg_type == MultigridType::chMG ||
+  else if(mg_type == MultigridType::cMG or mg_type == MultigridType::chMG or
           mg_type == MultigridType::hcMG)
   {
     p_levels.push_back({degree, false});
@@ -204,8 +204,8 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(dealii::Triangulatio
     // c-transfer before p-coarsening
     if(is_dg)
     {
-      if(mg_type == MultigridType::cpMG || mg_type == MultigridType::hcpMG ||
-         mg_type == MultigridType::chpMG || mg_type == MultigridType::cphMG)
+      if(mg_type == MultigridType::cpMG or mg_type == MultigridType::hcpMG or
+         mg_type == MultigridType::chpMG or mg_type == MultigridType::cphMG)
       {
         p_levels.push_back({p, discontinuous});
         discontinuous = false;
@@ -221,7 +221,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(dealii::Triangulatio
         case PSequenceType::GoToOne:       p = 1;                                                break;
         case PSequenceType::DecreaseByOne: p = std::max(p-1, 1u);                                break;
         case PSequenceType::Bisect:        p = std::max(p/2, 1u);                                break;
-        case PSequenceType::Manual:        p = (degree==3 && p==3) ? 2 : std::max(degree/2, 1u); break;
+        case PSequenceType::Manual:        p = (degree==3 and p==3) ? 2 : std::max(degree/2, 1u); break;
         default:
           AssertThrow(false, dealii::ExcMessage("No valid p-sequence selected!"));
           // clang-format on
@@ -231,8 +231,8 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(dealii::Triangulatio
     // c-transfer after p-coarsening
     if(is_dg)
     {
-      if(mg_type == MultigridType::pcMG || mg_type == MultigridType::hpcMG ||
-         mg_type == MultigridType::phcMG || mg_type == MultigridType::pchMG)
+      if(mg_type == MultigridType::pcMG or mg_type == MultigridType::hpcMG or
+         mg_type == MultigridType::phcMG or mg_type == MultigridType::pchMG)
       {
         p_levels.push_back({p, false});
       }
@@ -267,13 +267,13 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(dealii::Triangulatio
     for(unsigned int h = 0; h < h_levels.size(); h++)
       level_info.push_back({h_levels[h], p_levels.back()});
   }
-  else if(mg_type == MultigridType::pMG || mg_type == MultigridType::pcMG ||
+  else if(mg_type == MultigridType::pMG or mg_type == MultigridType::pcMG or
           mg_type == MultigridType::cpMG)
   {
     for(unsigned int p = 0; p < p_levels.size(); p++)
       level_info.push_back({h_levels.front(), p_levels[p]});
   }
-  else if(mg_type == MultigridType::phMG || mg_type == MultigridType::cphMG ||
+  else if(mg_type == MultigridType::phMG or mg_type == MultigridType::cphMG or
           mg_type == MultigridType::pchMG)
   {
     for(unsigned int h = 0; h < h_levels.size() - 1; h++)
@@ -282,7 +282,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(dealii::Triangulatio
     for(auto p : p_levels)
       level_info.push_back({h_levels.back(), p});
   }
-  else if(mg_type == MultigridType::hpMG || mg_type == MultigridType::hcpMG ||
+  else if(mg_type == MultigridType::hpMG or mg_type == MultigridType::hcpMG or
           mg_type == MultigridType::hpcMG)
   {
     for(unsigned int p = 0; p < p_levels.size() - 1; p++)
@@ -360,7 +360,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_mapping()
   std::shared_ptr<dealii::MappingQCache<dim> const> mapping_q_cache =
     std::dynamic_pointer_cast<dealii::MappingQCache<dim> const>(mapping);
 
-  if(data.involves_h_transfer() && mapping_q_cache.get() != 0)
+  if(data.involves_h_transfer() and mapping_q_cache.get() != 0)
   {
     if(multigrid_variant == MultigridVariant::GlobalCoarsening)
     {
@@ -389,7 +389,7 @@ MultigridPreconditionerBase<dim, Number>::get_mapping(unsigned int const h_level
   std::shared_ptr<dealii::MappingQCache<dim> const> mapping_q_cache =
     std::dynamic_pointer_cast<dealii::MappingQCache<dim> const>(mapping);
 
-  if(data.involves_h_transfer() && mapping_q_cache.get() != 0)
+  if(data.involves_h_transfer() and mapping_q_cache.get() != 0)
   {
     if(multigrid_variant == MultigridVariant::GlobalCoarsening)
     {

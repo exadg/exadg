@@ -51,7 +51,7 @@ add_periodicity_constraints(unsigned int const                                  
 
     for(unsigned int i = 0; i < dofs_per_face; ++i)
     {
-      if(constraints.can_store_line(dofs_2[i]) && constraints.can_store_line(dofs_1[i]) &&
+      if(constraints.can_store_line(dofs_2[i]) and constraints.can_store_line(dofs_1[i]) and
          !constraints.is_constrained(dofs_2[i]))
       {
         // constraint dof and ...
@@ -61,7 +61,7 @@ add_periodicity_constraints(unsigned int const                                  
       }
     }
   }
-  else if(face1->has_children() && face2->has_children())
+  else if(face1->has_children() and face2->has_children())
   {
     // recursively visit all subfaces
     for(unsigned int c = 0; c < face1->n_children(); ++c)
@@ -147,7 +147,7 @@ add_constraints(bool                                is_dg,
   // be applied in the DG case). In case we have interface matrices, there are
   // Dirichlet constraints on parts of the boundary and no such transformation
   // is required.
-  if(operator_is_singular && affine_constraints_own.can_store_line(0))
+  if(operator_is_singular and affine_constraints_own.can_store_line(0))
   {
     // if dof 0 is constrained, it must be a periodic dof, so we take the
     // value on the other side
@@ -175,7 +175,7 @@ add_constraints(bool                                is_dg,
       }
       else
       {
-        Assert(lines->size() == 1 && std::abs((*lines)[0].second - 1.) < 1e-15,
+        Assert(lines->size() == 1 and std::abs((*lines)[0].second - 1.) < 1e-15,
                dealii::ExcMessage("Periodic index expected, bailing out"));
 
         line_index = (*lines)[0].first;

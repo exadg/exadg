@@ -244,7 +244,7 @@ void
 PostProcessor<dim, Number>::initialize_derived_fields()
 {
   // vorticity
-  if(pp_data.output_data.write_vorticity || pp_data.output_data.write_streamfunction ||
+  if(pp_data.output_data.write_vorticity or pp_data.output_data.write_streamfunction or
      pp_data.output_data.write_vorticity_magnitude)
   {
     vorticity.type              = SolutionFieldType::vector;

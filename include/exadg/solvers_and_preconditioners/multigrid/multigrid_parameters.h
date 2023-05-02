@@ -233,7 +233,7 @@ struct CoarseGridData
 
     solver_data.print(pcout);
 
-    if(solver == MultigridCoarseGridSolver::AMG ||
+    if(solver == MultigridCoarseGridSolver::AMG or
        preconditioner == MultigridCoarseGridPreconditioner::AMG)
     {
       amg_data.print(pcout);

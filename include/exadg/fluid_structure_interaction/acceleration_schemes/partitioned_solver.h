@@ -119,7 +119,7 @@ PartitionedSolver<dim, Number>::check_convergence(VectorType const & residual) c
   double const ref_norm_rel  = structure->time_integrator->get_velocity_np().l2_norm() *
                               structure->time_integrator->get_time_step_size();
 
-  bool const converged = (residual_norm < parameters.abs_tol * ref_norm_abs) ||
+  bool const converged = (residual_norm < parameters.abs_tol * ref_norm_abs) or
                          (residual_norm < parameters.rel_tol * ref_norm_rel);
 
   return converged;

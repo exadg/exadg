@@ -66,7 +66,7 @@ public:
     double norm_r   = residual.l2_norm();
     double norm_r_0 = norm_r;
 
-    while(norm_r > this->solver_data.abs_tol && norm_r / norm_r_0 > solver_data.rel_tol &&
+    while(norm_r > this->solver_data.abs_tol and norm_r / norm_r_0 > solver_data.rel_tol and
           newton_iterations < solver_data.max_iter)
     {
       // reset increment
@@ -111,7 +111,7 @@ public:
 
         // increment counter
         n_iter_damp++;
-      } while(norm_r_damp >= (1.0 - tau * omega) * norm_r && n_iter_damp < max_iter_damp);
+      } while(norm_r_damp >= (1.0 - tau * omega) * norm_r and n_iter_damp < max_iter_damp);
 
       AssertThrow(norm_r_damp < (1.0 - tau * omega) * norm_r,
                   dealii::ExcMessage("Damped Newton iteration did not converge. "
@@ -126,7 +126,7 @@ public:
       linear_iterations += n_iter_linear;
     }
 
-    AssertThrow(norm_r <= this->solver_data.abs_tol || norm_r / norm_r_0 <= solver_data.rel_tol,
+    AssertThrow(norm_r <= this->solver_data.abs_tol or norm_r / norm_r_0 <= solver_data.rel_tol,
                 dealii::ExcMessage(
                   "Newton solver failed to solve nonlinear problem to given tolerance. "
                   "Maximum number of iterations exceeded!"));

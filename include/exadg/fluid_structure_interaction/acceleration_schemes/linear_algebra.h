@@ -58,7 +58,7 @@ public:
   Number
   get(unsigned int const i, unsigned int const j) const
   {
-    AssertThrow(i < M && j < M, dealii::ExcMessage("Index exceeds matrix dimensions."));
+    AssertThrow(i < M and j < M, dealii::ExcMessage("Index exceeds matrix dimensions."));
 
     return data[i * M + j];
   }
@@ -66,7 +66,7 @@ public:
   void
   set(Number const value, unsigned int const i, unsigned int const j)
   {
-    AssertThrow(i < M && j < M, dealii::ExcMessage("Index exceeds matrix dimensions."));
+    AssertThrow(i < M and j < M, dealii::ExcMessage("Index exceeds matrix dimensions."));
 
     data[i * M + j] = value;
   }

@@ -69,7 +69,7 @@ public:
       sinval *= sinvals[d];
     dealii::Tensor<1, dim> residual = space_point - x - sinval * one;
     unsigned int           its      = 0;
-    while(residual.norm() > 1e-12 && its < 100)
+    while(residual.norm() > 1e-12 and its < 100)
     {
       dealii::Tensor<2, dim> jacobian;
       for(unsigned int d = 0; d < dim; ++d)

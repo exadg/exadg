@@ -43,7 +43,7 @@ PointwiseOutputData<dim>::print(dealii::ConditionalOStream & pcout) const
 {
   PointwiseOutputDataBase<dim>::print(pcout);
 
-  if(this->time_control_data.is_active && this->evaluation_points.size() > 0)
+  if(this->time_control_data.is_active and this->evaluation_points.size() > 0)
   {
     print_parameter(pcout, "Write rho", write_rho);
     print_parameter(pcout, "Write rho_u", write_rho_u);
@@ -84,7 +84,7 @@ template<int dim, typename Number>
 void
 PointwiseOutputGenerator<dim, Number>::do_evaluate(VectorType const & solution)
 {
-  if(pointwise_output_data.write_rho || pointwise_output_data.write_rho_u ||
+  if(pointwise_output_data.write_rho or pointwise_output_data.write_rho_u or
      pointwise_output_data.write_rho_E)
   {
     auto const values = this->template compute_point_values<dim + 2>(solution, *dof_handler);

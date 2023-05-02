@@ -75,7 +75,7 @@ fill_resolutions_vector(
       n_cells           = dealii::Utilities::pow(n_subdivisions_1d, dim) *
                 dealii::Utilities::pow(2ULL, (refine_level - 2) * dim);
 
-      if(n_cells >= n_cells_min && n_cells <= n_cells_max)
+      if(n_cells >= n_cells_min and n_cells <= n_cells_max)
       {
         // set mesh refinement
         l = refine_level - 2;
@@ -95,7 +95,7 @@ fill_resolutions_vector(
       n_subdivisions_1d = 1;
       n_cells           = dealii::Utilities::pow(2ULL, refine_level * dim);
 
-      if(n_cells >= n_cells_min && n_cells <= n_cells_max)
+      if(n_cells >= n_cells_min and n_cells <= n_cells_max)
       {
         // set mesh refinement
         l = refine_level;
@@ -111,13 +111,13 @@ fill_resolutions_vector(
     }
 
     // coarse grid with 5^dim cells, and refine_level-2 uniform refinements
-    if(dim == 3 && refine_level >= 2)
+    if(dim == 3 and refine_level >= 2)
     {
       n_subdivisions_1d = 5;
       n_cells           = dealii::Utilities::pow(n_subdivisions_1d, dim) *
                 dealii::Utilities::pow(2ULL, (refine_level - 2) * dim);
 
-      if(n_cells >= n_cells_min && n_cells <= n_cells_max)
+      if(n_cells >= n_cells_min and n_cells <= n_cells_max)
       {
         // set mesh refinement
         l = refine_level - 2;
@@ -139,7 +139,7 @@ fill_resolutions_vector(
 
   if(run_type == RunType::FixedProblemSize)
   {
-    AssertThrow((n_cells >= n_cells_min && n_cells <= n_cells_max),
+    AssertThrow((n_cells >= n_cells_min and n_cells <= n_cells_max),
                 dealii::ExcMessage(
                   "No mesh found that meets the requirements regarding problem size. "
                   "Make sure that maximum number of dofs is sufficiently larger than "
@@ -265,7 +265,7 @@ struct HypercubeResolutionParameters
         }
       }
     }
-    else if(run_type == RunType::FixedProblemSize || run_type == RunType::IncreasingProblemSize)
+    else if(run_type == RunType::FixedProblemSize or run_type == RunType::IncreasingProblemSize)
     {
       for(unsigned int degree = degree_min; degree <= degree_max; ++degree)
       {

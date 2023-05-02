@@ -212,7 +212,7 @@ Operator<dim, Number>::evaluate_convective(VectorType &       dst,
                                            VectorType const & src,
                                            Number const       time) const
 {
-  if(param.equation_type == EquationType::Euler ||
+  if(param.equation_type == EquationType::Euler or
      param.equation_type == EquationType::NavierStokes)
   {
     convective_operator.evaluate(dst, src, time);
@@ -254,7 +254,7 @@ Operator<dim, Number>::evaluate_convective_and_viscous(VectorType &       dst,
     }
 
     // convective operator
-    if(param.equation_type == EquationType::Euler ||
+    if(param.equation_type == EquationType::Euler or
        param.equation_type == EquationType::NavierStokes)
     {
       convective_operator.evaluate_add(dst, src, time);

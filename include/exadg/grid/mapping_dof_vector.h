@@ -145,7 +145,7 @@ public:
 
     for(auto const & cell : dof_handler.active_cell_iterators())
     {
-      if(!cell->is_artificial())
+      if(not cell->is_artificial())
       {
         fe_values.reinit(typename dealii::Triangulation<dim>::cell_iterator(cell));
         cell->get_dof_indices(dof_indices);
@@ -187,7 +187,7 @@ public:
     AssertThrow(dealii::MultithreadInfo::n_threads() == 1, dealii::ExcNotImplemented());
 
     VectorType displacement_vector_ghosted;
-    if(dof_handler.n_dofs() > 0 && displacement_vector.size() == dof_handler.n_dofs())
+    if(dof_handler.n_dofs() > 0 and displacement_vector.size() == dof_handler.n_dofs())
     {
       dealii::IndexSet locally_relevant_dofs;
       dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
@@ -233,8 +233,8 @@ public:
 
         // if this function is called with an empty dof-vector, this indicates that the
         // displacements are zero and the points do not have to be moved
-        if(dof_handler.n_dofs() > 0 && displacement_vector.size() > 0 && cell_tria->is_active() &&
-           !cell_tria->is_artificial())
+        if(dof_handler.n_dofs() > 0 and displacement_vector.size() > 0 and
+           cell_tria->is_active() and not(cell_tria->is_artificial()))
         {
           dealii::FiniteElement<dim> const & fe = dof_handler.get_fe();
           AssertThrow(fe.element_multiplicity(0) == dim,

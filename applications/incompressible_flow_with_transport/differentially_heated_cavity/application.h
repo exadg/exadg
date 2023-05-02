@@ -283,7 +283,7 @@ private:
         }
 
         // lower and upper boundary
-        if((std::fabs(cell->face(f)->center()(1) - left) < 1e-12) ||
+        if((std::fabs(cell->face(f)->center()(1) - left) < 1e-12) or
            (std::fabs(cell->face(f)->center()(1) - right) < 1e-12))
         {
           cell->face(f)->set_boundary_id(2);

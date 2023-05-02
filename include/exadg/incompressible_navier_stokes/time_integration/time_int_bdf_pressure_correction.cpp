@@ -255,7 +255,7 @@ TimeIntBDFPressureCorrection<dim, Number>::postprocessing_stability_analysis()
               dealii::ExcMessage(
                 "Stability analysis can not be performed for nonlinear convective problems."));
 
-  AssertThrow(velocity[0].l2_norm() < 1.e-15 && pressure[0].l2_norm() < 1.e-15,
+  AssertThrow(velocity[0].l2_norm() < 1.e-15 and pressure[0].l2_norm() < 1.e-15,
               dealii::ExcMessage("Solution vector has to be zero for this stability analysis."));
 
   AssertThrow(dealii::Utilities::MPI::n_mpi_processes(this->mpi_comm) == 1,
@@ -381,7 +381,7 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
    */
 
   bool const update_preconditioner =
-    this->param.update_preconditioner_momentum &&
+    this->param.update_preconditioner_momentum and
     ((this->time_step_number - 1) % this->param.update_preconditioner_momentum_every_time_steps ==
      0);
 
@@ -483,7 +483,7 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_momentum(VectorType & rhs)
    *  Convective term formulated explicitly (additive decomposition):
    *  Evaluate convective term and add extrapolation of convective term to the rhs
    */
-  if(this->param.convective_problem() &&
+  if(this->param.convective_problem() and
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(this->param.ale_formulation)
@@ -522,7 +522,7 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_momentum(VectorType & rhs)
    *  inhomogeneous parts of boundary face integrals of the viscous operator
    *  have to be shifted to the right-hand side of the equation.
    */
-  if(this->param.viscous_problem() && this->param.linear_problem_has_to_be_solved())
+  if(this->param.viscous_problem() and this->param.linear_problem_has_to_be_solved())
   {
     pde_operator->rhs_add_viscous_term(rhs, this->get_next_time());
   }
@@ -572,7 +572,7 @@ TimeIntBDFPressureCorrection<dim, Number>::pressure_step(VectorType & pressure_i
 
   // solve linear system of equations
   bool const update_preconditioner =
-    this->param.update_preconditioner_pressure_poisson &&
+    this->param.update_preconditioner_pressure_poisson and
     ((this->time_step_number - 1) %
        this->param.update_preconditioner_pressure_poisson_every_time_steps ==
      0);
@@ -619,7 +619,7 @@ TimeIntBDFPressureCorrection<dim, Number>::calculate_chi(double & chi) const
   else
   {
     AssertThrow(this->param.formulation_viscous_term ==
-                    FormulationViscousTerm::LaplaceFormulation &&
+                    FormulationViscousTerm::LaplaceFormulation and
                   this->param.formulation_viscous_term ==
                     FormulationViscousTerm::DivergenceFormulation,
                 dealii::ExcMessage("Not implemented!"));
@@ -732,7 +732,7 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_projection(
    *  III. pressure gradient term: boundary conditions g_p(t_{n-i})
    *       in case of incremental formulation of pressure-correction scheme
    */
-  if(this->param.gradp_integrated_by_parts == true && this->param.gradp_use_boundary_data == true)
+  if(this->param.gradp_integrated_by_parts == true and this->param.gradp_use_boundary_data == true)
   {
     for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
     {
@@ -762,7 +762,7 @@ TimeIntBDFPressureCorrection<dim, Number>::projection_step(VectorType const & pr
   // and serves as a good initial guess for the case with penalty terms
   pde_operator->apply_inverse_mass_operator(velocity_np, rhs);
 
-  if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
+  if(this->param.use_divergence_penalty == true or this->param.use_continuity_penalty == true)
   {
     // extrapolate velocity to time t_{n+1} and use this velocity field to
     // calculate the penalty parameter for the divergence and continuity penalty terms
@@ -783,12 +783,12 @@ TimeIntBDFPressureCorrection<dim, Number>::projection_step(VectorType const & pr
     // add inhomogeneous contributions of continuity penalty term after computing
     // the initial guess for the linear system of equations to make sure that the initial
     // guess is as accurate as possible
-    if(this->param.use_continuity_penalty && this->param.continuity_penalty_use_boundary_data)
+    if(this->param.use_continuity_penalty and this->param.continuity_penalty_use_boundary_data)
       pde_operator->rhs_add_projection_operator(rhs, this->get_next_time());
 
     // solve linear system of equations
     bool const update_preconditioner =
-      this->param.update_preconditioner_projection &&
+      this->param.update_preconditioner_projection and
       ((this->time_step_number - 1) %
          this->param.update_preconditioner_projection_every_time_steps ==
        0);
@@ -831,7 +831,7 @@ TimeIntBDFPressureCorrection<dim, Number>::evaluate_convective_term()
   timer.restart();
 
   // evaluate convective term once solution_np is known
-  if(this->param.convective_problem() &&
+  if(this->param.convective_problem() and
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(this->param.ale_formulation == false) // Eulerian case
@@ -882,7 +882,7 @@ TimeIntBDFPressureCorrection<dim, Number>::solve_steady_problem()
     VectorType velocity_tmp;
     VectorType pressure_tmp;
 
-    while(!converged && this->time < (this->end_time - this->eps) &&
+    while(!converged and this->time < (this->end_time - this->eps) and
           this->get_time_step_number() <= this->param.max_number_of_time_steps)
     {
       // save solution from previous time step
@@ -924,7 +924,7 @@ TimeIntBDFPressureCorrection<dim, Number>::solve_steady_problem()
       }
 
       // check convergence
-      if(incr < this->param.abs_tol_steady || incr_rel < this->param.rel_tol_steady)
+      if(incr < this->param.abs_tol_steady or incr_rel < this->param.rel_tol_steady)
       {
         converged = true;
       }
@@ -935,7 +935,7 @@ TimeIntBDFPressureCorrection<dim, Number>::solve_steady_problem()
   {
     double const initial_residual = evaluate_residual();
 
-    while(!converged && this->time < (this->end_time - this->eps) &&
+    while(!converged and this->time < (this->end_time - this->eps) and
           this->get_time_step_number() <= this->param.max_number_of_time_steps)
     {
       this->do_timestep();
@@ -944,7 +944,7 @@ TimeIntBDFPressureCorrection<dim, Number>::solve_steady_problem()
       // the steady-state incompressible Navier-Stokes equations
       double const residual = evaluate_residual();
 
-      if(residual < this->param.abs_tol_steady ||
+      if(residual < this->param.abs_tol_steady or
          residual / initial_residual < this->param.rel_tol_steady)
       {
         converged = true;

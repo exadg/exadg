@@ -240,7 +240,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   this->pcout << "Performance results for convection-diffusion solver:" << std::endl;
 
   // Averaged number of iterations are only relevant for BDF time integrator
-  if(application->get_parameters().problem_type == ProblemType::Unsteady &&
+  if(application->get_parameters().problem_type == ProblemType::Unsteady and
      application->get_parameters().temporal_discretization == TemporalDiscretization::BDF)
   {
     this->pcout << std::endl << "Average number of iterations:" << std::endl;

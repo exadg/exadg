@@ -229,7 +229,7 @@ DriverPrecursor<dim, Number>::solve() const
     // both domains.
     if(use_adaptive_time_stepping == true)
       synchronize_time_step_size();
-  } while(!time_integrator_pre->finished() || !time_integrator->finished());
+  } while(!time_integrator_pre->finished() or !time_integrator->finished());
 }
 
 template<int dim, typename Number>

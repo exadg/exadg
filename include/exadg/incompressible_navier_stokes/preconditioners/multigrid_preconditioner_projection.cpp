@@ -101,11 +101,11 @@ MultigridPreconditionerProjection<dim, Number>::fill_matrix_free_data(
   if(data.use_divergence_penalty)
     matrix_free_data.append_mapping_flags(
       Operators::DivergencePenaltyKernel<dim, Number>::get_mapping_flags());
-  if(data.use_continuity_penalty && this->level_info[level].is_dg())
+  if(data.use_continuity_penalty and this->level_info[level].is_dg())
     matrix_free_data.append_mapping_flags(
       Operators::ContinuityPenaltyKernel<dim, Number>::get_mapping_flags());
 
-  if(data.use_cell_based_loops && this->level_info[level].is_dg())
+  if(data.use_cell_based_loops and this->level_info[level].is_dg())
   {
     auto tria = &this->dof_handlers[level]->get_triangulation();
     Categorization::do_cell_based_loops(*tria, matrix_free_data.data, h_level);

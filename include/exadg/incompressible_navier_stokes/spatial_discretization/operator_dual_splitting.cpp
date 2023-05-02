@@ -175,9 +175,9 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_solver()
     solver_data.solver_tolerance_abs = this->param.solver_data_viscous.abs_tol;
     solver_data.solver_tolerance_rel = this->param.solver_data_viscous.rel_tol;
 
-    if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi ||
-       this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi ||
-       this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix ||
+    if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi or
+       this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi or
+       this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix or
        this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
     {
       solver_data.use_preconditioner = true;
@@ -198,9 +198,9 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_solver()
     // use default value of compute_eigenvalues
 
     // default value of use_preconditioner = false
-    if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi ||
-       this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi ||
-       this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix ||
+    if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi or
+       this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi or
+       this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix or
        this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
     {
       solver_data.use_preconditioner = true;
@@ -218,9 +218,9 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_solver()
     solver_data.solver_tolerance_rel = this->param.solver_data_viscous.rel_tol;
     solver_data.max_n_tmp_vectors    = this->param.solver_data_viscous.max_krylov_size;
 
-    if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi ||
-       this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi ||
-       this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix ||
+    if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi or
+       this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi or
+       this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix or
        this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
     {
       solver_data.use_preconditioner = true;
@@ -282,7 +282,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_boundary_
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      if(boundary_type == BoundaryTypeU::Dirichlet ||
+      if(boundary_type == BoundaryTypeU::Dirichlet or
          boundary_type == BoundaryTypeU::DirichletCached)
       {
         dealii::Point<dim, scalar> q_points = integrator.quadrature_point(q);
@@ -298,7 +298,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_boundary_
         // and avoids a scaling of the resulting vector by the factor -1.0
         integrator.submit_value(-flux_times_normal, q);
       }
-      else if(boundary_type == BoundaryTypeU::Neumann || boundary_type == BoundaryTypeU::Symmetry)
+      else if(boundary_type == BoundaryTypeU::Neumann or boundary_type == BoundaryTypeU::Symmetry)
       {
         // Do nothing on Neumann and symmetry boundaries.
         // Remark: On symmetry boundaries it follows from g_u * n = 0 that also g_{u_hat} * n = 0.
@@ -378,7 +378,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
 
     for(unsigned int q = 0; q < pressure.n_q_points; ++q)
     {
-      if(boundary_type == BoundaryTypeU::Dirichlet ||
+      if(boundary_type == BoundaryTypeU::Dirichlet or
          boundary_type == BoundaryTypeU::DirichletCached)
       {
         vector normal = pressure.get_normal_vector(q);
@@ -412,7 +412,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
 
         pressure.submit_value(flux_times_normal, q);
       }
-      else if(boundary_type == BoundaryTypeU::Neumann || boundary_type == BoundaryTypeU::Symmetry)
+      else if(boundary_type == BoundaryTypeU::Neumann or boundary_type == BoundaryTypeU::Symmetry)
       {
         // Do nothing on Neumann and symmetry boundaries.
         // Remark: On symmetry boundaries it follows from g_u * n = 0 that also g_{u_hat} * n = 0.
@@ -813,7 +813,7 @@ OperatorDualSplitting<dim, Number>::local_interpolate_velocity_dirichlet_bc_boun
     BoundaryTypeU const boundary_type =
       this->boundary_descriptor->velocity->get_boundary_type(boundary_id);
 
-    if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)
+    if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
     {
       integrator.reinit(face);
       integrator.read_dof_values(dst);
@@ -853,7 +853,7 @@ OperatorDualSplitting<dim, Number>::local_interpolate_velocity_dirichlet_bc_boun
     }
     else
     {
-      AssertThrow(boundary_type == BoundaryTypeU::Neumann ||
+      AssertThrow(boundary_type == BoundaryTypeU::Neumann or
                     boundary_type == BoundaryTypeU::Symmetry,
                   dealii::ExcMessage("BoundaryTypeU not implemented."));
     }

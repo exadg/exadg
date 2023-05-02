@@ -687,7 +687,7 @@ public:
     std::vector<double> c;
     c.resize(stages);
 
-    if(order == 3 && stages == 7)
+    if(order == 3 and stages == 7)
     {
       A[0] = 0.;
       A[1] = -0.8083163874983830;
@@ -713,7 +713,7 @@ public:
       c[5] = 0.8534401385678250;
       c[6] = 0.9980466084623790;
     }
-    else if(order == 4 && stages == 8)
+    else if(order == 4 and stages == 8)
     {
       A[0] = 0.;
       A[1] = -0.7212962482279240;

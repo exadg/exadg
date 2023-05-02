@@ -30,7 +30,7 @@ namespace ExaDG
 bool
 MultigridData::involves_h_transfer() const
 {
-  if(type != MultigridType::pMG && type != MultigridType::cpMG && type != MultigridType::pcMG)
+  if(type != MultigridType::pMG and type != MultigridType::cpMG and type != MultigridType::pcMG)
     return true;
   else
     return false;
@@ -39,7 +39,7 @@ MultigridData::involves_h_transfer() const
 bool
 MultigridData::involves_c_transfer() const
 {
-  if(type == MultigridType::hMG || type == MultigridType::pMG || type == MultigridType::hpMG ||
+  if(type == MultigridType::hMG or type == MultigridType::pMG or type == MultigridType::hpMG ||
      type == MultigridType::phMG)
     return false;
   else
@@ -49,7 +49,7 @@ MultigridData::involves_c_transfer() const
 bool
 MultigridData::involves_p_transfer() const
 {
-  if(type != MultigridType::hMG && type != MultigridType::hcMG && type != MultigridType::chMG)
+  if(type != MultigridType::hMG and type != MultigridType::hcMG and type != MultigridType::chMG)
     return true;
   else
     return false;

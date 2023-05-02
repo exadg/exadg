@@ -221,8 +221,8 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> ma
   rhs_operator.initialize(*matrix_free, rhs_operator_data);
 
   // merged operator
-  if(param.temporal_discretization == TemporalDiscretization::BDF ||
-     (param.temporal_discretization == TemporalDiscretization::ExplRK &&
+  if(param.temporal_discretization == TemporalDiscretization::BDF or
+     (param.temporal_discretization == TemporalDiscretization::ExplRK and
       param.use_combined_operator == true))
   {
     CombinedOperatorData<dim> combined_operator_data;
@@ -237,13 +237,13 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> ma
     // linear system of equations has to be solved: the problem is either steady or
     // an unsteady problem is solved with BDF time integration (semi-implicit or fully implicit
     // formulation of convective and diffusive terms)
-    if(param.problem_type == ProblemType::Steady ||
+    if(param.problem_type == ProblemType::Steady or
        param.temporal_discretization == TemporalDiscretization::BDF)
     {
       if(param.problem_type == ProblemType::Unsteady)
         combined_operator_data.unsteady_problem = true;
 
-      if(param.convective_problem() &&
+      if(param.convective_problem() and
          param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
         combined_operator_data.convective_problem = true;
 
@@ -255,11 +255,11 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> ma
       // always false
       combined_operator_data.unsteady_problem = false;
 
-      if(this->param.equation_type == EquationType::Convection ||
+      if(this->param.equation_type == EquationType::Convection or
          this->param.equation_type == EquationType::ConvectionDiffusion)
         combined_operator_data.convective_problem = true;
 
-      if(this->param.equation_type == EquationType::Diffusion ||
+      if(this->param.equation_type == EquationType::Diffusion or
          this->param.equation_type == EquationType::ConvectionDiffusion)
         combined_operator_data.diffusive_problem = true;
     }
@@ -273,7 +273,7 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> ma
 
     combined_operator_data.dof_index = get_dof_index();
     combined_operator_data.quad_index =
-      (param.use_overintegration && combined_operator_data.convective_problem) ?
+      (param.use_overintegration and combined_operator_data.convective_problem) ?
         get_quad_index_overintegration() :
         get_quad_index();
 
@@ -335,7 +335,7 @@ template<int dim, typename Number>
 bool
 Operator<dim, Number>::needs_own_dof_handler_velocity() const
 {
-  return param.analytical_velocity_field && param.store_analytical_velocity_in_dof_vector;
+  return param.analytical_velocity_field and param.store_analytical_velocity_in_dof_vector;
 }
 
 template<int dim, typename Number>
@@ -449,7 +449,7 @@ Operator<dim, Number>::initialize_preconditioner()
   {
     if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
     {
-      AssertThrow(param.mg_operator_type != MultigridOperatorType::ReactionConvection &&
+      AssertThrow(param.mg_operator_type != MultigridOperatorType::ReactionConvection and
                     param.mg_operator_type != MultigridOperatorType::ReactionConvectionDiffusion,
                   dealii::ExcMessage(
                     "Invalid solver parameters. The convective term is treated explicitly."));
@@ -464,7 +464,7 @@ Operator<dim, Number>::initialize_preconditioner()
     std::shared_ptr<Multigrid> mg_preconditioner =
       std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
-    if(param.mg_operator_type == MultigridOperatorType::ReactionConvection ||
+    if(param.mg_operator_type == MultigridOperatorType::ReactionConvection or
        param.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
     {
       if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
@@ -502,10 +502,10 @@ Operator<dim, Number>::initialize_preconditioner()
   }
   else
   {
-    AssertThrow(param.preconditioner == Preconditioner::None ||
-                  param.preconditioner == Preconditioner::InverseMassMatrix ||
-                  param.preconditioner == Preconditioner::PointJacobi ||
-                  param.preconditioner == Preconditioner::BlockJacobi ||
+    AssertThrow(param.preconditioner == Preconditioner::None or
+                  param.preconditioner == Preconditioner::InverseMassMatrix or
+                  param.preconditioner == Preconditioner::PointJacobi or
+                  param.preconditioner == Preconditioner::BlockJacobi or
                   param.preconditioner == Preconditioner::Multigrid,
                 dealii::ExcMessage("Specified preconditioner is not implemented!"));
   }

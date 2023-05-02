@@ -315,7 +315,7 @@ public:
                 dealii::ExcMessage(
                   "Type of time step calculation has to be the same for both domains."));
 
-    AssertThrow(param_pre.solver_type == SolverType::Unsteady &&
+    AssertThrow(param_pre.solver_type == SolverType::Unsteady and
                   this->param.solver_type == SolverType::Unsteady,
                 dealii::ExcMessage("This is an unsteady solver. Check parameters."));
 
@@ -326,7 +326,7 @@ public:
     // is not known at this point since the two domains have to first communicate with each other
     // in order to find the minimum time step size. Hence, the easiest way to avoid these kind of
     // inconsistencies is to preclude the case start_with_low_order == false.
-    AssertThrow(param_pre.start_with_low_order == true && this->param.start_with_low_order == true,
+    AssertThrow(param_pre.start_with_low_order == true and this->param.start_with_low_order == true,
                 dealii::ExcMessage("start_with_low_order has to be true for two-domain solver."));
 
     // grid

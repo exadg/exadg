@@ -55,7 +55,7 @@ inline DEAL_II_ALWAYS_INLINE //
 {
   dealii::VectorizedArray<Number> value_m = dealii::make_vectorized_array<Number>(0.0);
 
-  if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
+  if(operator_type == OperatorType::full or operator_type == OperatorType::homogeneous)
   {
     value_m = integrator.get_value(q);
   }
@@ -87,7 +87,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if(boundary_type == BoundaryType::Dirichlet)
   {
-    if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
+    if(operator_type == OperatorType::full or operator_type == OperatorType::inhomogeneous)
     {
       dealii::VectorizedArray<Number> g;
 
@@ -155,7 +155,7 @@ inline DEAL_II_ALWAYS_INLINE //
 {
   dealii::VectorizedArray<Number> normal_gradient_m = dealii::make_vectorized_array<Number>(0.0);
 
-  if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
+  if(operator_type == OperatorType::full or operator_type == OperatorType::homogeneous)
   {
     normal_gradient_m = integrator.get_normal_derivative(q);
   }
@@ -192,7 +192,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else if(boundary_type == BoundaryType::Neumann)
   {
-    if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
+    if(operator_type == OperatorType::full or operator_type == OperatorType::inhomogeneous)
     {
       auto bc       = boundary_descriptor->neumann_bc.find(boundary_id)->second;
       auto q_points = integrator.quadrature_point(q);

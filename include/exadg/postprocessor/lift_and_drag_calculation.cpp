@@ -105,7 +105,7 @@ calculate_lift_and_drag_force(dealii::Tensor<1, dim, Number> &             Force
 void
 LiftAndDragData::print(dealii::ConditionalOStream & pcout, bool const unsteady) const
 {
-  if(boundary_IDs.size() > 0 && (time_control_data.is_active))
+  if(boundary_IDs.size() > 0 and (time_control_data.is_active))
   {
     pcout << std::endl << "Lift and drag calculation" << std::endl;
 

@@ -77,7 +77,7 @@ public:
   void
   stop(std::string label)
   {
-    if(m.count(label) && m[label].started)
+    if(m.count(label) and m[label].started)
     {
       auto & t  = m[label];
       t.time    = clock() - m[label].temp;
@@ -94,7 +94,7 @@ public:
   void
   append(std::string label)
   {
-    if(m.count(label) && m[label].started)
+    if(m.count(label) and m[label].started)
     {
       auto & t = m[label];
       t.time += (clock() - t.temp);

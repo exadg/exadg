@@ -136,10 +136,10 @@ private:
     {
       for(auto const & f : cell.face_indices())
       {
-        if((std::fabs(cell.face(f)->center()(1) - left) < 1e-12) ||
-           (std::fabs(cell.face(f)->center()(1) - right) < 1e-12) ||
-           ((dim == 3) && ((std::fabs(cell.face(f)->center()(2) - left) < 1e-12) ||
-                           (std::fabs(cell.face(f)->center()(2) - right) < 1e-12))))
+        if((std::fabs(cell.face(f)->center()(1) - left) < 1e-12) or
+           (std::fabs(cell.face(f)->center()(1) - right) < 1e-12) or
+           ((dim == 3) and ((std::fabs(cell.face(f)->center()(2) - left) < 1e-12) or
+                            (std::fabs(cell.face(f)->center()(2) - right) < 1e-12))))
         {
           cell.face(f)->set_boundary_id(1);
         }

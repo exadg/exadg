@@ -64,7 +64,7 @@ void
 TimeIntBDF<dim, Number>::setup_derived()
 {
   // In the case of an arbitrary Lagrangian-Eulerian formulation:
-  if(param.ale_formulation && param.restarted_simulation == false)
+  if(param.ale_formulation and param.restarted_simulation == false)
   {
     // compute the grid coordinates at start time (and at previous times in case of
     // start_with_low_order == false)
@@ -85,14 +85,14 @@ TimeIntBDF<dim, Number>::setup_derived()
 
   // Initialize vec_convective_term: Note that this function has to be called
   // after the solution has been initialized because the solution is evaluated in this function.
-  if(param.convective_problem() &&
+  if(param.convective_problem() and
      param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     // vec_convective_term does not have to be initialized in ALE case (the convective
     // term is recomputed in each time step for all previous times on the new mesh).
     // vec_convective_term does not have to be initialized in case of a restart, where
     // the vectors are read from memory.
-    if(param.ale_formulation == false && param.restarted_simulation == false)
+    if(param.ale_formulation == false and param.restarted_simulation == false)
     {
       initialize_vec_convective_term();
     }
@@ -316,7 +316,7 @@ TimeIntBDF<dim, Number>::prepare_vectors_for_next_timestep()
 
   solution[0].swap(solution_np);
 
-  if(param.convective_problem() &&
+  if(param.convective_problem() and
      param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(param.ale_formulation == false)
@@ -366,7 +366,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(boost::archive::binary_iarchive & 
     ia >> solution[i];
   }
 
-  if(param.convective_problem() &&
+  if(param.convective_problem() and
      param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(this->param.ale_formulation == false)
@@ -396,7 +396,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(boost::archive::binary_oarchive &
     oa << solution[i];
   }
 
-  if(param.convective_problem() &&
+  if(param.convective_problem() and
      param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(this->param.ale_formulation == false)
@@ -464,7 +464,7 @@ TimeIntBDF<dim, Number>::do_timestep_solve()
   // if the convective term is involved in the equations:
   // add the convective term to the right-hand side of the equations
   // if this term is treated explicitly (additive decomposition)
-  if(param.convective_problem() &&
+  if(param.convective_problem() and
      param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     // recompute convective term on new mesh for all previous time instants in case of
@@ -499,7 +499,7 @@ TimeIntBDF<dim, Number>::do_timestep_solve()
 
   // solve the linear system of equations
   bool const update_preconditioner =
-    this->param.update_preconditioner &&
+    this->param.update_preconditioner and
     (this->time_step_number % this->param.update_preconditioner_every_time_steps == 0);
 
   unsigned int const N_iter =
@@ -515,7 +515,7 @@ TimeIntBDF<dim, Number>::do_timestep_solve()
 
   // evaluate convective term at end time t_{n+1} at which we know the boundary condition
   // g_u(t_{n+1})
-  if(param.convective_problem() &&
+  if(param.convective_problem() and
      param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(param.ale_formulation == false)
@@ -554,7 +554,7 @@ TimeIntBDF<dim, Number>::postprocessing() const
 
   // To allow a computation of errors at start_time (= if time step number is 1 and if the
   // simulation is not a restarted one), the mesh has to be at the correct position
-  if(this->param.ale_formulation && this->get_time_step_number() == 1 &&
+  if(this->param.ale_formulation and this->get_time_step_number() == 1 and
      !this->param.restarted_simulation)
   {
     pde_operator->move_grid_and_update_dependent_data_structures(this->get_time());

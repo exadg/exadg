@@ -431,7 +431,7 @@ private:
         double const x = cell->face(f)->center()(0);
         double const y = cell->face(f)->center()(1);
 
-        if(std::fabs(y - Y_0) < TOL || std::fabs(y - H) < TOL)
+        if(std::fabs(y - Y_0) < TOL or std::fabs(y - H) < TOL)
         {
           cell->face(f)->set_boundary_id(BOUNDARY_ID_WALLS);
         }
@@ -451,8 +451,8 @@ private:
           cell->face(f)->set_boundary_id(BOUNDARY_ID_CYLINDER);
         }
 
-        if(std::fabs(y - (Y_C - T / 2.0)) < TOL || std::fabs(y - (Y_C + T / 2.0)) < TOL ||
-           (std::fabs(y - Y_C) < T / 2.0 + TOL && std::fabs(x - (X_C + R + L_FLAG)) < TOL))
+        if(std::fabs(y - (Y_C - T / 2.0)) < TOL or std::fabs(y - (Y_C + T / 2.0)) < TOL or
+           (std::fabs(y - Y_C) < T / 2.0 + TOL and std::fabs(x - (X_C + R + L_FLAG)) < TOL))
         {
           cell->face(f)->set_boundary_id(BOUNDARY_ID_FLAG);
         }

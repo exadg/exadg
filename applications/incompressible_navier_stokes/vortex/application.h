@@ -117,16 +117,16 @@ public:
     {
       if(component==0)
       {
-        if( (std::abs(p[1]+0.5)< 1e-12) && (p[0]<0) )
+        if( (std::abs(p[1]+0.5)< 1e-12) and (p[0]<0) )
           result = u_x_max*2.0*pi*std::cos(2.0*pi*p[1])*std::exp(-4.0*pi*pi*viscosity*t);
-        else if( (std::abs(p[1]-0.5)< 1e-12) && (p[0]>0) )
+        else if( (std::abs(p[1]-0.5)< 1e-12) and (p[0]>0) )
           result = -u_x_max*2.0*pi*std::cos(2.0*pi*p[1])*std::exp(-4.0*pi*pi*viscosity*t);
       }
       else if(component==1)
       {
-        if( (std::abs(p[0]+0.5)< 1e-12) && (p[1]>0) )
+        if( (std::abs(p[0]+0.5)< 1e-12) and (p[1]>0) )
           result = -u_x_max*2.0*pi*std::cos(2.0*pi*p[0])*std::exp(-4.0*pi*pi*viscosity*t);
-        else if((std::abs(p[0]-0.5)< 1e-12) && (p[1]<0) )
+        else if((std::abs(p[0]-0.5)< 1e-12) and (p[1]<0) )
           result = u_x_max*2.0*pi*std::cos(2.0*pi*p[0])*std::exp(-4.0*pi*pi*viscosity*t);
       }
     }
@@ -135,22 +135,22 @@ public:
     {
       if(component==0)
       {
-        if( (std::abs(p[1]+0.5)< 1e-12) && (p[0]<0) )
+        if( (std::abs(p[1]+0.5)< 1e-12) and (p[0]<0) )
           result = -u_x_max*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*viscosity*t);
-        else if( (std::abs(p[1]-0.5)< 1e-12) && (p[0]>0) )
+        else if( (std::abs(p[1]-0.5)< 1e-12) and (p[0]>0) )
           result = u_x_max*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*viscosity*t);
       }
       else if(component==1)
       {
-        if( (std::abs(p[0]+0.5)< 1e-12) && (p[1]>0) )
+        if( (std::abs(p[0]+0.5)< 1e-12) and (p[1]>0) )
           result = -u_x_max*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*viscosity*t);
-        else if((std::abs(p[0]-0.5)< 1e-12) && (p[1]<0) )
+        else if((std::abs(p[0]-0.5)< 1e-12) and (p[1]<0) )
           result = u_x_max*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*viscosity*t);
       }
     }
     else
     {
-      AssertThrow(formulation_viscous == FormulationViscousTerm::LaplaceFormulation ||
+      AssertThrow(formulation_viscous == FormulationViscousTerm::LaplaceFormulation or
                   formulation_viscous == FormulationViscousTerm::DivergenceFormulation,
                   dealii::ExcMessage("Specified formulation of viscous term is not implemented!"));
     }
@@ -212,7 +212,7 @@ public:
     }
     else
     {
-      AssertThrow(formulation_viscous == FormulationViscousTerm::LaplaceFormulation ||
+      AssertThrow(formulation_viscous == FormulationViscousTerm::LaplaceFormulation or
                     formulation_viscous == FormulationViscousTerm::DivergenceFormulation,
                   dealii::ExcMessage("Specified formulation of viscous term is not implemented!"));
     }
@@ -453,13 +453,13 @@ private:
     {
       for(auto const & f : cell->face_indices())
       {
-        if(((std::fabs(cell->face(f)->center()(0) - right) < 1e-12) &&
-            (cell->face(f)->center()(1) < 0)) ||
-           ((std::fabs(cell->face(f)->center()(0) - left) < 1e-12) &&
-            (cell->face(f)->center()(1) > 0)) ||
-           ((std::fabs(cell->face(f)->center()(1) - left) < 1e-12) &&
-            (cell->face(f)->center()(0) < 0)) ||
-           ((std::fabs(cell->face(f)->center()(1) - right) < 1e-12) &&
+        if(((std::fabs(cell->face(f)->center()(0) - right) < 1e-12) and
+            (cell->face(f)->center()(1) < 0)) or
+           ((std::fabs(cell->face(f)->center()(0) - left) < 1e-12) and
+            (cell->face(f)->center()(1) > 0)) or
+           ((std::fabs(cell->face(f)->center()(1) - left) < 1e-12) and
+            (cell->face(f)->center()(0) < 0)) or
+           ((std::fabs(cell->face(f)->center()(1) - right) < 1e-12) and
             (cell->face(f)->center()(0) > 0)))
         {
           cell->face(f)->set_boundary_id(1);

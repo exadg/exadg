@@ -350,7 +350,7 @@ private:
           {
             cell->face(f)->set_boundary_id(BOUNDARY_ID_INFLOW);
           }
-          else if(std::fabs(y - Y_0) < TOL || std::fabs(y - H) < TOL)
+          else if(std::fabs(y - Y_0) < TOL or std::fabs(y - H) < TOL)
           {
             cell->face(f)->set_boundary_id(BOUNDARY_ID_WALLS);
           }
@@ -358,7 +358,7 @@ private:
           {
             cell->face(f)->set_boundary_id(BOUNDARY_ID_OUTFLOW);
           }
-          else if(std::fabs(x - CENTER_S) < (THICKNESS_S * 0.5) + TOL && y < HEIGHT_S + TOL)
+          else if(std::fabs(x - CENTER_S) < (THICKNESS_S * 0.5) + TOL and y < HEIGHT_S + TOL)
           {
             cell->face(f)->set_boundary_id(BOUNDARY_ID_FLAG);
           }

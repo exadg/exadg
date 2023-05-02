@@ -69,8 +69,8 @@ struct SolverInfoData
       counter += int((time + 1.e-10) / interval_time);
     }
 
-    do_output_in_this_time_step = wall_time > interval_wall_time * counter ||
-                                  time > interval_time * counter ||
+    do_output_in_this_time_step = wall_time > interval_wall_time * counter or
+                                  time > interval_time * counter or
                                   time_step_number % interval_time_steps == 0;
 
     if(do_output_in_this_time_step)

@@ -323,7 +323,7 @@ public:
     }
     else
     {
-      AssertThrow(data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation ||
+      AssertThrow(data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation or
                     data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation,
                   dealii::ExcMessage("Specified formulation of viscous term is not implemented."));
 
@@ -416,7 +416,7 @@ public:
     }
     else
     {
-      AssertThrow(data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation ||
+      AssertThrow(data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation or
                     data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation,
                   dealii::ExcMessage("Specified formulation of viscous term is not implemented."));
     }
@@ -461,7 +461,7 @@ public:
       else
       {
         AssertThrow(
-          data.penalty_term_div_formulation == PenaltyTermDivergenceFormulation::Symmetrized ||
+          data.penalty_term_div_formulation == PenaltyTermDivergenceFormulation::Symmetrized or
             data.penalty_term_div_formulation == PenaltyTermDivergenceFormulation::NotSymmetrized,
           dealii::ExcMessage("Specified formulation of viscous term is not implemented."));
       }
@@ -472,7 +472,7 @@ public:
     }
     else
     {
-      AssertThrow(data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation ||
+      AssertThrow(data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation or
                     data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation,
                   dealii::ExcMessage("Specified formulation of viscous term is not implemented."));
     }
@@ -501,7 +501,7 @@ public:
   {
     vector normal_gradient_m;
 
-    if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
+    if(operator_type == OperatorType::full or operator_type == OperatorType::homogeneous)
     {
       normal_gradient_m = calculate_normal_gradient(q, integrator);
     }

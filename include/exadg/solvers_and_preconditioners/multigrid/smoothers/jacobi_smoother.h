@@ -87,7 +87,7 @@ public:
     }
     else
     {
-      AssertThrow(data.preconditioner == PreconditionerSmoother::PointJacobi ||
+      AssertThrow(data.preconditioner == PreconditionerSmoother::PointJacobi or
                     data.preconditioner == PreconditionerSmoother::BlockJacobi,
                   dealii::ExcMessage(
                     "Specified type of preconditioner for Jacobi smoother not implemented."));

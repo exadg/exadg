@@ -48,7 +48,7 @@ public:
     if(component == 0)
     {
       // initial conditions
-      if(p[1] > H && p[1] < (H + height))
+      if(p[1] > H and p[1] < (H + height))
         result = bulk_velocity * (p[1] - H) * ((H + height) - p[1]) / std::pow(height / 2.0, 2.0);
 
       // add some random perturbations

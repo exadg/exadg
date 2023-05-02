@@ -444,18 +444,18 @@ private:
         }
 
         // fluid-structure interface
-        if((std::fabs(x - L_IN) < TOL || std::fabs(x - (L_IN + T_S)) < TOL) &&
-           y < H_S - H_F / 2.0 + TOL && std::fabs(z) < B_S / 2.0 + TOL)
+        if((std::fabs(x - L_IN) < TOL or std::fabs(x - (L_IN + T_S)) < TOL) and
+           y < H_S - H_F / 2.0 + TOL and std::fabs(z) < B_S / 2.0 + TOL)
         {
           cell->face(f)->set_boundary_id(BOUNDARY_ID_FSI);
         }
-        if((std::fabs(z - (-B_S / 2.0)) < TOL || std::fabs(z - (+B_S / 2.0)) < TOL) &&
-           y < H_S - H_F / 2.0 + TOL && std::fabs(x - (L_IN + T_S / 2.0)) < T_S / 2.0 + TOL)
+        if((std::fabs(z - (-B_S / 2.0)) < TOL or std::fabs(z - (+B_S / 2.0)) < TOL) and
+           y < H_S - H_F / 2.0 + TOL and std::fabs(x - (L_IN + T_S / 2.0)) < T_S / 2.0 + TOL)
         {
           cell->face(f)->set_boundary_id(BOUNDARY_ID_FSI);
         }
-        if(std::fabs(y - (H_S - H_F / 2.0)) < TOL &&
-           std::fabs(x - (L_IN + T_S / 2.0)) < T_S / 2.0 + TOL && std::fabs(z) < B_S / 2.0 + TOL)
+        if(std::fabs(y - (H_S - H_F / 2.0)) < TOL and
+           std::fabs(x - (L_IN + T_S / 2.0)) < T_S / 2.0 + TOL and std::fabs(z) < B_S / 2.0 + TOL)
         {
           cell->face(f)->set_boundary_id(BOUNDARY_ID_FSI);
         }

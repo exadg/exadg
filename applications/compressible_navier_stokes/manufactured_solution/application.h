@@ -296,7 +296,7 @@ public:
 
     double result = 0.0;
 
-    if(SOLUTION_TYPE == SolutionType::Polynomial ||
+    if(SOLUTION_TYPE == SolutionType::Polynomial or
        SOLUTION_TYPE == SolutionType::SineAndPolynomial)
     {
       if(component == 0)

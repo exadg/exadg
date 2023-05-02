@@ -162,27 +162,31 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & tria, bool const compu
       for(auto const & v : cell->vertex_indices())
       {
         dealii::Point<2> & vertex = cell->vertex(v);
-        if(std::abs(vertex[0] - X_2) < 1e-10 && std::abs(vertex[1] - current_center[1]) < 1e-10)
+        if(std::abs(vertex[0] - X_2) < 1e-10 and std::abs(vertex[1] - current_center[1]) < 1e-10)
           vertex = dealii::Point<2>(X_2, H / 2.0);
-        else if(std::abs(vertex[0] - (current_center[0] + outer_radius / std::sqrt(2.0))) < 1e-10 &&
+        else if(std::abs(vertex[0] - (current_center[0] + outer_radius / std::sqrt(2.0))) <
+                  1e-10 and
                 std::abs(vertex[1] - (current_center[1] + outer_radius / std::sqrt(2.0))) < 1e-10)
           vertex = dealii::Point<2>(X_2, H);
-        else if(std::abs(vertex[0] - (current_center[0] + outer_radius / std::sqrt(2.0))) < 1e-10 &&
+        else if(std::abs(vertex[0] - (current_center[0] + outer_radius / std::sqrt(2.0))) <
+                  1e-10 and
                 std::abs(vertex[1] - (current_center[1] - outer_radius / std::sqrt(2.0))) < 1e-10)
           vertex = dealii::Point<2>(X_2, Y_0);
-        else if(std::abs(vertex[0] - current_center[0]) < 1e-10 &&
+        else if(std::abs(vertex[0] - current_center[0]) < 1e-10 and
                 std::abs(vertex[1] - (X_2 - X_1)) < 1e-10)
           vertex = dealii::Point<2>(current_center[0], H);
-        else if(std::abs(vertex[0] - current_center[0]) < 1e-10 &&
+        else if(std::abs(vertex[0] - current_center[0]) < 1e-10 and
                 std::abs(vertex[1] - X_0) < 1e-10)
           vertex = dealii::Point<2>(current_center[0], X_0);
-        else if(std::abs(vertex[0] - (current_center[0] - outer_radius / std::sqrt(2.0))) < 1e-10 &&
+        else if(std::abs(vertex[0] - (current_center[0] - outer_radius / std::sqrt(2.0))) <
+                  1e-10 and
                 std::abs(vertex[1] - (current_center[1] + outer_radius / std::sqrt(2.0))) < 1e-10)
           vertex = dealii::Point<2>(X_1, H);
-        else if(std::abs(vertex[0] - (current_center[0] - outer_radius / std::sqrt(2.0))) < 1e-10 &&
+        else if(std::abs(vertex[0] - (current_center[0] - outer_radius / std::sqrt(2.0))) <
+                  1e-10 and
                 std::abs(vertex[1] - (current_center[1] - outer_radius / std::sqrt(2.0))) < 1e-10)
           vertex = dealii::Point<2>(X_1, Y_0);
-        else if(std::abs(vertex[0] - X_1) < 1e-10 &&
+        else if(std::abs(vertex[0] - X_1) < 1e-10 and
                 std::abs(vertex[1] - current_center[1]) < 1e-10)
           vertex = dealii::Point<2>(X_1, H / 2.0);
       }
@@ -196,7 +200,7 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & tria, bool const compu
         dealii::Point<2> & vertex = cell->vertex(v);
 
         // allow to shift cylinder center
-        if(std::abs(vertex.distance(current_center) - R) < 1.e-10 ||
+        if(std::abs(vertex.distance(current_center) - R) < 1.e-10 or
            std::abs(vertex.distance(current_center) - (R + (outer_radius - R) / 2.0)) < 1.e-10)
         {
           vertex[0] += center[0] - current_center[0];
@@ -229,7 +233,7 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & tria, bool const compu
         {
           for(auto const & f : cell->face_indices())
           {
-            if(cell->face(f)->at_boundary() && center.distance(cell->face(f)->center()) <= R)
+            if(cell->face(f)->at_boundary() and center.distance(cell->face(f)->center()) <= R)
             {
               cell->face(f)->set_all_manifold_ids(MANIFOLD_ID);
             }
@@ -264,7 +268,7 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & tria, bool const compu
         }
         else
         {
-          AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold ||
+          AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold or
                         MANIFOLD_TYPE == ManifoldType::VolumeManifold,
                       dealii::ExcMessage("Specified manifold type not implemented"));
         }
@@ -310,41 +314,41 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & tria, bool const compu
       for(auto const & v : cell->vertex_indices())
       {
         dealii::Point<2> & vertex = cell->vertex(v);
-        if(std::abs(vertex[0] - X_2) < 1e-10 && std::abs(vertex[1] - Y_C) < 1e-10)
+        if(std::abs(vertex[0] - X_2) < 1e-10 and std::abs(vertex[1] - Y_C) < 1e-10)
         {
           vertex = dealii::Point<2>(X_2, H / 2.0);
         }
-        else if(std::abs(vertex[0] - (X_C + (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10 &&
+        else if(std::abs(vertex[0] - (X_C + (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10 and
                 std::abs(vertex[1] - (Y_C + (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10)
         {
           vertex = dealii::Point<2>(X_2, H);
         }
-        else if(std::abs(vertex[0] - (X_C + (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10 &&
+        else if(std::abs(vertex[0] - (X_C + (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10 and
                 std::abs(vertex[1] - (Y_C - (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10)
         {
           vertex = dealii::Point<2>(X_2, Y_0);
         }
-        else if(std::abs(vertex[0] - X_C) < 1e-10 &&
+        else if(std::abs(vertex[0] - X_C) < 1e-10 and
                 std::abs(vertex[1] - (Y_C + (X_2 - X_1) / 2.0)) < 1e-10)
         {
           vertex = dealii::Point<2>(X_C, H);
         }
-        else if(std::abs(vertex[0] - X_C) < 1e-10 &&
+        else if(std::abs(vertex[0] - X_C) < 1e-10 and
                 std::abs(vertex[1] - (Y_C - (X_2 - X_1) / 2.0)) < 1e-10)
         {
           vertex = dealii::Point<2>(X_C, Y_0);
         }
-        else if(std::abs(vertex[0] - (X_C - (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10 &&
+        else if(std::abs(vertex[0] - (X_C - (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10 and
                 std::abs(vertex[1] - (Y_C + (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10)
         {
           vertex = dealii::Point<2>(X_1, H);
         }
-        else if(std::abs(vertex[0] - (X_C - (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10 &&
+        else if(std::abs(vertex[0] - (X_C - (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10 and
                 std::abs(vertex[1] - (Y_C - (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10)
         {
           vertex = dealii::Point<2>(X_1, Y_0);
         }
-        else if(std::abs(vertex[0] - X_1) < 1e-10 && std::abs(vertex[1] - Y_C) < 1e-10)
+        else if(std::abs(vertex[0] - X_1) < 1e-10 and std::abs(vertex[1] - Y_C) < 1e-10)
         {
           vertex = dealii::Point<2>(X_1, H / 2.0);
         }
@@ -455,11 +459,11 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & tria, bool const compu
         dealii::Point<2> & vertex = cell->vertex(v);
 
         // shift two points at the top to a height of H
-        if(std::abs(vertex[0] - X_1) < 1e-10 && std::abs(vertex[1] - (X_2 - X_1)) < 1e-10)
+        if(std::abs(vertex[0] - X_1) < 1e-10 and std::abs(vertex[1] - (X_2 - X_1)) < 1e-10)
         {
           vertex = dealii::Point<2>(X_1, H);
         }
-        else if(std::abs(vertex[0] - X_2) < 1e-10 && std::abs(vertex[1] - (X_2 - X_1)) < 1e-10)
+        else if(std::abs(vertex[0] - X_2) < 1e-10 and std::abs(vertex[1] - (X_2 - X_1)) < 1e-10)
         {
           vertex = dealii::Point<2>(X_2, H);
         }
@@ -483,7 +487,7 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & tria, bool const compu
 
         // allow to shift cylinder center
         dealii::Point<2> current_center = dealii::Point<2>((X_1 + X_2) / 2.0, (X_2 - X_1) / 2.0);
-        if(std::abs(vertex.distance(current_center) - R) < 1.e-10 ||
+        if(std::abs(vertex.distance(current_center) - R) < 1.e-10 or
            std::abs(vertex.distance(current_center) - R_3) < 1.e-10)
         {
           vertex[0] += center[0] - current_center[0];
@@ -587,11 +591,11 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & tria, bool const compu
         dealii::Point<2> & vertex = cell->vertex(v);
 
         // shift two points at the top to a height of H
-        if(std::abs(vertex[0] - X_1) < 1e-10 && std::abs(vertex[1] - (X_2 - X_1)) < 1e-10)
+        if(std::abs(vertex[0] - X_1) < 1e-10 and std::abs(vertex[1] - (X_2 - X_1)) < 1e-10)
         {
           vertex = dealii::Point<2>(X_1, H);
         }
-        else if(std::abs(vertex[0] - X_2) < 1e-10 && std::abs(vertex[1] - (X_2 - X_1)) < 1e-10)
+        else if(std::abs(vertex[0] - X_2) < 1e-10 and std::abs(vertex[1] - (X_2 - X_1)) < 1e-10)
         {
           vertex = dealii::Point<2>(X_2, H);
         }
@@ -661,8 +665,8 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & tria, bool const compu
   }
   else
   {
-    AssertThrow(MESH_TYPE == MeshType::Type1 || MESH_TYPE == MeshType::Type2 ||
-                  MESH_TYPE == MeshType::Type3 || MESH_TYPE == MeshType::Type4,
+    AssertThrow(MESH_TYPE == MeshType::Type1 or MESH_TYPE == MeshType::Type2 or
+                  MESH_TYPE == MeshType::Type3 or MESH_TYPE == MeshType::Type4,
                 dealii::ExcMessage("Specified mesh type not implemented"));
   }
 
@@ -693,8 +697,8 @@ do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
       {
         for(auto const & f : cell->face_indices())
         {
-          if(cell->face(f)->at_boundary() && dealii::Point<3>(X_C, Y_C, cell->face(f)->center()[2])
-                                                 .distance(cell->face(f)->center()) <= R)
+          if(cell->face(f)->at_boundary() and dealii::Point<3>(X_C, Y_C, cell->face(f)->center()[2])
+                                                  .distance(cell->face(f)->center()) <= R)
           {
             cell->face(f)->set_all_manifold_ids(MANIFOLD_ID);
           }
@@ -735,7 +739,7 @@ do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
     }
     else
     {
-      AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold ||
+      AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold or
                     MANIFOLD_TYPE == ManifoldType::VolumeManifold,
                   dealii::ExcMessage("Specified manifold type not implemented"));
     }
@@ -794,7 +798,7 @@ do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
     }
     else
     {
-      AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold ||
+      AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold or
                     MANIFOLD_TYPE == ManifoldType::VolumeManifold,
                   dealii::ExcMessage("Specified manifold type not implemented"));
     }
@@ -898,8 +902,8 @@ do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
   }
   else
   {
-    AssertThrow(MESH_TYPE == MeshType::Type1 || MESH_TYPE == MeshType::Type2 ||
-                  MESH_TYPE == MeshType::Type3 || MESH_TYPE == MeshType::Type4,
+    AssertThrow(MESH_TYPE == MeshType::Type1 or MESH_TYPE == MeshType::Type2 or
+                  MESH_TYPE == MeshType::Type3 or MESH_TYPE == MeshType::Type4,
                 dealii::ExcMessage("Specified mesh type not implemented"));
   }
 
@@ -943,7 +947,7 @@ create_coarse_triangulation(dealii::Triangulation<dim> &                        
   }
   else
   {
-    AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold ||
+    AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold or
                   MANIFOLD_TYPE == ManifoldType::VolumeManifold,
                 dealii::ExcMessage("Specified manifold type not implemented"));
   }
@@ -1037,7 +1041,7 @@ create_trapezoid(dealii::Triangulation<2> & tria,
   {
     dealii::Point<2> & vertex = v->vertex();
 
-    if(0 < vertex[0] && vertex[0] < length)
+    if(0 < vertex[0] and vertex[0] < length)
       vertex = dealii::Point<2>(vertex[0] + 0.75 * length / ref[0] * vertex[0] / length, vertex[1]);
 
     double const m = (max_shift - min_shift) / height;
@@ -1079,7 +1083,7 @@ set_boundary_ids(dealii::Triangulation<dim> & tria)
           cell->face(f)->set_all_boundary_ids(1);
         }
         else if(std::abs(cell->face(f)->center()[0] - point_on_centerline[0]) <=
-                  (0.5 * D + 1e-12) &&
+                  (0.5 * D + 1e-12) and
                 std::abs(cell->face(f)->center()[1] - point_on_centerline[1]) <=
                   (0.5 * D + 1e-12)) // square cylinder walls
         {

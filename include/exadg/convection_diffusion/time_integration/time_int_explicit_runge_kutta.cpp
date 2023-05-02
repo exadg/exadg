@@ -100,7 +100,7 @@ TimeIntExplRK<Number>::calculate_time_step_size()
                 << std::endl;
     print_parameter(this->pcout, "time step size", this->time_step);
   }
-  else if(param.calculation_of_time_step_size == TimeStepCalculation::CFL ||
+  else if(param.calculation_of_time_step_size == TimeStepCalculation::CFL or
           param.calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion)
   {
     double time_step_conv = pde_operator->calculate_time_step_cfl_global(this->get_time());
@@ -213,7 +213,7 @@ template<typename Number>
 double
 TimeIntExplRK<Number>::recalculate_time_step_size() const
 {
-  AssertThrow(param.calculation_of_time_step_size == TimeStepCalculation::CFL ||
+  AssertThrow(param.calculation_of_time_step_size == TimeStepCalculation::CFL or
                 param.calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion,
               dealii::ExcMessage(
                 "Adaptive time step is not implemented for this type of time step calculation."));

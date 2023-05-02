@@ -90,7 +90,7 @@ template<typename Number>
 void
 TimeIntExplRKBase<Number>::do_timestep_pre_solve(bool const print_header)
 {
-  if(this->print_solver_info() && print_header)
+  if(this->print_solver_info() and print_header)
     this->output_solver_info_header();
 }
 

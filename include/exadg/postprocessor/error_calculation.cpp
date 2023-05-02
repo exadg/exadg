@@ -116,7 +116,7 @@ ErrorCalculator<dim, Number>::setup(dealii::DoFHandler<dim> const &   dof_handle
 
   time_control.setup(error_data_in.time_control_data);
 
-  if(error_data.analytical_solution && error_data.write_errors_to_file)
+  if(error_data.analytical_solution and error_data.write_errors_to_file)
     create_directories(error_data.directory, mpi_comm);
 }
 
