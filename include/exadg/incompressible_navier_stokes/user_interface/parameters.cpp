@@ -130,10 +130,8 @@ Parameters::Parameters()
     continuity_penalty_use_boundary_data(false),
     type_penalty_parameter(TypePenaltyParameter::ConvectiveTerm),
 
-    // TURBULENCE
-    use_turbulence_model(false),
-    turbulence_model_constant(1.0),
-    turbulence_model(TurbulenceEddyViscosityModel::Undefined),
+    // VARIABLE VISCOSITY MODELS
+    treatment_of_variable_viscosity(TreatmentOfVariableViscosity::Undefined),
 
     // NUMERICAL PARAMETERS
     implement_block_diagonal_preconditioner_matrix_free(false),
@@ -429,8 +427,7 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
     }
   }
 
-  bool const variable_viscosity = use_turbulence_model;
-  if(variable_viscosity and nonlinear_problem_has_to_be_solved())
+  if(viscosity_is_variable() and nonlinear_problem_has_to_be_solved())
     AssertThrow(quad_rule_linearization == QuadratureRuleLinearization::Standard,
                 dealii::ExcMessage(
                   "Only the standard integration rule is supported for variable viscosity. "
@@ -537,14 +534,43 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
                 dealii::ExcMessage("Not implemented."));
   }
 
-
   // TURBULENCE
-  if(use_turbulence_model)
+  if(turbulence_model_data.is_active)
   {
-    AssertThrow(turbulence_model != TurbulenceEddyViscosityModel::Undefined,
-                dealii::ExcMessage("parameter must be defined"));
-    AssertThrow(turbulence_model_constant > 0,
-                dealii::ExcMessage("parameter must be greater than zero"));
+    AssertThrow(turbulence_model_data.turbulence_model != TurbulenceEddyViscosityModel::Undefined,
+                dealii::ExcMessage("Parameter must be defined."));
+    AssertThrow(treatment_of_variable_viscosity != TreatmentOfVariableViscosity::Undefined,
+                dealii::ExcMessage("Parameter must be defined."));
+  }
+
+  // GENERALIZED NEWTONIAN MODEL
+  if(generalized_newtonian_model_data.is_active)
+  {
+    AssertThrow(generalized_newtonian_model_data.generalized_newtonian_model !=
+                  GeneralizedNewtonianViscosityModel::Undefined,
+                dealii::ExcMessage("Parameter must be defined."));
+    AssertThrow(treatment_of_variable_viscosity != TreatmentOfVariableViscosity::Undefined,
+                dealii::ExcMessage("Parameter must be defined."));
+  }
+
+  // VARIABLE VISCOSITY MODELS
+  if(viscosity_is_variable())
+  {
+    if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      AssertThrow(
+        treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit,
+        dealii::ExcMessage(
+          "An implicit treatment of the variable viscosity field (rendering the viscous step of the dual splitting scheme nonlinear regarding the unknown velocity field) is currently not implemented for the dual splitting scheme."));
+    }
+
+    if(treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Implicit)
+    {
+      AssertThrow(
+        implicit_convective_problem(),
+        dealii::ExcMessage(
+          "The current implementation only calls a Newton solver, if we have an implicit convective problem. Treat nonlinear convective and viscous terms alike."));
+    }
   }
 }
 
@@ -558,23 +584,61 @@ bool
 Parameters::viscous_problem() const
 {
   return (equation_type == EquationType::Stokes || equation_type == EquationType::NavierStokes ||
-          use_turbulence_model == true);
+          turbulence_model_data.is_active);
+}
+
+bool
+Parameters::viscous_term_is_linear() const
+{
+  return not viscous_term_is_nonlinear();
+}
+
+bool
+Parameters::viscous_term_is_nonlinear() const
+{
+  return (viscosity_is_variable() &&
+          treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Implicit);
+}
+
+bool
+Parameters::viscosity_is_variable() const
+{
+  return turbulence_model_data.is_active || generalized_newtonian_model_data.is_active;
+}
+
+bool
+Parameters::implicit_convective_problem() const
+{
+  if(convective_problem())
+  {
+    if(solver_type == SolverType::Steady ||
+       (solver_type == SolverType::Unsteady &&
+        (treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)))
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool
+Parameters::nonlinear_viscous_problem() const
+{
+  return viscous_problem() && viscous_term_is_nonlinear();
 }
 
 bool
 Parameters::nonlinear_problem_has_to_be_solved() const
 {
-  return convective_problem() &&
-         (solver_type == SolverType::Steady ||
-          (solver_type == SolverType::Unsteady &&
-           treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit));
+  // nonlinear_viscous_problem() ignored, i.e., does not trigger a Newton solve
+  return implicit_convective_problem();
 }
 
 bool
 Parameters::linear_problem_has_to_be_solved() const
 {
-  return equation_type == EquationType::Stokes ||
-         treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit;
+  return not nonlinear_problem_has_to_be_solved();
 }
 
 bool
@@ -705,7 +769,10 @@ Parameters::print(dealii::ConditionalOStream const & pcout, std::string const & 
   print_parameters_spatial_discretization(pcout);
 
   // TURBULENCE
-  print_parameters_turbulence(pcout);
+  turbulence_model_data.print(pcout);
+
+  // GENERALIZED NEWTONIAN MODELS
+  generalized_newtonian_model_data.print(pcout);
 
   // NUMERICAL PARAMTERS
   print_parameters_numerical_parameters(pcout);
@@ -789,6 +856,9 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
 
   print_parameter(pcout, "Temporal discretization method", temporal_discretization);
   print_parameter(pcout, "Treatment of convective term", treatment_of_convective_term);
+
+  if(this->viscosity_is_variable())
+    print_parameter(pcout, "Treatment of nonlinear viscosity", treatment_of_variable_viscosity);
 
   print_parameter(pcout, "Calculation of time step size", calculation_of_time_step_size);
 
@@ -926,20 +996,6 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
   if(use_divergence_penalty == true || use_continuity_penalty == true)
   {
     print_parameter(pcout, "Type of penalty parameter", type_penalty_parameter);
-  }
-}
-
-void
-Parameters::print_parameters_turbulence(dealii::ConditionalOStream const & pcout) const
-{
-  pcout << std::endl << "Turbulence:" << std::endl;
-
-  print_parameter(pcout, "Use turbulence model", use_turbulence_model);
-
-  if(use_turbulence_model == true)
-  {
-    print_parameter(pcout, "Turbulence model", turbulence_model);
-    print_parameter(pcout, "Turbulence model constant", turbulence_model_constant);
   }
 }
 

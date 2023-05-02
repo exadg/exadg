@@ -92,6 +92,9 @@ Spatial discretization:
 Turbulence:
   Use turbulence model:                      false
 
+Rheology:
+  Use generalized Newtonian model:           false
+
 Numerical parameters:
   Block Jacobi matrix-free:                  false
   Use cell-based face loops:                 false
@@ -196,61 +199,61 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for velocity at time t = 1.0002e+00:
-  Relative error (L2-norm): 1.04016e-15
+  Relative error (L2-norm): 1.72164e-15
 
 Calculate error for pressure at time t = 1.0002e+00:
-  Relative error (L2-norm): 1.61089e-13
+  Relative error (L2-norm): 5.21419e-14
 
 Calculate error for velocity at time t = 2.0015e+00:
-  Relative error (L2-norm): 1.44442e-15
+  Relative error (L2-norm): 1.16009e-15
 
 Calculate error for pressure at time t = 2.0015e+00:
-  Relative error (L2-norm): 1.27007e-13
+  Relative error (L2-norm): 6.74536e-13
 
 Calculate error for velocity at time t = 3.0028e+00:
-  Relative error (L2-norm): 1.02691e-15
+  Relative error (L2-norm): 1.27000e-15
 
 Calculate error for pressure at time t = 3.0028e+00:
-  Relative error (L2-norm): 5.61459e-13
+  Relative error (L2-norm): 1.13750e-13
 
 Calculate error for velocity at time t = 4.0042e+00:
-  Relative error (L2-norm): 4.00628e-15
+  Relative error (L2-norm): 1.00737e-15
 
 Calculate error for pressure at time t = 4.0042e+00:
-  Relative error (L2-norm): 6.53324e-13
+  Relative error (L2-norm): 1.19720e-13
 
 Calculate error for velocity at time t = 5.0055e+00:
-  Relative error (L2-norm): 1.31466e-15
+  Relative error (L2-norm): 1.18656e-15
 
 Calculate error for pressure at time t = 5.0055e+00:
-  Relative error (L2-norm): 8.71381e-14
+  Relative error (L2-norm): 1.87812e-13
 
 Calculate error for velocity at time t = 6.0011e+00:
-  Relative error (L2-norm): 1.25947e-15
+  Relative error (L2-norm): 1.21634e-15
 
 Calculate error for pressure at time t = 6.0011e+00:
-  Relative error (L2-norm): 1.97051e-13
+  Relative error (L2-norm): 2.16890e-13
 
 Calculate error for velocity at time t = 7.0024e+00:
-  Relative error (L2-norm): 9.64075e-16
+  Relative error (L2-norm): 9.91488e-16
 
 Calculate error for pressure at time t = 7.0024e+00:
-  Relative error (L2-norm): 4.27869e-13
+  Relative error (L2-norm): 4.59536e-13
 
 Calculate error for velocity at time t = 8.0037e+00:
-  Relative error (L2-norm): 1.50809e-15
+  Relative error (L2-norm): 1.18920e-15
 
 Calculate error for pressure at time t = 8.0037e+00:
-  Relative error (L2-norm): 6.69717e-14
+  Relative error (L2-norm): 1.03280e-12
 
 Calculate error for velocity at time t = 9.0051e+00:
-  Relative error (L2-norm): 1.00627e-15
+  Relative error (L2-norm): 8.52463e-16
 
 Calculate error for pressure at time t = 9.0051e+00:
-  Relative error (L2-norm): 3.78193e-13
+  Relative error (L2-norm): 3.39707e-13
 
 Calculate error for velocity at time t = 1.0001e+01:
-  Relative error (L2-norm): 9.02059e-16
+  Relative error (L2-norm): 1.05301e-15
 
 Calculate error for pressure at time t = 1.0001e+01:
-  Relative error (L2-norm): 3.27849e-13
+  Relative error (L2-norm): 7.32649e-13

@@ -141,6 +141,21 @@ DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_pro
       pde_operator->update_continuity_penalty_operator(solution.block(0));
   }
 
+  // update viscosity
+  if(this->param.viscosity_is_variable())
+  {
+    dealii::Timer timer_viscosity_update;
+    timer_viscosity_update.restart();
+
+    pde_operator->update_viscosity(solution.block(0));
+
+    if(print_solver_info(time, unsteady_problem) and not(this->is_test))
+    {
+      this->pcout << std::endl << "Update of variable viscosity:";
+      print_wall_time(this->pcout, timer_viscosity_update.wall_time());
+    }
+  }
+
   // linear problem
   if(this->param.linear_problem_has_to_be_solved())
   {

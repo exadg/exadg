@@ -22,56 +22,22 @@
 #ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_TURBULENCE_MODEL_H_
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_TURBULENCE_MODEL_H_
 
-// deal.II
-#include <deal.II/lac/la_parallel_vector.h>
-
 // ExaDG
-#include <exadg/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.h>
-#include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
-#include <exadg/matrix_free/integrators.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/viscosity_model_base.h>
 
 namespace ExaDG
 {
 namespace IncNS
 {
 /*
- *  Turbulence model data.
- */
-struct TurbulenceModelData
-{
-  TurbulenceModelData()
-    : turbulence_model(TurbulenceEddyViscosityModel::Undefined),
-      constant(1.0),
-      kinematic_viscosity(1.0),
-      dof_index(0),
-      quad_index(0),
-      degree(1)
-  {
-  }
-
-  TurbulenceEddyViscosityModel turbulence_model;
-  double                       constant;
-
-  // constant kinematic viscosity (physical viscosity)
-  double kinematic_viscosity;
-
-  // required for matrix-free loops
-  unsigned int dof_index;
-  unsigned int quad_index;
-
-  // required for calculation of filter width
-  unsigned int degree;
-};
-
-
-/*
- *  Algebraic subgrid-scale turbulence models for LES of incompressible flows.
+ *  Turbulence model.
  */
 template<int dim, typename Number>
-class TurbulenceModel
+class TurbulenceModel : public ViscosityModelBase<dim, Number>
 {
 private:
-  typedef TurbulenceModel<dim, Number> This;
+  typedef TurbulenceModel<dim, Number>    This;
+  typedef ViscosityModelBase<dim, Number> Base;
 
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
@@ -90,22 +56,35 @@ public:
   TurbulenceModel();
 
   /*
+   * Destructor.
+   */
+  virtual ~TurbulenceModel();
+
+  /*
    * Initialization function.
    */
   void
   initialize(dealii::MatrixFree<dim, Number> const &                matrix_free_in,
              dealii::Mapping<dim> const &                           mapping_in,
              std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
-             TurbulenceModelData const &                            data_in);
+             TurbulenceModelData const &                            turbulence_model_data_in,
+             unsigned int const                                     dof_index_velocity_in);
 
-  /*
-   *  This function calculates the turbulent viscosity for a given velocity field.
+  /**
+   * Function for *setting* the viscosity taking the viscosity stored in the viscous_kernel's data
+   * as a basis.
    */
   void
-  calculate_turbulent_viscosity(VectorType const & velocity) const;
+  set_viscosity(VectorType const & velocity) const;
 
-  /*
-   *  This function calculates the filter width for each cell.
+  /**
+   * Function for *adding to* the viscosity taking the currently stored viscosity as a basis.
+   */
+  void
+  add_viscosity(VectorType const & velocity) const;
+
+  /**
+   * This function calculates the filter width for each cell.
    */
   void
   calculate_filter_width(dealii::Mapping<dim> const & mapping);
@@ -129,7 +108,7 @@ private:
                                       VectorType const & src,
                                       Range const &      face_range) const;
 
-  /*
+  /**
    *  This function adds the turbulent eddy-viscosity to the laminar viscosity
    *  by using one of the implemented models.
    */
@@ -139,7 +118,7 @@ private:
                           tensor const & velocity_gradient,
                           double const & model_constant) const;
 
-  /*
+  /**
    *  Smagorinsky model (1963):
    *
    *    nu_SGS = (C * filter_width)^{2} * sqrt(2 * S:S)
@@ -159,7 +138,7 @@ private:
                     double const & C,
                     scalar &       viscosity) const;
 
-  /*
+  /**
    *  Vreman model (2004): Note that we only consider the isotropic variant of the Vreman model:
    *
    *    nu_SGS = (C * filter_width)^{2} * D
@@ -189,7 +168,7 @@ private:
                double const & C,
                scalar &       viscosity) const;
 
-  /*
+  /**
    *  WALE (wall-adapting local eddy-viscosity) model (Nicoud & Ducros 1999):
    *
    *    nu_SGS = (C * filter_width)^{2} * D ,
@@ -220,7 +199,7 @@ private:
              double const & C,
              scalar &       viscosity) const;
 
-  /*
+  /**
    *  Sigma model (Toda et al. 2010, Nicoud et al. 2011):
    *
    *    nu_SGS = (C * filter_width)^{2} * D
@@ -243,13 +222,7 @@ private:
               double const & C,
               scalar &       viscosity) const;
 
-
-  TurbulenceModelData turb_model_data;
-
-  dealii::MatrixFree<dim, Number> const * matrix_free;
-
-  std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel;
-
+  TurbulenceModelData           turbulence_model_data;
   dealii::AlignedVector<scalar> filter_width_vector;
 };
 

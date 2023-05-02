@@ -227,13 +227,13 @@ private:
     param.continuity_penalty_use_boundary_data       = true;
 
     // TURBULENCE
-    param.use_turbulence_model = false;
-    param.turbulence_model     = TurbulenceEddyViscosityModel::Sigma;
+    param.turbulence_model_data.is_active        = false;
+    param.turbulence_model_data.turbulence_model = TurbulenceEddyViscosityModel::Sigma;
     // Smagorinsky: 0.165
     // Vreman: 0.28
     // WALE: 0.50
     // Sigma: 1.35
-    param.turbulence_model_constant = 1.35;
+    param.turbulence_model_data.constant = 1.35;
 
     // PROJECTION METHODS
 

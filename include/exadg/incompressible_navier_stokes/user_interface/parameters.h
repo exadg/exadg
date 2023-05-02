@@ -29,6 +29,7 @@
 #include <exadg/grid/enum_types.h>
 #include <exadg/grid/grid_data.h>
 #include <exadg/incompressible_navier_stokes/user_interface/enum_types.h>
+#include <exadg/incompressible_navier_stokes/user_interface/viscosity_model_data.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver_data.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/enum_types.h>
@@ -57,6 +58,15 @@ public:
   viscous_problem() const;
 
   bool
+  viscosity_is_variable() const;
+
+  bool
+  implicit_convective_problem() const;
+
+  bool
+  nonlinear_viscous_problem() const;
+
+  bool
   nonlinear_problem_has_to_be_solved() const;
 
   bool
@@ -72,6 +82,12 @@ public:
   print(dealii::ConditionalOStream const & pcout, std::string const & name) const;
 
 private:
+  bool
+  viscous_term_is_linear() const;
+
+  bool
+  viscous_term_is_nonlinear() const;
+
   void
   print_parameters_mathematical_model(dealii::ConditionalOStream const & pcout) const;
 
@@ -83,9 +99,6 @@ private:
 
   void
   print_parameters_spatial_discretization(dealii::ConditionalOStream const & pcout) const;
-
-  void
-  print_parameters_turbulence(dealii::ConditionalOStream const & pcout) const;
 
   void
   print_parameters_numerical_parameters(dealii::ConditionalOStream const & pcout) const;
@@ -398,19 +411,13 @@ public:
 
   /**************************************************************************************/
   /*                                                                                    */
-  /*                                     TURBULENCE                                     */
+  /*                            Variable viscosity models                               */
   /*                                                                                    */
   /**************************************************************************************/
 
-  // use turbulence model
-  bool use_turbulence_model;
-
-  // scaling factor for turbulent viscosity model
-  double turbulence_model_constant;
-
-  // turbulence model
-  TurbulenceEddyViscosityModel turbulence_model;
-
+  TreatmentOfVariableViscosity  treatment_of_variable_viscosity;
+  TurbulenceModelData           turbulence_model_data;
+  GeneralizedNewtonianModelData generalized_newtonian_model_data;
 
   /**************************************************************************************/
   /*                                                                                    */

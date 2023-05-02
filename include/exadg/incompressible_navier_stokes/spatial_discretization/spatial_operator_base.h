@@ -34,6 +34,7 @@
 #include <exadg/grid/grid.h>
 #include <exadg/grid/grid_motion_interface.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/streamfunction_calculator_rhs_operator.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/generalized_newtonian_model.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/convective_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/divergence_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/gradient_operator.h>
@@ -42,6 +43,7 @@
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/rhs_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/turbulence_model.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/viscosity_model_base.h>
 #include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
@@ -183,9 +185,6 @@ public:
 
   dealii::types::global_dof_index
   get_number_of_dofs() const;
-
-  double
-  get_viscosity() const;
 
   dealii::VectorizedArray<Number>
   get_viscosity_boundary_face(unsigned int const face, unsigned int const q) const;
@@ -348,10 +347,10 @@ public:
   apply_inverse_mass_operator(VectorType & dst, VectorType const & src) const;
 
   /*
-   *  Update turbulence model, i.e., calculate turbulent viscosity.
+   * Update variable viscosity.
    */
   void
-  update_turbulence_model(VectorType const & velocity);
+  update_viscosity(VectorType const & velocity) const;
 
   /*
    * Projection step.
@@ -613,7 +612,7 @@ private:
   initialize_operators(std::string const & dof_index_temperature);
 
   void
-  initialize_turbulence_model();
+  initialize_viscosity_model();
 
   void
   initialize_calculators_for_derived_quantities();
@@ -650,9 +649,10 @@ private:
   mutable VectorType const * pressure_ptr;
 
   /*
-   * LES turbulence modeling.
+   * Variable viscosity models.
    */
-  TurbulenceModel<dim, Number> turbulence_model;
+  mutable TurbulenceModel<dim, Number>           turbulence_model;
+  mutable GeneralizedNewtonianModel<dim, Number> generalized_newtonian_model;
 };
 
 } // namespace IncNS

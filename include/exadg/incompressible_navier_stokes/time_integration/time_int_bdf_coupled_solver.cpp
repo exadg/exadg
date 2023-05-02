@@ -162,7 +162,7 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
   timer.restart();
 
   // extrapolate old solutions to obtain a good initial guess for the solver, or
-  // to update the turbulence model or the penalty parameters based on this
+  // to update the viscosity model or the penalty parameters based on this
   // extrapolated solution
   if(this->use_extrapolation)
   {
@@ -175,18 +175,18 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
     solution_np = solution_last_iter;
   }
 
-  // update of turbulence model
-  if(this->param.use_turbulence_model == true)
+  // update viscosity model
+  if(this->param.viscosity_is_variable())
   {
-    dealii::Timer timer_turbulence;
-    timer_turbulence.restart();
+    dealii::Timer timer_viscosity_update;
+    timer_viscosity_update.restart();
 
-    pde_operator->update_turbulence_model(solution_np.block(0));
+    pde_operator->update_viscosity(solution_np.block(0));
 
     if(this->print_solver_info() and not(this->is_test))
     {
-      this->pcout << std::endl << "Update of turbulent viscosity:";
-      print_wall_time(this->pcout, timer_turbulence.wall_time());
+      this->pcout << std::endl << "Update of variable viscosity:";
+      print_wall_time(this->pcout, timer_viscosity_update.wall_time());
     }
   }
 

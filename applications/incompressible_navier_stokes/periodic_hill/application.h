@@ -185,13 +185,13 @@ private:
     this->param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
     // TURBULENCE
-    this->param.use_turbulence_model = false;
-    this->param.turbulence_model     = TurbulenceEddyViscosityModel::Sigma;
+    this->param.turbulence_model_data.is_active        = false;
+    this->param.turbulence_model_data.turbulence_model = TurbulenceEddyViscosityModel::Sigma;
     // Smagorinsky: 0.165
     // Vreman: 0.28
     // WALE: 0.50
     // Sigma: 1.35
-    this->param.turbulence_model_constant = 1.35;
+    this->param.turbulence_model_data.constant = 1.35;
 
     // PROJECTION METHODS
 

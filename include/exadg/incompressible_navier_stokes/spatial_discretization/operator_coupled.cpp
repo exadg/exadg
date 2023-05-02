@@ -281,6 +281,12 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &     
                                                           double const &          time,
                                                           double const & scaling_factor_mass) const
 {
+  // update implicitly coupled variable viscosity
+  if(this->param.nonlinear_viscous_problem())
+  {
+    this->update_viscosity(src.block(0));
+  }
+
   // velocity-block
 
   if(this->unsteady_problem_has_to_be_solved())
@@ -288,9 +294,10 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &     
   else
     dst.block(0) = 0.0;
 
-  AssertThrow(this->param.convective_problem() == true, dealii::ExcMessage("Invalid parameters."));
-
-  this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0), src.block(0), time);
+  if(this->param.convective_problem())
+  {
+    this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0), src.block(0), time);
+  }
 
   if(this->param.viscous_problem())
   {
@@ -329,6 +336,12 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVectorType
                                                                  BlockVectorType const & src,
                                                                  double const &          time) const
 {
+  // update implicitly coupled variable viscosity
+  if(this->param.nonlinear_viscous_problem())
+  {
+    this->update_viscosity(src.block(0));
+  }
+
   // velocity-block
 
   // set dst.block(0) to zero. This is necessary since subsequent operators
@@ -1129,8 +1142,9 @@ OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &  
   else if(type == SchurComplementPreconditioner::InverseMassMatrix)
   {
     // - S^{-1} = nu M_p^{-1}
+    // TODO consider variable viscosity here
     inverse_mass_preconditioner_schur_complement->vmult(dst, src);
-    dst *= this->get_viscosity();
+    dst *= this->param.viscosity;
   }
   else if(type == SchurComplementPreconditioner::LaplaceOperator)
   {
@@ -1148,10 +1162,11 @@ OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &  
 
     // II. M_p^{-1}, apply inverse pressure mass operator to src-vector and store the result in a
     // temporary vector
+    // TODO consider variable viscosity here
     inverse_mass_preconditioner_schur_complement->vmult(tmp_scp_pressure, src);
 
     // III. add temporary vector scaled by viscosity
-    dst.add(this->get_viscosity(), tmp_scp_pressure);
+    dst.add(this->param.viscosity, tmp_scp_pressure);
   }
   else if(type == SchurComplementPreconditioner::PressureConvectionDiffusion)
   {
@@ -1173,6 +1188,7 @@ OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &  
     pressure_conv_diff_operator->apply(dst, tmp_scp_pressure);
 
     // III. inverse pressure mass operator M_p^{-1}
+    // TODO consider variable viscosity here
     inverse_mass_preconditioner_schur_complement->vmult(dst, dst);
   }
   else

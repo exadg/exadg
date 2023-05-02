@@ -56,7 +56,7 @@ private:
   typedef FaceIntegrator<dim, dim, Number> IntegratorFace;
 
 public:
-  ViscousKernel() : degree(1), tau(dealii::make_vectorized_array<Number>(0.0))
+  ViscousKernel() : quad_index(0), degree(1), tau(dealii::make_vectorized_array<Number>(0.0))
   {
   }
 
@@ -68,8 +68,10 @@ public:
   {
     this->data = data;
 
+    this->quad_index = quad_index;
+
     dealii::FiniteElement<dim> const & fe = matrix_free.get_dof_handler(dof_index).get_fe();
-    degree                                = fe.degree;
+    this->degree                          = fe.degree;
 
     calculate_penalty_parameter(matrix_free, dof_index);
 
@@ -96,6 +98,24 @@ public:
     return this->data;
   }
 
+  unsigned int
+  get_quad_index() const
+  {
+    return this->quad_index;
+  }
+
+  unsigned int
+  get_degree() const
+  {
+    return this->degree;
+  }
+
+  void
+  set_constant_coefficient(Number const & constant_coefficient)
+  {
+    viscosity_coefficients.set_coefficients(constant_coefficient);
+  }
+
   void
   set_coefficient_cell(unsigned int const cell, unsigned int const q, scalar const & value)
   {
@@ -112,6 +132,12 @@ public:
   set_coefficient_face(unsigned int const face, unsigned int const q, scalar const & value)
   {
     viscosity_coefficients.set_coefficient_face(face, q, value);
+  }
+
+  scalar
+  get_coefficient_face_neighbor(unsigned int const face, unsigned int const q)
+  {
+    return viscosity_coefficients.get_coefficient_face_neighbor(face, q);
   }
 
   void
@@ -493,6 +519,8 @@ public:
 
 private:
   ViscousKernelData data;
+
+  unsigned int quad_index;
 
   unsigned int degree;
 

@@ -230,7 +230,7 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_solver()
   // Navier-Stokes equations with an implicit treatment of the convective term
   if(this->param.nonlinear_problem_has_to_be_solved())
   {
-    // nonlinear_operator;
+    // nonlinear_operator
     nonlinear_operator.initialize(*this);
 
     // setup Newton solver
@@ -325,12 +325,16 @@ OperatorPressureCorrection<dim, Number>::evaluate_nonlinear_residual(
   double const &     time,
   double const &     scaling_factor_mass) const
 {
+  // update implicitly coupled viscosity
+  if(this->param.nonlinear_viscous_problem())
+  {
+    this->update_viscosity(src);
+  }
+
   this->mass_operator.apply_scale(dst, scaling_factor_mass, src);
 
-  // always evaluate convective term since this function is only called
-  // if a nonlinear problem has to be solved, i.e., if the convective operator
-  // has to be considered
-  this->convective_operator.evaluate_nonlinear_operator_add(dst, src, time);
+  if(this->param.convective_problem())
+    this->convective_operator.evaluate_nonlinear_operator_add(dst, src, time);
 
   // viscous term
   this->viscous_operator.set_time(time);
@@ -349,6 +353,12 @@ OperatorPressureCorrection<dim, Number>::evaluate_nonlinear_residual_steady(
   VectorType const & src_p,
   double const &     time) const
 {
+  // update implicitly coupled viscosity
+  if(this->param.nonlinear_viscous_problem())
+  {
+    this->update_viscosity(src_u);
+  }
+
   // velocity-block
 
   // set dst_u to zero. This is necessary since subsequent operators
