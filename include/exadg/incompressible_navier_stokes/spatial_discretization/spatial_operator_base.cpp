@@ -446,14 +446,26 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   }
 
   // inverse mass operator
-  inverse_mass_velocity.initialize(*matrix_free,
-                                   get_dof_index_velocity(),
-                                   get_quad_index_velocity_linear());
-
+  if(param.spatial_discretization == SpatialDiscretization::L2)
+  {
+    InverseMassOperatorData inverse_mass_operator_data_velocity;
+    inverse_mass_operator_data_velocity.dof_index  = get_dof_index_velocity();
+    inverse_mass_operator_data_velocity.quad_index = get_quad_index_velocity_linear();
+    inverse_mass_operator_data_velocity.implement_block_diagonal_preconditioner_matrix_free =
+      param.solve_elementwise_mass_system_matrix_free;
+    inverse_mass_operator_data_velocity.solver_data_block_diagonal =
+      param.solver_data_elementwise_inverse_mass;
+    inverse_mass_velocity.initialize(*matrix_free, inverse_mass_operator_data_velocity);
+  }
   // inverse mass operator velocity scalar
-  inverse_mass_velocity_scalar.initialize(*matrix_free,
-                                          get_dof_index_velocity_scalar(),
-                                          get_quad_index_velocity_linear());
+  InverseMassOperatorData inverse_mass_operator_data_velocity_scalar;
+  inverse_mass_operator_data_velocity_scalar.dof_index  = get_dof_index_velocity_scalar();
+  inverse_mass_operator_data_velocity_scalar.quad_index = get_quad_index_velocity_linear();
+  inverse_mass_operator_data_velocity_scalar.implement_block_diagonal_preconditioner_matrix_free =
+    param.solve_elementwise_mass_system_matrix_free;
+  inverse_mass_operator_data_velocity_scalar.solver_data_block_diagonal =
+    param.solver_data_elementwise_inverse_mass;
+  inverse_mass_velocity_scalar.initialize(*matrix_free, inverse_mass_operator_data_velocity_scalar);
 
   // body force operator
   RHSOperatorData<dim> rhs_data;
@@ -1589,8 +1601,17 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
     }
     else if(param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
     {
-      preconditioner_projection = std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(
-        *matrix_free, get_dof_index_velocity(), get_quad_index_velocity_linear());
+      InverseMassOperatorData inverse_mass_operator_data;
+      inverse_mass_operator_data.dof_index  = get_dof_index_velocity();
+      inverse_mass_operator_data.quad_index = get_quad_index_velocity_linear();
+      inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+        param.solve_elementwise_mass_system_matrix_free;
+      inverse_mass_operator_data.solver_data_block_diagonal =
+        param.solver_data_elementwise_inverse_mass;
+
+      preconditioner_projection =
+        std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(*matrix_free,
+                                                                      inverse_mass_operator_data);
     }
     else if(param.preconditioner_projection == PreconditionerProjection::PointJacobi)
     {

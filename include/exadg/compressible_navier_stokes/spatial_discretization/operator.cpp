@@ -486,9 +486,20 @@ Operator<dim, Number>::setup_operators()
   mass_operator.initialize(*matrix_free, mass_operator_data);
 
   // inverse mass operator
-  inverse_mass_all.initialize(*matrix_free, get_dof_index_all(), get_quad_index_standard());
-  inverse_mass_vector.initialize(*matrix_free, get_dof_index_vector(), get_quad_index_standard());
-  inverse_mass_scalar.initialize(*matrix_free, get_dof_index_scalar(), get_quad_index_standard());
+  InverseMassOperatorData inverse_mass_operator_data_all;
+  inverse_mass_operator_data_all.dof_index  = get_dof_index_all();
+  inverse_mass_operator_data_all.quad_index = get_quad_index_standard();
+  inverse_mass_all.initialize(*matrix_free, inverse_mass_operator_data_all);
+
+  InverseMassOperatorData inverse_mass_operator_data_vector;
+  inverse_mass_operator_data_vector.dof_index  = get_dof_index_vector();
+  inverse_mass_operator_data_vector.quad_index = get_quad_index_standard();
+  inverse_mass_vector.initialize(*matrix_free, inverse_mass_operator_data_vector);
+
+  InverseMassOperatorData inverse_mass_operator_data_scalar;
+  inverse_mass_operator_data_scalar.dof_index  = get_dof_index_scalar();
+  inverse_mass_operator_data_scalar.quad_index = get_quad_index_standard();
+  inverse_mass_scalar.initialize(*matrix_free, inverse_mass_operator_data_scalar);
 
   // body force operator
   BodyForceOperatorData<dim> body_force_operator_data;

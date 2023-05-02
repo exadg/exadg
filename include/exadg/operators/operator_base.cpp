@@ -510,6 +510,18 @@ OperatorBase<dim, Number, n_components>::apply_inverse_block_diagonal(VectorType
   // matrix-free
   if(this->data.implement_block_diagonal_preconditioner_matrix_free)
   {
+    if(evaluate_face_integrals())
+    {
+      AssertThrow(data.use_cell_based_loops,
+                  dealii::ExcMessage("Cell based face loops have to be activated for matrix-free "
+                                     "implementation of block diagonal preconditioner, if face "
+                                     "integrals need to be evaluated."));
+      AssertThrow(matrix_free->get_dof_handler(data.dof_index)
+                    .get_triangulation()
+                    .all_reference_cells_are_hyper_cube(),
+                  dealii::ExcMessage("Can't do cell based loop over faces for simplices."));
+    }
+
     // Solve elementwise block Jacobi problems iteratively using an elementwise solver vectorized
     // over several elements.
     elementwise_solver->solve(dst, src);
@@ -549,8 +561,7 @@ OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditione
   {
     typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<Number>> IDENTITY;
 
-    elementwise_preconditioner =
-      std::make_shared<IDENTITY>(elementwise_operator->get_problem_size());
+    elementwise_preconditioner = std::make_shared<IDENTITY>(integrator->dofs_per_cell);
   }
   else if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::InverseMassMatrix)
   {
@@ -1954,17 +1965,21 @@ OperatorBase<dim, Number, n_components>::evaluate_face_integrals() const
 template class OperatorBase<2, float, 1>;
 template class OperatorBase<2, float, 2>;
 template class OperatorBase<2, float, 3>;
+template class OperatorBase<2, float, 4>;
 
 template class OperatorBase<2, double, 1>;
 template class OperatorBase<2, double, 2>;
 template class OperatorBase<2, double, 3>;
+template class OperatorBase<2, double, 4>;
 
 template class OperatorBase<3, float, 1>;
 template class OperatorBase<3, float, 3>;
 template class OperatorBase<3, float, 4>;
+template class OperatorBase<3, float, 5>;
 
 template class OperatorBase<3, double, 1>;
 template class OperatorBase<3, double, 3>;
 template class OperatorBase<3, double, 4>;
+template class OperatorBase<3, double, 5>;
 
 } // namespace ExaDG

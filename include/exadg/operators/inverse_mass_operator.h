@@ -28,9 +28,24 @@
 
 // ExaDG
 #include <exadg/matrix_free/integrators.h>
+#include <exadg/operators/mass_operator.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 
 namespace ExaDG
 {
+struct InverseMassOperatorData
+{
+  unsigned int dof_index  = 0;
+  unsigned int quad_index = 0;
+
+  // only relevant if an explicit matrix-free inverse mass operator is not available
+  bool implement_block_diagonal_preconditioner_matrix_free = true;
+
+  // only relevant if elementwise mass operators are inverted by elementwise
+  // iterative solvers with matrix-free implementation
+  SolverData solver_data_block_diagonal = SolverData(1000, 1e-12, 1e-20);
+};
+
 template<int dim, int n_components, typename Number>
 class InverseMassOperator
 {
@@ -43,23 +58,61 @@ private:
 
   // use a template parameter of -1 to select the precompiled version of this operator
   typedef dealii::MatrixFreeOperators::CellwiseInverseMassMatrix<dim, -1, n_components, Number>
-    CellwiseInverseMass;
+    ExplicitMatrixFreeInverseMass;
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
 public:
-  InverseMassOperator() : matrix_free(nullptr), dof_index(0), quad_index(0)
+  InverseMassOperator()
+    : matrix_free(nullptr),
+      dof_index(0),
+      quad_index(0),
+      explicit_matrix_free_inverse_mass_available(false)
   {
   }
 
   void
   initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
-             unsigned int const                      dof_index_in,
-             unsigned int const                      quad_index_in)
+             InverseMassOperatorData const           inverse_mass_operator_data)
   {
     this->matrix_free = &matrix_free_in;
-    dof_index         = dof_index_in;
-    quad_index        = quad_index_in;
+    dof_index         = inverse_mass_operator_data.dof_index;
+    quad_index        = inverse_mass_operator_data.quad_index;
+
+    dealii::FiniteElement<dim> const & fe = matrix_free->get_dof_handler(dof_index).get_fe();
+
+    if(fe.conforms(dealii::FiniteElementData<dim>::L2))
+    {
+      // this checks if we have a tensor-product element
+      if(fe.base_element(0).dofs_per_cell == dealii::Utilities::pow(fe.degree + 1, dim))
+        explicit_matrix_free_inverse_mass_available = true;
+    }
+    else
+      AssertThrow(false, dealii::ExcMessage("InverseMassOperator only implemented for DG!"));
+
+    if(not(explicit_matrix_free_inverse_mass_available))
+    {
+      // initialize mass operator
+      dealii::AffineConstraints<Number> constraint;
+      constraint.clear();
+      constraint.close();
+
+      MassOperatorData<dim> mass_operator_data;
+      mass_operator_data.dof_index  = dof_index;
+      mass_operator_data.quad_index = quad_index;
+      mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+        inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free;
+      mass_operator_data.solver_block_diagonal         = Elementwise::Solver::CG;
+      mass_operator_data.preconditioner_block_diagonal = Elementwise::Preconditioner::None;
+      mass_operator_data.solver_data_block_diagonal =
+        inverse_mass_operator_data.solver_data_block_diagonal;
+
+      mass_operator.initialize(*matrix_free, constraint, mass_operator_data);
+
+      elementwise_inverse_mass =
+        std::make_shared<BlockJacobiPreconditioner<MassOperator<dim, n_components, Number>>>(
+          mass_operator);
+    }
   }
 
   void
@@ -67,7 +120,14 @@ public:
   {
     dst.zero_out_ghost_values();
 
-    matrix_free->cell_loop(&This::cell_loop, this, dst, src);
+    if(explicit_matrix_free_inverse_mass_available)
+    {
+      matrix_free->cell_loop(&This::cell_loop, this, dst, src);
+    }
+    else
+    {
+      elementwise_inverse_mass->vmult(dst, src);
+    }
   }
 
 private:
@@ -77,8 +137,8 @@ private:
             VectorType const & src,
             Range const &      cell_range) const
   {
-    Integrator          integrator(*matrix_free, dof_index, quad_index);
-    CellwiseInverseMass inverse(integrator);
+    Integrator                    integrator(*matrix_free, dof_index, quad_index);
+    ExplicitMatrixFreeInverseMass inverse(integrator);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -94,6 +154,13 @@ private:
   dealii::MatrixFree<dim, Number> const * matrix_free;
 
   unsigned int dof_index, quad_index;
+
+  bool explicit_matrix_free_inverse_mass_available;
+
+  MassOperator<dim, n_components, Number> mass_operator;
+
+  std::shared_ptr<BlockJacobiPreconditioner<MassOperator<dim, n_components, Number>>>
+    elementwise_inverse_mass;
 };
 
 } // namespace ExaDG

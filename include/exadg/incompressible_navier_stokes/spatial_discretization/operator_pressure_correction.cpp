@@ -98,10 +98,16 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
 {
   if(this->param.preconditioner_momentum == MomentumPreconditioner::InverseMassMatrix)
   {
-    momentum_preconditioner = std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(
-      this->get_matrix_free(),
-      this->get_dof_index_velocity(),
-      this->get_quad_index_velocity_linear());
+    InverseMassOperatorData inverse_mass_operator_data;
+    inverse_mass_operator_data.dof_index  = this->get_dof_index_velocity();
+    inverse_mass_operator_data.quad_index = this->get_quad_index_velocity_linear();
+    inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+      this->param.solve_elementwise_mass_system_matrix_free;
+    inverse_mass_operator_data.solver_data_block_diagonal =
+      this->param.solver_data_elementwise_inverse_mass;
+    momentum_preconditioner =
+      std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(this->get_matrix_free(),
+                                                                    inverse_mass_operator_data);
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::PointJacobi)
   {
@@ -245,9 +251,14 @@ OperatorPressureCorrection<dim, Number>::setup_inverse_mass_operator_pressure()
 {
   // inverse mass operator pressure (needed for pressure update in case of rotational
   // formulation)
-  inverse_mass_pressure.initialize(this->get_matrix_free(),
-                                   this->get_dof_index_pressure(),
-                                   this->get_quad_index_pressure());
+  InverseMassOperatorData inverse_mass_operator_data_pressure;
+  inverse_mass_operator_data_pressure.dof_index  = this->get_dof_index_pressure();
+  inverse_mass_operator_data_pressure.quad_index = this->get_quad_index_pressure();
+  inverse_mass_operator_data_pressure.implement_block_diagonal_preconditioner_matrix_free =
+    this->param.solve_elementwise_mass_system_matrix_free;
+  inverse_mass_operator_data_pressure.solver_data_block_diagonal =
+    this->param.solver_data_elementwise_inverse_mass;
+  inverse_mass_pressure.initialize(this->get_matrix_free(), inverse_mass_operator_data_pressure);
 }
 
 template<int dim, typename Number>

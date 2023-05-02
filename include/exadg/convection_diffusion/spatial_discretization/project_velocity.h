@@ -44,14 +44,13 @@ public:
    */
   void
   apply(dealii::MatrixFree<dim, Number> const &      matrix_free,
-        unsigned int const                           dof_index,
-        unsigned int const                           quad_index,
+        InverseMassOperatorData const                inverse_mass_operator_data,
         std::shared_ptr<dealii::Function<dim>> const function,
         double const &                               time,
         VectorType &                                 vector)
   {
-    this->dof_index  = dof_index;
-    this->quad_index = quad_index;
+    this->dof_index  = inverse_mass_operator_data.dof_index;
+    this->quad_index = inverse_mass_operator_data.quad_index;
     this->function   = function;
     this->time       = time;
 
@@ -61,7 +60,7 @@ public:
 
     // apply M^{-1}
     InverseMassOperator<dim, dim, Number> inverse_mass;
-    inverse_mass.initialize(matrix_free, dof_index, quad_index);
+    inverse_mass.initialize(matrix_free, inverse_mass_operator_data);
     inverse_mass.apply(vector, vector);
   }
 

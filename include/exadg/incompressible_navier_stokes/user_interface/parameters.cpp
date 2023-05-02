@@ -230,7 +230,11 @@ Parameters::Parameters()
 
     // Only relevant for HDIV case.
     solver_data_mass(SolverData(1e3, 1.e-12, 1.e-6, 100)),
-    preconditioner_mass(PreconditionerMass::PointJacobi)
+    preconditioner_mass(PreconditionerMass::PointJacobi),
+
+    // only relevant if an explicit matrix-free inverse mass operator is not available
+    solve_elementwise_mass_system_matrix_free(true),
+    solver_data_elementwise_inverse_mass(SolverData(1e3, 1.e-12, 1.e-20, 100))
 {
 }
 
@@ -529,11 +533,6 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
   // NUMERICAL PARAMETERS
   if(implement_block_diagonal_preconditioner_matrix_free)
   {
-    AssertThrow(
-      use_cell_based_face_loops == true,
-      dealii::ExcMessage(
-        "Cell based face loops have to be used for matrix-free implementation of block diagonal preconditioner."));
-
     AssertThrow(spatial_discretization == SpatialDiscretization::L2,
                 dealii::ExcMessage("Not implemented."));
   }
