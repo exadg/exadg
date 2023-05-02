@@ -86,7 +86,8 @@ calculate_penalty_parameter(
       for(unsigned int const f : cell->face_indices())
       {
         fe_face_values.reinit(cell, f);
-        Number const factor = (cell->at_boundary(f) and not cell->has_periodic_neighbor(f)) ? 1. : 0.5;
+        Number const factor =
+          (cell->at_boundary(f) and not cell->has_periodic_neighbor(f)) ? 1. : 0.5;
         for(unsigned int q = 0; q < face_quadrature.size(); ++q)
         {
           surface_area += fe_face_values.JxW(q) * factor;

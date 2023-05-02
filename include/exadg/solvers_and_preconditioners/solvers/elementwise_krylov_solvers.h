@@ -664,8 +664,8 @@ SolverGMRES<value_type, Matrix, Preconditioner>::solve(Matrix const *         A,
 
     iterations += k;
 
-  } while(
-    not converged(convergence_status, norm_r_abs, ABS_TOL, norm_r_rel, REL_TOL, iterations, MAX_ITER));
+  } while(not converged(
+    convergence_status, norm_r_abs, ABS_TOL, norm_r_rel, REL_TOL, iterations, MAX_ITER));
 
   // output convergence info
   //    std::cout << "Number of iterations = " << iterations << std::endl;
