@@ -27,4 +27,14 @@
 #########################################################################
 
 
-./configure --prefix=$WORKING_DIRECTORY/hdf5/install/ --enable-unsupported --enable-symbols=yes --disable-threadsafe --disable-cxx --enable-hl --without-szlib --enable-parallel --enable-shared CC=mpicc
+./configure \
+  --prefix=$WORKING_DIRECTORY/hdf5/install/ \
+  --enable-unsupported \
+  --enable-symbols=yes \
+  --disable-threadsafe \
+  --disable-cxx \
+  --enable-hl \
+  --without-szlib \
+  --enable-parallel \
+  --enable-shared \
+  CC=mpicc
