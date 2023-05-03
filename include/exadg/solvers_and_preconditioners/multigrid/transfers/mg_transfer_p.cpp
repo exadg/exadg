@@ -236,7 +236,7 @@ MGTransferP<dim, Number, VectorType, components>::do_restrict_and_add(VectorType
 
     fe_eval1.read_dof_values(src);
 
-    if(not(is_dg))
+    if(not is_dg)
       weight_residuum<dim, fe_degree_1, Number>(*matrixfree_1, fe_eval1, cell, this->weights);
 
     dealii::internal::FEEvaluationImplBasisChange<
@@ -289,7 +289,7 @@ MGTransferP<dim, Number, VectorType, components>::do_prolongate(VectorType &    
                                                    fe_eval2.begin_dof_values(),
                                                    fe_eval1.begin_dof_values());
 
-    if(not(is_dg))
+    if(not is_dg)
       weight_residuum<dim, fe_degree_1, Number>(*matrixfree_1, fe_eval1, cell, this->weights);
 
     fe_eval1.distribute_local_to_global(dst);
@@ -359,7 +359,7 @@ MGTransferP<dim, Number, VectorType, components>::reinit(
   fill_shape_values(prolongation_matrix_1d, this->degree_2, this->degree_1, false);
   fill_shape_values(interpolation_matrix_1d, this->degree_2, this->degree_1, true);
 
-  if(not(is_dg))
+  if(not is_dg)
   {
     dealii::LinearAlgebra::distributed::Vector<Number> vec;
     dealii::IndexSet                                   relevant_dofs;

@@ -40,13 +40,14 @@ do_test()
 
   dealii::MappingQ<dim> mapping_original(fe.degree);
   {
-    dealii::FEValues<dim>                        fe_values(mapping_original,
+    dealii::FEValues<dim> fe_values(mapping_original,
                                     fe,
                                     dealii::Quadrature<dim>(fe.get_unit_support_points()),
                                     dealii::update_quadrature_points);
+
     std::vector<dealii::types::global_dof_index> dof_indices(fe.dofs_per_cell);
     for(auto const & cell : dof_handler.active_cell_iterators())
-      if(not(cell->is_artificial()))
+      if(not cell->is_artificial())
       {
         fe_values.reinit(cell);
         cell->get_dof_indices(dof_indices);

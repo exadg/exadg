@@ -338,7 +338,7 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
   // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
   rhs.add(-1.0, tmp);
 
-  if(not(is_dg))
+  if(not is_dg)
   {
     // Set constrained degrees of freedom according to Dirichlet boundary conditions. The rest of
     // the vector contains zeros.
@@ -654,7 +654,7 @@ OperatorBase<dim, Number, n_components>::update_block_diagonal_preconditioner() 
 
   // initialization
 
-  if(not(block_diagonal_preconditioner_is_initialized))
+  if(not block_diagonal_preconditioner_is_initialized)
   {
     if(data.implement_block_diagonal_preconditioner_matrix_free)
     {
@@ -1707,7 +1707,7 @@ OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix(
       else
         cell_v->get_dof_indices(dof_indices);
 
-      if(not(is_dg))
+      if(not is_dg)
       {
         // in the case of CG: shape functions are not ordered lexicographically
         // see (https://www.dealii.org/8.5.1/doxygen/deal.II/classFE__Q.html)
