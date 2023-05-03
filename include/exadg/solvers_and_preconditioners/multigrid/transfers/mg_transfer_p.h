@@ -54,13 +54,17 @@ public:
   virtual ~MGTransferP();
 
   virtual void
-  interpolate(unsigned int const level, VectorType & dst, VectorType const & src) const;
+  interpolate(unsigned int const level, VectorType & dst, VectorType const & src) const final;
 
   virtual void
-  restrict_and_add(unsigned int const /*level*/, VectorType & dst, VectorType const & src) const;
+  restrict_and_add(unsigned int const /*level*/,
+                   VectorType &       dst,
+                   VectorType const & src) const final;
 
   virtual void
-  prolongate_and_add(unsigned int const /*level*/, VectorType & dst, VectorType const & src) const;
+  prolongate_and_add(unsigned int const /*level*/,
+                     VectorType &       dst,
+                     VectorType const & src) const final;
 
 private:
   template<int fe_degree_1, int fe_degree_2>

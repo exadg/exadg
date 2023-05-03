@@ -45,7 +45,7 @@ public:
   }
 
   void
-  vmult(VectorType & dst, VectorType const & src) const
+  vmult(VectorType & dst, VectorType const & src) const final
   {
     if(!dealii::PointerComparison::equal(&dst, &src))
       dst = src;
@@ -53,7 +53,7 @@ public:
   }
 
   void
-  update()
+  update() final
   {
     underlying_operator.calculate_inverse_diagonal(inverse_diagonal);
   }

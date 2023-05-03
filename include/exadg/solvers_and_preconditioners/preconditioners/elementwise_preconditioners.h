@@ -69,14 +69,14 @@ public:
   {
   }
 
-  virtual void
-  setup(unsigned int const /* cell */)
+  void
+  setup(unsigned int const /* cell */) final
   {
     // nothing to do
   }
 
   virtual void
-  vmult(Number * dst, Number const * src) const
+  vmult(Number * dst, Number const * src) const final
   {
     Number one;
     one = 1.0;
@@ -107,13 +107,14 @@ public:
   }
 
   void
-  setup(unsigned int const cell)
+  setup(unsigned int const cell) final
   {
     integrator->reinit(cell);
   }
 
   void
-  vmult(dealii::VectorizedArray<Number> * dst, dealii::VectorizedArray<Number> const * src) const
+  vmult(dealii::VectorizedArray<Number> *       dst,
+        dealii::VectorizedArray<Number> const * src) const final
   {
     inverse->apply(src, dst);
   }

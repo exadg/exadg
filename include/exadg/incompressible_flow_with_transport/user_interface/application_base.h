@@ -41,8 +41,8 @@ template<int dim, typename Number>
 class ApplicationBase : public IncNS::ApplicationBase<dim, Number>
 {
 public:
-  virtual void
-  add_parameters(dealii::ParameterHandler & prm)
+  void
+  add_parameters(dealii::ParameterHandler & prm) override
   {
     IncNS::ApplicationBase<dim, Number>::add_parameters(prm);
 

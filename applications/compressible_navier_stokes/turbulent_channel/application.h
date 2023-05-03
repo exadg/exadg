@@ -168,7 +168,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const final
   {
     double const tol = 1.e-12;
     AssertThrow(std::abs(p[1]) < DIMENSIONS_X2 / 2.0 + tol,

@@ -57,7 +57,7 @@ public:
   void
   do_postprocessing(VectorType const &     solution,
                     double const           time             = 0.0,
-                    types::time_step const time_step_number = numbers::steady_timestep);
+                    types::time_step const time_step_number = numbers::steady_timestep) override;
 
 private:
   PostProcessorData<dim> pp_data;

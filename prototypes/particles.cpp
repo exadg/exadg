@@ -24,8 +24,8 @@ public:
   {
   }
 
-  virtual double
-  value(Point<dim> const & p, unsigned int const component) const
+  double
+  value(Point<dim> const & p, unsigned int const component) const final
   {
     if(component == 0)
       return p[1];

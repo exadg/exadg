@@ -65,7 +65,7 @@ public:
 
 private:
   void
-  do_cell_integral(IntegratorCell & integrator) const;
+  do_cell_integral(IntegratorCell & integrator) const final;
 
   MassKernel<dim, Number> kernel;
 

@@ -278,7 +278,7 @@ public:
   }
 
   virtual void
-  add_parameters(dealii::ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm) final
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 

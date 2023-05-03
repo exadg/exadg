@@ -212,10 +212,11 @@ public:
   void
   setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free,
         std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data,
-        std::string const &                              dof_index_temperature = "");
+        std::string const &                              dof_index_temperature = "") final;
 
   void
-  setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);
+  setup_solvers(double const &     scaling_factor_time_derivative_term,
+                VectorType const & velocity) final;
 
   /*
    *  Update divergence penalty operator by recalculating the penalty parameter

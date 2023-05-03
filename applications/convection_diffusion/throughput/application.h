@@ -38,7 +38,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const final
   {
     return p[component];
   }
@@ -60,7 +60,7 @@ public:
   }
 
   void
-  add_parameters(dealii::ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm) final
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 

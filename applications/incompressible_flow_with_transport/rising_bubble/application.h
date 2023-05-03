@@ -36,7 +36,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const /*component = 0*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component = 0*/) const final
   {
     double radius = 0.0;
     if(dim == 2)

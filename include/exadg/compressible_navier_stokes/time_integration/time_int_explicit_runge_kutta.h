@@ -66,31 +66,31 @@ public:
 
 private:
   void
-  initialize_time_integrator();
+  initialize_time_integrator() final;
 
   void
-  initialize_vectors();
+  initialize_vectors() final;
 
   void
-  initialize_solution();
+  initialize_solution() final;
 
   void
   detect_instabilities() const;
 
   void
-  postprocessing() const;
+  postprocessing() const final;
 
   void
   do_timestep_solve() final;
 
   bool
-  print_solver_info() const;
+  print_solver_info() const final;
 
   void
-  calculate_time_step_size();
+  calculate_time_step_size() final;
 
   double
-  recalculate_time_step_size() const;
+  recalculate_time_step_size() const final;
 
   void
   calculate_pressure();

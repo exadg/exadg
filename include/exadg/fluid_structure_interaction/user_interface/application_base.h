@@ -75,7 +75,7 @@ public:
   }
 
   virtual void
-  add_parameters(dealii::ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm) final
   {
     resolution.add_parameters(prm, "SpatialResolutionStructure");
     output_parameters.add_parameters(prm, "Output");
@@ -218,7 +218,7 @@ public:
   }
 
   virtual void
-  add_parameters(dealii::ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm) final
   {
     resolution.add_parameters(prm, "SpatialResolutionFluid");
     output_parameters.add_parameters(prm, "Output");
@@ -477,7 +477,7 @@ class ApplicationBase
 {
 public:
   virtual void
-  add_parameters(dealii::ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm) final
   {
     structure->add_parameters(prm);
     fluid->add_parameters(prm);

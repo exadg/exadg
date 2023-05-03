@@ -54,13 +54,17 @@ public:
     dealii::MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> const & operator_in);
 
   virtual void
-  prolongate_and_add(unsigned int const to_level, VectorType & dst, VectorType const & src) const;
+  prolongate_and_add(unsigned int const to_level,
+                     VectorType &       dst,
+                     VectorType const & src) const final;
 
   virtual void
-  restrict_and_add(unsigned int const from_level, VectorType & dst, VectorType const & src) const;
+  restrict_and_add(unsigned int const from_level,
+                   VectorType &       dst,
+                   VectorType const & src) const final;
 
   virtual void
-  interpolate(unsigned int const level_in, VectorType & dst, VectorType const & src) const;
+  interpolate(unsigned int const level_in, VectorType & dst, VectorType const & src) const final;
 
   /**
    * Overload copy_to_mg from MGTransferMatrixFree

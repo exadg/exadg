@@ -71,12 +71,12 @@ public:
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   evaluate_stress(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
                   unsigned int const                                              cell,
-                  unsigned int const                                              q) const;
+                  unsigned int const                                              q) const final;
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   apply_C(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
           unsigned int const                                              cell,
-          unsigned int const                                              q) const;
+          unsigned int const                                              q) const final;
 
 private:
   Number

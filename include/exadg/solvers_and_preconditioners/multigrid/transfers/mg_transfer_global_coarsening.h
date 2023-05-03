@@ -47,13 +47,15 @@ public:
          unsigned int const dof_handler_index = 0);
 
   void
-  interpolate(unsigned int const level, VectorType & dst, VectorType const & src) const;
+  interpolate(unsigned int const level, VectorType & dst, VectorType const & src) const final;
 
   void
-  restrict_and_add(unsigned int const level, VectorType & dst, VectorType const & src) const;
+  restrict_and_add(unsigned int const level, VectorType & dst, VectorType const & src) const final;
 
   void
-  prolongate_and_add(unsigned int const level, VectorType & dst, VectorType const & src) const;
+  prolongate_and_add(unsigned int const level,
+                     VectorType &       dst,
+                     VectorType const & src) const final;
 
 private:
   dealii::MGLevelObject<dealii::MGTwoLevelTransfer<dim, VectorType>> transfers;

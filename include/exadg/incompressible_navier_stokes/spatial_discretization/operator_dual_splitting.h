@@ -67,7 +67,7 @@ public:
   virtual ~OperatorDualSplitting();
 
   void
-  setup_solvers(double const & scaling_factor_mass, VectorType const & velocity);
+  setup_solvers(double const & scaling_factor_mass, VectorType const & velocity) final;
 
   /*
    * Pressure Poisson equation.

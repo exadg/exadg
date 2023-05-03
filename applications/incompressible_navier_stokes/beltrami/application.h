@@ -36,7 +36,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const final
   {
     double const t = this->get_time();
     double const a = 0.25 * dealii::numbers::PI;

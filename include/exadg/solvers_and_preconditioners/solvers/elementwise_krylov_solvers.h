@@ -236,7 +236,7 @@ public:
   solve(Matrix const *         matrix,
         value_type *           solution,
         value_type const *     rhs,
-        Preconditioner const * preconditioner);
+        Preconditioner const * preconditioner) final;
 
 private:
   unsigned int const                M;
@@ -358,7 +358,7 @@ public:
   SolverGMRES(unsigned int const unknowns, SolverData const & solver_data);
 
   void
-  solve(Matrix const * A, value_type * x, value_type const * b, Preconditioner const * P);
+  solve(Matrix const * A, value_type * x, value_type const * b, Preconditioner const * P) final;
 
 private:
   // Matrix size MxM

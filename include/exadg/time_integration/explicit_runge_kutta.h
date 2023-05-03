@@ -532,7 +532,10 @@ public:
   }
 
   void
-  solve_timestep(VectorType & vec_np, VectorType & vec_n, double const time, double const time_step)
+  solve_timestep(VectorType & vec_np,
+                 VectorType & vec_n,
+                 double const time,
+                 double const time_step) final
   {
     if(!vec_tmp1.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
     {
@@ -673,7 +676,10 @@ public:
   }
 
   void
-  solve_timestep(VectorType & vec_np, VectorType & vec_n, double const time, double const time_step)
+  solve_timestep(VectorType & vec_np,
+                 VectorType & vec_n,
+                 double const time,
+                 double const time_step) final
   {
     if(!vec_tmp.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
     {

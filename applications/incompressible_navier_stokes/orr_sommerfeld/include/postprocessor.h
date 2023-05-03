@@ -54,7 +54,7 @@ public:
   }
 
   void
-  setup(Operator const & pde_operator)
+  setup(Operator const & pde_operator) final
   {
     // call setup function of base class
     Base::setup(pde_operator);
@@ -69,7 +69,7 @@ public:
   do_postprocessing(VectorType const &     velocity,
                     VectorType const &     pressure,
                     double const           time,
-                    types::time_step const time_step_number)
+                    types::time_step const time_step_number) final
   {
     Base::do_postprocessing(velocity, pressure, time, time_step_number);
 

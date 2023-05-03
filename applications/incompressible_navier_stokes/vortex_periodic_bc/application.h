@@ -45,7 +45,7 @@ public:
   }
 
   double
-  value(const dealii::Point<dim> & p, const unsigned int component = 0) const
+  value(const dealii::Point<dim> & p, const unsigned int component = 0) const final
   {
     double const t  = this->get_time();
     double const pi = dealii::numbers::PI;
@@ -73,7 +73,7 @@ public:
   }
 
   double
-  value(const dealii::Point<dim> & p, const unsigned int /*component*/) const
+  value(const dealii::Point<dim> & p, const unsigned int /*component*/) const final
   {
     double const t      = this->get_time();
     double const pi     = dealii::numbers::PI;
