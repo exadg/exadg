@@ -52,7 +52,7 @@ add_periodicity_constraints(unsigned int const                                  
     for(unsigned int i = 0; i < dofs_per_face; ++i)
     {
       if(constraints.can_store_line(dofs_2[i]) and constraints.can_store_line(dofs_1[i]) and
-         not constraints.is_constrained(dofs_2[i]))
+         not(constraints.is_constrained(dofs_2[i])))
       {
         // constraint dof and ...
         constraints.add_line(dofs_2[i]);
