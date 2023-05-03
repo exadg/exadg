@@ -127,7 +127,7 @@ cmake \
     -D Trilinos_ENABLE_Teko:BOOL=OFF \
     -D Teko_ENABLE_TESTS:BOOL=OFF \
     -D Trilinos_ENABLE_MueLu:BOOL=ON \
-    -D Tpetra_INST_INT_LONG_LONG:BOOL=OFF \
+    -D Tpetra_INST_INT_LONG_LONG:BOOL=ON \
     -D Tpetra_INST_INT_LONG:BOOL=ON \
     -D MueLu_ENABLE_TESTS:BOOL=OFF \
     -D MueLu_ENABLE_EXAMPLES:BOOL=OFF \
