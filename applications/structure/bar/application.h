@@ -43,7 +43,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const c) const
+  value(dealii::Point<dim> const & p, unsigned int const c) const final
   {
     (void)p;
 
@@ -77,7 +77,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const c) const
+  value(dealii::Point<dim> const & p, unsigned int const c) const final
   {
     (void)p;
 
@@ -106,7 +106,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const c) const
+  value(dealii::Point<dim> const & p, unsigned int const c) const final
   {
     (void)p;
 
@@ -138,7 +138,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const c) const
+  value(dealii::Point<dim> const & p, unsigned int const c) const final
   {
     if(c == 0)
       return A * p[0] * p[0] + B * p[0]; // displacement in x-direction

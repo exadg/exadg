@@ -39,7 +39,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const final
   {
     double phi_l = 1.0, phi_r = 0.0;
     double U = 1.0, L = 2.0;

@@ -229,7 +229,7 @@ public:
   }
 
   void
-  setup(Operator<dim, Number> const & pde_operator)
+  setup(Operator<dim, Number> const & pde_operator) final
   {
     // call setup function of base class
     Base::setup(pde_operator);
@@ -245,7 +245,7 @@ public:
   void
   do_postprocessing(VectorType const &     solution,
                     double const           time,
-                    types::time_step const time_step_number)
+                    types::time_step const time_step_number) final
   {
     Base::do_postprocessing(solution, time, time_step_number);
 

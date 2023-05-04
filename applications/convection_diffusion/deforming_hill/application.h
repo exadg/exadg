@@ -36,7 +36,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const final
   {
     // The analytical solution is only known at t = start_time and t = end_time
 
@@ -58,7 +58,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & point, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & point, unsigned int const component = 0) const final
   {
     double value = 0.0;
     double t     = this->get_time();
