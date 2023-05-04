@@ -175,15 +175,15 @@ $(function() {
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span> </div>
 <div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  <span class="comment">// same as step(), but sets dst-vector to zero</span></div>
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  vmult(VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src)<span class="keyword"> const</span></div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  vmult(VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src) <span class="keyword">const</span> <span class="keyword">final</span></div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  {</div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    dst = 0.0;</div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    step(dst, src);</div>
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  }</div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span> </div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  step(VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src)<span class="keyword"> const</span></div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  step(VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src) <span class="keyword">const</span> <span class="keyword">final</span></div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  {</div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    dealii::IterationNumberControl control(data.number_of_iterations, 1.e-20);</div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span> </div>
 <div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    <span class="keyword">typename</span> dealii::SolverGMRES&lt;VectorType&gt;::AdditionalData additional_data;</div>

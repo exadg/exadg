@@ -107,10 +107,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:afbe24c6cad472b99c8edea62b6daa574"><td class="memItemLeft" align="right" valign="top"><a id="afbe24c6cad472b99c8edea62b6daa574" name="afbe24c6cad472b99c8edea62b6daa574"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>StVenantKirchhoff</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, unsigned int const dof_index, unsigned int const quad_index, <a class="el" href="structExaDG_1_1Structure_1_1StVenantKirchhoffData.html">StVenantKirchhoffData</a>&lt; dim &gt; const &amp;data)</td></tr>
 <tr class="separator:afbe24c6cad472b99c8edea62b6daa574"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a28473f5267337aa91e6931c6ed8e3fb2"><td class="memItemLeft" align="right" valign="top">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html#a28473f5267337aa91e6931c6ed8e3fb2">evaluate_stress</a> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;E, unsigned int const cell, unsigned int const q) const</td></tr>
-<tr class="separator:a28473f5267337aa91e6931c6ed8e3fb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a974bde53f0425467272515144a732c6d"><td class="memItemLeft" align="right" valign="top">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html#a974bde53f0425467272515144a732c6d">apply_C</a> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;E, unsigned int const cell, unsigned int const q) const</td></tr>
-<tr class="separator:a974bde53f0425467272515144a732c6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a560191e10d928708a6218b96b909f12d"><td class="memItemLeft" align="right" valign="top">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html#a560191e10d928708a6218b96b909f12d">evaluate_stress</a> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;E, unsigned int const cell, unsigned int const q) const final</td></tr>
+<tr class="separator:a560191e10d928708a6218b96b909f12d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9c06aca1b7ce91beed007887556ab106"><td class="memItemLeft" align="right" valign="top">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html#a9c06aca1b7ce91beed007887556ab106">apply_C</a> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;E, unsigned int const cell, unsigned int const q) const final</td></tr>
+<tr class="separator:a9c06aca1b7ce91beed007887556ab106"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a57441631b81911df6a08ac8e940cd541"><td class="memItemLeft" align="right" valign="top"><a id="a57441631b81911df6a08ac8e940cd541" name="a57441631b81911df6a08ac8e940cd541"></a>
 virtual dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_stress</b> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;E, unsigned int const cell, unsigned int const q) const =0</td></tr>
 <tr class="separator:a57441631b81911df6a08ac8e940cd541"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -119,8 +119,8 @@ virtual dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&
 <tr class="separator:ab04d4d83a9a2d68364de5e76dcd07fe7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a974bde53f0425467272515144a732c6d" name="a974bde53f0425467272515144a732c6d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a974bde53f0425467272515144a732c6d">&#9670;&#160;</a></span>apply_C()</h2>
+<a id="a9c06aca1b7ce91beed007887556ab106" name="a9c06aca1b7ce91beed007887556ab106"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9c06aca1b7ce91beed007887556ab106">&#9670;&#160;</a></span>apply_C()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -156,7 +156,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -165,8 +165,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a28473f5267337aa91e6931c6ed8e3fb2" name="a28473f5267337aa91e6931c6ed8e3fb2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a28473f5267337aa91e6931c6ed8e3fb2">&#9670;&#160;</a></span>evaluate_stress()</h2>
+<a id="a560191e10d928708a6218b96b909f12d" name="a560191e10d928708a6218b96b909f12d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a560191e10d928708a6218b96b909f12d">&#9670;&#160;</a></span>evaluate_stress()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -202,7 +202,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

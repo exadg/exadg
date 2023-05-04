@@ -117,34 +117,34 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a1c9cb925a449b724c86976c0e2ea3327"><td class="memItemLeft" align="right" valign="top"><a id="a1c9cb925a449b724c86976c0e2ea3327" name="a1c9cb925a449b724c86976c0e2ea3327"></a>
 std::shared_ptr&lt; Operator &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_pde_operator</b> () const</td></tr>
 <tr class="separator:a1c9cb925a449b724c86976c0e2ea3327"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5ba7cc1b4c01de2f27f8094947642f29"><td class="memItemLeft" align="right" valign="top">virtual dealii::AffineConstraints&lt; typename Operator::value_type &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a5ba7cc1b4c01de2f27f8094947642f29">get_affine_constraints</a> () const</td></tr>
-<tr class="separator:a5ba7cc1b4c01de2f27f8094947642f29"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad2d4cb72fd527dd40c58e82958697171"><td class="memItemLeft" align="right" valign="top">virtual dealii::MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#ad2d4cb72fd527dd40c58e82958697171">get_matrix_free</a> () const</td></tr>
-<tr class="separator:ad2d4cb72fd527dd40c58e82958697171"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a06c3e149ba61aabe45ca78bae906452f"><td class="memItemLeft" align="right" valign="top">virtual unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a06c3e149ba61aabe45ca78bae906452f">get_dof_index</a> () const</td></tr>
-<tr class="separator:a06c3e149ba61aabe45ca78bae906452f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad7d64850d69bf59fb21b526e78853481"><td class="memItemLeft" align="right" valign="top">virtual dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#ad7d64850d69bf59fb21b526e78853481">m</a> () const</td></tr>
-<tr class="separator:ad7d64850d69bf59fb21b526e78853481"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6752bfcedfa0e690a627e3be295b7337"><td class="memItemLeft" align="right" valign="top">virtual dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a6752bfcedfa0e690a627e3be295b7337">n</a> () const</td></tr>
-<tr class="separator:a6752bfcedfa0e690a627e3be295b7337"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acff84cc63385f7758556acc3ad95df26"><td class="memItemLeft" align="right" valign="top">virtual Number&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#acff84cc63385f7758556acc3ad95df26">el</a> (unsigned int const i, unsigned int const j) const</td></tr>
-<tr class="separator:acff84cc63385f7758556acc3ad95df26"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a49da76db9200d367ab00bdbe42500b08"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a49da76db9200d367ab00bdbe42500b08">initialize_dof_vector</a> (VectorType &amp;vector) const</td></tr>
-<tr class="separator:a49da76db9200d367ab00bdbe42500b08"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3eba6d8150eb8cd59768f9fba80e4aff"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a3eba6d8150eb8cd59768f9fba80e4aff">vmult</a> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:a3eba6d8150eb8cd59768f9fba80e4aff"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a66130dbfc7067d75197f12878d3047d5"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a66130dbfc7067d75197f12878d3047d5">vmult_add</a> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:a66130dbfc7067d75197f12878d3047d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3cb70377f82f184c9131078552fb7f55"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a3cb70377f82f184c9131078552fb7f55">vmult_interface_down</a> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:a3cb70377f82f184c9131078552fb7f55"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a809343ac7c593bc43bc61b441a344440"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a809343ac7c593bc43bc61b441a344440">vmult_add_interface_up</a> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:a809343ac7c593bc43bc61b441a344440"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a504b21d91a5ca8eba40b3f4da5c0486e"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a504b21d91a5ca8eba40b3f4da5c0486e">calculate_inverse_diagonal</a> (VectorType &amp;inverse_diagonal_entries) const</td></tr>
-<tr class="separator:a504b21d91a5ca8eba40b3f4da5c0486e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad3a5515a314d423dcbd14b96d5b6a9c2"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#ad3a5515a314d423dcbd14b96d5b6a9c2">update_block_diagonal_preconditioner</a> () const</td></tr>
-<tr class="separator:ad3a5515a314d423dcbd14b96d5b6a9c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a157d0959f30252990413b3e03558a0f5"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a157d0959f30252990413b3e03558a0f5">apply_inverse_block_diagonal</a> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:a157d0959f30252990413b3e03558a0f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a61bf41e810e1d7857b26e24e7e8c4d19"><td class="memItemLeft" align="right" valign="top">dealii::AffineConstraints&lt; typename Operator::value_type &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a61bf41e810e1d7857b26e24e7e8c4d19">get_affine_constraints</a> () const final</td></tr>
+<tr class="separator:a61bf41e810e1d7857b26e24e7e8c4d19"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a810c0359a009072a5100e299407b4f78"><td class="memItemLeft" align="right" valign="top">dealii::MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a810c0359a009072a5100e299407b4f78">get_matrix_free</a> () const final</td></tr>
+<tr class="separator:a810c0359a009072a5100e299407b4f78"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3cab5f31edece0fe9fe9a71ab8aca464"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a3cab5f31edece0fe9fe9a71ab8aca464">get_dof_index</a> () const final</td></tr>
+<tr class="separator:a3cab5f31edece0fe9fe9a71ab8aca464"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab0b0f8d2af24ca94178176c0109bd825"><td class="memItemLeft" align="right" valign="top">dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#ab0b0f8d2af24ca94178176c0109bd825">m</a> () const final</td></tr>
+<tr class="separator:ab0b0f8d2af24ca94178176c0109bd825"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad0cb56a018e074cb21052c9dc2312772"><td class="memItemLeft" align="right" valign="top">dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#ad0cb56a018e074cb21052c9dc2312772">n</a> () const final</td></tr>
+<tr class="separator:ad0cb56a018e074cb21052c9dc2312772"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af476dac3a2091ed07563f13c5011446f"><td class="memItemLeft" align="right" valign="top">Number&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#af476dac3a2091ed07563f13c5011446f">el</a> (unsigned int const i, unsigned int const j) const final</td></tr>
+<tr class="separator:af476dac3a2091ed07563f13c5011446f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0e923a41a17d5c2b3eb16a632e0dd579"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a0e923a41a17d5c2b3eb16a632e0dd579">initialize_dof_vector</a> (VectorType &amp;vector) const final</td></tr>
+<tr class="separator:a0e923a41a17d5c2b3eb16a632e0dd579"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4dd9aad1e172581c713d510dc95c07f8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a4dd9aad1e172581c713d510dc95c07f8">vmult</a> (VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:a4dd9aad1e172581c713d510dc95c07f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af7f0636e0b8912917c77af486d6e35d4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#af7f0636e0b8912917c77af486d6e35d4">vmult_add</a> (VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:af7f0636e0b8912917c77af486d6e35d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1a247202576e3d23a118a2b5d36949f7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a1a247202576e3d23a118a2b5d36949f7">vmult_interface_down</a> (VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:a1a247202576e3d23a118a2b5d36949f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1f43baffc21c8cf23d122a6b5186ec3f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a1f43baffc21c8cf23d122a6b5186ec3f">vmult_add_interface_up</a> (VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:a1f43baffc21c8cf23d122a6b5186ec3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34bb3598f8b3e1ac1870346a90a8a452"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a34bb3598f8b3e1ac1870346a90a8a452">calculate_inverse_diagonal</a> (VectorType &amp;inverse_diagonal_entries) const final</td></tr>
+<tr class="separator:a34bb3598f8b3e1ac1870346a90a8a452"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a14dee6ca649cd51095bd404ab39a5183"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a14dee6ca649cd51095bd404ab39a5183">update_block_diagonal_preconditioner</a> () const final</td></tr>
+<tr class="separator:a14dee6ca649cd51095bd404ab39a5183"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a007d493aef4b47e3060bd2cb1b4a481c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a007d493aef4b47e3060bd2cb1b4a481c">apply_inverse_block_diagonal</a> (VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:a007d493aef4b47e3060bd2cb1b4a481c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5f35f0754b33f6d615c99bb6029daa24"><td class="memItemLeft" align="right" valign="top"><a id="a5f35f0754b33f6d615c99bb6029daa24" name="a5f35f0754b33f6d615c99bb6029daa24"></a>
 virtual dealii::AffineConstraints&lt; Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_affine_constraints</b> () const =0</td></tr>
 <tr class="separator:a5f35f0754b33f6d615c99bb6029daa24"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -189,8 +189,8 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_inverse
 <tr class="separator:aa5a8dd452b685613887d066c93034d6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a157d0959f30252990413b3e03558a0f5" name="a157d0959f30252990413b3e03558a0f5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a157d0959f30252990413b3e03558a0f5">&#9670;&#160;</a></span>apply_inverse_block_diagonal()</h2>
+<a id="a007d493aef4b47e3060bd2cb1b4a481c" name="a007d493aef4b47e3060bd2cb1b4a481c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a007d493aef4b47e3060bd2cb1b4a481c">&#9670;&#160;</a></span>apply_inverse_block_diagonal()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -201,7 +201,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::apply_inverse_block_diagonal </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::apply_inverse_block_diagonal </td>
           <td>(</td>
           <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>dst</em>, </td>
@@ -220,7 +220,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -229,8 +229,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
 
 </div>
 </div>
-<a id="a504b21d91a5ca8eba40b3f4da5c0486e" name="a504b21d91a5ca8eba40b3f4da5c0486e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a504b21d91a5ca8eba40b3f4da5c0486e">&#9670;&#160;</a></span>calculate_inverse_diagonal()</h2>
+<a id="a34bb3598f8b3e1ac1870346a90a8a452" name="a34bb3598f8b3e1ac1870346a90a8a452"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a34bb3598f8b3e1ac1870346a90a8a452">&#9670;&#160;</a></span>calculate_inverse_diagonal()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -241,7 +241,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::calculate_inverse_diagonal </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::calculate_inverse_diagonal </td>
           <td>(</td>
           <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>inverse_diagonal_entries</em></td><td>)</td>
@@ -250,7 +250,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -259,8 +259,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
 
 </div>
 </div>
-<a id="acff84cc63385f7758556acc3ad95df26" name="acff84cc63385f7758556acc3ad95df26"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acff84cc63385f7758556acc3ad95df26">&#9670;&#160;</a></span>el()</h2>
+<a id="af476dac3a2091ed07563f13c5011446f" name="af476dac3a2091ed07563f13c5011446f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af476dac3a2091ed07563f13c5011446f">&#9670;&#160;</a></span>el()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -271,7 +271,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual Number <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::el </td>
+          <td class="memname">Number <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::el </td>
           <td>(</td>
           <td class="paramtype">unsigned int const&#160;</td>
           <td class="paramname"><em>i</em>, </td>
@@ -290,7 +290,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -299,8 +299,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
 
 </div>
 </div>
-<a id="a5ba7cc1b4c01de2f27f8094947642f29" name="a5ba7cc1b4c01de2f27f8094947642f29"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5ba7cc1b4c01de2f27f8094947642f29">&#9670;&#160;</a></span>get_affine_constraints()</h2>
+<a id="a61bf41e810e1d7857b26e24e7e8c4d19" name="a61bf41e810e1d7857b26e24e7e8c4d19"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a61bf41e810e1d7857b26e24e7e8c4d19">&#9670;&#160;</a></span>get_affine_constraints()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -311,7 +311,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual dealii::AffineConstraints&lt; typename Operator::value_type &gt; const  &amp; <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::get_affine_constraints </td>
+          <td class="memname">dealii::AffineConstraints&lt; typename Operator::value_type &gt; const  &amp; <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::get_affine_constraints </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -319,7 +319,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -328,8 +328,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
 
 </div>
 </div>
-<a id="a06c3e149ba61aabe45ca78bae906452f" name="a06c3e149ba61aabe45ca78bae906452f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a06c3e149ba61aabe45ca78bae906452f">&#9670;&#160;</a></span>get_dof_index()</h2>
+<a id="a3cab5f31edece0fe9fe9a71ab8aca464" name="a3cab5f31edece0fe9fe9a71ab8aca464"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3cab5f31edece0fe9fe9a71ab8aca464">&#9670;&#160;</a></span>get_dof_index()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -340,7 +340,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual unsigned int <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::get_dof_index </td>
+          <td class="memname">unsigned int <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::get_dof_index </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -348,7 +348,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -357,8 +357,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
 
 </div>
 </div>
-<a id="ad2d4cb72fd527dd40c58e82958697171" name="ad2d4cb72fd527dd40c58e82958697171"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad2d4cb72fd527dd40c58e82958697171">&#9670;&#160;</a></span>get_matrix_free()</h2>
+<a id="a810c0359a009072a5100e299407b4f78" name="a810c0359a009072a5100e299407b4f78"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a810c0359a009072a5100e299407b4f78">&#9670;&#160;</a></span>get_matrix_free()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -369,7 +369,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual dealii::MatrixFree&lt; dim, Number &gt; const  &amp; <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::get_matrix_free </td>
+          <td class="memname">dealii::MatrixFree&lt; dim, Number &gt; const  &amp; <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::get_matrix_free </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -377,7 +377,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -386,8 +386,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
 
 </div>
 </div>
-<a id="a49da76db9200d367ab00bdbe42500b08" name="a49da76db9200d367ab00bdbe42500b08"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a49da76db9200d367ab00bdbe42500b08">&#9670;&#160;</a></span>initialize_dof_vector()</h2>
+<a id="a0e923a41a17d5c2b3eb16a632e0dd579" name="a0e923a41a17d5c2b3eb16a632e0dd579"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0e923a41a17d5c2b3eb16a632e0dd579">&#9670;&#160;</a></span>initialize_dof_vector()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -398,7 +398,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::initialize_dof_vector </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::initialize_dof_vector </td>
           <td>(</td>
           <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>vector</em></td><td>)</td>
@@ -407,7 +407,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -416,8 +416,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
 
 </div>
 </div>
-<a id="ad7d64850d69bf59fb21b526e78853481" name="ad7d64850d69bf59fb21b526e78853481"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad7d64850d69bf59fb21b526e78853481">&#9670;&#160;</a></span>m()</h2>
+<a id="ab0b0f8d2af24ca94178176c0109bd825" name="ab0b0f8d2af24ca94178176c0109bd825"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab0b0f8d2af24ca94178176c0109bd825">&#9670;&#160;</a></span>m()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -428,7 +428,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual dealii::types::global_dof_index <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::m </td>
+          <td class="memname">dealii::types::global_dof_index <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::m </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -436,7 +436,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -445,8 +445,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
 
 </div>
 </div>
-<a id="a6752bfcedfa0e690a627e3be295b7337" name="a6752bfcedfa0e690a627e3be295b7337"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6752bfcedfa0e690a627e3be295b7337">&#9670;&#160;</a></span>n()</h2>
+<a id="ad0cb56a018e074cb21052c9dc2312772" name="ad0cb56a018e074cb21052c9dc2312772"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad0cb56a018e074cb21052c9dc2312772">&#9670;&#160;</a></span>n()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -457,7 +457,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual dealii::types::global_dof_index <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::n </td>
+          <td class="memname">dealii::types::global_dof_index <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::n </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -465,7 +465,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -474,8 +474,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
 
 </div>
 </div>
-<a id="ad3a5515a314d423dcbd14b96d5b6a9c2" name="ad3a5515a314d423dcbd14b96d5b6a9c2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad3a5515a314d423dcbd14b96d5b6a9c2">&#9670;&#160;</a></span>update_block_diagonal_preconditioner()</h2>
+<a id="a14dee6ca649cd51095bd404ab39a5183" name="a14dee6ca649cd51095bd404ab39a5183"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a14dee6ca649cd51095bd404ab39a5183">&#9670;&#160;</a></span>update_block_diagonal_preconditioner()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -486,7 +486,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::update_block_diagonal_preconditioner </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::update_block_diagonal_preconditioner </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -494,7 +494,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -503,8 +503,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
 
 </div>
 </div>
-<a id="a3eba6d8150eb8cd59768f9fba80e4aff" name="a3eba6d8150eb8cd59768f9fba80e4aff"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3eba6d8150eb8cd59768f9fba80e4aff">&#9670;&#160;</a></span>vmult()</h2>
+<a id="a4dd9aad1e172581c713d510dc95c07f8" name="a4dd9aad1e172581c713d510dc95c07f8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4dd9aad1e172581c713d510dc95c07f8">&#9670;&#160;</a></span>vmult()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -515,7 +515,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::vmult </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::vmult </td>
           <td>(</td>
           <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>dst</em>, </td>
@@ -534,7 +534,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -543,8 +543,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
 
 </div>
 </div>
-<a id="a66130dbfc7067d75197f12878d3047d5" name="a66130dbfc7067d75197f12878d3047d5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a66130dbfc7067d75197f12878d3047d5">&#9670;&#160;</a></span>vmult_add()</h2>
+<a id="af7f0636e0b8912917c77af486d6e35d4" name="af7f0636e0b8912917c77af486d6e35d4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af7f0636e0b8912917c77af486d6e35d4">&#9670;&#160;</a></span>vmult_add()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -555,7 +555,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::vmult_add </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::vmult_add </td>
           <td>(</td>
           <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>dst</em>, </td>
@@ -574,7 +574,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -583,8 +583,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
 
 </div>
 </div>
-<a id="a809343ac7c593bc43bc61b441a344440" name="a809343ac7c593bc43bc61b441a344440"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a809343ac7c593bc43bc61b441a344440">&#9670;&#160;</a></span>vmult_add_interface_up()</h2>
+<a id="a1f43baffc21c8cf23d122a6b5186ec3f" name="a1f43baffc21c8cf23d122a6b5186ec3f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1f43baffc21c8cf23d122a6b5186ec3f">&#9670;&#160;</a></span>vmult_add_interface_up()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -595,7 +595,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::vmult_add_interface_up </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::vmult_add_interface_up </td>
           <td>(</td>
           <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>dst</em>, </td>
@@ -614,7 +614,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -623,8 +623,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
 
 </div>
 </div>
-<a id="a3cb70377f82f184c9131078552fb7f55" name="a3cb70377f82f184c9131078552fb7f55"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3cb70377f82f184c9131078552fb7f55">&#9670;&#160;</a></span>vmult_interface_down()</h2>
+<a id="a1a247202576e3d23a118a2b5d36949f7" name="a1a247202576e3d23a118a2b5d36949f7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1a247202576e3d23a118a2b5d36949f7">&#9670;&#160;</a></span>vmult_interface_down()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -635,7 +635,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::vmult_interface_down </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::vmult_interface_down </td>
           <td>(</td>
           <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>dst</em>, </td>
@@ -654,7 +654,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

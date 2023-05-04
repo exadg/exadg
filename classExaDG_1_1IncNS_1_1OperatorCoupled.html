@@ -94,10 +94,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ab4e052b235959563e88edf36c7a39aa5"><td class="memItemLeft" align="right" valign="top"><a id="ab4e052b235959563e88edf36c7a39aa5" name="ab4e052b235959563e88edf36c7a39aa5"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>OperatorCoupled</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1GridMotionInterface.html">GridMotionInterface</a>&lt; dim, Number &gt; &gt; grid_motion, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, <a class="el" href="classExaDG_1_1IncNS_1_1Parameters.html">Parameters</a> const &amp;parameters, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
 <tr class="separator:ab4e052b235959563e88edf36c7a39aa5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a74bda84ee8ef5a1a93e6208b286b11e5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorCoupled.html#a74bda84ee8ef5a1a93e6208b286b11e5">setup</a> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &gt; matrix_free_data, std::string const &amp;dof_index_temperature=&quot;&quot;)</td></tr>
-<tr class="separator:a74bda84ee8ef5a1a93e6208b286b11e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adf824e5c220cd24ad56a9042a3d4c996"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorCoupled.html#adf824e5c220cd24ad56a9042a3d4c996">setup_solvers</a> (double const &amp;scaling_factor_time_derivative_term, VectorType const &amp;velocity)</td></tr>
-<tr class="separator:adf824e5c220cd24ad56a9042a3d4c996"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a034efe73d1e2645bca4892bd31ec1cc2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorCoupled.html#a034efe73d1e2645bca4892bd31ec1cc2">setup</a> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &gt; matrix_free_data, std::string const &amp;dof_index_temperature=&quot;&quot;) final</td></tr>
+<tr class="separator:a034efe73d1e2645bca4892bd31ec1cc2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a01f4a09545f0a9611bf43efe7f473c40"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorCoupled.html#a01f4a09545f0a9611bf43efe7f473c40">setup_solvers</a> (double const &amp;scaling_factor_time_derivative_term, VectorType const &amp;velocity) final</td></tr>
+<tr class="separator:a01f4a09545f0a9611bf43efe7f473c40"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1e7a5b3e919ab9192f0d464d2138189d"><td class="memItemLeft" align="right" valign="top"><a id="a1e7a5b3e919ab9192f0d464d2138189d" name="a1e7a5b3e919ab9192f0d464d2138189d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update_divergence_penalty_operator</b> (VectorType const &amp;velocity)</td></tr>
 <tr class="separator:a1e7a5b3e919ab9192f0d464d2138189d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -515,8 +515,8 @@ dealii::ConditionalOStream&#160;</td><td class="memItemRight" valign="bottom"><b
 <tr class="separator:af8703888801515fcfbd89a71a7c8ed8f inherit pro_attribs_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a74bda84ee8ef5a1a93e6208b286b11e5" name="a74bda84ee8ef5a1a93e6208b286b11e5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a74bda84ee8ef5a1a93e6208b286b11e5">&#9670;&#160;</a></span>setup()</h2>
+<a id="a034efe73d1e2645bca4892bd31ec1cc2" name="a034efe73d1e2645bca4892bd31ec1cc2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a034efe73d1e2645bca4892bd31ec1cc2">&#9670;&#160;</a></span>setup()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -552,7 +552,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -561,8 +561,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="adf824e5c220cd24ad56a9042a3d4c996" name="adf824e5c220cd24ad56a9042a3d4c996"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adf824e5c220cd24ad56a9042a3d4c996">&#9670;&#160;</a></span>setup_solvers()</h2>
+<a id="a01f4a09545f0a9611bf43efe7f473c40" name="a01f4a09545f0a9611bf43efe7f473c40"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a01f4a09545f0a9611bf43efe7f473c40">&#9670;&#160;</a></span>setup_solvers()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -592,7 +592,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

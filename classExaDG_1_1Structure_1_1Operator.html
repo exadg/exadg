@@ -103,18 +103,18 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::share
 <tr class="memitem:a3671a935f6e4c0d9fd6d3633460ff64d"><td class="memItemLeft" align="right" valign="top"><a id="a3671a935f6e4c0d9fd6d3633460ff64d" name="a3671a935f6e4c0d9fd6d3633460ff64d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_solver</b> (double const &amp;scaling_factor_mass)</td></tr>
 <tr class="separator:a3671a935f6e4c0d9fd6d3633460ff64d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a963ed8ea047b50b78211caa86c095e59"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a963ed8ea047b50b78211caa86c095e59">initialize_dof_vector</a> (VectorType &amp;src) const</td></tr>
-<tr class="separator:a963ed8ea047b50b78211caa86c095e59"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3b69b0ab3498affb27371880b41f37ef"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a3b69b0ab3498affb27371880b41f37ef">prescribe_initial_displacement</a> (VectorType &amp;displacement, double const time) const</td></tr>
-<tr class="separator:a3b69b0ab3498affb27371880b41f37ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a43919edcea8701bbe3b75ab6506e33c3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a43919edcea8701bbe3b75ab6506e33c3">prescribe_initial_velocity</a> (VectorType &amp;velocity, double const time) const</td></tr>
-<tr class="separator:a43919edcea8701bbe3b75ab6506e33c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab24882ec3e3e18ac82e8572f88d58989"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#ab24882ec3e3e18ac82e8572f88d58989">compute_initial_acceleration</a> (VectorType &amp;acceleration, VectorType const &amp;displacement, double const time) const</td></tr>
-<tr class="separator:ab24882ec3e3e18ac82e8572f88d58989"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad4b78920acd894e1f557f5803ab273ba"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#ad4b78920acd894e1f557f5803ab273ba">apply_mass_operator</a> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:ad4b78920acd894e1f557f5803ab273ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae4cc4360daa7ba0d497c18f4bfb0678a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#ae4cc4360daa7ba0d497c18f4bfb0678a">compute_rhs_linear</a> (VectorType &amp;dst, double const time) const</td></tr>
-<tr class="separator:ae4cc4360daa7ba0d497c18f4bfb0678a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a12ba4207919ad8e7c96c3fa265c40283"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a12ba4207919ad8e7c96c3fa265c40283">initialize_dof_vector</a> (VectorType &amp;src) const final</td></tr>
+<tr class="separator:a12ba4207919ad8e7c96c3fa265c40283"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a32d3a20f946cc40fc7cf1d30191044da"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a32d3a20f946cc40fc7cf1d30191044da">prescribe_initial_displacement</a> (VectorType &amp;displacement, double const time) const final</td></tr>
+<tr class="separator:a32d3a20f946cc40fc7cf1d30191044da"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa51f8ba48a78401b1419f95aa53d903f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#aa51f8ba48a78401b1419f95aa53d903f">prescribe_initial_velocity</a> (VectorType &amp;velocity, double const time) const final</td></tr>
+<tr class="separator:aa51f8ba48a78401b1419f95aa53d903f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a07bbbf134f931c05dd02fdaaa2eca06f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a07bbbf134f931c05dd02fdaaa2eca06f">compute_initial_acceleration</a> (VectorType &amp;acceleration, VectorType const &amp;displacement, double const time) const final</td></tr>
+<tr class="separator:a07bbbf134f931c05dd02fdaaa2eca06f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9b31c067502f5a6d8d8f95db48d3ae1d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a9b31c067502f5a6d8d8f95db48d3ae1d">apply_mass_operator</a> (VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:a9b31c067502f5a6d8d8f95db48d3ae1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb14475edb64d95e4339f50d51494672"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#afb14475edb64d95e4339f50d51494672">compute_rhs_linear</a> (VectorType &amp;dst, double const time) const final</td></tr>
+<tr class="separator:afb14475edb64d95e4339f50d51494672"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaa6c2c9f9261b5297b99ac90d958a1f1"><td class="memItemLeft" align="right" valign="top"><a id="aaa6c2c9f9261b5297b99ac90d958a1f1" name="aaa6c2c9f9261b5297b99ac90d958a1f1"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_nonlinear_residual</b> (VectorType &amp;dst, VectorType const &amp;src, VectorType const &amp;const_vector, double const factor, double const time) const</td></tr>
 <tr class="separator:aaa6c2c9f9261b5297b99ac90d958a1f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -130,10 +130,10 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_nonlinear_opera
 <tr class="memitem:ab6f503f1d15c2124de109398c4c44c99"><td class="memItemLeft" align="right" valign="top"><a id="ab6f503f1d15c2124de109398c4c44c99" name="ab6f503f1d15c2124de109398c4c44c99"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_linear_operator</b> (VectorType &amp;dst, VectorType const &amp;src, double const factor, double const time) const</td></tr>
 <tr class="separator:ab6f503f1d15c2124de109398c4c44c99"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a320b5e723770cc5983378cffeaa39f3b"><td class="memItemLeft" align="right" valign="top">std::tuple&lt; unsigned int, unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a320b5e723770cc5983378cffeaa39f3b">solve_nonlinear</a> (VectorType &amp;sol, VectorType const &amp;rhs, double const factor, double const time, bool const update_preconditioner) const</td></tr>
-<tr class="separator:a320b5e723770cc5983378cffeaa39f3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa3ecc106a343bbc8c0af3142475daabf"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#aa3ecc106a343bbc8c0af3142475daabf">solve_linear</a> (VectorType &amp;sol, VectorType const &amp;rhs, double const factor, double const time, bool const update_preconditioner) const</td></tr>
-<tr class="separator:aa3ecc106a343bbc8c0af3142475daabf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a95c5512d4503dc52b1959c1b1683aed5"><td class="memItemLeft" align="right" valign="top">std::tuple&lt; unsigned int, unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a95c5512d4503dc52b1959c1b1683aed5">solve_nonlinear</a> (VectorType &amp;sol, VectorType const &amp;rhs, double const factor, double const time, bool const update_preconditioner) const final</td></tr>
+<tr class="separator:a95c5512d4503dc52b1959c1b1683aed5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a95678c5f5c387f5acac87e78a51cd9b8"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a95678c5f5c387f5acac87e78a51cd9b8">solve_linear</a> (VectorType &amp;sol, VectorType const &amp;rhs, double const factor, double const time, bool const update_preconditioner) const final</td></tr>
+<tr class="separator:a95678c5f5c387f5acac87e78a51cd9b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ade61817a9249314baa58e46275377c5d"><td class="memItemLeft" align="right" valign="top"><a id="ade61817a9249314baa58e46275377c5d" name="ade61817a9249314baa58e46275377c5d"></a>
 dealii::MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_matrix_free</b> () const</td></tr>
 <tr class="separator:ade61817a9249314baa58e46275377c5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -188,8 +188,8 @@ typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td
 <tr class="separator:a3cd86188b7eca0ed67a0874504edc307 inherit pub_types_classExaDG_1_1Structure_1_1Interface_1_1Operator"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="ad4b78920acd894e1f557f5803ab273ba" name="ad4b78920acd894e1f557f5803ab273ba"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad4b78920acd894e1f557f5803ab273ba">&#9670;&#160;</a></span>apply_mass_operator()</h2>
+<a id="a9b31c067502f5a6d8d8f95db48d3ae1d" name="a9b31c067502f5a6d8d8f95db48d3ae1d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9b31c067502f5a6d8d8f95db48d3ae1d">&#9670;&#160;</a></span>apply_mass_operator()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -219,7 +219,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -228,8 +228,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="ab24882ec3e3e18ac82e8572f88d58989" name="ab24882ec3e3e18ac82e8572f88d58989"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab24882ec3e3e18ac82e8572f88d58989">&#9670;&#160;</a></span>compute_initial_acceleration()</h2>
+<a id="a07bbbf134f931c05dd02fdaaa2eca06f" name="a07bbbf134f931c05dd02fdaaa2eca06f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a07bbbf134f931c05dd02fdaaa2eca06f">&#9670;&#160;</a></span>compute_initial_acceleration()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -265,7 +265,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -274,8 +274,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="ae4cc4360daa7ba0d497c18f4bfb0678a" name="ae4cc4360daa7ba0d497c18f4bfb0678a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae4cc4360daa7ba0d497c18f4bfb0678a">&#9670;&#160;</a></span>compute_rhs_linear()</h2>
+<a id="afb14475edb64d95e4339f50d51494672" name="afb14475edb64d95e4339f50d51494672"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afb14475edb64d95e4339f50d51494672">&#9670;&#160;</a></span>compute_rhs_linear()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -305,7 +305,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -314,8 +314,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a963ed8ea047b50b78211caa86c095e59" name="a963ed8ea047b50b78211caa86c095e59"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a963ed8ea047b50b78211caa86c095e59">&#9670;&#160;</a></span>initialize_dof_vector()</h2>
+<a id="a12ba4207919ad8e7c96c3fa265c40283" name="a12ba4207919ad8e7c96c3fa265c40283"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a12ba4207919ad8e7c96c3fa265c40283">&#9670;&#160;</a></span>initialize_dof_vector()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -335,7 +335,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -344,8 +344,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a3b69b0ab3498affb27371880b41f37ef" name="a3b69b0ab3498affb27371880b41f37ef"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3b69b0ab3498affb27371880b41f37ef">&#9670;&#160;</a></span>prescribe_initial_displacement()</h2>
+<a id="a32d3a20f946cc40fc7cf1d30191044da" name="a32d3a20f946cc40fc7cf1d30191044da"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a32d3a20f946cc40fc7cf1d30191044da">&#9670;&#160;</a></span>prescribe_initial_displacement()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -375,7 +375,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -384,8 +384,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a43919edcea8701bbe3b75ab6506e33c3" name="a43919edcea8701bbe3b75ab6506e33c3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a43919edcea8701bbe3b75ab6506e33c3">&#9670;&#160;</a></span>prescribe_initial_velocity()</h2>
+<a id="aa51f8ba48a78401b1419f95aa53d903f" name="aa51f8ba48a78401b1419f95aa53d903f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa51f8ba48a78401b1419f95aa53d903f">&#9670;&#160;</a></span>prescribe_initial_velocity()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -415,7 +415,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -424,8 +424,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="aa3ecc106a343bbc8c0af3142475daabf" name="aa3ecc106a343bbc8c0af3142475daabf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa3ecc106a343bbc8c0af3142475daabf">&#9670;&#160;</a></span>solve_linear()</h2>
+<a id="a95678c5f5c387f5acac87e78a51cd9b8" name="a95678c5f5c387f5acac87e78a51cd9b8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a95678c5f5c387f5acac87e78a51cd9b8">&#9670;&#160;</a></span>solve_linear()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -473,7 +473,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -482,8 +482,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a320b5e723770cc5983378cffeaa39f3b" name="a320b5e723770cc5983378cffeaa39f3b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a320b5e723770cc5983378cffeaa39f3b">&#9670;&#160;</a></span>solve_nonlinear()</h2>
+<a id="a95c5512d4503dc52b1959c1b1683aed5" name="a95c5512d4503dc52b1959c1b1683aed5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a95c5512d4503dc52b1959c1b1683aed5">&#9670;&#160;</a></span>solve_nonlinear()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -531,7 +531,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

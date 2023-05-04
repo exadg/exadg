@@ -658,41 +658,41 @@ $(function() {
 <div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span> </div>
 <div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span><span class="keyword">private</span>:</div>
 <div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span>  reinit_cell(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> cell) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span>  reinit_cell(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> cell) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span> </div>
 <div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>  reinit_face(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>  reinit_face(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span> </div>
 <div class="line"><a id="l00588" name="l00588"></a><span class="lineno">  588</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span>  reinit_boundary_face(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span>  reinit_boundary_face(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span> </div>
 <div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>  reinit_face_cell_based(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>               cell,</div>
 <div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>                         <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>               face,</div>
-<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>                         dealii::types::boundary_id <span class="keyword">const</span> boundary_id) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>                         dealii::types::boundary_id <span class="keyword">const</span> boundary_id) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span> </div>
 <div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>  do_cell_integral(IntegratorCell &amp; integrator) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>  do_cell_integral(IntegratorCell &amp; integrator) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span> </div>
 <div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>  do_face_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>  do_face_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span> </div>
 <div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>  do_face_int_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>  do_face_int_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span> </div>
 <div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>  do_face_ext_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>  do_face_ext_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span> </div>
 <div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span>  do_boundary_integral(IntegratorFace &amp;                   integrator_m,</div>
 <div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span>                       OperatorType <span class="keyword">const</span> &amp;               operator_type,</div>
-<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span>                       dealii::types::boundary_id <span class="keyword">const</span> &amp; boundary_id) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span>                       dealii::types::boundary_id <span class="keyword">const</span> &amp; boundary_id) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00612" name="l00612"></a><span class="lineno">  612</span> </div>
 <div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span>  <span class="comment">// TODO can be removed later once matrix-free evaluation allows accessing neighboring data for</span></div>
 <div class="line"><a id="l00614" name="l00614"></a><span class="lineno">  614</span>  <span class="comment">// cell-based face loops</span></div>
 <div class="line"><a id="l00615" name="l00615"></a><span class="lineno">  615</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span>  do_face_int_integral_cell_based(IntegratorFace &amp; integrator_m,</div>
-<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span>                                  IntegratorFace &amp; integrator_p) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span>                                  IntegratorFace &amp; integrator_p) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span> </div>
 <div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>  <a class="code hl_struct" href="structExaDG_1_1ConvDiff_1_1ConvectiveOperatorData.html">ConvectiveOperatorData&lt;dim&gt;</a> operator_data;</div>
 <div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span> </div>

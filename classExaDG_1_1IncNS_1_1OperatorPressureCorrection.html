@@ -95,10 +95,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a5aafbf276ed4fc9e14c470481bfb573c"><td class="memItemLeft" align="right" valign="top"><a id="a5aafbf276ed4fc9e14c470481bfb573c" name="a5aafbf276ed4fc9e14c470481bfb573c"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>OperatorPressureCorrection</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1GridMotionInterface.html">GridMotionInterface</a>&lt; dim, Number &gt; &gt; grid_motion, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, <a class="el" href="classExaDG_1_1IncNS_1_1Parameters.html">Parameters</a> const &amp;parameters, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
 <tr class="separator:a5aafbf276ed4fc9e14c470481bfb573c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2f01e082dee8337df11b37a982ec9160"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorPressureCorrection.html#a2f01e082dee8337df11b37a982ec9160">setup</a> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &gt; matrix_free_data, std::string const &amp;dof_index_temperature=&quot;&quot;)</td></tr>
-<tr class="separator:a2f01e082dee8337df11b37a982ec9160"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae7ba603673307890565ef3db7ae7b269"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorPressureCorrection.html#ae7ba603673307890565ef3db7ae7b269">setup_solvers</a> (double const &amp;scaling_factor_mass, VectorType const &amp;velocity)</td></tr>
-<tr class="separator:ae7ba603673307890565ef3db7ae7b269"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae34138747f345149abdf9c471adcbb57"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorPressureCorrection.html#ae34138747f345149abdf9c471adcbb57">setup</a> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &gt; matrix_free_data, std::string const &amp;dof_index_temperature=&quot;&quot;) final</td></tr>
+<tr class="separator:ae34138747f345149abdf9c471adcbb57"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8ca8a4ba5318dae25bddec4c2d8f9c78"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorPressureCorrection.html#a8ca8a4ba5318dae25bddec4c2d8f9c78">setup_solvers</a> (double const &amp;scaling_factor_mass, VectorType const &amp;velocity) final</td></tr>
+<tr class="separator:a8ca8a4ba5318dae25bddec4c2d8f9c78"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7be767557399ba504c31114204884ea8"><td class="memItemLeft" align="right" valign="top"><a id="a7be767557399ba504c31114204884ea8" name="a7be767557399ba504c31114204884ea8"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve_linear_momentum_equation</b> (VectorType &amp;solution, VectorType const &amp;rhs, bool const &amp;update_preconditioner, double const &amp;scaling_factor_mass)</td></tr>
 <tr class="separator:a7be767557399ba504c31114204884ea8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -569,8 +569,8 @@ dealii::ConditionalOStream&#160;</td><td class="memItemRight" valign="bottom"><b
 <tr class="separator:af8703888801515fcfbd89a71a7c8ed8f inherit pro_attribs_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a2f01e082dee8337df11b37a982ec9160" name="a2f01e082dee8337df11b37a982ec9160"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2f01e082dee8337df11b37a982ec9160">&#9670;&#160;</a></span>setup()</h2>
+<a id="ae34138747f345149abdf9c471adcbb57" name="ae34138747f345149abdf9c471adcbb57"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae34138747f345149abdf9c471adcbb57">&#9670;&#160;</a></span>setup()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -606,7 +606,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -615,8 +615,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="ae7ba603673307890565ef3db7ae7b269" name="ae7ba603673307890565ef3db7ae7b269"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae7ba603673307890565ef3db7ae7b269">&#9670;&#160;</a></span>setup_solvers()</h2>
+<a id="a8ca8a4ba5318dae25bddec4c2d8f9c78" name="a8ca8a4ba5318dae25bddec4c2d8f9c78"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8ca8a4ba5318dae25bddec4c2d8f9c78">&#9670;&#160;</a></span>setup_solvers()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -646,7 +646,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

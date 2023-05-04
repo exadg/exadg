@@ -106,12 +106,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:afd2f1927e35c434fff765bf19cb38dcd"><td class="memItemLeft" align="right" valign="top"><a id="afd2f1927e35c434fff765bf19cb38dcd" name="afd2f1927e35c434fff765bf19cb38dcd"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_operator</b> (dealii::MGLevelObject&lt; std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridOperatorBase.html">MultigridOperatorBase</a>&lt; dim, Number &gt; &gt; &gt; const &amp;operator_in)</td></tr>
 <tr class="separator:afd2f1927e35c434fff765bf19cb38dcd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaacbad1e2fcb22f75847ef474f15cf64"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferH.html#aaacbad1e2fcb22f75847ef474f15cf64">prolongate_and_add</a> (unsigned int const to_level, VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:aaacbad1e2fcb22f75847ef474f15cf64"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3184524c399a6219aab2a09ba6ac6fc8"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferH.html#a3184524c399a6219aab2a09ba6ac6fc8">restrict_and_add</a> (unsigned int const from_level, VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:a3184524c399a6219aab2a09ba6ac6fc8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a049551197107dbf30cc794eb27d03239"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferH.html#a049551197107dbf30cc794eb27d03239">interpolate</a> (unsigned int const level_in, VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:a049551197107dbf30cc794eb27d03239"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a14c1b6e7fc8c410fb1010d39cf92db0d"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferH.html#a14c1b6e7fc8c410fb1010d39cf92db0d">prolongate_and_add</a> (unsigned int const to_level, VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:a14c1b6e7fc8c410fb1010d39cf92db0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a03481258569708ccf2051d0fb8ab4bda"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferH.html#a03481258569708ccf2051d0fb8ab4bda">restrict_and_add</a> (unsigned int const from_level, VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:a03481258569708ccf2051d0fb8ab4bda"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af906da1ddafa607a41e141f032dd6559"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferH.html#af906da1ddafa607a41e141f032dd6559">interpolate</a> (unsigned int const level_in, VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:af906da1ddafa607a41e141f032dd6559"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9c0e0187ca29cbeff492774a99979ddf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferH.html#a9c0e0187ca29cbeff492774a99979ddf">copy_to_mg</a> (dealii::DoFHandler&lt; dim, dim &gt; const &amp;mg_dof, dealii::MGLevelObject&lt; VectorType &gt; &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:a9c0e0187ca29cbeff492774a99979ddf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab05e642da4e8960f222e6ca81f33b736"><td class="memItemLeft" align="right" valign="top"><a id="ab05e642da4e8960f222e6ca81f33b736" name="ab05e642da4e8960f222e6ca81f33b736"></a>
@@ -165,8 +165,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a049551197107dbf30cc794eb27d03239" name="a049551197107dbf30cc794eb27d03239"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a049551197107dbf30cc794eb27d03239">&#9670;&#160;</a></span>interpolate()</h2>
+<a id="af906da1ddafa607a41e141f032dd6559" name="af906da1ddafa607a41e141f032dd6559"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af906da1ddafa607a41e141f032dd6559">&#9670;&#160;</a></span>interpolate()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -202,7 +202,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -211,8 +211,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="aaacbad1e2fcb22f75847ef474f15cf64" name="aaacbad1e2fcb22f75847ef474f15cf64"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aaacbad1e2fcb22f75847ef474f15cf64">&#9670;&#160;</a></span>prolongate_and_add()</h2>
+<a id="a14c1b6e7fc8c410fb1010d39cf92db0d" name="a14c1b6e7fc8c410fb1010d39cf92db0d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a14c1b6e7fc8c410fb1010d39cf92db0d">&#9670;&#160;</a></span>prolongate_and_add()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -248,7 +248,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -257,8 +257,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a3184524c399a6219aab2a09ba6ac6fc8" name="a3184524c399a6219aab2a09ba6ac6fc8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3184524c399a6219aab2a09ba6ac6fc8">&#9670;&#160;</a></span>restrict_and_add()</h2>
+<a id="a03481258569708ccf2051d0fb8ab4bda" name="a03481258569708ccf2051d0fb8ab4bda"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a03481258569708ccf2051d0fb8ab4bda">&#9670;&#160;</a></span>restrict_and_add()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -294,7 +294,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

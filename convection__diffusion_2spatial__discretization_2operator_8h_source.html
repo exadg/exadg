@@ -165,13 +165,13 @@ $(function() {
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span><span class="comment">   * Initialization of dof-vector.</span></div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  initialize_dof_vector(VectorType &amp; src) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  initialize_dof_vector(VectorType &amp; src) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span><span class="comment">   * Initialization of velocity dof-vector (in case of numerical velocity field).</span></div>
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  initialize_dof_vector_velocity(VectorType &amp; src) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  initialize_dof_vector_velocity(VectorType &amp; src) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span><span class="comment">   * Obtain velocity dof-vector by interpolation of specified analytical velocity field.</span></div>
@@ -183,13 +183,13 @@ $(function() {
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span><span class="comment">   * Obtain velocity dof-vector by L2-projection using the specified analytical velocity field.</span></div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  project_velocity(VectorType &amp; velocity, <span class="keywordtype">double</span> <span class="keyword">const</span> time) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  project_velocity(VectorType &amp; velocity, <span class="keywordtype">double</span> <span class="keyword">const</span> time) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span> </div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span><span class="comment">   * Prescribe initial conditions using a specified analytical function.</span></div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  prescribe_initial_conditions(VectorType &amp; src, <span class="keywordtype">double</span> <span class="keyword">const</span> evaluation_time) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  prescribe_initial_conditions(VectorType &amp; src, <span class="keywordtype">double</span> <span class="keyword">const</span> evaluation_time) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span><span class="comment">   * This function is used in case of explicit time integration:</span></div>
@@ -202,7 +202,7 @@ $(function() {
 <div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  evaluate_explicit_time_int(VectorType &amp;       dst,</div>
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>                             VectorType <span class="keyword">const</span> &amp; src,</div>
 <div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>                             <span class="keywordtype">double</span> <span class="keyword">const</span>       evaluation_time,</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>                             VectorType <span class="keyword">const</span> * velocity = <span class="keyword">nullptr</span>) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>                             VectorType <span class="keyword">const</span> * velocity = <span class="keyword">nullptr</span>) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span> </div>
 <div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span><span class="comment">   * This function evaluates the convective term which is needed when using an explicit formulation</span></div>
@@ -227,7 +227,7 @@ $(function() {
 <div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  rhs(VectorType &amp;       dst,</div>
 <div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>      <span class="keywordtype">double</span> <span class="keyword">const</span>       evaluation_time = 0.0,</div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>      VectorType <span class="keyword">const</span> * velocity        = <span class="keyword">nullptr</span>) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>      VectorType <span class="keyword">const</span> * velocity        = <span class="keyword">nullptr</span>) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span> </div>
 <div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span><span class="comment">   * This function applies the mass operator to the src-vector and writes the result to the</span></div>
@@ -277,19 +277,19 @@ $(function() {
 <div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span><span class="comment">   * Moves the grid for ALE-type problems.</span></div>
 <div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  move_grid(<span class="keywordtype">double</span> <span class="keyword">const</span> &amp; time) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  move_grid(<span class="keywordtype">double</span> <span class="keyword">const</span> &amp; time) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span> </div>
 <div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span><span class="comment">   * Moves the grid and updates dependent data structures for ALE-type problems.</span></div>
 <div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>  move_grid_and_update_dependent_data_structures(<span class="keywordtype">double</span> <span class="keyword">const</span> &amp; time);</div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>  move_grid_and_update_dependent_data_structures(<span class="keywordtype">double</span> <span class="keyword">const</span> &amp; time) <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span> </div>
 <div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span><span class="comment">   * Fills a dof-vector with grid coordinates for ALE-type problems.</span></div>
 <div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>  fill_grid_coordinates_vector(VectorType &amp; vector) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>  fill_grid_coordinates_vector(VectorType &amp; vector) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span> </div>
 <div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span><span class="comment">   * Updates operators after grid has been moved.</span></div>
@@ -308,13 +308,13 @@ $(function() {
 <div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>        <span class="keywordtype">bool</span> <span class="keyword">const</span>         update_preconditioner,</div>
 <div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>        <span class="keywordtype">double</span> <span class="keyword">const</span>       scaling_factor = -1.0,</div>
 <div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>        <span class="keywordtype">double</span> <span class="keyword">const</span>       time           = -1.0,</div>
-<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>        VectorType <span class="keyword">const</span> * velocity       = <span class="keyword">nullptr</span>);</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>        VectorType <span class="keyword">const</span> * velocity       = <span class="keyword">nullptr</span>) <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span> </div>
 <div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span><span class="comment">   * Calculate time step size according to maximum efficiency criterion</span></div>
 <div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>  <span class="keywordtype">double</span></div>
-<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>  calculate_time_step_max_efficiency(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> order_time_integrator) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>  calculate_time_step_max_efficiency(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> order_time_integrator) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span> </div>
 <div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span><span class="comment">   * Calculate time step size according to CFL criterion</span></div>
@@ -322,21 +322,21 @@ $(function() {
 <div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span> </div>
 <div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>  <span class="comment">// global CFL criterion</span></div>
 <div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>  <span class="keywordtype">double</span></div>
-<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  calculate_time_step_cfl_global(<span class="keywordtype">double</span> <span class="keyword">const</span> time) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  calculate_time_step_cfl_global(<span class="keywordtype">double</span> <span class="keyword">const</span> time) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span> </div>
 <div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>  <span class="comment">// local CFL criterion: use numerical velocity field</span></div>
 <div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>  <span class="keywordtype">double</span></div>
-<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>  calculate_time_step_cfl_numerical_velocity(VectorType <span class="keyword">const</span> &amp; velocity) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>  calculate_time_step_cfl_numerical_velocity(VectorType <span class="keyword">const</span> &amp; velocity) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span> </div>
 <div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>  <span class="comment">// local CFL criterion: use analytical velocity field</span></div>
 <div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>  <span class="keywordtype">double</span></div>
-<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>  calculate_time_step_cfl_analytical_velocity(<span class="keywordtype">double</span> <span class="keyword">const</span> time) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>  calculate_time_step_cfl_analytical_velocity(<span class="keywordtype">double</span> <span class="keyword">const</span> time) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span> </div>
 <div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span><span class="comment">   * Calculate time step size according to diffusion term</span></div>
 <div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>  <span class="keywordtype">double</span></div>
-<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>  calculate_time_step_diffusion() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>  calculate_time_step_diffusion() <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span> </div>
 <div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span><span class="keyword">public</span>:</div>
 <div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>  <span class="comment">/*</span></div>

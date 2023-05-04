@@ -123,7 +123,7 @@ $(function() {
 <div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span><span class="comment">   *  when calling this function.</span></div>
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  update()</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  update() <span class="keyword">final</span></div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  {</div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    underlying_operator.update_block_diagonal_preconditioner();</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  }</div>
@@ -134,8 +134,8 @@ $(function() {
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="comment">   *  updated when calling this function.</span></div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  vmult(VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src)<span class="keyword"> const</span></div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  vmult(VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src) <span class="keyword">const</span> <span class="keyword">final</span></div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  {</div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    underlying_operator.apply_inverse_block_diagonal(dst, src);</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  }</div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>

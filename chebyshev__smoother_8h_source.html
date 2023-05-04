@@ -121,14 +121,14 @@ $(function() {
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  }</div>
 <div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
 <div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  vmult(VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src)<span class="keyword"> const</span></div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  vmult(VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src) <span class="keyword">const</span> <span class="keyword">final</span></div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  {</div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    smoother_object.vmult(dst, src);</div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  }</div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  step(VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src)<span class="keyword"> const</span></div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  step(VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src) <span class="keyword">const</span> <span class="keyword">final</span></div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  {</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    smoother_object.step(dst, src);</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  }</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>

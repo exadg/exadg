@@ -94,10 +94,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a68d42a62aab79cc98eb1e72aceabaa89"><td class="memItemLeft" align="right" valign="top"><a id="a68d42a62aab79cc98eb1e72aceabaa89" name="a68d42a62aab79cc98eb1e72aceabaa89"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>PreconditionerIdentity</b> (unsigned int const size)</td></tr>
 <tr class="separator:a68d42a62aab79cc98eb1e72aceabaa89"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8734a43639a67cc6871d07da642f7318"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerIdentity.html#a8734a43639a67cc6871d07da642f7318">setup</a> (unsigned int const)</td></tr>
-<tr class="separator:a8734a43639a67cc6871d07da642f7318"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a13cc486cef107df4393ba406f61b52c0"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerIdentity.html#a13cc486cef107df4393ba406f61b52c0">vmult</a> (Number *dst, Number const *src) const</td></tr>
-<tr class="separator:a13cc486cef107df4393ba406f61b52c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c54b9d5435d38e4105c8f0665c7b771"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerIdentity.html#a2c54b9d5435d38e4105c8f0665c7b771">setup</a> (unsigned int const) final</td></tr>
+<tr class="separator:a2c54b9d5435d38e4105c8f0665c7b771"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6d98b09a0f8215f2ff25588c9c3852ee"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerIdentity.html#a6d98b09a0f8215f2ff25588c9c3852ee">vmult</a> (Number *dst, Number const *src) const final</td></tr>
+<tr class="separator:a6d98b09a0f8215f2ff25588c9c3852ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a89cbbd28c5f2965564679a9778a3e531"><td class="memItemLeft" align="right" valign="top"><a id="a89cbbd28c5f2965564679a9778a3e531" name="a89cbbd28c5f2965564679a9778a3e531"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (unsigned int const cell)=0</td></tr>
 <tr class="separator:a89cbbd28c5f2965564679a9778a3e531"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -106,8 +106,8 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (Nu
 <tr class="separator:a9a69021b941a0e9dffe99d0be27d6b70"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a8734a43639a67cc6871d07da642f7318" name="a8734a43639a67cc6871d07da642f7318"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8734a43639a67cc6871d07da642f7318">&#9670;&#160;</a></span>setup()</h2>
+<a id="a2c54b9d5435d38e4105c8f0665c7b771" name="a2c54b9d5435d38e4105c8f0665c7b771"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2c54b9d5435d38e4105c8f0665c7b771">&#9670;&#160;</a></span>setup()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -118,7 +118,7 @@ template&lt;typename Number &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void <a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerIdentity.html">ExaDG::Elementwise::PreconditionerIdentity</a>&lt; Number &gt;::setup </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerIdentity.html">ExaDG::Elementwise::PreconditionerIdentity</a>&lt; Number &gt;::setup </td>
           <td>(</td>
           <td class="paramtype">unsigned int const&#160;</td>
           <td class="paramname"></td><td>)</td>
@@ -127,7 +127,7 @@ template&lt;typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -136,8 +136,8 @@ template&lt;typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a13cc486cef107df4393ba406f61b52c0" name="a13cc486cef107df4393ba406f61b52c0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a13cc486cef107df4393ba406f61b52c0">&#9670;&#160;</a></span>vmult()</h2>
+<a id="a6d98b09a0f8215f2ff25588c9c3852ee" name="a6d98b09a0f8215f2ff25588c9c3852ee"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6d98b09a0f8215f2ff25588c9c3852ee">&#9670;&#160;</a></span>vmult()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -167,7 +167,7 @@ template&lt;typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

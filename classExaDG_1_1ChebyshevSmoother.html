@@ -98,10 +98,10 @@ typedef dealii::PreconditionChebyshev&lt; Operator, VectorType, PreconditionerTy
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a9a1616b56a137a2a31faf5c86c46f43a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ChebyshevSmoother.html#a9a1616b56a137a2a31faf5c86c46f43a">vmult</a> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:a9a1616b56a137a2a31faf5c86c46f43a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1ed49cc075195d3dce1e0e093b27962c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ChebyshevSmoother.html#a1ed49cc075195d3dce1e0e093b27962c">step</a> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:a1ed49cc075195d3dce1e0e093b27962c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4912d8818edbb54bd2696f7dad361943"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ChebyshevSmoother.html#a4912d8818edbb54bd2696f7dad361943">vmult</a> (VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:a4912d8818edbb54bd2696f7dad361943"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a022db5df7da26d551cbf39a15adc0c58"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ChebyshevSmoother.html#a022db5df7da26d551cbf39a15adc0c58">step</a> (VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:a022db5df7da26d551cbf39a15adc0c58"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4893c8955396f6f256cffdda3209e2d8"><td class="memItemLeft" align="right" valign="top"><a id="a4893c8955396f6f256cffdda3209e2d8" name="a4893c8955396f6f256cffdda3209e2d8"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (Operator const &amp;matrix, AdditionalData const &amp;additional_data)</td></tr>
 <tr class="separator:a4893c8955396f6f256cffdda3209e2d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -113,8 +113,8 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>step</b> (Vec
 <tr class="separator:a06093b23a79d8b6449d05f75466355c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a1ed49cc075195d3dce1e0e093b27962c" name="a1ed49cc075195d3dce1e0e093b27962c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1ed49cc075195d3dce1e0e093b27962c">&#9670;&#160;</a></span>step()</h2>
+<a id="a022db5df7da26d551cbf39a15adc0c58" name="a022db5df7da26d551cbf39a15adc0c58"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a022db5df7da26d551cbf39a15adc0c58">&#9670;&#160;</a></span>step()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -144,7 +144,7 @@ template&lt;typename Operator , typename VectorType , typename PreconditionerTyp
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -153,8 +153,8 @@ template&lt;typename Operator , typename VectorType , typename PreconditionerTyp
 
 </div>
 </div>
-<a id="a9a1616b56a137a2a31faf5c86c46f43a" name="a9a1616b56a137a2a31faf5c86c46f43a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9a1616b56a137a2a31faf5c86c46f43a">&#9670;&#160;</a></span>vmult()</h2>
+<a id="a4912d8818edbb54bd2696f7dad361943" name="a4912d8818edbb54bd2696f7dad361943"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4912d8818edbb54bd2696f7dad361943">&#9670;&#160;</a></span>vmult()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -184,7 +184,7 @@ template&lt;typename Operator , typename VectorType , typename PreconditionerTyp
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

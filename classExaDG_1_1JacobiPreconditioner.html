@@ -105,11 +105,11 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a1fa948292fd50975dd5b80a9d253a93b"><td class="memItemLeft" align="right" valign="top"><a id="a1fa948292fd50975dd5b80a9d253a93b" name="a1fa948292fd50975dd5b80a9d253a93b"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>JacobiPreconditioner</b> (Operator const &amp;underlying_operator_in)</td></tr>
 <tr class="separator:a1fa948292fd50975dd5b80a9d253a93b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a62fe86b8cb1ab04a2e648053eb1ad123"><td class="memItemLeft" align="right" valign="top"><a id="a62fe86b8cb1ab04a2e648053eb1ad123" name="a62fe86b8cb1ab04a2e648053eb1ad123"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:a62fe86b8cb1ab04a2e648053eb1ad123"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a63c2133ec98304b1432970a2db58768d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1JacobiPreconditioner.html#a63c2133ec98304b1432970a2db58768d">update</a> ()</td></tr>
-<tr class="separator:a63c2133ec98304b1432970a2db58768d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6ef402767f81019b19b39decf87a41e8"><td class="memItemLeft" align="right" valign="top"><a id="a6ef402767f81019b19b39decf87a41e8" name="a6ef402767f81019b19b39decf87a41e8"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:a6ef402767f81019b19b39decf87a41e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af3df8cfb8df5aa3673d9f4cf05cf6d02"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1JacobiPreconditioner.html#af3df8cfb8df5aa3673d9f4cf05cf6d02">update</a> () final</td></tr>
+<tr class="separator:af3df8cfb8df5aa3673d9f4cf05cf6d02"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1614150a9f657ec2ca0a63f2cd1dec33"><td class="memItemLeft" align="right" valign="top"><a id="a1614150a9f657ec2ca0a63f2cd1dec33" name="a1614150a9f657ec2ca0a63f2cd1dec33"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_size_of_diagonal</b> ()</td></tr>
 <tr class="separator:a1614150a9f657ec2ca0a63f2cd1dec33"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -125,8 +125,8 @@ virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">Ti
 <tr class="separator:abe7ccce9fd4fcea2f022aa64d174ba36 inherit pub_methods_classExaDG_1_1PreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a63c2133ec98304b1432970a2db58768d" name="a63c2133ec98304b1432970a2db58768d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a63c2133ec98304b1432970a2db58768d">&#9670;&#160;</a></span>update()</h2>
+<a id="af3df8cfb8df5aa3673d9f4cf05cf6d02" name="af3df8cfb8df5aa3673d9f4cf05cf6d02"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af3df8cfb8df5aa3673d9f4cf05cf6d02">&#9670;&#160;</a></span>update()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -145,7 +145,7 @@ template&lt;typename Operator &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

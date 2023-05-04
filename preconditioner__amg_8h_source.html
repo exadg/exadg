@@ -373,8 +373,8 @@ $(function() {
 <div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>  }</div>
 <div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span> </div>
 <div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>  vmult(VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src)<span class="keyword"> const</span></div>
-<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>  vmult(VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src) <span class="keyword">const</span> <span class="keyword">final</span></div>
+<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span>  {</div>
 <div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>    <span class="comment">// create temporal vectors of type double</span></div>
 <div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>    VectorTypeAMG dst_amg;</div>
 <div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>    dst_amg.reinit(dst, <span class="keyword">false</span>);</div>
@@ -389,7 +389,7 @@ $(function() {
 <div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>  }</div>
 <div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span> </div>
 <div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>  update()</div>
+<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>  update() <span class="keyword">final</span></div>
 <div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>  {</div>
 <div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>    preconditioner_amg-&gt;update();</div>
 <div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span>  }</div>

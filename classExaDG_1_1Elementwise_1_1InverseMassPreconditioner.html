@@ -104,10 +104,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ab3e9342103db0bbb484b419cf9d9b18d"><td class="memItemLeft" align="right" valign="top"><a id="ab3e9342103db0bbb484b419cf9d9b18d" name="ab3e9342103db0bbb484b419cf9d9b18d"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>InverseMassPreconditioner</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, unsigned int const dof_index, unsigned int const quad_index)</td></tr>
 <tr class="separator:ab3e9342103db0bbb484b419cf9d9b18d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a858e6b131413c28a5914e040ba4ff064"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Elementwise_1_1InverseMassPreconditioner.html#a858e6b131413c28a5914e040ba4ff064">setup</a> (unsigned int const cell)</td></tr>
-<tr class="separator:a858e6b131413c28a5914e040ba4ff064"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9d439285d5993b1452d9978703b3f1ed"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Elementwise_1_1InverseMassPreconditioner.html#a9d439285d5993b1452d9978703b3f1ed">vmult</a> (dealii::VectorizedArray&lt; Number &gt; *dst, dealii::VectorizedArray&lt; Number &gt; const *src) const</td></tr>
-<tr class="separator:a9d439285d5993b1452d9978703b3f1ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a979d578d6be232374a37c0f8c6162518"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Elementwise_1_1InverseMassPreconditioner.html#a979d578d6be232374a37c0f8c6162518">setup</a> (unsigned int const cell) final</td></tr>
+<tr class="separator:a979d578d6be232374a37c0f8c6162518"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1f480ae1482708fd0fe5d377fe24e102"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Elementwise_1_1InverseMassPreconditioner.html#a1f480ae1482708fd0fe5d377fe24e102">vmult</a> (dealii::VectorizedArray&lt; Number &gt; *dst, dealii::VectorizedArray&lt; Number &gt; const *src) const final</td></tr>
+<tr class="separator:a1f480ae1482708fd0fe5d377fe24e102"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a89cbbd28c5f2965564679a9778a3e531"><td class="memItemLeft" align="right" valign="top"><a id="a89cbbd28c5f2965564679a9778a3e531" name="a89cbbd28c5f2965564679a9778a3e531"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (unsigned int const cell)=0</td></tr>
 <tr class="separator:a89cbbd28c5f2965564679a9778a3e531"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -116,8 +116,8 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (de
 <tr class="separator:a9a69021b941a0e9dffe99d0be27d6b70"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a858e6b131413c28a5914e040ba4ff064" name="a858e6b131413c28a5914e040ba4ff064"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a858e6b131413c28a5914e040ba4ff064">&#9670;&#160;</a></span>setup()</h2>
+<a id="a979d578d6be232374a37c0f8c6162518" name="a979d578d6be232374a37c0f8c6162518"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a979d578d6be232374a37c0f8c6162518">&#9670;&#160;</a></span>setup()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -137,7 +137,7 @@ template&lt;int dim, int n_components, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -146,8 +146,8 @@ template&lt;int dim, int n_components, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a9d439285d5993b1452d9978703b3f1ed" name="a9d439285d5993b1452d9978703b3f1ed"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9d439285d5993b1452d9978703b3f1ed">&#9670;&#160;</a></span>vmult()</h2>
+<a id="a1f480ae1482708fd0fe5d377fe24e102" name="a1f480ae1482708fd0fe5d377fe24e102"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1f480ae1482708fd0fe5d377fe24e102">&#9670;&#160;</a></span>vmult()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -177,7 +177,7 @@ template&lt;int dim, int n_components, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

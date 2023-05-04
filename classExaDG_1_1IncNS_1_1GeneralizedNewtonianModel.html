@@ -97,10 +97,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a948ce580f8ec32259a29b424c3147a08"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0f7d7bb207b90814000fc60d71b10461"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1GeneralizedNewtonianModel.html#a0f7d7bb207b90814000fc60d71b10461">initialize</a> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html">Operators::ViscousKernel</a>&lt; dim, Number &gt; &gt; viscous_kernel_in, <a class="el" href="structExaDG_1_1IncNS_1_1GeneralizedNewtonianModelData.html">GeneralizedNewtonianModelData</a> const &amp;generalized_newtonian_model_data_in, unsigned int const dof_index_velocity_in)</td></tr>
 <tr class="separator:a0f7d7bb207b90814000fc60d71b10461"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1015a8507d894e8a136220491ecd48ae"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1GeneralizedNewtonianModel.html#a1015a8507d894e8a136220491ecd48ae">set_viscosity</a> (VectorType const &amp;velocity) const</td></tr>
-<tr class="separator:a1015a8507d894e8a136220491ecd48ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a00592dbdfe199e6b60f645488374384e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1GeneralizedNewtonianModel.html#a00592dbdfe199e6b60f645488374384e">add_viscosity</a> (VectorType const &amp;velocity) const</td></tr>
-<tr class="separator:a00592dbdfe199e6b60f645488374384e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa97bcec81031e00e48d670b25bb05d7d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1GeneralizedNewtonianModel.html#aa97bcec81031e00e48d670b25bb05d7d">set_viscosity</a> (VectorType const &amp;velocity) const final</td></tr>
+<tr class="separator:aa97bcec81031e00e48d670b25bb05d7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0e350aa72427fa2b600e356f57bf1dd0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1GeneralizedNewtonianModel.html#a0e350aa72427fa2b600e356f57bf1dd0">add_viscosity</a> (VectorType const &amp;velocity) const final</td></tr>
+<tr class="separator:a0e350aa72427fa2b600e356f57bf1dd0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1IncNS_1_1ViscosityModelBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1IncNS_1_1ViscosityModelBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1IncNS_1_1ViscosityModelBase.html">ExaDG::IncNS::ViscosityModelBase&lt; dim, Number &gt;</a></td></tr>
 <tr class="memitem:afb85ec702f59872bd91f6f4fab2bd0f9 inherit pub_methods_classExaDG_1_1IncNS_1_1ViscosityModelBase"><td class="memItemLeft" align="right" valign="top"><a id="afb85ec702f59872bd91f6f4fab2bd0f9" name="afb85ec702f59872bd91f6f4fab2bd0f9"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html">Operators::ViscousKernel</a>&lt; dim, Number &gt; &gt; viscous_kernel_in, unsigned int const dof_index_velocity_in)</td></tr>
@@ -167,8 +167,8 @@ template&lt;int dim, typename Number &gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a00592dbdfe199e6b60f645488374384e" name="a00592dbdfe199e6b60f645488374384e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a00592dbdfe199e6b60f645488374384e">&#9670;&#160;</a></span>add_viscosity()</h2>
+<a id="a0e350aa72427fa2b600e356f57bf1dd0" name="a0e350aa72427fa2b600e356f57bf1dd0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0e350aa72427fa2b600e356f57bf1dd0">&#9670;&#160;</a></span>add_viscosity()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -188,7 +188,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -241,8 +241,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a1015a8507d894e8a136220491ecd48ae" name="a1015a8507d894e8a136220491ecd48ae"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1015a8507d894e8a136220491ecd48ae">&#9670;&#160;</a></span>set_viscosity()</h2>
+<a id="aa97bcec81031e00e48d670b25bb05d7d" name="aa97bcec81031e00e48d670b25bb05d7d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa97bcec81031e00e48d670b25bb05d7d">&#9670;&#160;</a></span>set_viscosity()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -262,7 +262,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

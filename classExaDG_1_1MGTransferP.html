@@ -104,12 +104,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a993ddbf68f417bac3c542106028bf068"><td class="memItemLeft" align="right" valign="top"><a id="a993ddbf68f417bac3c542106028bf068" name="a993ddbf68f417bac3c542106028bf068"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit</b> (dealii::MatrixFree&lt; dim, value_type &gt; const *matrixfree_1, dealii::MatrixFree&lt; dim, value_type &gt; const *matrixfree_2, int degree_1, int degree_2, int dof_handler_index=0)</td></tr>
 <tr class="separator:a993ddbf68f417bac3c542106028bf068"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aad963e1799913a2cc131347d492a1293"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferP.html#aad963e1799913a2cc131347d492a1293">interpolate</a> (unsigned int const level, VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:aad963e1799913a2cc131347d492a1293"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a99abd647a499b8ac81513d68668708b5"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferP.html#a99abd647a499b8ac81513d68668708b5">restrict_and_add</a> (unsigned int const, VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:a99abd647a499b8ac81513d68668708b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa1ae7050226966ef7e9c4287066590b9"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferP.html#aa1ae7050226966ef7e9c4287066590b9">prolongate_and_add</a> (unsigned int const, VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:aa1ae7050226966ef7e9c4287066590b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0c1ccb9a0787b97691b5edcf46591f99"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferP.html#a0c1ccb9a0787b97691b5edcf46591f99">interpolate</a> (unsigned int const level, VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:a0c1ccb9a0787b97691b5edcf46591f99"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abffd24076557c6e166356e0512febd57"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferP.html#abffd24076557c6e166356e0512febd57">restrict_and_add</a> (unsigned int const, VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:abffd24076557c6e166356e0512febd57"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af3e4cf878af6a56b83c1fd2a1445408a"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferP.html#af3e4cf878af6a56b83c1fd2a1445408a">prolongate_and_add</a> (unsigned int const, VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:af3e4cf878af6a56b83c1fd2a1445408a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab05e642da4e8960f222e6ca81f33b736"><td class="memItemLeft" align="right" valign="top"><a id="ab05e642da4e8960f222e6ca81f33b736" name="ab05e642da4e8960f222e6ca81f33b736"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>interpolate</b> (unsigned int const level, VectorType &amp;dst, VectorType const &amp;src) const =0</td></tr>
 <tr class="separator:ab05e642da4e8960f222e6ca81f33b736"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -121,8 +121,8 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>prolongate_an
 <tr class="separator:a1a0a299f50406e99bcc10dfb78444bfd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="aad963e1799913a2cc131347d492a1293" name="aad963e1799913a2cc131347d492a1293"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aad963e1799913a2cc131347d492a1293">&#9670;&#160;</a></span>interpolate()</h2>
+<a id="a0c1ccb9a0787b97691b5edcf46591f99" name="a0c1ccb9a0787b97691b5edcf46591f99"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0c1ccb9a0787b97691b5edcf46591f99">&#9670;&#160;</a></span>interpolate()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -158,7 +158,7 @@ template&lt;int dim, typename Number , typename VectorType , int components&gt; 
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -167,8 +167,8 @@ template&lt;int dim, typename Number , typename VectorType , int components&gt; 
 
 </div>
 </div>
-<a id="aa1ae7050226966ef7e9c4287066590b9" name="aa1ae7050226966ef7e9c4287066590b9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa1ae7050226966ef7e9c4287066590b9">&#9670;&#160;</a></span>prolongate_and_add()</h2>
+<a id="af3e4cf878af6a56b83c1fd2a1445408a" name="af3e4cf878af6a56b83c1fd2a1445408a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af3e4cf878af6a56b83c1fd2a1445408a">&#9670;&#160;</a></span>prolongate_and_add()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -204,7 +204,7 @@ template&lt;int dim, typename Number , typename VectorType , int components&gt; 
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -213,8 +213,8 @@ template&lt;int dim, typename Number , typename VectorType , int components&gt; 
 
 </div>
 </div>
-<a id="a99abd647a499b8ac81513d68668708b5" name="a99abd647a499b8ac81513d68668708b5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a99abd647a499b8ac81513d68668708b5">&#9670;&#160;</a></span>restrict_and_add()</h2>
+<a id="abffd24076557c6e166356e0512febd57" name="abffd24076557c6e166356e0512febd57"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abffd24076557c6e166356e0512febd57">&#9670;&#160;</a></span>restrict_and_add()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -250,7 +250,7 @@ template&lt;int dim, typename Number , typename VectorType , int components&gt; 
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

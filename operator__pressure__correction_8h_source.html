@@ -199,13 +199,13 @@ $(function() {
 <div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span><span class="comment">   * operator needed in the ALE case only (where the mass operator may be evaluated at different</span></div>
 <div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span><span class="comment">   * times depending on the specific ALE formulation chosen).</span></div>
 <div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  setup(std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt;&gt; matrix_free,</div>
 <div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>        std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a>&gt;     matrix_free_data,</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>        std::string <span class="keyword">const</span> &amp;                              dof_index_temperature = <span class="stringliteral">&quot;&quot;</span>);</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>        std::string <span class="keyword">const</span> &amp;                              dof_index_temperature = <span class="stringliteral">&quot;&quot;</span>) <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span> </div>
 <div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  setup_solvers(<span class="keywordtype">double</span> <span class="keyword">const</span> &amp; scaling_factor_mass, VectorType <span class="keyword">const</span> &amp; velocity);</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  setup_solvers(<span class="keywordtype">double</span> <span class="keyword">const</span> &amp; scaling_factor_mass, VectorType <span class="keyword">const</span> &amp; velocity) <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span> </div>
 <div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span><span class="comment">   * Momentum step:</span></div>
