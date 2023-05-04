@@ -469,7 +469,7 @@ LaplaceOperator<dim, Number, n_components>::set_constrained_values(VectorType & 
       }
       else
       {
-        AssertThrow(boundary_type == BoundaryType::Dirichlet ||
+        AssertThrow(boundary_type == BoundaryType::Dirichlet or
                       boundary_type == BoundaryType::Neumann,
                     dealii::ExcMessage("BoundaryType not implemented."));
       }

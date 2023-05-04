@@ -245,7 +245,7 @@ public:
                  double const time,
                  double const time_step) final
   {
-    if(!vec_tmp1.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
+    if(not vec_tmp1.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
     {
       vec_tmp1.reinit(vec_np);
     }
@@ -330,7 +330,7 @@ public:
                  double const time,
                  double const time_step) final
   {
-    if(!vec_tmp1.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
+    if(not vec_tmp1.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
     {
       vec_tmp1.reinit(vec_np);
     }
@@ -425,7 +425,7 @@ public:
                  double const time,
                  double const time_step) final
   {
-    if(!vec_tmp1.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
+    if(not vec_tmp1.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
     {
       vec_tmp1.reinit(vec_np, true);
       vec_tmp2.reinit(vec_np, true);
@@ -534,7 +534,7 @@ public:
   void
   solve_timestep(VectorType & vec_np, VectorType & vec_n, double const time, double const time_step)
   {
-    if(!vec_tmp1.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
+    if(not vec_tmp1.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
     {
       vec_tmp1.reinit(vec_np);
     }
@@ -675,7 +675,7 @@ public:
   void
   solve_timestep(VectorType & vec_np, VectorType & vec_n, double const time, double const time_step)
   {
-    if(!vec_tmp.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
+    if(not vec_tmp.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
     {
       vec_tmp.reinit(vec_np);
     }
@@ -687,7 +687,7 @@ public:
     std::vector<double> c;
     c.resize(stages);
 
-    if(order == 3 && stages == 7)
+    if(order == 3 and stages == 7)
     {
       A[0] = 0.;
       A[1] = -0.8083163874983830;
@@ -713,7 +713,7 @@ public:
       c[5] = 0.8534401385678250;
       c[6] = 0.9980466084623790;
     }
-    else if(order == 4 && stages == 8)
+    else if(order == 4 and stages == 8)
     {
       A[0] = 0.;
       A[1] = -0.7212962482279240;

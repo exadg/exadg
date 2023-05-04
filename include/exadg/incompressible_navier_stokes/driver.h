@@ -98,16 +98,16 @@ get_dofs_per_element(std::string const & input_file,
   else
     AssertThrow(false, dealii::ExcMessage("Not implemented."));
 
-  if(operator_type == OperatorType::CoupledNonlinearResidual ||
+  if(operator_type == OperatorType::CoupledNonlinearResidual or
      operator_type == OperatorType::CoupledLinearized)
   {
     return velocity_dofs_per_element + pressure_dofs_per_element;
   }
   // velocity
-  else if(operator_type == OperatorType::ConvectiveOperator ||
-          operator_type == OperatorType::VelocityConvDiffOperator ||
-          operator_type == OperatorType::HelmholtzOperator ||
-          operator_type == OperatorType::ProjectionOperator ||
+  else if(operator_type == OperatorType::ConvectiveOperator or
+          operator_type == OperatorType::VelocityConvDiffOperator or
+          operator_type == OperatorType::HelmholtzOperator or
+          operator_type == OperatorType::ProjectionOperator or
           operator_type == OperatorType::InverseMassOperator)
   {
     return velocity_dofs_per_element;

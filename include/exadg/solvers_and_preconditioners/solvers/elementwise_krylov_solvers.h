@@ -78,7 +78,7 @@ converged(Number &     is_converged,
           unsigned int MAX_ITER)
 {
   bool is_converged_bool = true;
-  if(norm_r_abs < ABS_TOL || norm_r_rel < REL_TOL || k >= MAX_ITER)
+  if(norm_r_abs < ABS_TOL or norm_r_rel < REL_TOL or k >= MAX_ITER)
   {
     is_converged      = 1.0;
     is_converged_bool = true;
@@ -104,7 +104,7 @@ converged(dealii::VectorizedArray<Number> & is_converged,
 {
   for(unsigned int v = 0; v < dealii::VectorizedArray<Number>::size(); ++v)
   {
-    if((norm_r_abs[v] < ABS_TOL || norm_r_rel[v] < REL_TOL || k >= MAX_ITER))
+    if((norm_r_abs[v] < ABS_TOL or norm_r_rel[v] < REL_TOL or k >= MAX_ITER))
       is_converged[v] = 1.0;
     else
       is_converged[v] = -1.0;
@@ -322,7 +322,7 @@ SolverCG<value_type, Matrix, Preconditioner>::solve(Matrix const *         matri
     ++n_iter;
 
     // check convergence
-    if(all_smaller(norm_r_abs, ABS_TOL) || all_smaller(norm_r_rel, REL_TOL) || (n_iter > MAX_ITER))
+    if(all_smaller(norm_r_abs, ABS_TOL) or all_smaller(norm_r_rel, REL_TOL) or (n_iter > MAX_ITER))
     {
       break;
     }
@@ -664,8 +664,8 @@ SolverGMRES<value_type, Matrix, Preconditioner>::solve(Matrix const *         A,
 
     iterations += k;
 
-  } while(
-    !converged(convergence_status, norm_r_abs, ABS_TOL, norm_r_rel, REL_TOL, iterations, MAX_ITER));
+  } while(not converged(
+    convergence_status, norm_r_abs, ABS_TOL, norm_r_rel, REL_TOL, iterations, MAX_ITER));
 
   // output convergence info
   //    std::cout << "Number of iterations = " << iterations << std::endl;
@@ -713,7 +713,7 @@ SolverGMRES<value_type, Matrix, Preconditioner>::do_solve(Matrix const *        
   norm_r_rel = res[0] / norm_r_initial;
 
   while(
-    !converged(convergence_status, norm_r_abs, ABS_TOL, norm_r_rel, REL_TOL, k, MAX_KRYLOV_SIZE))
+    not converged(convergence_status, norm_r_abs, ABS_TOL, norm_r_rel, REL_TOL, k, MAX_KRYLOV_SIZE))
   {
     // normalize vector v^(k)
     if(k == 0)

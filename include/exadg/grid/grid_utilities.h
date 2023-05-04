@@ -417,7 +417,7 @@ template<int dim>
 inline void
 read_external_triangulation(dealii::Triangulation<dim, dim> & tria, GridData const & data)
 {
-  AssertThrow(!data.file_name.empty(),
+  AssertThrow(not data.file_name.empty(),
               dealii::ExcMessage(
                 "You are trying to read a grid file, but the string, which is supposed to contain"
                 " the file name, is empty."));
@@ -429,7 +429,7 @@ read_external_triangulation(dealii::Triangulation<dim, dim> & tria, GridData con
   // find the file extension from the file name
   std::string extension = data.file_name.substr(data.file_name.find_last_of('.') + 1);
 
-  AssertThrow(!extension.empty(),
+  AssertThrow(not extension.empty(),
               dealii::ExcMessage("You are trying to read a grid file, but the file extension is"
                                  " empty."));
 

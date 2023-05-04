@@ -219,7 +219,7 @@ private:
           cell.face(face)->set_all_boundary_ids(2);
         }
         // top-right edge
-        else if(std::fabs(cell.face(face)->center()(0) - this->length) < element_length &&
+        else if(std::fabs(cell.face(face)->center()(0) - this->length) < element_length and
                 std::fabs(cell.face(face)->center()(1) - this->height / 2) < tol)
         {
           if(boundary_type == "SingleForce")

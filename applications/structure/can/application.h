@@ -187,12 +187,12 @@ private:
           dealii::Point<dim> const face_center = cell->face(f)->center();
 
           // bottom
-          if(dim == 3 && std::abs(face_center[dim - 1] - 0.0) < 1.e-8)
+          if(dim == 3 and std::abs(face_center[dim - 1] - 0.0) < 1.e-8)
           {
             cell->face(f)->set_boundary_id(0);
           }
           // top
-          else if(dim == 3 && std::abs(face_center[dim - 1] - height) < 1.e-8)
+          else if(dim == 3 and std::abs(face_center[dim - 1] - height) < 1.e-8)
           {
             cell->face(f)->set_boundary_id(1);
           }

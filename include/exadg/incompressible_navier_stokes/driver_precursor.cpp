@@ -188,7 +188,7 @@ DriverPrecursor<dim, Number>::setup()
     pde_operator, application->get_parameters(), mpi_comm, is_test, postprocessor);
 
   // setup time integrator before calling setup_solvers (this is necessary since the setup of the
-  // solvers depends on quantities such as the time_step_size or gamma0!!!)
+  // solvers depends on quantities such as the time_step_size or gamma0!)
   time_integrator_pre->setup(application->get_parameters_precursor().restarted_simulation);
   time_integrator->setup(application->get_parameters().restarted_simulation);
 
@@ -229,7 +229,7 @@ DriverPrecursor<dim, Number>::solve() const
     // both domains.
     if(use_adaptive_time_stepping == true)
       synchronize_time_step_size();
-  } while(!time_integrator_pre->finished() || !time_integrator->finished());
+  } while(not(time_integrator_pre->finished()) or not(time_integrator->finished()));
 }
 
 template<int dim, typename Number>

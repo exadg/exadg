@@ -200,9 +200,9 @@ public:
   {
     unsigned int index_1d = 0;
 
-    if(face == 0 || face == 2)
+    if(face == 0 or face == 2)
       index_1d = 0;
-    else if(face == 1 || face == 3)
+    else if(face == 1 or face == 3)
       index_1d = 1;
     else
       Assert(false, dealii::ExcMessage("Face ID is invalid."));
@@ -219,9 +219,9 @@ public:
   {
     unsigned int index_face = 0;
 
-    if(face == 0 || face == 1)
+    if(face == 0 or face == 1)
       index_face = 1;
-    else if(face == 2 || face == 3)
+    else if(face == 2 or face == 3)
       index_face = 0;
     else
       Assert(false, dealii::ExcMessage("Face ID is invalid."));
@@ -277,7 +277,7 @@ public:
     // Newton method to solve nonlinear pull_back operation
     unsigned int n_iter = 0, MAX_ITER = 100;
     double const TOL = 1.e-12;
-    while(residual.norm() > TOL && n_iter < MAX_ITER)
+    while(residual.norm() > TOL and n_iter < MAX_ITER)
     {
       // multiply by -1.0, i.e., shift residual to the rhs
       residual *= -1.0;
@@ -310,10 +310,10 @@ public:
            dealii::ExcMessage("Newton solver did not converge to given tolerance. "
                               "Maximum number of iterations exceeded."));
 
-    Assert(xi[0] >= 0.0 && xi[0] <= 1.0,
+    Assert(xi[0] >= 0.0 and xi[0] <= 1.0,
            dealii::ExcMessage("Pull back operation generated invalid xi[0] values."));
 
-    Assert(xi[1] >= 0.0 && xi[1] <= 1.0,
+    Assert(xi[1] >= 0.0 and xi[1] <= 1.0,
            dealii::ExcMessage("Pull back operation generated invalid xi[1] values."));
 
     return xi;
@@ -520,9 +520,9 @@ public:
   {
     unsigned int index_1d = 0;
 
-    if(face == 0 || face == 2)
+    if(face == 0 or face == 2)
       index_1d = 0;
-    else if(face == 1 || face == 3)
+    else if(face == 1 or face == 3)
       index_1d = 1;
     else
       Assert(false, dealii::ExcMessage("Face ID is invalid."));
@@ -539,9 +539,9 @@ public:
   {
     unsigned int index_face = 0;
 
-    if(face == 0 || face == 1)
+    if(face == 0 or face == 1)
       index_face = 1;
-    else if(face == 2 || face == 3)
+    else if(face == 2 or face == 3)
       index_face = 0;
     else
       Assert(false, dealii::ExcMessage("Face ID is invalid."));
@@ -597,7 +597,7 @@ public:
     // Newton method to solve nonlinear pull_back operation
     unsigned int n_iter = 0, MAX_ITER = 100;
     double const TOL = 1.e-12;
-    while(residual.norm() > TOL && n_iter < MAX_ITER)
+    while(residual.norm() > TOL and n_iter < MAX_ITER)
     {
       // multiply by -1.0, i.e., shift residual to the rhs
       residual *= -1.0;
@@ -635,13 +635,13 @@ public:
            dealii::ExcMessage("Newton solver did not converge to given tolerance. "
                               "Maximum number of iterations exceeded."));
 
-    Assert(xi[0] >= 0.0 && xi[0] <= 1.0,
+    Assert(xi[0] >= 0.0 and xi[0] <= 1.0,
            dealii::ExcMessage("Pull back operation generated invalid xi[0] values."));
 
-    Assert(xi[1] >= 0.0 && xi[1] <= 1.0,
+    Assert(xi[1] >= 0.0 and xi[1] <= 1.0,
            dealii::ExcMessage("Pull back operation generated invalid xi[1] values."));
 
-    Assert(xi[2] >= 0.0 && xi[2] <= 1.0,
+    Assert(xi[2] >= 0.0 and xi[2] <= 1.0,
            dealii::ExcMessage("Pull back operation generated invalid xi[2] values."));
 
     return xi;
@@ -708,7 +708,7 @@ public:
     dealii::Point<spacedim> space_point;
     if(radius > 1e-10)
     {
-      AssertThrow(spacedim == 2 || spacedim == 3,
+      AssertThrow(spacedim == 2 or spacedim == 3,
                   dealii::ExcMessage("Only implemented for 2D and 3D case."));
 
       space_point[0] = radius * cos(theta);

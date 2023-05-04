@@ -42,7 +42,7 @@ template<int dim>
 void
 PointwiseOutputDataBase<dim>::print(dealii::ConditionalOStream & pcout) const
 {
-  if(time_control_data.is_active && evaluation_points.size() > 0)
+  if(time_control_data.is_active and evaluation_points.size() > 0)
   {
     pcout << std::endl << "Pointwise output" << std::endl;
 
@@ -101,7 +101,7 @@ PointwiseOutputGeneratorBase<dim, VectorType>::setup_base(
 
   AssertThrow(
     (get_unsteady_evaluation_type(pointwise_output_data_in.time_control_data) ==
-     TimeControlData::UnsteadyEvalType::Interval) ||
+     TimeControlData::UnsteadyEvalType::Interval) or
       (get_unsteady_evaluation_type(pointwise_output_data_in.time_control_data) ==
        TimeControlData::UnsteadyEvalType::None),
     dealii::ExcMessage(
@@ -109,7 +109,7 @@ PointwiseOutputGeneratorBase<dim, VectorType>::setup_base(
 
   time_control.setup(pointwise_output_data_in.time_control_data);
 
-  if(pointwise_output_data.time_control_data.is_active &&
+  if(pointwise_output_data.time_control_data.is_active and
      pointwise_output_data.evaluation_points.size() > 0)
   {
     mapping = &mapping_in;

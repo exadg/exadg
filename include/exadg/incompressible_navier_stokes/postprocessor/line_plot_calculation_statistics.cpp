@@ -139,8 +139,8 @@ LinePlotCalculatorStatistics<dim, Number>::initialize_cell_data(VectorType const
         quantity != (*line)->quantities.end();
         ++quantity)
     {
-      if((*quantity)->type == QuantityType::Velocity ||
-         (*quantity)->type == QuantityType::SkinFriction ||
+      if((*quantity)->type == QuantityType::Velocity or
+         (*quantity)->type == QuantityType::SkinFriction or
          (*quantity)->type == QuantityType::ReynoldsStresses)
       {
         velocity_has_to_be_evaluated = true;
@@ -191,7 +191,7 @@ LinePlotCalculatorStatistics<dim, Number>::initialize_cell_data(VectorType const
       // If averaging in circumferential direction is used, we insert additional points along
       // the circle for points p>=1. The first point p=0 lies in the center of the circle
       // (point(p=0) == line.begin).
-      if(p >= 1 && line_circ->average_circumferential == true)
+      if(p >= 1 and line_circ->average_circumferential == true)
       {
         // begin with 1 since the first point has already been inserted.
         for(unsigned int i = 1; i < line_circ->n_points_circumferential; ++i)
@@ -288,8 +288,8 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate(VectorType const & veloci
         ++quantity)
     {
       // evaluate quantities that involve velocity
-      if((*quantity)->type == QuantityType::Velocity ||
-         (*quantity)->type == QuantityType::SkinFriction ||
+      if((*quantity)->type == QuantityType::Velocity or
+         (*quantity)->type == QuantityType::SkinFriction or
          (*quantity)->type == QuantityType::ReynoldsStresses)
       {
         evaluate_velocity = true;
@@ -307,7 +307,7 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate(VectorType const & veloci
         ++quantity)
     {
       // evaluate quantities that involve velocity
-      if((*quantity)->type == QuantityType::Pressure ||
+      if((*quantity)->type == QuantityType::Pressure or
          (*quantity)->type == QuantityType::PressureCoefficient)
       {
         evaluate_pressure = true;

@@ -189,8 +189,8 @@ ElasticityOperatorBase<dim, Number>::set_constrained_values(VectorType & dst,
       }
       else
       {
-        AssertThrow(boundary_type == BoundaryType::Dirichlet ||
-                      boundary_type == BoundaryType::Neumann ||
+        AssertThrow(boundary_type == BoundaryType::Dirichlet or
+                      boundary_type == BoundaryType::Neumann or
                       boundary_type == BoundaryType::NeumannCached,
                     dealii::ExcMessage("BoundaryType not implemented."));
       }

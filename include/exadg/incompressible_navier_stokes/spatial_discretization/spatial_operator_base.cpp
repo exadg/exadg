@@ -294,7 +294,7 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
     // Symmetry boundaries
     // Constraints the normal components of the velocity, where "0" as second argument indicates the
     // first component in the dof_handler.
-    if(!(boundary_descriptor->velocity->symmetry_bc.empty()))
+    if(not(boundary_descriptor->velocity->symmetry_bc.empty()))
     {
       for(auto bc : boundary_descriptor->velocity->symmetry_bc)
         dealii::VectorTools::project_boundary_values_div_conforming(
@@ -302,7 +302,7 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
     }
 
     // Dirichlet boundaries
-    if(!(boundary_descriptor->velocity->dirichlet_bc.empty()))
+    if(not(boundary_descriptor->velocity->dirichlet_bc.empty()))
     {
       AssertThrow(
         false,
@@ -610,11 +610,11 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
     conti_penalty_operator.initialize(*matrix_free, operator_data, conti_penalty_kernel);
   }
 
-  if(param.use_divergence_penalty || param.use_continuity_penalty)
+  if(param.use_divergence_penalty or param.use_continuity_penalty)
   {
-    if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme ||
-       param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection ||
-       (param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution &&
+    if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme or
+       param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection or
+       (param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution and
         param.apply_penalty_terms_in_postprocessing_step == true))
     {
       // setup projection operator
@@ -1559,7 +1559,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
   // setup projection solver
 
   // divergence penalty only -> local, elementwise problem
-  if(param.use_divergence_penalty == true && param.use_continuity_penalty == false)
+  if(param.use_divergence_penalty == true and param.use_continuity_penalty == false)
   {
     if(param.solver_projection == SolverProjection::CG)
     {
@@ -1746,7 +1746,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
   else
   {
     AssertThrow(
-      param.use_divergence_penalty == false && param.use_continuity_penalty == false,
+      param.use_divergence_penalty == false and param.use_continuity_penalty == false,
       dealii::ExcMessage(
         "Specified combination of divergence and continuity penalty operators not implemented."));
   }
@@ -1856,8 +1856,8 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
     }
     else
     {
-      AssertThrow(boundary_type == BoundaryTypeU::Dirichlet ||
-                    boundary_type == BoundaryTypeU::Neumann ||
+      AssertThrow(boundary_type == BoundaryTypeU::Dirichlet or
+                    boundary_type == BoundaryTypeU::Neumann or
                     boundary_type == BoundaryTypeU::Symmetry,
                   dealii::ExcMessage("BoundaryTypeU not implemented."));
     }

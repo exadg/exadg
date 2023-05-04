@@ -418,7 +418,7 @@ public:
     {
       flux = calculate_lax_friedrichs_flux(uM, uP, normalM);
 
-      if(boundary_type == BoundaryTypeU::Neumann && data.use_outflow_bc == true)
+      if(boundary_type == BoundaryTypeU::Neumann and data.use_outflow_bc == true)
         apply_outflow_bc(flux, uM * normalM);
     }
     else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
@@ -429,7 +429,7 @@ public:
 
       flux = calculate_upwind_flux(uM, uP, average_u_normal);
 
-      if(boundary_type == BoundaryTypeU::Neumann && data.use_outflow_bc == true)
+      if(boundary_type == BoundaryTypeU::Neumann and data.use_outflow_bc == true)
       {
         if(data.ale == false)
           apply_outflow_bc(flux, uM * normalM);
@@ -567,7 +567,7 @@ public:
     {
       flux = calculate_lax_friedrichs_flux_linearized(uM, uP, delta_uM, delta_uP, normalM);
 
-      if(boundary_type == BoundaryTypeU::Neumann && data.use_outflow_bc == true)
+      if(boundary_type == BoundaryTypeU::Neumann and data.use_outflow_bc == true)
         apply_outflow_bc(flux, uM * normalM);
     }
     else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
@@ -578,7 +578,7 @@ public:
 
       flux = calculate_upwind_flux_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);
 
-      if(boundary_type == BoundaryTypeU::Neumann && data.use_outflow_bc == true)
+      if(boundary_type == BoundaryTypeU::Neumann and data.use_outflow_bc == true)
         apply_outflow_bc(flux, uM * normalM);
 
       scalar average_u_normal = 0.5 * (uM + uP) * normalM;
@@ -773,7 +773,7 @@ public:
     // element e⁺
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> delta_uP;
 
-    if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)
+    if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
     {
       if(data.type_dirichlet_bc == TypeDirichletBCs::Mirror)
       {

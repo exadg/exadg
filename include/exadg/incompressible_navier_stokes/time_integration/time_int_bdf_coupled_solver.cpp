@@ -220,7 +220,7 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
   solution_np.block(1) *= 1.0 / scaling_factor_continuity;
 
   bool const update_preconditioner =
-    this->param.update_preconditioner_coupled &&
+    this->param.update_preconditioner_coupled and
     ((this->time_step_number - 1) % this->param.update_preconditioner_coupled_every_time_steps ==
      0);
 
@@ -236,7 +236,7 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
     // Add the convective term to the right-hand side of the equations
     // if the convective term is treated explicitly (additive decomposition):
     // evaluate convective term and add extrapolation of convective term to the rhs (-> minus sign!)
-    if(this->param.convective_problem() &&
+    if(this->param.convective_problem() and
        this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
     {
       if(this->param.ale_formulation)
@@ -331,7 +331,7 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
   // This is necessary because otherwise the pressure solution moves away from the exact solution.
   pde_operator->adjust_pressure_level_if_undefined(solution_np.block(1), this->get_next_time());
 
-  if(this->store_solution && this->param.apply_penalty_terms_in_postprocessing_step == true)
+  if(this->store_solution and this->param.apply_penalty_terms_in_postprocessing_step == true)
   {
     solution_last_iter = solution_np;
   }
@@ -341,7 +341,7 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
   // If the penalty terms are applied in a postprocessing step
   if(this->param.apply_penalty_terms_in_postprocessing_step == true)
   {
-    if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
+    if(this->param.use_divergence_penalty == true or this->param.use_continuity_penalty == true)
     {
       timer.restart();
 
@@ -354,7 +354,7 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
   timer.restart();
 
   // evaluate convective term once solution_np is known
-  if(this->param.convective_problem() &&
+  if(this->param.convective_problem() and
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(this->param.ale_formulation == false) // Eulerian case
@@ -398,11 +398,11 @@ TimeIntBDFCoupled<dim, Number>::penalty_step()
 
   // right-hand side term: add inhomogeneous contributions of continuity penalty operator to
   // rhs-vector if desired
-  if(this->param.use_continuity_penalty && this->param.continuity_penalty_use_boundary_data)
+  if(this->param.use_continuity_penalty and this->param.continuity_penalty_use_boundary_data)
     pde_operator->rhs_add_projection_operator(rhs, this->get_next_time());
 
   bool const update_preconditioner =
-    this->param.update_preconditioner_projection &&
+    this->param.update_preconditioner_projection and
     ((this->time_step_number - 1) % this->param.update_preconditioner_projection_every_time_steps ==
      0);
 
@@ -438,7 +438,7 @@ TimeIntBDFCoupled<dim, Number>::postprocessing_stability_analysis()
               dealii::ExcMessage(
                 "Stability analysis can not be performed for nonlinear convective problems."));
 
-  AssertThrow(solution[0].block(0).l2_norm() < 1.e-15 && solution[0].block(1).l2_norm() < 1.e-15,
+  AssertThrow(solution[0].block(0).l2_norm() < 1.e-15 and solution[0].block(1).l2_norm() < 1.e-15,
               dealii::ExcMessage("Solution vector has to be zero for this stability analysis."));
 
   AssertThrow(dealii::Utilities::MPI::n_mpi_processes(this->mpi_comm) == 1,
@@ -517,7 +517,7 @@ TimeIntBDFCoupled<dim, Number>::solve_steady_problem()
     VectorType velocity_tmp;
     VectorType pressure_tmp;
 
-    while(!converged && this->time < (this->end_time - this->eps) &&
+    while(not(converged) and this->time < (this->end_time - this->eps) and
           this->get_time_step_number() <= this->param.max_number_of_time_steps)
     {
       // save solution from previous time step
@@ -559,7 +559,7 @@ TimeIntBDFCoupled<dim, Number>::solve_steady_problem()
       }
 
       // check convergence
-      if(incr < this->param.abs_tol_steady || incr_rel < this->param.rel_tol_steady)
+      if(incr < this->param.abs_tol_steady or incr_rel < this->param.rel_tol_steady)
       {
         converged = true;
       }
@@ -568,7 +568,7 @@ TimeIntBDFCoupled<dim, Number>::solve_steady_problem()
   else if(this->param.convergence_criterion_steady_problem ==
           ConvergenceCriterionSteadyProblem::ResidualSteadyNavierStokes)
   {
-    while(!converged && this->time < (this->end_time - this->eps) &&
+    while(not(converged) and this->time < (this->end_time - this->eps) and
           this->get_time_step_number() <= this->param.max_number_of_time_steps)
     {
       this->do_timestep();
@@ -577,7 +577,7 @@ TimeIntBDFCoupled<dim, Number>::solve_steady_problem()
       // the steady-state incompressible Navier-Stokes equations
       double const residual = evaluate_residual();
 
-      if(residual < this->param.abs_tol_steady ||
+      if(residual < this->param.abs_tol_steady or
          residual / initial_residual < this->param.rel_tol_steady)
       {
         converged = true;

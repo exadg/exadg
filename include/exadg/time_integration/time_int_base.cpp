@@ -53,13 +53,13 @@ TimeIntBase::started() const
 bool
 TimeIntBase::finished() const
 {
-  return !(time < (end_time - eps) && time_step_number <= max_number_of_time_steps);
+  return not(time < (end_time - eps) and time_step_number <= max_number_of_time_steps);
 }
 
 void
 TimeIntBase::timeloop()
 {
-  while(!finished())
+  while(not finished())
   {
     advance_one_timestep();
   }
@@ -81,7 +81,7 @@ TimeIntBase::advance_one_timestep_pre_solve(bool const print_header)
   dealii::Timer timer;
   timer.restart();
 
-  if(started() && !finished())
+  if(started() and not finished())
   {
     if(time_step_number == 1)
     {
@@ -104,7 +104,7 @@ TimeIntBase::advance_one_timestep_solve()
   dealii::Timer timer;
   timer.restart();
 
-  if(started() && !finished())
+  if(started() and not finished())
   {
     do_timestep_solve();
   }
@@ -118,7 +118,7 @@ TimeIntBase::advance_one_timestep_post_solve()
   dealii::Timer timer;
   timer.restart();
 
-  if(started() && !finished())
+  if(started() and not finished())
   {
     do_timestep_post_solve();
 

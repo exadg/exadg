@@ -145,7 +145,7 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
       Operators::DiffusiveKernel<dim, Number>::get_mapping_flags(this->level_info[level].is_dg(),
                                                                  this->level_info[level].is_dg()));
 
-  if(data.use_cell_based_loops && this->level_info[level].is_dg())
+  if(data.use_cell_based_loops and this->level_info[level].is_dg())
   {
     auto tria = dynamic_cast<dealii::parallel::distributed::Triangulation<dim> const *>(
       &this->dof_handlers[level]->get_triangulation());
@@ -185,7 +185,7 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
 
   // set dof and quad indices after matrix_free_data has been filled
   data.dof_index = this->matrix_free_data_objects[level]->get_dof_index("std_dof_handler");
-  if(data.convective_problem &&
+  if(data.convective_problem and
      data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
   {
     data.convective_kernel_data.dof_index_velocity =
@@ -221,7 +221,7 @@ MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
                                                dirichlet_bc,
                                                dirichlet_bc_component_mask);
 
-  if(data.convective_problem &&
+  if(data.convective_problem and
      data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
   {
     dealii::FESystem<dim> fe_velocity(dealii::FE_DGQ<dim>(fe.degree), dim);
@@ -246,7 +246,7 @@ MultigridPreconditioner<dim, Number>::initialize_transfer_operators()
 {
   Base::initialize_transfer_operators();
 
-  if(data.convective_problem &&
+  if(data.convective_problem and
      data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
   {
     unsigned int const dof_index = 1;
@@ -268,7 +268,7 @@ MultigridPreconditioner<dim, Number>::update_operators()
   set_time(pde_operator->get_time());
   set_scaling_factor_mass_operator(pde_operator->get_scaling_factor_mass_operator());
 
-  if(data.convective_problem &&
+  if(data.convective_problem and
      data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
   {
     VectorType const & velocity = pde_operator->get_velocity();

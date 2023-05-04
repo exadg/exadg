@@ -72,7 +72,7 @@ TimeIntBDFBase<Number>::initialize_solution_and_time_step_size(bool do_restart)
 {
   if(do_restart)
   {
-    if(order > 1 && start_with_low_order == true)
+    if(order > 1 and start_with_low_order == true)
     {
       this->pcout << "WARNING A higher-order time integration scheme is used, " << std::endl
                   << "WARNING but the simulation is started with first-order after the restart."
@@ -164,7 +164,7 @@ TimeIntBDFBase<Number>::get_time_step_size(int const i /* dt[i] */) const
    *                 |         |        |           |           /
    *  time_steps-vec:   dt[2]     dt[1]    dt[0]
    */
-  AssertThrow(i >= 0 && i <= int(order) - 1, dealii::ExcMessage("Invalid access."));
+  AssertThrow(i >= 0 and i <= int(order) - 1, dealii::ExcMessage("Invalid access."));
 
   AssertThrow(time_steps[i] > 0.0, dealii::ExcMessage("Invalid or uninitialized time step size."));
 
@@ -219,7 +219,7 @@ template<typename Number>
 void
 TimeIntBDFBase<Number>::do_timestep_pre_solve(bool const print_header)
 {
-  if(this->print_solver_info() && print_header)
+  if(this->print_solver_info() and print_header)
     this->output_solver_info_header();
 
   update_time_integrator_constants();

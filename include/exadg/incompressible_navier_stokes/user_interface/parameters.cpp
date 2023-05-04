@@ -270,7 +270,7 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
         "Convective formulation of convective operator has to be used for ALE formulation."));
 
     AssertThrow(
-      problem_type == ProblemType::Unsteady && solver_type == SolverType::Unsteady,
+      problem_type == ProblemType::Unsteady and solver_type == SolverType::Unsteady,
       dealii::ExcMessage(
         "Both problem type and solver type have to be Unsteady when using ALE formulation."));
 
@@ -394,7 +394,7 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
     }
   }
 
-  if(use_divergence_penalty == true || use_continuity_penalty == true)
+  if(use_divergence_penalty == true or use_continuity_penalty == true)
   {
     AssertThrow(type_penalty_parameter != TypePenaltyParameter::Undefined,
                 dealii::ExcMessage("Parameter must be defined"));
@@ -402,7 +402,7 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
 
   if(solver_type == SolverType::Steady)
   {
-    if(use_divergence_penalty == true || use_continuity_penalty == true)
+    if(use_divergence_penalty == true or use_continuity_penalty == true)
     {
       AssertThrow(apply_penalty_terms_in_postprocessing_step == false,
                   dealii::ExcMessage(
@@ -420,7 +420,7 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
     if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
     {
       AssertThrow(
-        preconditioner_velocity_block == MomentumPreconditioner::None ||
+        preconditioner_velocity_block == MomentumPreconditioner::None or
           preconditioner_velocity_block == MomentumPreconditioner::PointJacobi,
         dealii::ExcMessage(
           "Use either PointJacobi or None as preconditioner for the momentum block in the case of HDIV - Raviart-Thomas."));
@@ -445,7 +445,7 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
         << "solution. Use the coupled scheme instead if this is desired." << std::endl;
 
       AssertThrow(
-        preconditioner_viscous == PreconditionerViscous::None ||
+        preconditioner_viscous == PreconditionerViscous::None or
           preconditioner_viscous == PreconditionerViscous::PointJacobi,
         dealii::ExcMessage(
           "Use either PointJacobi or None as preconditioner for the viscous step in the case of HDIV - Raviart-Thomas."));
@@ -465,7 +465,7 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
     }
 
     AssertThrow(formulation_convective_term_bc ==
-                    FormulationConvectiveTerm::DivergenceFormulation ||
+                    FormulationConvectiveTerm::DivergenceFormulation or
                   formulation_convective_term_bc ==
                     FormulationConvectiveTerm::ConvectiveFormulation,
                 dealii::ExcMessage("Not implemented."));
@@ -577,13 +577,13 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
 bool
 Parameters::convective_problem() const
 {
-  return (equation_type == EquationType::NavierStokes || equation_type == EquationType::Euler);
+  return (equation_type == EquationType::NavierStokes or equation_type == EquationType::Euler);
 }
 
 bool
 Parameters::viscous_problem() const
 {
-  return (equation_type == EquationType::Stokes || equation_type == EquationType::NavierStokes ||
+  return (equation_type == EquationType::Stokes or equation_type == EquationType::NavierStokes or
           turbulence_model_data.is_active);
 }
 
@@ -596,14 +596,14 @@ Parameters::viscous_term_is_linear() const
 bool
 Parameters::viscous_term_is_nonlinear() const
 {
-  return (viscosity_is_variable() &&
+  return (viscosity_is_variable() and
           treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Implicit);
 }
 
 bool
 Parameters::viscosity_is_variable() const
 {
-  return turbulence_model_data.is_active || generalized_newtonian_model_data.is_active;
+  return turbulence_model_data.is_active or generalized_newtonian_model_data.is_active;
 }
 
 bool
@@ -611,8 +611,8 @@ Parameters::implicit_convective_problem() const
 {
   if(convective_problem())
   {
-    if(solver_type == SolverType::Steady ||
-       (solver_type == SolverType::Unsteady &&
+    if(solver_type == SolverType::Steady or
+       (solver_type == SolverType::Unsteady and
         (treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)))
     {
       return true;
@@ -625,7 +625,7 @@ Parameters::implicit_convective_problem() const
 bool
 Parameters::nonlinear_viscous_problem() const
 {
-  return viscous_problem() && viscous_term_is_nonlinear();
+  return viscous_problem() and viscous_term_is_nonlinear();
 }
 
 bool
@@ -786,8 +786,8 @@ Parameters::print(dealii::ConditionalOStream const & pcout, std::string const & 
     print_parameters_pressure_correction(pcout);
 
   // COUPLED NAVIER-STOKES SOLVER
-  if(solver_type == SolverType::Steady ||
-     (solver_type == SolverType::Unsteady &&
+  if(solver_type == SolverType::Steady or
+     (solver_type == SolverType::Unsteady and
       temporal_discretization == TemporalDiscretization::BDFCoupledSolution))
     print_parameters_coupled_solver(pcout);
 }
@@ -974,10 +974,10 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
 
   print_parameter(pcout, "Use continuity penalty term", use_continuity_penalty);
 
-  if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution ||
+  if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution or
      temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    if(use_divergence_penalty == true || use_continuity_penalty == true)
+    if(use_divergence_penalty == true or use_continuity_penalty == true)
     {
       print_parameter(pcout,
                       "Apply penalty terms in postprocessing step",
@@ -993,7 +993,7 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
     print_parameter(pcout, "Continuity penalty term components", continuity_penalty_components);
   }
 
-  if(use_divergence_penalty == true || use_continuity_penalty == true)
+  if(use_divergence_penalty == true or use_continuity_penalty == true)
   {
     print_parameter(pcout, "Type of penalty parameter", type_penalty_parameter);
   }
@@ -1058,7 +1058,7 @@ Parameters::print_parameters_projection_step(dealii::ConditionalOStream const & 
 
     solver_data_projection.print(pcout);
 
-    if(use_divergence_penalty == true && use_continuity_penalty == true)
+    if(use_divergence_penalty == true and use_continuity_penalty == true)
     {
       print_parameter(pcout, "Preconditioner projection step", preconditioner_projection);
 
@@ -1073,7 +1073,7 @@ Parameters::print_parameters_projection_step(dealii::ConditionalOStream const & 
                         update_preconditioner_projection_every_time_steps);
       }
 
-      if(preconditioner_projection == PreconditionerProjection::BlockJacobi &&
+      if(preconditioner_projection == PreconditionerProjection::BlockJacobi and
          implement_block_diagonal_preconditioner_matrix_free)
       {
         print_parameter(pcout,
@@ -1152,7 +1152,7 @@ Parameters::print_parameters_pressure_correction(dealii::ConditionalOStream cons
   pcout << std::endl << "  Momentum step:" << std::endl;
 
   // Newton solver
-  if(equation_type == EquationType::NavierStokes &&
+  if(equation_type == EquationType::NavierStokes and
      treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
   {
     pcout << "  Newton solver:" << std::endl;
@@ -1176,7 +1176,7 @@ Parameters::print_parameters_pressure_correction(dealii::ConditionalOStream cons
   if(update_preconditioner_momentum == true)
   {
     // if a nonlinear problem has to be solved
-    if(equation_type == EquationType::NavierStokes &&
+    if(equation_type == EquationType::NavierStokes and
        treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
     {
       print_parameter(pcout,
@@ -1219,7 +1219,7 @@ Parameters::print_parameters_coupled_solver(dealii::ConditionalOStream const & p
   // Newton solver
 
   // if a nonlinear problem has to be solved
-  if(equation_type == EquationType::NavierStokes &&
+  if(equation_type == EquationType::NavierStokes and
      treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
   {
     pcout << "Newton solver:" << std::endl;
@@ -1243,7 +1243,7 @@ Parameters::print_parameters_coupled_solver(dealii::ConditionalOStream const & p
   if(update_preconditioner_coupled == true)
   {
     // if a nonlinear problem has to be solved
-    if(equation_type == EquationType::NavierStokes &&
+    if(equation_type == EquationType::NavierStokes and
        treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
     {
       print_parameter(pcout,
@@ -1278,8 +1278,8 @@ Parameters::print_parameters_coupled_solver(dealii::ConditionalOStream const & p
 
   print_parameter(pcout, "Preconditioner", preconditioner_pressure_block);
 
-  if(preconditioner_pressure_block == SchurComplementPreconditioner::LaplaceOperator ||
-     preconditioner_pressure_block == SchurComplementPreconditioner::CahouetChabard ||
+  if(preconditioner_pressure_block == SchurComplementPreconditioner::LaplaceOperator or
+     preconditioner_pressure_block == SchurComplementPreconditioner::CahouetChabard or
      preconditioner_pressure_block == SchurComplementPreconditioner::PressureConvectionDiffusion)
   {
     multigrid_data_pressure_block.print(pcout);
@@ -1295,7 +1295,7 @@ Parameters::print_parameters_coupled_solver(dealii::ConditionalOStream const & p
   }
 
   // projection_step
-  if(use_divergence_penalty == true || use_continuity_penalty == true)
+  if(use_divergence_penalty == true or use_continuity_penalty == true)
   {
     if(apply_penalty_terms_in_postprocessing_step == true)
     {

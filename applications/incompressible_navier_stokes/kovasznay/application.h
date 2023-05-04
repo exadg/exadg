@@ -111,7 +111,7 @@ public:
     }
     else
     {
-      AssertThrow(formulation_viscous == FormulationViscousTerm::LaplaceFormulation ||
+      AssertThrow(formulation_viscous == FormulationViscousTerm::LaplaceFormulation or
                     formulation_viscous == FormulationViscousTerm::DivergenceFormulation,
                   dealii::ExcMessage("Specified formulation of viscous term is not implemented!"));
     }

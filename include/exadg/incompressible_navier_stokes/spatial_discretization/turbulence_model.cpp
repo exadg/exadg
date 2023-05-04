@@ -349,7 +349,7 @@ TurbulenceModel<dim, Number>::vreman_model(scalar const & filter_width,
     // viscosity is defined as zero, so we do nothing in that case.
     // Make sure that B_gamma[i] is larger than zero since we calculate
     // the square root of B_gamma[i].
-    if(velocity_gradient_norm_square[i] > tolerance && B_gamma[i] > tolerance)
+    if(velocity_gradient_norm_square[i] > tolerance and B_gamma[i] > tolerance)
     {
       viscosity[i] += factor[i] * factor[i] *
                       std::exp(0.5 * std::log(B_gamma[i] / velocity_gradient_norm_square[i]));
@@ -516,7 +516,7 @@ TurbulenceModel<dim, Number>::sigma_model(scalar const & filter_width,
   //
   //      // Write values in vector "ev" and reverse the order so that we
   //      // ev[0] corresponds to the largest eigenvalue.
-  //      for(it = ev_list.rbegin(), k=0; it != ev_list.rend() && k<dim; ++it, ++k)
+  //      for(it = ev_list.rbegin(), k=0; it != ev_list.rend() and k<dim; ++it, ++k)
   //      {
   //        ev[k] = std::sqrt(*it);
   //      }

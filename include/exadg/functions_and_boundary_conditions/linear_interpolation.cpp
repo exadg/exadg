@@ -36,7 +36,7 @@ linear_interpolation_1d(double const &                                      y,
 
   unsigned int const n_points_y = y_values.size();
 
-  AssertThrow((y_values[0] - tol < y) && (y < y_values[n_points_y - 1] + tol),
+  AssertThrow((y_values[0] - tol < y) and (y < y_values[n_points_y - 1] + tol),
               dealii::ExcMessage("invalid point found."));
 
   // interpolate y-coordinates
@@ -53,7 +53,7 @@ linear_interpolation_1d(double const &                                      y,
   Number const weight_yp = (y - y_values[iy - 1]) / (y_values[iy] - y_values[iy - 1]);
   Number const weight_ym = 1 - weight_yp;
 
-  AssertThrow(-1.e-12 < weight_yp && weight_yp < 1. + 1e-12 && -1.e-12 < weight_ym &&
+  AssertThrow(-1.e-12 < weight_yp and weight_yp < 1. + 1e-12 and -1.e-12 < weight_ym and
                 weight_ym < 1. + 1e-12,
               dealii::ExcMessage("invalid weights when interpolating solution in 1D."));
 
@@ -108,8 +108,8 @@ linear_interpolation_2d_cartesian(
   // make sure that point does not exceed bounds
   dealii::Point<dim> p = point;
 
-  AssertThrow((y_values[0] - tol < p[1]) && (p[1] < y_values[n_points_y - 1] + tol) &&
-                (z_values[0] - tol < p[2]) && (p[2] < z_values[n_points_z - 1] + tol),
+  AssertThrow((y_values[0] - tol < p[1]) and (p[1] < y_values[n_points_y - 1] + tol) and
+                (z_values[0] - tol < p[2]) and (p[2] < z_values[n_points_z - 1] + tol),
               dealii::ExcMessage("invalid point found."));
 
   // interpolate y and z-coordinates
@@ -133,9 +133,9 @@ linear_interpolation_2d_cartesian(
   Number const weight_zp = (p[2] - z_values[iz - 1]) / (z_values[iz] - z_values[iz - 1]);
   Number const weight_zm = 1 - weight_zp;
 
-  AssertThrow(-1.e-12 < weight_yp && weight_yp < 1. + 1e-12 && -1.e-12 < weight_ym &&
-                weight_ym < 1. + 1e-12 && -1.e-12 < weight_zp && weight_zp < 1. + 1e-12 &&
-                -1.e-12 < weight_zm && weight_zm < 1. + 1e-12,
+  AssertThrow(-1.e-12 < weight_yp and weight_yp < 1. + 1e-12 and -1.e-12 < weight_ym and
+                weight_ym < 1. + 1e-12 and -1.e-12 < weight_zp and weight_zp < 1. + 1e-12 and
+                -1.e-12 < weight_zm and weight_zm < 1. + 1e-12,
               dealii::ExcMessage("invalid weights when interpolating solution in 2D."));
 
   result = weight_ym * weight_zm * solution_values[(iy - 1) * n_points_z + (iz - 1)][component] +
@@ -201,8 +201,8 @@ linear_interpolation_2d_cylindrical(
   if(r > r_values[n_points_r - 1])
     r = r_values[n_points_r - 1];
 
-  AssertThrow(r > (r_values[0] - tol) && r < (r_values[n_points_r - 1] + tol) &&
-                phi > (phi_values[0] - tol) && phi < (phi_values[n_points_phi - 1] + tol),
+  AssertThrow(r > (r_values[0] - tol) and r < (r_values[n_points_r - 1] + tol) and
+                phi > (phi_values[0] - tol) and phi < (phi_values[n_points_phi - 1] + tol),
               dealii::ExcMessage("invalid point found."));
 
   // interpolate r and phi-coordinates
@@ -223,7 +223,7 @@ linear_interpolation_2d_cylindrical(
   if(i_phi == 0)
     i_phi++;
 
-  AssertThrow(i_r > 0 && i_r < n_points_r && i_phi > 0 && i_phi < n_points_phi,
+  AssertThrow(i_r > 0 and i_r < n_points_r and i_phi > 0 and i_phi < n_points_phi,
               dealii::ExcMessage("Invalid point found"));
 
   Number const weight_r_p = (r - r_values[i_r - 1]) / (r_values[i_r] - r_values[i_r - 1]);
@@ -232,9 +232,9 @@ linear_interpolation_2d_cylindrical(
     (phi - phi_values[i_phi - 1]) / (phi_values[i_phi] - phi_values[i_phi - 1]);
   Number const weight_phi_m = 1 - weight_phi_p;
 
-  AssertThrow(-1.e-12 < weight_r_p && weight_r_p < 1. + 1e-12 && -1.e-12 < weight_r_m &&
-                weight_r_m < 1. + 1e-12 && -1.e-12 < weight_phi_p && weight_phi_p < 1. + 1e-12 &&
-                -1.e-12 < weight_phi_m && weight_phi_m < 1. + 1e-12,
+  AssertThrow(-1.e-12 < weight_r_p and weight_r_p < 1. + 1e-12 and -1.e-12 < weight_r_m and
+                weight_r_m < 1. + 1e-12 and -1.e-12 < weight_phi_p and weight_phi_p < 1. + 1e-12 and
+                -1.e-12 < weight_phi_m and weight_phi_m < 1. + 1e-12,
               dealii::ExcMessage("invalid weights when interpolating solution in 2D."));
 
   result =

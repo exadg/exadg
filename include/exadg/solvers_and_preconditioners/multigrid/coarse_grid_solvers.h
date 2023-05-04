@@ -137,9 +137,9 @@ public:
     else
     {
       AssertThrow(
-        additional_data.preconditioner == MultigridCoarseGridPreconditioner::None ||
-          additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi ||
-          additional_data.preconditioner == MultigridCoarseGridPreconditioner::BlockJacobi ||
+        additional_data.preconditioner == MultigridCoarseGridPreconditioner::None or
+          additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi or
+          additional_data.preconditioner == MultigridCoarseGridPreconditioner::BlockJacobi or
           additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG,
         dealii::ExcMessage("Specified preconditioner for PCG coarse grid solver not implemented."));
     }
@@ -156,7 +156,7 @@ public:
     {
       // do nothing
     }
-    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi ||
+    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi or
             additional_data.preconditioner == MultigridCoarseGridPreconditioner::BlockJacobi)
     {
       preconditioner->update();
@@ -282,7 +282,7 @@ public:
         {
           solver_data.use_preconditioner = false;
         }
-        else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi ||
+        else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi or
                 additional_data.preconditioner == MultigridCoarseGridPreconditioner::BlockJacobi)
         {
           solver_data.use_preconditioner = true;
@@ -309,7 +309,7 @@ public:
         {
           solver_data.use_preconditioner = false;
         }
-        else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi ||
+        else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi or
                 additional_data.preconditioner == MultigridCoarseGridPreconditioner::BlockJacobi)
         {
           solver_data.use_preconditioner = true;

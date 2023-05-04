@@ -74,7 +74,7 @@ struct RestartData
     if(reset_counter)
       counter += int((time + 1.e-10) / interval_time);
 
-    bool do_restart = wall_time > interval_wall_time * counter || time > interval_time * counter ||
+    bool do_restart = wall_time > interval_wall_time * counter or time > interval_time * counter or
                       time_step_number > interval_time_steps * counter;
 
     if(do_restart)

@@ -119,7 +119,7 @@ PartitionedSolver<dim, Number>::check_convergence(VectorType const & residual) c
   double const ref_norm_rel  = structure->time_integrator->get_velocity_np().l2_norm() *
                               structure->time_integrator->get_time_step_size();
 
-  bool const converged = (residual_norm < parameters.abs_tol * ref_norm_abs) ||
+  bool const converged = (residual_norm < parameters.abs_tol * ref_norm_abs) or
                          (residual_norm < parameters.rel_tol * ref_norm_rel);
 
   return converged;
@@ -190,7 +190,7 @@ PartitionedSolver<dim, Number>::solve(
 
     bool   converged = false;
     double omega     = 1.0;
-    while(not converged and k < parameters.partitioned_iter_max)
+    while(not(converged) and k < parameters.partitioned_iter_max)
     {
       print_solver_info_header(k);
 
@@ -381,7 +381,7 @@ PartitionedSolver<dim, Number>::solve(
     unsigned int const n = fluid->time_integrator->get_number_of_time_steps();
 
     bool converged = false;
-    while(not converged and k < parameters.partitioned_iter_max)
+    while(not(converged) and k < parameters.partitioned_iter_max)
     {
       print_solver_info_header(k);
 

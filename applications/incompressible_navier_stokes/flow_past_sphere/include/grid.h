@@ -153,17 +153,17 @@ create_sphere_grid(Triangulation<dim> & tria, unsigned int const n_refinements)
   // Shift two points somewhat to generate a better balance in points
   for(auto const & cell : tria_ser.active_cell_iterators())
   {
-    if(std::abs(cell->vertex(0)[0] - outer) < 1e-10 && std::abs(cell->vertex(0)[1]) < 1e-10 &&
+    if(std::abs(cell->vertex(0)[0] - outer) < 1e-10 and std::abs(cell->vertex(0)[1]) < 1e-10 and
        std::abs(cell->vertex(0)[2]) < 1e-10)
       cell->vertex(0)[0] += 0.3 * (outer - radius_next);
-    else if(std::abs(cell->vertex(0)[0] - 0.5 * (outer + radius_next)) < 1e-10 &&
-            std::abs(cell->vertex(0)[1]) < 1e-10 && std::abs(cell->vertex(0)[2]) < 1e-10)
+    else if(std::abs(cell->vertex(0)[0] - 0.5 * (outer + radius_next)) < 1e-10 and
+            std::abs(cell->vertex(0)[1]) < 1e-10 and std::abs(cell->vertex(0)[2]) < 1e-10)
       cell->vertex(0)[0] += 0.15 * (outer - radius_next);
-    else if(std::abs(cell->vertex(1)[0] + outer) < 1e-10 && std::abs(cell->vertex(1)[1]) < 1e-10 &&
-            std::abs(cell->vertex(1)[2]) < 1e-10)
+    else if(std::abs(cell->vertex(1)[0] + outer) < 1e-10 and
+            std::abs(cell->vertex(1)[1]) < 1e-10 and std::abs(cell->vertex(1)[2]) < 1e-10)
       cell->vertex(1)[0] -= 0.3 * (outer - radius_next);
-    else if(std::abs(cell->vertex(1)[0] + 0.5 * (outer + radius_next)) < 1e-10 &&
-            std::abs(cell->vertex(1)[1]) < 1e-10 && std::abs(cell->vertex(1)[2]) < 1e-10)
+    else if(std::abs(cell->vertex(1)[0] + 0.5 * (outer + radius_next)) < 1e-10 and
+            std::abs(cell->vertex(1)[1]) < 1e-10 and std::abs(cell->vertex(1)[2]) < 1e-10)
       cell->vertex(1)[0] -= 0.15 * (outer - radius_next);
   }
 
@@ -185,8 +185,8 @@ create_sphere_grid(Triangulation<dim> & tria, unsigned int const n_refinements)
   // Remove cells present in inner mesh
   std::set<typename Triangulation<dim>::active_cell_iterator> cells_to_remove;
   for(auto const & cell : tria_rectangle.active_cell_iterators())
-    if(outer - std::abs(cell->center()[1]) > 0. &&
-       (dim < 3 || (outer - std::abs(cell->center()[2]) > 0.)))
+    if(outer - std::abs(cell->center()[1]) > 0. and
+       (dim < 3 or (outer - std::abs(cell->center()[2]) > 0.)))
       cells_to_remove.insert(cell);
 
   Triangulation<dim> tria_outer;
@@ -221,8 +221,8 @@ create_sphere_grid(Triangulation<dim> & tria, unsigned int const n_refinements)
         else if(std::abs(cell->face(f)->center()[0] + 3. * outer) < 1e-10)
           cell->face(f)->set_boundary_id(1);
         // symmetry -> id 0
-        else if(2. * outer - std::abs(cell->face(f)->center()[1]) < 1e-10 ||
-                (dim == 3 && (2. * outer - std::abs(cell->face(f)->center()[2]) < 1e-10)))
+        else if(2. * outer - std::abs(cell->face(f)->center()[1]) < 1e-10 or
+                (dim == 3 and (2. * outer - std::abs(cell->face(f)->center()[2]) < 1e-10)))
           cell->face(f)->set_boundary_id(0);
         // outflow -> id 2
         else
@@ -241,8 +241,8 @@ create_sphere_grid(Triangulation<dim> & tria, unsigned int const n_refinements)
     for(auto const & cell : tria.active_cell_iterators())
       if(cell->is_locally_owned())
       {
-        if(outer - std::abs(cell->center()[1]) > 0. &&
-           (dim < 3 || (outer - std::abs(cell->center()[2]) > 0.)))
+        if(outer - std::abs(cell->center()[1]) > 0. and
+           (dim < 3 or (outer - std::abs(cell->center()[2]) > 0.)))
           cell->set_refine_flag();
       }
     tria.execute_coarsening_and_refinement();
@@ -256,7 +256,7 @@ create_sphere_grid(Triangulation<dim> & tria, unsigned int const n_refinements)
     if(cell->is_locally_owned())
     {
       Point<dim> center = cell->center();
-      if(center[0] > 0 && center[0] < 4.5 * outer)
+      if(center[0] > 0 and center[0] < 4.5 * outer)
       {
         // Check radius of 2.5 * radius for (y,z) coordinates
         const double radius_factor = center[0] < 0 ? 2.3 : 2.8;

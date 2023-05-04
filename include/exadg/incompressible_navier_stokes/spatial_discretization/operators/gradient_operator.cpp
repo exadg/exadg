@@ -340,7 +340,7 @@ GradientOperator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const &
     velocity.reinit(cell);
     pressure.reinit(cell);
 
-    if(data.integration_by_parts == true &&
+    if(data.integration_by_parts == true and
        data.formulation == FormulationPressureGradientTerm::Weak)
     {
       pressure.gather_evaluate(src, dealii::EvaluationFlags::values);
@@ -482,7 +482,7 @@ GradientOperator<dim, Number>::boundary_face_loop_inhom_operator(
 {
   (void)src;
 
-  if(data.integration_by_parts == true && data.use_boundary_data == true)
+  if(data.integration_by_parts == true and data.use_boundary_data == true)
   {
     FaceIntegratorU velocity(matrix_free, true, data.dof_index_velocity, data.quad_index);
     FaceIntegratorP pressure(matrix_free, true, data.dof_index_pressure, data.quad_index);
@@ -510,7 +510,7 @@ GradientOperator<dim, Number>::boundary_face_loop_inhom_operator_bc_from_dof_vec
   VectorType const &,
   Range const & face_range) const
 {
-  if(data.integration_by_parts == true && data.use_boundary_data == true)
+  if(data.integration_by_parts == true and data.use_boundary_data == true)
   {
     FaceIntegratorU velocity(matrix_free, true, data.dof_index_velocity, data.quad_index);
     FaceIntegratorP pressure(matrix_free, true, data.dof_index_pressure, data.quad_index);

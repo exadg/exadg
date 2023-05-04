@@ -248,7 +248,7 @@ Operator<dim, n_components, Number>::fill_matrix_free_data(
   // conditions. This is not needed in case of discontinuous Galerkin discretizations
   // where boundary conditions are imposed weakly via integrals over the domain
   // boundaries.
-  if(param.spatial_discretization == SpatialDiscretization::CG &&
+  if(param.spatial_discretization == SpatialDiscretization::CG and
      not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
     AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
@@ -267,7 +267,7 @@ Operator<dim, n_components, Number>::setup_operators()
   Poisson::LaplaceOperatorData<rank, dim> laplace_operator_data;
   laplace_operator_data.dof_index  = get_dof_index();
   laplace_operator_data.quad_index = get_quad_index();
-  if(param.spatial_discretization == SpatialDiscretization::CG &&
+  if(param.spatial_discretization == SpatialDiscretization::CG and
      not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
     AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),

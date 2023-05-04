@@ -36,7 +36,7 @@ compute_eigenvalues(Operator const &   op,
   VectorType solution, rhs;
   solution.reinit(inverse_diagonal);
   rhs.reinit(inverse_diagonal, true);
-  // NB: initialize rand in order to obtain "reproducible" results !!!
+  // NB: initialize rand in order to obtain "reproducible" results!
   srand(1);
   for(unsigned int i = 0; i < rhs.locally_owned_size(); ++i)
     rhs.local_element(i) = (double)rand() / RAND_MAX;

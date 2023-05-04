@@ -81,13 +81,13 @@ radius_function(double const z)
 {
   double radius = R_OUTER;
 
-  if(z >= Z1_INFLOW && z <= Z2_INFLOW)
+  if(z >= Z1_INFLOW and z <= Z2_INFLOW)
     radius = R_OUTER;
-  else if(z >= Z1_CONE && z <= Z2_CONE)
+  else if(z >= Z1_CONE and z <= Z2_CONE)
     radius = R_OUTER * (1.0 - (z - Z1_CONE) / (Z2_CONE - Z1_CONE) * (R_OUTER - R_INNER) / R_OUTER);
-  else if(z >= Z1_THROAT && z <= Z2_THROAT)
+  else if(z >= Z1_THROAT and z <= Z2_THROAT)
     radius = R_INNER;
-  else if(z > Z1_OUTFLOW && z <= Z2_OUTFLOW)
+  else if(z > Z1_OUTFLOW and z <= Z2_OUTFLOW)
     radius = R_OUTER;
 
   return radius;
@@ -144,9 +144,9 @@ create_grid_and_set_boundary_ids_nozzle(
         double const       z = cell->vertex(v)[2];
         point_2d[2]          = z;
 
-        // note that this value is only valid for the current dealii implementation of hyper_ball!!!
+        // note that this value is only valid for the current dealii implementation of hyper_ball!
         if(std::abs((cell->vertex(v) - point_2d).norm() - 2.485281374239e-03 / 6.0e-3 * R_OUTER) <
-             1.e-10 ||
+             1.e-10 or
            std::abs((cell->vertex(v) - point_2d).norm() - R_OUTER) < 1.e-10)
         {
           cell->vertex(v)[0] *= 1.0 - (cell->vertex(v)[2] - Z1_CONE) / (Z2_CONE - Z1_CONE) *
@@ -264,7 +264,7 @@ create_grid_and_set_boundary_ids_nozzle(
       }
     }
     // CONE
-    else if(cell->center()[2] > Z1_CONE && cell->center()[2] < Z2_CONE)
+    else if(cell->center()[2] > Z1_CONE and cell->center()[2] < Z2_CONE)
     {
       for(auto const & f : cell->face_indices())
       {
@@ -304,7 +304,7 @@ create_grid_and_set_boundary_ids_nozzle(
       }
     }
     // THROAT
-    else if(cell->center()[2] > Z1_THROAT && cell->center()[2] < Z2_THROAT)
+    else if(cell->center()[2] > Z1_THROAT and cell->center()[2] < Z2_THROAT)
     {
       for(auto const & f : cell->face_indices())
       {
@@ -333,7 +333,7 @@ create_grid_and_set_boundary_ids_nozzle(
       }
     }
     // OUTFLOW
-    else if(cell->center()[2] > Z1_OUTFLOW && cell->center()[2] < Z2_OUTFLOW)
+    else if(cell->center()[2] > Z1_OUTFLOW and cell->center()[2] < Z2_OUTFLOW)
     {
       dealii::Point<dim> point2 = dealii::Point<dim>(0, 0, cell->center()[2]);
 
@@ -350,7 +350,7 @@ create_grid_and_set_boundary_ids_nozzle(
           for(auto const & v : cell->face(f)->vertex_indices())
           {
             dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
-            if(std::abs((cell->face(f)->vertex(v) - point).norm() - R_INNER) > 1e-12 ||
+            if(std::abs((cell->face(f)->vertex(v) - point).norm() - R_INNER) > 1e-12 or
                (cell->center() - point2).norm() > R_INNER / std::sqrt(2.0))
             {
               face_at_sphere_boundary = false;

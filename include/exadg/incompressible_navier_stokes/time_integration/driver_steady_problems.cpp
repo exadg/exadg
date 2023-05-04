@@ -129,7 +129,7 @@ DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_pro
   // Update divergence and continuity penalty operator in case
   // that these terms are added to the monolithic system of equations
   // instead of applying these terms in a postprocessing step.
-  if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
+  if(this->param.use_divergence_penalty == true or this->param.use_continuity_penalty == true)
   {
     AssertThrow(this->param.apply_penalty_terms_in_postprocessing_step == false,
                 dealii::ExcMessage(
@@ -200,9 +200,9 @@ template<int dim, typename Number>
 bool
 DriverSteadyProblems<dim, Number>::print_solver_info(double const time, bool unsteady_problem) const
 {
-  return !unsteady_problem || param.solver_info_data.write(this->global_timer.wall_time(),
-                                                           time - param.start_time,
-                                                           iterations.first + 1);
+  return not(unsteady_problem) or param.solver_info_data.write(this->global_timer.wall_time(),
+                                                               time - param.start_time,
+                                                               iterations.first + 1);
 }
 
 template<int dim, typename Number>

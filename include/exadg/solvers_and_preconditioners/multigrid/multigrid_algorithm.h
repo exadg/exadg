@@ -128,7 +128,7 @@ public:
 
     int  n_iter    = 0;
     bool converged = norm_r_0 < abstol;
-    while(!converged)
+    while(not converged)
     {
       for(unsigned int i = minlevel; i < maxlevel; i++)
       {
@@ -140,7 +140,7 @@ public:
       // calculate residual and check convergence
       norm_r = calculate_residual(residual);
       std::cout << "Norm of residual = " << norm_r << std::endl;
-      converged = (norm_r < abstol || norm_r / norm_r_0 < reltol || n_iter >= max_iter);
+      converged = (norm_r < abstol or norm_r / norm_r_0 < reltol or n_iter >= max_iter);
 
       ++n_iter;
     }

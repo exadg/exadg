@@ -247,7 +247,7 @@ TimeIntBDFDualSplitting<dim, Number>::postprocessing_stability_analysis()
               dealii::ExcMessage(
                 "Stability analysis can not be performed for nonlinear convective problems."));
 
-  AssertThrow(velocity[0].l2_norm() < 1.e-15 && pressure[0].l2_norm() < 1.e-15,
+  AssertThrow(velocity[0].l2_norm() < 1.e-15 and pressure[0].l2_norm() < 1.e-15,
               dealii::ExcMessage("Solution vector has to be zero for this stability analysis."));
 
   AssertThrow(dealii::Utilities::MPI::n_mpi_processes(this->mpi_comm) == 1,
@@ -333,7 +333,7 @@ TimeIntBDFDualSplitting<dim, Number>::convective_step()
   velocity_np = 0.0;
 
   // compute convective term and extrapolate convective term (if not Stokes equations)
-  if(this->param.convective_problem() &&
+  if(this->param.convective_problem() and
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(this->param.ale_formulation)
@@ -400,7 +400,7 @@ TimeIntBDFDualSplitting<dim, Number>::evaluate_convective_term()
   dealii::Timer timer;
   timer.restart();
 
-  if(this->param.convective_problem() &&
+  if(this->param.convective_problem() and
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(this->param.ale_formulation == false) // Eulerian case
@@ -441,7 +441,7 @@ TimeIntBDFDualSplitting<dim, Number>::pressure_step()
 
   // solve linear system of equations
   bool const update_preconditioner =
-    this->param.update_preconditioner_pressure_poisson &&
+    this->param.update_preconditioner_pressure_poisson and
     ((this->time_step_number - 1) %
        this->param.update_preconditioner_pressure_poisson_every_time_steps ==
      0);
@@ -481,7 +481,7 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
   rhs *= -this->bdf.get_gamma0() / this->get_time_step_size();
 
   // inhomogeneous parts of boundary face integrals of velocity divergence operator
-  if(this->param.divu_integrated_by_parts == true && this->param.divu_use_boundary_data == true)
+  if(this->param.divu_integrated_by_parts == true and this->param.divu_use_boundary_data == true)
   {
     VectorType temp(rhs);
 
@@ -597,8 +597,8 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
   iterations_mass.second += n_iter_mass;
 
   // penalty terms
-  if(this->param.apply_penalty_terms_in_postprocessing_step == false &&
-     (this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true))
+  if(this->param.apply_penalty_terms_in_postprocessing_step == false and
+     (this->param.use_divergence_penalty == true or this->param.use_continuity_penalty == true))
   {
     // extrapolate velocity to time t_n+1 and use this velocity field to
     // calculate the penalty parameter for the divergence and continuity penalty term
@@ -618,7 +618,7 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
 
     // solve linear system of equations
     bool const update_preconditioner =
-      this->param.update_preconditioner_projection &&
+      this->param.update_preconditioner_projection and
       ((this->time_step_number - 1) %
          this->param.update_preconditioner_projection_every_time_steps ==
        0);
@@ -731,7 +731,7 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
 
     // solve linear system of equations
     bool const update_preconditioner =
-      this->param.update_preconditioner_viscous &&
+      this->param.update_preconditioner_viscous and
       ((this->time_step_number - 1) % this->param.update_preconditioner_viscous_every_time_steps ==
        0);
 
@@ -780,7 +780,7 @@ template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::penalty_step()
 {
-  if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
+  if(this->param.use_divergence_penalty == true or this->param.use_continuity_penalty == true)
   {
     dealii::Timer timer;
     timer.restart();
@@ -800,12 +800,12 @@ TimeIntBDFDualSplitting<dim, Number>::penalty_step()
 
     // right-hand side term: add inhomogeneous contributions of continuity penalty operator to
     // rhs-vector if desired
-    if(this->param.use_continuity_penalty && this->param.continuity_penalty_use_boundary_data)
+    if(this->param.use_continuity_penalty and this->param.continuity_penalty_use_boundary_data)
       pde_operator->rhs_add_projection_operator(rhs, this->get_next_time());
 
     // solve linear system of equations
     bool const update_preconditioner =
-      this->param.update_preconditioner_projection &&
+      this->param.update_preconditioner_projection and
       ((this->time_step_number - 1) %
          this->param.update_preconditioner_projection_every_time_steps ==
        0);
@@ -866,7 +866,7 @@ TimeIntBDFDualSplitting<dim, Number>::solve_steady_problem()
     VectorType velocity_tmp;
     VectorType pressure_tmp;
 
-    while(!converged && this->time < (this->end_time - this->eps) &&
+    while(not(converged) and this->time < (this->end_time - this->eps) and
           this->get_time_step_number() <= this->param.max_number_of_time_steps)
     {
       // save solution from previous time step
@@ -908,7 +908,7 @@ TimeIntBDFDualSplitting<dim, Number>::solve_steady_problem()
       }
 
       // check convergence
-      if(incr < this->param.abs_tol_steady || incr_rel < this->param.rel_tol_steady)
+      if(incr < this->param.abs_tol_steady or incr_rel < this->param.rel_tol_steady)
       {
         converged = true;
       }

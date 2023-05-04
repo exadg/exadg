@@ -84,7 +84,7 @@ SSPRK<Operator, VectorType>::solve_timestep(VectorType & vec_np,
   unsigned int const stages = A.m();
 
   // Initialize vectors if necessary
-  if(u_vec.empty() || !u_vec[0].partitioners_are_globally_compatible(*vec_n.get_partitioner()))
+  if(u_vec.empty() or not(u_vec[0].partitioners_are_globally_compatible(*vec_n.get_partitioner())))
   {
     u_vec.resize(stages + 1);
     for(unsigned int d = 0; d < u_vec.size(); ++d)

@@ -145,7 +145,7 @@ TimerTree::insert(std::vector<std::string>   ids,
 
     std::shared_ptr<TimerTree> new_tree(new TimerTree());
     new_tree->copy_from(sub_tree);
-    if(!new_name.empty())
+    if(not new_name.empty())
       new_tree->id = new_name;
 
     // Make sure that the new tree does not already exist
@@ -362,7 +362,7 @@ TimerTree::print_direct_children(dealii::ConditionalOStream const & pcout,
 
   // Compute item "Other" if relative computation is activated.
   // Print "Other" only if there is at least one sub-tree with data.
-  if(relative && at_least_one_subtree_with_data)
+  if(relative and at_least_one_subtree_with_data)
   {
     TimerTree other;
     other.id              = "Other";

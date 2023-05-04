@@ -380,7 +380,7 @@ public:
   virtual ~Permutator()
   {
     // not initialized -> nothing to clean up
-    if(!initialized)
+    if(not initialized)
       return;
 
     delete[] recv_index;

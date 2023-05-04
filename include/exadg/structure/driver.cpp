@@ -81,7 +81,7 @@ Driver<dim, Number>::setup()
 
   pde_operator->setup(matrix_free, matrix_free_data);
 
-  if(!is_throughput_study)
+  if(not is_throughput_study)
   {
     // initialize postprocessor
     postprocessor = application->create_postprocessor();
@@ -235,7 +235,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   pde_operator->initialize_dof_vector(dst);
   src = 1.0;
 
-  if(application->get_parameters().large_deformation && operator_type == OperatorType::Linearized)
+  if(application->get_parameters().large_deformation and operator_type == OperatorType::Linearized)
   {
     pde_operator->initialize_dof_vector(linearization);
     linearization = 1.0;

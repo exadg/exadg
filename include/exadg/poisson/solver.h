@@ -111,7 +111,7 @@ main(int argc, char ** argv)
   {
     input_file = std::string(argv[1]);
 
-    if(argc == 3 && std::string(argv[2]) == "--help")
+    if(argc == 3 and std::string(argv[2]) == "--help")
     {
       if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
         ExaDG::create_input_file(input_file);
@@ -135,16 +135,16 @@ main(int argc, char ** argv)
     unsigned int const refine_space = std::get<1>(*iter);
     unsigned int const n_cells_1d   = std::get<2>(*iter);
 
-    if(general.dim == 2 && general.precision == "float")
+    if(general.dim == 2 and general.precision == "float")
       ExaDG::run<2, float>(
         results, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
-    else if(general.dim == 2 && general.precision == "double")
+    else if(general.dim == 2 and general.precision == "double")
       ExaDG::run<2, double>(
         results, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
-    else if(general.dim == 3 && general.precision == "float")
+    else if(general.dim == 3 and general.precision == "float")
       ExaDG::run<3, float>(
         results, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
-    else if(general.dim == 3 && general.precision == "double")
+    else if(general.dim == 3 and general.precision == "double")
       ExaDG::run<3, double>(
         results, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
     else

@@ -158,7 +158,7 @@ DriverQuasiStatic<dim, Number>::do_solve()
     // step can be solved successfully
     bool         success        = false;
     unsigned int re_try_counter = 0;
-    while(!success && re_try_counter < 10)
+    while(not(success) and re_try_counter < 10)
     {
       try
       {

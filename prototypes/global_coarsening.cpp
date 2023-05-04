@@ -38,7 +38,7 @@ print_mesh(const Triangulation<dim> &                                      tria,
       if(cell == tria.end())
         break;
 
-      if(cell->is_locally_owned_on_level() &&
+      if(cell->is_locally_owned_on_level() and
          static_cast<bool>(refinement_state[cell->level()][cell->global_level_cell_index()]))
         return cell;
     }
@@ -53,7 +53,7 @@ print_mesh(const Triangulation<dim> &                                      tria,
     if(cell == tria.end())
       return cell;
 
-    if(cell->is_locally_owned_on_level() &&
+    if(cell->is_locally_owned_on_level() and
        static_cast<bool>(refinement_state[cell->level()][cell->global_level_cell_index()]))
       return cell;
 
@@ -135,7 +135,7 @@ test(const unsigned int n_local_refinements)
 
     for(unsigned int l = 0; l < refinement_state.size() - 1 - ll; ++l)
       for(const auto & parent_cell : tria.cell_iterators_on_level(l))
-        if(parent_cell->is_locally_owned_on_level() == true && parent_cell->has_children())
+        if(parent_cell->is_locally_owned_on_level() == true and parent_cell->has_children())
         {
           // cell has been visited already -> nothing to do
           if(refinement_state_temp[parent_cell->level()][parent_cell->global_level_cell_index()] !=

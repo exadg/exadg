@@ -123,7 +123,7 @@ public:
     timer.stop("Init-Ipol");
 
     // FFTW will be called externally
-    if(!inplace)
+    if(not inplace)
       return;
 
     // ... fftw

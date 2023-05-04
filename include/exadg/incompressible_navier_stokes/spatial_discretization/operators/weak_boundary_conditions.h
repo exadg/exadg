@@ -47,7 +47,7 @@ inline DEAL_II_ALWAYS_INLINE //
   // element e⁻
   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> value_m;
 
-  if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
+  if(operator_type == OperatorType::full or operator_type == OperatorType::homogeneous)
   {
     value_m = integrator.get_value(q);
   }
@@ -78,9 +78,9 @@ inline DEAL_II_ALWAYS_INLINE //
   // element e⁺
   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> value_p;
 
-  if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)
+  if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
   {
-    if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
+    if(operator_type == OperatorType::full or operator_type == OperatorType::inhomogeneous)
     {
       dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> g;
 
@@ -160,7 +160,7 @@ inline DEAL_II_ALWAYS_INLINE //
 {
   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> u_p;
 
-  if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)
+  if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
   {
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> g;
 
@@ -229,9 +229,9 @@ inline DEAL_II_ALWAYS_INLINE //
   // element e⁺
   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> value_p;
 
-  if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)
+  if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
   {
-    if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
+    if(operator_type == OperatorType::full or operator_type == OperatorType::inhomogeneous)
     {
       dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> g = integrator_bc.get_value(q);
 
@@ -292,7 +292,7 @@ inline DEAL_II_ALWAYS_INLINE //
   // element e⁻
   dealii::VectorizedArray<Number> value_m = dealii::make_vectorized_array<Number>(0.0);
 
-  if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
+  if(operator_type == OperatorType::full or operator_type == OperatorType::homogeneous)
   {
     value_m = integrator.get_value(q);
   }
@@ -326,7 +326,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if(boundary_type == BoundaryTypeP::Dirichlet)
   {
-    if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
+    if(operator_type == OperatorType::full or operator_type == OperatorType::inhomogeneous)
     {
       auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
       auto q_points = integrator.quadrature_point(q);
@@ -371,7 +371,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if(boundary_type == BoundaryTypeP::Dirichlet)
   {
-    if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
+    if(operator_type == OperatorType::full or operator_type == OperatorType::inhomogeneous)
     {
       dealii::VectorizedArray<Number> g = integrator_bc.get_value(q);
 
@@ -446,13 +446,13 @@ inline DEAL_II_ALWAYS_INLINE //
 {
   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normal_gradient_p;
 
-  if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)
+  if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
   {
     normal_gradient_p = normal_gradient_m;
   }
   else if(boundary_type == BoundaryTypeU::Neumann)
   {
-    if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
+    if(operator_type == OperatorType::full or operator_type == OperatorType::inhomogeneous)
     {
       auto bc       = boundary_descriptor->neumann_bc.find(boundary_id)->second;
       auto q_points = integrator.quadrature_point(q);

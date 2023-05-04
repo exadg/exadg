@@ -83,7 +83,7 @@ FlowRateCalculator<dim, Number>::write_output(Number const &      value,
                                               std::string const & name)
 {
   // write output file
-  if(data.write_to_file == true && dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  if(data.write_to_file == true and dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     std::string filename = data.directory + data.filename;
 

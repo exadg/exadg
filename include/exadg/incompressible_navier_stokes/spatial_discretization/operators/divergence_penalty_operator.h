@@ -143,7 +143,7 @@ public:
       scalar tau_convective = dealii::make_vectorized_array<Number>(0.0);
       scalar tau_viscous    = dealii::make_vectorized_array<Number>(data.viscosity);
 
-      if(data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm ||
+      if(data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm or
          data.type_penalty_parameter == TypePenaltyParameter::ViscousAndConvectiveTerms)
       {
         integrator.reinit(cell);

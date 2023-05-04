@@ -338,7 +338,7 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
   // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
   rhs.add(-1.0, tmp);
 
-  if(not(is_dg))
+  if(not is_dg)
   {
     // Set constrained degrees of freedom according to Dirichlet boundary conditions. The rest of
     // the vector contains zeros.
@@ -390,7 +390,7 @@ void
 OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) const
 {
   // compute diagonal
-  if(is_dg && evaluate_face_integrals())
+  if(is_dg and evaluate_face_integrals())
   {
     if(data.use_cell_based_loops)
     {
@@ -435,7 +435,7 @@ OperatorBase<dim, Number, n_components>::calculate_block_diagonal_matrices() con
   AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
 
   // allocate memory only the first time
-  if(!block_diagonal_preconditioner_is_initialized ||
+  if(not(block_diagonal_preconditioner_is_initialized) or
      matrix_free->n_cell_batches() * vectorization_length != matrices.size())
   {
     auto dofs =
@@ -611,7 +611,7 @@ OperatorBase<dim, Number, n_components>::apply_add_block_diagonal_elementwise(
   for(unsigned int i = 0; i < integrator->dofs_per_cell; ++i)
     dst[i] += integrator->begin_dof_values()[i];
 
-  if(is_dg && evaluate_face_integrals())
+  if(is_dg and evaluate_face_integrals())
   {
     // face integrals
     unsigned int const n_faces = dealii::ReferenceCells::template get_hypercube<dim>().n_faces();
@@ -654,7 +654,7 @@ OperatorBase<dim, Number, n_components>::update_block_diagonal_preconditioner() 
 
   // initialization
 
-  if(!block_diagonal_preconditioner_is_initialized)
+  if(not block_diagonal_preconditioner_is_initialized)
   {
     if(data.implement_block_diagonal_preconditioner_matrix_free)
     {
@@ -676,7 +676,7 @@ OperatorBase<dim, Number, n_components>::update_block_diagonal_preconditioner() 
 
   // For the matrix-free variant there is nothing to do.
   // For the matrix-based variant we have to recompute the block matrices.
-  if(!data.implement_block_diagonal_preconditioner_matrix_free)
+  if(not data.implement_block_diagonal_preconditioner_matrix_free)
   {
     // clear matrices
     initialize_block_jacobi_matrices_with_zero(matrices);
@@ -746,7 +746,7 @@ OperatorBase<dim, Number, n_components>::internal_init_system_matrix(
   dealii::types::global_dof_index const sum_of_locally_owned_dofs =
     dealii::Utilities::MPI::sum(owned_dofs.n_elements(), mpi_comm);
   bool const my_rank_is_part_of_subcommunicator = sum_of_locally_owned_dofs == owned_dofs.size();
-  AssertThrow(my_rank_is_part_of_subcommunicator || owned_dofs.n_elements() == 0,
+  AssertThrow(my_rank_is_part_of_subcommunicator or owned_dofs.n_elements() == 0,
               dealii::ExcMessage(
                 "The given communicator mpi_comm in init_system_matrix does not span "
                 "all MPI processes needed to cover the index space of all dofs: " +
@@ -760,13 +760,13 @@ OperatorBase<dim, Number, n_components>::internal_init_system_matrix(
     dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs);
   dealii::DynamicSparsityPattern dsp(relevant_dofs);
 
-  if(is_dg && is_mg)
+  if(is_dg and is_mg)
     dealii::MGTools::make_flux_sparsity_pattern(dof_handler, dsp, this->level);
-  else if(is_dg && !is_mg)
+  else if(is_dg and not is_mg)
     dealii::DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
-  else if(/*!is_dg &&*/ is_mg)
+  else if(/*not(is_dg) and*/ is_mg)
     dealii::MGTools::make_sparsity_pattern(dof_handler, dsp, this->level, *this->constraint);
-  else /* if (!is_dg && !is_mg)*/
+  else /* if (not(is_dg) and not(is_mg))*/
     dealii::DoFTools::make_sparsity_pattern(dof_handler, dsp, *this->constraint);
 
   if(my_rank_is_part_of_subcommunicator)
@@ -783,7 +783,7 @@ OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix(
   SparseMatrix & system_matrix) const
 {
   // assemble matrix locally on each process
-  if(evaluate_face_integrals() && is_dg)
+  if(evaluate_face_integrals() and is_dg)
   {
     matrix_free->loop(&This::cell_loop_calculate_system_matrix,
                       &This::face_loop_calculate_system_matrix,
@@ -1707,7 +1707,7 @@ OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix(
       else
         cell_v->get_dof_indices(dof_indices);
 
-      if(!is_dg)
+      if(not is_dg)
       {
         // in the case of CG: shape functions are not ordered lexicographically
         // see (https://www.dealii.org/8.5.1/doxygen/deal.II/classFE__Q.html)
@@ -1957,7 +1957,7 @@ template<int dim, typename Number, int n_components>
 bool
 OperatorBase<dim, Number, n_components>::evaluate_face_integrals() const
 {
-  return (integrator_flags.face_evaluate != dealii::EvaluationFlags::nothing) ||
+  return (integrator_flags.face_evaluate != dealii::EvaluationFlags::nothing) or
          (integrator_flags.face_integrate != dealii::EvaluationFlags::nothing);
 }
 

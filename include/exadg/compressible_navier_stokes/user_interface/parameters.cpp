@@ -104,7 +104,7 @@ Parameters::check() const
 
   if(temporal_discretization == TemporalDiscretization::ExplRK)
   {
-    AssertThrow(order_time_integrator >= 1 && order_time_integrator <= 4,
+    AssertThrow(order_time_integrator >= 1 and order_time_integrator <= 4,
                 dealii::ExcMessage("Specified order of time integrator ExplRK not implemented!"));
   }
 

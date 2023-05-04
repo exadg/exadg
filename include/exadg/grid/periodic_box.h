@@ -85,9 +85,9 @@ create_periodic_box(std::shared_ptr<dealii::Triangulation<dim>>              tri
       else if((std::fabs(cell->face(face_number)->center()(1) - right) < 1e-12))
         cell->face(face_number)->set_all_boundary_ids(3);
       // z-direction
-      else if(dim == 3 && (std::fabs(cell->face(face_number)->center()(2) - left) < 1e-12))
+      else if(dim == 3 and (std::fabs(cell->face(face_number)->center()(2) - left) < 1e-12))
         cell->face(face_number)->set_all_boundary_ids(4);
-      else if(dim == 3 && (std::fabs(cell->face(face_number)->center()(2) - right) < 1e-12))
+      else if(dim == 3 and (std::fabs(cell->face(face_number)->center()(2) - right) < 1e-12))
         cell->face(face_number)->set_all_boundary_ids(5);
     }
   }

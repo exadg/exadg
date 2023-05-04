@@ -63,7 +63,7 @@ void
 TimeIntBDF<dim, Number>::allocate_vectors()
 {
   // convective term
-  if(this->param.convective_problem() &&
+  if(this->param.convective_problem() and
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
@@ -91,7 +91,7 @@ void
 TimeIntBDF<dim, Number>::setup_derived()
 {
   // In the case of an arbitrary Lagrangian-Eulerian formulation:
-  if(param.ale_formulation && param.restarted_simulation == false)
+  if(param.ale_formulation and param.restarted_simulation == false)
   {
     // compute the grid coordinates at start time (and at previous times in case of
     // start_with_low_order == false)
@@ -110,14 +110,14 @@ TimeIntBDF<dim, Number>::setup_derived()
     }
   }
 
-  if(this->param.convective_problem() &&
+  if(this->param.convective_problem() and
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     // vec_convective_term does not have to be initialized in ALE case (the convective
     // term is recomputed in each time step for all previous times on the new mesh).
     // vec_convective_term does not have to be initialized in case of a restart, where
     // the vectors are read from memory.
-    if(this->param.ale_formulation == false && this->param.restarted_simulation == false)
+    if(this->param.ale_formulation == false and this->param.restarted_simulation == false)
     {
       initialize_vec_convective_term();
     }
@@ -128,7 +128,7 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::prepare_vectors_for_next_timestep()
 {
-  if(this->param.convective_problem() &&
+  if(this->param.convective_problem() and
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(this->param.ale_formulation == false)
@@ -209,7 +209,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(boost::archive::binary_iarchive & 
     set_pressure(tmp, i);
   }
 
-  if(this->param.convective_problem() &&
+  if(this->param.convective_problem() and
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(this->param.ale_formulation == false)
@@ -243,7 +243,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(boost::archive::binary_oarchive &
     oa << get_pressure(i);
   }
 
-  if(this->param.convective_problem() &&
+  if(this->param.convective_problem() and
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(this->param.ale_formulation == false)
@@ -393,12 +393,12 @@ TimeIntBDF<dim, Number>::get_velocities_and_times(std::vector<VectorType const *
    *             times[2]  times[1]  times[0]
    */
   unsigned int current_order = this->order;
-  if(this->time_step_number <= this->order && this->param.start_with_low_order == true)
+  if(this->time_step_number <= this->order and this->param.start_with_low_order == true)
   {
     current_order = this->time_step_number;
   }
 
-  AssertThrow(current_order > 0 && current_order <= this->order,
+  AssertThrow(current_order > 0 and current_order <= this->order,
               dealii::ExcMessage("Invalid parameter current_order"));
 
   velocities.resize(current_order);
@@ -428,12 +428,12 @@ TimeIntBDF<dim, Number>::get_velocities_and_times_np(std::vector<VectorType cons
    *              times[3] times[2]  times[1]   times[0]
    */
   unsigned int current_order = this->order;
-  if(this->time_step_number <= this->order && this->param.start_with_low_order == true)
+  if(this->time_step_number <= this->order and this->param.start_with_low_order == true)
   {
     current_order = this->time_step_number;
   }
 
-  AssertThrow(current_order > 0 && current_order <= this->order,
+  AssertThrow(current_order > 0 and current_order <= this->order,
               dealii::ExcMessage("Invalid parameter current_order"));
 
   velocities.resize(current_order + 1);
@@ -457,8 +457,8 @@ TimeIntBDF<dim, Number>::postprocessing() const
 
   // To allow a computation of errors at start_time (= if time step number is 1 and if the
   // simulation is not a restarted one), the mesh has to be at the correct position
-  if(this->param.ale_formulation && this->get_time_step_number() == 1 &&
-     !this->param.restarted_simulation)
+  if(this->param.ale_formulation and this->get_time_step_number() == 1 and
+     not this->param.restarted_simulation)
   {
     operator_base->move_grid_and_update_dependent_data_structures(this->get_time());
   }

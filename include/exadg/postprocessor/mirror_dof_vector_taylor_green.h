@@ -80,7 +80,7 @@ apply_taylor_green_symmetry(dealii::DoFHandler<dim> const & dof_handler_symm,
 
     // ... has (symm)
     for(auto const & cell : dof_handler_symm.active_cell_iterators())
-      if(cell->is_active() && cell->is_locally_owned())
+      if(cell->is_active() and cell->is_locally_owned())
       {
         auto c = cell->center();
         for(unsigned int i = 0; i < dim; i++)
@@ -94,7 +94,7 @@ apply_taylor_green_symmetry(dealii::DoFHandler<dim> const & dof_handler_symm,
 
     // want (full)
     for(auto const & cell : dof_handler.active_cell_iterators())
-      if(cell->is_active() && cell->is_locally_owned())
+      if(cell->is_active() and cell->is_locally_owned())
       {
         auto c = cell->center();
         for(unsigned int i = 0; i < dim; i++)

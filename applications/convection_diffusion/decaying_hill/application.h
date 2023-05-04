@@ -96,7 +96,7 @@ public:
     double t      = this->get_time();
     double result = 0.0;
 
-    if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousDBC ||
+    if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousDBC or
        BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBC)
     {
       // do nothing, rhs=0
@@ -206,7 +206,7 @@ private:
     {
       this->boundary_descriptor->dirichlet_bc.insert(pair(0, new Solution<dim>(diffusivity)));
     }
-    else if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBC ||
+    else if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBC or
             BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBCWithRHS)
     {
       this->boundary_descriptor->neumann_bc.insert(

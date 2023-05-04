@@ -890,16 +890,16 @@ OperatorCoupled<dim, Number>::update_block_preconditioner()
     auto const type = this->param.preconditioner_pressure_block;
 
     // inverse mass operator
-    if(type == SchurComplementPreconditioner::InverseMassMatrix ||
-       type == SchurComplementPreconditioner::CahouetChabard ||
+    if(type == SchurComplementPreconditioner::InverseMassMatrix or
+       type == SchurComplementPreconditioner::CahouetChabard or
        type == SchurComplementPreconditioner::PressureConvectionDiffusion)
     {
       inverse_mass_preconditioner_schur_complement->update();
     }
 
     // Laplace operator
-    if(type == SchurComplementPreconditioner::LaplaceOperator ||
-       type == SchurComplementPreconditioner::CahouetChabard ||
+    if(type == SchurComplementPreconditioner::LaplaceOperator or
+       type == SchurComplementPreconditioner::CahouetChabard or
        type == SchurComplementPreconditioner::PressureConvectionDiffusion)
     {
       if(this->param.exact_inversion_of_laplace_operator == true)
@@ -1068,7 +1068,7 @@ OperatorCoupled<dim, Number>::apply_preconditioner_velocity_block(VectorType &  
   {
     dst = src;
   }
-  else if(type == MomentumPreconditioner::PointJacobi ||
+  else if(type == MomentumPreconditioner::PointJacobi or
           type == MomentumPreconditioner::BlockJacobi)
   {
     preconditioner_momentum->vmult(dst, src);

@@ -171,7 +171,7 @@ public:
   ~SpectralAnalysis()
   {
     // not initialized -> nothing to clean up
-    if(!initialized)
+    if(not initialized)
       return;
 
     // free data structures

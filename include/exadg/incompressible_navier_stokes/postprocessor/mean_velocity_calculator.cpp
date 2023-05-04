@@ -48,7 +48,7 @@ MeanVelocityCalculator<dim, Number>::MeanVelocityCalculator(
     clear_files(true),
     mpi_comm(comm_in)
 {
-  if(data.calculate && data.write_to_file)
+  if(data.calculate and data.write_to_file)
     create_directories(data.directory, mpi_comm);
 }
 
@@ -155,7 +155,7 @@ MeanVelocityCalculator<dim, Number>::write_output(Number const &      value,
                                                   std::string const & name) const
 {
   // write output file
-  if(data.write_to_file == true && dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  if(data.write_to_file == true and dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     std::string filename = data.directory + data.filename;
 

@@ -194,7 +194,7 @@ template<int dim, typename Number>
 void
 PostProcessor<dim, Number>::initialize_derived_fields()
 {
-  if(pp_data.output_data.write_pressure || pp_data.lift_and_drag_data.time_control_data.is_active ||
+  if(pp_data.output_data.write_pressure or pp_data.lift_and_drag_data.time_control_data.is_active or
      pp_data.pressure_difference_data.time_control_data.is_active)
   {
     pressure.type              = SolutionFieldType::scalar;
@@ -211,10 +211,10 @@ PostProcessor<dim, Number>::initialize_derived_fields()
   }
 
   // velocity
-  if(pp_data.output_data.write_velocity || pp_data.output_data.write_vorticity ||
-     pp_data.output_data.write_divergence || pp_data.output_data.write_shear_rate ||
-     pp_data.lift_and_drag_data.time_control_data.is_active ||
-     pp_data.kinetic_energy_data.time_control_data.is_active ||
+  if(pp_data.output_data.write_velocity or pp_data.output_data.write_vorticity or
+     pp_data.output_data.write_divergence or pp_data.output_data.write_shear_rate or
+     pp_data.lift_and_drag_data.time_control_data.is_active or
+     pp_data.kinetic_energy_data.time_control_data.is_active or
      pp_data.kinetic_energy_spectrum_data.time_control_data.is_active)
   {
     velocity.type              = SolutionFieldType::vector;

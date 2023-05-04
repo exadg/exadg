@@ -79,7 +79,7 @@ do_cell_based_loops(dealii::Triangulation<dim> const & tria,
     return c_num;
   };
 
-  if(!is_mg)
+  if(not is_mg)
   {
     for(auto cell = tria.begin_active(); cell != tria.end(); ++cell)
     {

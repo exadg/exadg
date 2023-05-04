@@ -69,7 +69,7 @@ map_boundary_dofs_to_support_points(
   for(auto const & cell : dof_handler.active_cell_iterators())
     if(cell->is_locally_owned())
       for(auto const & face : cell->face_iterators())
-        if(face->at_boundary() == true && face->boundary_id() == boundary_id)
+        if(face->at_boundary() == true and face->boundary_id() == boundary_id)
         // only work on locally relevant cells
         {
           fe_values.reinit(cell, face);

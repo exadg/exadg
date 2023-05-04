@@ -100,7 +100,7 @@ Driver<dim, Number>::setup()
   // setup convection-diffusion operator
   pde_operator->setup(matrix_free, matrix_free_data);
 
-  if(!is_throughput_study)
+  if(not is_throughput_study)
   {
     // initialize postprocessor
     postprocessor = application->create_postprocessor();
@@ -211,7 +211,7 @@ Driver<dim, Number>::solve()
         time_integrator->advance_one_timestep_solve();
 
         time_integrator->advance_one_timestep_post_solve();
-      } while(!time_integrator->finished());
+      } while(not(time_integrator->finished()));
     }
     else
     {
@@ -240,7 +240,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   this->pcout << "Performance results for convection-diffusion solver:" << std::endl;
 
   // Averaged number of iterations are only relevant for BDF time integrator
-  if(application->get_parameters().problem_type == ProblemType::Unsteady &&
+  if(application->get_parameters().problem_type == ProblemType::Unsteady and
      application->get_parameters().temporal_discretization == TemporalDiscretization::BDF)
   {
     this->pcout << std::endl << "Average number of iterations:" << std::endl;

@@ -95,7 +95,7 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
         mg_matrixfree[i]->get_affine_constraints(dof_handler_index),
         mg_matrixfree[i - 1]->get_affine_constraints(dof_handler_index));
     }
-    else if(coarse_level.degree() != fine_level.degree() || // p-transfer
+    else if(coarse_level.degree() != fine_level.degree() or // p-transfer
             coarse_level.is_dg() != fine_level.is_dg())     // c-transfer
     {
       transfers[i].reinit_polynomial_transfer(

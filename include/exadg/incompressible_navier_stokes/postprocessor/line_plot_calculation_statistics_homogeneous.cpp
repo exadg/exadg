@@ -83,7 +83,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
                 dealii::ExcMessage("Invalid line type, expected LineHomogeneousAveraging<dim>"));
     averaging_direction = line_hom->averaging_direction;
 
-    AssertThrow(averaging_direction == 0 || averaging_direction == 1 || averaging_direction == 2,
+    AssertThrow(averaging_direction == 0 or averaging_direction == 1 or averaging_direction == 2,
                 dealii::ExcMessage("Take the average either in x, y or z-direction"));
 
     unsigned int line_iterator = 0;
@@ -143,8 +143,8 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
               quantity != (*line)->quantities.end();
               ++quantity)
           {
-            if((*quantity)->type == QuantityType::Velocity ||
-               (*quantity)->type == QuantityType::SkinFriction ||
+            if((*quantity)->type == QuantityType::Velocity or
+               (*quantity)->type == QuantityType::SkinFriction or
                (*quantity)->type == QuantityType::ReynoldsStresses)
             {
               velocity_has_to_be_evaluated = true;
@@ -365,8 +365,8 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate(VectorType con
         ++quantity)
     {
       // evaluate quantities that involve velocity
-      if((*quantity)->type == QuantityType::Velocity ||
-         (*quantity)->type == QuantityType::SkinFriction ||
+      if((*quantity)->type == QuantityType::Velocity or
+         (*quantity)->type == QuantityType::SkinFriction or
          (*quantity)->type == QuantityType::ReynoldsStresses)
       {
         evaluate_velocity = true;
@@ -382,7 +382,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate(VectorType con
         ++quantity)
     {
       // evaluate quantities that involve velocity
-      if((*quantity)->type == QuantityType::Pressure ||
+      if((*quantity)->type == QuantityType::Pressure or
          (*quantity)->type == QuantityType::PressureCoefficient)
       {
         evaluate_pressure = true;
@@ -471,7 +471,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
         {
           dealii::Tensor<1, dim> velocity;
 
-          if((*quantity)->type == QuantityType::Velocity ||
+          if((*quantity)->type == QuantityType::Velocity or
              (*quantity)->type == QuantityType::ReynoldsStresses)
           {
             // evaluate velocity solution in current quadrature points
@@ -875,7 +875,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_write_output() const
           f.close();
         }
 
-        if((*quantity)->type == QuantityType::Pressure ||
+        if((*quantity)->type == QuantityType::Pressure or
            (*quantity)->type == QuantityType::PressureCoefficient)
         {
           std::string   filename = filename_prefix + "_pressure" + ".txt";

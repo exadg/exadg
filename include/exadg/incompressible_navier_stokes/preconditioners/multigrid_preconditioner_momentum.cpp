@@ -134,7 +134,7 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
       Operators::ViscousKernel<dim, Number>::get_mapping_flags(this->level_info[level].is_dg(),
                                                                this->level_info[level].is_dg()));
 
-  if(data.use_cell_based_loops && this->level_info[level].is_dg())
+  if(data.use_cell_based_loops and this->level_info[level].is_dg())
   {
     auto tria = &this->dof_handlers[level]->get_triangulation();
     Categorization::do_cell_based_loops(*tria, matrix_free_data.data, h_level);

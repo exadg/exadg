@@ -161,7 +161,7 @@ Driver<dim, Number>::setup()
   // setup Navier-Stokes operator
   pde_operator->setup(matrix_free, matrix_free_data);
 
-  if(!is_throughput_study)
+  if(not is_throughput_study)
   {
     // setup postprocessor
     postprocessor = application->create_postprocessor();
@@ -169,7 +169,7 @@ Driver<dim, Number>::setup()
 
     // setup time integrator before calling setup_solvers
     // (this is necessary since the setup of the solvers
-    // depends on quantities such as the time_step_size or gamma0!!!)
+    // depends on quantities such as the time_step_size or gamma0!)
     if(application->get_parameters().solver_type == SolverType::Unsteady)
     {
       time_integrator = create_time_integrator<dim, Number>(
@@ -257,7 +257,7 @@ Driver<dim, Number>::solve() const
 
     if(application->get_parameters().ale_formulation == true)
     {
-      while(not time_integrator->finished())
+      while(not(time_integrator->finished()))
       {
         time_integrator->advance_one_timestep_pre_solve(true);
 
@@ -379,29 +379,29 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   if(application->get_parameters().temporal_discretization ==
      TemporalDiscretization::BDFCoupledSolution)
   {
-    AssertThrow(operator_type == OperatorType::ConvectiveOperator ||
-                  operator_type == OperatorType::CoupledNonlinearResidual ||
-                  operator_type == OperatorType::CoupledLinearized ||
+    AssertThrow(operator_type == OperatorType::ConvectiveOperator or
+                  operator_type == OperatorType::CoupledNonlinearResidual or
+                  operator_type == OperatorType::CoupledLinearized or
                   operator_type == OperatorType::InverseMassOperator,
                 dealii::ExcMessage("Invalid operator specified for coupled solution approach."));
   }
   else if(application->get_parameters().temporal_discretization ==
           TemporalDiscretization::BDFDualSplittingScheme)
   {
-    AssertThrow(operator_type == OperatorType::ConvectiveOperator ||
-                  operator_type == OperatorType::PressurePoissonOperator ||
-                  operator_type == OperatorType::HelmholtzOperator ||
-                  operator_type == OperatorType::ProjectionOperator ||
+    AssertThrow(operator_type == OperatorType::ConvectiveOperator or
+                  operator_type == OperatorType::PressurePoissonOperator or
+                  operator_type == OperatorType::HelmholtzOperator or
+                  operator_type == OperatorType::ProjectionOperator or
                   operator_type == OperatorType::InverseMassOperator,
                 dealii::ExcMessage("Invalid operator specified for dual splitting scheme."));
   }
   else if(application->get_parameters().temporal_discretization ==
           TemporalDiscretization::BDFPressureCorrection)
   {
-    AssertThrow(operator_type == OperatorType::ConvectiveOperator ||
-                  operator_type == OperatorType::PressurePoissonOperator ||
-                  operator_type == OperatorType::VelocityConvDiffOperator ||
-                  operator_type == OperatorType::ProjectionOperator ||
+    AssertThrow(operator_type == OperatorType::ConvectiveOperator or
+                  operator_type == OperatorType::PressurePoissonOperator or
+                  operator_type == OperatorType::VelocityConvDiffOperator or
+                  operator_type == OperatorType::ProjectionOperator or
                   operator_type == OperatorType::InverseMassOperator,
                 dealii::ExcMessage("Invalid operator specified for pressure-correction scheme."));
   }
@@ -430,7 +430,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
     pde_operator->initialize_block_vector_velocity_pressure(src1);
     src1 = 1.0;
 
-    if(operator_type == OperatorType::ConvectiveOperator ||
+    if(operator_type == OperatorType::ConvectiveOperator or
        operator_type == OperatorType::InverseMassOperator)
     {
       pde_operator->initialize_vector_velocity(src2);
@@ -440,9 +440,9 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   else if(application->get_parameters().temporal_discretization ==
           TemporalDiscretization::BDFDualSplittingScheme)
   {
-    if(operator_type == OperatorType::ConvectiveOperator ||
-       operator_type == OperatorType::HelmholtzOperator ||
-       operator_type == OperatorType::ProjectionOperator ||
+    if(operator_type == OperatorType::ConvectiveOperator or
+       operator_type == OperatorType::HelmholtzOperator or
+       operator_type == OperatorType::ProjectionOperator or
        operator_type == OperatorType::InverseMassOperator)
     {
       pde_operator->initialize_vector_velocity(src2);
@@ -463,8 +463,8 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   else if(application->get_parameters().temporal_discretization ==
           TemporalDiscretization::BDFPressureCorrection)
   {
-    if(operator_type == OperatorType::VelocityConvDiffOperator ||
-       operator_type == OperatorType::ProjectionOperator ||
+    if(operator_type == OperatorType::VelocityConvDiffOperator or
+       operator_type == OperatorType::ProjectionOperator or
        operator_type == OperatorType::InverseMassOperator)
     {
       pde_operator->initialize_vector_velocity(src2);
@@ -554,17 +554,17 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   dealii::types::global_dof_index dofs      = 0;
   unsigned int                    fe_degree = 1;
 
-  if(operator_type == OperatorType::CoupledNonlinearResidual ||
+  if(operator_type == OperatorType::CoupledNonlinearResidual or
      operator_type == OperatorType::CoupledLinearized)
   {
     dofs = pde_operator->get_dof_handler_u().n_dofs() + pde_operator->get_dof_handler_p().n_dofs();
 
     fe_degree = application->get_parameters().degree_u;
   }
-  else if(operator_type == OperatorType::ConvectiveOperator ||
-          operator_type == OperatorType::VelocityConvDiffOperator ||
-          operator_type == OperatorType::HelmholtzOperator ||
-          operator_type == OperatorType::ProjectionOperator ||
+  else if(operator_type == OperatorType::ConvectiveOperator or
+          operator_type == OperatorType::VelocityConvDiffOperator or
+          operator_type == OperatorType::HelmholtzOperator or
+          operator_type == OperatorType::ProjectionOperator or
           operator_type == OperatorType::InverseMassOperator)
   {
     dofs = pde_operator->get_dof_handler_u().n_dofs();

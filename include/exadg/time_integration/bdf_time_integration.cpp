@@ -31,7 +31,7 @@ BDFTimeIntegratorConstants::BDFTimeIntegratorConstants(unsigned int const order,
                                                        bool const         start_with_low_order)
   : TimeIntegratorConstantsBase(order, start_with_low_order), gamma0(-1.0), alpha(order)
 {
-  AssertThrow(order >= 1 && order <= 4,
+  AssertThrow(order >= 1 and order <= 4,
               dealii::ExcMessage("Specified order of BDF scheme not implemented."));
 
   // The default case is start_with_low_order = false.

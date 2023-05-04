@@ -60,13 +60,13 @@ TimeControlStatistics::write_preliminary_results(double const           time,
   {
     // if we are outside the interval bounds
     if(time <
-         time_control_data_statistics.time_control_data.start_time - time_control.get_epsilon() ||
+         time_control_data_statistics.time_control_data.start_time - time_control.get_epsilon() or
        final_output_written)
     {
       return false;
     }
     // check whether one of the criteria for writing results is met
-    else if(time_control.reached_end_time() ||
+    else if(time_control.reached_end_time() or
             (time_step_number - 1) %
                 (time_control_data_statistics.write_preliminary_results_every_nth_time_step) ==
               0)

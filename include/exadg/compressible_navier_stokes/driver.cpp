@@ -81,7 +81,7 @@ Driver<dim, Number>::setup()
   pde_operator->setup(matrix_free, matrix_free_data);
 
   // initialize postprocessor
-  if(!is_throughput_study)
+  if(not is_throughput_study)
   {
     postprocessor = application->create_postprocessor();
     postprocessor->setup(*pde_operator);

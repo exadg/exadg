@@ -264,7 +264,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_surface(
   }
   else
   {
-    Assert(write_data_type == WriteDataType::values_on_q_points ||
+    Assert(write_data_type == WriteDataType::values_on_q_points or
              write_data_type == WriteDataType::normal_gradients_on_q_points,
            dealii::ExcNotImplemented());
     writer.insert({mesh_name,
@@ -321,7 +321,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::initialize_precice(
   VectorType const & dealii_to_precice)
 {
 #ifdef EXADG_WITH_PRECICE
-  // if(!dealii_to_precice.has_ghost_elements())
+  // if(not dealii_to_precice.has_ghost_elements())
   //   dealii_to_precice.update_ghost_values();
 
   // Initialize preCICE internally
@@ -342,7 +342,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::initialize_precice(
 
   // Maybe, read block-wise and work with an AlignedVector since the read data
   // (forces) is multiple times required during the Newton iteration
-  //    if (shared_memory_parallel && precice->isReadDataAvailable())
+  //    if (shared_memory_parallel and precice->isReadDataAvailable())
   //      precice->readBlockVectorData(read_data_id,
   //                                   read_nodes_ids.size(),
   //                                   read_nodes_ids.data(),

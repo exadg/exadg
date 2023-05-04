@@ -49,8 +49,8 @@ struct ErrorCalculationData
   void
   print(dealii::ConditionalOStream & pcout, bool unsteady)
   {
-    print_parameter(pcout, "Error calculation", unsteady == true && analytical_solution);
-    if(unsteady == true && time_control_data.is_active)
+    print_parameter(pcout, "Error calculation", unsteady == true and analytical_solution);
+    if(unsteady == true and time_control_data.is_active)
     {
       print(pcout, unsteady, time_control_data);
       print_parameter(pcout, "Calculate relative errors", calculate_relative_errors);

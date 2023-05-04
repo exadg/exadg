@@ -85,11 +85,11 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
 
     typename dealii::Triangulation<dim>::cell_iterator cell =
       dof_handler.get_triangulation().begin(0);
-    while(cell != dof_handler.get_triangulation().end(0) && !cell->at_boundary(2))
+    while(cell != dof_handler.get_triangulation().end(0) and !cell->at_boundary(2))
     {
       ++cell;
     }
-    while(!cell->at_boundary(3))
+    while(not cell->at_boundary(3))
     {
       ++n_cells_y_dir;
       cell = cell->neighbor(3);
@@ -233,7 +233,7 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
 
               // reduce index by 1 in case that the previous point is closer to y than
               // the next point
-              if(idx > 0 && std::abs(y_glob[idx - 1] - y) < std::abs(y_glob[idx] - y))
+              if(idx > 0 and std::abs(y_glob[idx - 1] - y) < std::abs(y_glob[idx] - y))
                 idx--;
             }
             else // simply increment index for subsequent points of a cell
@@ -503,7 +503,7 @@ StatisticsManager<dim, Number>::do_evaluate(const std::vector<VectorType const *
 
         // reduce index by 1 in case that the previous point is closer to y than
         // the next point
-        if(idx > 0 && std::abs(y_glob[idx - 1] - y) < std::abs(y_glob[idx] - y))
+        if(idx > 0 and std::abs(y_glob[idx - 1] - y) < std::abs(y_glob[idx] - y))
           idx--;
 
         AssertThrow(std::abs(y_glob[idx] - y) < 1e-13,
