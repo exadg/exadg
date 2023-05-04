@@ -156,23 +156,7 @@ DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_pro
     }
   }
 
-  // linear problem
-  if(this->param.linear_problem_has_to_be_solved())
-  {
-    // calculate rhs vector
-    pde_operator->rhs_stokes_problem(rhs_vector, time);
-
-    // solve coupled system of equations
-    unsigned int const n_iter = pde_operator->solve_linear_stokes_problem(
-      solution, rhs_vector, this->param.update_preconditioner_coupled, time);
-
-    if(print_solver_info(time, unsteady_problem) and not(this->is_test))
-      print_solver_info_linear(pcout, n_iter, timer.wall_time());
-
-    iterations.first += 1;
-    std::get<1>(iterations.second) += n_iter;
-  }
-  else // nonlinear problem
+  if(this->param.nonlinear_problem_has_to_be_solved())
   {
     VectorType rhs(solution.block(0));
     rhs = 0.0;
@@ -189,6 +173,21 @@ DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_pro
     iterations.first += 1;
     std::get<0>(iterations.second) += std::get<0>(iter);
     std::get<1>(iterations.second) += std::get<1>(iter);
+  }
+  else
+  {
+    // calculate rhs vector
+    pde_operator->rhs_stokes_problem(rhs_vector, time);
+
+    // solve coupled system of equations
+    unsigned int const n_iter = pde_operator->solve_linear_stokes_problem(
+      solution, rhs_vector, this->param.update_preconditioner_coupled, time);
+
+    if(print_solver_info(time, unsteady_problem) and not(this->is_test))
+      print_solver_info_linear(pcout, n_iter, timer.wall_time());
+
+    iterations.first += 1;
+    std::get<1>(iterations.second) += n_iter;
   }
 
   pde_operator->adjust_pressure_level_if_undefined(solution.block(1), time);
@@ -212,14 +211,7 @@ DriverSteadyProblems<dim, Number>::print_iterations() const
   std::vector<std::string> names;
   std::vector<double>      iterations_avg;
 
-  if(this->param.linear_problem_has_to_be_solved())
-  {
-    names = {"Coupled system"};
-    iterations_avg.resize(1);
-    iterations_avg[0] =
-      (double)std::get<1>(iterations.second) / std::max(1., (double)iterations.first);
-  }
-  else // nonlinear system of equations in momentum step
+  if(this->param.nonlinear_problem_has_to_be_solved())
   {
     names = {"Coupled system (nonlinear)",
              "Coupled system (linear accumulated)",
@@ -234,6 +226,13 @@ DriverSteadyProblems<dim, Number>::print_iterations() const
       iterations_avg[2] = iterations_avg[1] / iterations_avg[0];
     else
       iterations_avg[2] = iterations_avg[1];
+  }
+  else
+  {
+    names = {"Coupled system"};
+    iterations_avg.resize(1);
+    iterations_avg[0] =
+      (double)std::get<1>(iterations.second) / std::max(1., (double)iterations.first);
   }
 
   print_list_of_iterations(this->pcout, names, iterations_avg);

@@ -636,12 +636,6 @@ Parameters::nonlinear_problem_has_to_be_solved() const
 }
 
 bool
-Parameters::linear_problem_has_to_be_solved() const
-{
-  return not nonlinear_problem_has_to_be_solved();
-}
-
-bool
 Parameters::involves_h_multigrid() const
 {
   bool use_global_coarsening = false;

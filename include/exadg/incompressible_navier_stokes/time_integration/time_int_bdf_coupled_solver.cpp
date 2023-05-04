@@ -224,7 +224,45 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
     ((this->time_step_number - 1) % this->param.update_preconditioner_coupled_every_time_steps ==
      0);
 
-  if(this->param.linear_problem_has_to_be_solved())
+  if(this->param.nonlinear_problem_has_to_be_solved())
+  {
+    VectorType sum_alphai_ui(solution[0].block(0));
+
+    // calculate Sum_i (alpha_i/dt * u_i)
+    sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), solution[0].block(0));
+    for(unsigned int i = 1; i < solution.size(); ++i)
+    {
+      sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), solution[i].block(0));
+    }
+
+    VectorType rhs(sum_alphai_ui);
+    pde_operator->apply_mass_operator(rhs, sum_alphai_ui);
+    if(this->param.right_hand_side)
+      pde_operator->evaluate_add_body_force_term(rhs, this->get_next_time());
+
+    // Newton solver
+    auto const iter =
+      pde_operator->solve_nonlinear_problem(solution_np,
+                                            rhs,
+                                            update_preconditioner,
+                                            this->get_next_time(),
+                                            this->get_scaling_factor_time_derivative_term());
+
+    iterations.first += 1;
+    std::get<0>(iterations.second) += std::get<0>(iter);
+    std::get<1>(iterations.second) += std::get<1>(iter);
+
+    // write output
+    if(this->print_solver_info() and not(this->is_test))
+    {
+      this->pcout << std::endl << "Solve nonlinear problem:";
+      print_solver_info_nonlinear(this->pcout,
+                                  std::get<0>(iter),
+                                  std::get<1>(iter),
+                                  timer.wall_time());
+    }
+  }
+  else
   {
     BlockVectorType rhs_vector;
     pde_operator->initialize_block_vector_velocity_pressure(rhs_vector);
@@ -282,44 +320,6 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
     {
       this->pcout << std::endl << "Solve linear problem:";
       print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
-    }
-  }
-  else // a nonlinear system of equations has to be solved
-  {
-    VectorType sum_alphai_ui(solution[0].block(0));
-
-    // calculate Sum_i (alpha_i/dt * u_i)
-    sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), solution[0].block(0));
-    for(unsigned int i = 1; i < solution.size(); ++i)
-    {
-      sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), solution[i].block(0));
-    }
-
-    VectorType rhs(sum_alphai_ui);
-    pde_operator->apply_mass_operator(rhs, sum_alphai_ui);
-    if(this->param.right_hand_side)
-      pde_operator->evaluate_add_body_force_term(rhs, this->get_next_time());
-
-    // Newton solver
-    auto const iter =
-      pde_operator->solve_nonlinear_problem(solution_np,
-                                            rhs,
-                                            update_preconditioner,
-                                            this->get_next_time(),
-                                            this->get_scaling_factor_time_derivative_term());
-
-    iterations.first += 1;
-    std::get<0>(iterations.second) += std::get<0>(iter);
-    std::get<1>(iterations.second) += std::get<1>(iter);
-
-    // write output
-    if(this->print_solver_info() and not(this->is_test))
-    {
-      this->pcout << std::endl << "Solve nonlinear problem:";
-      print_solver_info_nonlinear(this->pcout,
-                                  std::get<0>(iter),
-                                  std::get<1>(iter),
-                                  timer.wall_time());
     }
   }
 
@@ -629,14 +629,7 @@ TimeIntBDFCoupled<dim, Number>::print_iterations() const
   std::vector<std::string> names;
   std::vector<double>      iterations_avg;
 
-  if(this->param.linear_problem_has_to_be_solved())
-  {
-    names = {"Coupled system"};
-    iterations_avg.resize(1);
-    iterations_avg[0] =
-      (double)std::get<1>(iterations.second) / std::max(1., (double)iterations.first);
-  }
-  else // nonlinear system of equations in momentum step
+  if(this->param.nonlinear_problem_has_to_be_solved())
   {
     names = {"Coupled system (nonlinear)",
              "Coupled system (linear accumulated)",
@@ -651,6 +644,13 @@ TimeIntBDFCoupled<dim, Number>::print_iterations() const
       iterations_avg[2] = iterations_avg[1] / iterations_avg[0];
     else
       iterations_avg[2] = iterations_avg[1];
+  }
+  else
+  {
+    names = {"Coupled system"};
+    iterations_avg.resize(1);
+    iterations_avg[0] =
+      (double)std::get<1>(iterations.second) / std::max(1., (double)iterations.first);
   }
 
   if(this->param.apply_penalty_terms_in_postprocessing_step)
