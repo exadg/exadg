@@ -265,7 +265,7 @@ $(function() {
 <div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>  }</div>
 <div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>  <span class="keywordflow">else</span></div>
 <div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>  {</div>
-<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>    Assert(write_data_type == WriteDataType::values_on_q_points ||</div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>    Assert(write_data_type == WriteDataType::values_on_q_points or</div>
 <div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>             write_data_type == WriteDataType::normal_gradients_on_q_points,</div>
 <div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>           dealii::ExcNotImplemented());</div>
 <div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>    writer.insert({mesh_name,</div>
@@ -322,7 +322,7 @@ $(function() {
 <div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>  VectorType <span class="keyword">const</span> &amp; dealii_to_precice)</div>
 <div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>{</div>
 <div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span><span class="preprocessor">#ifdef EXADG_WITH_PRECICE</span></div>
-<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>  <span class="comment">// if(!dealii_to_precice.has_ghost_elements())</span></div>
+<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>  <span class="comment">// if(not dealii_to_precice.has_ghost_elements())</span></div>
 <div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>  <span class="comment">//   dealii_to_precice.update_ghost_values();</span></div>
 <div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span> </div>
 <div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>  <span class="comment">// Initialize preCICE internally</span></div>
@@ -343,7 +343,7 @@ $(function() {
 <div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span> </div>
 <div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>  <span class="comment">// Maybe, read block-wise and work with an AlignedVector since the read data</span></div>
 <div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span>  <span class="comment">// (forces) is multiple times required during the Newton iteration</span></div>
-<div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span>  <span class="comment">//    if (shared_memory_parallel &amp;&amp; precice-&gt;isReadDataAvailable())</span></div>
+<div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span>  <span class="comment">//    if (shared_memory_parallel and precice-&gt;isReadDataAvailable())</span></div>
 <div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span>  <span class="comment">//      precice-&gt;readBlockVectorData(read_data_id,</span></div>
 <div class="line"><a id="l00347" name="l00347"></a><span class="lineno">  347</span>  <span class="comment">//                                   read_nodes_ids.size(),</span></div>
 <div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span>  <span class="comment">//                                   read_nodes_ids.data(),</span></div>

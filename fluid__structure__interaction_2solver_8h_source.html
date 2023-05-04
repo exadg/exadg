@@ -192,13 +192,13 @@ $(function() {
 <div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  <a class="code hl_struct" href="structExaDG_1_1GeneralParameters.html">ExaDG::GeneralParameters</a> general(input_file);</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <span class="comment">// run the simulation</span></div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <span class="keywordflow">if</span>(general.dim == 2 &amp;&amp; general.precision == <span class="stringliteral">&quot;float&quot;</span>)</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <span class="keywordflow">if</span>(general.dim == 2 and general.precision == <span class="stringliteral">&quot;float&quot;</span>)</div>
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>    ExaDG::run&lt;2, float&gt;(input_file, mpi_comm, general.is_test);</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <span class="keywordflow">else</span> <span class="keywordflow">if</span>(general.dim == 2 &amp;&amp; general.precision == <span class="stringliteral">&quot;double&quot;</span>)</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <span class="keywordflow">else</span> <span class="keywordflow">if</span>(general.dim == 2 and general.precision == <span class="stringliteral">&quot;double&quot;</span>)</div>
 <div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    ExaDG::run&lt;2, double&gt;(input_file, mpi_comm, general.is_test);</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  <span class="keywordflow">else</span> <span class="keywordflow">if</span>(general.dim == 3 &amp;&amp; general.precision == <span class="stringliteral">&quot;float&quot;</span>)</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  <span class="keywordflow">else</span> <span class="keywordflow">if</span>(general.dim == 3 and general.precision == <span class="stringliteral">&quot;float&quot;</span>)</div>
 <div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>    ExaDG::run&lt;3, float&gt;(input_file, mpi_comm, general.is_test);</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  <span class="keywordflow">else</span> <span class="keywordflow">if</span>(general.dim == 3 &amp;&amp; general.precision == <span class="stringliteral">&quot;double&quot;</span>)</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  <span class="keywordflow">else</span> <span class="keywordflow">if</span>(general.dim == 3 and general.precision == <span class="stringliteral">&quot;double&quot;</span>)</div>
 <div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>    ExaDG::run&lt;3, double&gt;(input_file, mpi_comm, general.is_test);</div>
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  <span class="keywordflow">else</span></div>
 <div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>    AssertThrow(<span class="keyword">false</span>,</div>

@@ -278,9 +278,9 @@ $(function() {
 <div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span><span class="keyword">  </span>{</div>
 <div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> index_1d = 0;</div>
 <div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span> </div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>    <span class="keywordflow">if</span>(face == 0 || face == 2)</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>    <span class="keywordflow">if</span>(face == 0 or face == 2)</div>
 <div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>      index_1d = 0;</div>
-<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(face == 1 || face == 3)</div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(face == 1 or face == 3)</div>
 <div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>      index_1d = 1;</div>
 <div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>    <span class="keywordflow">else</span></div>
 <div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>      Assert(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;Face ID is invalid.&quot;</span>));</div>
@@ -297,9 +297,9 @@ $(function() {
 <div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span><span class="keyword">  </span>{</div>
 <div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> index_face = 0;</div>
 <div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span> </div>
-<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>    <span class="keywordflow">if</span>(face == 0 || face == 1)</div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>    <span class="keywordflow">if</span>(face == 0 or face == 1)</div>
 <div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>      index_face = 1;</div>
-<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(face == 2 || face == 3)</div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(face == 2 or face == 3)</div>
 <div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>      index_face = 0;</div>
 <div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>    <span class="keywordflow">else</span></div>
 <div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>      Assert(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;Face ID is invalid.&quot;</span>));</div>
@@ -355,7 +355,7 @@ $(function() {
 <div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>    <span class="comment">// Newton method to solve nonlinear pull_back operation</span></div>
 <div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n_iter = 0, MAX_ITER = 100;</div>
 <div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>    <span class="keywordtype">double</span> <span class="keyword">const</span> TOL = 1.e-12;</div>
-<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>    <span class="keywordflow">while</span>(residual.norm() &gt; TOL &amp;&amp; n_iter &lt; MAX_ITER)</div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>    <span class="keywordflow">while</span>(residual.norm() &gt; TOL and n_iter &lt; MAX_ITER)</div>
 <div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>    {</div>
 <div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>      <span class="comment">// multiply by -1.0, i.e., shift residual to the rhs</span></div>
 <div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>      residual *= -1.0;</div>
@@ -388,10 +388,10 @@ $(function() {
 <div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span>           dealii::ExcMessage(<span class="stringliteral">&quot;Newton solver did not converge to given tolerance. &quot;</span></div>
 <div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span>                              <span class="stringliteral">&quot;Maximum number of iterations exceeded.&quot;</span>));</div>
 <div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span> </div>
-<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>    Assert(xi[0] &gt;= 0.0 &amp;&amp; xi[0] &lt;= 1.0,</div>
+<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>    Assert(xi[0] &gt;= 0.0 and xi[0] &lt;= 1.0,</div>
 <div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>           dealii::ExcMessage(<span class="stringliteral">&quot;Pull back operation generated invalid xi[0] values.&quot;</span>));</div>
 <div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span> </div>
-<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>    Assert(xi[1] &gt;= 0.0 &amp;&amp; xi[1] &lt;= 1.0,</div>
+<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>    Assert(xi[1] &gt;= 0.0 and xi[1] &lt;= 1.0,</div>
 <div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>           dealii::ExcMessage(<span class="stringliteral">&quot;Pull back operation generated invalid xi[1] values.&quot;</span>));</div>
 <div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span> </div>
 <div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>    <span class="keywordflow">return</span> xi;</div>
@@ -598,9 +598,9 @@ $(function() {
 <div class="line"><a id="l00520" name="l00520"></a><span class="lineno">  520</span><span class="keyword">  </span>{</div>
 <div class="line"><a id="l00521" name="l00521"></a><span class="lineno">  521</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> index_1d = 0;</div>
 <div class="line"><a id="l00522" name="l00522"></a><span class="lineno">  522</span> </div>
-<div class="line"><a id="l00523" name="l00523"></a><span class="lineno">  523</span>    <span class="keywordflow">if</span>(face == 0 || face == 2)</div>
+<div class="line"><a id="l00523" name="l00523"></a><span class="lineno">  523</span>    <span class="keywordflow">if</span>(face == 0 or face == 2)</div>
 <div class="line"><a id="l00524" name="l00524"></a><span class="lineno">  524</span>      index_1d = 0;</div>
-<div class="line"><a id="l00525" name="l00525"></a><span class="lineno">  525</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(face == 1 || face == 3)</div>
+<div class="line"><a id="l00525" name="l00525"></a><span class="lineno">  525</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(face == 1 or face == 3)</div>
 <div class="line"><a id="l00526" name="l00526"></a><span class="lineno">  526</span>      index_1d = 1;</div>
 <div class="line"><a id="l00527" name="l00527"></a><span class="lineno">  527</span>    <span class="keywordflow">else</span></div>
 <div class="line"><a id="l00528" name="l00528"></a><span class="lineno">  528</span>      Assert(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;Face ID is invalid.&quot;</span>));</div>
@@ -617,9 +617,9 @@ $(function() {
 <div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span><span class="keyword">  </span>{</div>
 <div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> index_face = 0;</div>
 <div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span> </div>
-<div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span>    <span class="keywordflow">if</span>(face == 0 || face == 1)</div>
+<div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span>    <span class="keywordflow">if</span>(face == 0 or face == 1)</div>
 <div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span>      index_face = 1;</div>
-<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(face == 2 || face == 3)</div>
+<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(face == 2 or face == 3)</div>
 <div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>      index_face = 0;</div>
 <div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>    <span class="keywordflow">else</span></div>
 <div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>      Assert(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;Face ID is invalid.&quot;</span>));</div>
@@ -675,7 +675,7 @@ $(function() {
 <div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>    <span class="comment">// Newton method to solve nonlinear pull_back operation</span></div>
 <div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n_iter = 0, MAX_ITER = 100;</div>
 <div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>    <span class="keywordtype">double</span> <span class="keyword">const</span> TOL = 1.e-12;</div>
-<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>    <span class="keywordflow">while</span>(residual.norm() &gt; TOL &amp;&amp; n_iter &lt; MAX_ITER)</div>
+<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>    <span class="keywordflow">while</span>(residual.norm() &gt; TOL and n_iter &lt; MAX_ITER)</div>
 <div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>    {</div>
 <div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>      <span class="comment">// multiply by -1.0, i.e., shift residual to the rhs</span></div>
 <div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>      residual *= -1.0;</div>
@@ -713,13 +713,13 @@ $(function() {
 <div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>           dealii::ExcMessage(<span class="stringliteral">&quot;Newton solver did not converge to given tolerance. &quot;</span></div>
 <div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>                              <span class="stringliteral">&quot;Maximum number of iterations exceeded.&quot;</span>));</div>
 <div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span> </div>
-<div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span>    Assert(xi[0] &gt;= 0.0 &amp;&amp; xi[0] &lt;= 1.0,</div>
+<div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span>    Assert(xi[0] &gt;= 0.0 and xi[0] &lt;= 1.0,</div>
 <div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span>           dealii::ExcMessage(<span class="stringliteral">&quot;Pull back operation generated invalid xi[0] values.&quot;</span>));</div>
 <div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span> </div>
-<div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span>    Assert(xi[1] &gt;= 0.0 &amp;&amp; xi[1] &lt;= 1.0,</div>
+<div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span>    Assert(xi[1] &gt;= 0.0 and xi[1] &lt;= 1.0,</div>
 <div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>           dealii::ExcMessage(<span class="stringliteral">&quot;Pull back operation generated invalid xi[1] values.&quot;</span>));</div>
 <div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span> </div>
-<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span>    Assert(xi[2] &gt;= 0.0 &amp;&amp; xi[2] &lt;= 1.0,</div>
+<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span>    Assert(xi[2] &gt;= 0.0 and xi[2] &lt;= 1.0,</div>
 <div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span>           dealii::ExcMessage(<span class="stringliteral">&quot;Pull back operation generated invalid xi[2] values.&quot;</span>));</div>
 <div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span> </div>
 <div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>    <span class="keywordflow">return</span> xi;</div>
@@ -786,7 +786,7 @@ $(function() {
 <div class="line"><a id="l00708" name="l00708"></a><span class="lineno">  708</span>    dealii::Point&lt;spacedim&gt; space_point;</div>
 <div class="line"><a id="l00709" name="l00709"></a><span class="lineno">  709</span>    <span class="keywordflow">if</span>(radius &gt; 1e-10)</div>
 <div class="line"><a id="l00710" name="l00710"></a><span class="lineno">  710</span>    {</div>
-<div class="line"><a id="l00711" name="l00711"></a><span class="lineno">  711</span>      AssertThrow(spacedim == 2 || spacedim == 3,</div>
+<div class="line"><a id="l00711" name="l00711"></a><span class="lineno">  711</span>      AssertThrow(spacedim == 2 or spacedim == 3,</div>
 <div class="line"><a id="l00712" name="l00712"></a><span class="lineno">  712</span>                  dealii::ExcMessage(<span class="stringliteral">&quot;Only implemented for 2D and 3D case.&quot;</span>));</div>
 <div class="line"><a id="l00713" name="l00713"></a><span class="lineno">  713</span> </div>
 <div class="line"><a id="l00714" name="l00714"></a><span class="lineno">  714</span>      space_point[0] = radius * cos(theta);</div>

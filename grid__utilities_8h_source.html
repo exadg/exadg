@@ -460,7 +460,7 @@ $(function() {
 <div class="line"><a id="l00417" name="l00417"></a><span class="lineno">  417</span><span class="keyword">inline</span> <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00418" name="l00418"></a><span class="lineno">  418</span>read_external_triangulation(dealii::Triangulation&lt;dim, dim&gt; &amp; tria, GridData <span class="keyword">const</span> &amp; data)</div>
 <div class="line"><a id="l00419" name="l00419"></a><span class="lineno">  419</span>{</div>
-<div class="line"><a id="l00420" name="l00420"></a><span class="lineno">  420</span>  AssertThrow(!data.file_name.empty(),</div>
+<div class="line"><a id="l00420" name="l00420"></a><span class="lineno">  420</span>  AssertThrow(not data.file_name.empty(),</div>
 <div class="line"><a id="l00421" name="l00421"></a><span class="lineno">  421</span>              dealii::ExcMessage(</div>
 <div class="line"><a id="l00422" name="l00422"></a><span class="lineno">  422</span>                <span class="stringliteral">&quot;You are trying to read a grid file, but the string, which is supposed to contain&quot;</span></div>
 <div class="line"><a id="l00423" name="l00423"></a><span class="lineno">  423</span>                <span class="stringliteral">&quot; the file name, is empty.&quot;</span>));</div>
@@ -472,7 +472,7 @@ $(function() {
 <div class="line"><a id="l00429" name="l00429"></a><span class="lineno">  429</span>  <span class="comment">// find the file extension from the file name</span></div>
 <div class="line"><a id="l00430" name="l00430"></a><span class="lineno">  430</span>  std::string extension = data.file_name.substr(data.file_name.find_last_of(<span class="charliteral">&#39;.&#39;</span>) + 1);</div>
 <div class="line"><a id="l00431" name="l00431"></a><span class="lineno">  431</span> </div>
-<div class="line"><a id="l00432" name="l00432"></a><span class="lineno">  432</span>  AssertThrow(!extension.empty(),</div>
+<div class="line"><a id="l00432" name="l00432"></a><span class="lineno">  432</span>  AssertThrow(not extension.empty(),</div>
 <div class="line"><a id="l00433" name="l00433"></a><span class="lineno">  433</span>              dealii::ExcMessage(<span class="stringliteral">&quot;You are trying to read a grid file, but the file extension is&quot;</span></div>
 <div class="line"><a id="l00434" name="l00434"></a><span class="lineno">  434</span>                                 <span class="stringliteral">&quot; empty.&quot;</span>));</div>
 <div class="line"><a id="l00435" name="l00435"></a><span class="lineno">  435</span> </div>

@@ -129,8 +129,8 @@ $(function() {
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; dofs_per_face; ++i)</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    {</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>      <span class="keywordflow">if</span>(constraints.can_store_line(dofs_2[i]) &amp;&amp; constraints.can_store_line(dofs_1[i]) &amp;&amp;</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>         !constraints.is_constrained(dofs_2[i]))</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>      <span class="keywordflow">if</span>(constraints.can_store_line(dofs_2[i]) and constraints.can_store_line(dofs_1[i]) and</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>         not(constraints.is_constrained(dofs_2[i])))</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>      {</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>        <span class="comment">// constraint dof and ...</span></div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>        constraints.add_line(dofs_2[i]);</div>
@@ -139,7 +139,7 @@ $(function() {
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>      }</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    }</div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  }</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keywordflow">else</span> <span class="keywordflow">if</span>(face1-&gt;has_children() &amp;&amp; face2-&gt;has_children())</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keywordflow">else</span> <span class="keywordflow">if</span>(face1-&gt;has_children() and face2-&gt;has_children())</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  {</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    <span class="comment">// recursively visit all subfaces</span></div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> c = 0; c &lt; face1-&gt;n_children(); ++c)</div>
@@ -225,7 +225,7 @@ $(function() {
 <div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>  <span class="comment">// be applied in the DG case). In case we have interface matrices, there are</span></div>
 <div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>  <span class="comment">// Dirichlet constraints on parts of the boundary and no such transformation</span></div>
 <div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  <span class="comment">// is required.</span></div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  <span class="keywordflow">if</span>(operator_is_singular &amp;&amp; affine_constraints_own.can_store_line(0))</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  <span class="keywordflow">if</span>(operator_is_singular and affine_constraints_own.can_store_line(0))</div>
 <div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>  {</div>
 <div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>    <span class="comment">// if dof 0 is constrained, it must be a periodic dof, so we take the</span></div>
 <div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>    <span class="comment">// value on the other side</span></div>
@@ -253,7 +253,7 @@ $(function() {
 <div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>      }</div>
 <div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>      <span class="keywordflow">else</span></div>
 <div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>      {</div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>        Assert(lines-&gt;size() == 1 &amp;&amp; std::abs((*lines)[0].second - 1.) &lt; 1e-15,</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>        Assert(lines-&gt;size() == 1 and std::abs((*lines)[0].second - 1.) &lt; 1e-15,</div>
 <div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>               dealii::ExcMessage(<span class="stringliteral">&quot;Periodic index expected, bailing out&quot;</span>));</div>
 <div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span> </div>
 <div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>        line_index = (*lines)[0].first;</div>

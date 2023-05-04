@@ -158,7 +158,7 @@ $(function() {
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span> </div>
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>    <span class="comment">// ... has (symm)</span></div>
 <div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>    <span class="keywordflow">for</span>(<span class="keyword">auto</span> <span class="keyword">const</span> &amp; cell : dof_handler_symm.active_cell_iterators())</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>      <span class="keywordflow">if</span>(cell-&gt;is_active() &amp;&amp; cell-&gt;is_locally_owned())</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>      <span class="keywordflow">if</span>(cell-&gt;is_active() and cell-&gt;is_locally_owned())</div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>      {</div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>        <span class="keyword">auto</span> c = cell-&gt;center();</div>
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>        <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; dim; i++)</div>
@@ -172,7 +172,7 @@ $(function() {
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span> </div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>    <span class="comment">// want (full)</span></div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    <span class="keywordflow">for</span>(<span class="keyword">auto</span> <span class="keyword">const</span> &amp; cell : dof_handler.active_cell_iterators())</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>      <span class="keywordflow">if</span>(cell-&gt;is_active() &amp;&amp; cell-&gt;is_locally_owned())</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>      <span class="keywordflow">if</span>(cell-&gt;is_active() and cell-&gt;is_locally_owned())</div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>      {</div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>        <span class="keyword">auto</span> c = cell-&gt;center();</div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>        <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; dim; i++)</div>

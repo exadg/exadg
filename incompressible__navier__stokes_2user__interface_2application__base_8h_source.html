@@ -393,7 +393,7 @@ $(function() {
 <div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span>                dealii::ExcMessage(</div>
 <div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>                  <span class="stringliteral">&quot;Type of time step calculation has to be the same for both domains.&quot;</span>));</div>
 <div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span> </div>
-<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>    AssertThrow(param_pre.solver_type == SolverType::Unsteady &amp;&amp;</div>
+<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>    AssertThrow(param_pre.solver_type == SolverType::Unsteady and</div>
 <div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>                  this-&gt;param.solver_type == SolverType::Unsteady,</div>
 <div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span>                dealii::ExcMessage(<span class="stringliteral">&quot;This is an unsteady solver. Check parameters.&quot;</span>));</div>
 <div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span> </div>
@@ -404,7 +404,7 @@ $(function() {
 <div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>    <span class="comment">// is not known at this point since the two domains have to first communicate with each other</span></div>
 <div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>    <span class="comment">// in order to find the minimum time step size. Hence, the easiest way to avoid these kind of</span></div>
 <div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>    <span class="comment">// inconsistencies is to preclude the case start_with_low_order == false.</span></div>
-<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>    AssertThrow(param_pre.start_with_low_order == <span class="keyword">true</span> &amp;&amp; this-&gt;param.start_with_low_order == <span class="keyword">true</span>,</div>
+<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>    AssertThrow(param_pre.start_with_low_order == <span class="keyword">true</span> and this-&gt;param.start_with_low_order == <span class="keyword">true</span>,</div>
 <div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span>                dealii::ExcMessage(<span class="stringliteral">&quot;start_with_low_order has to be true for two-domain solver.&quot;</span>));</div>
 <div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span> </div>
 <div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span>    <span class="comment">// grid</span></div>
@@ -491,7 +491,7 @@ $(function() {
 <div class="line"><a id="l00413" name="l00413"></a><span class="lineno">  413</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_APPLICATION_BASE_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1ApplicationBasePrecursor_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1ApplicationBasePrecursor.html">ExaDG::IncNS::ApplicationBasePrecursor</a></div><div class="ttdef"><b>Definition:</b> application_base.h:269</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1ApplicationBase.html">ExaDG::IncNS::ApplicationBase</a></div><div class="ttdef"><b>Definition:</b> application_base.h:55</div></div>
-<div class="ttc" id="aclassExaDG_1_1IncNS_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1Parameters.html">ExaDG::IncNS::Parameters</a></div><div class="ttdef"><b>Definition:</b> parameters.h:45</div></div>
+<div class="ttc" id="aclassExaDG_1_1IncNS_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1Parameters.html">ExaDG::IncNS::Parameters</a></div><div class="ttdef"><b>Definition:</b> parameters.h:46</div></div>
 <div class="ttc" id="aclassExaDG_1_1Poisson_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1Parameters.html">ExaDG::Poisson::Parameters</a></div><div class="ttdef"><b>Definition:</b> parameters.h:37</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition:</b> driver.cpp:33</div></div>
 <div class="ttc" id="astructExaDG_1_1OutputParameters_html"><div class="ttname"><a href="structExaDG_1_1OutputParameters.html">ExaDG::OutputParameters</a></div><div class="ttdef"><b>Definition:</b> output_parameters.h:31</div></div>

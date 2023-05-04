@@ -163,9 +163,9 @@ $(function() {
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>      <span class="keywordflow">else</span> <span class="keywordflow">if</span>((std::fabs(cell-&gt;face(face_number)-&gt;center()(1) - right) &lt; 1e-12))</div>
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>        cell-&gt;face(face_number)-&gt;set_all_boundary_ids(3);</div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>      <span class="comment">// z-direction</span></div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>      <span class="keywordflow">else</span> <span class="keywordflow">if</span>(dim == 3 &amp;&amp; (std::fabs(cell-&gt;face(face_number)-&gt;center()(2) - left) &lt; 1e-12))</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>      <span class="keywordflow">else</span> <span class="keywordflow">if</span>(dim == 3 and (std::fabs(cell-&gt;face(face_number)-&gt;center()(2) - left) &lt; 1e-12))</div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>        cell-&gt;face(face_number)-&gt;set_all_boundary_ids(4);</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>      <span class="keywordflow">else</span> <span class="keywordflow">if</span>(dim == 3 &amp;&amp; (std::fabs(cell-&gt;face(face_number)-&gt;center()(2) - right) &lt; 1e-12))</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>      <span class="keywordflow">else</span> <span class="keywordflow">if</span>(dim == 3 and (std::fabs(cell-&gt;face(face_number)-&gt;center()(2) - right) &lt; 1e-12))</div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>        cell-&gt;face(face_number)-&gt;set_all_boundary_ids(5);</div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>    }</div>
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  }</div>

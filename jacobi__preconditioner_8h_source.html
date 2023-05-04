@@ -125,7 +125,7 @@ $(function() {
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  vmult(VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src)<span class="keyword"> const</span></div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="keywordflow">if</span>(!dealii::PointerComparison::equal(&amp;dst, &amp;src))</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="keywordflow">if</span>(not dealii::PointerComparison::equal(&amp;dst, &amp;src))</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>      dst = src;</div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    dst.scale(inverse_diagonal);</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  }</div>

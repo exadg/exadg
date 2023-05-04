@@ -144,7 +144,7 @@ $(function() {
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    <span class="keywordtype">double</span> norm_r   = residual.l2_norm();</div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    <span class="keywordtype">double</span> norm_r_0 = norm_r;</div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    <span class="keywordflow">while</span>(norm_r &gt; this-&gt;solver_data.abs_tol &amp;&amp; norm_r / norm_r_0 &gt; solver_data.rel_tol &amp;&amp;</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    <span class="keywordflow">while</span>(norm_r &gt; this-&gt;solver_data.abs_tol and norm_r / norm_r_0 &gt; solver_data.rel_tol and</div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>          newton_iterations &lt; solver_data.max_iter)</div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    {</div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>      <span class="comment">// reset increment</span></div>
@@ -189,7 +189,7 @@ $(function() {
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span> </div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>        <span class="comment">// increment counter</span></div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>        n_iter_damp++;</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>      } <span class="keywordflow">while</span>(norm_r_damp &gt;= (1.0 - tau * omega) * norm_r &amp;&amp; n_iter_damp &lt; max_iter_damp);</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>      } <span class="keywordflow">while</span>(norm_r_damp &gt;= (1.0 - tau * omega) * norm_r and n_iter_damp &lt; max_iter_damp);</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>      AssertThrow(norm_r_damp &lt; (1.0 - tau * omega) * norm_r,</div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>                  dealii::ExcMessage(<span class="stringliteral">&quot;Damped Newton iteration did not converge. &quot;</span></div>
@@ -204,7 +204,7 @@ $(function() {
 <div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>      linear_iterations += n_iter_linear;</div>
 <div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>    }</div>
 <div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span> </div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>    AssertThrow(norm_r &lt;= this-&gt;solver_data.abs_tol || norm_r / norm_r_0 &lt;= solver_data.rel_tol,</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>    AssertThrow(norm_r &lt;= this-&gt;solver_data.abs_tol or norm_r / norm_r_0 &lt;= solver_data.rel_tol,</div>
 <div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>                dealii::ExcMessage(</div>
 <div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>                  <span class="stringliteral">&quot;Newton solver failed to solve nonlinear problem to given tolerance. &quot;</span></div>
 <div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>                  <span class="stringliteral">&quot;Maximum number of iterations exceeded!&quot;</span>));</div>

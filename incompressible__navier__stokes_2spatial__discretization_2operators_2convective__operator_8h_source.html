@@ -496,7 +496,7 @@ $(function() {
 <div class="line"><a id="l00418" name="l00418"></a><span class="lineno">  418</span>    {</div>
 <div class="line"><a id="l00419" name="l00419"></a><span class="lineno">  419</span>      flux = calculate_lax_friedrichs_flux(uM, uP, normalM);</div>
 <div class="line"><a id="l00420" name="l00420"></a><span class="lineno">  420</span> </div>
-<div class="line"><a id="l00421" name="l00421"></a><span class="lineno">  421</span>      <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::Neumann &amp;&amp; data.use_outflow_bc == <span class="keyword">true</span>)</div>
+<div class="line"><a id="l00421" name="l00421"></a><span class="lineno">  421</span>      <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::Neumann and data.use_outflow_bc == <span class="keyword">true</span>)</div>
 <div class="line"><a id="l00422" name="l00422"></a><span class="lineno">  422</span>        apply_outflow_bc(flux, uM * normalM);</div>
 <div class="line"><a id="l00423" name="l00423"></a><span class="lineno">  423</span>    }</div>
 <div class="line"><a id="l00424" name="l00424"></a><span class="lineno">  424</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)</div>
@@ -507,7 +507,7 @@ $(function() {
 <div class="line"><a id="l00429" name="l00429"></a><span class="lineno">  429</span> </div>
 <div class="line"><a id="l00430" name="l00430"></a><span class="lineno">  430</span>      flux = calculate_upwind_flux(uM, uP, average_u_normal);</div>
 <div class="line"><a id="l00431" name="l00431"></a><span class="lineno">  431</span> </div>
-<div class="line"><a id="l00432" name="l00432"></a><span class="lineno">  432</span>      <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::Neumann &amp;&amp; data.use_outflow_bc == <span class="keyword">true</span>)</div>
+<div class="line"><a id="l00432" name="l00432"></a><span class="lineno">  432</span>      <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::Neumann and data.use_outflow_bc == <span class="keyword">true</span>)</div>
 <div class="line"><a id="l00433" name="l00433"></a><span class="lineno">  433</span>      {</div>
 <div class="line"><a id="l00434" name="l00434"></a><span class="lineno">  434</span>        <span class="keywordflow">if</span>(data.ale == <span class="keyword">false</span>)</div>
 <div class="line"><a id="l00435" name="l00435"></a><span class="lineno">  435</span>          apply_outflow_bc(flux, uM * normalM);</div>
@@ -645,7 +645,7 @@ $(function() {
 <div class="line"><a id="l00567" name="l00567"></a><span class="lineno">  567</span>    {</div>
 <div class="line"><a id="l00568" name="l00568"></a><span class="lineno">  568</span>      flux = calculate_lax_friedrichs_flux_linearized(uM, uP, delta_uM, delta_uP, normalM);</div>
 <div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span> </div>
-<div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span>      <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::Neumann &amp;&amp; data.use_outflow_bc == <span class="keyword">true</span>)</div>
+<div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span>      <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::Neumann and data.use_outflow_bc == <span class="keyword">true</span>)</div>
 <div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span>        apply_outflow_bc(flux, uM * normalM);</div>
 <div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>    }</div>
 <div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)</div>
@@ -656,7 +656,7 @@ $(function() {
 <div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span> </div>
 <div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span>      flux = calculate_upwind_flux_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);</div>
 <div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span> </div>
-<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span>      <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::Neumann &amp;&amp; data.use_outflow_bc == <span class="keyword">true</span>)</div>
+<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span>      <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::Neumann and data.use_outflow_bc == <span class="keyword">true</span>)</div>
 <div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span>        apply_outflow_bc(flux, uM * normalM);</div>
 <div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span> </div>
 <div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span>      scalar average_u_normal = 0.5 * (uM + uP) * normalM;</div>
@@ -851,7 +851,7 @@ $(function() {
 <div class="line"><a id="l00773" name="l00773"></a><span class="lineno">  773</span>    <span class="comment">// element e⁺</span></div>
 <div class="line"><a id="l00774" name="l00774"></a><span class="lineno">  774</span>    dealii::Tensor&lt;1, dim, dealii::VectorizedArray&lt;Number&gt;&gt; delta_uP;</div>
 <div class="line"><a id="l00775" name="l00775"></a><span class="lineno">  775</span> </div>
-<div class="line"><a id="l00776" name="l00776"></a><span class="lineno">  776</span>    <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletCached)</div>
+<div class="line"><a id="l00776" name="l00776"></a><span class="lineno">  776</span>    <span class="keywordflow">if</span>(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)</div>
 <div class="line"><a id="l00777" name="l00777"></a><span class="lineno">  777</span>    {</div>
 <div class="line"><a id="l00778" name="l00778"></a><span class="lineno">  778</span>      <span class="keywordflow">if</span>(data.type_dirichlet_bc == TypeDirichletBCs::Mirror)</div>
 <div class="line"><a id="l00779" name="l00779"></a><span class="lineno">  779</span>      {</div>

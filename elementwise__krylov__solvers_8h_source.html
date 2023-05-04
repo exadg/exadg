@@ -156,7 +156,7 @@ $(function() {
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> MAX_ITER)</div>
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>{</div>
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <span class="keywordtype">bool</span> is_converged_bool = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  <span class="keywordflow">if</span>(norm_r_abs &lt; ABS_TOL || norm_r_rel &lt; REL_TOL || k &gt;= MAX_ITER)</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  <span class="keywordflow">if</span>(norm_r_abs &lt; ABS_TOL or norm_r_rel &lt; REL_TOL or k &gt;= MAX_ITER)</div>
 <div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  {</div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    is_converged      = 1.0;</div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    is_converged_bool = <span class="keyword">true</span>;</div>
@@ -182,7 +182,7 @@ $(function() {
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>{</div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> v = 0; v &lt; dealii::VectorizedArray&lt;Number&gt;::size(); ++v)</div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  {</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    <span class="keywordflow">if</span>((norm_r_abs[v] &lt; ABS_TOL || norm_r_rel[v] &lt; REL_TOL || k &gt;= MAX_ITER))</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    <span class="keywordflow">if</span>((norm_r_abs[v] &lt; ABS_TOL or norm_r_rel[v] &lt; REL_TOL or k &gt;= MAX_ITER))</div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>      is_converged[v] = 1.0;</div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    <span class="keywordflow">else</span></div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>      is_converged[v] = -1.0;</div>
@@ -400,7 +400,7 @@ $(function() {
 <div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>    ++n_iter;</div>
 <div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span> </div>
 <div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>    <span class="comment">// check convergence</span></div>
-<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>    <span class="keywordflow">if</span>(all_smaller(norm_r_abs, ABS_TOL) || all_smaller(norm_r_rel, REL_TOL) || (n_iter &gt; MAX_ITER))</div>
+<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>    <span class="keywordflow">if</span>(all_smaller(norm_r_abs, ABS_TOL) or all_smaller(norm_r_rel, REL_TOL) or (n_iter &gt; MAX_ITER))</div>
 <div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>    {</div>
 <div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>      <span class="keywordflow">break</span>;</div>
 <div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>    }</div>
@@ -742,8 +742,8 @@ $(function() {
 <div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span> </div>
 <div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span>    iterations += k;</div>
 <div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span> </div>
-<div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>  } <span class="keywordflow">while</span>(</div>
-<div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span>    !converged(convergence_status, norm_r_abs, ABS_TOL, norm_r_rel, REL_TOL, iterations, MAX_ITER));</div>
+<div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>  } <span class="keywordflow">while</span>(not converged(</div>
+<div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span>    convergence_status, norm_r_abs, ABS_TOL, norm_r_rel, REL_TOL, iterations, MAX_ITER));</div>
 <div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span> </div>
 <div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span>  <span class="comment">// output convergence info</span></div>
 <div class="line"><a id="l00671" name="l00671"></a><span class="lineno">  671</span>  <span class="comment">//    std::cout &lt;&lt; &quot;Number of iterations = &quot; &lt;&lt; iterations &lt;&lt; std::endl;</span></div>
@@ -791,7 +791,7 @@ $(function() {
 <div class="line"><a id="l00713" name="l00713"></a><span class="lineno">  713</span>  norm_r_rel = res[0] / norm_r_initial;</div>
 <div class="line"><a id="l00714" name="l00714"></a><span class="lineno">  714</span> </div>
 <div class="line"><a id="l00715" name="l00715"></a><span class="lineno">  715</span>  <span class="keywordflow">while</span>(</div>
-<div class="line"><a id="l00716" name="l00716"></a><span class="lineno">  716</span>    !converged(convergence_status, norm_r_abs, ABS_TOL, norm_r_rel, REL_TOL, k, MAX_KRYLOV_SIZE))</div>
+<div class="line"><a id="l00716" name="l00716"></a><span class="lineno">  716</span>    not converged(convergence_status, norm_r_abs, ABS_TOL, norm_r_rel, REL_TOL, k, MAX_KRYLOV_SIZE))</div>
 <div class="line"><a id="l00717" name="l00717"></a><span class="lineno">  717</span>  {</div>
 <div class="line"><a id="l00718" name="l00718"></a><span class="lineno">  718</span>    <span class="comment">// normalize vector v^(k)</span></div>
 <div class="line"><a id="l00719" name="l00719"></a><span class="lineno">  719</span>    <span class="keywordflow">if</span>(k == 0)</div>

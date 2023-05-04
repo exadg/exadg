@@ -136,7 +136,7 @@ $(function() {
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  Number</div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  get(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> i, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> j)<span class="keyword"> const</span></div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    AssertThrow(i &lt; M &amp;&amp; j &lt; M, dealii::ExcMessage(<span class="stringliteral">&quot;Index exceeds matrix dimensions.&quot;</span>));</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    AssertThrow(i &lt; M and j &lt; M, dealii::ExcMessage(<span class="stringliteral">&quot;Index exceeds matrix dimensions.&quot;</span>));</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    <span class="keywordflow">return</span> data[i * M + j];</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  }</div>
@@ -144,7 +144,7 @@ $(function() {
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  set(Number <span class="keyword">const</span> value, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> i, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> j)</div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  {</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    AssertThrow(i &lt; M &amp;&amp; j &lt; M, dealii::ExcMessage(<span class="stringliteral">&quot;Index exceeds matrix dimensions.&quot;</span>));</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    AssertThrow(i &lt; M and j &lt; M, dealii::ExcMessage(<span class="stringliteral">&quot;Index exceeds matrix dimensions.&quot;</span>));</div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    data[i * M + j] = value;</div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  }</div>

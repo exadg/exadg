@@ -201,7 +201,7 @@ $(function() {
 <div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span> </div>
 <div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>    <span class="keywordflow">for</span>(<span class="keyword">auto</span> <span class="keyword">const</span> &amp; cell : dof_handler.active_cell_iterators())</div>
 <div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>    {</div>
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>      <span class="keywordflow">if</span>(!cell-&gt;is_artificial())</div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>      <span class="keywordflow">if</span>(not cell-&gt;is_artificial())</div>
 <div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>      {</div>
 <div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>        fe_values.reinit(<span class="keyword">typename</span> dealii::Triangulation&lt;dim&gt;::cell_iterator(cell));</div>
 <div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>        cell-&gt;get_dof_indices(dof_indices);</div>
@@ -231,7 +231,7 @@ $(function() {
 <div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>    AssertThrow(dealii::MultithreadInfo::n_threads() == 1, dealii::ExcNotImplemented());</div>
 <div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span> </div>
 <div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>    VectorType displacement_vector_ghosted;</div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>    <span class="keywordflow">if</span>(dof_handler.n_dofs() &gt; 0 &amp;&amp; displacement_vector.size() == dof_handler.n_dofs())</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>    <span class="keywordflow">if</span>(dof_handler.n_dofs() &gt; 0 and displacement_vector.size() == dof_handler.n_dofs())</div>
 <div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>    {</div>
 <div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>      dealii::IndexSet locally_relevant_dofs;</div>
 <div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>      dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);</div>
@@ -277,8 +277,8 @@ $(function() {
 <div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span> </div>
 <div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>        <span class="comment">// if this function is called with an empty dof-vector, this indicates that the</span></div>
 <div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>        <span class="comment">// displacements are zero and the points do not have to be moved</span></div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>        <span class="keywordflow">if</span>(dof_handler.n_dofs() &gt; 0 &amp;&amp; displacement_vector.size() &gt; 0 &amp;&amp; cell_tria-&gt;is_active() &amp;&amp;</div>
-<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>           !cell_tria-&gt;is_artificial())</div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>        <span class="keywordflow">if</span>(dof_handler.n_dofs() &gt; 0 and displacement_vector.size() &gt; 0 and</div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>           cell_tria-&gt;is_active() and not(cell_tria-&gt;is_artificial()))</div>
 <div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>        {</div>
 <div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>          dealii::FiniteElement&lt;dim&gt; const &amp; fe = dof_handler.get_fe();</div>
 <div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>          AssertThrow(fe.element_multiplicity(0) == dim,</div>

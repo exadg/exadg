@@ -8,10 +8,11 @@ var searchData=
   ['set_5fcoefficient_5fface_5fcell_5fbased_5',['set_coefficient_face_cell_based',['../classExaDG_1_1VariableCoefficients.html#ae5b82fe6876340c749177f1558fc70ee',1,'ExaDG::VariableCoefficients']]],
   ['set_5fcoefficient_5fface_5fneighbor_6',['set_coefficient_face_neighbor',['../classExaDG_1_1VariableCoefficients.html#aef6d49252b3b89cc167f576cd2171019',1,'ExaDG::VariableCoefficients']]],
   ['set_5fcoefficients_7',['set_coefficients',['../classExaDG_1_1VariableCoefficients.html#ac2463a7113784b16e28c72fa8a091e4d',1,'ExaDG::VariableCoefficients']]],
-  ['set_5fwrite_5fdata_5ftype_8',['set_write_data_type',['../classExaDG_1_1preCICE_1_1CouplingBase.html#aae21d6fc764dbd5051ec7c27cc38d11a',1,'ExaDG::preCICE::CouplingBase']]],
-  ['setup_9',['Setup',['../classdealspectrum_1_1Setup.html#ae48fcc6968bba36f4300ec7e88009717',1,'dealspectrum::Setup']]],
+  ['set_5fviscosity_8',['set_viscosity',['../classExaDG_1_1IncNS_1_1GeneralizedNewtonianModel.html#a1015a8507d894e8a136220491ecd48ae',1,'ExaDG::IncNS::GeneralizedNewtonianModel::set_viscosity()'],['../classExaDG_1_1IncNS_1_1TurbulenceModel.html#aab9024818273e7a241343831eb2b6ad6',1,'ExaDG::IncNS::TurbulenceModel::set_viscosity()'],['../classExaDG_1_1IncNS_1_1ViscosityModelBase.html#a6de08076571b34dcf105b8d44a43a0d4',1,'ExaDG::IncNS::ViscosityModelBase::set_viscosity()']]],
+  ['set_5fwrite_5fdata_5ftype_9',['set_write_data_type',['../classExaDG_1_1preCICE_1_1CouplingBase.html#aae21d6fc764dbd5051ec7c27cc38d11a',1,'ExaDG::preCICE::CouplingBase']]],
   ['setup_10',['setup',['../classExaDG_1_1InterfaceCoupling.html#a7aa3cfb167de7d9384a7686e7e1f964e',1,'ExaDG::InterfaceCoupling']]],
-  ['spectralanalysis_11',['SpectralAnalysis',['../classdealspectrum_1_1SpectralAnalysis.html#a34a974fb314f0807d96902741be6e156',1,'dealspectrum::SpectralAnalysis']]],
-  ['start_12',['start',['../classdealspectrum_1_1DealSpectrumTimer.html#a140b943f9881e4a1d917941f896cb472',1,'dealspectrum::DealSpectrumTimer']]],
-  ['stop_13',['stop',['../classdealspectrum_1_1DealSpectrumTimer.html#ac7f6fa0118b49c8c58f1b8357cc2a371',1,'dealspectrum::DealSpectrumTimer']]]
+  ['setup_11',['Setup',['../classdealspectrum_1_1Setup.html#ae48fcc6968bba36f4300ec7e88009717',1,'dealspectrum::Setup']]],
+  ['spectralanalysis_12',['SpectralAnalysis',['../classdealspectrum_1_1SpectralAnalysis.html#a34a974fb314f0807d96902741be6e156',1,'dealspectrum::SpectralAnalysis']]],
+  ['start_13',['start',['../classdealspectrum_1_1DealSpectrumTimer.html#a140b943f9881e4a1d917941f896cb472',1,'dealspectrum::DealSpectrumTimer']]],
+  ['stop_14',['stop',['../classdealspectrum_1_1DealSpectrumTimer.html#ac7f6fa0118b49c8c58f1b8357cc2a371',1,'dealspectrum::DealSpectrumTimer']]]
 ];

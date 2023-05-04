@@ -217,9 +217,6 @@ dealii::AffineConstraints&lt; Number &gt; const &amp;&#160;</td><td class="memIt
 <tr class="memitem:a363b6a19d43aa353410e18cbc1cd3634 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a363b6a19d43aa353410e18cbc1cd3634" name="a363b6a19d43aa353410e18cbc1cd3634"></a>
 dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>get_number_of_dofs</b> () const</td></tr>
 <tr class="separator:a363b6a19d43aa353410e18cbc1cd3634 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a721393a3fe8b47b34aafb2b473b9d733 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a721393a3fe8b47b34aafb2b473b9d733" name="a721393a3fe8b47b34aafb2b473b9d733"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>get_viscosity</b> () const</td></tr>
-<tr class="separator:a721393a3fe8b47b34aafb2b473b9d733 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a33a1dc8a862e8aa6c68e18a9578b2e7b inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a33a1dc8a862e8aa6c68e18a9578b2e7b" name="a33a1dc8a862e8aa6c68e18a9578b2e7b"></a>
 dealii::VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_viscosity_boundary_face</b> (unsigned int const face, unsigned int const q) const</td></tr>
 <tr class="separator:a33a1dc8a862e8aa6c68e18a9578b2e7b inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -313,9 +310,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_velocity_div
 <tr class="memitem:aa59ed11089bd48caa511344dfb22aebc inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="aa59ed11089bd48caa511344dfb22aebc" name="aa59ed11089bd48caa511344dfb22aebc"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>apply_inverse_mass_operator</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:aa59ed11089bd48caa511344dfb22aebc inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1a0bd85d074ac0c5a7265fb017d4380b inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a1a0bd85d074ac0c5a7265fb017d4380b" name="a1a0bd85d074ac0c5a7265fb017d4380b"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>update_turbulence_model</b> (VectorType const &amp;velocity)</td></tr>
-<tr class="separator:a1a0bd85d074ac0c5a7265fb017d4380b inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7868bed4c6f43ed90d4d356cf2d4c315 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a7868bed4c6f43ed90d4d356cf2d4c315" name="a7868bed4c6f43ed90d4d356cf2d4c315"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>update_viscosity</b> (VectorType const &amp;velocity) const</td></tr>
+<tr class="separator:a7868bed4c6f43ed90d4d356cf2d4c315 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3f53a48254109b53cd057cb3cb0a1e70 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a3f53a48254109b53cd057cb3cb0a1e70" name="a3f53a48254109b53cd057cb3cb0a1e70"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update_projection_operator</b> (VectorType const &amp;velocity, double const time_step_size) const</td></tr>
 <tr class="separator:a3f53a48254109b53cd057cb3cb0a1e70 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
