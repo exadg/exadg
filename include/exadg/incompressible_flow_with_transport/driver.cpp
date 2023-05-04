@@ -519,9 +519,9 @@ Driver<dim, Number>::ale_update() const
   timer_tree.insert({"Flow + transport", "ALE", "Update matrix-free"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  fluid_operator->update_after_grid_motion();
+  fluid_operator->update_spatial_operators_after_grid_motion();
   for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
-    scalar_operator[i]->update_after_grid_motion();
+    scalar_operator[i]->update_spatial_operators_after_grid_motion();
   timer_tree.insert({"Flow + transport", "ALE", "Update all operators"}, sub_timer.wall_time());
 
   sub_timer.restart();

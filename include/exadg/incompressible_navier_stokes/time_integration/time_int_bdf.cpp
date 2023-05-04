@@ -460,7 +460,9 @@ TimeIntBDF<dim, Number>::postprocessing() const
   if(this->param.ale_formulation and this->get_time_step_number() == 1 and
      not this->param.restarted_simulation)
   {
-    operator_base->move_grid_and_update_dependent_data_structures(this->get_time());
+    operator_base->move_grid(this->get_time());
+    operator_base->update_matrix_free_after_grid_motion();
+    operator_base->update_spatial_operators_after_grid_motion();
   }
 
   // We need to distribute the dofs before computing the error since

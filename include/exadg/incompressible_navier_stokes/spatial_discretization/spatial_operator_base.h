@@ -388,22 +388,22 @@ public:
   move_grid(double const & time) const;
 
   /*
-   * Moves the grid and updates dependent data structures for ALE-type problems.
+   * Updates MatrixFree after grid has been moved.
    */
   void
-  move_grid_and_update_dependent_data_structures(double const & time);
+  update_matrix_free_after_grid_motion();
+
+  /*
+   * Updates operators after grid has been moved.
+   */
+  virtual void
+  update_spatial_operators_after_grid_motion();
 
   /*
    * Fills a dof-vector with grid coordinates for ALE-type problems.
    */
   void
   fill_grid_coordinates_vector(VectorType & vector) const;
-
-  /*
-   * Updates operators after grid has been moved.
-   */
-  virtual void
-  update_after_grid_motion();
 
   /*
    * Sets the grid velocity.

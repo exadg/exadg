@@ -109,7 +109,11 @@ public:
 
   // needed for ALE-type problems
   virtual void
-  move_grid_and_update_dependent_data_structures(double const & time) = 0;
+  update_matrix_free_after_grid_motion() = 0;
+
+  // needed for ALE-type problems
+  virtual void
+  update_spatial_operators_after_grid_motion() = 0;
 
   // needed for ALE-type problems
   virtual void

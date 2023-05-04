@@ -105,12 +105,6 @@ private:
   initialize_transfer_operators() override;
 
   /*
-   *  This function updates the operators on all levels
-   */
-  void
-  update_operators();
-
-  /*
    * This function updates the velocity field for all levels.
    * In order to update mg_matrices[level] this function has to be called.
    */
@@ -118,11 +112,11 @@ private:
   set_velocity(VectorTypeMG const & velocity);
 
   /*
-   * This function performs the updates that are necessary after the mesh has been moved
+   * This function performs the updates that are necessary after the grid has been moved
    * and after matrix_free has been updated.
    */
   void
-  update_operators_after_mesh_movement();
+  update_operators_after_grid_motion();
 
   /*
    *  This function sets the current the time.

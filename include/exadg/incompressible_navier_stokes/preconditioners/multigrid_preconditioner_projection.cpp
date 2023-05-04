@@ -171,7 +171,7 @@ MultigridPreconditionerProjection<dim, Number>::update_operators()
     velocity_multigrid_type_ptr  = &velocity_multigrid_type_copy;
   }
 
-  // update operator
+  // update operator on fine level
   this->get_operator(this->fine_level)->update(*velocity_multigrid_type_ptr, time_step_size);
 
   // we store only two vectors since the velocity is no longer needed after having updated the

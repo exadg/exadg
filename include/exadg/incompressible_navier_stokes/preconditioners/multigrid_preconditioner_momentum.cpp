@@ -105,9 +105,38 @@ MultigridPreconditioner<dim, Number>::update()
     this->initialize_mapping();
 
     this->update_matrix_free();
+
+    update_operators_after_grid_motion();
   }
 
-  update_operators();
+  if(data.unsteady_problem)
+  {
+    set_time(pde_operator->get_time());
+    set_scaling_factor_mass_operator(pde_operator->get_scaling_factor_mass_operator());
+  }
+
+  if(mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
+  {
+    VectorType const & vector_linearization = pde_operator->get_velocity();
+
+    // convert Number --> MultigridNumber, e.g., double --> float, but only if necessary
+    VectorTypeMG         vector_multigrid_type_copy;
+    VectorTypeMG const * vector_multigrid_type_ptr;
+    if(std::is_same<MultigridNumber, Number>::value)
+    {
+      vector_multigrid_type_ptr = reinterpret_cast<VectorTypeMG const *>(&vector_linearization);
+    }
+    else
+    {
+      vector_multigrid_type_copy = vector_linearization;
+      vector_multigrid_type_ptr  = &vector_multigrid_type_copy;
+    }
+
+    set_vector_linearization(*vector_multigrid_type_ptr);
+  }
+
+  // Once the operators are updated, the update of smoothers and the coarse grid solver is generic
+  // functionality implemented in the base class
 
   this->update_smoothers();
 
@@ -174,42 +203,6 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
 
 template<int dim, typename Number>
 void
-MultigridPreconditioner<dim, Number>::update_operators()
-{
-  if(mesh_is_moving)
-  {
-    update_operators_after_mesh_movement();
-  }
-
-  if(data.unsteady_problem)
-  {
-    set_time(pde_operator->get_time());
-    set_scaling_factor_mass_operator(pde_operator->get_scaling_factor_mass_operator());
-  }
-
-  if(mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
-  {
-    VectorType const & vector_linearization = pde_operator->get_velocity();
-
-    // convert Number --> MultigridNumber, e.g., double --> float, but only if necessary
-    VectorTypeMG         vector_multigrid_type_copy;
-    VectorTypeMG const * vector_multigrid_type_ptr;
-    if(std::is_same<MultigridNumber, Number>::value)
-    {
-      vector_multigrid_type_ptr = reinterpret_cast<VectorTypeMG const *>(&vector_linearization);
-    }
-    else
-    {
-      vector_multigrid_type_copy = vector_linearization;
-      vector_multigrid_type_ptr  = &vector_multigrid_type_copy;
-    }
-
-    set_vector_linearization(*vector_multigrid_type_ptr);
-  }
-}
-
-template<int dim, typename Number>
-void
 MultigridPreconditioner<dim, Number>::set_vector_linearization(
   VectorTypeMG const & vector_linearization)
 {
@@ -238,7 +231,7 @@ MultigridPreconditioner<dim, Number>::set_time(double const & time)
 
 template<int dim, typename Number>
 void
-MultigridPreconditioner<dim, Number>::update_operators_after_mesh_movement()
+MultigridPreconditioner<dim, Number>::update_operators_after_grid_motion()
 {
   for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
   {
