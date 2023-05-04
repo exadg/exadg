@@ -43,7 +43,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const final
   {
     double result = 0.0;
 
@@ -74,7 +74,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const final
   {
     // pressure decreases linearly in flow direction
     double pressure_gradient = -2. * viscosity * max_velocity / std::pow(H / 2., 2.0);
@@ -105,7 +105,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const final
   {
     (void)p;
     (void)component;

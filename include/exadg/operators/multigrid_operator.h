@@ -50,115 +50,115 @@ public:
     return pde_operator;
   }
 
-  virtual dealii::AffineConstraints<typename Operator::value_type> const &
-  get_affine_constraints() const
+  dealii::AffineConstraints<typename Operator::value_type> const &
+  get_affine_constraints() const final
   {
     return pde_operator->get_affine_constraints();
   }
 
-  virtual dealii::MatrixFree<dim, Number> const &
-  get_matrix_free() const
+  dealii::MatrixFree<dim, Number> const &
+  get_matrix_free() const final
   {
     return pde_operator->get_matrix_free();
   }
 
-  virtual unsigned int
-  get_dof_index() const
+  unsigned int
+  get_dof_index() const final
   {
     return pde_operator->get_dof_index();
   }
 
-  virtual dealii::types::global_dof_index
-  m() const
+  dealii::types::global_dof_index
+  m() const final
   {
     return pde_operator->m();
   }
 
-  virtual dealii::types::global_dof_index
-  n() const
+  dealii::types::global_dof_index
+  n() const final
   {
     return pde_operator->n();
   }
 
-  virtual Number
-  el(unsigned int const i, unsigned int const j) const
+  Number
+  el(unsigned int const i, unsigned int const j) const final
   {
     return pde_operator->el(i, j);
   }
 
-  virtual void
-  initialize_dof_vector(VectorType & vector) const
+  void
+  initialize_dof_vector(VectorType & vector) const final
   {
     pde_operator->initialize_dof_vector(vector);
   }
 
-  virtual void
-  vmult(VectorType & dst, VectorType const & src) const
+  void
+  vmult(VectorType & dst, VectorType const & src) const final
   {
     pde_operator->vmult(dst, src);
   }
 
-  virtual void
-  vmult_add(VectorType & dst, VectorType const & src) const
+  void
+  vmult_add(VectorType & dst, VectorType const & src) const final
   {
     pde_operator->vmult_add(dst, src);
   }
 
-  virtual void
-  vmult_interface_down(VectorType & dst, VectorType const & src) const
+  void
+  vmult_interface_down(VectorType & dst, VectorType const & src) const final
   {
     pde_operator->vmult_interface_down(dst, src);
   }
 
-  virtual void
-  vmult_add_interface_up(VectorType & dst, VectorType const & src) const
+  void
+  vmult_add_interface_up(VectorType & dst, VectorType const & src) const final
   {
     pde_operator->vmult_add_interface_up(dst, src);
   }
 
-  virtual void
-  calculate_inverse_diagonal(VectorType & inverse_diagonal_entries) const
+  void
+  calculate_inverse_diagonal(VectorType & inverse_diagonal_entries) const final
   {
     pde_operator->calculate_inverse_diagonal(inverse_diagonal_entries);
   }
 
-  virtual void
-  update_block_diagonal_preconditioner() const
+  void
+  update_block_diagonal_preconditioner() const final
   {
     pde_operator->update_block_diagonal_preconditioner();
   }
 
-  virtual void
-  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const
+  void
+  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const final
   {
     pde_operator->apply_inverse_block_diagonal(dst, src);
   }
 
 #ifdef DEAL_II_WITH_TRILINOS
-  virtual void
+  void
   init_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix,
-                     MPI_Comm const &                         mpi_comm) const
+                     MPI_Comm const &                         mpi_comm) const final
   {
     pde_operator->init_system_matrix(system_matrix, mpi_comm);
   }
 
-  virtual void
-  calculate_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix) const
+  void
+  calculate_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix) const final
   {
     pde_operator->calculate_system_matrix(system_matrix);
   }
 #endif
 
 #ifdef DEAL_II_WITH_PETSC
-  virtual void
+  void
   init_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix,
-                     MPI_Comm const &                           mpi_comm) const
+                     MPI_Comm const &                           mpi_comm) const final
   {
     pde_operator->init_system_matrix(system_matrix, mpi_comm);
   }
 
-  virtual void
-  calculate_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const
+  void
+  calculate_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const final
   {
     pde_operator->calculate_system_matrix(system_matrix);
   }

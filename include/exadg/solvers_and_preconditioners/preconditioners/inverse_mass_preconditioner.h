@@ -40,13 +40,13 @@ public:
   }
 
   void
-  vmult(VectorType & dst, VectorType const & src) const
+  vmult(VectorType & dst, VectorType const & src) const final
   {
     inverse_mass_operator.apply(dst, src);
   }
 
   void
-  update()
+  update() final
   {
     // do nothing
   }

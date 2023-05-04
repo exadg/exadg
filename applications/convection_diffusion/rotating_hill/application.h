@@ -60,7 +60,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & point, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & point, unsigned int const component = 0) const final
   {
     double value = 0.0;
 

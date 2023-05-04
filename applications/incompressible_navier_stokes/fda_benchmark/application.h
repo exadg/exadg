@@ -45,7 +45,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const final
   {
     AssertThrow(dim == 3, dealii::ExcMessage("Dimension has to be dim==3."));
 
@@ -105,7 +105,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const final
   {
     // compute polar coordinates (r, phi) from point p
     // given in Cartesian coordinates (x, y) = inflow plane

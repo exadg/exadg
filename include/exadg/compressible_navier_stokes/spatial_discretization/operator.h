@@ -69,7 +69,7 @@ public:
 
   // initialization of DoF vectors
   void
-  initialize_dof_vector(VectorType & src) const;
+  initialize_dof_vector(VectorType & src) const final;
 
   void
   initialize_dof_vector_scalar(VectorType & src) const;
@@ -79,7 +79,7 @@ public:
 
   // set initial conditions
   void
-  prescribe_initial_conditions(VectorType & src, double const time) const;
+  prescribe_initial_conditions(VectorType & src, double const time) const final;
 
   /*
    *  This function is used in case of explicit time integration:
@@ -89,7 +89,7 @@ public:
    *  and finally applies the inverse mass operator.
    */
   void
-  evaluate(VectorType & dst, VectorType const & src, Number const time) const;
+  evaluate(VectorType & dst, VectorType const & src, Number const time) const final;
 
   void
   evaluate_convective(VectorType & dst, VectorType const & src, Number const time) const;
@@ -158,15 +158,15 @@ public:
   compute_shear_rate(VectorType & dst, VectorType const & src) const;
 
   double
-  get_wall_time_operator_evaluation() const;
+  get_wall_time_operator_evaluation() const final;
 
   // global CFL criterion: calculates the time step size for a given global maximum velocity
   double
-  calculate_time_step_cfl_global() const;
+  calculate_time_step_cfl_global() const final;
 
   // Calculate time step size according to diffusion term
   double
-  calculate_time_step_diffusion() const;
+  calculate_time_step_diffusion() const final;
 
 private:
   double

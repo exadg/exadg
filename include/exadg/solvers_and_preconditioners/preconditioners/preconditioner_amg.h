@@ -298,7 +298,7 @@ public:
   }
 
   void
-  vmult(VectorType & dst, VectorType const & src) const
+  vmult(VectorType & dst, VectorType const & src) const final
   {
     // create temporal vectors of type double
     VectorTypeAMG dst_amg;
@@ -314,7 +314,7 @@ public:
   }
 
   void
-  update()
+  update() final
   {
     preconditioner_amg->update();
   }

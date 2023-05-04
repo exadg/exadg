@@ -121,13 +121,13 @@ public:
    * operator needed in the ALE case only (where the mass operator may be evaluated at different
    * times depending on the specific ALE formulation chosen).
    */
-  virtual void
+  void
   setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free,
         std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data,
-        std::string const &                              dof_index_temperature = "");
+        std::string const &                              dof_index_temperature = "") final;
 
   void
-  setup_solvers(double const & scaling_factor_mass, VectorType const & velocity);
+  setup_solvers(double const & scaling_factor_mass, VectorType const & velocity) final;
 
   /*
    * Momentum step:

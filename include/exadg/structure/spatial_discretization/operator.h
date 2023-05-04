@@ -201,31 +201,31 @@ public:
    * Initialization of dof-vector.
    */
   void
-  initialize_dof_vector(VectorType & src) const;
+  initialize_dof_vector(VectorType & src) const final;
 
   /*
    * Prescribe initial conditions using a specified initial solution function.
    */
   void
-  prescribe_initial_displacement(VectorType & displacement, double const time) const;
+  prescribe_initial_displacement(VectorType & displacement, double const time) const final;
 
   void
-  prescribe_initial_velocity(VectorType & velocity, double const time) const;
+  prescribe_initial_velocity(VectorType & velocity, double const time) const final;
 
   void
   compute_initial_acceleration(VectorType &       acceleration,
                                VectorType const & displacement,
-                               double const       time) const;
+                               double const       time) const final;
 
   void
-  apply_mass_operator(VectorType & dst, VectorType const & src) const;
+  apply_mass_operator(VectorType & dst, VectorType const & src) const final;
 
   /*
    * This function calculates the right-hand side of the linear system
    * of equations for linear elasticity problems.
    */
   void
-  compute_rhs_linear(VectorType & dst, double const time) const;
+  compute_rhs_linear(VectorType & dst, double const time) const final;
 
   /*
    * This function evaluates the nonlinear residual which is required by
@@ -267,14 +267,14 @@ public:
                   VectorType const & rhs,
                   double const       factor,
                   double const       time,
-                  bool const         update_preconditioner) const;
+                  bool const         update_preconditioner) const final;
 
   unsigned int
   solve_linear(VectorType &       sol,
                VectorType const & rhs,
                double const       factor,
                double const       time,
-               bool const         update_preconditioner) const;
+               bool const         update_preconditioner) const final;
 
   /*
    * Setters and getters.

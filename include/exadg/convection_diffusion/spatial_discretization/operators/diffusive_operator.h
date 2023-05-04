@@ -252,32 +252,32 @@ public:
 
 private:
   void
-  reinit_face(unsigned int const face) const;
+  reinit_face(unsigned int const face) const final;
 
   void
-  reinit_boundary_face(unsigned int const face) const;
+  reinit_boundary_face(unsigned int const face) const final;
 
   void
   reinit_face_cell_based(unsigned int const               cell,
                          unsigned int const               face,
-                         dealii::types::boundary_id const boundary_id) const;
+                         dealii::types::boundary_id const boundary_id) const final;
 
   void
-  do_cell_integral(IntegratorCell & integrator) const;
+  do_cell_integral(IntegratorCell & integrator) const final;
 
   void
-  do_face_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
+  do_face_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const final;
 
   void
-  do_face_int_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
+  do_face_int_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const final;
 
   void
-  do_face_ext_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
+  do_face_ext_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const final;
 
   void
   do_boundary_integral(IntegratorFace &                   integrator_m,
                        OperatorType const &               operator_type,
-                       dealii::types::boundary_id const & boundary_id) const;
+                       dealii::types::boundary_id const & boundary_id) const final;
 
   DiffusiveOperatorData<dim> operator_data;
 

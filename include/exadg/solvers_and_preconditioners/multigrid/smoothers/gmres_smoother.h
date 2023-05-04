@@ -100,14 +100,14 @@ public:
 
   // same as step(), but sets dst-vector to zero
   void
-  vmult(VectorType & dst, VectorType const & src) const
+  vmult(VectorType & dst, VectorType const & src) const final
   {
     dst = 0.0;
     step(dst, src);
   }
 
   void
-  step(VectorType & dst, VectorType const & src) const
+  step(VectorType & dst, VectorType const & src) const final
   {
     dealii::IterationNumberControl control(data.number_of_iterations, 1.e-20);
 

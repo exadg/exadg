@@ -74,13 +74,13 @@ public:
    * as a basis.
    */
   void
-  set_viscosity(VectorType const & velocity) const;
+  set_viscosity(VectorType const & velocity) const final;
 
   /**
    * Function for *adding to* the viscosity taking the currently stored viscosity as a basis.
    */
   void
-  add_viscosity(VectorType const & velocity) const;
+  add_viscosity(VectorType const & velocity) const final;
 
 private:
   void

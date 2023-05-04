@@ -38,14 +38,14 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const c = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const c = 0) const final
   {
     (void)c;
     return value<double>(p);
   }
 
   dealii::Tensor<1, dim>
-  gradient(dealii::Point<dim> const & p, unsigned int const c = 0) const
+  gradient(dealii::Point<dim> const & p, unsigned int const c = 0) const final
   {
     (void)c;
     (void)p;
@@ -102,7 +102,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const /*component*/ = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/ = 0) const final
   {
     double return_value = 0;
     for(unsigned int i = 0; i < this->n_source_centers; ++i)
@@ -116,7 +116,7 @@ public:
   }
 
   dealii::Tensor<1, dim>
-  gradient(dealii::Point<dim> const & p, unsigned int const /*component*/ = 0) const
+  gradient(dealii::Point<dim> const & p, unsigned int const /*component*/ = 0) const final
   {
     dealii::Tensor<1, dim> return_value;
 
@@ -143,7 +143,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const /*component*/ = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/ = 0) const final
   {
     CoefficientFunction<dim>     coefficient;
     double const                 coef         = coefficient.value(p);
@@ -180,7 +180,7 @@ public:
   }
 
   void
-  add_parameters(dealii::ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm) final
   {
     ApplicationBase<dim, n_components, Number>::add_parameters(prm);
 

@@ -171,8 +171,8 @@ public:
     }
   }
 
-  virtual void
-  operator()(unsigned int const, VectorType & dst, VectorType const & src) const
+  void
+  operator()(unsigned int const, VectorType & dst, VectorType const & src) const final
   {
     VectorType r(src);
     if(additional_data.operator_is_singular)
@@ -359,8 +359,8 @@ public:
   {
   }
 
-  virtual void
-  operator()(unsigned int const level, Vector & dst, const Vector & src) const
+  void
+  operator()(unsigned int const level, Vector & dst, const Vector & src) const final
   {
     AssertThrow(inverse_operator.get() != 0,
                 dealii::ExcMessage("MGCoarseChebyshev: inverse_operator is not initialized."));
@@ -424,7 +424,7 @@ public:
   void
   operator()(unsigned int const /*level*/,
              VectorTypeMultigrid &       dst,
-             VectorTypeMultigrid const & src) const
+             VectorTypeMultigrid const & src) const final
   {
     // create temporal vectors of type VectorTypeAMG (double)
     VectorTypeAMG dst_amg;

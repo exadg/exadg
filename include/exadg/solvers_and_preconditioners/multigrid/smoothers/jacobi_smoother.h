@@ -116,7 +116,7 @@ public:
    *    P:     preconditioner
    */
   void
-  vmult(VectorType & dst, VectorType const & src) const
+  vmult(VectorType & dst, VectorType const & src) const final
   {
     dst = 0;
 
@@ -144,7 +144,7 @@ public:
   }
 
   void
-  step(VectorType & dst, VectorType const & src) const
+  step(VectorType & dst, VectorType const & src) const final
   {
     VectorType tmp(src), residual(src);
 

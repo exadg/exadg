@@ -43,13 +43,13 @@ public:
   }
 
   void
-  vmult(VectorType & dst, VectorType const & src) const
+  vmult(VectorType & dst, VectorType const & src) const final
   {
     smoother_object.vmult(dst, src);
   }
 
   void
-  step(VectorType & dst, VectorType const & src) const
+  step(VectorType & dst, VectorType const & src) const final
   {
     smoother_object.step(dst, src);
   }

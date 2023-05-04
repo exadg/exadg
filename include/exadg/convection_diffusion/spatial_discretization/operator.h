@@ -87,13 +87,13 @@ public:
    * Initialization of dof-vector.
    */
   void
-  initialize_dof_vector(VectorType & src) const;
+  initialize_dof_vector(VectorType & src) const final;
 
   /*
    * Initialization of velocity dof-vector (in case of numerical velocity field).
    */
   void
-  initialize_dof_vector_velocity(VectorType & src) const;
+  initialize_dof_vector_velocity(VectorType & src) const final;
 
   /*
    * Obtain velocity dof-vector by interpolation of specified analytical velocity field.
@@ -105,13 +105,13 @@ public:
    * Obtain velocity dof-vector by L2-projection using the specified analytical velocity field.
    */
   void
-  project_velocity(VectorType & velocity, double const time) const;
+  project_velocity(VectorType & velocity, double const time) const final;
 
   /*
    * Prescribe initial conditions using a specified analytical function.
    */
   void
-  prescribe_initial_conditions(VectorType & src, double const evaluation_time) const;
+  prescribe_initial_conditions(VectorType & src, double const evaluation_time) const final;
 
   /*
    * This function is used in case of explicit time integration:
@@ -124,7 +124,7 @@ public:
   evaluate_explicit_time_int(VectorType &       dst,
                              VectorType const & src,
                              double const       evaluation_time,
-                             VectorType const * velocity = nullptr) const;
+                             VectorType const * velocity = nullptr) const final;
 
   /*
    * This function evaluates the convective term which is needed when using an explicit formulation
@@ -149,7 +149,7 @@ public:
   void
   rhs(VectorType &       dst,
       double const       evaluation_time = 0.0,
-      VectorType const * velocity        = nullptr) const;
+      VectorType const * velocity        = nullptr) const final;
 
   /*
    * This function applies the mass operator to the src-vector and writes the result to the
@@ -199,19 +199,19 @@ public:
    * Moves the grid for ALE-type problems.
    */
   void
-  move_grid(double const & time) const;
+  move_grid(double const & time) const final;
 
   /*
    * Moves the grid and updates dependent data structures for ALE-type problems.
    */
   void
-  move_grid_and_update_dependent_data_structures(double const & time);
+  move_grid_and_update_dependent_data_structures(double const & time) final;
 
   /*
    * Fills a dof-vector with grid coordinates for ALE-type problems.
    */
   void
-  fill_grid_coordinates_vector(VectorType & vector) const;
+  fill_grid_coordinates_vector(VectorType & vector) const final;
 
   /*
    * Updates operators after grid has been moved.
@@ -230,13 +230,13 @@ public:
         bool const         update_preconditioner,
         double const       scaling_factor = -1.0,
         double const       time           = -1.0,
-        VectorType const * velocity       = nullptr);
+        VectorType const * velocity       = nullptr) final;
 
   /*
    * Calculate time step size according to maximum efficiency criterion
    */
   double
-  calculate_time_step_max_efficiency(unsigned int const order_time_integrator) const;
+  calculate_time_step_max_efficiency(unsigned int const order_time_integrator) const final;
 
   /*
    * Calculate time step size according to CFL criterion
@@ -244,21 +244,21 @@ public:
 
   // global CFL criterion
   double
-  calculate_time_step_cfl_global(double const time) const;
+  calculate_time_step_cfl_global(double const time) const final;
 
   // local CFL criterion: use numerical velocity field
   double
-  calculate_time_step_cfl_numerical_velocity(VectorType const & velocity) const;
+  calculate_time_step_cfl_numerical_velocity(VectorType const & velocity) const final;
 
   // local CFL criterion: use analytical velocity field
   double
-  calculate_time_step_cfl_analytical_velocity(double const time) const;
+  calculate_time_step_cfl_analytical_velocity(double const time) const final;
 
   /*
    * Calculate time step size according to diffusion term
    */
   double
-  calculate_time_step_diffusion() const;
+  calculate_time_step_diffusion() const final;
 
 public:
   /*

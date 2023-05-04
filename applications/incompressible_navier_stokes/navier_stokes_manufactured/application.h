@@ -77,7 +77,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const final
   {
     double const t     = this->get_time();
     double const x     = p[0];
@@ -141,7 +141,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const final
   {
     /*
      * This is the kinematic traction vector t obtained via integration by
@@ -235,7 +235,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const final
   {
     /*
      * The solution laid out above is inserted into the momentum balance

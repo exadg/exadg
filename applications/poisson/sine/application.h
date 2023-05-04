@@ -42,7 +42,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const final
   {
     double result = 1.0;
     for(unsigned int d = 0; d < dim; ++d)
@@ -62,7 +62,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const final
   {
     double result = 1.0;
     for(unsigned int d = 0; d < dim; ++d)
@@ -88,7 +88,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const /* component */) const
+  value(dealii::Point<dim> const & p, unsigned int const /* component */) const final
   {
     double result = FREQUENCY * FREQUENCY * dim;
     for(unsigned int d = 0; d < dim; ++d)
@@ -114,7 +114,7 @@ public:
   }
 
   void
-  add_parameters(dealii::ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm) final
   {
     ApplicationBase<dim, n_components, Number>::add_parameters(prm);
 

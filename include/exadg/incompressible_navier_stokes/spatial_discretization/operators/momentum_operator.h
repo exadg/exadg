@@ -107,43 +107,43 @@ public:
    * Interfaces of OperatorBase.
    */
   void
-  rhs(VectorType & dst) const;
+  rhs(VectorType & dst) const final;
 
   void
-  rhs_add(VectorType & dst) const;
+  rhs_add(VectorType & dst) const final;
 
   void
-  evaluate(VectorType & dst, VectorType const & src) const;
+  evaluate(VectorType & dst, VectorType const & src) const final;
 
   void
-  evaluate_add(VectorType & dst, VectorType const & src) const;
+  evaluate_add(VectorType & dst, VectorType const & src) const final;
 
 private:
   void
-  reinit_cell(unsigned int const cell) const;
+  reinit_cell(unsigned int const cell) const final;
 
   void
-  reinit_face(unsigned int const face) const;
+  reinit_face(unsigned int const face) const final;
 
   void
-  reinit_boundary_face(unsigned int const face) const;
+  reinit_boundary_face(unsigned int const face) const final;
 
   void
   reinit_face_cell_based(unsigned int const               cell,
                          unsigned int const               face,
-                         dealii::types::boundary_id const boundary_id) const;
+                         dealii::types::boundary_id const boundary_id) const final;
 
   // linearized operator
   void
-  do_cell_integral(IntegratorCell & integrator) const;
+  do_cell_integral(IntegratorCell & integrator) const final;
 
   // linearized operator
   void
-  do_face_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
+  do_face_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const final;
 
   // linearized operator
   void
-  do_face_int_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
+  do_face_int_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const final;
 
   // linearized operator
 
@@ -153,17 +153,17 @@ private:
   // Once this functionality is available, this function should be removed again.
   void
   do_face_int_integral_cell_based(IntegratorFace & integrator_m,
-                                  IntegratorFace & integrator_p) const;
+                                  IntegratorFace & integrator_p) const final;
 
   // linearized operator
   void
-  do_face_ext_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
+  do_face_ext_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const final;
 
   // linearized operator
   void
   do_boundary_integral(IntegratorFace &                   integrator,
                        OperatorType const &               operator_type,
-                       dealii::types::boundary_id const & boundary_id) const;
+                       dealii::types::boundary_id const & boundary_id) const final;
 
   MomentumOperatorData<dim> operator_data;
 

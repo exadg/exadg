@@ -89,7 +89,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const final
   {
     double const t    = this->get_time();
     double const r_sq = get_r_square(p[0], p[1], t);
@@ -134,7 +134,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const final
   {
     double const t    = this->get_time();
     double const r_sq = get_r_square(p[0], p[1], t);
@@ -161,7 +161,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const final
   {
     (void)component;
 
@@ -185,7 +185,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const final
   {
     (void)component;
 

@@ -51,7 +51,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const final
   {
     AssertThrow(dim == 3, dealii::ExcMessage("Dimension has to be dim==3."));
 
@@ -106,7 +106,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const final
   {
     double result = linear_interpolation_2d_cartesian(
       p, data.y_values, data.z_values, data.velocity_values, component);
@@ -127,7 +127,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & /*p*/, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & /*p*/, unsigned int const component = 0) const final
   {
     double result = 0.0;
 

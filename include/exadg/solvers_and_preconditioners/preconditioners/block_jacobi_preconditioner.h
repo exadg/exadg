@@ -45,7 +45,7 @@ public:
    *  when calling this function.
    */
   void
-  update()
+  update() final
   {
     underlying_operator.update_block_diagonal_preconditioner();
   }
@@ -56,7 +56,7 @@ public:
    *  updated when calling this function.
    */
   void
-  vmult(VectorType & dst, VectorType const & src) const
+  vmult(VectorType & dst, VectorType const & src) const final
   {
     underlying_operator.apply_inverse_block_diagonal(dst, src);
   }
