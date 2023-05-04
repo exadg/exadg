@@ -387,9 +387,6 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
 
   if(this->param.nonlinear_problem_has_to_be_solved())
   {
-    AssertThrow(this->param.nonlinear_problem_has_to_be_solved(),
-                dealii::ExcMessage("Logical error."));
-
     // solve non-linear system of equations
     auto const iter = pde_operator->solve_nonlinear_momentum_equation(
       velocity_np,
@@ -411,7 +408,7 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
                                   timer.wall_time());
     }
   }
-  else
+  else // linear problem
   {
     if(this->param.viscous_problem())
     {
@@ -1021,7 +1018,7 @@ TimeIntBDFPressureCorrection<dim, Number>::print_iterations() const
     iterations_avg[4] =
       (double)iterations_projection.second / std::max(1., (double)iterations_projection.first);
   }
-  else
+  else // linear problem
   {
     names = {"Momentum step", "Pressure step", "Projection step"};
 

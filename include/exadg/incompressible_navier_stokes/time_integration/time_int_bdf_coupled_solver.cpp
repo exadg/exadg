@@ -262,7 +262,7 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
                                   timer.wall_time());
     }
   }
-  else
+  else // linear problem
   {
     BlockVectorType rhs_vector;
     pde_operator->initialize_block_vector_velocity_pressure(rhs_vector);

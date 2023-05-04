@@ -174,7 +174,7 @@ DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_pro
     std::get<0>(iterations.second) += std::get<0>(iter);
     std::get<1>(iterations.second) += std::get<1>(iter);
   }
-  else
+  else // linear problem
   {
     // calculate rhs vector
     pde_operator->rhs_stokes_problem(rhs_vector, time);
@@ -227,7 +227,7 @@ DriverSteadyProblems<dim, Number>::print_iterations() const
     else
       iterations_avg[2] = iterations_avg[1];
   }
-  else
+  else // linear problem
   {
     names = {"Coupled system"};
     iterations_avg.resize(1);
