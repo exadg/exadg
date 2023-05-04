@@ -68,7 +68,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const final
   {
     double const result = 0.5 * (1.0 - std::exp(2.0 * lambda * p[0]));
 

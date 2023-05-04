@@ -43,7 +43,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const /*component = 0*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component = 0*/) const final
   {
     double       t           = this->get_time();
     double const time_factor = std::max(0.0, 1.0 - t / characteristic_time);

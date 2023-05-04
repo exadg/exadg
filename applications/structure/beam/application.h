@@ -38,7 +38,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const c) const
+  value(dealii::Point<dim> const & p, unsigned int const c) const final
   {
     double factor = 1.0;
     if(incremental_loading)
@@ -67,7 +67,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const c) const
+  value(dealii::Point<dim> const & p, unsigned int const c) const final
   {
     (void)p;
 
@@ -100,7 +100,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const c) const
+  value(dealii::Point<dim> const & p, unsigned int const c) const final
   {
     (void)p;
     (void)c;
