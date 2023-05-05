@@ -66,10 +66,10 @@ public:
 
   template<typename Number>
   void
-  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_,
-        unsigned int const                               dof_index_,
-        std::vector<quad_index> const &                  quad_indices_,
-        SetBoundaryIDs const &                           set_bids_)
+  setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_,
+        unsigned int const                                     dof_index_,
+        std::vector<quad_index> const &                        quad_indices_,
+        SetBoundaryIDs const &                                 set_bids_)
   {
     quad_indices = quad_indices_;
 

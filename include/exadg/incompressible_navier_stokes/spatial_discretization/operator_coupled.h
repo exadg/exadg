@@ -210,9 +210,9 @@ public:
   virtual ~OperatorCoupled();
 
   void
-  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free,
-        std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data,
-        std::string const &                              dof_index_temperature = "") final;
+  setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number>>           matrix_free_data,
+        std::string const &                                    dof_index_temperature = "") final;
 
   void
   setup_solvers(double const &     scaling_factor_time_derivative_term,
