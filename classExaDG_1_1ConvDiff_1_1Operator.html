@@ -144,13 +144,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>update_conv_diff_oper
 <tr class="separator:ab0a9edc71a3572c652cae04d08e622a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aca761ff6d921acfc926610df7b7b2bd7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#aca761ff6d921acfc926610df7b7b2bd7">move_grid</a> (double const &amp;time) const final</td></tr>
 <tr class="separator:aca761ff6d921acfc926610df7b7b2bd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a895d04962326af22e0356ee048ae3a19"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a895d04962326af22e0356ee048ae3a19">move_grid_and_update_dependent_data_structures</a> (double const &amp;time) final</td></tr>
-<tr class="separator:a895d04962326af22e0356ee048ae3a19"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a738698af4c940f4861d37fd6af4aa82c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a738698af4c940f4861d37fd6af4aa82c">update_matrix_free_after_grid_motion</a> () final</td></tr>
+<tr class="separator:a738698af4c940f4861d37fd6af4aa82c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa60c33eeda7c41816546e8422a53451e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#aa60c33eeda7c41816546e8422a53451e">update_spatial_operators_after_grid_motion</a> () final</td></tr>
+<tr class="separator:aa60c33eeda7c41816546e8422a53451e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0a7abd93d0b03b699237e5811a070dd1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a0a7abd93d0b03b699237e5811a070dd1">fill_grid_coordinates_vector</a> (VectorType &amp;vector) const final</td></tr>
 <tr class="separator:a0a7abd93d0b03b699237e5811a070dd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7a06387448756d20efc44fc54020c304"><td class="memItemLeft" align="right" valign="top"><a id="a7a06387448756d20efc44fc54020c304" name="a7a06387448756d20efc44fc54020c304"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>update_after_grid_motion</b> ()</td></tr>
-<tr class="separator:a7a06387448756d20efc44fc54020c304"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8a3e92a1eb0446b7e9f1af254113bae"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#ab8a3e92a1eb0446b7e9f1af254113bae">solve</a> (VectorType &amp;sol, VectorType const &amp;rhs, bool const update_preconditioner, double const scaling_factor=-1.0, double const time=-1.0, VectorType const *velocity=nullptr) final</td></tr>
 <tr class="separator:ab8a3e92a1eb0446b7e9f1af254113bae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a358adb942d4b4ee6e94c0c52614102c3"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a358adb942d4b4ee6e94c0c52614102c3">calculate_time_step_max_efficiency</a> (unsigned int const order_time_integrator) const final</td></tr>
@@ -226,9 +225,12 @@ virtual double&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_t
 <tr class="memitem:ac74041a69f2bd90a0e795ccd1cc39b3c"><td class="memItemLeft" align="right" valign="top"><a id="ac74041a69f2bd90a0e795ccd1cc39b3c" name="ac74041a69f2bd90a0e795ccd1cc39b3c"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>move_grid</b> (double const &amp;time) const =0</td></tr>
 <tr class="separator:ac74041a69f2bd90a0e795ccd1cc39b3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a527122592300b18d747ff7b6a3daaccf"><td class="memItemLeft" align="right" valign="top"><a id="a527122592300b18d747ff7b6a3daaccf" name="a527122592300b18d747ff7b6a3daaccf"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>move_grid_and_update_dependent_data_structures</b> (double const &amp;time)=0</td></tr>
-<tr class="separator:a527122592300b18d747ff7b6a3daaccf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3b55c02d34c4c22e5097d23eb5337309"><td class="memItemLeft" align="right" valign="top"><a id="a3b55c02d34c4c22e5097d23eb5337309" name="a3b55c02d34c4c22e5097d23eb5337309"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update_matrix_free_after_grid_motion</b> ()=0</td></tr>
+<tr class="separator:a3b55c02d34c4c22e5097d23eb5337309"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab77b296534c7d43f5c485ff164b3536c"><td class="memItemLeft" align="right" valign="top"><a id="ab77b296534c7d43f5c485ff164b3536c" name="ab77b296534c7d43f5c485ff164b3536c"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update_spatial_operators_after_grid_motion</b> ()=0</td></tr>
+<tr class="separator:ab77b296534c7d43f5c485ff164b3536c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7a2a784586b3480a46ab6ce31d935dab"><td class="memItemLeft" align="right" valign="top"><a id="a7a2a784586b3480a46ab6ce31d935dab" name="a7a2a784586b3480a46ab6ce31d935dab"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_grid_coordinates_vector</b> (VectorType &amp;vector) const =0</td></tr>
 <tr class="separator:a7a2a784586b3480a46ab6ce31d935dab"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -559,36 +561,6 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a895d04962326af22e0356ee048ae3a19" name="a895d04962326af22e0356ee048ae3a19"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a895d04962326af22e0356ee048ae3a19">&#9670;&#160;</a></span>move_grid_and_update_dependent_data_structures()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::move_grid_and_update_dependent_data_structures </td>
-          <td>(</td>
-          <td class="paramtype">double const &amp;&#160;</td>
-          <td class="paramname"><em>time</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classExaDG_1_1ConvDiff_1_1Interface_1_1Operator.html">ExaDG::ConvDiff::Interface::Operator&lt; Number &gt;</a>.</p>
-
-</div>
-</div>
 <a id="ae4951dea8935b315a0e69ee95ceb759c" name="ae4951dea8935b315a0e69ee95ceb759c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae4951dea8935b315a0e69ee95ceb759c">&#9670;&#160;</a></span>prescribe_initial_conditions()</h2>
 
@@ -766,6 +738,58 @@ template&lt;int dim, typename Number &gt; </div>
           <td></td>
           <td>)</td>
           <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1ConvDiff_1_1Interface_1_1Operator.html">ExaDG::ConvDiff::Interface::Operator&lt; Number &gt;</a>.</p>
+
+</div>
+</div>
+<a id="a738698af4c940f4861d37fd6af4aa82c" name="a738698af4c940f4861d37fd6af4aa82c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a738698af4c940f4861d37fd6af4aa82c">&#9670;&#160;</a></span>update_matrix_free_after_grid_motion()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::update_matrix_free_after_grid_motion</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1ConvDiff_1_1Interface_1_1Operator.html">ExaDG::ConvDiff::Interface::Operator&lt; Number &gt;</a>.</p>
+
+</div>
+</div>
+<a id="aa60c33eeda7c41816546e8422a53451e" name="aa60c33eeda7c41816546e8422a53451e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa60c33eeda7c41816546e8422a53451e">&#9670;&#160;</a></span>update_spatial_operators_after_grid_motion()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::update_spatial_operators_after_grid_motion</td>
         </tr>
       </table>
   </td>

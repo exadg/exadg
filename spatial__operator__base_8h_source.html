@@ -466,22 +466,22 @@ $(function() {
 <div class="line"><a id="l00388" name="l00388"></a><span class="lineno">  388</span>  move_grid(<span class="keywordtype">double</span> <span class="keyword">const</span> &amp; time) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00389" name="l00389"></a><span class="lineno">  389</span> </div>
 <div class="line"><a id="l00390" name="l00390"></a><span class="lineno">  390</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00391" name="l00391"></a><span class="lineno">  391</span><span class="comment">   * Moves the grid and updates dependent data structures for ALE-type problems.</span></div>
+<div class="line"><a id="l00391" name="l00391"></a><span class="lineno">  391</span><span class="comment">   * Updates MatrixFree after grid has been moved.</span></div>
 <div class="line"><a id="l00392" name="l00392"></a><span class="lineno">  392</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00393" name="l00393"></a><span class="lineno">  393</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00394" name="l00394"></a><span class="lineno">  394</span>  move_grid_and_update_dependent_data_structures(<span class="keywordtype">double</span> <span class="keyword">const</span> &amp; time);</div>
+<div class="line"><a id="l00394" name="l00394"></a><span class="lineno">  394</span>  update_matrix_free_after_grid_motion();</div>
 <div class="line"><a id="l00395" name="l00395"></a><span class="lineno">  395</span> </div>
 <div class="line"><a id="l00396" name="l00396"></a><span class="lineno">  396</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00397" name="l00397"></a><span class="lineno">  397</span><span class="comment">   * Fills a dof-vector with grid coordinates for ALE-type problems.</span></div>
+<div class="line"><a id="l00397" name="l00397"></a><span class="lineno">  397</span><span class="comment">   * Updates operators after grid has been moved.</span></div>
 <div class="line"><a id="l00398" name="l00398"></a><span class="lineno">  398</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00399" name="l00399"></a><span class="lineno">  399</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00400" name="l00400"></a><span class="lineno">  400</span>  fill_grid_coordinates_vector(VectorType &amp; vector) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00399" name="l00399"></a><span class="lineno">  399</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00400" name="l00400"></a><span class="lineno">  400</span>  update_spatial_operators_after_grid_motion();</div>
 <div class="line"><a id="l00401" name="l00401"></a><span class="lineno">  401</span> </div>
 <div class="line"><a id="l00402" name="l00402"></a><span class="lineno">  402</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00403" name="l00403"></a><span class="lineno">  403</span><span class="comment">   * Updates operators after grid has been moved.</span></div>
+<div class="line"><a id="l00403" name="l00403"></a><span class="lineno">  403</span><span class="comment">   * Fills a dof-vector with grid coordinates for ALE-type problems.</span></div>
 <div class="line"><a id="l00404" name="l00404"></a><span class="lineno">  404</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00405" name="l00405"></a><span class="lineno">  405</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00406" name="l00406"></a><span class="lineno">  406</span>  update_after_grid_motion();</div>
+<div class="line"><a id="l00405" name="l00405"></a><span class="lineno">  405</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00406" name="l00406"></a><span class="lineno">  406</span>  fill_grid_coordinates_vector(VectorType &amp; vector) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00407" name="l00407"></a><span class="lineno">  407</span> </div>
 <div class="line"><a id="l00408" name="l00408"></a><span class="lineno">  408</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00409" name="l00409"></a><span class="lineno">  409</span><span class="comment">   * Sets the grid velocity.</span></div>

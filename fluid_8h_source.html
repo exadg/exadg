@@ -349,7 +349,7 @@ $(function() {
 <div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>  timer_tree-&gt;insert({<span class="stringliteral">&quot;ALE&quot;</span>, <span class="stringliteral">&quot;Update matrix-free&quot;</span>}, sub_timer.wall_time());</div>
 <div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span> </div>
 <div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>  sub_timer.restart();</div>
-<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>  pde_operator-&gt;update_after_grid_motion();</div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>  pde_operator-&gt;update_spatial_operators_after_grid_motion();</div>
 <div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>  timer_tree-&gt;insert({<span class="stringliteral">&quot;ALE&quot;</span>, <span class="stringliteral">&quot;Update operator&quot;</span>}, sub_timer.wall_time());</div>
 <div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span> </div>
 <div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>  sub_timer.restart();</div>
