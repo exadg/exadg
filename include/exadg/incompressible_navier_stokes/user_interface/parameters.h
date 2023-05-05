@@ -70,9 +70,6 @@ public:
   nonlinear_problem_has_to_be_solved() const;
 
   bool
-  linear_problem_has_to_be_solved() const;
-
-  bool
   involves_h_multigrid() const;
 
   unsigned int

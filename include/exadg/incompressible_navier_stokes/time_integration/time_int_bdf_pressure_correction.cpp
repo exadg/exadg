@@ -385,7 +385,30 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
     ((this->time_step_number - 1) % this->param.update_preconditioner_momentum_every_time_steps ==
      0);
 
-  if(this->param.linear_problem_has_to_be_solved())
+  if(this->param.nonlinear_problem_has_to_be_solved())
+  {
+    // solve non-linear system of equations
+    auto const iter = pde_operator->solve_nonlinear_momentum_equation(
+      velocity_np,
+      rhs,
+      this->get_next_time(),
+      update_preconditioner,
+      this->get_scaling_factor_time_derivative_term());
+
+    iterations_momentum.first += 1;
+    std::get<0>(iterations_momentum.second) += std::get<0>(iter);
+    std::get<1>(iterations_momentum.second) += std::get<1>(iter);
+
+    if(this->print_solver_info() and not(this->is_test))
+    {
+      this->pcout << std::endl << "Solve momentum step:";
+      print_solver_info_nonlinear(this->pcout,
+                                  std::get<0>(iter),
+                                  std::get<1>(iter),
+                                  timer.wall_time());
+    }
+  }
+  else // linear problem
   {
     if(this->param.viscous_problem())
     {
@@ -412,32 +435,6 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
         this->pcout << std::endl << "Explicit momentum step:";
         print_wall_time(this->pcout, timer.wall_time());
       }
-    }
-  }
-  else // nonlinear problem
-  {
-    AssertThrow(this->param.nonlinear_problem_has_to_be_solved(),
-                dealii::ExcMessage("Logical error."));
-
-    // solve non-linear system of equations
-    auto const iter = pde_operator->solve_nonlinear_momentum_equation(
-      velocity_np,
-      rhs,
-      this->get_next_time(),
-      update_preconditioner,
-      this->get_scaling_factor_time_derivative_term());
-
-    iterations_momentum.first += 1;
-    std::get<0>(iterations_momentum.second) += std::get<0>(iter);
-    std::get<1>(iterations_momentum.second) += std::get<1>(iter);
-
-    if(this->print_solver_info() and not(this->is_test))
-    {
-      this->pcout << std::endl << "Solve momentum step:";
-      print_solver_info_nonlinear(this->pcout,
-                                  std::get<0>(iter),
-                                  std::get<1>(iter),
-                                  timer.wall_time());
     }
   }
 
@@ -518,11 +515,11 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_momentum(VectorType & rhs)
 
   /*
    *  Right-hand side viscous term:
-   *  If a linear system of equations has to be solved,
+   *  If there is no nonlinearity, we solve a linear system of equations, where
    *  inhomogeneous parts of boundary face integrals of the viscous operator
    *  have to be shifted to the right-hand side of the equation.
    */
-  if(this->param.viscous_problem() and this->param.linear_problem_has_to_be_solved())
+  if(this->param.viscous_problem() && not(this->param.nonlinear_problem_has_to_be_solved()))
   {
     pde_operator->rhs_add_viscous_term(rhs, this->get_next_time());
   }
@@ -999,19 +996,7 @@ TimeIntBDFPressureCorrection<dim, Number>::print_iterations() const
   std::vector<std::string> names;
   std::vector<double>      iterations_avg;
 
-  if(this->param.linear_problem_has_to_be_solved())
-  {
-    names = {"Momentum step", "Pressure step", "Projection step"};
-
-    iterations_avg.resize(3);
-    iterations_avg[0] = (double)std::get<1>(iterations_momentum.second) /
-                        std::max(1., (double)iterations_momentum.first);
-    iterations_avg[1] =
-      (double)iterations_pressure.second / std::max(1., (double)iterations_pressure.first);
-    iterations_avg[2] =
-      (double)iterations_projection.second / std::max(1., (double)iterations_projection.first);
-  }
-  else // nonlinear system of equations in momentum step
+  if(this->param.nonlinear_problem_has_to_be_solved())
   {
     names = {"Momentum (nonlinear)",
              "Momentum (linear accumulated)",
@@ -1031,6 +1016,18 @@ TimeIntBDFPressureCorrection<dim, Number>::print_iterations() const
     iterations_avg[3] =
       (double)iterations_pressure.second / std::max(1., (double)iterations_pressure.first);
     iterations_avg[4] =
+      (double)iterations_projection.second / std::max(1., (double)iterations_projection.first);
+  }
+  else // linear problem
+  {
+    names = {"Momentum step", "Pressure step", "Projection step"};
+
+    iterations_avg.resize(3);
+    iterations_avg[0] = (double)std::get<1>(iterations_momentum.second) /
+                        std::max(1., (double)iterations_momentum.first);
+    iterations_avg[1] =
+      (double)iterations_pressure.second / std::max(1., (double)iterations_pressure.first);
+    iterations_avg[2] =
       (double)iterations_projection.second / std::max(1., (double)iterations_projection.first);
   }
 
