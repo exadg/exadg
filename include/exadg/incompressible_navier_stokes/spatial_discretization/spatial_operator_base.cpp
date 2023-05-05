@@ -1520,23 +1520,6 @@ SpatialOperatorBase<dim, Number>::calculate_dissipation_continuity_term(
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::move_grid(double const & time) const
-{
-  grid_motion->update(
-    time,
-    false /* print_solver_info */,
-    dealii::numbers::invalid_unsigned_int /* time_step_number used for preconditioner update */);
-}
-
-template<int dim, typename Number>
-void
-SpatialOperatorBase<dim, Number>::update_matrix_free_after_grid_motion()
-{
-  matrix_free->update_mapping(*get_mapping());
-}
-
-template<int dim, typename Number>
-void
 SpatialOperatorBase<dim, Number>::update_spatial_operators_after_grid_motion()
 {
   if(param.turbulence_model_data.is_active)
@@ -1553,13 +1536,6 @@ SpatialOperatorBase<dim, Number>::update_spatial_operators_after_grid_motion()
   }
 
   // note that the update of div-div and continuity penalty terms is done separately
-}
-
-template<int dim, typename Number>
-void
-SpatialOperatorBase<dim, Number>::fill_grid_coordinates_vector(VectorType & vector) const
-{
-  grid_motion->fill_grid_coordinates_vector(vector, get_dof_handler_u());
 }
 
 template<int dim, typename Number>

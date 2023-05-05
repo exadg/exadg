@@ -144,7 +144,7 @@ void
 TimeIntBDFPressureCorrection<dim, Number>::initialize_current_solution()
 {
   if(this->param.ale_formulation)
-    pde_operator->move_grid(this->get_time());
+    this->helpers_ale.move_grid(this->get_time());
 
   pde_operator->prescribe_initial_conditions(velocity[0], pressure[0], this->get_time());
 }
@@ -157,7 +157,7 @@ TimeIntBDFPressureCorrection<dim, Number>::initialize_former_solutions()
   for(unsigned int i = 1; i < velocity.size(); ++i)
   {
     if(this->param.ale_formulation)
-      pde_operator->move_grid(this->get_previous_time(i));
+      this->helpers_ale.move_grid(this->get_previous_time(i));
 
     pde_operator->prescribe_initial_conditions(velocity[i],
                                                pressure[i],
@@ -180,8 +180,8 @@ TimeIntBDFPressureCorrection<dim, Number>::initialize_pressure_on_boundary()
       double const time = this->get_time() - double(i) * this->get_time_step_size();
       if(this->param.ale_formulation)
       {
-        pde_operator->move_grid(time);
-        pde_operator->update_matrix_free_after_grid_motion();
+        this->helpers_ale.move_grid(time);
+        this->helpers_ale.update_matrix_free_after_grid_motion();
         pde_operator->update_spatial_operators_after_grid_motion();
       }
 

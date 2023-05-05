@@ -383,28 +383,10 @@ public:
   calculate_dissipation_continuity_term(VectorType const & velocity) const;
 
   /*
-   * Moves the grid for ALE-type problems.
-   */
-  void
-  move_grid(double const & time) const;
-
-  /*
-   * Updates MatrixFree after grid has been moved.
-   */
-  void
-  update_matrix_free_after_grid_motion();
-
-  /*
    * Updates operators after grid has been moved.
    */
   virtual void
   update_spatial_operators_after_grid_motion();
-
-  /*
-   * Fills a dof-vector with grid coordinates for ALE-type problems.
-   */
-  void
-  fill_grid_coordinates_vector(VectorType & vector) const;
 
   /*
    * Sets the grid velocity.

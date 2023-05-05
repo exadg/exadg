@@ -40,6 +40,16 @@ class SpatialOperatorBase;
 template<typename Number>
 class PostProcessorInterface;
 
+template<typename Number>
+class HelpersALE
+{
+public:
+  std::function<void(double const & time)> const move_grid;
+  std::function<void()> const                    update_matrix_free_after_grid_motion;
+  std::function<void(dealii::LinearAlgebra::distributed::Vector<Number> & vector)> const
+    fill_grid_coordinates_vector;
+};
+
 template<int dim, typename Number>
 class TimeIntBDF : public TimeIntBDFBase<Number>
 {
@@ -127,6 +137,8 @@ protected:
   // required for strongly-coupled partitioned iteration
   bool use_extrapolation;
   bool store_solution;
+
+  HelpersALE<Number> helpers_ale;
 
 private:
   void

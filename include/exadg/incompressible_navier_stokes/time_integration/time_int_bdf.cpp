@@ -96,16 +96,16 @@ TimeIntBDF<dim, Number>::setup_derived()
     // compute the grid coordinates at start time (and at previous times in case of
     // start_with_low_order == false)
 
-    operator_base->move_grid(this->get_time());
-    operator_base->fill_grid_coordinates_vector(vec_grid_coordinates[0]);
+    helpers_ale.move_grid(this->get_time());
+    helpers_ale.fill_grid_coordinates_vector(vec_grid_coordinates[0]);
 
     if(this->start_with_low_order == false)
     {
       // compute grid coordinates at previous times (start with 1!)
       for(unsigned int i = 1; i < this->order; ++i)
       {
-        operator_base->move_grid(this->get_previous_time(i));
-        operator_base->fill_grid_coordinates_vector(vec_grid_coordinates[i]);
+        helpers_ale.move_grid(this->get_previous_time(i));
+        helpers_ale.fill_grid_coordinates_vector(vec_grid_coordinates[i]);
       }
     }
   }
@@ -150,7 +150,7 @@ void
 TimeIntBDF<dim, Number>::ale_update()
 {
   // and compute grid coordinates at the end of the current time step t_{n+1}
-  operator_base->fill_grid_coordinates_vector(grid_coordinates_np);
+  helpers_ale.fill_grid_coordinates_vector(grid_coordinates_np);
 
   // and update grid velocity using BDF time derivative
   compute_bdf_time_derivative(grid_velocity,
@@ -460,8 +460,8 @@ TimeIntBDF<dim, Number>::postprocessing() const
   if(this->param.ale_formulation and this->get_time_step_number() == 1 and
      not this->param.restarted_simulation)
   {
-    operator_base->move_grid(this->get_time());
-    operator_base->update_matrix_free_after_grid_motion();
+    helpers_ale.move_grid(this->get_time());
+    helpers_ale.update_matrix_free_after_grid_motion();
     operator_base->update_spatial_operators_after_grid_motion();
   }
 
