@@ -1019,12 +1019,12 @@ double const h_x_1 = D / nele_x_middle_middle;
 double const h_x_0 = (X_1 - X_0) / nele_x_left;
 
 void
-do_create_coarse_triangulation(dealii::Triangulation<2> &        tria,
-                               std::vector<unsigned int> const & repetitions,
-                               dealii::Point<2> const &          p1,
-                               dealii::Point<2> const &          p2,
-                               ElementType const &               element_type,
-                               bool const                        colorize = false)
+create_subdivided_hyper_rectangle(dealii::Triangulation<2> &        tria,
+                                  std::vector<unsigned int> const & repetitions,
+                                  dealii::Point<2> const &          p1,
+                                  dealii::Point<2> const &          p2,
+                                  ElementType const &               element_type,
+                                  bool const                        colorize = false)
 {
   if(element_type == ElementType::Hypercube)
   {
@@ -1053,7 +1053,7 @@ create_trapezoid(dealii::Triangulation<2> & tria,
 
   dealii::Point<2> x_1 = x_0 + dealii::Point<2>(length, height);
 
-  do_create_coarse_triangulation(tmp, ref, x_0, x_1, element_type, false);
+  create_subdivided_hyper_rectangle(tmp, ref, x_0, x_1, element_type, false);
 
   for(dealii::Triangulation<2>::vertex_iterator v = tmp.begin_vertex(); v != tmp.end_vertex(); ++v)
   {
@@ -1155,52 +1155,52 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation,
   std::vector<unsigned int> ref_middle_left  = {nele_x_middle_left, nele_y_middle};
 
   // left part
-  do_create_coarse_triangulation(left_bottom,
-                                 ref_left_bottom,
-                                 dealii::Point<2>(X_0, Y_0),
-                                 dealii::Point<2>(X_1, Y_1),
-                                 element_type,
-                                 false);
+  create_subdivided_hyper_rectangle(left_bottom,
+                                    ref_left_bottom,
+                                    dealii::Point<2>(X_0, Y_0),
+                                    dealii::Point<2>(X_1, Y_1),
+                                    element_type,
+                                    false);
 
-  do_create_coarse_triangulation(left_middle,
-                                 ref_left_middle,
-                                 dealii::Point<2>(X_0, Y_1),
-                                 dealii::Point<2>(X_1, Y_2),
-                                 element_type,
-                                 false);
+  create_subdivided_hyper_rectangle(left_middle,
+                                    ref_left_middle,
+                                    dealii::Point<2>(X_0, Y_1),
+                                    dealii::Point<2>(X_1, Y_2),
+                                    element_type,
+                                    false);
 
-  do_create_coarse_triangulation(left_top,
-                                 ref_left_top,
-                                 dealii::Point<2>(X_0, Y_2),
-                                 dealii::Point<2>(X_1, H),
-                                 element_type,
-                                 false);
+  create_subdivided_hyper_rectangle(left_top,
+                                    ref_left_top,
+                                    dealii::Point<2>(X_0, Y_2),
+                                    dealii::Point<2>(X_1, H),
+                                    element_type,
+                                    false);
 
   // merge left triangulations
   dealii::GridGenerator::merge_triangulations(left_bottom, left_middle, tmp);
   dealii::GridGenerator::merge_triangulations(tmp, left_top, left);
 
   // right part
-  do_create_coarse_triangulation(right_bottom,
-                                 ref_right_bottom,
-                                 dealii::Point<2>(X_2, Y_0),
-                                 dealii::Point<2>(L, Y_1),
-                                 element_type,
-                                 false);
+  create_subdivided_hyper_rectangle(right_bottom,
+                                    ref_right_bottom,
+                                    dealii::Point<2>(X_2, Y_0),
+                                    dealii::Point<2>(L, Y_1),
+                                    element_type,
+                                    false);
 
-  do_create_coarse_triangulation(right_middle,
-                                 ref_right_middle,
-                                 dealii::Point<2>(X_2, Y_1),
-                                 dealii::Point<2>(L, Y_2),
-                                 element_type,
-                                 false);
+  create_subdivided_hyper_rectangle(right_middle,
+                                    ref_right_middle,
+                                    dealii::Point<2>(X_2, Y_1),
+                                    dealii::Point<2>(L, Y_2),
+                                    element_type,
+                                    false);
 
-  do_create_coarse_triangulation(right_top,
-                                 ref_right_top,
-                                 dealii::Point<2>(X_2, Y_2),
-                                 dealii::Point<2>(L, H),
-                                 element_type,
-                                 false);
+  create_subdivided_hyper_rectangle(right_top,
+                                    ref_right_top,
+                                    dealii::Point<2>(X_2, Y_2),
+                                    dealii::Point<2>(L, H),
+                                    element_type,
+                                    false);
 
   // merge right triangulations
   dealii::GridGenerator::merge_triangulations(right_bottom, right_middle, tmp);
@@ -1210,64 +1210,64 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & triangulation,
   if(!adaptive_mesh_shift)
   {
     // create middle bottom part
-    do_create_coarse_triangulation(middle_bottom,
-                                   ref_middle_bottom,
-                                   dealii::Point<2>(X_0 + I_x, Y_0),
-                                   dealii::Point<2>(X_0 + I_x + D, Y_1),
-                                   element_type,
-                                   false);
+    create_subdivided_hyper_rectangle(middle_bottom,
+                                      ref_middle_bottom,
+                                      dealii::Point<2>(X_0 + I_x, Y_0),
+                                      dealii::Point<2>(X_0 + I_x + D, Y_1),
+                                      element_type,
+                                      false);
 
     // create middle top part
-    do_create_coarse_triangulation(middle_top,
-                                   ref_middle_top,
-                                   dealii::Point<2>(X_0 + I_x, Y_2),
-                                   dealii::Point<2>(X_0 + I_x + D, H),
-                                   element_type,
-                                   false);
+    create_subdivided_hyper_rectangle(middle_top,
+                                      ref_middle_top,
+                                      dealii::Point<2>(X_0 + I_x, Y_2),
+                                      dealii::Point<2>(X_0 + I_x + D, H),
+                                      element_type,
+                                      false);
 
     // create middle left part
-    do_create_coarse_triangulation(middle_left,
-                                   ref_middle_left,
-                                   dealii::Point<2>(X_1, Y_1),
-                                   dealii::Point<2>(X_0 + I_x, Y_2),
-                                   element_type,
-                                   false);
+    create_subdivided_hyper_rectangle(middle_left,
+                                      ref_middle_left,
+                                      dealii::Point<2>(X_1, Y_1),
+                                      dealii::Point<2>(X_0 + I_x, Y_2),
+                                      element_type,
+                                      false);
 
-    do_create_coarse_triangulation(middle_left_top,
-                                   ref_middle_top_left,
-                                   dealii::Point<2>(X_1, Y_2),
-                                   dealii::Point<2>(X_0 + I_x, H),
-                                   element_type,
-                                   false);
+    create_subdivided_hyper_rectangle(middle_left_top,
+                                      ref_middle_top_left,
+                                      dealii::Point<2>(X_1, Y_2),
+                                      dealii::Point<2>(X_0 + I_x, H),
+                                      element_type,
+                                      false);
 
-    do_create_coarse_triangulation(middle_left_bottom,
-                                   ref_middle_bottom_left,
-                                   dealii::Point<2>(X_1, Y_0),
-                                   dealii::Point<2>(X_0 + I_x, Y_1),
-                                   element_type,
-                                   false);
+    create_subdivided_hyper_rectangle(middle_left_bottom,
+                                      ref_middle_bottom_left,
+                                      dealii::Point<2>(X_1, Y_0),
+                                      dealii::Point<2>(X_0 + I_x, Y_1),
+                                      element_type,
+                                      false);
 
     // create middle right part
-    do_create_coarse_triangulation(middle_right,
-                                   ref_middle_right,
-                                   dealii::Point<2>(X_0 + I_x + D, Y_1),
-                                   dealii::Point<2>(X_2, Y_2),
-                                   element_type,
-                                   false);
+    create_subdivided_hyper_rectangle(middle_right,
+                                      ref_middle_right,
+                                      dealii::Point<2>(X_0 + I_x + D, Y_1),
+                                      dealii::Point<2>(X_2, Y_2),
+                                      element_type,
+                                      false);
 
-    do_create_coarse_triangulation(middle_right_top,
-                                   ref_middle_top_right,
-                                   dealii::Point<2>(X_0 + I_x + D, Y_2),
-                                   dealii::Point<2>(X_2, H),
-                                   element_type,
-                                   false);
+    create_subdivided_hyper_rectangle(middle_right_top,
+                                      ref_middle_top_right,
+                                      dealii::Point<2>(X_0 + I_x + D, Y_2),
+                                      dealii::Point<2>(X_2, H),
+                                      element_type,
+                                      false);
 
-    do_create_coarse_triangulation(middle_right_bottom,
-                                   ref_middle_bottom_right,
-                                   dealii::Point<2>(X_0 + I_x + D, Y_0),
-                                   dealii::Point<2>(X_2, Y_1),
-                                   element_type,
-                                   false);
+    create_subdivided_hyper_rectangle(middle_right_bottom,
+                                      ref_middle_bottom_right,
+                                      dealii::Point<2>(X_0 + I_x + D, Y_0),
+                                      dealii::Point<2>(X_2, Y_1),
+                                      element_type,
+                                      false);
   }
   else
   {
