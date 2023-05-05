@@ -128,7 +128,7 @@ MultigridPreconditionerProjection<dim, Number>::fill_matrix_free_data(
   {
     AssertThrow(false,
                 dealii::ExcMessage("Only pure hypercube or pure simplex meshes are implemented for "
-                                   "ProjectionPreconditioner::Multigrid."));
+                                   "IncNS::Multigrid."));
   }
 }
 
