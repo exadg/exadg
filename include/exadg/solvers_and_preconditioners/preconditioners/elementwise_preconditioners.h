@@ -88,6 +88,50 @@ private:
 };
 
 template<int dim, int n_components, typename Number>
+class JacobiPreconditioner : public Elementwise::PreconditionerBase<dealii::VectorizedArray<Number>>
+{
+  typedef CellIntegrator<dim, n_components, Number> Integrator;
+
+public:
+  JacobiPreconditioner(
+    dealii::MatrixFree<dim, Number> const &                    matrix_free,
+    unsigned int const                                         dof_index,
+    unsigned int const                                         quad_index,
+    unsigned int const                                         size,
+    dealii::LinearAlgebra::distributed::Vector<Number> const & global_inverse_diagonal_in)
+    : M(size), global_inverse_diagonal(global_inverse_diagonal_in)
+  {
+    integrator = std::make_shared<Integrator>(matrix_free, dof_index, quad_index);
+    inverse_diagonal.resize(M);
+  }
+
+  void
+  setup(unsigned int cell)
+  {
+    integrator->reinit(cell);
+    integrator->read_dof_values(global_inverse_diagonal, 0);
+  }
+
+  void
+  vmult(dealii::VectorizedArray<Number> * dst, dealii::VectorizedArray<Number> const * src) const
+  {
+    for(unsigned int i = 0; i < M; ++i)
+    {
+      dst[i] = integrator->begin_dof_values()[i] * src[i];
+    }
+  }
+
+private:
+  std::shared_ptr<Integrator> integrator;
+
+  unsigned int const M;
+
+  dealii::LinearAlgebra::distributed::Vector<Number> const global_inverse_diagonal;
+
+  dealii::AlignedVector<dealii::VectorizedArray<Number>> inverse_diagonal;
+};
+
+template<int dim, int n_components, typename Number>
 class InverseMassPreconditioner
   : public Elementwise::PreconditionerBase<dealii::VectorizedArray<Number>>
 {
