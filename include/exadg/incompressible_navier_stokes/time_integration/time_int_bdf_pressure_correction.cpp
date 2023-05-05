@@ -179,7 +179,11 @@ TimeIntBDFPressureCorrection<dim, Number>::initialize_pressure_on_boundary()
     {
       double const time = this->get_time() - double(i) * this->get_time_step_size();
       if(this->param.ale_formulation)
-        pde_operator->move_grid_and_update_dependent_data_structures(time);
+      {
+        pde_operator->move_grid(time);
+        pde_operator->update_matrix_free_after_grid_motion();
+        pde_operator->update_spatial_operators_after_grid_motion();
+      }
 
       pde_operator->interpolate_pressure_dirichlet_bc(pressure_dbc[i], time);
     }

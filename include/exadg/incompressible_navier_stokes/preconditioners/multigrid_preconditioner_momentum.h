@@ -89,12 +89,6 @@ private:
   initialize_operator(unsigned int const level) override;
 
   /*
-   * This function updates the multigrid operators for all levels
-   */
-  void
-  update_operators();
-
-  /*
    * This function updates vector_linearization.
    * In order to update operators[level] this function has to be called.
    */
@@ -111,11 +105,11 @@ private:
   set_time(double const & time);
 
   /*
-   * This function performs the updates that are necessary after the mesh has been moved
+   * This function performs the updates that are necessary after the grid has been moved
    * and after matrix_free has been updated.
    */
   void
-  update_operators_after_mesh_movement();
+  update_operators_after_grid_motion();
 
   /*
    * This function updates scaling_factor_time_derivative_term. In order to update the

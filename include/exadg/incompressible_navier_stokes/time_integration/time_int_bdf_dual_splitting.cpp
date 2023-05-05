@@ -163,7 +163,11 @@ TimeIntBDFDualSplitting<dim, Number>::initialize_velocity_dbc()
 {
   // fill vector velocity_dbc: The first entry [0] is already needed if start_with_low_order == true
   if(this->param.ale_formulation)
-    pde_operator->move_grid_and_update_dependent_data_structures(this->get_time());
+  {
+    pde_operator->move_grid(this->get_time());
+    pde_operator->update_matrix_free_after_grid_motion();
+    pde_operator->update_spatial_operators_after_grid_motion();
+  }
   pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[0], this->get_time());
   // ... and previous times if start_with_low_order == false
   if(this->start_with_low_order == false)
@@ -172,7 +176,11 @@ TimeIntBDFDualSplitting<dim, Number>::initialize_velocity_dbc()
     {
       double const time = this->get_time() - double(i) * this->get_time_step_size();
       if(this->param.ale_formulation)
-        pde_operator->move_grid_and_update_dependent_data_structures(time);
+      {
+        pde_operator->move_grid(time);
+        pde_operator->update_matrix_free_after_grid_motion();
+        pde_operator->update_spatial_operators_after_grid_motion();
+      }
       pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[i], time);
     }
   }

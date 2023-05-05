@@ -66,9 +66,9 @@ OperatorProjectionMethods<dim, Number>::setup(
 
 template<int dim, typename Number>
 void
-OperatorProjectionMethods<dim, Number>::update_after_grid_motion()
+OperatorProjectionMethods<dim, Number>::update_spatial_operators_after_grid_motion()
 {
-  Base::update_after_grid_motion();
+  Base::update_spatial_operators_after_grid_motion();
 
   // update SIPG penalty parameter of Laplace operator which depends on the deformation
   // of elements

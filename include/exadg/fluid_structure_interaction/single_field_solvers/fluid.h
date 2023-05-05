@@ -271,7 +271,7 @@ SolverFluid<dim, Number>::solve_ale(
   timer_tree->insert({"ALE", "Update matrix-free"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  pde_operator->update_after_grid_motion();
+  pde_operator->update_spatial_operators_after_grid_motion();
   timer_tree->insert({"ALE", "Update operator"}, sub_timer.wall_time());
 
   sub_timer.restart();

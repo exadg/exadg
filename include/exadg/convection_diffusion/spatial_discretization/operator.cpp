@@ -829,7 +829,6 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::move_grid(double const & time) const
 {
-  // Driver::ale_update() is responsible for the preconditioner update
   grid_motion->update(
     time,
     false /* print_solver_info */,
@@ -838,27 +837,14 @@ Operator<dim, Number>::move_grid(double const & time) const
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::move_grid_and_update_dependent_data_structures(double const & time)
+Operator<dim, Number>::update_matrix_free_after_grid_motion()
 {
-  // Driver::ale_update() is responsible for the preconditioner update
-  grid_motion->update(
-    time,
-    false /* print_solver_info */,
-    dealii::numbers::invalid_unsigned_int /* time_step_number used for preconditioner update */);
   matrix_free->update_mapping(*get_mapping());
-  update_after_grid_motion();
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::fill_grid_coordinates_vector(VectorType & vector) const
-{
-  grid_motion->fill_grid_coordinates_vector(vector, this->get_dof_handler_velocity());
-}
-
-template<int dim, typename Number>
-void
-Operator<dim, Number>::update_after_grid_motion()
+Operator<dim, Number>::update_spatial_operators_after_grid_motion()
 {
   // update SIPG penalty parameter of diffusive operator which depends on the deformation
   // of elements
@@ -866,6 +852,13 @@ Operator<dim, Number>::update_after_grid_motion()
   {
     diffusive_kernel->calculate_penalty_parameter(*matrix_free, get_dof_index());
   }
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::fill_grid_coordinates_vector(VectorType & vector) const
+{
+  grid_motion->fill_grid_coordinates_vector(vector, this->get_dof_handler_velocity());
 }
 
 template<int dim, typename Number>
