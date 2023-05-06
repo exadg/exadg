@@ -28,16 +28,16 @@
 namespace ExaDG
 {
 /*
- * The only reason why we do not integrate ContainerInterfaceData directly into
+ * The only reason why we do not integrate CouplingDataSurface directly into
  * FunctionCached is that we want to use only one object of type
- * ContainerInterfaceData for (potentially) many boundary IDs and, therefore,
+ * CouplingDataSurface for (potentially) many boundary IDs and, therefore,
  * many objects of type FunctionCached.
  */
 template<int rank, int dim>
 class FunctionCached
 {
 private:
-  typedef typename ContainerInterfaceData<rank, dim, double>::data_type data_type;
+  typedef typename CouplingDataSurface<rank, dim, double>::data_type data_type;
 
 public:
   FunctionCached();
@@ -54,11 +54,10 @@ public:
 
   // initialize data pointer
   void
-  set_data_pointer(
-    std::shared_ptr<ContainerInterfaceData<rank, dim, double>> const interface_data_);
+  set_data_pointer(std::shared_ptr<CouplingDataSurface<rank, dim, double>> const interface_data_);
 
 private:
-  std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data;
+  std::shared_ptr<CouplingDataSurface<rank, dim, double>> interface_data;
 };
 
 } // namespace ExaDG

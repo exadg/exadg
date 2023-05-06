@@ -115,9 +115,9 @@ public:
 
   void
   add_read_surface(std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
-                   std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data,
-                   std::string const &                                        mesh_name,
-                   std::vector<std::string> const &                           read_data_name);
+                   std::shared_ptr<CouplingDataSurface<rank, dim, double>> interface_data,
+                   std::string const &                                     mesh_name,
+                   std::vector<std::string> const &                        read_data_name);
 
   /**
    * @brief      Advances preCICE after every timestep
@@ -295,7 +295,7 @@ template<int dim, int data_dim, typename VectorType, typename VectorizedArrayTyp
 void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_read_surface(
   std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
-  std::shared_ptr<ContainerInterfaceData<rank, dim, double>>                  interface_data,
+  std::shared_ptr<CouplingDataSurface<rank, dim, double>>                     interface_data,
   std::string const &                                                         mesh_name,
   std::vector<std::string> const &                                            read_data_names)
 {

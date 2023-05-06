@@ -25,55 +25,34 @@
 namespace ExaDG
 {
 template<int rank, int dim, typename number_type>
-ContainerInterfaceData<rank, dim, number_type>::ContainerInterfaceData()
+CouplingDataSurface<rank, dim, number_type>::CouplingDataSurface()
 {
 }
 
 template<int rank, int dim, typename number_type>
-typename ContainerInterfaceData<rank, dim, number_type>::data_type
-ContainerInterfaceData<rank, dim, number_type>::get_data(unsigned int const q_index,
-                                                         unsigned int const face,
-                                                         unsigned int const q,
-                                                         unsigned int const v) const
+typename CouplingDataSurface<rank, dim, number_type>::data_type
+CouplingDataSurface<rank, dim, number_type>::get_data(unsigned int const q_index,
+                                                      unsigned int const face,
+                                                      unsigned int const q,
+                                                      unsigned int const v) const
 {
   Assert(map_vector_index.find(q_index) != map_vector_index.end(),
          dealii::ExcMessage("Specified q_index does not exist in map_vector_index."));
 
-  Assert(map_solution.find(q_index) != map_solution.end(),
+  Assert(this->map_solution.find(q_index) != this->map_solution.end(),
          dealii::ExcMessage("Specified q_index does not exist in map_solution."));
 
   Id                              id    = std::make_tuple(face, q, v);
   dealii::types::global_dof_index index = map_vector_index.find(q_index)->second.find(id)->second;
 
-  ArraySolutionValues const & array_solution = map_solution.find(q_index)->second;
+  ArraySolutionValues const & array_solution = this->map_solution.find(q_index)->second;
   Assert(index < array_solution.size(), dealii::ExcMessage("Index exceeds dimensions of vector."));
 
   return array_solution[index];
 }
 
-template<int rank, int dim, typename number_type>
-std::vector<typename ContainerInterfaceData<rank, dim, number_type>::quad_index> const &
-ContainerInterfaceData<rank, dim, number_type>::get_quad_indices()
-{
-  return quad_indices;
-}
-
-template<int rank, int dim, typename number_type>
-typename ContainerInterfaceData<rank, dim, number_type>::ArrayQuadraturePoints &
-ContainerInterfaceData<rank, dim, number_type>::get_array_q_points(quad_index const & q_index)
-{
-  return map_q_points[q_index];
-}
-
-template<int rank, int dim, typename number_type>
-typename ContainerInterfaceData<rank, dim, number_type>::ArraySolutionValues &
-ContainerInterfaceData<rank, dim, number_type>::get_array_solution(quad_index const & q_index)
-{
-  return map_solution[q_index];
-}
-
-template class ContainerInterfaceData<0, 2, double>;
-template class ContainerInterfaceData<1, 2, double>;
-template class ContainerInterfaceData<0, 3, double>;
-template class ContainerInterfaceData<1, 3, double>;
+template class CouplingDataSurface<0, 2, double>;
+template class CouplingDataSurface<1, 2, double>;
+template class CouplingDataSurface<0, 3, double>;
+template class CouplingDataSurface<1, 3, double>;
 } // namespace ExaDG

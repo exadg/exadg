@@ -304,7 +304,7 @@ Operator<dim, n_components, Number>::setup(
 
   if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
-    interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<rank, dim, double>>();
+    interface_data_dirichlet_cached = std::make_shared<CouplingDataSurface<rank, dim, double>>();
     std::vector<unsigned int> quad_indices;
     if(param.spatial_discretization == SpatialDiscretization::DG)
       quad_indices.emplace_back(get_quad_index());
@@ -680,7 +680,7 @@ Operator<dim, n_components, Number>::get_quad_index_gauss_lobatto() const
 }
 
 template<int dim, int n_components, typename Number>
-std::shared_ptr<ContainerInterfaceData<Operator<dim, n_components, Number>::rank, dim, double>>
+std::shared_ptr<CouplingDataSurface<Operator<dim, n_components, Number>::rank, dim, double>>
 Operator<dim, n_components, Number>::get_container_interface_data()
 {
   return interface_data_dirichlet_cached;
