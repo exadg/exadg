@@ -565,16 +565,12 @@ OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditione
   }
   else if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::PointJacobi)
   {
-    typedef Elementwise::JacobiPreconditioner<dim, n_components, Number> POINT_JACOBI;
-
-    VectorType inverse_diagonal;
-    initialize_dof_vector(inverse_diagonal);
-    calculate_inverse_diagonal(inverse_diagonal);
+    typedef Elementwise::JacobiPreconditioner<dim, n_components, Number, This> POINT_JACOBI;
 
     elementwise_preconditioner = std::make_shared<POINT_JACOBI>(get_matrix_free(),
                                                                 get_dof_index(),
                                                                 get_quad_index(),
-                                                                inverse_diagonal);
+                                                                *this);
   }
   else if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::InverseMassMatrix)
   {
