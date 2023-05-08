@@ -567,10 +567,8 @@ OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditione
   {
     typedef Elementwise::JacobiPreconditioner<dim, n_components, Number, This> POINT_JACOBI;
 
-    elementwise_preconditioner = std::make_shared<POINT_JACOBI>(get_matrix_free(),
-                                                                get_dof_index(),
-                                                                get_quad_index(),
-                                                                *this);
+    elementwise_preconditioner =
+      std::make_shared<POINT_JACOBI>(get_matrix_free(), get_dof_index(), get_quad_index(), *this);
   }
   else if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::InverseMassMatrix)
   {
