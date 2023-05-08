@@ -574,7 +574,6 @@ OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditione
     elementwise_preconditioner = std::make_shared<POINT_JACOBI>(get_matrix_free(),
                                                                 get_dof_index(),
                                                                 get_quad_index(),
-                                                                integrator->dofs_per_cell,
                                                                 inverse_diagonal);
   }
   else if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::InverseMassMatrix)
