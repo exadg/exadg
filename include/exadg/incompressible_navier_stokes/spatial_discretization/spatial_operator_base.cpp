@@ -30,6 +30,7 @@
 #include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
 #include <exadg/time_integration/time_step_calculation.h>
+#include <exadg/utilities/exceptions.h>
 
 namespace ExaDG
 {
@@ -145,15 +146,28 @@ SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
   matrix_free_data.insert_constraint(&constraint_u_scalar, field + dof_index_u_scalar);
 
   // quadrature
-  matrix_free_data.insert_quadrature(fe_u->reference_cell().template get_gauss_type_quadrature<dim>(
-                                       param.degree_u + 1),
-                                     field + quad_index_u);
-  matrix_free_data.insert_quadrature(fe_p->reference_cell().template get_gauss_type_quadrature<dim>(
-                                       param.get_degree_p(param.degree_u) + 1),
-                                     field + quad_index_p);
-  matrix_free_data.insert_quadrature(fe_u->reference_cell().template get_gauss_type_quadrature<dim>(
-                                       param.degree_u + (param.degree_u + 2) / 2),
-                                     field + quad_index_u_nonlinear);
+  if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+  {
+    matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree_u + 1), field + quad_index_u);
+    matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.get_degree_p(param.degree_u) + 1),
+                                       field + quad_index_p);
+    matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree_u + (param.degree_u + 2) / 2),
+                                       field + quad_index_u_nonlinear);
+  }
+  else if(this->grid->triangulation->all_reference_cells_are_simplex())
+  {
+    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(param.degree_u + 1),
+                                       field + quad_index_u);
+    matrix_free_data.insert_quadrature(
+      dealii::QGaussSimplex<dim>(param.get_degree_p(param.degree_u) + 1), field + quad_index_p);
+    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(param.degree_u +
+                                                                  (param.degree_u + 2) / 2),
+                                       field + quad_index_u_nonlinear);
+  }
+  else
+  {
+    AssertThrow(false, ExcNotImplemented());
+  }
 
   // TODO create those quadrature rules only when needed
   matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree_u + 1),
