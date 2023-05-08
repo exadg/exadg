@@ -285,7 +285,10 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
       fe_u_scalar = std::make_shared<dealii::FE_SimplexDGP<dim>>(param.degree_u);
     }
     else
-      AssertThrow(false, dealii::ExcMessage("FE not implemented."));
+      AssertThrow(
+        false,
+        dealii::ExcMessage(
+          "The specified finite element type is currently not implemented for ElementType::Simplex."));
   }
   else
     AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
