@@ -36,6 +36,7 @@ enum class Preconditioner
 {
   Undefined,
   None,
+  PointJacobi,
   InverseMassMatrix
 };
 
