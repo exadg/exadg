@@ -190,7 +190,7 @@ private:
   }
 
   void
-  set_boundary_descriptor()
+  set_boundary_descriptor() final
   {
     // test case with purely periodic boundary conditions
     // boundary descriptors remain empty for velocity and pressure

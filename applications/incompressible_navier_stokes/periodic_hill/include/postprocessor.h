@@ -62,7 +62,7 @@ public:
   }
 
   void
-  setup(Operator const & pde_operator)
+  setup(Operator const & pde_operator) final
   {
     // call setup function of base class
     Base::setup(pde_operator);

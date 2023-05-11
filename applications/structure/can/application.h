@@ -38,7 +38,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const c) const
+  value(dealii::Point<dim> const & p, unsigned int const c) const final
   {
     (void)p;
 
@@ -67,7 +67,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const c) const
+  value(dealii::Point<dim> const & p, unsigned int const c) const final
   {
     (void)p;
 
