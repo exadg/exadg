@@ -20,7 +20,6 @@
  */
 
 // deal.II
-#include <deal.II/fe/mapping_q_generic.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/particles/data_out.h>
