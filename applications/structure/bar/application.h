@@ -224,7 +224,7 @@ private:
     this->param.spectral_radius                      = 0.8;
     this->param.solver_info_data.interval_time_steps = 2;
 
-    this->param.grid.mapping_degree = 1;
+    this->param.grid.mapping_degree = this->param.degree;
     this->param.grid.element_type   = ElementType::Hypercube; // Simplex;
     if(this->param.grid.element_type == ElementType::Simplex)
     {
@@ -358,6 +358,13 @@ private:
                                                               this->param.grid,
                                                               this->param.involves_h_multigrid(),
                                                               lambda_create_triangulation);
+
+    // set mapping vector
+    std::shared_ptr<GridMap::DeformedMesh<dim, double>> mapping =
+      std::make_shared<GridMap::DeformedMesh<dim, double>>(*this->grid->triangulation,
+                                                           this->param.grid.mapping_degree);
+    mapping->initialize(this->length);
+    this->grid->mapping = mapping;
   }
 
   void
