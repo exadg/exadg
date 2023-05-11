@@ -107,14 +107,15 @@ public:
   }
 
   void
-  setup(unsigned int cell)
+  setup(unsigned int cell) final
   {
     integrator->reinit(cell);
     integrator->read_dof_values(global_inverse_diagonal, 0);
   }
 
   void
-  vmult(dealii::VectorizedArray<Number> * dst, dealii::VectorizedArray<Number> const * src) const
+  vmult(dealii::VectorizedArray<Number> *       dst,
+        dealii::VectorizedArray<Number> const * src) const final
   {
     for(unsigned int i = 0; i < integrator->dofs_per_cell; ++i)
     {

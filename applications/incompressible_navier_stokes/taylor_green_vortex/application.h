@@ -73,7 +73,7 @@ public:
   }
 
   double
-  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const final
   {
     double const result = p_0 + V_0 * V_0 / 16.0 *
                                   (std::cos(2.0 * p[0] / L) + std::cos(2.0 * p[1] / L)) *
