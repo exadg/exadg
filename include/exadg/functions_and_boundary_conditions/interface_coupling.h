@@ -65,6 +65,11 @@ public:
   update_data(VectorType const & dof_vector_src);
 
 private:
+  void plot_points_and_triangulation(std::vector<dealii::Point<dim>> const & points,
+			dealii::DoFHandler<dim> const & dof_handler,
+			dealii::Mapping<dim> const & mapping,
+			std::string const & file_name) const;
+
   /*
    * dst-side
    */
