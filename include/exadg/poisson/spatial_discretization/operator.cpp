@@ -295,7 +295,7 @@ template<int dim, int n_components, typename Number>
 void
 Operator<dim, n_components, Number>::setup(
   std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
-  std::shared_ptr<MatrixFreeData<dim, Number>>           matrix_free_data_in)
+  std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data_in)
 {
   pcout << std::endl << "Setup Poisson operator ..." << std::endl;
 

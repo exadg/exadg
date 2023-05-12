@@ -62,7 +62,7 @@ public:
 
   void
   setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
-        std::shared_ptr<MatrixFreeData<dim, Number>>           matrix_free_data);
+        std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data);
 
   void
   setup_solver();
@@ -200,7 +200,7 @@ private:
   std::string const quad_index_gauss_lobatto = "laplace_gauss_lobatto";
 
   std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free;
-  std::shared_ptr<MatrixFreeData<dim, Number>>           matrix_free_data;
+  std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data;
 
   /*
    * Interface coupling
