@@ -171,8 +171,23 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
 
   matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "std_dof_handler");
   matrix_free_data.insert_constraint(&(*this->constraints[level]), "std_dof_handler");
-  matrix_free_data.insert_quadrature(dealii::QGauss<1>(this->level_info[level].degree() + 1),
-                                     "std_quadrature");
+  if(this->dof_handlers[level]->get_triangulation().all_reference_cells_are_hyper_cube())
+  {
+    matrix_free_data.insert_quadrature(dealii::QGauss<1>(this->level_info[level].degree() + 1),
+                                       "std_quadrature");
+  }
+  else if(this->dof_handlers[level]->get_triangulation().all_reference_cells_are_simplex())
+  {
+    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(this->level_info[level].degree() +
+                                                                  1),
+                                       "std_quadrature");
+  }
+  else
+  {
+    AssertThrow(false,
+                dealii::ExcMessage("Only pure hypercube or pure simplex meshes are implemented for "
+                                   "IncNS::MultigridPreconditioner."));
+  }
 }
 
 template<int dim, typename Number>

@@ -572,6 +572,13 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
           "The current implementation only calls a Newton solver, if we have an implicit convective problem. Treat nonlinear convective and viscous terms alike."));
     }
   }
+
+  // SIMPLEX ELEMENTS
+  if(grid.element_type == ElementType::Simplex)
+  {
+    AssertThrow(temporal_discretization == TemporalDiscretization::BDFCoupledSolution,
+                dealii::ExcMessage("Only BDFCoupledSolution is supported for simplex elements."));
+  }
 }
 
 bool

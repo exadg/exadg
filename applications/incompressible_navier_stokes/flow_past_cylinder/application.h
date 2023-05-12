@@ -195,6 +195,8 @@ private:
     this->param.grid.triangulation_type = TriangulationType::Distributed;
     this->param.grid.mapping_degree     = this->param.degree_u;
     this->param.degree_p                = DegreePressure::MixedOrder;
+    this->param.grid.element_type       = ElementType::Hypercube;
+    this->param.grid.multigrid          = MultigridVariant::LocalSmoothing;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -331,7 +333,10 @@ private:
           unsigned int const                                       global_refinements,
           std::vector<unsigned int> const &                        vector_local_refinements) {
         (void)periodic_face_pairs;
-        create_coarse_grid<dim>(tria, this->grid->periodic_face_pairs, cylinder_type_string);
+        create_coarse_grid<dim>(tria,
+                                this->grid->periodic_face_pairs,
+                                cylinder_type_string,
+                                this->param.grid.element_type);
 
         if(vector_local_refinements.size() > 0)
           refine_local(tria, vector_local_refinements);

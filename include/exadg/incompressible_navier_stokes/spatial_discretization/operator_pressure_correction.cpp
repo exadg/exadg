@@ -482,7 +482,10 @@ OperatorPressureCorrection<dim, Number>::local_interpolate_pressure_dirichlet_bc
   VectorType const &,
   Range const & face_range) const
 {
-  unsigned int const dof_index  = this->get_dof_index_pressure();
+  unsigned int const dof_index = this->get_dof_index_pressure();
+  AssertThrow(
+    matrix_free.get_dof_handler(dof_index).get_triangulation().all_reference_cells_are_hyper_cube(),
+    dealii::ExcMessage("This function is only implemented for hypercube elements."));
   unsigned int const quad_index = this->get_quad_index_pressure_gauss_lobatto();
 
   FaceIntegratorP integrator(matrix_free, true, dof_index, quad_index);
