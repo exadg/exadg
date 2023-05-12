@@ -35,11 +35,12 @@ namespace ExaDG
  * This function wraps around dealii::GridGenerator::subdivided_hyper_rectangle() taking an
  * additional argument ElementType.
  */
+template<int dim>
 void
-create_subdivided_hyper_rectangle(dealii::Triangulation<2> &        tria,
+create_subdivided_hyper_rectangle(dealii::Triangulation<dim> &      tria,
                                   std::vector<unsigned int> const & repetitions,
-                                  dealii::Point<2> const &          p1,
-                                  dealii::Point<2> const &          p2,
+                                  dealii::Point<dim> const &        p1,
+                                  dealii::Point<dim> const &        p2,
                                   ElementType const &               element_type,
                                   bool const                        colorize = false)
 {
