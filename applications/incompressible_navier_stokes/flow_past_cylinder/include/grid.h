@@ -26,6 +26,7 @@
 #include <boost/math/special_functions/sign.hpp>
 
 // ExaDG
+#include <exadg/grid/hyper_rectangle.h>
 #include <exadg/grid/one_sided_cylindrical_manifold.h>
 
 namespace ExaDG
@@ -1021,27 +1022,6 @@ double const h_y_0 = (Y_1 - Y_0) / nele_y_bottom;
 double const h_x_2 = (L - X_2) / nele_x_right;
 double const h_x_1 = D / nele_x_middle_middle;
 double const h_x_0 = (X_1 - X_0) / nele_x_left;
-
-void
-create_subdivided_hyper_rectangle(dealii::Triangulation<2> &        tria,
-                                  std::vector<unsigned int> const & repetitions,
-                                  dealii::Point<2> const &          p1,
-                                  dealii::Point<2> const &          p2,
-                                  ElementType const &               element_type,
-                                  bool const                        colorize = false)
-{
-  if(element_type == ElementType::Hypercube)
-  {
-    dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, p1, p2, colorize);
-  }
-  else if(element_type == ElementType::Simplex)
-  {
-    dealii::GridGenerator::subdivided_hyper_rectangle_with_simplices(
-      tria, repetitions, p1, p2, colorize);
-  }
-  else
-    AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
-}
 
 void
 create_trapezoid(dealii::Triangulation<2> & tria,
