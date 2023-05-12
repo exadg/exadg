@@ -581,6 +581,9 @@ template&lt;int dim&gt; </td></tr>
 <tr class="memitem:a7ece5f60d30685552c07158c85d74f2d"><td class="memTemplParams" colspan="2">template&lt;int dim, typename Number &gt; </td></tr>
 <tr class="memitem:a7ece5f60d30685552c07158c85d74f2d"><td class="memTemplItemLeft" align="right" valign="top">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#a7ece5f60d30685552c07158c85d74f2d">get_dynamic_mapping</a> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1GridMotionInterface.html">GridMotionInterface</a>&lt; dim, Number &gt; const &gt; grid_motion)</td></tr>
 <tr class="separator:a7ece5f60d30685552c07158c85d74f2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a11fdfa75b66139f3547f5ed4d7c1ef58"><td class="memTemplParams" colspan="2">template&lt;int dim&gt; </td></tr>
+<tr class="memitem:a11fdfa75b66139f3547f5ed4d7c1ef58"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#a11fdfa75b66139f3547f5ed4d7c1ef58">create_subdivided_hyper_rectangle</a> (dealii::Triangulation&lt; dim &gt; &amp;tria, std::vector&lt; unsigned int &gt; const &amp;repetitions, dealii::Point&lt; dim &gt; const &amp;p1, dealii::Point&lt; dim &gt; const &amp;p2, ElementType const &amp;element_type, bool const colorize=false)</td></tr>
+<tr class="separator:a11fdfa75b66139f3547f5ed4d7c1ef58"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac26ac75e95c9fbc45eaa00fa0c05a2b7"><td class="memTemplParams" colspan="2">template&lt;int dim&gt; </td></tr>
 <tr class="memitem:ac26ac75e95c9fbc45eaa00fa0c05a2b7"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#ac26ac75e95c9fbc45eaa00fa0c05a2b7">refine_local</a> (dealii::Triangulation&lt; dim &gt; &amp;tria, std::vector&lt; unsigned int &gt; const &amp;vector_local_refinements)</td></tr>
 <tr class="separator:ac26ac75e95c9fbc45eaa00fa0c05a2b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -888,6 +891,61 @@ template&lt;int dim, typename Number &gt; </td></tr>
 </table>
 </div><div class="memdoc">
 <p>Creates directories if not already existing. An MPI barrier ensures that directories have been created for all processes when completing this function. </p>
+
+</div>
+</div>
+<a id="a11fdfa75b66139f3547f5ed4d7c1ef58" name="a11fdfa75b66139f3547f5ed4d7c1ef58"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a11fdfa75b66139f3547f5ed4d7c1ef58">&#9670;&#160;</a></span>create_subdivided_hyper_rectangle()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void ExaDG::create_subdivided_hyper_rectangle </td>
+          <td>(</td>
+          <td class="paramtype">dealii::Triangulation&lt; dim &gt; &amp;&#160;</td>
+          <td class="paramname"><em>tria</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; unsigned int &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>repetitions</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">dealii::Point&lt; dim &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>p1</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">dealii::Point&lt; dim &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>p2</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">ElementType const &amp;&#160;</td>
+          <td class="paramname"><em>element_type</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool const&#160;</td>
+          <td class="paramname"><em>colorize</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>This function wraps around dealii::GridGenerator::subdivided_hyper_rectangle() taking an additional argument ElementType. </p>
 
 </div>
 </div>

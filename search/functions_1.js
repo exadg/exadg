@@ -6,5 +6,6 @@ var searchData=
   ['calculate_5fvalue_5fflux_3',['calculate_value_flux',['../classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html#a068b47893755fa37fe567bf3c01c021a',1,'ExaDG::IncNS::Operators::ViscousKernel']]],
   ['clear_4',['clear',['../classExaDG_1_1TimerTree.html#a2886f1d3bbd4e82cb54458d94fe82979',1,'ExaDG::TimerTree']]],
   ['copy_5fto_5fmg_5',['copy_to_mg',['../classExaDG_1_1MGTransferH.html#a9c0e0187ca29cbeff492774a99979ddf',1,'ExaDG::MGTransferH']]],
-  ['create_5fdirectories_6',['create_directories',['../namespaceExaDG.html#ae37213007b3d71515b9d35a598e17e22',1,'ExaDG']]]
+  ['create_5fdirectories_6',['create_directories',['../namespaceExaDG.html#ae37213007b3d71515b9d35a598e17e22',1,'ExaDG']]],
+  ['create_5fsubdivided_5fhyper_5frectangle_7',['create_subdivided_hyper_rectangle',['../namespaceExaDG.html#a11fdfa75b66139f3547f5ed4d7c1ef58',1,'ExaDG']]]
 ];

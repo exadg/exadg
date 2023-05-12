@@ -28,7 +28,8 @@ var searchData=
   ['copy_5fto_5fmg_25',['copy_to_mg',['../classExaDG_1_1MGTransferH.html#a9c0e0187ca29cbeff492774a99979ddf',1,'ExaDG::MGTransferH']]],
   ['couplingbase_26',['CouplingBase',['../classExaDG_1_1preCICE_1_1CouplingBase.html',1,'ExaDG::preCICE']]],
   ['create_5fdirectories_27',['create_directories',['../namespaceExaDG.html#ae37213007b3d71515b9d35a598e17e22',1,'ExaDG']]],
-  ['cubemeshmovementfunctions_28',['CubeMeshMovementFunctions',['../classExaDG_1_1CubeMeshMovementFunctions.html',1,'ExaDG']]],
-  ['curlcompute_29',['CurlCompute',['../structExaDG_1_1IncNS_1_1CurlCompute.html',1,'ExaDG::IncNS']]],
-  ['curlcompute_3c_202_2c_20feeval_20_3e_30',['CurlCompute&lt; 2, FEEval &gt;',['../structExaDG_1_1IncNS_1_1CurlCompute_3_012_00_01FEEval_01_4.html',1,'ExaDG::IncNS']]]
+  ['create_5fsubdivided_5fhyper_5frectangle_28',['create_subdivided_hyper_rectangle',['../namespaceExaDG.html#a11fdfa75b66139f3547f5ed4d7c1ef58',1,'ExaDG']]],
+  ['cubemeshmovementfunctions_29',['CubeMeshMovementFunctions',['../classExaDG_1_1CubeMeshMovementFunctions.html',1,'ExaDG']]],
+  ['curlcompute_30',['CurlCompute',['../structExaDG_1_1IncNS_1_1CurlCompute.html',1,'ExaDG::IncNS']]],
+  ['curlcompute_3c_202_2c_20feeval_20_3e_31',['CurlCompute&lt; 2, FEEval &gt;',['../structExaDG_1_1IncNS_1_1CurlCompute_3_012_00_01FEEval_01_4.html',1,'ExaDG::IncNS']]]
 ];
