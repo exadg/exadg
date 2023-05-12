@@ -111,7 +111,7 @@ public:
    */
   virtual void
   setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
-        std::shared_ptr<MatrixFreeData<dim, Number>>           matrix_free_data,
+        std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
         std::string const &                                    dof_index_temperature = "");
 
   /*
@@ -488,7 +488,7 @@ private:
   std::string const quad_index_u_gauss_lobatto = "velocity_gauss_lobatto";
   std::string const quad_index_p_gauss_lobatto = "pressure_gauss_lobatto";
 
-  std::shared_ptr<MatrixFreeData<dim, Number>>           matrix_free_data;
+  std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data;
   std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free;
 
   bool pressure_level_is_undefined;

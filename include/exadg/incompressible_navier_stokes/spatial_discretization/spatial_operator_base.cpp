@@ -181,7 +181,7 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::setup(
   std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
-  std::shared_ptr<MatrixFreeData<dim, Number>>           matrix_free_data_in,
+  std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data_in,
   std::string const &                                    dof_index_temperature)
 {
   pcout << std::endl

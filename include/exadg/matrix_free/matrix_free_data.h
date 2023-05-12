@@ -58,26 +58,26 @@ public:
     pde_operator->fill_matrix_free_data(*this);
   }
 
-  std::vector<dealii::DoFHandler<dim> const *> &
-  get_dof_handler_vector()
+  std::vector<dealii::DoFHandler<dim> const *> const &
+  get_dof_handler_vector() const
   {
     return dof_handler_vec;
   }
 
-  std::vector<dealii::AffineConstraints<Number> const *> &
-  get_constraint_vector()
+  std::vector<dealii::AffineConstraints<Number> const *> const &
+  get_constraint_vector() const
   {
     return constraint_vec;
   }
 
-  std::vector<dealii::Quadrature<dim>> &
-  get_quadrature_vector()
+  std::vector<dealii::Quadrature<dim>> const &
+  get_quadrature_vector() const
   {
     return quadrature_vec;
   }
 
   dealii::DoFHandler<dim> const &
-  get_dof_handler(std::string const & name)
+  get_dof_handler(std::string const & name) const
   {
     return *dof_handler_vec.at(get_dof_index(name));
   }
@@ -119,19 +119,19 @@ public:
   }
 
   unsigned int
-  get_dof_index(std::string const & name)
+  get_dof_index(std::string const & name) const
   {
     return get_index(dof_index_map, name);
   }
 
   unsigned int
-  get_constraint_index(std::string const & name)
+  get_constraint_index(std::string const & name) const
   {
     return get_index(constraint_index_map, name);
   }
 
   unsigned int
-  get_quad_index(std::string const & name)
+  get_quad_index(std::string const & name) const
   {
     return get_index(quad_index_map, name);
   }
@@ -166,7 +166,7 @@ private:
   }
 
   unsigned int
-  get_index(std::map<std::string, unsigned int> const & map, std::string const & name)
+  get_index(std::map<std::string, unsigned int> const & map, std::string const & name) const
   {
     auto it = map.find(name);
 
