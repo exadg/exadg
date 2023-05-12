@@ -119,7 +119,7 @@ DriverPrecursor<dim, Number>::setup()
 
   // initialize pde_operator_pre (precursor domain)
   pde_operator_pre = create_operator<dim, Number>(application->get_grid_precursor(),
-                                                  nullptr /* grid motion */,
+                                                  application->get_grid_precursor()->mapping,
                                                   application->get_boundary_descriptor_precursor(),
                                                   application->get_field_functions_precursor(),
                                                   application->get_parameters_precursor(),
@@ -128,7 +128,7 @@ DriverPrecursor<dim, Number>::setup()
 
   // initialize operator_base (actual domain)
   pde_operator = create_operator<dim, Number>(application->get_grid(),
-                                              nullptr /* grid motion */,
+                                              application->get_grid()->mapping,
                                               application->get_boundary_descriptor(),
                                               application->get_field_functions(),
                                               application->get_parameters(),

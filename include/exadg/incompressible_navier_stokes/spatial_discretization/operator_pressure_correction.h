@@ -102,13 +102,13 @@ public:
   /*
    * Constructor.
    */
-  OperatorPressureCorrection(std::shared_ptr<Grid<dim> const>                  grid,
-                             std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion,
-                             std::shared_ptr<BoundaryDescriptor<dim> const>    boundary_descriptor,
-                             std::shared_ptr<FieldFunctions<dim> const>        field_functions,
-                             Parameters const &                                parameters,
-                             std::string const &                               field,
-                             MPI_Comm const &                                  mpi_comm);
+  OperatorPressureCorrection(std::shared_ptr<Grid<dim> const>               grid,
+                             std::shared_ptr<dealii::Mapping<dim> const>    mapping,
+                             std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
+                             std::shared_ptr<FieldFunctions<dim> const>     field_functions,
+                             Parameters const &                             parameters,
+                             std::string const &                            field,
+                             MPI_Comm const &                               mpi_comm);
 
   /*
    * Destructor.

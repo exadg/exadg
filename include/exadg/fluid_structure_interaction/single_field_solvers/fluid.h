@@ -202,13 +202,15 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   }
 
   // initialize pde_operator
-  pde_operator = IncNS::create_operator<dim, Number>(application->get_grid(),
-                                                     ale_grid_motion,
-                                                     application->get_boundary_descriptor(),
-                                                     application->get_field_functions(),
-                                                     application->get_parameters(),
-                                                     "fluid",
-                                                     mpi_comm);
+  pde_operator =
+    IncNS::create_operator<dim, Number>(application->get_grid(),
+                                        get_dynamic_mapping<dim, Number>(application->get_grid(),
+                                                                         ale_grid_motion),
+                                        application->get_boundary_descriptor(),
+                                        application->get_field_functions(),
+                                        application->get_parameters(),
+                                        "fluid",
+                                        mpi_comm);
 
   // initialize matrix_free
   matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();

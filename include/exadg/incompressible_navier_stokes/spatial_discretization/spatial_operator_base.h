@@ -33,7 +33,6 @@
 
 // ExaDG
 #include <exadg/grid/grid.h>
-#include <exadg/grid/grid_motion_interface.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/streamfunction_calculator_rhs_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/generalized_newtonian_model.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/convective_operator.h>
@@ -88,13 +87,13 @@ public:
   /*
    * Constructor.
    */
-  SpatialOperatorBase(std::shared_ptr<Grid<dim> const>                        grid,
-                      std::shared_ptr<GridMotionInterface<dim, Number> const> grid_motion,
-                      std::shared_ptr<BoundaryDescriptor<dim> const>          boundary_descriptor,
-                      std::shared_ptr<FieldFunctions<dim> const>              field_functions,
-                      Parameters const &                                      parameters,
-                      std::string const &                                     field,
-                      MPI_Comm const &                                        mpi_comm);
+  SpatialOperatorBase(std::shared_ptr<Grid<dim> const>               grid,
+                      std::shared_ptr<dealii::Mapping<dim> const>    mapping,
+                      std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
+                      std::shared_ptr<FieldFunctions<dim> const>     field_functions,
+                      Parameters const &                             parameters,
+                      std::string const &                            field,
+                      MPI_Comm const &                               mpi_comm);
 
   /*
    * Destructor.
@@ -416,9 +415,10 @@ protected:
   std::shared_ptr<Grid<dim> const> grid;
 
   /*
-   * Grid motion for ALE formulations
+   * dealii::Mapping (In case of moving meshes (ALE), this is the dynamic mapping describing the
+   * deformed configuration.)
    */
-  std::shared_ptr<GridMotionInterface<dim, Number> const> grid_motion;
+  std::shared_ptr<dealii::Mapping<dim> const> mapping;
 
   /*
    * User interface: Boundary conditions and field functions.

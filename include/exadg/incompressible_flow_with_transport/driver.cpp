@@ -105,24 +105,26 @@ Driver<dim, Number>::setup()
   // initialize fluid_operator
   if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
-    fluid_operator = IncNS::create_operator<dim, Number>(application->get_grid(),
-                                                         grid_motion,
-                                                         application->get_boundary_descriptor(),
-                                                         application->get_field_functions(),
-                                                         application->get_parameters(),
-                                                         "fluid",
-                                                         mpi_comm);
+    fluid_operator =
+      IncNS::create_operator<dim, Number>(application->get_grid(),
+                                          get_dynamic_mapping<dim, Number>(application->get_grid(),
+                                                                           grid_motion),
+                                          application->get_boundary_descriptor(),
+                                          application->get_field_functions(),
+                                          application->get_parameters(),
+                                          "fluid",
+                                          mpi_comm);
   }
   else if(application->get_parameters().solver_type == IncNS::SolverType::Steady)
   {
-    fluid_operator =
-      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(application->get_grid(),
-                                                            grid_motion,
-                                                            application->get_boundary_descriptor(),
-                                                            application->get_field_functions(),
-                                                            application->get_parameters(),
-                                                            "fluid",
-                                                            mpi_comm);
+    fluid_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
+      application->get_grid(),
+      get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion),
+      application->get_boundary_descriptor(),
+      application->get_field_functions(),
+      application->get_parameters(),
+      "fluid",
+      mpi_comm);
   }
   else
   {

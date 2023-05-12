@@ -137,24 +137,26 @@ Driver<dim, Number>::setup()
 
   if(application->get_parameters().solver_type == SolverType::Unsteady)
   {
-    pde_operator = create_operator<dim, Number>(application->get_grid(),
-                                                grid_motion,
-                                                application->get_boundary_descriptor(),
-                                                application->get_field_functions(),
-                                                application->get_parameters(),
-                                                "fluid",
-                                                mpi_comm);
+    pde_operator =
+      create_operator<dim, Number>(application->get_grid(),
+                                   get_dynamic_mapping<dim, Number>(application->get_grid(),
+                                                                    grid_motion),
+                                   application->get_boundary_descriptor(),
+                                   application->get_field_functions(),
+                                   application->get_parameters(),
+                                   "fluid",
+                                   mpi_comm);
   }
   else if(application->get_parameters().solver_type == SolverType::Steady)
   {
-    pde_operator =
-      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(application->get_grid(),
-                                                            grid_motion,
-                                                            application->get_boundary_descriptor(),
-                                                            application->get_field_functions(),
-                                                            application->get_parameters(),
-                                                            "fluid",
-                                                            mpi_comm);
+    pde_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
+      application->get_grid(),
+      get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion),
+      application->get_boundary_descriptor(),
+      application->get_field_functions(),
+      application->get_parameters(),
+      "fluid",
+      mpi_comm);
   }
   else
   {
