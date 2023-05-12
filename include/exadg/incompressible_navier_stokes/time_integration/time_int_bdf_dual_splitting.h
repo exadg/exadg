@@ -44,6 +44,7 @@ private:
 
 public:
   TimeIntBDFDualSplitting(std::shared_ptr<Operator>                       pde_operator_in,
+                          std::shared_ptr<HelpersALE<Number> const>       helpers_ale_in,
                           Parameters const &                              param_in,
                           MPI_Comm const &                                mpi_comm_in,
                           bool const                                      is_test_in,

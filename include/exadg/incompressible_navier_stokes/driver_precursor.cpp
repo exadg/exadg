@@ -178,14 +178,20 @@ DriverPrecursor<dim, Number>::setup()
 
 
   // Setup time integrator
+  std::shared_ptr<HelpersALE<Number>> helpers_ale_dummy;
   time_integrator_pre = create_time_integrator<dim, Number>(pde_operator_pre,
+                                                            helpers_ale_dummy,
                                                             application->get_parameters_precursor(),
                                                             mpi_comm,
                                                             is_test,
                                                             postprocessor_pre);
 
-  time_integrator = create_time_integrator<dim, Number>(
-    pde_operator, application->get_parameters(), mpi_comm, is_test, postprocessor);
+  time_integrator = create_time_integrator<dim, Number>(pde_operator,
+                                                        helpers_ale_dummy,
+                                                        application->get_parameters(),
+                                                        mpi_comm,
+                                                        is_test,
+                                                        postprocessor);
 
   // setup time integrator before calling setup_solvers (this is necessary since the setup of the
   // solvers depends on quantities such as the time_step_size or gamma0!)

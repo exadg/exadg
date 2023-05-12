@@ -33,11 +33,12 @@ namespace IncNS
 template<int dim, typename Number>
 TimeIntBDFDualSplitting<dim, Number>::TimeIntBDFDualSplitting(
   std::shared_ptr<Operator>                       operator_in,
+  std::shared_ptr<HelpersALE<Number> const>       helpers_ale_in,
   Parameters const &                              param_in,
   MPI_Comm const &                                mpi_comm_in,
   bool const                                      is_test_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
-  : Base(operator_in, param_in, mpi_comm_in, is_test_in, postprocessor_in),
+  : Base(operator_in, helpers_ale_in, param_in, mpi_comm_in, is_test_in, postprocessor_in),
     pde_operator(operator_in),
     velocity(this->order),
     pressure(this->order),
@@ -136,7 +137,7 @@ void
 TimeIntBDFDualSplitting<dim, Number>::initialize_current_solution()
 {
   if(this->param.ale_formulation)
-    this->helpers_ale.move_grid(this->get_time());
+    this->helpers_ale->move_grid(this->get_time());
 
   pde_operator->prescribe_initial_conditions(velocity[0], pressure[0], this->get_time());
 }
@@ -149,7 +150,7 @@ TimeIntBDFDualSplitting<dim, Number>::initialize_former_solutions()
   for(unsigned int i = 1; i < velocity.size(); ++i)
   {
     if(this->param.ale_formulation)
-      this->helpers_ale.move_grid(this->get_previous_time(i));
+      this->helpers_ale->move_grid(this->get_previous_time(i));
 
     pde_operator->prescribe_initial_conditions(velocity[i],
                                                pressure[i],
@@ -164,8 +165,8 @@ TimeIntBDFDualSplitting<dim, Number>::initialize_velocity_dbc()
   // fill vector velocity_dbc: The first entry [0] is already needed if start_with_low_order == true
   if(this->param.ale_formulation)
   {
-    this->helpers_ale.move_grid(this->get_time());
-    this->helpers_ale.update_matrix_free_after_grid_motion();
+    this->helpers_ale->move_grid(this->get_time());
+    this->helpers_ale->update_matrix_free_after_grid_motion();
     pde_operator->update_spatial_operators_after_grid_motion();
   }
   pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[0], this->get_time());
@@ -177,8 +178,8 @@ TimeIntBDFDualSplitting<dim, Number>::initialize_velocity_dbc()
       double const time = this->get_time() - double(i) * this->get_time_step_size();
       if(this->param.ale_formulation)
       {
-        this->helpers_ale.move_grid(time);
-        this->helpers_ale.update_matrix_free_after_grid_motion();
+        this->helpers_ale->move_grid(time);
+        this->helpers_ale->update_matrix_free_after_grid_motion();
         pde_operator->update_spatial_operators_after_grid_motion();
       }
       pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[i], time);

@@ -33,11 +33,12 @@ namespace IncNS
 template<int dim, typename Number>
 TimeIntBDFPressureCorrection<dim, Number>::TimeIntBDFPressureCorrection(
   std::shared_ptr<Operator>                       operator_in,
+  std::shared_ptr<HelpersALE<Number> const>       helpers_ale_in,
   Parameters const &                              param_in,
   MPI_Comm const &                                mpi_comm_in,
   bool const                                      is_test_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
-  : Base(operator_in, param_in, mpi_comm_in, is_test_in, postprocessor_in),
+  : Base(operator_in, helpers_ale_in, param_in, mpi_comm_in, is_test_in, postprocessor_in),
     pde_operator(operator_in),
     velocity(param_in.order_time_integrator),
     pressure(param_in.order_time_integrator),
@@ -144,7 +145,7 @@ void
 TimeIntBDFPressureCorrection<dim, Number>::initialize_current_solution()
 {
   if(this->param.ale_formulation)
-    this->helpers_ale.move_grid(this->get_time());
+    this->helpers_ale->move_grid(this->get_time());
 
   pde_operator->prescribe_initial_conditions(velocity[0], pressure[0], this->get_time());
 }
@@ -157,7 +158,7 @@ TimeIntBDFPressureCorrection<dim, Number>::initialize_former_solutions()
   for(unsigned int i = 1; i < velocity.size(); ++i)
   {
     if(this->param.ale_formulation)
-      this->helpers_ale.move_grid(this->get_previous_time(i));
+      this->helpers_ale->move_grid(this->get_previous_time(i));
 
     pde_operator->prescribe_initial_conditions(velocity[i],
                                                pressure[i],
@@ -180,8 +181,8 @@ TimeIntBDFPressureCorrection<dim, Number>::initialize_pressure_on_boundary()
       double const time = this->get_time() - double(i) * this->get_time_step_size();
       if(this->param.ale_formulation)
       {
-        this->helpers_ale.move_grid(time);
-        this->helpers_ale.update_matrix_free_after_grid_motion();
+        this->helpers_ale->move_grid(time);
+        this->helpers_ale->update_matrix_free_after_grid_motion();
         pde_operator->update_spatial_operators_after_grid_motion();
       }
 

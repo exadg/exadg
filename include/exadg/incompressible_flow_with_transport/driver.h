@@ -96,8 +96,11 @@ private:
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
-  // moving mapping (ALE)
+  // grid motion (ALE)
   std::shared_ptr<GridMotionBase<dim, Number>> grid_motion;
+
+  // ALE helper functions required by time integrator
+  std::shared_ptr<HelpersALE<Number>> helpers_ale;
 
   bool use_adaptive_time_stepping;
 

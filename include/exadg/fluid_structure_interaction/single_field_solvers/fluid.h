@@ -65,8 +65,7 @@ public:
         bool const                                              is_test);
 
   void
-  solve_ale(std::shared_ptr<FluidFSI::ApplicationBase<dim, Number>> application,
-            bool const                                              is_test) const;
+  solve_ale() const;
 
   std::shared_ptr<TimerTree>
   get_timings_ale() const;
@@ -84,8 +83,11 @@ public:
   // Postprocessor
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> postprocessor;
 
-  // moving mapping (ALE)
+  // grid motion (ALE)
   std::shared_ptr<GridMotionBase<dim, Number>> ale_grid_motion;
+
+  // ALE helper functions required by time integrator
+  std::shared_ptr<HelpersALE<Number>> helpers_ale;
 
   // use a PDE solver for grid motion
   std::shared_ptr<MatrixFreeData<dim, Number>>     ale_matrix_free_data;
@@ -237,8 +239,27 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
               dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
   // initialize time_integrator
+  helpers_ale = std::make_shared<HelpersALE<Number>>();
+
+  helpers_ale->move_grid = [&](double const & time) {
+    ale_grid_motion->update(time,
+                            time_integrator->print_solver_info(),
+                            this->time_integrator->get_number_of_time_steps());
+  };
+
+  helpers_ale->update_matrix_free_after_grid_motion = [&]() {
+    std::shared_ptr<dealii::Mapping<dim> const> mapping =
+      get_dynamic_mapping<dim, Number>(application->get_grid(), ale_grid_motion);
+    matrix_free->update_mapping(*mapping);
+  };
+
+  helpers_ale->fill_grid_coordinates_vector =
+    [&](dealii::LinearAlgebra::distributed::Vector<Number> & vector) {
+      ale_grid_motion->fill_grid_coordinates_vector(vector, pde_operator->get_dof_handler_u());
+    };
+
   time_integrator = IncNS::create_time_integrator<dim, Number>(
-    pde_operator, application->get_parameters(), mpi_comm, is_test, postprocessor);
+    pde_operator, helpers_ale, application->get_parameters(), mpi_comm, is_test, postprocessor);
 
   time_integrator->setup(application->get_parameters().restarted_simulation);
 
@@ -248,9 +269,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
 
 template<int dim, typename Number>
 void
-SolverFluid<dim, Number>::solve_ale(
-  std::shared_ptr<FluidFSI::ApplicationBase<dim, Number>> application,
-  bool const                                              is_test) const
+SolverFluid<dim, Number>::solve_ale() const
 {
   dealii::Timer timer;
   timer.restart();
@@ -258,16 +277,11 @@ SolverFluid<dim, Number>::solve_ale(
   dealii::Timer sub_timer;
 
   sub_timer.restart();
-  bool const print_solver_info = time_integrator->print_solver_info();
-  ale_grid_motion->update(time_integrator->get_next_time(),
-                          print_solver_info and not(is_test),
-                          this->time_integrator->get_number_of_time_steps());
+  helpers_ale->move_grid(time_integrator->get_next_time());
   timer_tree->insert({"ALE", "Solve and reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  std::shared_ptr<dealii::Mapping<dim> const> mapping =
-    get_dynamic_mapping<dim, Number>(application->get_grid(), ale_grid_motion);
-  matrix_free->update_mapping(*mapping);
+  helpers_ale->update_matrix_free_after_grid_motion();
   timer_tree->insert({"ALE", "Update matrix-free"}, sub_timer.wall_time());
 
   sub_timer.restart();

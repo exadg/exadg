@@ -30,6 +30,30 @@
 
 namespace ExaDG
 {
+template<typename Number>
+class HelpersALE
+{
+public:
+  std::function<void(double const & time)> move_grid = [](double const & time) {
+    (void)time;
+    AssertThrow(false, dealii::ExcMessage("The function move_grid() has not been implemented."));
+  };
+
+  std::function<void()> update_matrix_free_after_grid_motion = []() {
+    AssertThrow(false,
+                dealii::ExcMessage(
+                  "The function update_matrix_free_after_grid_motion() has not been implemented."));
+  };
+
+  std::function<void(dealii::LinearAlgebra::distributed::Vector<Number> & vector)>
+    fill_grid_coordinates_vector = [](dealii::LinearAlgebra::distributed::Vector<Number> & vector) {
+      (void)vector;
+      AssertThrow(false,
+                  dealii::ExcMessage(
+                    "The function fill_grid_coordinates_vector() has not been implemented."));
+    };
+};
+
 namespace IncNS
 {
 class Parameters;
@@ -39,16 +63,6 @@ class SpatialOperatorBase;
 
 template<typename Number>
 class PostProcessorInterface;
-
-template<typename Number>
-class HelpersALE
-{
-public:
-  std::function<void(double const & time)> const move_grid;
-  std::function<void()> const                    update_matrix_free_after_grid_motion;
-  std::function<void(dealii::LinearAlgebra::distributed::Vector<Number> & vector)> const
-    fill_grid_coordinates_vector;
-};
 
 template<int dim, typename Number>
 class TimeIntBDF : public TimeIntBDFBase<Number>
@@ -61,6 +75,7 @@ public:
   typedef SpatialOperatorBase<dim, Number> OperatorBase;
 
   TimeIntBDF(std::shared_ptr<OperatorBase>                   operator_in,
+             std::shared_ptr<HelpersALE<Number> const>       helpers_ale_in,
              Parameters const &                              param_in,
              MPI_Comm const &                                mpi_comm_in,
              bool const                                      is_test_in,
@@ -138,7 +153,8 @@ protected:
   bool use_extrapolation;
   bool store_solution;
 
-  HelpersALE<Number> helpers_ale;
+  // This object allows to access utility functions needed for ALE
+  std::shared_ptr<HelpersALE<Number> const> helpers_ale;
 
 private:
   void

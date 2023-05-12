@@ -114,6 +114,25 @@ Driver<dim, Number>::setup()
     {
       AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
+
+    helpers_ale = std::make_shared<HelpersALE<Number>>();
+
+    helpers_ale->move_grid = [&](double const & time) {
+      grid_motion->update(time,
+                          false /* print_solver_info */,
+                          this->time_integrator->get_number_of_time_steps());
+    };
+
+    helpers_ale->update_matrix_free_after_grid_motion = [&]() {
+      std::shared_ptr<dealii::Mapping<dim> const> mapping =
+        get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
+      matrix_free->update_mapping(*mapping);
+    };
+
+    helpers_ale->fill_grid_coordinates_vector =
+      [&](dealii::LinearAlgebra::distributed::Vector<Number> & vector) {
+        grid_motion->fill_grid_coordinates_vector(vector, pde_operator->get_dof_handler_u());
+      };
   }
 
   if(application->get_parameters().solver_type == SolverType::Unsteady)
@@ -173,7 +192,7 @@ Driver<dim, Number>::setup()
     if(application->get_parameters().solver_type == SolverType::Unsteady)
     {
       time_integrator = create_time_integrator<dim, Number>(
-        pde_operator, application->get_parameters(), mpi_comm, is_test, postprocessor);
+        pde_operator, helpers_ale, application->get_parameters(), mpi_comm, is_test, postprocessor);
     }
     else if(application->get_parameters().solver_type == SolverType::Steady)
     {
@@ -222,15 +241,11 @@ Driver<dim, Number>::ale_update() const
   dealii::Timer sub_timer;
 
   sub_timer.restart();
-  grid_motion->update(time_integrator->get_next_time(),
-                      false /* print_solver_info */,
-                      this->time_integrator->get_number_of_time_steps());
+  helpers_ale->move_grid(time_integrator->get_next_time());
   timer_tree.insert({"Incompressible flow", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  std::shared_ptr<dealii::Mapping<dim> const> mapping =
-    get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
-  matrix_free->update_mapping(*mapping);
+  helpers_ale->update_matrix_free_after_grid_motion();
   timer_tree.insert({"Incompressible flow", "ALE", "Update matrix-free"}, sub_timer.wall_time());
 
   sub_timer.restart();

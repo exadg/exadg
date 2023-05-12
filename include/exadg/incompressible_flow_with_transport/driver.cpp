@@ -81,6 +81,25 @@ Driver<dim, Number>::setup()
                                                         *application->get_grid()->triangulation,
                                                         mesh_motion,
                                                         application->get_parameters().start_time);
+
+    helpers_ale = std::make_shared<HelpersALE<Number>>();
+
+    helpers_ale->move_grid = [&](double const & time) {
+      grid_motion->update(time,
+                          false /* print_solver_info */,
+                          this->fluid_time_integrator->get_number_of_time_steps());
+    };
+
+    helpers_ale->update_matrix_free_after_grid_motion = [&]() {
+      std::shared_ptr<dealii::Mapping<dim> const> mapping =
+        get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
+      matrix_free->update_mapping(*mapping);
+    };
+
+    helpers_ale->fill_grid_coordinates_vector =
+      [&](dealii::LinearAlgebra::distributed::Vector<Number> & vector) {
+        grid_motion->fill_grid_coordinates_vector(vector, fluid_operator->get_dof_handler_u());
+      };
   }
 
   // initialize fluid_operator
@@ -192,8 +211,13 @@ Driver<dim, Number>::setup()
   // depends on quantities such as the time_step_size or gamma0!)
   if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
-    fluid_time_integrator = IncNS::create_time_integrator<dim, Number>(
-      fluid_operator, application->get_parameters(), mpi_comm, is_test, fluid_postprocessor);
+    fluid_time_integrator =
+      IncNS::create_time_integrator<dim, Number>(fluid_operator,
+                                                 helpers_ale,
+                                                 application->get_parameters(),
+                                                 mpi_comm,
+                                                 is_test,
+                                                 fluid_postprocessor);
   }
   else if(application->get_parameters().solver_type == IncNS::SolverType::Steady)
   {
@@ -507,15 +531,11 @@ Driver<dim, Number>::ale_update() const
   dealii::Timer sub_timer;
 
   sub_timer.restart();
-  grid_motion->update(fluid_time_integrator->get_next_time(),
-                      false /* print_solver_info */,
-                      this->fluid_time_integrator->get_number_of_time_steps());
+  helpers_ale->move_grid(fluid_time_integrator->get_next_time());
   timer_tree.insert({"Flow + transport", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  std::shared_ptr<dealii::Mapping<dim> const> mapping =
-    get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
-  matrix_free->update_mapping(*mapping);
+  helpers_ale->update_matrix_free_after_grid_motion();
   timer_tree.insert({"Flow + transport", "ALE", "Update matrix-free"}, sub_timer.wall_time());
 
   sub_timer.restart();
