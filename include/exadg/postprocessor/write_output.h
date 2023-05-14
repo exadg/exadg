@@ -111,8 +111,6 @@ write_points(std::vector<dealii::Point<dim>> const & points,
 {
   std::string filename = file + "_points";
 
-  dealii::Triangulation<dim> particle_dummy_tria;
-
   double min_coord = points[0][0];
   double max_coord = points[0][0];
   for(auto const & p : points)
@@ -125,9 +123,8 @@ write_points(std::vector<dealii::Point<dim>> const & points,
   }
   min_coord = dealii::Utilities::MPI::min(min_coord, mpi_comm);
   max_coord = dealii::Utilities::MPI::max(max_coord, mpi_comm);
-  min_coord -= 0.1 * min_coord;
-  max_coord += 0.1 * max_coord;
 
+  dealii::Triangulation<dim> particle_dummy_tria;
   dealii::GridGenerator::hyper_cube(particle_dummy_tria, min_coord, max_coord);
   dealii::MappingQGeneric<dim> particle_dummy_mapping(1 /* mapping_degree */);
   dealii::Particles::ParticleHandler<dim, dim> particle_handler(particle_dummy_tria,

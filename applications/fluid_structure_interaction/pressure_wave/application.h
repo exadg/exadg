@@ -131,11 +131,11 @@ public:
               if(d == 0)
                 displacement_vector(dof_indices[component_to_system_index[i][d]]) =
                   point[d] +
-                  length_beam * 0.1 * std::sin(point[2] * dealii::numbers::PI / length_beam);
+                  length_beam * 0.5 * std::sin(point[2] * dealii::numbers::PI / length_beam);
               else if(d == 1)
                 displacement_vector(dof_indices[component_to_system_index[i][d]]) =
                   point[d] +
-                  length_beam * 0.05 * std::sin(point[2] * dealii::numbers::PI / length_beam);
+                  length_beam * 0.5 * std::sin(point[2] * dealii::numbers::PI / length_beam);
             }
           }
         }

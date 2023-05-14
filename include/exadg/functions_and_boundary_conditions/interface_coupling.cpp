@@ -81,7 +81,7 @@ InterfaceCoupling<rank, dim, Number>::setup(
         	 points_not_found.push_back((*points)[i]);
          }
       }
-      dealii::Utilities::MPI::sum(n_points_not_found, dof_handler_src->get_communicator());
+      n_points_not_found = dealii::Utilities::MPI::sum(n_points_not_found, dof_handler_src->get_communicator());
 
       std::string const file_name =
         "interface_coupling_quad_index_" + dealii::Utilities::to_string(quad_index);
@@ -91,7 +91,7 @@ InterfaceCoupling<rank, dim, Number>::setup(
       write_points(points_not_found, "./", file_name, 0, dof_handler_src->get_communicator());
 
       AssertThrow(
-        not map_evaluator[quad_index].all_points_found(),
+        map_evaluator[quad_index].all_points_found(),
         dealii::ExcMessage(std::string("Setup of InterfaceCoupling was not successful: "
         		+ std::to_string(n_points_not_found) + " points have not been found.")));
     }
