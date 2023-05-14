@@ -26,10 +26,10 @@
 #include <fstream>
 
 // deal.II
-#include <deal.II/grid/grid_out.h>
-#include <deal.II/numerics/data_out_faces.h>
 #include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_out.h>
 #include <deal.II/numerics/data_out.h>
+#include <deal.II/numerics/data_out_faces.h>
 #include <deal.II/particles/data_out.h>
 #include <deal.II/particles/particle_handler.h>
 
@@ -81,12 +81,12 @@ write_boundary_IDs(dealii::Triangulation<dim> const & triangulation,
 template<int dim>
 void
 write_grid(dealii::Triangulation<dim> const & triangulation,
-		   dealii::Mapping<dim> const &       mapping,
-		   unsigned int const                 n_subdivisions,
-		   std::string const &                folder,
+           dealii::Mapping<dim> const &       mapping,
+           unsigned int const                 n_subdivisions,
+           std::string const &                folder,
            std::string const &                file,
-		   unsigned int const &               counter,
-		   MPI_Comm const &                   mpi_comm)
+           unsigned int const &               counter,
+           MPI_Comm const &                   mpi_comm)
 {
   std::string filename = file + "_grid";
 
@@ -104,10 +104,10 @@ write_grid(dealii::Triangulation<dim> const & triangulation,
 template<int dim>
 void
 write_points(std::vector<dealii::Point<dim>> const & points,
-		     std::string const &                     folder,
+             std::string const &                     folder,
              std::string const &                     file,
-		     unsigned int const &                    counter,
-		     MPI_Comm const &                        mpi_comm)
+             unsigned int const &                    counter,
+             MPI_Comm const &                        mpi_comm)
 {
   std::string filename = file + "_points";
 
@@ -115,20 +115,20 @@ write_points(std::vector<dealii::Point<dim>> const & points,
   double max_coord = points[0][0];
   for(auto const & p : points)
   {
-	for(unsigned int d = 0; d < dim; ++d)
-	{
-	  min_coord = std::min(p[d], min_coord);
-	  max_coord = std::max(p[d], max_coord);
-	}
+    for(unsigned int d = 0; d < dim; ++d)
+    {
+      min_coord = std::min(p[d], min_coord);
+      max_coord = std::max(p[d], max_coord);
+    }
   }
   min_coord = dealii::Utilities::MPI::min(min_coord, mpi_comm);
   max_coord = dealii::Utilities::MPI::max(max_coord, mpi_comm);
 
   dealii::Triangulation<dim> particle_dummy_tria;
   dealii::GridGenerator::hyper_cube(particle_dummy_tria, min_coord, max_coord);
-  dealii::MappingQGeneric<dim> particle_dummy_mapping(1 /* mapping_degree */);
+  dealii::MappingQGeneric<dim>                 particle_dummy_mapping(1 /* mapping_degree */);
   dealii::Particles::ParticleHandler<dim, dim> particle_handler(particle_dummy_tria,
-	                                                            particle_dummy_mapping);
+                                                                particle_dummy_mapping);
 
   particle_handler.insert_particles(points);
 

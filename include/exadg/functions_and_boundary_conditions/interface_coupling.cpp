@@ -61,11 +61,9 @@ InterfaceCoupling<rank, dim, Number>::setup(
                               return marked_vertices_src_;
                             }));
 
-    auto const * points = & interface_data_dst->get_array_q_points(quad_index);
+    auto const * points = &interface_data_dst->get_array_q_points(quad_index);
 
-    map_evaluator[quad_index].reinit(*points,
-                                     dof_handler_src_.get_triangulation(),
-                                     mapping_src_);
+    map_evaluator[quad_index].reinit(*points, dof_handler_src_.get_triangulation(), mapping_src_);
 
     if(not map_evaluator[quad_index].all_points_found())
     {
@@ -75,25 +73,32 @@ InterfaceCoupling<rank, dim, Number>::setup(
       unsigned int n_points_not_found = 0;
       for(unsigned int i = 0; i < points->size(); ++i)
       {
-         if(not map_evaluator[quad_index].point_found(i))
-         {
-        	 n_points_not_found += 1;
-        	 points_not_found.push_back((*points)[i]);
-         }
+        if(not map_evaluator[quad_index].point_found(i))
+        {
+          n_points_not_found += 1;
+          points_not_found.push_back((*points)[i]);
+        }
       }
-      n_points_not_found = dealii::Utilities::MPI::sum(n_points_not_found, dof_handler_src->get_communicator());
+      n_points_not_found =
+        dealii::Utilities::MPI::sum(n_points_not_found, dof_handler_src->get_communicator());
 
       std::string const file_name =
         "interface_coupling_quad_index_" + dealii::Utilities::to_string(quad_index);
 
-      write_grid(dof_handler_src->get_triangulation(), mapping_src_, 4, "./", file_name, 0, dof_handler_src->get_communicator());
+      write_grid(dof_handler_src->get_triangulation(),
+                 mapping_src_,
+                 4,
+                 "./",
+                 file_name,
+                 0,
+                 dof_handler_src->get_communicator());
 
       write_points(points_not_found, "./", file_name, 0, dof_handler_src->get_communicator());
 
-      AssertThrow(
-        map_evaluator[quad_index].all_points_found(),
-        dealii::ExcMessage(std::string("Setup of InterfaceCoupling was not successful: "
-        		+ std::to_string(n_points_not_found) + " points have not been found.")));
+      AssertThrow(map_evaluator[quad_index].all_points_found(),
+                  dealii::ExcMessage(std::string("Setup of InterfaceCoupling was not successful: " +
+                                                 std::to_string(n_points_not_found) +
+                                                 " points have not been found.")));
     }
   }
 }
