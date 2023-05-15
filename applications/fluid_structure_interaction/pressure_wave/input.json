@@ -19,7 +19,7 @@
         "OmegaInit": "0.3",
         "PartitionedIterMax": "100",
         "ReusedTimeSteps": "10",
-        "GeometricTolerance": "1.0e-8"
+        "GeometricTolerance": "1.e-8"
     },
     "Application": {
     },

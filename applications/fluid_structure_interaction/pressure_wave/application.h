@@ -50,7 +50,7 @@ dealii::types::boundary_id const BOUNDARY_ID_WALLS   = 3;
 
 unsigned int MANIFOLD_ID_CYLINDER = 1;
 
-unsigned int const MAPPING_DEGREE = 2; // 2;
+unsigned int const MAPPING_DEGREE = 1; // 2;
 
 double const TIME_PRESSURE  = 3.0e-3;
 double const TIME_STEP_SIZE = 0.0001;
@@ -65,8 +65,6 @@ double const ABS_TOL = 1.e-12;
 double const REL_TOL_LINEARIZED = 1.e-3;
 double const ABS_TOL_LINEARIZED = 1.e-12;
 
-namespace GridMap
-{
 template<int dim>
 class PressureInflowBC : public dealii::Function<dim>
 {
