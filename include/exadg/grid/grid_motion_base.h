@@ -22,9 +22,14 @@
 #ifndef INCLUDE_EXADG_GRID_GRID_MOTION_BASE_H_
 #define INCLUDE_EXADG_GRID_GRID_MOTION_BASE_H_
 
+// deal.II
+#include <deal.II/dofs/dof_handler.h>
+#include <deal.II/fe/mapping.h>
+#include <deal.II/lac/la_parallel_vector.h>
+
 // ExaDG
-#include <exadg/grid/grid_motion_interface.h>
 #include <exadg/grid/mapping_dof_vector.h>
+#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
@@ -32,7 +37,7 @@ namespace ExaDG
  * Base class for moving grid problems.
  */
 template<int dim, typename Number>
-class GridMotionBase : public GridMotionInterface<dim, Number>
+class GridMotionBase
 {
 public:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -56,15 +61,27 @@ public:
                                                dof_handler);
   }
 
-  void
-  fill_grid_coordinates_vector(VectorType &                    grid_coordinates,
-                               dealii::DoFHandler<dim> const & dof_handler) const final
+  virtual ~GridMotionBase()
   {
-    moving_mapping->fill_grid_coordinates_vector(grid_coordinates, dof_handler);
+  }
+
+  /**
+   * Updates the mapping, i.e., moves the grid.
+   */
+  virtual void
+  update(double const time, bool const print_solver_info, types::time_step time_step_number) = 0;
+
+  /**
+   * Print the number of iterations for PDE type grid motion problems.
+   */
+  virtual void
+  print_iterations() const
+  {
+    AssertThrow(false, dealii::ExcMessage("Has to be overwritten by derived classes."));
   }
 
   std::shared_ptr<dealii::Mapping<dim> const>
-  get_mapping() const final
+  get_mapping() const
   {
     return moving_mapping;
   }

@@ -257,11 +257,6 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
     pde_operator->update_spatial_operators_after_grid_motion();
   };
 
-  helpers_ale->fill_grid_coordinates_vector =
-    [&](dealii::LinearAlgebra::distributed::Vector<Number> & vector) {
-      ale_grid_motion->fill_grid_coordinates_vector(vector, pde_operator->get_dof_handler_u());
-    };
-
   time_integrator = IncNS::create_time_integrator<dim, Number>(
     pde_operator, helpers_ale, application->get_parameters(), mpi_comm, is_test, postprocessor);
 

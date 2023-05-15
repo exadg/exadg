@@ -72,7 +72,7 @@ TimeIntBDF<dim, Number>::setup_derived()
     // start_with_low_order == false)
 
     helpers_ale->move_grid(this->get_time());
-    helpers_ale->fill_grid_coordinates_vector(vec_grid_coordinates[0]);
+    pde_operator->fill_grid_coordinates_vector(vec_grid_coordinates[0]);
 
     if(this->start_with_low_order == false)
     {
@@ -80,7 +80,7 @@ TimeIntBDF<dim, Number>::setup_derived()
       for(unsigned int i = 1; i < this->order; ++i)
       {
         helpers_ale->move_grid(this->get_previous_time(i));
-        helpers_ale->fill_grid_coordinates_vector(vec_grid_coordinates[i]);
+        pde_operator->fill_grid_coordinates_vector(vec_grid_coordinates[i]);
       }
     }
   }
@@ -340,7 +340,7 @@ void
 TimeIntBDF<dim, Number>::ale_update()
 {
   // and compute grid coordinates at the end of the current time step t_{n+1}
-  helpers_ale->fill_grid_coordinates_vector(grid_coordinates_np);
+  pde_operator->fill_grid_coordinates_vector(grid_coordinates_np);
 
   // and update grid velocity using BDF time derivative
   compute_bdf_time_derivative(grid_velocity,

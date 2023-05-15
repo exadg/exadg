@@ -51,7 +51,8 @@ public:
   };
 
   /**
-   * This function updates the PDE operator after the grid has been moved.
+   * This function updates the PDE operator after the grid has been moved. This function makes sure
+   * that weak forms are evaluated correctly after the grid has been moved.
    *
    * The default implementation causes the program to terminate, in order to avoid uninitialized /
    * undefined functions leading to erroneous results.
@@ -62,21 +63,6 @@ public:
       dealii::ExcMessage(
         "The function update_pde_operator_after_grid_motion() has not been implemented."));
   };
-
-  /**
-   * This function fills a DoF-vector describing the grid coordinates as required by time
-   * integration routines supporting ALE functionality.
-   *
-   * The default implementation causes the program to terminate, in order to avoid uninitialized /
-   * undefined functions leading to erroneous results.
-   */
-  std::function<void(dealii::LinearAlgebra::distributed::Vector<Number> & vector)>
-    fill_grid_coordinates_vector = [](dealii::LinearAlgebra::distributed::Vector<Number> & vector) {
-      (void)vector;
-      AssertThrow(false,
-                  dealii::ExcMessage(
-                    "The function fill_grid_coordinates_vector() has not been implemented."));
-    };
 };
 } // namespace ExaDG
 

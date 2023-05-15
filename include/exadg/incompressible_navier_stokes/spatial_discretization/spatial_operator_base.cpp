@@ -23,6 +23,7 @@
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
+#include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_projection.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
@@ -1535,6 +1536,20 @@ SpatialOperatorBase<dim, Number>::update_spatial_operators_after_grid_motion()
   }
 
   // note that the update of div-div and continuity penalty terms is done separately
+}
+
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::fill_grid_coordinates_vector(VectorType & vector) const
+{
+  std::shared_ptr<MappingDoFVector<dim, Number> const> mapping_dof_vector =
+    std::dynamic_pointer_cast<MappingDoFVector<dim, Number> const>(get_mapping());
+
+  AssertThrow(mapping_dof_vector.get(),
+              dealii::ExcMessage("The function fill_grid_coordinates_vector() is only "
+                                 "implemented for mappings of type MappingDoFVector."));
+
+  mapping_dof_vector->fill_grid_coordinates_vector(vector, get_dof_handler_u());
 }
 
 template<int dim, typename Number>

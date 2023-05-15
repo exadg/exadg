@@ -86,21 +86,17 @@ Driver<dim, Number>::setup()
 
       pde_operator->update_spatial_operators_after_grid_motion();
     };
-
-    helpers_ale->fill_grid_coordinates_vector =
-      [&](dealii::LinearAlgebra::distributed::Vector<Number> & vector) {
-        grid_motion->fill_grid_coordinates_vector(vector, pde_operator->get_dof_handler_velocity());
-      };
   }
 
   // initialize convection-diffusion operator
-  pde_operator = std::make_shared<Operator<dim, Number>>(application->get_grid(),
-                                                         grid_motion,
-                                                         application->get_boundary_descriptor(),
-                                                         application->get_field_functions(),
-                                                         application->get_parameters(),
-                                                         "scalar",
-                                                         mpi_comm);
+  pde_operator = std::make_shared<Operator<dim, Number>>(
+    application->get_grid(),
+    get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion),
+    application->get_boundary_descriptor(),
+    application->get_field_functions(),
+    application->get_parameters(),
+    "scalar",
+    mpi_comm);
 
   // initialize matrix_free
   matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();

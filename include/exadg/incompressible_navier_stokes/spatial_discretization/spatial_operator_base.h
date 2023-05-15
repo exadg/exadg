@@ -388,6 +388,12 @@ public:
   update_spatial_operators_after_grid_motion();
 
   /*
+   * Fills a dof-vector with grid coordinates for ALE-type problems.
+   */
+  void
+  fill_grid_coordinates_vector(VectorType & vector) const;
+
+  /*
    * Sets the grid velocity.
    */
   void

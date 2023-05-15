@@ -106,6 +106,10 @@ public:
   // needed for ALE-type problems
   virtual void
   update_spatial_operators_after_grid_motion() = 0;
+
+  // needed for ALE-type problems
+  virtual void
+  fill_grid_coordinates_vector(VectorType & vector) const = 0;
 };
 } // namespace Interface
 

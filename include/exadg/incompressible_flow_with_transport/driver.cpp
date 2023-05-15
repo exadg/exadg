@@ -99,11 +99,6 @@ Driver<dim, Number>::setup()
       for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
         scalar_operator[i]->update_spatial_operators_after_grid_motion();
     };
-
-    helpers_ale->fill_grid_coordinates_vector =
-      [&](dealii::LinearAlgebra::distributed::Vector<Number> & vector) {
-        grid_motion->fill_grid_coordinates_vector(vector, fluid_operator->get_dof_handler_u());
-      };
   }
 
   // initialize fluid_operator
@@ -144,15 +139,14 @@ Driver<dim, Number>::setup()
   // initialize convection-diffusion operator
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    scalar_operator[i] =
-      std::make_shared<ConvDiff::Operator<dim, Number>>(application->get_grid(),
-                                                        grid_motion,
-                                                        application->get_boundary_descriptor_scalar(
-                                                          i),
-                                                        application->get_field_functions_scalar(i),
-                                                        application->get_parameters_scalar(i),
-                                                        "scalar" + std::to_string(i),
-                                                        mpi_comm);
+    scalar_operator[i] = std::make_shared<ConvDiff::Operator<dim, Number>>(
+      application->get_grid(),
+      get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion),
+      application->get_boundary_descriptor_scalar(i),
+      application->get_field_functions_scalar(i),
+      application->get_parameters_scalar(i),
+      "scalar" + std::to_string(i),
+      mpi_comm);
   }
 
   // initialize matrix_free
