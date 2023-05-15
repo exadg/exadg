@@ -32,12 +32,12 @@ namespace IncNS
 {
 template<int dim, typename Number>
 TimeIntBDF<dim, Number>::TimeIntBDF(
-  std::shared_ptr<OperatorBase>                   operator_in,
-  std::shared_ptr<HelpersALE<Number> const>       helpers_ale_in,
-  Parameters const &                              param_in,
-  MPI_Comm const &                                mpi_comm_in,
-  bool const                                      is_test_in,
-  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
+  std::shared_ptr<SpatialOperatorBase<dim, Number>> operator_in,
+  std::shared_ptr<HelpersALE<Number> const>         helpers_ale_in,
+  std::shared_ptr<PostProcessorInterface<Number>>   postprocessor_in,
+  Parameters const &                                param_in,
+  MPI_Comm const &                                  mpi_comm_in,
+  bool const                                        is_test_in)
   : TimeIntBDFBase<Number>(param_in.start_time,
                            param_in.end_time,
                            param_in.max_number_of_time_steps,

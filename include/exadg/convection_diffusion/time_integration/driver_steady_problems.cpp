@@ -32,10 +32,10 @@ namespace ConvDiff
 template<typename Number>
 DriverSteadyProblems<Number>::DriverSteadyProblems(
   std::shared_ptr<Operator>                       operator_,
+  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_,
   Parameters const &                              param_,
   MPI_Comm const &                                mpi_comm_,
-  bool const                                      is_test_,
-  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_)
+  bool const                                      is_test_)
   : pde_operator(operator_),
     param(param_),
     mpi_comm(mpi_comm_),

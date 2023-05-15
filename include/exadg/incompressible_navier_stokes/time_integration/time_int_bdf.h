@@ -49,14 +49,12 @@ public:
   typedef typename Base::VectorType                               VectorType;
   typedef dealii::LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef SpatialOperatorBase<dim, Number> OperatorBase;
-
-  TimeIntBDF(std::shared_ptr<OperatorBase>                   operator_in,
-             std::shared_ptr<HelpersALE<Number> const>       helpers_ale_in,
-             Parameters const &                              param_in,
-             MPI_Comm const &                                mpi_comm_in,
-             bool const                                      is_test_in,
-             std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in);
+  TimeIntBDF(std::shared_ptr<SpatialOperatorBase<dim, Number>> operator_in,
+             std::shared_ptr<HelpersALE<Number> const>         helpers_ale_in,
+             std::shared_ptr<PostProcessorInterface<Number>>   postprocessor_in,
+             Parameters const &                                param_in,
+             MPI_Comm const &                                  mpi_comm_in,
+             bool const                                        is_test_in);
 
   virtual ~TimeIntBDF()
   {
@@ -120,7 +118,7 @@ protected:
   double const cfl;
 
   // spatial discretization operator
-  std::shared_ptr<OperatorBase> operator_base;
+  std::shared_ptr<SpatialOperatorBase<dim, Number>> operator_base;
 
   // convective term formulated explicitly
   std::vector<VectorType> vec_convective_term;

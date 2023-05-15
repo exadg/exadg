@@ -458,8 +458,9 @@ OperatorPressureCorrection<dim, Number>::rhs_ppe_laplace_add_dirichlet_bc_from_d
 
 template<int dim, typename Number>
 void
-OperatorPressureCorrection<dim, Number>::interpolate_pressure_dirichlet_bc(VectorType &   dst,
-                                                                           double const & time)
+OperatorPressureCorrection<dim, Number>::interpolate_pressure_dirichlet_bc(
+  VectorType &   dst,
+  double const & time) const
 {
   this->evaluation_time = time;
 

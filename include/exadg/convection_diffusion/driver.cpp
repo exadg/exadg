@@ -127,14 +127,14 @@ Driver<dim, Number>::setup()
     if(application->get_parameters().problem_type == ProblemType::Unsteady)
     {
       time_integrator = create_time_integrator<dim, Number>(
-        pde_operator, helpers_ale, application->get_parameters(), mpi_comm, is_test, postprocessor);
+        pde_operator, helpers_ale, postprocessor, application->get_parameters(), mpi_comm, is_test);
 
       time_integrator->setup(application->get_parameters().restarted_simulation);
     }
     else if(application->get_parameters().problem_type == ProblemType::Steady)
     {
       driver_steady = std::make_shared<DriverSteadyProblems<Number>>(
-        pde_operator, application->get_parameters(), mpi_comm, is_test, postprocessor);
+        pde_operator, postprocessor, application->get_parameters(), mpi_comm, is_test);
 
       driver_steady->setup();
     }

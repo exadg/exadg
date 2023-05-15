@@ -37,22 +37,22 @@ template<int dim, typename Number>
 std::shared_ptr<TimeIntBase>
 create_time_integrator(std::shared_ptr<Operator<dim, Number>>          pde_operator,
                        std::shared_ptr<HelpersALE<Number> const>       helpers_ale,
+                       std::shared_ptr<PostProcessorInterface<Number>> postprocessor,
                        Parameters const &                              parameters,
                        MPI_Comm const &                                mpi_comm,
-                       bool const                                      is_test,
-                       std::shared_ptr<PostProcessorInterface<Number>> postprocessor)
+                       bool const                                      is_test)
 {
   std::shared_ptr<TimeIntBase> time_integrator;
 
   if(parameters.temporal_discretization == TemporalDiscretization::ExplRK)
   {
     time_integrator = std::make_shared<TimeIntExplRK<Number>>(
-      pde_operator, parameters, mpi_comm, is_test, postprocessor);
+      pde_operator, postprocessor, parameters, mpi_comm, is_test);
   }
   else if(parameters.temporal_discretization == TemporalDiscretization::BDF)
   {
     time_integrator = std::make_shared<TimeIntBDF<dim, Number>>(
-      pde_operator, helpers_ale, parameters, mpi_comm, is_test, postprocessor);
+      pde_operator, helpers_ale, postprocessor, parameters, mpi_comm, is_test);
   }
   else
   {

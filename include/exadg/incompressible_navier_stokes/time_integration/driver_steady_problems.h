@@ -50,13 +50,11 @@ public:
   typedef dealii::LinearAlgebra::distributed::Vector<Number>      VectorType;
   typedef dealii::LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef OperatorCoupled<dim, Number> Operator;
-
-  DriverSteadyProblems(std::shared_ptr<Operator>                       operator_,
+  DriverSteadyProblems(std::shared_ptr<OperatorCoupled<dim, Number>>   operator_,
+                       std::shared_ptr<PostProcessorInterface<Number>> postprocessor_,
                        Parameters const &                              param_,
                        MPI_Comm const &                                mpi_comm_,
-                       bool const                                      is_test_,
-                       std::shared_ptr<PostProcessorInterface<Number>> postprocessor_);
+                       bool const                                      is_test_);
 
   void
   setup();
@@ -89,7 +87,7 @@ private:
   void
   postprocessing(double const time = 0.0, bool unsteady_problem = false) const;
 
-  std::shared_ptr<Operator> pde_operator;
+  std::shared_ptr<OperatorCoupled<dim, Number>> pde_operator;
 
   Parameters const & param;
 

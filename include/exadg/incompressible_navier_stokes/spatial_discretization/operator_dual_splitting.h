@@ -83,7 +83,7 @@ public:
 
   // rhs pressure Poisson equation: velocity divergence term: body force term
   void
-  rhs_ppe_div_term_body_forces_add(VectorType & dst, double const & time);
+  rhs_ppe_div_term_body_forces_add(VectorType & dst, double const & time) const;
 
   // rhs pressure Poisson equation: velocity divergence term: convective term
   void
@@ -91,11 +91,11 @@ public:
 
   // rhs pressure Poisson equation: Neumann BC body force term
   void
-  rhs_ppe_nbc_body_force_term_add(VectorType & dst, double const & time);
+  rhs_ppe_nbc_body_force_term_add(VectorType & dst, double const & time) const;
 
   // rhs pressure Poisson equation: Neumann BC numerical time derivative term
   void
-  rhs_ppe_nbc_numerical_time_derivative_add(VectorType & dst, VectorType const & src);
+  rhs_ppe_nbc_numerical_time_derivative_add(VectorType & dst, VectorType const & src) const;
 
   // rhs pressure Poisson equation: Neumann BC convective term
   void
@@ -136,7 +136,7 @@ public:
    * the degrees of freedom of the underlying finite element space.
    */
   void
-  interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time);
+  interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time) const;
 
 private:
   /*

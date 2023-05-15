@@ -191,7 +191,7 @@ Driver<dim, Number>::setup()
     if(application->get_parameters().solver_type == SolverType::Unsteady)
     {
       time_integrator = create_time_integrator<dim, Number>(
-        pde_operator, helpers_ale, application->get_parameters(), mpi_comm, is_test, postprocessor);
+        pde_operator, helpers_ale, postprocessor, application->get_parameters(), mpi_comm, is_test);
     }
     else if(application->get_parameters().solver_type == SolverType::Steady)
     {
@@ -200,7 +200,7 @@ Driver<dim, Number>::setup()
 
       // initialize driver for steady state problem that depends on pde_operator
       driver_steady = std::make_shared<DriverSteadyProblems<dim, Number>>(
-        operator_coupled, application->get_parameters(), mpi_comm, is_test, postprocessor);
+        operator_coupled, postprocessor, application->get_parameters(), mpi_comm, is_test);
     }
     else
     {

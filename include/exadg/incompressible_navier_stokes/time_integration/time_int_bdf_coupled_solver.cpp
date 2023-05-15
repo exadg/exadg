@@ -34,11 +34,11 @@ template<int dim, typename Number>
 TimeIntBDFCoupled<dim, Number>::TimeIntBDFCoupled(
   std::shared_ptr<Operator>                       operator_in,
   std::shared_ptr<HelpersALE<Number> const>       helpers_ale_in,
+  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
   Parameters const &                              param_in,
   MPI_Comm const &                                mpi_comm_in,
-  bool const                                      is_test_in,
-  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
-  : Base(operator_in, helpers_ale_in, param_in, mpi_comm_in, is_test_in, postprocessor_in),
+  bool const                                      is_test_in)
+  : Base(operator_in, helpers_ale_in, postprocessor_in, param_in, mpi_comm_in, is_test_in),
     pde_operator(operator_in),
     solution(this->order),
     iterations({0, {0, 0}}),

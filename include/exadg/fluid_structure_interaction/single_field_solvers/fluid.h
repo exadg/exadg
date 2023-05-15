@@ -258,7 +258,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   };
 
   time_integrator = IncNS::create_time_integrator<dim, Number>(
-    pde_operator, helpers_ale, application->get_parameters(), mpi_comm, is_test, postprocessor);
+    pde_operator, helpers_ale, postprocessor, application->get_parameters(), mpi_comm, is_test);
 
   time_integrator->setup(application->get_parameters().restarted_simulation);
 

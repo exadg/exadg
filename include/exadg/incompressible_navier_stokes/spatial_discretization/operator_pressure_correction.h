@@ -222,7 +222,7 @@ public:
   rhs_ppe_laplace_add_dirichlet_bc_from_dof_vector(VectorType & dst, VectorType const & src) const;
 
   void
-  interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time);
+  interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time) const;
 
 private:
   /*

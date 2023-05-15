@@ -1873,7 +1873,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::distribute_constraint_u(VectorType & velocity)
+SpatialOperatorBase<dim, Number>::distribute_constraint_u(VectorType & velocity) const
 {
   if(param.spatial_discretization == SpatialDiscretization::HDIV)
   {

@@ -214,10 +214,10 @@ Driver<dim, Number>::setup()
     fluid_time_integrator =
       IncNS::create_time_integrator<dim, Number>(fluid_operator,
                                                  helpers_ale,
+                                                 fluid_postprocessor,
                                                  application->get_parameters(),
                                                  mpi_comm,
-                                                 is_test,
-                                                 fluid_postprocessor);
+                                                 is_test);
   }
   else if(application->get_parameters().solver_type == IncNS::SolverType::Steady)
   {
@@ -226,10 +226,10 @@ Driver<dim, Number>::setup()
 
     // initialize driver for steady state problem that depends on fluid_operator
     fluid_driver_steady = std::make_shared<DriverSteady>(fluid_operator_coupled,
+                                                         fluid_postprocessor,
                                                          application->get_parameters(),
                                                          mpi_comm,
-                                                         is_test,
-                                                         fluid_postprocessor);
+                                                         is_test);
   }
   else
   {
@@ -279,10 +279,10 @@ Driver<dim, Number>::setup()
     scalar_time_integrator[i] =
       ConvDiff::create_time_integrator<dim, Number>(scalar_operator[i],
                                                     helpers_ale,
+                                                    scalar_postprocessor[i],
                                                     application->get_parameters_scalar(i),
                                                     mpi_comm,
-                                                    is_test,
-                                                    scalar_postprocessor[i]);
+                                                    is_test);
 
     if(application->get_parameters_scalar(i).restarted_simulation == false and
        application->get_parameters_scalar(i).temporal_discretization ==

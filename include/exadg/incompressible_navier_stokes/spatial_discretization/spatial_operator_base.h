@@ -403,7 +403,7 @@ public:
    *  Calls constraint_u.distribute(u) and updates the constrained DoFs of the velocity field
    */
   void
-  distribute_constraint_u(VectorType & velocity);
+  distribute_constraint_u(VectorType & velocity) const;
 
 protected:
   /*
@@ -468,7 +468,7 @@ protected:
    * Element variable used to store the current physical time. This variable is needed for the
    * evaluation of certain integrals or weak forms.
    */
-  double evaluation_time;
+  mutable double evaluation_time;
 
 private:
   /*

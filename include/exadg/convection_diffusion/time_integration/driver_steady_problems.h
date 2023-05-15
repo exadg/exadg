@@ -54,10 +54,10 @@ public:
   typedef Interface::Operator<Number> Operator;
 
   DriverSteadyProblems(std::shared_ptr<Operator>                       operator_,
+                       std::shared_ptr<PostProcessorInterface<Number>> postprocessor_,
                        Parameters const &                              param_,
                        MPI_Comm const &                                mpi_comm_,
-                       bool const                                      is_test_,
-                       std::shared_ptr<PostProcessorInterface<Number>> postprocessor_);
+                       bool const                                      is_test_);
 
   void
   setup();
