@@ -27,6 +27,6 @@
     "Output": {
         "OutputDirectory": "output/bar/",
         "OutputName": "test",
-        "WriteOutput": "true"
+        "WriteOutput": "false"
     }
 }

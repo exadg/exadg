@@ -67,95 +67,6 @@ double const ABS_TOL_LINEARIZED = 1.e-12;
 
 namespace GridMap
 {
-template<int dim, typename Number>
-class DeformedMesh : public MappingDoFVector<dim, Number>
-{
-public:
-  typedef typename MappingDoFVector<dim, Number>::VectorType VectorType;
-
-  DeformedMesh(dealii::Triangulation<dim> & tria, unsigned int const mapping_degree)
-    : MappingDoFVector<dim, Number>(mapping_degree), mapping_degree(mapping_degree), tria(tria)
-  {
-    undeformed_mapping = std::make_shared<dealii::MappingQGeneric<dim>>(mapping_degree);
-  }
-
-  void
-  initialize(double const & length_beam)
-  {
-    // some dummy functionality to fill the displacement vector
-    dealii::DoFHandler<dim> dof_handler(tria);
-    dealii::FESystem<dim>   fe_mapping(dealii::FE_Q<dim>(mapping_degree), dim);
-
-    dof_handler.distribute_dofs(fe_mapping);
-
-    dealii::QGaussLobatto<dim> quadrature(mapping_degree + 1);
-    dealii::FE_Nothing<dim>    dummy_fe;
-    dealii::FEValues<dim>      fe_values(*undeformed_mapping,
-                                    dummy_fe,
-                                    quadrature,
-                                    dealii::update_quadrature_points);
-
-    std::vector<std::array<unsigned int, dim>> component_to_system_index(
-      fe_mapping.base_element(0).dofs_per_cell);
-
-    std::vector<unsigned int> hierarchic_to_lexicographic_numbering =
-      dealii::FETools::hierarchic_to_lexicographic_numbering<dim>(mapping_degree);
-    for(unsigned int i = 0; i < fe_mapping.dofs_per_cell; ++i)
-    {
-      component_to_system_index
-        [hierarchic_to_lexicographic_numbering[fe_mapping.system_to_component_index(i).second]]
-        [fe_mapping.system_to_component_index(i).first] = i;
-    }
-
-    std::vector<dealii::types::global_dof_index> dof_indices(fe_mapping.dofs_per_cell);
-
-    VectorType displacement_vector;
-    displacement_vector.reinit(dof_handler.locally_owned_dofs(), tria.get_communicator());
-
-    for(auto const & cell : dof_handler.active_cell_iterators())
-    {
-      if(cell->is_locally_owned())
-      {
-        fe_values.reinit(typename dealii::Triangulation<dim>::cell_iterator(cell));
-        cell->get_dof_indices(dof_indices);
-
-        for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
-        {
-          dealii::Point<dim> const point = fe_values.quadrature_point(i);
-
-          for(unsigned int d = 0; d < dim; ++d)
-          {
-            if(displacement_vector.get_partitioner()->in_local_range(
-                 dof_indices[component_to_system_index[i][d]]))
-            {
-              if(d == 0)
-                displacement_vector(dof_indices[component_to_system_index[i][d]]) =
-                  point[d] +
-                  length_beam * 0.5 * std::sin(point[2] * dealii::numbers::PI / length_beam);
-              else if(d == 1)
-                displacement_vector(dof_indices[component_to_system_index[i][d]]) =
-                  point[d] +
-                  length_beam * 0.5 * std::sin(point[2] * dealii::numbers::PI / length_beam);
-            }
-          }
-        }
-      }
-    }
-    displacement_vector.compress(dealii::VectorOperation::insert);
-
-    MappingDoFVector<dim, Number>::initialize_mapping_q_cache(undeformed_mapping,
-                                                              displacement_vector,
-                                                              dof_handler);
-  }
-
-private:
-  std::shared_ptr<dealii::Mapping<dim>> undeformed_mapping;
-
-  unsigned int const           mapping_degree;
-  dealii::Triangulation<dim> & tria;
-};
-} // namespace GridMap
-
 template<int dim>
 class PressureInflowBC : public dealii::Function<dim>
 {
@@ -448,15 +359,6 @@ private:
     }
 
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global + 2);
-
-    std::cout << "I attached the mapping in FluidFSI ##+ \n";
-
-    std::shared_ptr<GridMap::DeformedMesh<dim, Number>> mapping =
-      std::make_shared<GridMap::DeformedMesh<dim, Number>>(*this->grid->triangulation,
-                                                           this->param.grid.mapping_degree);
-
-    mapping->initialize(L);
-    this->grid->mapping = mapping;
   }
 
   void
@@ -812,15 +714,6 @@ private:
     this->grid->triangulation->set_manifold(MANIFOLD_ID_CYLINDER, *cylinder_manifold);
 
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    std::cout << "I attached the mapping in StructureFSI ##+ \n";
-
-    std::shared_ptr<GridMap::DeformedMesh<dim, Number>> mapping =
-      std::make_shared<GridMap::DeformedMesh<dim, Number>>(*this->grid->triangulation,
-                                                           this->param.grid.mapping_degree);
-
-    mapping->initialize(L);
-    this->grid->mapping = mapping;
   }
 
   void
