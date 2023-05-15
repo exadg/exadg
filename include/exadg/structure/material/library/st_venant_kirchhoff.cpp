@@ -119,7 +119,7 @@ StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients(
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
       dealii::VectorizedArray<Number> E_vec =
-        FunctionEvaluator<0, dim, Number>::value(data.E_function,
+        FunctionEvaluator<0, dim, Number>::value(*(data.E_function),
                                                  integrator.quadrature_point(q),
                                                  0.0 /*time*/);
 

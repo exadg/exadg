@@ -455,7 +455,7 @@ LaplaceOperator<dim, Number, n_components>::set_constrained_values(VectorType & 
           {
             auto bc = operator_data.bc->dirichlet_cached_bc.find(boundary_id)->second;
 
-            g = FunctionEvaluator<rank, dim, Number>::value(bc, face, q, quad_index);
+            g = FunctionEvaluator<rank, dim, Number>::value(*bc, face, q, quad_index);
           }
           else
           {

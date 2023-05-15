@@ -175,7 +175,7 @@ ElasticityOperatorBase<dim, Number>::set_constrained_values(VectorType & dst,
           {
             auto bc = operator_data.bc->dirichlet_cached_bc.find(boundary_id)->second;
 
-            g = FunctionEvaluator<1, dim, Number>::value(bc, face, q, quad_index);
+            g = FunctionEvaluator<1, dim, Number>::value(*bc, face, q, quad_index);
           }
           else
           {

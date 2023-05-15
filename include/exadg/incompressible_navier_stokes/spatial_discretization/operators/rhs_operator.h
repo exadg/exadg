@@ -81,12 +81,13 @@ public:
   {
     dealii::Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
-    vector f = FunctionEvaluator<1, dim, Number>::value(data.f, q_points, time);
+    vector f = FunctionEvaluator<1, dim, Number>::value(*(data.f), q_points, time);
 
     if(data.boussinesq_term)
     {
-      vector g = FunctionEvaluator<1, dim, Number>::value(data.gravitational_force, q_points, time);
-      scalar T = integrator_temperature.get_value(q);
+      vector g =
+        FunctionEvaluator<1, dim, Number>::value(*(data.gravitational_force), q_points, time);
+      scalar T     = integrator_temperature.get_value(q);
       scalar T_ref = data.reference_temperature;
       // solve only for the dynamic pressure variations
       if(data.boussinesq_dynamic_part_only)

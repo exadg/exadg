@@ -313,7 +313,7 @@ public:
     {
       dealii::Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
-      vector velocity = FunctionEvaluator<1, dim, Number>::value(data.velocity, q_points, time);
+      vector velocity = FunctionEvaluator<1, dim, Number>::value(*(data.velocity), q_points, time);
 
       scalar normal_velocity = velocity * normal_m;
 
@@ -390,7 +390,7 @@ public:
     {
       dealii::Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
-      velocity = FunctionEvaluator<1, dim, Number>::value(data.velocity, q_points, time);
+      velocity = FunctionEvaluator<1, dim, Number>::value(*(data.velocity), q_points, time);
     }
     else if(data.velocity_type == TypeVelocityField::DoFVector)
     {
@@ -480,7 +480,7 @@ public:
 
     if(data.velocity_type == TypeVelocityField::Function)
     {
-      velocity = FunctionEvaluator<1, dim, Number>::value(data.velocity,
+      velocity = FunctionEvaluator<1, dim, Number>::value(*(data.velocity),
                                                           integrator.quadrature_point(q),
                                                           time);
     }
@@ -507,7 +507,7 @@ public:
 
     if(data.velocity_type == TypeVelocityField::Function)
     {
-      velocity = FunctionEvaluator<1, dim, Number>::value(data.velocity,
+      velocity = FunctionEvaluator<1, dim, Number>::value(*(data.velocity),
                                                           integrator.quadrature_point(q),
                                                           time);
     }

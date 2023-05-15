@@ -82,7 +82,7 @@ private:
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         integrator.submit_value(
-          FunctionEvaluator<1, dim, Number>::value(function, integrator.quadrature_point(q), time),
+          FunctionEvaluator<1, dim, Number>::value(*function, integrator.quadrature_point(q), time),
           q);
       }
 

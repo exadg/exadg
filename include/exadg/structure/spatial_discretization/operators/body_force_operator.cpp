@@ -87,7 +87,7 @@ BodyForceOperator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
       auto q_points = integrator.quadrature_point(q);
-      auto b        = FunctionEvaluator<1, dim, Number>::value(data.function, q_points, time);
+      auto b        = FunctionEvaluator<1, dim, Number>::value(*(data.function), q_points, time);
 
       if(data.pull_back_body_force)
       {
