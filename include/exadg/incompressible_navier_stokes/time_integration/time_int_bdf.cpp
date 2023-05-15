@@ -463,8 +463,7 @@ TimeIntBDF<dim, Number>::postprocessing() const
      not this->param.restarted_simulation)
   {
     helpers_ale->move_grid(this->get_time());
-    helpers_ale->update_matrix_free_after_grid_motion();
-    operator_base->update_spatial_operators_after_grid_motion();
+    helpers_ale->update_pde_operator_after_grid_motion();
   }
 
   // We need to distribute the dofs before computing the error since

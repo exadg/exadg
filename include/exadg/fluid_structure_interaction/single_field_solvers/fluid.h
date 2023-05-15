@@ -249,10 +249,12 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
                             this->time_integrator->get_number_of_time_steps());
   };
 
-  helpers_ale->update_matrix_free_after_grid_motion = [&]() {
+  helpers_ale->update_pde_operator_after_grid_motion = [&]() {
     std::shared_ptr<dealii::Mapping<dim> const> mapping =
       get_dynamic_mapping<dim, Number>(application->get_grid(), ale_grid_motion);
     matrix_free->update_mapping(*mapping);
+
+    pde_operator->update_spatial_operators_after_grid_motion();
   };
 
   helpers_ale->fill_grid_coordinates_vector =
@@ -283,12 +285,8 @@ SolverFluid<dim, Number>::solve_ale() const
   timer_tree->insert({"ALE", "Solve and reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  helpers_ale->update_matrix_free_after_grid_motion();
-  timer_tree->insert({"ALE", "Update matrix-free"}, sub_timer.wall_time());
-
-  sub_timer.restart();
-  pde_operator->update_spatial_operators_after_grid_motion();
-  timer_tree->insert({"ALE", "Update operator"}, sub_timer.wall_time());
+  helpers_ale->update_pde_operator_after_grid_motion();
+  timer_tree->insert({"ALE", "Update matrix-free / PDE operator"}, sub_timer.wall_time());
 
   sub_timer.restart();
   time_integrator->ale_update();

@@ -560,8 +560,7 @@ TimeIntBDF<dim, Number>::postprocessing() const
      not this->param.restarted_simulation)
   {
     helpers_ale->move_grid(this->get_time());
-    helpers_ale->update_matrix_free_after_grid_motion();
-    pde_operator->update_spatial_operators_after_grid_motion();
+    helpers_ale->update_pde_operator_after_grid_motion();
   }
 
   postprocessor->do_postprocessing(solution[0], this->get_time(), this->get_time_step_number());

@@ -51,16 +51,16 @@ public:
   };
 
   /**
-   * This function updates the dealii::MatrixFree object, calling
-   * dealii::MatrixFree::update_mapping(mapping).
+   * This function updates the PDE operator after the grid has been moved.
    *
    * The default implementation causes the program to terminate, in order to avoid uninitialized /
    * undefined functions leading to erroneous results.
    */
-  std::function<void()> update_matrix_free_after_grid_motion = []() {
-    AssertThrow(false,
-                dealii::ExcMessage(
-                  "The function update_matrix_free_after_grid_motion() has not been implemented."));
+  std::function<void()> update_pde_operator_after_grid_motion = []() {
+    AssertThrow(
+      false,
+      dealii::ExcMessage(
+        "The function update_pde_operator_after_grid_motion() has not been implemented."));
   };
 
   /**

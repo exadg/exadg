@@ -90,10 +90,14 @@ Driver<dim, Number>::setup()
                           this->fluid_time_integrator->get_number_of_time_steps());
     };
 
-    helpers_ale->update_matrix_free_after_grid_motion = [&]() {
+    helpers_ale->update_pde_operator_after_grid_motion = [&]() {
       std::shared_ptr<dealii::Mapping<dim> const> mapping =
         get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
       matrix_free->update_mapping(*mapping);
+
+      fluid_operator->update_spatial_operators_after_grid_motion();
+      for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
+        scalar_operator[i]->update_spatial_operators_after_grid_motion();
     };
 
     helpers_ale->fill_grid_coordinates_vector =
@@ -538,14 +542,9 @@ Driver<dim, Number>::ale_update() const
   timer_tree.insert({"Flow + transport", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  helpers_ale->update_matrix_free_after_grid_motion();
-  timer_tree.insert({"Flow + transport", "ALE", "Update matrix-free"}, sub_timer.wall_time());
-
-  sub_timer.restart();
-  fluid_operator->update_spatial_operators_after_grid_motion();
-  for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
-    scalar_operator[i]->update_spatial_operators_after_grid_motion();
-  timer_tree.insert({"Flow + transport", "ALE", "Update all operators"}, sub_timer.wall_time());
+  helpers_ale->update_pde_operator_after_grid_motion();
+  timer_tree.insert({"Flow + transport", "ALE", "Update matrix-free / PDE operators"},
+                    sub_timer.wall_time());
 
   sub_timer.restart();
   fluid_time_integrator->ale_update();
