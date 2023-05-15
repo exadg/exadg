@@ -84,7 +84,7 @@ Driver<dim, Number>::setup()
         get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
       matrix_free->update_mapping(*mapping);
 
-      pde_operator->update_spatial_operators_after_grid_motion();
+      pde_operator->update_after_grid_motion();
     };
   }
 

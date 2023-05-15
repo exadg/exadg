@@ -95,9 +95,9 @@ Driver<dim, Number>::setup()
         get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
       matrix_free->update_mapping(*mapping);
 
-      fluid_operator->update_spatial_operators_after_grid_motion();
+      fluid_operator->update_after_grid_motion();
       for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
-        scalar_operator[i]->update_spatial_operators_after_grid_motion();
+        scalar_operator[i]->update_after_grid_motion();
     };
   }
 

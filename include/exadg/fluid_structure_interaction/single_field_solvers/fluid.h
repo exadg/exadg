@@ -254,7 +254,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
       get_dynamic_mapping<dim, Number>(application->get_grid(), ale_grid_motion);
     matrix_free->update_mapping(*mapping);
 
-    pde_operator->update_spatial_operators_after_grid_motion();
+    pde_operator->update_after_grid_motion();
   };
 
   time_integrator = IncNS::create_time_integrator<dim, Number>(

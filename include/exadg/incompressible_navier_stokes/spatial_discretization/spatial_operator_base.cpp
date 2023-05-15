@@ -1520,7 +1520,7 @@ SpatialOperatorBase<dim, Number>::calculate_dissipation_continuity_term(
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::update_spatial_operators_after_grid_motion()
+SpatialOperatorBase<dim, Number>::update_after_grid_motion()
 {
   if(param.turbulence_model_data.is_active)
   {

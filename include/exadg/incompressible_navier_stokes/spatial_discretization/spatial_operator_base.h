@@ -385,7 +385,7 @@ public:
    * Updates operators after grid has been moved.
    */
   virtual void
-  update_spatial_operators_after_grid_motion();
+  update_after_grid_motion();
 
   /*
    * Fills a dof-vector with grid coordinates for ALE-type problems.

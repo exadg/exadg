@@ -828,7 +828,7 @@ Operator<dim, Number>::update_conv_diff_operator(double const       time,
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::update_spatial_operators_after_grid_motion()
+Operator<dim, Number>::update_after_grid_motion()
 {
   // update SIPG penalty parameter of diffusive operator which depends on the deformation
   // of elements

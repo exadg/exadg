@@ -198,7 +198,7 @@ public:
    * Updates spatial operators after grid has been moved.
    */
   void
-  update_spatial_operators_after_grid_motion() final;
+  update_after_grid_motion() final;
 
   /*
    * Fills a dof-vector with grid coordinates for ALE-type problems.
