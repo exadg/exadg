@@ -93,7 +93,7 @@ InterfaceCoupling<rank, dim, Number>::setup(
                  0,
                  dof_handler_src->get_communicator());
 
-      write_points(points_not_found, "./", file_name, 0, dof_handler_src->get_communicator());
+      write_points_in_dummy_triangulation(points_not_found, "./", file_name, 0, dof_handler_src->get_communicator());
 
       AssertThrow(map_evaluator[quad_index].all_points_found(),
                   dealii::ExcMessage(std::string("Setup of InterfaceCoupling was not successful: " +
