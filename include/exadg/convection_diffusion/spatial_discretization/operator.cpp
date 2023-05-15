@@ -125,8 +125,8 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_in,
-                             std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data_in,
+Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
+                             std::shared_ptr<MatrixFreeData<dim, Number> const> matrix_free_data_in,
                              std::string const & dof_index_velocity_external_in)
 {
   pcout << std::endl << "Setup convection-diffusion operator ..." << std::endl;
@@ -827,23 +827,6 @@ Operator<dim, Number>::update_conv_diff_operator(double const       time,
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::move_grid(double const & time) const
-{
-  grid_motion->update(
-    time,
-    false /* print_solver_info */,
-    dealii::numbers::invalid_unsigned_int /* time_step_number used for preconditioner update */);
-}
-
-template<int dim, typename Number>
-void
-Operator<dim, Number>::update_matrix_free_after_grid_motion()
-{
-  matrix_free->update_mapping(*get_mapping());
-}
-
-template<int dim, typename Number>
-void
 Operator<dim, Number>::update_spatial_operators_after_grid_motion()
 {
   // update SIPG penalty parameter of diffusive operator which depends on the deformation
@@ -852,13 +835,6 @@ Operator<dim, Number>::update_spatial_operators_after_grid_motion()
   {
     diffusive_kernel->calculate_penalty_parameter(*matrix_free, get_dof_index());
   }
-}
-
-template<int dim, typename Number>
-void
-Operator<dim, Number>::fill_grid_coordinates_vector(VectorType & vector) const
-{
-  grid_motion->fill_grid_coordinates_vector(vector, this->get_dof_handler_velocity());
 }
 
 template<int dim, typename Number>

@@ -280,6 +280,7 @@ Driver<dim, Number>::setup()
     // initialize time integrator
     scalar_time_integrator[i] =
       ConvDiff::create_time_integrator<dim, Number>(scalar_operator[i],
+                                                    helpers_ale,
                                                     application->get_parameters_scalar(i),
                                                     mpi_comm,
                                                     is_test,

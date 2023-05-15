@@ -72,9 +72,9 @@ public:
    * of equations.
    */
   void
-  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_in,
-        std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data_in,
-        std::string const &                              dof_index_velocity_external_in = "");
+  setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
+        std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data_in,
+        std::string const &                                    dof_index_velocity_external_in = "");
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -196,28 +196,10 @@ public:
                             VectorType const * velocity = nullptr);
 
   /*
-   * Moves the grid for ALE-type problems.
-   */
-  void
-  move_grid(double const & time) const final;
-
-  /*
-   * Updates MatrixFree after grid has been moved.
-   */
-  void
-  update_matrix_free_after_grid_motion() final;
-
-  /*
    * Updates spatial operators after grid has been moved.
    */
   void
   update_spatial_operators_after_grid_motion() final;
-
-  /*
-   * Fills a dof-vector with grid coordinates for ALE-type problems.
-   */
-  void
-  fill_grid_coordinates_vector(VectorType & vector) const final;
 
   /*
    * This function solves the linear system of equations in case of implicit time integration or
@@ -392,8 +374,8 @@ private:
   /*
    * Matrix-free operator evaluation.
    */
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data;
 
   /*
    * Basic operators.

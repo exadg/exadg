@@ -26,34 +26,11 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
+#include <exadg/time_integration/lambda_functions_ale.h>
 #include <exadg/time_integration/time_int_bdf_base.h>
 
 namespace ExaDG
 {
-template<typename Number>
-class HelpersALE
-{
-public:
-  std::function<void(double const & time)> move_grid = [](double const & time) {
-    (void)time;
-    AssertThrow(false, dealii::ExcMessage("The function move_grid() has not been implemented."));
-  };
-
-  std::function<void()> update_matrix_free_after_grid_motion = []() {
-    AssertThrow(false,
-                dealii::ExcMessage(
-                  "The function update_matrix_free_after_grid_motion() has not been implemented."));
-  };
-
-  std::function<void(dealii::LinearAlgebra::distributed::Vector<Number> & vector)>
-    fill_grid_coordinates_vector = [](dealii::LinearAlgebra::distributed::Vector<Number> & vector) {
-      (void)vector;
-      AssertThrow(false,
-                  dealii::ExcMessage(
-                    "The function fill_grid_coordinates_vector() has not been implemented."));
-    };
-};
-
 namespace IncNS
 {
 class Parameters;

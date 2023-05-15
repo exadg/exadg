@@ -70,6 +70,25 @@ Driver<dim, Number>::setup()
                                                         *application->get_grid()->triangulation,
                                                         mesh_motion,
                                                         application->get_parameters().start_time);
+
+    helpers_ale = std::make_shared<HelpersALE<Number>>();
+
+    helpers_ale->move_grid = [&](double const & time) {
+      grid_motion->update(time,
+                          false /* print_solver_info */,
+                          time_integrator->get_number_of_time_steps());
+    };
+
+    helpers_ale->update_matrix_free_after_grid_motion = [&]() {
+      std::shared_ptr<dealii::Mapping<dim> const> mapping =
+        get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
+      matrix_free->update_mapping(*mapping);
+    };
+
+    helpers_ale->fill_grid_coordinates_vector =
+      [&](dealii::LinearAlgebra::distributed::Vector<Number> & vector) {
+        grid_motion->fill_grid_coordinates_vector(vector, pde_operator->get_dof_handler_velocity());
+      };
   }
 
   // initialize convection-diffusion operator
@@ -110,7 +129,7 @@ Driver<dim, Number>::setup()
     if(application->get_parameters().problem_type == ProblemType::Unsteady)
     {
       time_integrator = create_time_integrator<dim, Number>(
-        pde_operator, application->get_parameters(), mpi_comm, is_test, postprocessor);
+        pde_operator, helpers_ale, application->get_parameters(), mpi_comm, is_test, postprocessor);
 
       time_integrator->setup(application->get_parameters().restarted_simulation);
     }
@@ -180,13 +199,9 @@ void
 Driver<dim, Number>::ale_update() const
 {
   // move the mesh and update dependent data structures
-  grid_motion->update(time_integrator->get_next_time(),
-                      false /* print_solver_info */,
-                      this->time_integrator->get_number_of_time_steps());
+  helpers_ale->move_grid(time_integrator->get_next_time());
 
-  std::shared_ptr<dealii::Mapping<dim> const> mapping =
-    get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
-  matrix_free->update_mapping(*mapping);
+  helpers_ale->update_matrix_free_after_grid_motion();
 
   pde_operator->update_spatial_operators_after_grid_motion();
   std::shared_ptr<TimeIntBDF<dim, Number>> time_int_bdf =
