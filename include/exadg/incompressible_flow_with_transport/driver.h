@@ -96,16 +96,19 @@ private:
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
-  // moving mapping (ALE)
+  // grid motion (ALE)
   std::shared_ptr<GridMotionBase<dim, Number>> grid_motion;
+
+  // ALE helper functions required by time integrator
+  std::shared_ptr<HelpersALE<Number>> helpers_ale;
 
   bool use_adaptive_time_stepping;
 
-  // INCOMPRESSIBLE NAVIER-STOKES
-
-  //  MatrixFree
+  //  MatrixFree (only a single object for both flow and transport problems)
   std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
   std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
+
+  // INCOMPRESSIBLE NAVIER-STOKES
 
   std::shared_ptr<IncNS::SpatialOperatorBase<dim, Number>> fluid_operator;
 

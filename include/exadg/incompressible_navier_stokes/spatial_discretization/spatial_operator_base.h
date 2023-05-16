@@ -33,7 +33,6 @@
 
 // ExaDG
 #include <exadg/grid/grid.h>
-#include <exadg/grid/grid_motion_interface.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/streamfunction_calculator_rhs_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/generalized_newtonian_model.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/convective_operator.h>
@@ -88,13 +87,13 @@ public:
   /*
    * Constructor.
    */
-  SpatialOperatorBase(std::shared_ptr<Grid<dim> const>                  grid,
-                      std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion,
-                      std::shared_ptr<BoundaryDescriptor<dim> const>    boundary_descriptor,
-                      std::shared_ptr<FieldFunctions<dim> const>        field_functions,
-                      Parameters const &                                parameters,
-                      std::string const &                               field,
-                      MPI_Comm const &                                  mpi_comm);
+  SpatialOperatorBase(std::shared_ptr<Grid<dim> const>               grid,
+                      std::shared_ptr<dealii::Mapping<dim> const>    mapping,
+                      std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
+                      std::shared_ptr<FieldFunctions<dim> const>     field_functions,
+                      Parameters const &                             parameters,
+                      std::string const &                            field,
+                      MPI_Comm const &                               mpi_comm);
 
   /*
    * Destructor.
@@ -110,9 +109,9 @@ public:
    * of equations.
    */
   virtual void
-  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free,
-        std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data,
-        std::string const &                              dof_index_temperature = "");
+  setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
+        std::string const &                                    dof_index_temperature = "");
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -383,22 +382,10 @@ public:
   calculate_dissipation_continuity_term(VectorType const & velocity) const;
 
   /*
-   * Moves the grid for ALE-type problems.
-   */
-  void
-  move_grid(double const & time) const;
-
-  /*
-   * Updates MatrixFree after grid has been moved.
-   */
-  void
-  update_matrix_free_after_grid_motion();
-
-  /*
    * Updates operators after grid has been moved.
    */
   virtual void
-  update_spatial_operators_after_grid_motion();
+  update_after_grid_motion();
 
   /*
    * Fills a dof-vector with grid coordinates for ALE-type problems.
@@ -416,7 +403,7 @@ public:
    *  Calls constraint_u.distribute(u) and updates the constrained DoFs of the velocity field
    */
   void
-  distribute_constraint_u(VectorType & velocity);
+  distribute_constraint_u(VectorType & velocity) const;
 
 protected:
   /*
@@ -434,9 +421,10 @@ protected:
   std::shared_ptr<Grid<dim> const> grid;
 
   /*
-   * Grid motion for ALE formulations
+   * dealii::Mapping (In case of moving meshes (ALE), this is the dynamic mapping describing the
+   * deformed configuration.)
    */
-  std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion;
+  std::shared_ptr<dealii::Mapping<dim> const> mapping;
 
   /*
    * User interface: Boundary conditions and field functions.
@@ -480,7 +468,7 @@ protected:
    * Element variable used to store the current physical time. This variable is needed for the
    * evaluation of certain integrals or weak forms.
    */
-  double evaluation_time;
+  mutable double evaluation_time;
 
 private:
   /*
@@ -506,8 +494,8 @@ private:
   std::string const quad_index_u_gauss_lobatto = "velocity_gauss_lobatto";
   std::string const quad_index_p_gauss_lobatto = "pressure_gauss_lobatto";
 
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free;
 
   bool pressure_level_is_undefined;
 

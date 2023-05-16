@@ -114,28 +114,46 @@ Driver<dim, Number>::setup()
     {
       AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
+
+    helpers_ale = std::make_shared<HelpersALE<Number>>();
+
+    helpers_ale->move_grid = [&](double const & time) {
+      grid_motion->update(time,
+                          false /* print_solver_info */,
+                          this->time_integrator->get_number_of_time_steps());
+    };
+
+    helpers_ale->update_pde_operator_after_grid_motion = [&]() {
+      std::shared_ptr<dealii::Mapping<dim> const> mapping =
+        get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
+      matrix_free->update_mapping(*mapping);
+
+      pde_operator->update_after_grid_motion();
+    };
   }
 
   if(application->get_parameters().solver_type == SolverType::Unsteady)
   {
-    pde_operator = create_operator<dim, Number>(application->get_grid(),
-                                                grid_motion,
-                                                application->get_boundary_descriptor(),
-                                                application->get_field_functions(),
-                                                application->get_parameters(),
-                                                "fluid",
-                                                mpi_comm);
+    pde_operator =
+      create_operator<dim, Number>(application->get_grid(),
+                                   get_dynamic_mapping<dim, Number>(application->get_grid(),
+                                                                    grid_motion),
+                                   application->get_boundary_descriptor(),
+                                   application->get_field_functions(),
+                                   application->get_parameters(),
+                                   "fluid",
+                                   mpi_comm);
   }
   else if(application->get_parameters().solver_type == SolverType::Steady)
   {
-    pde_operator =
-      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(application->get_grid(),
-                                                            grid_motion,
-                                                            application->get_boundary_descriptor(),
-                                                            application->get_field_functions(),
-                                                            application->get_parameters(),
-                                                            "fluid",
-                                                            mpi_comm);
+    pde_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
+      application->get_grid(),
+      get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion),
+      application->get_boundary_descriptor(),
+      application->get_field_functions(),
+      application->get_parameters(),
+      "fluid",
+      mpi_comm);
   }
   else
   {
@@ -173,7 +191,7 @@ Driver<dim, Number>::setup()
     if(application->get_parameters().solver_type == SolverType::Unsteady)
     {
       time_integrator = create_time_integrator<dim, Number>(
-        pde_operator, application->get_parameters(), mpi_comm, is_test, postprocessor);
+        pde_operator, helpers_ale, postprocessor, application->get_parameters(), mpi_comm, is_test);
     }
     else if(application->get_parameters().solver_type == SolverType::Steady)
     {
@@ -182,7 +200,7 @@ Driver<dim, Number>::setup()
 
       // initialize driver for steady state problem that depends on pde_operator
       driver_steady = std::make_shared<DriverSteadyProblems<dim, Number>>(
-        operator_coupled, application->get_parameters(), mpi_comm, is_test, postprocessor);
+        operator_coupled, postprocessor, application->get_parameters(), mpi_comm, is_test);
     }
     else
     {
@@ -222,20 +240,13 @@ Driver<dim, Number>::ale_update() const
   dealii::Timer sub_timer;
 
   sub_timer.restart();
-  grid_motion->update(time_integrator->get_next_time(),
-                      false /* print_solver_info */,
-                      this->time_integrator->get_number_of_time_steps());
+  helpers_ale->move_grid(time_integrator->get_next_time());
   timer_tree.insert({"Incompressible flow", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  std::shared_ptr<dealii::Mapping<dim> const> mapping =
-    get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
-  matrix_free->update_mapping(*mapping);
-  timer_tree.insert({"Incompressible flow", "ALE", "Update matrix-free"}, sub_timer.wall_time());
-
-  sub_timer.restart();
-  pde_operator->update_spatial_operators_after_grid_motion();
-  timer_tree.insert({"Incompressible flow", "ALE", "Update operator"}, sub_timer.wall_time());
+  helpers_ale->update_pde_operator_after_grid_motion();
+  timer_tree.insert({"Incompressible flow", "ALE", "Update matrix-free / PDE operator"},
+                    sub_timer.wall_time());
 
   sub_timer.restart();
   time_integrator->ale_update();

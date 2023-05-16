@@ -33,7 +33,6 @@
 #include <exadg/convection_diffusion/user_interface/field_functions.h>
 #include <exadg/convection_diffusion/user_interface/parameters.h>
 #include <exadg/grid/grid.h>
-#include <exadg/grid/grid_motion_interface.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
 #include <exadg/operators/mass_operator.h>
@@ -54,13 +53,13 @@ public:
   /*
    * Constructor.
    */
-  Operator(std::shared_ptr<Grid<dim> const>                  grid,
-           std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion,
-           std::shared_ptr<BoundaryDescriptor<dim> const>    boundary_descriptor,
-           std::shared_ptr<FieldFunctions<dim> const>        field_functions,
-           Parameters const &                                param,
-           std::string const &                               field,
-           MPI_Comm const &                                  mpi_comm);
+  Operator(std::shared_ptr<Grid<dim> const>               grid,
+           std::shared_ptr<dealii::Mapping<dim> const>    mapping,
+           std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
+           std::shared_ptr<FieldFunctions<dim> const>     field_functions,
+           Parameters const &                             param,
+           std::string const &                            field,
+           MPI_Comm const &                               mpi_comm);
 
 
   void
@@ -72,9 +71,9 @@ public:
    * of equations.
    */
   void
-  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_in,
-        std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data_in,
-        std::string const &                              dof_index_velocity_external_in = "");
+  setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
+        std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data_in,
+        std::string const &                                    dof_index_velocity_external_in = "");
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -196,22 +195,10 @@ public:
                             VectorType const * velocity = nullptr);
 
   /*
-   * Moves the grid for ALE-type problems.
-   */
-  void
-  move_grid(double const & time) const final;
-
-  /*
-   * Updates MatrixFree after grid has been moved.
-   */
-  void
-  update_matrix_free_after_grid_motion() final;
-
-  /*
    * Updates spatial operators after grid has been moved.
    */
   void
-  update_spatial_operators_after_grid_motion() final;
+  update_after_grid_motion() final;
 
   /*
    * Fills a dof-vector with grid coordinates for ALE-type problems.
@@ -349,7 +336,7 @@ private:
   /*
    * Grid motion for ALE formulations
    */
-  std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion;
+  std::shared_ptr<dealii::Mapping<dim> const> mapping;
 
   /*
    * User interface: Boundary conditions and field functions.
@@ -392,8 +379,8 @@ private:
   /*
    * Matrix-free operator evaluation.
    */
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data;
 
   /*
    * Basic operators.

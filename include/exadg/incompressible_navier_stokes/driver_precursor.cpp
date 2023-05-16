@@ -119,7 +119,7 @@ DriverPrecursor<dim, Number>::setup()
 
   // initialize pde_operator_pre (precursor domain)
   pde_operator_pre = create_operator<dim, Number>(application->get_grid_precursor(),
-                                                  nullptr /* grid motion */,
+                                                  application->get_grid_precursor()->mapping,
                                                   application->get_boundary_descriptor_precursor(),
                                                   application->get_field_functions_precursor(),
                                                   application->get_parameters_precursor(),
@@ -128,7 +128,7 @@ DriverPrecursor<dim, Number>::setup()
 
   // initialize operator_base (actual domain)
   pde_operator = create_operator<dim, Number>(application->get_grid(),
-                                              nullptr /* grid motion */,
+                                              application->get_grid()->mapping,
                                               application->get_boundary_descriptor(),
                                               application->get_field_functions(),
                                               application->get_parameters(),
@@ -178,14 +178,20 @@ DriverPrecursor<dim, Number>::setup()
 
 
   // Setup time integrator
+  std::shared_ptr<HelpersALE<Number>> helpers_ale_dummy;
   time_integrator_pre = create_time_integrator<dim, Number>(pde_operator_pre,
+                                                            helpers_ale_dummy,
+                                                            postprocessor_pre,
                                                             application->get_parameters_precursor(),
                                                             mpi_comm,
-                                                            is_test,
-                                                            postprocessor_pre);
+                                                            is_test);
 
-  time_integrator = create_time_integrator<dim, Number>(
-    pde_operator, application->get_parameters(), mpi_comm, is_test, postprocessor);
+  time_integrator = create_time_integrator<dim, Number>(pde_operator,
+                                                        helpers_ale_dummy,
+                                                        postprocessor,
+                                                        application->get_parameters(),
+                                                        mpi_comm,
+                                                        is_test);
 
   // setup time integrator before calling setup_solvers (this is necessary since the setup of the
   // solvers depends on quantities such as the time_step_size or gamma0!)

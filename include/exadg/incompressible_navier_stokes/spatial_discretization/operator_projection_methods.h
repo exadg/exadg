@@ -45,13 +45,13 @@ public:
   /*
    * Constructor.
    */
-  OperatorProjectionMethods(std::shared_ptr<Grid<dim> const>                  grid,
-                            std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion,
-                            std::shared_ptr<BoundaryDescriptor<dim> const>    boundary_descriptor,
-                            std::shared_ptr<FieldFunctions<dim> const>        field_functions,
-                            Parameters const &                                parameters,
-                            std::string const &                               field,
-                            MPI_Comm const &                                  mpi_comm);
+  OperatorProjectionMethods(std::shared_ptr<Grid<dim> const>               grid,
+                            std::shared_ptr<dealii::Mapping<dim> const>    mapping,
+                            std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
+                            std::shared_ptr<FieldFunctions<dim> const>     field_functions,
+                            Parameters const &                             parameters,
+                            std::string const &                            field,
+                            MPI_Comm const &                               mpi_comm);
 
   /*
    * Destructor.
@@ -63,12 +63,12 @@ public:
    * needed for projection-type methods.
    */
   void
-  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free,
-        std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data,
-        std::string const &                              dof_index_temperature = "") override;
+  setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
+        std::string const &                                    dof_index_temperature = "") override;
 
   void
-  update_spatial_operators_after_grid_motion() override;
+  update_after_grid_motion() override;
 
   /*
    * This function evaluates the rhs-contribution of the viscous term and adds the result to the

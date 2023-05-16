@@ -81,29 +81,49 @@ Driver<dim, Number>::setup()
                                                         *application->get_grid()->triangulation,
                                                         mesh_motion,
                                                         application->get_parameters().start_time);
+
+    helpers_ale = std::make_shared<HelpersALE<Number>>();
+
+    helpers_ale->move_grid = [&](double const & time) {
+      grid_motion->update(time,
+                          false /* print_solver_info */,
+                          this->fluid_time_integrator->get_number_of_time_steps());
+    };
+
+    helpers_ale->update_pde_operator_after_grid_motion = [&]() {
+      std::shared_ptr<dealii::Mapping<dim> const> mapping =
+        get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
+      matrix_free->update_mapping(*mapping);
+
+      fluid_operator->update_after_grid_motion();
+      for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
+        scalar_operator[i]->update_after_grid_motion();
+    };
   }
 
   // initialize fluid_operator
   if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
-    fluid_operator = IncNS::create_operator<dim, Number>(application->get_grid(),
-                                                         grid_motion,
-                                                         application->get_boundary_descriptor(),
-                                                         application->get_field_functions(),
-                                                         application->get_parameters(),
-                                                         "fluid",
-                                                         mpi_comm);
+    fluid_operator =
+      IncNS::create_operator<dim, Number>(application->get_grid(),
+                                          get_dynamic_mapping<dim, Number>(application->get_grid(),
+                                                                           grid_motion),
+                                          application->get_boundary_descriptor(),
+                                          application->get_field_functions(),
+                                          application->get_parameters(),
+                                          "fluid",
+                                          mpi_comm);
   }
   else if(application->get_parameters().solver_type == IncNS::SolverType::Steady)
   {
-    fluid_operator =
-      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(application->get_grid(),
-                                                            grid_motion,
-                                                            application->get_boundary_descriptor(),
-                                                            application->get_field_functions(),
-                                                            application->get_parameters(),
-                                                            "fluid",
-                                                            mpi_comm);
+    fluid_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
+      application->get_grid(),
+      get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion),
+      application->get_boundary_descriptor(),
+      application->get_field_functions(),
+      application->get_parameters(),
+      "fluid",
+      mpi_comm);
   }
   else
   {
@@ -119,15 +139,14 @@ Driver<dim, Number>::setup()
   // initialize convection-diffusion operator
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    scalar_operator[i] =
-      std::make_shared<ConvDiff::Operator<dim, Number>>(application->get_grid(),
-                                                        grid_motion,
-                                                        application->get_boundary_descriptor_scalar(
-                                                          i),
-                                                        application->get_field_functions_scalar(i),
-                                                        application->get_parameters_scalar(i),
-                                                        "scalar" + std::to_string(i),
-                                                        mpi_comm);
+    scalar_operator[i] = std::make_shared<ConvDiff::Operator<dim, Number>>(
+      application->get_grid(),
+      get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion),
+      application->get_boundary_descriptor_scalar(i),
+      application->get_field_functions_scalar(i),
+      application->get_parameters_scalar(i),
+      "scalar" + std::to_string(i),
+      mpi_comm);
   }
 
   // initialize matrix_free
@@ -192,8 +211,13 @@ Driver<dim, Number>::setup()
   // depends on quantities such as the time_step_size or gamma0!)
   if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
-    fluid_time_integrator = IncNS::create_time_integrator<dim, Number>(
-      fluid_operator, application->get_parameters(), mpi_comm, is_test, fluid_postprocessor);
+    fluid_time_integrator =
+      IncNS::create_time_integrator<dim, Number>(fluid_operator,
+                                                 helpers_ale,
+                                                 fluid_postprocessor,
+                                                 application->get_parameters(),
+                                                 mpi_comm,
+                                                 is_test);
   }
   else if(application->get_parameters().solver_type == IncNS::SolverType::Steady)
   {
@@ -202,10 +226,10 @@ Driver<dim, Number>::setup()
 
     // initialize driver for steady state problem that depends on fluid_operator
     fluid_driver_steady = std::make_shared<DriverSteady>(fluid_operator_coupled,
+                                                         fluid_postprocessor,
                                                          application->get_parameters(),
                                                          mpi_comm,
-                                                         is_test,
-                                                         fluid_postprocessor);
+                                                         is_test);
   }
   else
   {
@@ -254,10 +278,11 @@ Driver<dim, Number>::setup()
     // initialize time integrator
     scalar_time_integrator[i] =
       ConvDiff::create_time_integrator<dim, Number>(scalar_operator[i],
+                                                    helpers_ale,
+                                                    scalar_postprocessor[i],
                                                     application->get_parameters_scalar(i),
                                                     mpi_comm,
-                                                    is_test,
-                                                    scalar_postprocessor[i]);
+                                                    is_test);
 
     if(application->get_parameters_scalar(i).restarted_simulation == false and
        application->get_parameters_scalar(i).temporal_discretization ==
@@ -507,22 +532,13 @@ Driver<dim, Number>::ale_update() const
   dealii::Timer sub_timer;
 
   sub_timer.restart();
-  grid_motion->update(fluid_time_integrator->get_next_time(),
-                      false /* print_solver_info */,
-                      this->fluid_time_integrator->get_number_of_time_steps());
+  helpers_ale->move_grid(fluid_time_integrator->get_next_time());
   timer_tree.insert({"Flow + transport", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  std::shared_ptr<dealii::Mapping<dim> const> mapping =
-    get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
-  matrix_free->update_mapping(*mapping);
-  timer_tree.insert({"Flow + transport", "ALE", "Update matrix-free"}, sub_timer.wall_time());
-
-  sub_timer.restart();
-  fluid_operator->update_spatial_operators_after_grid_motion();
-  for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
-    scalar_operator[i]->update_spatial_operators_after_grid_motion();
-  timer_tree.insert({"Flow + transport", "ALE", "Update all operators"}, sub_timer.wall_time());
+  helpers_ale->update_pde_operator_after_grid_motion();
+  timer_tree.insert({"Flow + transport", "ALE", "Update matrix-free / PDE operators"},
+                    sub_timer.wall_time());
 
   sub_timer.restart();
   fluid_time_integrator->ale_update();

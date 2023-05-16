@@ -102,13 +102,13 @@ public:
   /*
    * Constructor.
    */
-  OperatorPressureCorrection(std::shared_ptr<Grid<dim> const>                  grid,
-                             std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion,
-                             std::shared_ptr<BoundaryDescriptor<dim> const>    boundary_descriptor,
-                             std::shared_ptr<FieldFunctions<dim> const>        field_functions,
-                             Parameters const &                                parameters,
-                             std::string const &                               field,
-                             MPI_Comm const &                                  mpi_comm);
+  OperatorPressureCorrection(std::shared_ptr<Grid<dim> const>               grid,
+                             std::shared_ptr<dealii::Mapping<dim> const>    mapping,
+                             std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
+                             std::shared_ptr<FieldFunctions<dim> const>     field_functions,
+                             Parameters const &                             parameters,
+                             std::string const &                            field,
+                             MPI_Comm const &                               mpi_comm);
 
   /*
    * Destructor.
@@ -122,9 +122,9 @@ public:
    * times depending on the specific ALE formulation chosen).
    */
   void
-  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free,
-        std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data,
-        std::string const &                              dof_index_temperature = "") final;
+  setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
+        std::string const &                                    dof_index_temperature = "") final;
 
   void
   setup_solvers(double const & scaling_factor_mass, VectorType const & velocity) final;
@@ -222,7 +222,7 @@ public:
   rhs_ppe_laplace_add_dirichlet_bc_from_dof_vector(VectorType & dst, VectorType const & src) const;
 
   void
-  interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time);
+  interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time) const;
 
 private:
   /*

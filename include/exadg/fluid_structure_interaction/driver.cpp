@@ -276,7 +276,7 @@ Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType &       d_tilde,
   coupling_structure_to_ale(d);
 
   // move the fluid mesh and update dependent data structures
-  fluid->solve_ale(application->fluid, is_test);
+  fluid->solve_ale();
 
   // update velocity boundary condition for fluid
   coupling_structure_to_fluid(iteration == 0);

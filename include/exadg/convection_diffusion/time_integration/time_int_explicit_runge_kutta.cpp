@@ -34,10 +34,10 @@ namespace ConvDiff
 template<typename Number>
 TimeIntExplRK<Number>::TimeIntExplRK(
   std::shared_ptr<Interface::Operator<Number>>    operator_in,
+  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
   Parameters const &                              param_in,
   MPI_Comm const &                                mpi_comm_in,
-  bool const                                      is_test_in,
-  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
+  bool const                                      is_test_in)
   : TimeIntExplRKBase<Number>(param_in.start_time,
                               param_in.end_time,
                               param_in.max_number_of_time_steps,

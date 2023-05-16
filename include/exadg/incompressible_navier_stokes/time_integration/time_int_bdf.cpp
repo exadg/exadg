@@ -32,11 +32,12 @@ namespace IncNS
 {
 template<int dim, typename Number>
 TimeIntBDF<dim, Number>::TimeIntBDF(
-  std::shared_ptr<OperatorBase>                   operator_in,
-  Parameters const &                              param_in,
-  MPI_Comm const &                                mpi_comm_in,
-  bool const                                      is_test_in,
-  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
+  std::shared_ptr<SpatialOperatorBase<dim, Number>> operator_in,
+  std::shared_ptr<HelpersALE<Number> const>         helpers_ale_in,
+  std::shared_ptr<PostProcessorInterface<Number>>   postprocessor_in,
+  Parameters const &                                param_in,
+  MPI_Comm const &                                  mpi_comm_in,
+  bool const                                        is_test_in)
   : TimeIntBDFBase<Number>(param_in.start_time,
                            param_in.end_time,
                            param_in.max_number_of_time_steps,
@@ -53,6 +54,7 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
     vec_convective_term(this->order),
     use_extrapolation(true),
     store_solution(false),
+    helpers_ale(helpers_ale_in),
     postprocessor(postprocessor_in),
     vec_grid_coordinates(param_in.order_time_integrator)
 {
@@ -96,7 +98,7 @@ TimeIntBDF<dim, Number>::setup_derived()
     // compute the grid coordinates at start time (and at previous times in case of
     // start_with_low_order == false)
 
-    operator_base->move_grid(this->get_time());
+    helpers_ale->move_grid(this->get_time());
     operator_base->fill_grid_coordinates_vector(vec_grid_coordinates[0]);
 
     if(this->start_with_low_order == false)
@@ -104,7 +106,7 @@ TimeIntBDF<dim, Number>::setup_derived()
       // compute grid coordinates at previous times (start with 1!)
       for(unsigned int i = 1; i < this->order; ++i)
       {
-        operator_base->move_grid(this->get_previous_time(i));
+        helpers_ale->move_grid(this->get_previous_time(i));
         operator_base->fill_grid_coordinates_vector(vec_grid_coordinates[i]);
       }
     }
@@ -460,9 +462,8 @@ TimeIntBDF<dim, Number>::postprocessing() const
   if(this->param.ale_formulation and this->get_time_step_number() == 1 and
      not this->param.restarted_simulation)
   {
-    operator_base->move_grid(this->get_time());
-    operator_base->update_matrix_free_after_grid_motion();
-    operator_base->update_spatial_operators_after_grid_motion();
+    helpers_ale->move_grid(this->get_time());
+    helpers_ale->update_pde_operator_after_grid_motion();
   }
 
   // We need to distribute the dofs before computing the error since

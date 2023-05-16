@@ -120,8 +120,8 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_in,
-                             std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data_in)
+Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
+                             std::shared_ptr<MatrixFreeData<dim, Number> const> matrix_free_data_in)
 {
   pcout << std::endl << "Setup compressible Navier-Stokes DG operator ..." << std::endl;
 

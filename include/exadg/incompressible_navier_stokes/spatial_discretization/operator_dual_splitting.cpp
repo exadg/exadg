@@ -31,15 +31,15 @@ namespace IncNS
 {
 template<int dim, typename Number>
 OperatorDualSplitting<dim, Number>::OperatorDualSplitting(
-  std::shared_ptr<Grid<dim> const>                  grid_in,
-  std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion_in,
-  std::shared_ptr<BoundaryDescriptor<dim> const>    boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim> const>        field_functions_in,
-  Parameters const &                                parameters_in,
-  std::string const &                               field_in,
-  MPI_Comm const &                                  mpi_comm_in)
+  std::shared_ptr<Grid<dim> const>               grid_in,
+  std::shared_ptr<dealii::Mapping<dim> const>    mapping_in,
+  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
+  Parameters const &                             parameters_in,
+  std::string const &                            field_in,
+  MPI_Comm const &                               mpi_comm_in)
   : ProjectionBase(grid_in,
-                   grid_motion_in,
+                   mapping_in,
                    boundary_descriptor_in,
                    field_functions_in,
                    parameters_in,
@@ -247,7 +247,7 @@ OperatorDualSplitting<dim, Number>::apply_velocity_divergence_term(VectorType & 
 template<int dim, typename Number>
 void
 OperatorDualSplitting<dim, Number>::rhs_ppe_div_term_body_forces_add(VectorType &   dst,
-                                                                     double const & time)
+                                                                     double const & time) const
 {
   this->evaluation_time = time;
 
@@ -435,7 +435,7 @@ template<int dim, typename Number>
 void
 OperatorDualSplitting<dim, Number>::rhs_ppe_nbc_numerical_time_derivative_add(
   VectorType &       dst,
-  VectorType const & acceleration)
+  VectorType const & acceleration) const
 {
   this->get_matrix_free().loop(&This::cell_loop_empty,
                                &This::face_loop_empty,
@@ -501,7 +501,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_numerical_time_derivative_
 template<int dim, typename Number>
 void
 OperatorDualSplitting<dim, Number>::rhs_ppe_nbc_body_force_term_add(VectorType &   dst,
-                                                                    double const & time)
+                                                                    double const & time) const
 {
   this->evaluation_time = time;
 
@@ -778,7 +778,7 @@ OperatorDualSplitting<dim, Number>::solve_viscous(VectorType &       dst,
 template<int dim, typename Number>
 void
 OperatorDualSplitting<dim, Number>::interpolate_velocity_dirichlet_bc(VectorType &   dst,
-                                                                      double const & time)
+                                                                      double const & time) const
 {
   this->evaluation_time = time;
 

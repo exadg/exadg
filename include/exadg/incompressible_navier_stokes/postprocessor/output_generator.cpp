@@ -187,7 +187,7 @@ OutputGenerator<dim, Number>::evaluate(
   VectorType const &                                                    pressure,
   std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
   double const                                                          time,
-  bool const                                                            unsteady)
+  bool const                                                            unsteady) const
 {
   print_write_output_time(time, time_control.get_counter(), unsteady, mpi_comm);
 

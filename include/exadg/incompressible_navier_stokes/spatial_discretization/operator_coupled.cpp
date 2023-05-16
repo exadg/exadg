@@ -34,15 +34,15 @@ namespace IncNS
 {
 template<int dim, typename Number>
 OperatorCoupled<dim, Number>::OperatorCoupled(
-  std::shared_ptr<Grid<dim> const>                  grid_in,
-  std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion_in,
-  std::shared_ptr<BoundaryDescriptor<dim> const>    boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim> const>        field_functions_in,
-  Parameters const &                                parameters_in,
-  std::string const &                               field_in,
-  MPI_Comm const &                                  mpi_comm_in)
+  std::shared_ptr<Grid<dim> const>               grid_in,
+  std::shared_ptr<dealii::Mapping<dim> const>    mapping_in,
+  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
+  Parameters const &                             parameters_in,
+  std::string const &                            field_in,
+  MPI_Comm const &                               mpi_comm_in)
   : Base(grid_in,
-         grid_motion_in,
+         mapping_in,
          boundary_descriptor_in,
          field_functions_in,
          parameters_in,
@@ -59,9 +59,10 @@ OperatorCoupled<dim, Number>::~OperatorCoupled()
 
 template<int dim, typename Number>
 void
-OperatorCoupled<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free,
-                                    std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
-                                    std::string const & dof_index_temperature)
+OperatorCoupled<dim, Number>::setup(
+  std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
+  std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
+  std::string const &                                    dof_index_temperature)
 {
   Base::setup(matrix_free, matrix_free_data, dof_index_temperature);
 

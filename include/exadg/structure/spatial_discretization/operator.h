@@ -187,8 +187,8 @@ public:
    * related to the solution of linear systems of equations.
    */
   void
-  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free,
-        std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data);
+  setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data);
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -385,8 +385,8 @@ private:
   /*
    * Matrix-free operator evaluation.
    */
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
+  std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data;
 
   /*
    * Interface coupling

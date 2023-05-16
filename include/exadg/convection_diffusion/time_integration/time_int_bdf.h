@@ -26,6 +26,7 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
+#include <exadg/time_integration/lambda_functions_ale.h>
 #include <exadg/time_integration/time_int_bdf_base.h>
 
 namespace ExaDG
@@ -51,10 +52,11 @@ public:
   typedef typename TimeIntBDFBase<Number>::VectorType VectorType;
 
   TimeIntBDF(std::shared_ptr<Operator<dim, Number>>          operator_in,
+             std::shared_ptr<HelpersALE<Number> const>       helpers_ale_in,
+             std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
              Parameters const &                              param_in,
              MPI_Comm const &                                mpi_comm_in,
-             bool const                                      is_test_in,
-             std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in);
+             bool const                                      is_test_in);
 
   void
   set_velocities_and_times(std::vector<VectorType const *> const & velocities_in,
@@ -134,6 +136,9 @@ private:
 
   // postprocessor
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor;
+
+  // This object allows to access utility functions needed for ALE
+  std::shared_ptr<HelpersALE<Number> const> helpers_ale;
 
   // ALE
   VectorType              grid_velocity;

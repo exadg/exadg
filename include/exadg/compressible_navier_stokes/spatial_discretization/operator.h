@@ -61,8 +61,8 @@ public:
   fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
 
   void
-  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free,
-        std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data);
+  setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data);
 
   dealii::types::global_dof_index
   get_number_of_dofs() const;
@@ -245,8 +245,8 @@ private:
   /*
    * Matrix-free operator evaluation.
    */
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free;
 
   /*
    * Basic operators.

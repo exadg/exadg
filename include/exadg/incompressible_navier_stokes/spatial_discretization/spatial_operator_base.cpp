@@ -23,7 +23,7 @@
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
-#include <exadg/grid/get_dynamic_mapping.h>
+#include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_projection.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
@@ -38,16 +38,16 @@ namespace IncNS
 {
 template<int dim, typename Number>
 SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
-  std::shared_ptr<Grid<dim> const>                  grid_in,
-  std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion_in,
-  std::shared_ptr<BoundaryDescriptor<dim> const>    boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim> const>        field_functions_in,
-  Parameters const &                                parameters_in,
-  std::string const &                               field_in,
-  MPI_Comm const &                                  mpi_comm_in)
+  std::shared_ptr<Grid<dim> const>               grid_in,
+  std::shared_ptr<dealii::Mapping<dim> const>    mapping_in,
+  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
+  Parameters const &                             parameters_in,
+  std::string const &                            field_in,
+  MPI_Comm const &                               mpi_comm_in)
   : dealii::Subscriptor(),
     grid(grid_in),
-    grid_motion(grid_motion_in),
+    mapping(mapping_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(parameters_in),
@@ -180,9 +180,9 @@ SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
 template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::setup(
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_in,
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data_in,
-  std::string const &                              dof_index_temperature)
+  std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
+  std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data_in,
+  std::string const &                                    dof_index_temperature)
 {
   pcout << std::endl
         << "Setup incompressible Navier-Stokes operator ..." << std::endl
@@ -857,7 +857,7 @@ template<int dim, typename Number>
 std::shared_ptr<dealii::Mapping<dim> const>
 SpatialOperatorBase<dim, Number>::get_mapping() const
 {
-  return get_dynamic_mapping<dim, Number>(grid, grid_motion);
+  return mapping;
 }
 
 template<int dim, typename Number>
@@ -1520,24 +1520,7 @@ SpatialOperatorBase<dim, Number>::calculate_dissipation_continuity_term(
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::move_grid(double const & time) const
-{
-  grid_motion->update(
-    time,
-    false /* print_solver_info */,
-    dealii::numbers::invalid_unsigned_int /* time_step_number used for preconditioner update */);
-}
-
-template<int dim, typename Number>
-void
-SpatialOperatorBase<dim, Number>::update_matrix_free_after_grid_motion()
-{
-  matrix_free->update_mapping(*get_mapping());
-}
-
-template<int dim, typename Number>
-void
-SpatialOperatorBase<dim, Number>::update_spatial_operators_after_grid_motion()
+SpatialOperatorBase<dim, Number>::update_after_grid_motion()
 {
   if(param.turbulence_model_data.is_active)
   {
@@ -1559,7 +1542,14 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::fill_grid_coordinates_vector(VectorType & vector) const
 {
-  grid_motion->fill_grid_coordinates_vector(vector, get_dof_handler_u());
+  std::shared_ptr<MappingDoFVector<dim, Number> const> mapping_dof_vector =
+    std::dynamic_pointer_cast<MappingDoFVector<dim, Number> const>(get_mapping());
+
+  AssertThrow(mapping_dof_vector.get(),
+              dealii::ExcMessage("The function fill_grid_coordinates_vector() is only "
+                                 "implemented for mappings of type MappingDoFVector."));
+
+  mapping_dof_vector->fill_grid_coordinates_vector(vector, get_dof_handler_u());
 }
 
 template<int dim, typename Number>
@@ -1883,7 +1873,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::distribute_constraint_u(VectorType & velocity)
+SpatialOperatorBase<dim, Number>::distribute_constraint_u(VectorType & velocity) const
 {
   if(param.spatial_discretization == SpatialDiscretization::HDIV)
   {

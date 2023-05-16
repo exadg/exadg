@@ -194,7 +194,7 @@ public:
         coupling_structure_to_ale();
 
         // move the fluid mesh and update dependent data structures
-        fluid->solve_ale(this->application->fluid, this->is_test);
+        fluid->solve_ale();
 
         // update velocity boundary condition for fluid
         coupling_structure_to_fluid();

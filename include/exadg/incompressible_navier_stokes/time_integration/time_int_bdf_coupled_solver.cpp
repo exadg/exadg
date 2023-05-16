@@ -33,11 +33,12 @@ namespace IncNS
 template<int dim, typename Number>
 TimeIntBDFCoupled<dim, Number>::TimeIntBDFCoupled(
   std::shared_ptr<Operator>                       operator_in,
+  std::shared_ptr<HelpersALE<Number> const>       helpers_ale_in,
+  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
   Parameters const &                              param_in,
   MPI_Comm const &                                mpi_comm_in,
-  bool const                                      is_test_in,
-  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
-  : Base(operator_in, param_in, mpi_comm_in, is_test_in, postprocessor_in),
+  bool const                                      is_test_in)
+  : Base(operator_in, helpers_ale_in, postprocessor_in, param_in, mpi_comm_in, is_test_in),
     pde_operator(operator_in),
     solution(this->order),
     iterations({0, {0, 0}}),
@@ -64,7 +65,7 @@ void
 TimeIntBDFCoupled<dim, Number>::initialize_current_solution()
 {
   if(this->param.ale_formulation)
-    pde_operator->move_grid(this->get_time());
+    this->helpers_ale->move_grid(this->get_time());
 
   pde_operator->prescribe_initial_conditions(solution[0].block(0),
                                              solution[0].block(1),
@@ -79,7 +80,7 @@ TimeIntBDFCoupled<dim, Number>::initialize_former_solutions()
   for(unsigned int i = 1; i < solution.size(); ++i)
   {
     if(this->param.ale_formulation)
-      pde_operator->move_grid(this->get_previous_time(i));
+      this->helpers_ale->move_grid(this->get_previous_time(i));
 
     pde_operator->prescribe_initial_conditions(solution[i].block(0),
                                                solution[i].block(1),

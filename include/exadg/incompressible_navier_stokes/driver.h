@@ -173,6 +173,9 @@ private:
   // moving mapping (ALE)
   std::shared_ptr<GridMotionBase<dim, Number>> grid_motion;
 
+  // ALE helper functions required by time integrator
+  std::shared_ptr<HelpersALE<Number>> helpers_ale;
+
   // solve mesh deformation by a Poisson problem
   std::shared_ptr<MatrixFreeData<dim, Number>>         poisson_matrix_free_data;
   std::shared_ptr<dealii::MatrixFree<dim, Number>>     poisson_matrix_free;
