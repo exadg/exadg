@@ -50,8 +50,8 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              2
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        2
   Mapping degree:                            1
   Polynomial degree:                         7
   Numerical flux convective term:            LaxFriedrichsFlux
@@ -65,7 +65,6 @@ Generating grid for 2-dimensional problem:
 
   Max. number of refinements:                2
   Number of cells:                           16
-  Mapping degree:                            1
 
 Construct convection-diffusion operator ...
 

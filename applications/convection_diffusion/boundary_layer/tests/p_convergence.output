@@ -48,8 +48,8 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              4
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        4
   Mapping degree:                            1
   Polynomial degree:                         1
   Numerical flux convective term:            LaxFriedrichsFlux
@@ -91,7 +91,6 @@ Generating grid for 2-dimensional problem:
 
   Max. number of refinements:                4
   Number of cells:                           256
-  Mapping degree:                            1
 
 Construct convection-diffusion operator ...
 
@@ -170,8 +169,8 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              4
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        4
   Mapping degree:                            1
   Polynomial degree:                         2
   Numerical flux convective term:            LaxFriedrichsFlux
@@ -213,7 +212,6 @@ Generating grid for 2-dimensional problem:
 
   Max. number of refinements:                4
   Number of cells:                           256
-  Mapping degree:                            1
 
 Construct convection-diffusion operator ...
 
@@ -292,8 +290,8 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              4
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        4
   Mapping degree:                            1
   Polynomial degree:                         3
   Numerical flux convective term:            LaxFriedrichsFlux
@@ -335,7 +333,6 @@ Generating grid for 2-dimensional problem:
 
   Max. number of refinements:                4
   Number of cells:                           256
-  Mapping degree:                            1
 
 Construct convection-diffusion operator ...
 
@@ -363,7 +360,7 @@ Solving steady state problem ...
 ... done!
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 1.11728e-04
+  Relative error (L2-norm): 1.11727e-04
 
 
 
@@ -414,8 +411,8 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              4
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        4
   Mapping degree:                            1
   Polynomial degree:                         4
   Numerical flux convective term:            LaxFriedrichsFlux
@@ -457,7 +454,6 @@ Generating grid for 2-dimensional problem:
 
   Max. number of refinements:                4
   Number of cells:                           256
-  Mapping degree:                            1
 
 Construct convection-diffusion operator ...
 
@@ -485,7 +481,7 @@ Solving steady state problem ...
 ... done!
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 6.62910e-06
+  Relative error (L2-norm): 6.62897e-06
 
 
 
@@ -536,8 +532,8 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              4
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        4
   Mapping degree:                            1
   Polynomial degree:                         5
   Numerical flux convective term:            LaxFriedrichsFlux
@@ -579,7 +575,6 @@ Generating grid for 2-dimensional problem:
 
   Max. number of refinements:                4
   Number of cells:                           256
-  Mapping degree:                            1
 
 Construct convection-diffusion operator ...
 
@@ -607,4 +602,4 @@ Solving steady state problem ...
 ... done!
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 4.54842e-07
+  Relative error (L2-norm): 4.64418e-07

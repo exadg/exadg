@@ -70,9 +70,9 @@ get_element_type(dealii::Triangulation<dim> const & tria)
  */
 template<int dim>
 void
-create_mapping(std::shared_ptr<dealii::Mapping<dim>> mapping,
-               ElementType const &                   element_type,
-               unsigned int const &                  mapping_degree)
+create_mapping(std::shared_ptr<dealii::Mapping<dim>> & mapping,
+               ElementType const &                     element_type,
+               unsigned int const &                    mapping_degree)
 {
   if(element_type == ElementType::Hypercube)
   {

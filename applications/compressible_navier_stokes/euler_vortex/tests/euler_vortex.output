@@ -50,8 +50,8 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              4
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        4
   Mapping degree:                            7
   Polynomial degree:                         7
   Quadrature rule convective term:           Standard
@@ -66,7 +66,6 @@ Generating grid for 2-dimensional problem:
 
   Max. number of refinements:                4
   Number of cells:                           256
-  Mapping degree:                            7
 
 Construct compressible Navier-Stokes DG operator ...
 

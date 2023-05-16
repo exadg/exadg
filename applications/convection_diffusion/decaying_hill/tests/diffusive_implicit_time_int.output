@@ -47,8 +47,8 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              4
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        4
   Mapping degree:                            1
   Polynomial degree:                         5
   IP factor viscous term:                    1.0000e+00
@@ -82,7 +82,6 @@ Generating grid for 2-dimensional problem:
 
   Max. number of refinements:                4
   Number of cells:                           256
-  Mapping degree:                            1
 
 Construct convection-diffusion operator ...
 
@@ -121,61 +120,61 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for all fields at time t = 5.0000e-02:
-  Relative error (L2-norm): 5.27721e-11
+  Relative error (L2-norm): 5.27723e-11
 
 Calculate error for all fields at time t = 1.0000e-01:
-  Relative error (L2-norm): 5.27878e-11
+  Relative error (L2-norm): 5.27879e-11
 
 Calculate error for all fields at time t = 1.5000e-01:
-  Relative error (L2-norm): 5.28139e-11
+  Relative error (L2-norm): 5.28140e-11
 
 Calculate error for all fields at time t = 2.0000e-01:
-  Relative error (L2-norm): 5.28505e-11
+  Relative error (L2-norm): 5.28507e-11
 
 Calculate error for all fields at time t = 2.5000e-01:
-  Relative error (L2-norm): 5.28976e-11
+  Relative error (L2-norm): 5.28977e-11
 
 Calculate error for all fields at time t = 3.0000e-01:
-  Relative error (L2-norm): 5.29551e-11
+  Relative error (L2-norm): 5.29552e-11
 
 Calculate error for all fields at time t = 3.5000e-01:
-  Relative error (L2-norm): 5.30230e-11
+  Relative error (L2-norm): 5.30231e-11
 
 Calculate error for all fields at time t = 4.0000e-01:
-  Relative error (L2-norm): 5.31013e-11
+  Relative error (L2-norm): 5.31014e-11
 
 Calculate error for all fields at time t = 4.5000e-01:
-  Relative error (L2-norm): 5.31898e-11
+  Relative error (L2-norm): 5.31900e-11
 
 Calculate error for all fields at time t = 5.0000e-01:
-  Relative error (L2-norm): 5.32886e-11
+  Relative error (L2-norm): 5.32888e-11
 
 Calculate error for all fields at time t = 5.5000e-01:
-  Relative error (L2-norm): 5.33977e-11
+  Relative error (L2-norm): 5.33978e-11
 
 Calculate error for all fields at time t = 6.0000e-01:
-  Relative error (L2-norm): 5.35169e-11
+  Relative error (L2-norm): 5.35170e-11
 
 Calculate error for all fields at time t = 6.5000e-01:
-  Relative error (L2-norm): 5.36461e-11
+  Relative error (L2-norm): 5.36462e-11
 
 Calculate error for all fields at time t = 7.0000e-01:
-  Relative error (L2-norm): 5.37853e-11
+  Relative error (L2-norm): 5.37855e-11
 
 Calculate error for all fields at time t = 7.5000e-01:
-  Relative error (L2-norm): 5.39345e-11
+  Relative error (L2-norm): 5.39347e-11
 
 Calculate error for all fields at time t = 8.0000e-01:
-  Relative error (L2-norm): 5.40935e-11
+  Relative error (L2-norm): 5.40937e-11
 
 Calculate error for all fields at time t = 8.5000e-01:
-  Relative error (L2-norm): 5.42623e-11
+  Relative error (L2-norm): 5.42625e-11
 
 Calculate error for all fields at time t = 9.0000e-01:
-  Relative error (L2-norm): 5.44406e-11
+  Relative error (L2-norm): 5.44408e-11
 
 Calculate error for all fields at time t = 9.5000e-01:
-  Relative error (L2-norm): 5.46287e-11
+  Relative error (L2-norm): 5.46289e-11
 
 Calculate error for all fields at time t = 1.0000e+00:
-  Relative error (L2-norm): 5.48262e-11
+  Relative error (L2-norm): 5.48263e-11

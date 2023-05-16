@@ -27,10 +27,10 @@ Mathematical model:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              2
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        2
   Mapping degree:                            3
-  Element type:                              DG
+  FE space:                                  DG
   Polynomial degree:                         1
   IP factor:                                 1.0000e+00
 
@@ -66,7 +66,6 @@ Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                2
   Number of cells:                           512
-  Mapping degree:                            3
 
 Construct Poisson operator ...
 
@@ -121,10 +120,10 @@ Mathematical model:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              2
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        2
   Mapping degree:                            3
-  Element type:                              DG
+  FE space:                                  DG
   Polynomial degree:                         2
   IP factor:                                 1.0000e+00
 
@@ -160,7 +159,6 @@ Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                2
   Number of cells:                           512
-  Mapping degree:                            3
 
 Construct Poisson operator ...
 
@@ -215,10 +213,10 @@ Mathematical model:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              2
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        2
   Mapping degree:                            3
-  Element type:                              DG
+  FE space:                                  DG
   Polynomial degree:                         3
   IP factor:                                 1.0000e+00
 
@@ -254,7 +252,6 @@ Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                2
   Number of cells:                           512
-  Mapping degree:                            3
 
 Construct Poisson operator ...
 
@@ -309,10 +306,10 @@ Mathematical model:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              2
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        2
   Mapping degree:                            3
-  Element type:                              DG
+  FE space:                                  DG
   Polynomial degree:                         4
   IP factor:                                 1.0000e+00
 
@@ -348,7 +345,6 @@ Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                2
   Number of cells:                           512
-  Mapping degree:                            3
 
 Construct Poisson operator ...
 
@@ -403,10 +399,10 @@ Mathematical model:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              2
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        2
   Mapping degree:                            3
-  Element type:                              DG
+  FE space:                                  DG
   Polynomial degree:                         5
   IP factor:                                 1.0000e+00
 
@@ -442,7 +438,6 @@ Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                2
   Number of cells:                           512
-  Mapping degree:                            3
 
 Construct Poisson operator ...
 
@@ -497,10 +492,10 @@ Mathematical model:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              2
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        2
   Mapping degree:                            3
-  Element type:                              DG
+  FE space:                                  DG
   Polynomial degree:                         6
   IP factor:                                 1.0000e+00
 
@@ -536,7 +531,6 @@ Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                2
   Number of cells:                           512
-  Mapping degree:                            3
 
 Construct Poisson operator ...
 
@@ -591,10 +585,10 @@ Mathematical model:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              2
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        2
   Mapping degree:                            3
-  Element type:                              DG
+  FE space:                                  DG
   Polynomial degree:                         7
   IP factor:                                 1.0000e+00
 
@@ -630,7 +624,6 @@ Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                2
   Number of cells:                           512
-  Mapping degree:                            3
 
 Construct Poisson operator ...
 
