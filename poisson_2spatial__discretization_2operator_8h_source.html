@@ -139,8 +139,8 @@ $(function() {
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  fill_matrix_free_data(<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a> &amp; matrix_free_data) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  setup(std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt;&gt; matrix_free,</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>        std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a>&gt;     matrix_free_data);</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  setup(std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span>&gt; matrix_free,</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>        std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a> <span class="keyword">const</span>&gt;     matrix_free_data);</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  setup_solver();</div>
@@ -277,8 +277,8 @@ $(function() {
 <div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  std::string <span class="keyword">const</span> quad_index               = <span class="stringliteral">&quot;laplace&quot;</span>;</div>
 <div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>  std::string <span class="keyword">const</span> quad_index_gauss_lobatto = <span class="stringliteral">&quot;laplace_gauss_lobatto&quot;</span>;</div>
 <div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span> </div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt;&gt; matrix_free;</div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>  std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt;&gt;     matrix_free_data;</div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span>&gt; matrix_free;</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>  std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt; <span class="keyword">const</span>&gt;     matrix_free_data;</div>
 <div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span> </div>
 <div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span><span class="comment">   * Interface coupling</span></div>

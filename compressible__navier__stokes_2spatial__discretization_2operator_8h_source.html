@@ -139,8 +139,8 @@ $(function() {
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  fill_matrix_free_data(<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a> &amp; matrix_free_data) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  setup(std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt;&gt; matrix_free,</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>        std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a>&gt;     matrix_free_data);</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  setup(std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span>&gt; matrix_free,</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>        std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a> <span class="keyword">const</span>&gt;     matrix_free_data);</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  dealii::types::global_dof_index</div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  get_number_of_dofs() <span class="keyword">const</span>;</div>
@@ -323,8 +323,8 @@ $(function() {
 <div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span><span class="comment">   * Matrix-free operator evaluation.</span></div>
 <div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>  std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt;&gt;     matrix_free_data;</div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>  std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt;&gt; matrix_free;</div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>  std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt; <span class="keyword">const</span>&gt;     matrix_free_data;</div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>  std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span>&gt; matrix_free;</div>
 <div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span> </div>
 <div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span><span class="comment">   * Basic operators.</span></div>

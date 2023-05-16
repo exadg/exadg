@@ -15,7 +15,6 @@ var searchData=
   ['gridmotionbase_12',['GridMotionBase',['../classExaDG_1_1GridMotionBase.html',1,'ExaDG']]],
   ['gridmotionelasticity_13',['GridMotionElasticity',['../classExaDG_1_1GridMotionElasticity.html',1,'ExaDG']]],
   ['gridmotionfunction_14',['GridMotionFunction',['../classExaDG_1_1GridMotionFunction.html',1,'ExaDG']]],
-  ['gridmotioninterface_15',['GridMotionInterface',['../classExaDG_1_1GridMotionInterface.html',1,'ExaDG']]],
-  ['gridmotionpoisson_16',['GridMotionPoisson',['../classExaDG_1_1GridMotionPoisson.html',1,'ExaDG']]],
-  ['gridparameters_17',['GridParameters',['../structExaDG_1_1GridParameters.html',1,'ExaDG']]]
+  ['gridmotionpoisson_15',['GridMotionPoisson',['../classExaDG_1_1GridMotionPoisson.html',1,'ExaDG']]],
+  ['gridparameters_16',['GridParameters',['../structExaDG_1_1GridParameters.html',1,'ExaDG']]]
 ];

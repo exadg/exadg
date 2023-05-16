@@ -98,15 +98,15 @@ Inheritance diagram for ExaDG::IncNS::SpatialOperatorBase&lt; dim, Number &gt;:<
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a08086876150c29e28a4c4fa90ea710db"><td class="memItemLeft" align="right" valign="top"><a id="a08086876150c29e28a4c4fa90ea710db" name="a08086876150c29e28a4c4fa90ea710db"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>SpatialOperatorBase</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1GridMotionInterface.html">GridMotionInterface</a>&lt; dim, Number &gt; &gt; grid_motion, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, <a class="el" href="classExaDG_1_1IncNS_1_1Parameters.html">Parameters</a> const &amp;parameters, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
-<tr class="separator:a08086876150c29e28a4c4fa90ea710db"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab09d887351a5d42c69e8a0221536fe18"><td class="memItemLeft" align="right" valign="top"><a id="ab09d887351a5d42c69e8a0221536fe18" name="ab09d887351a5d42c69e8a0221536fe18"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>SpatialOperatorBase</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, <a class="el" href="classExaDG_1_1IncNS_1_1Parameters.html">Parameters</a> const &amp;parameters, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
+<tr class="separator:ab09d887351a5d42c69e8a0221536fe18"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a48632e10b788b5204a3c2a194e0b96e3"><td class="memItemLeft" align="right" valign="top"><a id="a48632e10b788b5204a3c2a194e0b96e3" name="a48632e10b788b5204a3c2a194e0b96e3"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data</b> (<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &amp;matrix_free_data) const</td></tr>
 <tr class="separator:a48632e10b788b5204a3c2a194e0b96e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a29701314ba7cbbb6fa311edaddb161d5"><td class="memItemLeft" align="right" valign="top"><a id="a29701314ba7cbbb6fa311edaddb161d5" name="a29701314ba7cbbb6fa311edaddb161d5"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &gt; matrix_free_data, std::string const &amp;dof_index_temperature=&quot;&quot;)</td></tr>
-<tr class="separator:a29701314ba7cbbb6fa311edaddb161d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad13c470d6f158669dd5050852e222132"><td class="memItemLeft" align="right" valign="top"><a id="ad13c470d6f158669dd5050852e222132" name="ad13c470d6f158669dd5050852e222132"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; const &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; const &gt; matrix_free_data, std::string const &amp;dof_index_temperature=&quot;&quot;)</td></tr>
+<tr class="separator:ad13c470d6f158669dd5050852e222132"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a048ae70c404c9252250935a219cd5d42"><td class="memItemLeft" align="right" valign="top"><a id="a048ae70c404c9252250935a219cd5d42" name="a048ae70c404c9252250935a219cd5d42"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_solvers</b> (double const &amp;scaling_factor_mass, VectorType const &amp;velocity)</td></tr>
 <tr class="separator:a048ae70c404c9252250935a219cd5d42"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -269,24 +269,18 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_dissipati
 <tr class="memitem:a4c5a09c2884a48b02e66bdbf130fff0f"><td class="memItemLeft" align="right" valign="top"><a id="a4c5a09c2884a48b02e66bdbf130fff0f" name="a4c5a09c2884a48b02e66bdbf130fff0f"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_dissipation_continuity_term</b> (VectorType const &amp;velocity) const</td></tr>
 <tr class="separator:a4c5a09c2884a48b02e66bdbf130fff0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa6c42eb85a712c992aea250108fff541"><td class="memItemLeft" align="right" valign="top"><a id="aa6c42eb85a712c992aea250108fff541" name="aa6c42eb85a712c992aea250108fff541"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>move_grid</b> (double const &amp;time) const</td></tr>
-<tr class="separator:aa6c42eb85a712c992aea250108fff541"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0e47348cdbfc69630233955e718c9786"><td class="memItemLeft" align="right" valign="top"><a id="a0e47348cdbfc69630233955e718c9786" name="a0e47348cdbfc69630233955e718c9786"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>update_matrix_free_after_grid_motion</b> ()</td></tr>
-<tr class="separator:a0e47348cdbfc69630233955e718c9786"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7cffb340238a664edce6acdd181971bd"><td class="memItemLeft" align="right" valign="top"><a id="a7cffb340238a664edce6acdd181971bd" name="a7cffb340238a664edce6acdd181971bd"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update_spatial_operators_after_grid_motion</b> ()</td></tr>
-<tr class="separator:a7cffb340238a664edce6acdd181971bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a14e730249b281e939ec2f9fb8a25fdc4"><td class="memItemLeft" align="right" valign="top"><a id="a14e730249b281e939ec2f9fb8a25fdc4" name="a14e730249b281e939ec2f9fb8a25fdc4"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update_after_grid_motion</b> ()</td></tr>
+<tr class="separator:a14e730249b281e939ec2f9fb8a25fdc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0d7ffbde87c7a8f40aa5f45c112c4010"><td class="memItemLeft" align="right" valign="top"><a id="a0d7ffbde87c7a8f40aa5f45c112c4010" name="a0d7ffbde87c7a8f40aa5f45c112c4010"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_grid_coordinates_vector</b> (VectorType &amp;vector) const</td></tr>
 <tr class="separator:a0d7ffbde87c7a8f40aa5f45c112c4010"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adc26e0bc5f2465cd8a1f5cea06e6ef21"><td class="memItemLeft" align="right" valign="top"><a id="adc26e0bc5f2465cd8a1f5cea06e6ef21" name="adc26e0bc5f2465cd8a1f5cea06e6ef21"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_grid_velocity</b> (VectorType const &amp;velocity)</td></tr>
 <tr class="separator:adc26e0bc5f2465cd8a1f5cea06e6ef21"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeb8100c790030eecb4fc06e4caa287c3"><td class="memItemLeft" align="right" valign="top"><a id="aeb8100c790030eecb4fc06e4caa287c3" name="aeb8100c790030eecb4fc06e4caa287c3"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>distribute_constraint_u</b> (VectorType &amp;velocity)</td></tr>
-<tr class="separator:aeb8100c790030eecb4fc06e4caa287c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af131719842c8c903ece954e55b1e3ee8"><td class="memItemLeft" align="right" valign="top"><a id="af131719842c8c903ece954e55b1e3ee8" name="af131719842c8c903ece954e55b1e3ee8"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>distribute_constraint_u</b> (VectorType &amp;velocity) const</td></tr>
+<tr class="separator:af131719842c8c903ece954e55b1e3ee8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-types" name="pro-types"></a>
 Protected Types</h2></td></tr>
@@ -362,9 +356,9 @@ Protected Attributes</h2></td></tr>
 <tr class="memitem:a52c9b065437ad1692952203da51fe334"><td class="memItemLeft" align="right" valign="top"><a id="a52c9b065437ad1692952203da51fe334" name="a52c9b065437ad1692952203da51fe334"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>grid</b></td></tr>
 <tr class="separator:a52c9b065437ad1692952203da51fe334"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad015db876b6000df55ffef13bfbbe338"><td class="memItemLeft" align="right" valign="top"><a id="ad015db876b6000df55ffef13bfbbe338" name="ad015db876b6000df55ffef13bfbbe338"></a>
-std::shared_ptr&lt; <a class="el" href="classExaDG_1_1GridMotionInterface.html">GridMotionInterface</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>grid_motion</b></td></tr>
-<tr class="separator:ad015db876b6000df55ffef13bfbbe338"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a44893e69c6f527d2cacc73553829b66a"><td class="memItemLeft" align="right" valign="top"><a id="a44893e69c6f527d2cacc73553829b66a" name="a44893e69c6f527d2cacc73553829b66a"></a>
+std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>mapping</b></td></tr>
+<tr class="separator:a44893e69c6f527d2cacc73553829b66a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a84e1befa2a42251868b1bb16d3c43848"><td class="memItemLeft" align="right" valign="top"><a id="a84e1befa2a42251868b1bb16d3c43848" name="a84e1befa2a42251868b1bb16d3c43848"></a>
 std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>boundary_descriptor</b></td></tr>
 <tr class="separator:a84e1befa2a42251868b1bb16d3c43848"><td class="memSeparator" colspan="2">&#160;</td></tr>

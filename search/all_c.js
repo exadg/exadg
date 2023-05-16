@@ -45,12 +45,13 @@ var searchData=
   ['momentumoperator_42',['MomentumOperator',['../classExaDG_1_1IncNS_1_1MomentumOperator.html',1,'ExaDG::IncNS']]],
   ['momentumoperator_3c_20dim_2c_20double_20_3e_43',['MomentumOperator&lt; dim, double &gt;',['../classExaDG_1_1IncNS_1_1MomentumOperator.html',1,'ExaDG::IncNS']]],
   ['momentumoperatordata_44',['MomentumOperatorData',['../structExaDG_1_1IncNS_1_1MomentumOperatorData.html',1,'ExaDG::IncNS']]],
-  ['multigridalgorithm_45',['MultigridAlgorithm',['../classExaDG_1_1MultigridAlgorithm.html',1,'ExaDG']]],
-  ['multigriddata_46',['MultigridData',['../structExaDG_1_1MultigridData.html',1,'ExaDG']]],
-  ['multigridoperator_47',['MultigridOperator',['../classExaDG_1_1MultigridOperator.html',1,'ExaDG']]],
-  ['multigridoperatorbase_48',['MultigridOperatorBase',['../classExaDG_1_1MultigridOperatorBase.html',1,'ExaDG']]],
-  ['multigridpreconditioner_49',['MultigridPreconditioner',['../classExaDG_1_1ConvDiff_1_1MultigridPreconditioner.html',1,'ExaDG::ConvDiff::MultigridPreconditioner&lt; dim, Number &gt;'],['../classExaDG_1_1IncNS_1_1MultigridPreconditioner.html',1,'ExaDG::IncNS::MultigridPreconditioner&lt; dim, Number &gt;'],['../classExaDG_1_1Poisson_1_1MultigridPreconditioner.html',1,'ExaDG::Poisson::MultigridPreconditioner&lt; dim, Number, n_components &gt;'],['../classExaDG_1_1Structure_1_1MultigridPreconditioner.html',1,'ExaDG::Structure::MultigridPreconditioner&lt; dim, Number &gt;']]],
-  ['multigridpreconditionerbase_50',['MultigridPreconditionerBase',['../classExaDG_1_1MultigridPreconditionerBase.html',1,'ExaDG']]],
-  ['multigridpreconditionerprojection_51',['MultigridPreconditionerProjection',['../classExaDG_1_1IncNS_1_1MultigridPreconditionerProjection.html',1,'ExaDG::IncNS']]],
-  ['mycylindricalmanifold_52',['MyCylindricalManifold',['../classExaDG_1_1MyCylindricalManifold.html',1,'ExaDG']]]
+  ['move_5fgrid_45',['move_grid',['../classExaDG_1_1HelpersALE.html#adb14cfdccb4d9dfc10656c83fd796957',1,'ExaDG::HelpersALE']]],
+  ['multigridalgorithm_46',['MultigridAlgorithm',['../classExaDG_1_1MultigridAlgorithm.html',1,'ExaDG']]],
+  ['multigriddata_47',['MultigridData',['../structExaDG_1_1MultigridData.html',1,'ExaDG']]],
+  ['multigridoperator_48',['MultigridOperator',['../classExaDG_1_1MultigridOperator.html',1,'ExaDG']]],
+  ['multigridoperatorbase_49',['MultigridOperatorBase',['../classExaDG_1_1MultigridOperatorBase.html',1,'ExaDG']]],
+  ['multigridpreconditioner_50',['MultigridPreconditioner',['../classExaDG_1_1ConvDiff_1_1MultigridPreconditioner.html',1,'ExaDG::ConvDiff::MultigridPreconditioner&lt; dim, Number &gt;'],['../classExaDG_1_1IncNS_1_1MultigridPreconditioner.html',1,'ExaDG::IncNS::MultigridPreconditioner&lt; dim, Number &gt;'],['../classExaDG_1_1Poisson_1_1MultigridPreconditioner.html',1,'ExaDG::Poisson::MultigridPreconditioner&lt; dim, Number, n_components &gt;'],['../classExaDG_1_1Structure_1_1MultigridPreconditioner.html',1,'ExaDG::Structure::MultigridPreconditioner&lt; dim, Number &gt;']]],
+  ['multigridpreconditionerbase_51',['MultigridPreconditionerBase',['../classExaDG_1_1MultigridPreconditionerBase.html',1,'ExaDG']]],
+  ['multigridpreconditionerprojection_52',['MultigridPreconditionerProjection',['../classExaDG_1_1IncNS_1_1MultigridPreconditionerProjection.html',1,'ExaDG::IncNS']]],
+  ['mycylindricalmanifold_53',['MyCylindricalManifold',['../classExaDG_1_1MyCylindricalManifold.html',1,'ExaDG']]]
 ];

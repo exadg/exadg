@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.6"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: include/exadg/grid/get_dynamic_mapping.h Source File</title>
+<title>ExaDG: include/exadg/time_integration/lambda_functions_ale.h Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -69,18 +69,18 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_0b4591dde26de212b152a147f5a814f3.html">exadg</a></li><li class="navelem"><a class="el" href="dir_45d2867edb440e3d4cb569c013399533.html">grid</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_0b4591dde26de212b152a147f5a814f3.html">exadg</a></li><li class="navelem"><a class="el" href="dir_b900e68e6c8e1c7b0b397fda819eb3fa.html">time_integration</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
-  <div class="headertitle"><div class="title">get_dynamic_mapping.h</div></div>
+  <div class="headertitle"><div class="title">lambda_functions_ale.h</div></div>
 </div><!--header-->
 <div class="contents">
 <div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="comment">/*  ______________________________________________________________________</span></div>
 <div class="line"><a id="l00002" name="l00002"></a><span class="lineno">    2</span><span class="comment"> *</span></div>
 <div class="line"><a id="l00003" name="l00003"></a><span class="lineno">    3</span><span class="comment"> *  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale</span></div>
 <div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span><span class="comment"> *</span></div>
-<div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span><span class="comment"> *  Copyright (C) 2021 by the ExaDG authors</span></div>
+<div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span><span class="comment"> *  Copyright (C) 2023 by the ExaDG authors</span></div>
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span><span class="comment"> *</span></div>
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="comment"> *  This program is free software: you can redistribute it and/or modify</span></div>
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="comment"> *  it under the terms of the GNU General Public License as published by</span></div>
@@ -97,39 +97,38 @@ $(function() {
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="comment"> *  ______________________________________________________________________</span></div>
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="comment"> */</span></div>
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#ifndef INCLUDE_EXADG_GRID_GET_DYNAMIC_MAPPING_H_</span></div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#define INCLUDE_EXADG_GRID_GET_DYNAMIC_MAPPING_H_</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#ifndef INCLUDE_EXADG_TIME_INTEGRATION_LAMBDA_FUNCTIONS_ALE_H_</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#define INCLUDE_EXADG_TIME_INTEGRATION_LAMBDA_FUNCTIONS_ALE_H_</span></div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="comment">// ExaDG</span></div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;exadg/grid/grid.h&gt;</span></div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &lt;exadg/grid/grid_motion_base.h&gt;</span></div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespaceExaDG.html">ExaDG</a></div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>{</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno"><a class="line" href="namespaceExaDG.html#a33015f0f0caa5d76b74b5579ca1a18c8">   37</a></span><a class="code hl_function" href="namespaceExaDG.html#a33015f0f0caa5d76b74b5579ca1a18c8">get_dynamic_mapping</a>(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Grid.html">Grid&lt;dim&gt;</a> <span class="keyword">const</span>&gt;                   grid,</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>                    std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1GridMotionBase.html">GridMotionBase&lt;dim, Number&gt;</a> <span class="keyword">const</span>&gt; grid_motion)</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>{</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keywordflow">if</span>(grid_motion.get() != 0)</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  {</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    <span class="keywordflow">return</span> grid_motion-&gt;get_mapping();</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  }</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keywordflow">else</span></div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  {</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    AssertThrow(grid-&gt;mapping.get() != 0,</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>                dealii::ExcMessage(<span class="stringliteral">&quot;Uninitialized mapping object detected.&quot;</span>));</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    <span class="keywordflow">return</span> grid-&gt;mapping;</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  }</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>}</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_GRID_GET_DYNAMIC_MAPPING_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1GridMotionBase_html"><div class="ttname"><a href="classExaDG_1_1GridMotionBase.html">ExaDG::GridMotionBase</a></div><div class="ttdef"><b>Definition:</b> grid_motion_base.h:41</div></div>
-<div class="ttc" id="aclassExaDG_1_1Grid_html"><div class="ttname"><a href="classExaDG_1_1Grid.html">ExaDG::Grid</a></div><div class="ttdef"><b>Definition:</b> grid.h:41</div></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="comment">// deal.II</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;deal.II/base/exceptions.h&gt;</span></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespaceExaDG.html">ExaDG</a></div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>{</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> Number&gt;</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno"><a class="line" href="classExaDG_1_1HelpersALE.html">   37</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1HelpersALE.html">HelpersALE</a></div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>{</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno"><a class="line" href="classExaDG_1_1HelpersALE.html#adb14cfdccb4d9dfc10656c83fd796957">   48</a></span>  std::function&lt;void(<span class="keywordtype">double</span> <span class="keyword">const</span> &amp; time)&gt; <a class="code hl_variable" href="classExaDG_1_1HelpersALE.html#adb14cfdccb4d9dfc10656c83fd796957">move_grid</a> = [](<span class="keywordtype">double</span> <span class="keyword">const</span> &amp; time) {</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    (void)time;</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    AssertThrow(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;The function move_grid() has not been implemented.&quot;</span>));</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  };</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno"><a class="line" href="classExaDG_1_1HelpersALE.html#a9978fd3202aa07445be088688b7a704a">   60</a></span>  std::function&lt;void()&gt; <a class="code hl_variable" href="classExaDG_1_1HelpersALE.html#a9978fd3202aa07445be088688b7a704a">update_pde_operator_after_grid_motion</a> = []() {</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    AssertThrow(</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>      <span class="keyword">false</span>,</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>      dealii::ExcMessage(</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>        <span class="stringliteral">&quot;The function update_pde_operator_after_grid_motion() has not been implemented.&quot;</span>));</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  };</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>};</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_TIME_INTEGRATION_LAMBDA_FUNCTIONS_ALE_H_ */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1HelpersALE_html"><div class="ttname"><a href="classExaDG_1_1HelpersALE.html">ExaDG::HelpersALE</a></div><div class="ttdef"><b>Definition:</b> lambda_functions_ale.h:38</div></div>
+<div class="ttc" id="aclassExaDG_1_1HelpersALE_html_a9978fd3202aa07445be088688b7a704a"><div class="ttname"><a href="classExaDG_1_1HelpersALE.html#a9978fd3202aa07445be088688b7a704a">ExaDG::HelpersALE::update_pde_operator_after_grid_motion</a></div><div class="ttdeci">std::function&lt; void()&gt; update_pde_operator_after_grid_motion</div><div class="ttdef"><b>Definition:</b> lambda_functions_ale.h:60</div></div>
+<div class="ttc" id="aclassExaDG_1_1HelpersALE_html_adb14cfdccb4d9dfc10656c83fd796957"><div class="ttname"><a href="classExaDG_1_1HelpersALE.html#adb14cfdccb4d9dfc10656c83fd796957">ExaDG::HelpersALE::move_grid</a></div><div class="ttdeci">std::function&lt; void(double const &amp;time)&gt; move_grid</div><div class="ttdef"><b>Definition:</b> lambda_functions_ale.h:48</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition:</b> driver.cpp:33</div></div>
-<div class="ttc" id="anamespaceExaDG_html_a33015f0f0caa5d76b74b5579ca1a18c8"><div class="ttname"><a href="namespaceExaDG.html#a33015f0f0caa5d76b74b5579ca1a18c8">ExaDG::get_dynamic_mapping</a></div><div class="ttdeci">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; get_dynamic_mapping(std::shared_ptr&lt; Grid&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; GridMotionBase&lt; dim, Number &gt; const &gt; grid_motion)</div><div class="ttdef"><b>Definition:</b> get_dynamic_mapping.h:37</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

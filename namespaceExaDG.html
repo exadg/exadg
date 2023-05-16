@@ -150,11 +150,11 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionFunction.html">GridMotionFunction</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionInterface.html">GridMotionInterface</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1GridMotionPoisson.html">GridMotionPoisson</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structExaDG_1_1GridParameters.html">GridParameters</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1HelpersALE.html">HelpersALE</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structExaDG_1_1HypercubeResolutionParameters.html">HypercubeResolutionParameters</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -578,9 +578,9 @@ template&lt;int dim&gt; </td></tr>
 template&lt;int dim&gt; </td></tr>
 <tr class="memitem:ab1fb23c670624b2536ca454efaa42301"><td class="memTemplItemLeft" align="right" valign="top">double&#160;</td><td class="memTemplItemRight" valign="bottom"><b>calculate_aspect_ratio_vertex_distance</b> (dealii::Triangulation&lt; dim &gt; const &amp;triangulation, MPI_Comm const &amp;mpi_comm)</td></tr>
 <tr class="separator:ab1fb23c670624b2536ca454efaa42301"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7ece5f60d30685552c07158c85d74f2d"><td class="memTemplParams" colspan="2">template&lt;int dim, typename Number &gt; </td></tr>
-<tr class="memitem:a7ece5f60d30685552c07158c85d74f2d"><td class="memTemplItemLeft" align="right" valign="top">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#a7ece5f60d30685552c07158c85d74f2d">get_dynamic_mapping</a> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1GridMotionInterface.html">GridMotionInterface</a>&lt; dim, Number &gt; const &gt; grid_motion)</td></tr>
-<tr class="separator:a7ece5f60d30685552c07158c85d74f2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a33015f0f0caa5d76b74b5579ca1a18c8"><td class="memTemplParams" colspan="2">template&lt;int dim, typename Number &gt; </td></tr>
+<tr class="memitem:a33015f0f0caa5d76b74b5579ca1a18c8"><td class="memTemplItemLeft" align="right" valign="top">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#a33015f0f0caa5d76b74b5579ca1a18c8">get_dynamic_mapping</a> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1GridMotionBase.html">GridMotionBase</a>&lt; dim, Number &gt; const &gt; grid_motion)</td></tr>
+<tr class="separator:a33015f0f0caa5d76b74b5579ca1a18c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a11fdfa75b66139f3547f5ed4d7c1ef58"><td class="memTemplParams" colspan="2">template&lt;int dim&gt; </td></tr>
 <tr class="memitem:a11fdfa75b66139f3547f5ed4d7c1ef58"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#a11fdfa75b66139f3547f5ed4d7c1ef58">create_subdivided_hyper_rectangle</a> (dealii::Triangulation&lt; dim &gt; &amp;tria, std::vector&lt; unsigned int &gt; const &amp;repetitions, dealii::Point&lt; dim &gt; const &amp;p1, dealii::Point&lt; dim &gt; const &amp;p2, ElementType const &amp;element_type, bool const colorize=false)</td></tr>
 <tr class="separator:a11fdfa75b66139f3547f5ed4d7c1ef58"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1098,8 +1098,8 @@ template&lt;int n_components1, int n_components2, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a7ece5f60d30685552c07158c85d74f2d" name="a7ece5f60d30685552c07158c85d74f2d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7ece5f60d30685552c07158c85d74f2d">&#9670;&#160;</a></span>get_dynamic_mapping()</h2>
+<a id="a33015f0f0caa5d76b74b5579ca1a18c8" name="a33015f0f0caa5d76b74b5579ca1a18c8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a33015f0f0caa5d76b74b5579ca1a18c8">&#9670;&#160;</a></span>get_dynamic_mapping()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1115,7 +1115,7 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1GridMotionInterface.html">GridMotionInterface</a>&lt; dim, Number &gt; const &gt;&#160;</td>
+          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1GridMotionBase.html">GridMotionBase</a>&lt; dim, Number &gt; const &gt;&#160;</td>
           <td class="paramname"><em>grid_motion</em>&#160;</td>
         </tr>
         <tr>

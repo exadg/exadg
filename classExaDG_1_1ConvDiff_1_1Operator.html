@@ -91,15 +91,15 @@ Inheritance diagram for ExaDG::ConvDiff::Operator&lt; dim, Number &gt;:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ae02b3d1892473648487ad794e0a52c91"><td class="memItemLeft" align="right" valign="top"><a id="ae02b3d1892473648487ad794e0a52c91" name="ae02b3d1892473648487ad794e0a52c91"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>Operator</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1GridMotionInterface.html">GridMotionInterface</a>&lt; dim, Number &gt; &gt; grid_motion, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1ConvDiff_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1ConvDiff_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, <a class="el" href="classExaDG_1_1ConvDiff_1_1Parameters.html">Parameters</a> const &amp;param, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
-<tr class="separator:ae02b3d1892473648487ad794e0a52c91"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af6ad93924160c35325f165113b73f933"><td class="memItemLeft" align="right" valign="top"><a id="af6ad93924160c35325f165113b73f933" name="af6ad93924160c35325f165113b73f933"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>Operator</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1ConvDiff_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1ConvDiff_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, <a class="el" href="classExaDG_1_1ConvDiff_1_1Parameters.html">Parameters</a> const &amp;param, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
+<tr class="separator:af6ad93924160c35325f165113b73f933"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a65c5bc919e153a4313bd4e5ff2b7c628"><td class="memItemLeft" align="right" valign="top"><a id="a65c5bc919e153a4313bd4e5ff2b7c628" name="a65c5bc919e153a4313bd4e5ff2b7c628"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data</b> (<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &amp;matrix_free_data) const</td></tr>
 <tr class="separator:a65c5bc919e153a4313bd4e5ff2b7c628"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4764ccd162e96c2e731addc7d194abd5"><td class="memItemLeft" align="right" valign="top"><a id="a4764ccd162e96c2e731addc7d194abd5" name="a4764ccd162e96c2e731addc7d194abd5"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; &gt; matrix_free_in, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &gt; matrix_free_data_in, std::string const &amp;dof_index_velocity_external_in=&quot;&quot;)</td></tr>
-<tr class="separator:a4764ccd162e96c2e731addc7d194abd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7f6785ef345f7996bbb7a9e4e27dbf06"><td class="memItemLeft" align="right" valign="top"><a id="a7f6785ef345f7996bbb7a9e4e27dbf06" name="a7f6785ef345f7996bbb7a9e4e27dbf06"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; const &gt; matrix_free_in, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; const &gt; matrix_free_data_in, std::string const &amp;dof_index_velocity_external_in=&quot;&quot;)</td></tr>
+<tr class="separator:a7f6785ef345f7996bbb7a9e4e27dbf06"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab54335883fff91970ff6f8861ad3555a"><td class="memItemLeft" align="right" valign="top"><a id="ab54335883fff91970ff6f8861ad3555a" name="ab54335883fff91970ff6f8861ad3555a"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_solver</b> (double const scaling_factor_mass=-1.0, VectorType const *velocity=nullptr)</td></tr>
 <tr class="separator:ab54335883fff91970ff6f8861ad3555a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -142,12 +142,8 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_conv_diff_opera
 <tr class="memitem:ab0a9edc71a3572c652cae04d08e622a5"><td class="memItemLeft" align="right" valign="top"><a id="ab0a9edc71a3572c652cae04d08e622a5" name="ab0a9edc71a3572c652cae04d08e622a5"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update_conv_diff_operator</b> (double const evaluation_time, double const scaling_factor, VectorType const *velocity=nullptr)</td></tr>
 <tr class="separator:ab0a9edc71a3572c652cae04d08e622a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aca761ff6d921acfc926610df7b7b2bd7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#aca761ff6d921acfc926610df7b7b2bd7">move_grid</a> (double const &amp;time) const final</td></tr>
-<tr class="separator:aca761ff6d921acfc926610df7b7b2bd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a738698af4c940f4861d37fd6af4aa82c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a738698af4c940f4861d37fd6af4aa82c">update_matrix_free_after_grid_motion</a> () final</td></tr>
-<tr class="separator:a738698af4c940f4861d37fd6af4aa82c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa60c33eeda7c41816546e8422a53451e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#aa60c33eeda7c41816546e8422a53451e">update_spatial_operators_after_grid_motion</a> () final</td></tr>
-<tr class="separator:aa60c33eeda7c41816546e8422a53451e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a003bfdfd6a5a23d2f9830af167391d0a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a003bfdfd6a5a23d2f9830af167391d0a">update_after_grid_motion</a> () final</td></tr>
+<tr class="separator:a003bfdfd6a5a23d2f9830af167391d0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0a7abd93d0b03b699237e5811a070dd1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a0a7abd93d0b03b699237e5811a070dd1">fill_grid_coordinates_vector</a> (VectorType &amp;vector) const final</td></tr>
 <tr class="separator:a0a7abd93d0b03b699237e5811a070dd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8a3e92a1eb0446b7e9f1af254113bae"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#ab8a3e92a1eb0446b7e9f1af254113bae">solve</a> (VectorType &amp;sol, VectorType const &amp;rhs, bool const update_preconditioner, double const scaling_factor=-1.0, double const time=-1.0, VectorType const *velocity=nullptr) final</td></tr>
@@ -222,15 +218,9 @@ virtual double&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_t
 <tr class="memitem:a0e48a963c3b8ddcd99b6ce67d732db8a"><td class="memItemLeft" align="right" valign="top"><a id="a0e48a963c3b8ddcd99b6ce67d732db8a" name="a0e48a963c3b8ddcd99b6ce67d732db8a"></a>
 virtual double&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_time_step_diffusion</b> () const =0</td></tr>
 <tr class="separator:a0e48a963c3b8ddcd99b6ce67d732db8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac74041a69f2bd90a0e795ccd1cc39b3c"><td class="memItemLeft" align="right" valign="top"><a id="ac74041a69f2bd90a0e795ccd1cc39b3c" name="ac74041a69f2bd90a0e795ccd1cc39b3c"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>move_grid</b> (double const &amp;time) const =0</td></tr>
-<tr class="separator:ac74041a69f2bd90a0e795ccd1cc39b3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3b55c02d34c4c22e5097d23eb5337309"><td class="memItemLeft" align="right" valign="top"><a id="a3b55c02d34c4c22e5097d23eb5337309" name="a3b55c02d34c4c22e5097d23eb5337309"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update_matrix_free_after_grid_motion</b> ()=0</td></tr>
-<tr class="separator:a3b55c02d34c4c22e5097d23eb5337309"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab77b296534c7d43f5c485ff164b3536c"><td class="memItemLeft" align="right" valign="top"><a id="ab77b296534c7d43f5c485ff164b3536c" name="ab77b296534c7d43f5c485ff164b3536c"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update_spatial_operators_after_grid_motion</b> ()=0</td></tr>
-<tr class="separator:ab77b296534c7d43f5c485ff164b3536c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a403927ae62b55b524876c580f59f9429"><td class="memItemLeft" align="right" valign="top"><a id="a403927ae62b55b524876c580f59f9429" name="a403927ae62b55b524876c580f59f9429"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update_after_grid_motion</b> ()=0</td></tr>
+<tr class="separator:a403927ae62b55b524876c580f59f9429"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7a2a784586b3480a46ab6ce31d935dab"><td class="memItemLeft" align="right" valign="top"><a id="a7a2a784586b3480a46ab6ce31d935dab" name="a7a2a784586b3480a46ab6ce31d935dab"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_grid_coordinates_vector</b> (VectorType &amp;vector) const =0</td></tr>
 <tr class="separator:a7a2a784586b3480a46ab6ce31d935dab"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -531,36 +521,6 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="aca761ff6d921acfc926610df7b7b2bd7" name="aca761ff6d921acfc926610df7b7b2bd7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aca761ff6d921acfc926610df7b7b2bd7">&#9670;&#160;</a></span>move_grid()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::move_grid </td>
-          <td>(</td>
-          <td class="paramtype">double const &amp;&#160;</td>
-          <td class="paramname"><em>time</em></td><td>)</td>
-          <td> const</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classExaDG_1_1ConvDiff_1_1Interface_1_1Operator.html">ExaDG::ConvDiff::Interface::Operator&lt; Number &gt;</a>.</p>
-
-</div>
-</div>
 <a id="ae4951dea8935b315a0e69ee95ceb759c" name="ae4951dea8935b315a0e69ee95ceb759c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae4951dea8935b315a0e69ee95ceb759c">&#9670;&#160;</a></span>prescribe_initial_conditions()</h2>
 
@@ -751,8 +711,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a738698af4c940f4861d37fd6af4aa82c" name="a738698af4c940f4861d37fd6af4aa82c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a738698af4c940f4861d37fd6af4aa82c">&#9670;&#160;</a></span>update_matrix_free_after_grid_motion()</h2>
+<a id="a003bfdfd6a5a23d2f9830af167391d0a" name="a003bfdfd6a5a23d2f9830af167391d0a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a003bfdfd6a5a23d2f9830af167391d0a">&#9670;&#160;</a></span>update_after_grid_motion()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -763,33 +723,7 @@ template&lt;int dim, typename Number &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::update_matrix_free_after_grid_motion</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classExaDG_1_1ConvDiff_1_1Interface_1_1Operator.html">ExaDG::ConvDiff::Interface::Operator&lt; Number &gt;</a>.</p>
-
-</div>
-</div>
-<a id="aa60c33eeda7c41816546e8422a53451e" name="aa60c33eeda7c41816546e8422a53451e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa60c33eeda7c41816546e8422a53451e">&#9670;&#160;</a></span>update_spatial_operators_after_grid_motion()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::update_spatial_operators_after_grid_motion</td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::update_after_grid_motion</td>
         </tr>
       </table>
   </td>

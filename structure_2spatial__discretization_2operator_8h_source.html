@@ -265,8 +265,8 @@ $(function() {
 <div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span><span class="comment">   * related to the solution of linear systems of equations.</span></div>
 <div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  setup(std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt;&gt; matrix_free,</div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>        std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a>&gt;     matrix_free_data);</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  setup(std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span>&gt; matrix_free,</div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>        std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a> <span class="keyword">const</span>&gt;     matrix_free_data);</div>
 <div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span> </div>
 <div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span><span class="comment">   * This function initializes operators, preconditioners, and solvers related to the solution of</span></div>
@@ -463,8 +463,8 @@ $(function() {
 <div class="line"><a id="l00385" name="l00385"></a><span class="lineno">  385</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00386" name="l00386"></a><span class="lineno">  386</span><span class="comment">   * Matrix-free operator evaluation.</span></div>
 <div class="line"><a id="l00387" name="l00387"></a><span class="lineno">  387</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00388" name="l00388"></a><span class="lineno">  388</span>  std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt;&gt;     matrix_free_data;</div>
-<div class="line"><a id="l00389" name="l00389"></a><span class="lineno">  389</span>  std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt;&gt; matrix_free;</div>
+<div class="line"><a id="l00388" name="l00388"></a><span class="lineno">  388</span>  std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span>&gt; matrix_free;</div>
+<div class="line"><a id="l00389" name="l00389"></a><span class="lineno">  389</span>  std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt; <span class="keyword">const</span>&gt;     matrix_free_data;</div>
 <div class="line"><a id="l00390" name="l00390"></a><span class="lineno">  390</span> </div>
 <div class="line"><a id="l00391" name="l00391"></a><span class="lineno">  391</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00392" name="l00392"></a><span class="lineno">  392</span><span class="comment">   * Interface coupling</span></div>
