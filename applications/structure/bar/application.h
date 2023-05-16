@@ -224,8 +224,8 @@ private:
     this->param.spectral_radius                      = 0.8;
     this->param.solver_info_data.interval_time_steps = 2;
 
-    this->param.grid.mapping_degree = 1;
-    this->param.grid.element_type   = ElementType::Hypercube; // Simplex;
+    this->param.mapping_degree    = 1;
+    this->param.grid.element_type = ElementType::Hypercube; // Simplex;
     if(this->param.grid.element_type == ElementType::Simplex)
     {
       this->param.grid.triangulation_type = TriangulationType::FullyDistributed;

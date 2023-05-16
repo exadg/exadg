@@ -71,7 +71,7 @@ Driver<dim, Number>::setup()
 
       grid_motion = std::make_shared<GridMotionFunction<dim, Number>>(
         application->get_mapping(),
-        application->get_parameters().grid.mapping_degree,
+        application->get_parameters().mapping_degree,
         *application->get_grid()->triangulation,
         mesh_motion,
         application->get_parameters().start_time);

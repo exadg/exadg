@@ -36,7 +36,6 @@ struct GridData
       partitioning_type(PartitioningType::Metis),
       multigrid(MultigridVariant::LocalSmoothing),
       n_refine_global(0),
-      mapping_degree(1),
       file_name()
   {
   }
@@ -59,8 +58,6 @@ struct GridData
     print_parameter(pcout, "Multigrid variant", multigrid);
 
     print_parameter(pcout, "Global refinements", n_refine_global);
-
-    print_parameter(pcout, "Mapping degree", mapping_degree);
   }
 
   TriangulationType triangulation_type;
@@ -73,8 +70,6 @@ struct GridData
   MultigridVariant multigrid;
 
   unsigned int n_refine_global;
-
-  unsigned int mapping_degree;
 
   // path to a grid file
   // the filename needs to include a proper filename ending/extension so that we can internally

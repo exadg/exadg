@@ -108,7 +108,7 @@ public:
 
     // grid
     grid->initialize(param.grid, mpi_comm);
-    GridUtilities::create_mapping(mapping, param.grid.element_type, param.grid.mapping_degree);
+    GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
     create_grid();
     print_grid_info(pcout, *grid);
   }

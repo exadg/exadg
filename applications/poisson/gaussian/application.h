@@ -210,7 +210,7 @@ private:
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type = TriangulationType::Distributed;
     this->param.grid.multigrid          = MultigridVariant::LocalSmoothing;
-    this->param.grid.mapping_degree     = this->param.degree;
+    this->param.mapping_degree          = this->param.degree;
     this->param.spatial_discretization  = SpatialDiscretization::DG;
     this->param.IP_factor               = 1.0e0;
 

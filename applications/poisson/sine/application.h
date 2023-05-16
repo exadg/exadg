@@ -145,13 +145,13 @@ private:
     if(this->param.grid.element_type == ElementType::Simplex)
     {
       this->param.grid.triangulation_type = TriangulationType::FullyDistributed;
-      this->param.grid.mapping_degree     = 2;
+      this->param.mapping_degree          = 2;
       this->param.grid.multigrid          = MultigridVariant::GlobalCoarsening;
     }
     else if(this->param.grid.element_type == ElementType::Hypercube)
     {
       this->param.grid.triangulation_type = TriangulationType::Distributed;
-      this->param.grid.mapping_degree     = 3;
+      this->param.mapping_degree          = 3;
       this->param.grid.multigrid          = MultigridVariant::LocalSmoothing;
     }
     this->param.grid.file_name = this->grid_parameters.file_name;

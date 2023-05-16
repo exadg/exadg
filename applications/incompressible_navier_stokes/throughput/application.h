@@ -96,7 +96,7 @@ private:
 
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.grid.mapping_degree     = 1; // this->param.degree_u;
+    this->param.mapping_degree          = 1; // this->param.degree_u;
     // use EqualOrder so that we can also start with k=1 for the velocity!
     this->param.degree_p = DegreePressure::MixedOrder;
 

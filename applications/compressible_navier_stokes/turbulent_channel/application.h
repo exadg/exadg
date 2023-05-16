@@ -311,7 +311,7 @@ private:
 
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.grid.mapping_degree     = 1;
+    this->param.mapping_degree          = 1;
     this->param.n_q_points_convective   = QuadratureRule::Overintegration32k;
     this->param.n_q_points_viscous      = QuadratureRule::Overintegration32k;
 
