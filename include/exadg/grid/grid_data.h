@@ -34,9 +34,9 @@ struct GridData
     : triangulation_type(TriangulationType::Distributed),
       element_type(ElementType::Hypercube),
       partitioning_type(PartitioningType::Metis),
-      multigrid(MultigridVariant::LocalSmoothing),
       n_refine_global(0),
-      file_name()
+      file_name(),
+      multigrid(MultigridVariant::LocalSmoothing)
   {
   }
 
@@ -55,9 +55,12 @@ struct GridData
     if(triangulation_type == TriangulationType::FullyDistributed)
       print_parameter(pcout, "Partitioning type (fully-distributed)", partitioning_type);
 
-    print_parameter(pcout, "Multigrid variant", multigrid);
+    print_parameter(pcout, "Number of global refinements", n_refine_global);
 
-    print_parameter(pcout, "Global refinements", n_refine_global);
+    if(not file_name.empty())
+      print_parameter(pcout, "Grid file name", file_name);
+
+    print_parameter(pcout, "Multigrid variant", multigrid);
   }
 
   TriangulationType triangulation_type;
@@ -67,14 +70,14 @@ struct GridData
   // only relevant for TriangulationType::FullyDistributed
   PartitioningType partitioning_type;
 
-  MultigridVariant multigrid;
-
   unsigned int n_refine_global;
 
   // path to a grid file
   // the filename needs to include a proper filename ending/extension so that we can internally
   // deduce the correct type of the file format
   std::string file_name;
+
+  MultigridVariant multigrid;
 };
 
 } // namespace ExaDG
