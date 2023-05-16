@@ -114,7 +114,7 @@ Driver<dim, Number>::setup_interface_coupling()
       structure_to_ale = std::make_shared<InterfaceCoupling<1, dim, Number>>();
       structure_to_ale->setup(fluid->ale_poisson_operator->get_container_interface_data(),
                               structure->pde_operator->get_dof_handler(),
-                              *application->structure->get_grid()->mapping,
+                              *application->structure->get_mapping(),
                               marked_vertices_structure,
                               parameters.geometric_tolerance);
     }
@@ -125,7 +125,7 @@ Driver<dim, Number>::setup_interface_coupling()
       structure_to_ale->setup(
         fluid->ale_elasticity_operator->get_container_interface_data_dirichlet(),
         structure->pde_operator->get_dof_handler(),
-        *application->structure->get_grid()->mapping,
+        *application->structure->get_mapping(),
         marked_vertices_structure,
         parameters.geometric_tolerance);
     }
@@ -154,7 +154,7 @@ Driver<dim, Number>::setup_interface_coupling()
     structure_to_fluid = std::make_shared<InterfaceCoupling<1, dim, Number>>();
     structure_to_fluid->setup(fluid->pde_operator->get_container_interface_data(),
                               structure->pde_operator->get_dof_handler(),
-                              *application->structure->get_grid()->mapping,
+                              *application->structure->get_mapping(),
                               marked_vertices_structure,
                               parameters.geometric_tolerance);
 
@@ -171,7 +171,7 @@ Driver<dim, Number>::setup_interface_coupling()
     pcout << std::endl << "Setup interface coupling fluid -> structure ..." << std::endl;
 
     std::shared_ptr<dealii::Mapping<dim> const> mapping_fluid =
-      get_dynamic_mapping<dim, Number>(application->fluid->get_grid(), fluid->ale_grid_motion);
+      get_dynamic_mapping<dim, Number>(application->fluid->get_mapping(), fluid->ale_grid_motion);
 
     auto const & tria         = fluid->pde_operator->get_dof_handler_u().get_triangulation();
     auto const   boundary_ids = extract_set_of_keys_from_map(

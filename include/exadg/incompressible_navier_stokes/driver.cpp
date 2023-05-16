@@ -70,7 +70,7 @@ Driver<dim, Number>::setup()
         application->create_mesh_movement_function();
 
       grid_motion = std::make_shared<GridMotionFunction<dim, Number>>(
-        application->get_grid()->mapping,
+        application->get_mapping(),
         application->get_parameters().grid.mapping_degree,
         *application->get_grid()->triangulation,
         mesh_motion,
@@ -83,6 +83,7 @@ Driver<dim, Number>::setup()
       // initialize Poisson operator
       poisson_operator = std::make_shared<Poisson::Operator<dim, dim, Number>>(
         application->get_grid(),
+        application->get_mapping(),
         application->get_boundary_descriptor_poisson(),
         application->get_field_functions_poisson(),
         application->get_parameters_poisson(),
@@ -97,7 +98,7 @@ Driver<dim, Number>::setup()
       if(application->get_parameters_poisson().enable_cell_based_face_loops)
         Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
                                             poisson_matrix_free_data->data);
-      poisson_matrix_free->reinit(*application->get_grid()->mapping,
+      poisson_matrix_free->reinit(*application->get_mapping(),
                                   poisson_matrix_free_data->get_dof_handler_vector(),
                                   poisson_matrix_free_data->get_constraint_vector(),
                                   poisson_matrix_free_data->get_quadrature_vector(),
@@ -106,9 +107,8 @@ Driver<dim, Number>::setup()
       poisson_operator->setup(poisson_matrix_free, poisson_matrix_free_data);
       poisson_operator->setup_solver();
 
-      grid_motion =
-        std::make_shared<GridMotionPoisson<dim, Number>>(application->get_grid()->mapping,
-                                                         poisson_operator);
+      grid_motion = std::make_shared<GridMotionPoisson<dim, Number>>(application->get_mapping(),
+                                                                     poisson_operator);
     }
     else
     {
@@ -125,7 +125,7 @@ Driver<dim, Number>::setup()
 
     helpers_ale->update_pde_operator_after_grid_motion = [&]() {
       std::shared_ptr<dealii::Mapping<dim> const> mapping =
-        get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
+        get_dynamic_mapping<dim, Number>(application->get_mapping(), grid_motion);
       matrix_free->update_mapping(*mapping);
 
       pde_operator->update_after_grid_motion();
@@ -136,7 +136,7 @@ Driver<dim, Number>::setup()
   {
     pde_operator =
       create_operator<dim, Number>(application->get_grid(),
-                                   get_dynamic_mapping<dim, Number>(application->get_grid(),
+                                   get_dynamic_mapping<dim, Number>(application->get_mapping(),
                                                                     grid_motion),
                                    application->get_boundary_descriptor(),
                                    application->get_field_functions(),
@@ -148,7 +148,7 @@ Driver<dim, Number>::setup()
   {
     pde_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
       application->get_grid(),
-      get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion),
+      get_dynamic_mapping<dim, Number>(application->get_mapping(), grid_motion),
       application->get_boundary_descriptor(),
       application->get_field_functions(),
       application->get_parameters(),
@@ -169,7 +169,7 @@ Driver<dim, Number>::setup()
     Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
                                         matrix_free_data->data);
   std::shared_ptr<dealii::Mapping<dim> const> mapping =
-    get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
+    get_dynamic_mapping<dim, Number>(application->get_mapping(), grid_motion);
   matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),

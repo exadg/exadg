@@ -98,11 +98,6 @@ print_grid_info(dealii::ConditionalOStream const & pcout, Grid<dim> const & grid
 
   print_parameter(pcout, "Max. number of refinements", grid.triangulation->n_global_levels() - 1);
   print_parameter(pcout, "Number of cells", grid.triangulation->n_global_active_cells());
-
-  std::shared_ptr<dealii::MappingQ<dim>> mapping_q =
-    std::dynamic_pointer_cast<dealii::MappingQ<dim>>(grid.mapping);
-  if(mapping_q.get() != 0)
-    print_parameter(pcout, "Mapping degree", mapping_q->get_degree());
 }
 
 template<typename Number>

@@ -185,13 +185,13 @@ private:
     // set boundary IDs for domain 1
     set_boundary_ids_overlap_region(*domain1->get_grid()->triangulation,
                                     boundary_id_overlap,
-                                    *domain2->get_grid()->mapping,
+                                    *domain2->get_mapping(),
                                     *domain2->get_grid()->triangulation);
 
     // set boundary IDs for domain 2
     set_boundary_ids_overlap_region(*domain2->get_grid()->triangulation,
                                     boundary_id_overlap,
-                                    *domain1->get_grid()->mapping,
+                                    *domain1->get_mapping(),
                                     *domain1->get_grid()->triangulation);
   }
 

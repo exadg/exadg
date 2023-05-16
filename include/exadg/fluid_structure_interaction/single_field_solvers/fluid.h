@@ -116,6 +116,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   {
     ale_poisson_operator = std::make_shared<Poisson::Operator<dim, dim, Number>>(
       application->get_grid(),
+      application->get_mapping(),
       application->get_boundary_descriptor_ale_poisson(),
       application->get_field_functions_ale_poisson(),
       application->get_parameters_ale_poisson(),
@@ -126,6 +127,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   {
     ale_elasticity_operator = std::make_shared<Structure::Operator<dim, Number>>(
       application->get_grid(),
+      application->get_mapping(),
       application->get_boundary_descriptor_ale_elasticity(),
       application->get_field_functions_ale_elasticity(),
       application->get_material_descriptor_ale_elasticity(),
@@ -160,7 +162,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
 
   // ALE: initialize matrix_free
   ale_matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-  ale_matrix_free->reinit(*application->get_grid()->mapping,
+  ale_matrix_free->reinit(*application->get_mapping(),
                           ale_matrix_free_data->get_dof_handler_vector(),
                           ale_matrix_free_data->get_constraint_vector(),
                           ale_matrix_free_data->get_quadrature_vector(),
@@ -185,14 +187,13 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   // ALE: create grid motion object
   if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)
   {
-    ale_grid_motion =
-      std::make_shared<GridMotionPoisson<dim, Number>>(application->get_grid()->mapping,
-                                                       ale_poisson_operator);
+    ale_grid_motion = std::make_shared<GridMotionPoisson<dim, Number>>(application->get_mapping(),
+                                                                       ale_poisson_operator);
   }
   else if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Elasticity)
   {
     ale_grid_motion = std::make_shared<GridMotionElasticity<dim, Number>>(
-      application->get_grid()->mapping,
+      application->get_mapping(),
       ale_elasticity_operator,
       application->get_parameters_ale_elasticity());
   }
@@ -204,7 +205,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   // initialize pde_operator
   pde_operator =
     IncNS::create_operator<dim, Number>(application->get_grid(),
-                                        get_dynamic_mapping<dim, Number>(application->get_grid(),
+                                        get_dynamic_mapping<dim, Number>(application->get_mapping(),
                                                                          ale_grid_motion),
                                         application->get_boundary_descriptor(),
                                         application->get_field_functions(),
@@ -221,7 +222,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
     Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
                                         matrix_free_data->data);
   std::shared_ptr<dealii::Mapping<dim> const> mapping =
-    get_dynamic_mapping<dim, Number>(application->get_grid(), ale_grid_motion);
+    get_dynamic_mapping<dim, Number>(application->get_mapping(), ale_grid_motion);
   matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
@@ -251,7 +252,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
 
   helpers_ale->update_pde_operator_after_grid_motion = [&]() {
     std::shared_ptr<dealii::Mapping<dim> const> mapping =
-      get_dynamic_mapping<dim, Number>(application->get_grid(), ale_grid_motion);
+      get_dynamic_mapping<dim, Number>(application->get_mapping(), ale_grid_motion);
     matrix_free->update_mapping(*mapping);
 
     pde_operator->update_after_grid_motion();

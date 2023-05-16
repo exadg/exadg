@@ -76,7 +76,7 @@ Driver<dim, Number>::setup()
     std::shared_ptr<dealii::Function<dim>> mesh_motion;
     mesh_motion = application->create_mesh_movement_function();
     grid_motion =
-      std::make_shared<GridMotionFunction<dim, Number>>(application->get_grid()->mapping,
+      std::make_shared<GridMotionFunction<dim, Number>>(application->get_mapping(),
                                                         application->get_parameters().degree_u,
                                                         *application->get_grid()->triangulation,
                                                         mesh_motion,
@@ -92,7 +92,7 @@ Driver<dim, Number>::setup()
 
     helpers_ale->update_pde_operator_after_grid_motion = [&]() {
       std::shared_ptr<dealii::Mapping<dim> const> mapping =
-        get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
+        get_dynamic_mapping<dim, Number>(application->get_mapping(), grid_motion);
       matrix_free->update_mapping(*mapping);
 
       fluid_operator->update_after_grid_motion();
@@ -104,21 +104,20 @@ Driver<dim, Number>::setup()
   // initialize fluid_operator
   if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
-    fluid_operator =
-      IncNS::create_operator<dim, Number>(application->get_grid(),
-                                          get_dynamic_mapping<dim, Number>(application->get_grid(),
-                                                                           grid_motion),
-                                          application->get_boundary_descriptor(),
-                                          application->get_field_functions(),
-                                          application->get_parameters(),
-                                          "fluid",
-                                          mpi_comm);
+    fluid_operator = IncNS::create_operator<dim, Number>(
+      application->get_grid(),
+      get_dynamic_mapping<dim, Number>(application->get_mapping(), grid_motion),
+      application->get_boundary_descriptor(),
+      application->get_field_functions(),
+      application->get_parameters(),
+      "fluid",
+      mpi_comm);
   }
   else if(application->get_parameters().solver_type == IncNS::SolverType::Steady)
   {
     fluid_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
       application->get_grid(),
-      get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion),
+      get_dynamic_mapping<dim, Number>(application->get_mapping(), grid_motion),
       application->get_boundary_descriptor(),
       application->get_field_functions(),
       application->get_parameters(),
@@ -141,7 +140,7 @@ Driver<dim, Number>::setup()
   {
     scalar_operator[i] = std::make_shared<ConvDiff::Operator<dim, Number>>(
       application->get_grid(),
-      get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion),
+      get_dynamic_mapping<dim, Number>(application->get_mapping(), grid_motion),
       application->get_boundary_descriptor_scalar(i),
       application->get_field_functions_scalar(i),
       application->get_parameters_scalar(i),
@@ -160,7 +159,7 @@ Driver<dim, Number>::setup()
     Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
                                         matrix_free_data->data);
   std::shared_ptr<dealii::Mapping<dim> const> mapping =
-    get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
+    get_dynamic_mapping<dim, Number>(application->get_mapping(), grid_motion);
   matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),

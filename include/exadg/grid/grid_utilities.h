@@ -23,6 +23,9 @@
 #define INCLUDE_EXADG_GRID_GRID_UTILITIES_H_
 
 // deal.II
+#include <deal.II/fe/fe_simplex_p.h>
+#include <deal.II/fe/mapping_fe.h>
+#include <deal.II/fe/mapping_q.h>
 #include <deal.II/grid/grid_in.h>
 #include <deal.II/multigrid/mg_transfer_global_coarsening.h>
 
@@ -59,6 +62,29 @@ get_element_type(dealii::Triangulation<dim> const & tria)
   {
     AssertThrow(false, dealii::ExcMessage("Invalid parameter element_type."));
     return ElementType::Hypercube;
+  }
+}
+
+/**
+ * Initializes the dealii::Mapping depending on the element type
+ */
+template<int dim>
+void
+create_mapping(std::shared_ptr<dealii::Mapping<dim>> mapping,
+               ElementType const &                   element_type,
+               unsigned int const &                  mapping_degree)
+{
+  if(element_type == ElementType::Hypercube)
+  {
+    mapping = std::make_shared<dealii::MappingQ<dim>>(mapping_degree);
+  }
+  else if(element_type == ElementType::Simplex)
+  {
+    mapping = std::make_shared<dealii::MappingFE<dim>>(dealii::FE_SimplexP<dim>(mapping_degree));
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("Invalid parameter element_type."));
   }
 }
 

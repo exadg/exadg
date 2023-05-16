@@ -66,7 +66,7 @@ DriverOversetGrids<dim, n_components, Number>::setup()
     // resolve this, the implementation of InterfaceCoupling needs to be generalized.
     first_to_second->setup(poisson2->pde_operator->get_container_interface_data(),
                            poisson1->pde_operator->get_dof_handler(),
-                           *application->domain1->get_grid()->mapping,
+                           *application->domain1->get_mapping(),
                            {} /* marked_vertices */,
                            1.e-8 /* geometric tolerance */);
 
@@ -78,7 +78,7 @@ DriverOversetGrids<dim, n_components, Number>::setup()
     second_to_first = std::make_shared<InterfaceCoupling<rank, dim, Number>>();
     second_to_first->setup(poisson1->pde_operator->get_container_interface_data(),
                            poisson2->pde_operator->get_dof_handler(),
-                           *application->domain2->get_grid()->mapping,
+                           *application->domain2->get_mapping(),
                            {} /* marked_vertices */,
                            1.e-8 /* geometric tolerance */);
 

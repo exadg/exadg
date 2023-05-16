@@ -34,7 +34,7 @@ namespace ExaDG
  */
 template<int dim, typename Number>
 std::shared_ptr<dealii::Mapping<dim> const>
-get_dynamic_mapping(std::shared_ptr<Grid<dim> const>                   grid,
+get_dynamic_mapping(std::shared_ptr<dealii::Mapping<dim> const>        mapping,
                     std::shared_ptr<GridMotionBase<dim, Number> const> grid_motion)
 {
   if(grid_motion.get() != 0)
@@ -43,10 +43,7 @@ get_dynamic_mapping(std::shared_ptr<Grid<dim> const>                   grid,
   }
   else
   {
-    AssertThrow(grid->mapping.get() != 0,
-                dealii::ExcMessage("Uninitialized mapping object detected."));
-
-    return grid->mapping;
+    return mapping;
   }
 }
 } // namespace ExaDG

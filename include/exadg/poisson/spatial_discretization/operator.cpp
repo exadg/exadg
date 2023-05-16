@@ -50,6 +50,7 @@ namespace Poisson
 template<int dim, int n_components, typename Number>
 Operator<dim, n_components, Number>::Operator(
   std::shared_ptr<Grid<dim> const>                     grid_in,
+  std::shared_ptr<dealii::Mapping<dim> const>          mapping_in,
   std::shared_ptr<BoundaryDescriptor<rank, dim> const> boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim> const>           field_functions_in,
   Parameters const &                                   param_in,
@@ -57,6 +58,7 @@ Operator<dim, n_components, Number>::Operator(
   MPI_Comm const &                                     mpi_comm_in)
   : dealii::Subscriptor(),
     grid(grid_in),
+    mapping(mapping_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(param_in),
@@ -397,7 +399,7 @@ Operator<dim, n_components, Number>::setup_solver()
                                   grid->coarse_triangulations,
                                   grid->coarse_periodic_face_pairs,
                                   dof_handler.get_fe(),
-                                  grid->mapping,
+                                  mapping,
                                   laplace_operator.get_data(),
                                   false /* moving_mesh */,
                                   dirichlet_boundary_conditions,
@@ -697,7 +699,7 @@ template<int dim, int n_components, typename Number>
 std::shared_ptr<dealii::Mapping<dim> const>
 Operator<dim, n_components, Number>::get_mapping() const
 {
-  return grid->mapping;
+  return mapping;
 }
 
 template class Operator<2, 1, float>;

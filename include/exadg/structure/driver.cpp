@@ -61,6 +61,7 @@ Driver<dim, Number>::setup()
 
   // setup spatial operator
   pde_operator = std::make_shared<Operator<dim, Number>>(application->get_grid(),
+                                                         application->get_mapping(),
                                                          application->get_boundary_descriptor(),
                                                          application->get_field_functions(),
                                                          application->get_material_descriptor(),
@@ -73,7 +74,7 @@ Driver<dim, Number>::setup()
   matrix_free_data->append(pde_operator);
 
   matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-  matrix_free->reinit(*application->get_grid()->mapping,
+  matrix_free->reinit(*application->get_mapping(),
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),

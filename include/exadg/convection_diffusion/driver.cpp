@@ -65,7 +65,7 @@ Driver<dim, Number>::setup()
     std::shared_ptr<dealii::Function<dim>> mesh_motion =
       application->create_mesh_movement_function();
     grid_motion =
-      std::make_shared<GridMotionFunction<dim, Number>>(application->get_grid()->mapping,
+      std::make_shared<GridMotionFunction<dim, Number>>(application->get_mapping(),
                                                         application->get_parameters().degree,
                                                         *application->get_grid()->triangulation,
                                                         mesh_motion,
@@ -81,7 +81,7 @@ Driver<dim, Number>::setup()
 
     helpers_ale->update_pde_operator_after_grid_motion = [&]() {
       std::shared_ptr<dealii::Mapping<dim> const> mapping =
-        get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
+        get_dynamic_mapping<dim, Number>(application->get_mapping(), grid_motion);
       matrix_free->update_mapping(*mapping);
 
       pde_operator->update_after_grid_motion();
@@ -91,7 +91,7 @@ Driver<dim, Number>::setup()
   // initialize convection-diffusion operator
   pde_operator = std::make_shared<Operator<dim, Number>>(
     application->get_grid(),
-    get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion),
+    get_dynamic_mapping<dim, Number>(application->get_mapping(), grid_motion),
     application->get_boundary_descriptor(),
     application->get_field_functions(),
     application->get_parameters(),
@@ -107,7 +107,7 @@ Driver<dim, Number>::setup()
     Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
                                         matrix_free_data->data);
   std::shared_ptr<dealii::Mapping<dim> const> mapping =
-    get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
+    get_dynamic_mapping<dim, Number>(application->get_mapping(), grid_motion);
   matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),

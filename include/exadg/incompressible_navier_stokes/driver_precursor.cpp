@@ -119,7 +119,7 @@ DriverPrecursor<dim, Number>::setup()
 
   // initialize pde_operator_pre (precursor domain)
   pde_operator_pre = create_operator<dim, Number>(application->get_grid_precursor(),
-                                                  application->get_grid_precursor()->mapping,
+                                                  application->get_mapping_precursor(),
                                                   application->get_boundary_descriptor_precursor(),
                                                   application->get_field_functions_precursor(),
                                                   application->get_parameters_precursor(),
@@ -128,7 +128,7 @@ DriverPrecursor<dim, Number>::setup()
 
   // initialize operator_base (actual domain)
   pde_operator = create_operator<dim, Number>(application->get_grid(),
-                                              application->get_grid()->mapping,
+                                              application->get_mapping(),
                                               application->get_boundary_descriptor(),
                                               application->get_field_functions(),
                                               application->get_parameters(),
@@ -144,7 +144,7 @@ DriverPrecursor<dim, Number>::setup()
   if(application->get_parameters_precursor().use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*application->get_grid_precursor()->triangulation,
                                         matrix_free_data_pre->data);
-  matrix_free_pre->reinit(*application->get_grid_precursor()->mapping,
+  matrix_free_pre->reinit(*application->get_mapping_precursor(),
                           matrix_free_data_pre->get_dof_handler_vector(),
                           matrix_free_data_pre->get_constraint_vector(),
                           matrix_free_data_pre->get_quadrature_vector(),
@@ -158,7 +158,7 @@ DriverPrecursor<dim, Number>::setup()
   if(application->get_parameters().use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
                                         matrix_free_data->data);
-  matrix_free->reinit(*application->get_grid()->mapping,
+  matrix_free->reinit(*application->get_mapping(),
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
