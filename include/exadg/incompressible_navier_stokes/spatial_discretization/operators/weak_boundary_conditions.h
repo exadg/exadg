@@ -466,7 +466,7 @@ inline DEAL_II_ALWAYS_INLINE //
       {
         auto normals_m = integrator.get_normal_vector(q);
         h              = FunctionEvaluator<1, dim, Number>::value(
-          *(std::static_pointer_cast<FunctionWithNormal<dim>>(bc)), q_points, normals_m, time);
+          *(std::dynamic_pointer_cast<FunctionWithNormal<dim>>(bc)), q_points, normals_m, time);
       }
 
       normal_gradient_p = -normal_gradient_m + 2.0 * h;
