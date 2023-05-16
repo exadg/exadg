@@ -132,7 +132,7 @@ write_points_in_dummy_triangulation(std::vector<dealii::Point<dim>> const & poin
                                     MPI_Comm const &                        mpi_comm)
 {
   dealii::BoundingBox<dim> bounding_box(points);
-  auto const &             boundary_points =
+  auto const               boundary_points =
     bounding_box.create_extended(1e-3 * std::pow(bounding_box.volume(), 1.0 / ((double)dim)))
       .get_boundary_points();
 
