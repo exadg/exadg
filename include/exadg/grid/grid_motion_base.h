@@ -34,7 +34,13 @@
 namespace ExaDG
 {
 /**
- * Base class for moving grid problems.
+ * Base class to describe grid deformations, where the grid coordinates described by a reference
+ * mapping are superimposed by a displacement DoF vector.
+ *
+ * A typical use case of this class are Arbitrary Lagrangian-Eulerian type problems with moving
+ * domains / grids, where the displacement vector describes the time-dependent deformation of the
+ * grid. However, this class may also be used for stationary problems, e.g. to apply high-order
+ * curved boundaries on top of low-order approximation of a certain geometry.
  */
 template<int dim, typename Number>
 class GridMotionBase : public MappingDoFVector<dim, Number>
@@ -44,32 +50,45 @@ public:
 
   /**
    * Constructor.
+   *
+   * The constructor assumes a vanishing displacement field, i.e. the reference configuration
+   * described by @p mapping_undeformed describes the absolute coordinates of the grid.
    */
   GridMotionBase(std::shared_ptr<dealii::Mapping<dim> const> mapping_undeformed,
                  unsigned int const                          mapping_degree_q_cache,
                  dealii::Triangulation<dim> const &          triangulation)
     : MappingDoFVector<dim, Number>(mapping_degree_q_cache), mapping_undeformed(mapping_undeformed)
   {
-    // Make sure that dealii::MappingQCache is initialized correctly. An empty dof-vector is used
-    // and, hence, no displacements are added to the reference configuration described by
-    // mapping_undeformed.
+    // Make sure that dealii::MappingQCache is initialized correctly. We use an empty
+    // dof-vector so that no displacements are added to the reference configuration
+    // described by mapping_undeformed.
     dealii::DoFHandler<dim> dof_handler(triangulation);
     VectorType              displacement_vector;
     this->initialize_mapping_q_cache(mapping_undeformed, displacement_vector, dof_handler);
   }
 
+  /**
+   * Desctructor.
+   */
   virtual ~GridMotionBase()
   {
   }
 
   /**
    * Updates the mapping, i.e., moves the grid.
+   *
+   * TODO: The parameters print_solver_info and time_step_number are only relevant for PDE-type grid
+   * deformation problems. Hence this function with these particular arguments should not appear in
+   * this base class.
    */
   virtual void
   update(double const time, bool const print_solver_info, types::time_step time_step_number) = 0;
 
   /**
-   * Print the number of iterations for PDE type grid motion problems.
+   * Print the number of iterations for PDE-type grid deformation problems.
+   *
+   * TODO: this function is only relevant for PDE-type grid deformation problems, and should
+   * therefore not appear in this base class.
    */
   virtual void
   print_iterations() const
@@ -78,7 +97,9 @@ public:
   }
 
 protected:
-  // mapping describing undeformed reference state
+  /**
+   * mapping describing undeformed reference state
+   */
   std::shared_ptr<dealii::Mapping<dim> const> mapping_undeformed;
 };
 
