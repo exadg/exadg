@@ -32,11 +32,13 @@
 
 namespace ExaDG
 {
+namespace Poisson
+{
 /**
  * Class for moving grid problems based on a Poisson-type grid motion technique.
  */
 template<int dim, typename Number>
-class GridMotionPoisson : public GridMotionBase<dim, Number>
+class DeformedMapping : public DeformedMappingBase<dim, Number>
 {
 public:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -44,14 +46,14 @@ public:
   /**
    * Constructor.
    */
-  GridMotionPoisson(std::shared_ptr<Grid<dim> const>                           grid,
-                    std::shared_ptr<dealii::Mapping<dim> const>                mapping_undeformed,
-                    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim> const> boundary_descriptor,
-                    std::shared_ptr<Poisson::FieldFunctions<dim> const>        field_functions,
-                    Poisson::Parameters const &                                param,
-                    std::string const &                                        field,
-                    MPI_Comm const &                                           mpi_comm)
-    : GridMotionBase<dim, Number>(mapping_undeformed, param.degree, *grid->triangulation),
+  DeformedMapping(std::shared_ptr<Grid<dim> const>                           grid,
+                  std::shared_ptr<dealii::Mapping<dim> const>                mapping_undeformed,
+                  std::shared_ptr<Poisson::BoundaryDescriptor<1, dim> const> boundary_descriptor,
+                  std::shared_ptr<Poisson::FieldFunctions<dim> const>        field_functions,
+                  Poisson::Parameters const &                                param,
+                  std::string const &                                        field,
+                  MPI_Comm const &                                           mpi_comm)
+    : DeformedMappingBase<dim, Number>(mapping_undeformed, param.degree, *grid->triangulation),
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       iterations({0, 0})
   {
@@ -164,6 +166,7 @@ private:
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations;
 };
 
+} // namespace Poisson
 } // namespace ExaDG
 
 #endif /* INCLUDE_EXADG_GRID_GRID_MOTION_POISSON_H_ */

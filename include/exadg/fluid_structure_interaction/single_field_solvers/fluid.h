@@ -83,8 +83,8 @@ public:
   // Postprocessor
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> postprocessor;
 
-  // ALE grid motion
-  std::shared_ptr<GridMotionBase<dim, Number>> ale_grid_motion;
+  // ALE mapping
+  std::shared_ptr<DeformedMappingBase<dim, Number>> ale_mapping;
 
   // ALE helper functions required by fluid time integrator
   std::shared_ptr<HelpersALE<Number>> helpers_ale;
@@ -104,7 +104,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   // ALE: create grid motion object
   if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)
   {
-    ale_grid_motion = std::make_shared<GridMotionPoisson<dim, Number>>(
+    ale_mapping = std::make_shared<Poisson::DeformedMapping<dim, Number>>(
       application->get_grid(),
       application->get_mapping(),
       application->get_boundary_descriptor_ale_poisson(),
@@ -115,7 +115,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   }
   else if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Elasticity)
   {
-    ale_grid_motion = std::make_shared<GridMotionElasticity<dim, Number>>(
+    ale_mapping = std::make_shared<Structure::DeformedMapping<dim, Number>>(
       application->get_grid(),
       application->get_mapping(),
       application->get_boundary_descriptor_ale_elasticity(),
@@ -132,7 +132,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
 
   // initialize pde_operator
   pde_operator = IncNS::create_operator<dim, Number>(application->get_grid(),
-                                                     ale_grid_motion,
+                                                     ale_mapping,
                                                      application->get_boundary_descriptor(),
                                                      application->get_field_functions(),
                                                      application->get_parameters(),
@@ -147,7 +147,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   if(application->get_parameters().use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
                                         matrix_free_data->data);
-  matrix_free->reinit(*ale_grid_motion,
+  matrix_free->reinit(*ale_mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
@@ -169,13 +169,13 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   helpers_ale = std::make_shared<HelpersALE<Number>>();
 
   helpers_ale->move_grid = [&](double const & time) {
-    ale_grid_motion->update(time,
-                            time_integrator->print_solver_info(),
-                            this->time_integrator->get_number_of_time_steps());
+    ale_mapping->update(time,
+                        time_integrator->print_solver_info(),
+                        this->time_integrator->get_number_of_time_steps());
   };
 
   helpers_ale->update_pde_operator_after_grid_motion = [&]() {
-    matrix_free->update_mapping(*ale_grid_motion);
+    matrix_free->update_mapping(*ale_mapping);
 
     pde_operator->update_after_grid_motion();
   };

@@ -69,7 +69,7 @@ Driver<dim, Number>::setup()
       std::shared_ptr<dealii::Function<dim>> mesh_motion =
         application->create_mesh_movement_function();
 
-      grid_motion = std::make_shared<GridMotionFunction<dim, Number>>(
+      grid_motion = std::make_shared<DeformedMappingFunction<dim, Number>>(
         application->get_mapping(),
         application->get_parameters().mapping_degree,
         *application->get_grid()->triangulation,
@@ -80,7 +80,7 @@ Driver<dim, Number>::setup()
     {
       application->setup_poisson();
 
-      grid_motion = std::make_shared<GridMotionPoisson<dim, Number>>(
+      grid_motion = std::make_shared<Poisson::DeformedMapping<dim, Number>>(
         application->get_grid(),
         application->get_mapping(),
         application->get_boundary_descriptor_poisson(),

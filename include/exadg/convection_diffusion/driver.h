@@ -117,8 +117,8 @@ private:
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
-  // moving mapping (ALE)
-  std::shared_ptr<GridMotionFunction<dim, Number>> grid_motion;
+  // ALE mapping
+  std::shared_ptr<DeformedMappingFunction<dim, Number>> ale_mapping;
 
   // ALE helper functions required by time integrator
   std::shared_ptr<HelpersALE<Number>> helpers_ale;

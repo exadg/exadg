@@ -43,7 +43,7 @@ namespace ExaDG
  * curved boundaries on top of low-order approximation of a certain geometry.
  */
 template<int dim, typename Number>
-class GridMotionBase : public MappingDoFVector<dim, Number>
+class DeformedMappingBase : public MappingDoFVector<dim, Number>
 {
 public:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -51,12 +51,13 @@ public:
   /**
    * Constructor.
    *
-   * The constructor assumes a vanishing displacement field, i.e. the reference configuration
-   * described by @p mapping_undeformed describes the absolute coordinates of the grid.
+   * The constructor assumes a vanishing displacement field, i.e. after construction
+   * the reference configuration described by @p mapping_undeformed describes the
+   * absolute coordinates of the grid.
    */
-  GridMotionBase(std::shared_ptr<dealii::Mapping<dim> const> mapping_undeformed,
-                 unsigned int const                          mapping_degree_q_cache,
-                 dealii::Triangulation<dim> const &          triangulation)
+  DeformedMappingBase(std::shared_ptr<dealii::Mapping<dim> const> mapping_undeformed,
+                      unsigned int const                          mapping_degree_q_cache,
+                      dealii::Triangulation<dim> const &          triangulation)
     : MappingDoFVector<dim, Number>(mapping_degree_q_cache), mapping_undeformed(mapping_undeformed)
   {
     // Make sure that dealii::MappingQCache is initialized correctly. We use an empty
@@ -70,7 +71,7 @@ public:
   /**
    * Desctructor.
    */
-  virtual ~GridMotionBase()
+  virtual ~DeformedMappingBase()
   {
   }
 

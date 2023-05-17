@@ -119,12 +119,12 @@ public:
       if(this->application->fluid->get_parameters().mesh_movement_type ==
          IncNS::MeshMovementType::Poisson)
       {
-        std::shared_ptr<GridMotionPoisson<dim, Number>> poisson_grid_motion =
-          std::dynamic_pointer_cast<GridMotionPoisson<dim, Number>>(fluid->ale_grid_motion);
+        std::shared_ptr<Poisson::DeformedMapping<dim, Number>> poisson_ale_mapping =
+          std::dynamic_pointer_cast<Poisson::DeformedMapping<dim, Number>>(fluid->ale_mapping);
 
         this->precice->add_read_surface(
-          poisson_grid_motion->get_matrix_free(),
-          poisson_grid_motion->get_pde_operator()->get_container_interface_data(),
+          poisson_ale_mapping->get_matrix_free(),
+          poisson_ale_mapping->get_pde_operator()->get_container_interface_data(),
           this->precice_parameters.ale_mesh_name,
           {this->precice_parameters.displacement_data_name});
       }
@@ -132,12 +132,12 @@ public:
       else if(this->application->fluid->get_parameters().mesh_movement_type ==
               IncNS::MeshMovementType::Elasticity)
       {
-        std::shared_ptr<GridMotionElasticity<dim, Number>> elasticity_grid_motion =
-          std::dynamic_pointer_cast<GridMotionElasticity<dim, Number>>(fluid->ale_grid_motion);
+        std::shared_ptr<Structure::DeformedMapping<dim, Number>> structure_ale_mapping =
+          std::dynamic_pointer_cast<Structure::DeformedMapping<dim, Number>>(fluid->ale_mapping);
 
         this->precice->add_read_surface(
-          elasticity_grid_motion->get_matrix_free(),
-          elasticity_grid_motion->get_pde_operator()->get_container_interface_data_dirichlet(),
+          structure_ale_mapping->get_matrix_free(),
+          structure_ale_mapping->get_pde_operator()->get_container_interface_data_dirichlet(),
           this->precice_parameters.ale_mesh_name,
           {this->precice_parameters.displacement_data_name});
       }
@@ -244,7 +244,7 @@ public:
     fluid->time_integrator->print_iterations();
 
     this->pcout << std::endl << "ALE:" << std::endl;
-    fluid->ale_grid_motion->print_iterations();
+    fluid->ale_mapping->print_iterations();
 
     // wall times
     this->pcout << std::endl << "Wall times:" << std::endl;
@@ -265,18 +265,18 @@ public:
     if(this->application->fluid->get_parameters().mesh_movement_type ==
        IncNS::MeshMovementType::Poisson)
     {
-      std::shared_ptr<GridMotionPoisson<dim, Number>> poisson_grid_motion =
-        std::dynamic_pointer_cast<GridMotionPoisson<dim, Number>>(fluid->ale_grid_motion);
+      std::shared_ptr<Poisson::DeformedMapping<dim, Number>> poisson_ale_mapping =
+        std::dynamic_pointer_cast<Poisson::DeformedMapping<dim, Number>>(fluid->ale_mapping);
 
-      DoFs += poisson_grid_motion->get_pde_operator()->get_number_of_dofs();
+      DoFs += poisson_ale_mapping->get_pde_operator()->get_number_of_dofs();
     }
     else if(this->application->fluid->get_parameters().mesh_movement_type ==
             IncNS::MeshMovementType::Elasticity)
     {
-      std::shared_ptr<GridMotionElasticity<dim, Number>> elasticity_grid_motion =
-        std::dynamic_pointer_cast<GridMotionElasticity<dim, Number>>(fluid->ale_grid_motion);
+      std::shared_ptr<Structure::DeformedMapping<dim, Number>> elasticity_ale_mapping =
+        std::dynamic_pointer_cast<Structure::DeformedMapping<dim, Number>>(fluid->ale_mapping);
 
-      DoFs += elasticity_grid_motion->get_pde_operator()->get_number_of_dofs();
+      DoFs += elasticity_ale_mapping->get_pde_operator()->get_number_of_dofs();
     }
     else
     {

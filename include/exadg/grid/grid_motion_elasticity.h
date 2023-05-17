@@ -32,11 +32,13 @@
 
 namespace ExaDG
 {
+namespace Structure
+{
 /**
  * Class for moving grid problems based on a pseudo-solid grid motion technique.
  */
 template<int dim, typename Number>
-class GridMotionElasticity : public GridMotionBase<dim, Number>
+class DeformedMapping : public DeformedMappingBase<dim, Number>
 {
 public:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -44,29 +46,28 @@ public:
   /**
    * Constructor.
    */
-  GridMotionElasticity(
-    std::shared_ptr<Grid<dim> const>                          grid,
-    std::shared_ptr<dealii::Mapping<dim> const>               mapping_undeformed,
-    std::shared_ptr<Structure::BoundaryDescriptor<dim> const> boundary_descriptor,
-    std::shared_ptr<Structure::FieldFunctions<dim> const>     field_functions,
-    std::shared_ptr<Structure::MaterialDescriptor const>      material_descriptor,
-    Structure::Parameters const &                             param,
-    std::string const &                                       field,
-    MPI_Comm const &                                          mpi_comm)
-    : GridMotionBase<dim, Number>(mapping_undeformed, param.degree, *grid->triangulation),
+  DeformedMapping(std::shared_ptr<Grid<dim> const>               grid,
+                  std::shared_ptr<dealii::Mapping<dim> const>    mapping_undeformed,
+                  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
+                  std::shared_ptr<FieldFunctions<dim> const>     field_functions,
+                  std::shared_ptr<MaterialDescriptor const>      material_descriptor,
+                  Parameters const &                             param,
+                  std::string const &                            field,
+                  MPI_Comm const &                               mpi_comm)
+    : DeformedMappingBase<dim, Number>(mapping_undeformed, param.degree, *grid->triangulation),
       param(param),
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       iterations({0, {0, 0}})
   {
     // initialize PDE operator
-    pde_operator = std::make_shared<Structure::Operator<dim, Number>>(grid,
-                                                                      mapping_undeformed,
-                                                                      boundary_descriptor,
-                                                                      field_functions,
-                                                                      material_descriptor,
-                                                                      param,
-                                                                      field,
-                                                                      mpi_comm);
+    pde_operator = std::make_shared<Operator<dim, Number>>(grid,
+                                                           mapping_undeformed,
+                                                           boundary_descriptor,
+                                                           field_functions,
+                                                           material_descriptor,
+                                                           param,
+                                                           field,
+                                                           mpi_comm);
 
     // ALE: initialize matrix_free_data
     matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
@@ -89,7 +90,7 @@ public:
     pde_operator->initialize_dof_vector(displacement);
   }
 
-  std::shared_ptr<Structure::Operator<dim, Number> const>
+  std::shared_ptr<Operator<dim, Number> const>
   get_pde_operator() const
   {
     return pde_operator;
@@ -200,9 +201,9 @@ private:
   std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
 
   // PDE operator
-  std::shared_ptr<Structure::Operator<dim, Number>> pde_operator;
+  std::shared_ptr<Operator<dim, Number>> pde_operator;
 
-  Structure::Parameters const & param;
+  Parameters const & param;
 
   // store solution of previous time step / iteration so that a good initial
   // guess is available in the next step, easing convergence or reducing computational
@@ -217,6 +218,7 @@ private:
     iterations;
 };
 
+} // namespace Structure
 } // namespace ExaDG
 
 #endif /* INCLUDE_EXADG_GRID_GRID_MOTION_ELASTICITY_H_ */

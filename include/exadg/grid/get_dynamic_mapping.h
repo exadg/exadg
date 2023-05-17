@@ -34,8 +34,8 @@ namespace ExaDG
  */
 template<int dim, typename Number>
 std::shared_ptr<dealii::Mapping<dim> const>
-get_dynamic_mapping(std::shared_ptr<dealii::Mapping<dim> const>        mapping,
-                    std::shared_ptr<GridMotionBase<dim, Number> const> grid_motion)
+get_dynamic_mapping(std::shared_ptr<dealii::Mapping<dim> const>             mapping,
+                    std::shared_ptr<DeformedMappingBase<dim, Number> const> grid_motion)
 {
   if(grid_motion.get() != 0)
   {

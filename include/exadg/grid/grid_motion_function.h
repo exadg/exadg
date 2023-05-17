@@ -27,11 +27,11 @@
 namespace ExaDG
 {
 /**
- * Class for moving mesh problems based on mesh motions that can be described analytically via a
- * dealii::Function<dim> object.
+ * Class for mesh deformations that can be described analytically via a dealii::Function<dim>
+ * object.
  */
 template<int dim, typename Number>
-class GridMotionFunction : public GridMotionBase<dim, Number>
+class DeformedMappingFunction : public DeformedMappingBase<dim, Number>
 {
 public:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -39,13 +39,13 @@ public:
   /**
    * Constructor.
    */
-  GridMotionFunction(std::shared_ptr<dealii::Mapping<dim> const>  mapping_undeformed,
-                     unsigned int const                           mapping_degree_q_cache,
-                     dealii::Triangulation<dim> const &           triangulation,
-                     std::shared_ptr<dealii::Function<dim>> const mesh_movement_function,
-                     double const                                 start_time)
-    : GridMotionBase<dim, Number>(mapping_undeformed, mapping_degree_q_cache, triangulation),
-      mesh_movement_function(mesh_movement_function),
+  DeformedMappingFunction(std::shared_ptr<dealii::Mapping<dim> const>  mapping_undeformed,
+                          unsigned int const                           mapping_degree_q_cache,
+                          dealii::Triangulation<dim> const &           triangulation,
+                          std::shared_ptr<dealii::Function<dim>> const mesh_deformation_function,
+                          double const                                 start_time)
+    : DeformedMappingBase<dim, Number>(mapping_undeformed, mapping_degree_q_cache, triangulation),
+      mesh_deformation_function(mesh_deformation_function),
       triangulation(triangulation)
   {
     update(start_time, false, dealii::numbers::invalid_unsigned_int);
@@ -62,9 +62,9 @@ public:
     (void)print_solver_info;
     (void)time_step_number;
 
-    mesh_movement_function->set_time(time);
+    mesh_deformation_function->set_time(time);
 
-    this->do_initialize(triangulation, mesh_movement_function);
+    this->do_initialize(triangulation, mesh_deformation_function);
   }
 
 private:
@@ -109,7 +109,7 @@ private:
                      });
   }
 
-  std::shared_ptr<dealii::Function<dim>> mesh_movement_function;
+  std::shared_ptr<dealii::Function<dim>> mesh_deformation_function;
 
   dealii::Triangulation<dim> const & triangulation;
 };

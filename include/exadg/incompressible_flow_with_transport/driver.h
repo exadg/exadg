@@ -97,7 +97,7 @@ private:
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
   // grid motion (ALE)
-  std::shared_ptr<GridMotionFunction<dim, Number>> grid_motion;
+  std::shared_ptr<DeformedMappingFunction<dim, Number>> ale_mapping;
 
   // ALE helper functions required by time integrator
   std::shared_ptr<HelpersALE<Number>> helpers_ale;

@@ -75,23 +75,23 @@ Driver<dim, Number>::setup()
 
     std::shared_ptr<dealii::Function<dim>> mesh_motion;
     mesh_motion = application->create_mesh_movement_function();
-    grid_motion =
-      std::make_shared<GridMotionFunction<dim, Number>>(application->get_mapping(),
-                                                        application->get_parameters().degree_u,
-                                                        *application->get_grid()->triangulation,
-                                                        mesh_motion,
-                                                        application->get_parameters().start_time);
+    ale_mapping = std::make_shared<DeformedMappingFunction<dim, Number>>(
+      application->get_mapping(),
+      application->get_parameters().degree_u,
+      *application->get_grid()->triangulation,
+      mesh_motion,
+      application->get_parameters().start_time);
 
     helpers_ale = std::make_shared<HelpersALE<Number>>();
 
     helpers_ale->move_grid = [&](double const & time) {
-      grid_motion->update(time,
+      ale_mapping->update(time,
                           false /* print_solver_info */,
                           this->fluid_time_integrator->get_number_of_time_steps());
     };
 
     helpers_ale->update_pde_operator_after_grid_motion = [&]() {
-      matrix_free->update_mapping(*grid_motion);
+      matrix_free->update_mapping(*ale_mapping);
 
       fluid_operator->update_after_grid_motion();
       for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
@@ -100,7 +100,7 @@ Driver<dim, Number>::setup()
   }
 
   std::shared_ptr<dealii::Mapping<dim> const> dynamic_mapping =
-    get_dynamic_mapping<dim, Number>(application->get_mapping(), grid_motion);
+    get_dynamic_mapping<dim, Number>(application->get_mapping(), ale_mapping);
 
   // initialize fluid_operator
   if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
