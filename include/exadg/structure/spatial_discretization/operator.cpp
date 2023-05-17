@@ -281,14 +281,14 @@ Operator<dim, Number>::get_quad_index_gauss_lobatto() const
 
 template<int dim, typename Number>
 std::shared_ptr<ContainerInterfaceData<1, dim, double>>
-Operator<dim, Number>::get_container_interface_data_neumann()
+Operator<dim, Number>::get_container_interface_data_neumann() const
 {
   return interface_data_neumann_cached;
 }
 
 template<int dim, typename Number>
 std::shared_ptr<ContainerInterfaceData<1, dim, double>>
-Operator<dim, Number>::get_container_interface_data_dirichlet()
+Operator<dim, Number>::get_container_interface_data_dirichlet() const
 {
   return interface_data_dirichlet_cached;
 }

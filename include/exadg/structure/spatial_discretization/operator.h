@@ -294,10 +294,10 @@ public:
 
   // Multiphysics coupling via "Cached" boundary conditions
   std::shared_ptr<ContainerInterfaceData<1, dim, double>>
-  get_container_interface_data_neumann();
+  get_container_interface_data_neumann() const;
 
   std::shared_ptr<ContainerInterfaceData<1, dim, double>>
-  get_container_interface_data_dirichlet();
+  get_container_interface_data_dirichlet() const;
 
   // TODO: we currently need this function public for precice-based FSI
   unsigned int
@@ -397,8 +397,9 @@ private:
   /*
    * Interface coupling
    */
-  std::shared_ptr<ContainerInterfaceData<1, dim, double>> interface_data_dirichlet_cached;
-  std::shared_ptr<ContainerInterfaceData<1, dim, double>> interface_data_neumann_cached;
+  // TODO: The PDE operator should only have read access to interface data
+  mutable std::shared_ptr<ContainerInterfaceData<1, dim, double>> interface_data_dirichlet_cached;
+  mutable std::shared_ptr<ContainerInterfaceData<1, dim, double>> interface_data_neumann_cached;
 
   /*
    * Basic operators.

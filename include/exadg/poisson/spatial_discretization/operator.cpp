@@ -683,7 +683,7 @@ Operator<dim, n_components, Number>::get_quad_index_gauss_lobatto() const
 
 template<int dim, int n_components, typename Number>
 std::shared_ptr<ContainerInterfaceData<Operator<dim, n_components, Number>::rank, dim, double>>
-Operator<dim, n_components, Number>::get_container_interface_data()
+Operator<dim, n_components, Number>::get_container_interface_data() const
 {
   return interface_data_dirichlet_cached;
 }

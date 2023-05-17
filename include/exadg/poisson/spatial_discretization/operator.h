@@ -107,7 +107,7 @@ public:
 
   // Multiphysics coupling via "Cached" boundary conditions
   std::shared_ptr<ContainerInterfaceData<rank, dim, double>>
-  get_container_interface_data();
+  get_container_interface_data() const;
 
   std::shared_ptr<TimerTree>
   get_timings() const;
@@ -211,7 +211,9 @@ private:
   /*
    * Interface coupling
    */
-  std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data_dirichlet_cached;
+  // TODO: The PDE operator should only have read access to interface data
+  mutable std::shared_ptr<ContainerInterfaceData<rank, dim, double>>
+    interface_data_dirichlet_cached;
 
   RHSOperator<dim, Number, n_components> rhs_operator;
 

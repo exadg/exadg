@@ -89,8 +89,8 @@ public:
     pde_operator->initialize_dof_vector(displacement);
   }
 
-  std::shared_ptr<Structure::Operator<dim, Number>>
-  get_pde_operator()
+  std::shared_ptr<Structure::Operator<dim, Number> const>
+  get_pde_operator() const
   {
     return pde_operator;
   }
