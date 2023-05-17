@@ -24,10 +24,8 @@
 
 // grid
 #include <exadg/grid/get_dynamic_mapping.h>
-#include <exadg/grid/grid_motion_elasticity.h>
-#include <exadg/grid/grid_motion_poisson.h>
-#include <exadg/poisson/spatial_discretization/operator.h>
-#include <exadg/structure/spatial_discretization/operator.h>
+#include <exadg/grid/mapping_deformation_poisson.h>
+#include <exadg/grid/mapping_deformation_structure.h>
 
 // IncNS
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>

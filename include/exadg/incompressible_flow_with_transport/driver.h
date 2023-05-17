@@ -38,7 +38,7 @@
 
 // IncNS
 #include <exadg/convection_diffusion/spatial_discretization/operator.h>
-#include <exadg/grid/grid_motion_function.h>
+#include <exadg/grid/mapping_deformation_function.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.h>

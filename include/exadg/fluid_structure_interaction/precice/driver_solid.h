@@ -22,22 +22,8 @@
 #ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_SOLID_H_
 #define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_SOLID_H_
 
-// application
-#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
-
-// utilities
-#include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
-#include <exadg/matrix_free/matrix_free_data.h>
-#include <exadg/utilities/print_general_infos.h>
-
-// grid
-#include <exadg/grid/grid_motion_elasticity.h>
-#include <exadg/grid/grid_motion_poisson.h>
-#include <exadg/poisson/spatial_discretization/operator.h>
-
-// Structure
-#include <exadg/structure/spatial_discretization/operator.h>
-#include <exadg/structure/time_integration/time_int_gen_alpha.h>
+// ExaDG
+#include <exadg/fluid_structure_interaction/single_field_solvers/structure.h>
 
 namespace ExaDG
 {

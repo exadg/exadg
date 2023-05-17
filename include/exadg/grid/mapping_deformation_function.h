@@ -19,10 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_GRID_GRID_MOTION_ANALYTICAL_H_
-#define INCLUDE_GRID_GRID_MOTION_ANALYTICAL_H_
+#ifndef INCLUDE_GRID_MAPPING_DEFORMATION_FUNCTION_H_
+#define INCLUDE_GRID_MAPPING_DEFORMATION_FUNCTION_H_
 
-#include <exadg/grid/grid_motion_base.h>
+#include <exadg/grid/mapping_deformation_base.h>
 
 namespace ExaDG
 {
@@ -116,4 +116,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /*INCLUDE_GRID_GRID_MOTION_ANALYTICAL_H_*/
+#endif /*INCLUDE_GRID_MAPPING_DEFORMATION_FUNCTION_H_*/

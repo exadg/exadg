@@ -19,14 +19,14 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_GRID_MOTION_POISSON_H_
-#define INCLUDE_EXADG_GRID_GRID_MOTION_POISSON_H_
+#ifndef INCLUDE_EXADG_GRID_MAPPING_DEFORMATION_POISSON_H_
+#define INCLUDE_EXADG_GRID_MAPPING_DEFORMATION_POISSON_H_
 
 // deal.II
 #include <deal.II/base/timer.h>
 
 // ExaDG
-#include <exadg/grid/grid_motion_base.h>
+#include <exadg/grid/mapping_deformation_base.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 #include <exadg/utilities/print_solver_results.h>
 
@@ -169,4 +169,4 @@ private:
 } // namespace Poisson
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_GRID_GRID_MOTION_POISSON_H_ */
+#endif /* INCLUDE_EXADG_GRID_MAPPING_DEFORMATION_POISSON_H_ */
