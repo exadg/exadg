@@ -176,11 +176,6 @@ private:
   // ALE helper functions required by time integrator
   std::shared_ptr<HelpersALE<Number>> helpers_ale;
 
-  // solve mesh deformation by a Poisson problem
-  std::shared_ptr<MatrixFreeData<dim, Number>>         poisson_matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>>     poisson_matrix_free;
-  std::shared_ptr<Poisson::Operator<dim, dim, Number>> poisson_operator;
-
   /*
    * MatrixFree
    */
