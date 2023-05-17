@@ -112,18 +112,25 @@ Driver<dim, Number>::setup_interface_coupling()
     if(application->fluid->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
       structure_to_ale = std::make_shared<InterfaceCoupling<1, dim, Number>>();
-      structure_to_ale->setup(fluid->ale_poisson_operator->get_container_interface_data(),
-                              structure->pde_operator->get_dof_handler(),
-                              *application->structure->get_mapping(),
-                              marked_vertices_structure,
-                              parameters.geometric_tolerance);
+
+      std::shared_ptr<GridMotionPoisson<dim, Number>> poisson_grid_motion =
+        std::dynamic_pointer_cast<GridMotionPoisson<dim, Number>>(fluid->ale_grid_motion);
+      structure_to_ale->setup(
+        poisson_grid_motion->get_pde_operator()->get_container_interface_data(),
+        structure->pde_operator->get_dof_handler(),
+        *application->structure->get_mapping(),
+        marked_vertices_structure,
+        parameters.geometric_tolerance);
     }
     else if(application->fluid->get_parameters().mesh_movement_type ==
             IncNS::MeshMovementType::Elasticity)
     {
       structure_to_ale = std::make_shared<InterfaceCoupling<1, dim, Number>>();
+
+      std::shared_ptr<GridMotionElasticity<dim, Number>> elasticity_grid_motion =
+        std::dynamic_pointer_cast<GridMotionElasticity<dim, Number>>(fluid->ale_grid_motion);
       structure_to_ale->setup(
-        fluid->ale_elasticity_operator->get_container_interface_data_dirichlet(),
+        elasticity_grid_motion->get_pde_operator()->get_container_interface_data_dirichlet(),
         structure->pde_operator->get_dof_handler(),
         *application->structure->get_mapping(),
         marked_vertices_structure,
@@ -380,12 +387,18 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 
   if(application->fluid->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)
   {
-    DoFs += fluid->pde_operator->get_number_of_dofs();
+    std::shared_ptr<GridMotionPoisson<dim, Number>> poisson_grid_motion =
+      std::dynamic_pointer_cast<GridMotionPoisson<dim, Number>>(fluid->ale_grid_motion);
+
+    DoFs += poisson_grid_motion->get_pde_operator()->get_number_of_dofs();
   }
   else if(application->fluid->get_parameters().mesh_movement_type ==
           IncNS::MeshMovementType::Elasticity)
   {
-    DoFs += fluid->ale_elasticity_operator->get_number_of_dofs();
+    std::shared_ptr<GridMotionElasticity<dim, Number>> elasticity_grid_motion =
+      std::dynamic_pointer_cast<GridMotionElasticity<dim, Number>>(fluid->ale_grid_motion);
+
+    DoFs += elasticity_grid_motion->get_pde_operator()->get_number_of_dofs();
   }
   else
   {

@@ -80,8 +80,7 @@ Driver<dim, Number>::setup()
     {
       application->setup_poisson();
 
-      // initialize Poisson operator
-      poisson_operator = std::make_shared<Poisson::Operator<dim, dim, Number>>(
+      grid_motion = std::make_shared<GridMotionPoisson<dim, Number>>(
         application->get_grid(),
         application->get_mapping(),
         application->get_boundary_descriptor_poisson(),
@@ -89,26 +88,6 @@ Driver<dim, Number>::setup()
         application->get_parameters_poisson(),
         "Poisson",
         mpi_comm);
-
-      // initialize matrix_free
-      poisson_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-      poisson_matrix_free_data->append(poisson_operator);
-
-      poisson_matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-      if(application->get_parameters_poisson().enable_cell_based_face_loops)
-        Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
-                                            poisson_matrix_free_data->data);
-      poisson_matrix_free->reinit(*application->get_mapping(),
-                                  poisson_matrix_free_data->get_dof_handler_vector(),
-                                  poisson_matrix_free_data->get_constraint_vector(),
-                                  poisson_matrix_free_data->get_quadrature_vector(),
-                                  poisson_matrix_free_data->data);
-
-      poisson_operator->setup(poisson_matrix_free, poisson_matrix_free_data);
-      poisson_operator->setup_solver();
-
-      grid_motion = std::make_shared<GridMotionPoisson<dim, Number>>(application->get_mapping(),
-                                                                     poisson_operator);
     }
     else
     {

@@ -171,14 +171,14 @@ public:
   /*
    * Constructor.
    */
-  Operator(std::shared_ptr<Grid<dim> const>               grid_in,
-           std::shared_ptr<dealii::Mapping<dim> const>    mapping_in,
-           std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
-           std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
-           std::shared_ptr<MaterialDescriptor const>      material_descriptor_in,
-           Parameters const &                             param_in,
-           std::string const &                            field_in,
-           MPI_Comm const &                               mpi_comm_in);
+  Operator(std::shared_ptr<Grid<dim> const>               grid,
+           std::shared_ptr<dealii::Mapping<dim> const>    mapping,
+           std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
+           std::shared_ptr<FieldFunctions<dim> const>     field_functions,
+           std::shared_ptr<MaterialDescriptor const>      material_descriptor,
+           Parameters const &                             param,
+           std::string const &                            field,
+           MPI_Comm const &                               mpi_comm);
 
   void
   fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;

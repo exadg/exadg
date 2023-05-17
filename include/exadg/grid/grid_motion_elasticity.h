@@ -44,21 +44,61 @@ public:
   /**
    * Constructor.
    */
-  GridMotionElasticity(std::shared_ptr<dealii::Mapping<dim> const>       mapping_undeformed,
-                       std::shared_ptr<Structure::Operator<dim, Number>> structure_operator,
-                       Structure::Parameters const &                     structure_parameters)
-    : GridMotionBase<dim, Number>(mapping_undeformed,
-                                  // extract mapping_degree_moving from elasticity operator
-                                  structure_operator->get_dof_handler().get_fe().degree,
-                                  structure_operator->get_dof_handler().get_triangulation()),
-      pde_operator(structure_operator),
-      param(structure_parameters),
-      pcout(std::cout,
-            dealii::Utilities::MPI::this_mpi_process(
-              structure_operator->get_dof_handler().get_communicator()) == 0),
+  GridMotionElasticity(
+    std::shared_ptr<Grid<dim> const>                          grid,
+    std::shared_ptr<dealii::Mapping<dim> const>               mapping_undeformed,
+    std::shared_ptr<Structure::BoundaryDescriptor<dim> const> boundary_descriptor,
+    std::shared_ptr<Structure::FieldFunctions<dim> const>     field_functions,
+    std::shared_ptr<Structure::MaterialDescriptor const>      material_descriptor,
+    Structure::Parameters const &                             param,
+    std::string const &                                       field,
+    MPI_Comm const &                                          mpi_comm)
+    : GridMotionBase<dim, Number>(mapping_undeformed, param.degree, *grid->triangulation),
+      param(param),
+      pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       iterations({0, {0, 0}})
   {
+    // initialize PDE operator
+    pde_operator = std::make_shared<Structure::Operator<dim, Number>>(grid,
+                                                                      mapping_undeformed,
+                                                                      boundary_descriptor,
+                                                                      field_functions,
+                                                                      material_descriptor,
+                                                                      param,
+                                                                      field,
+                                                                      mpi_comm);
+
+    // ALE: initialize matrix_free_data
+    matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
+
+    matrix_free_data->append(pde_operator);
+
+    // initialize matrix_free
+    matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
+    matrix_free->reinit(*mapping_undeformed,
+                        matrix_free_data->get_dof_handler_vector(),
+                        matrix_free_data->get_constraint_vector(),
+                        matrix_free_data->get_quadrature_vector(),
+                        matrix_free_data->data);
+
+    // setup PDE operator and solver
+    pde_operator->setup(matrix_free, matrix_free_data);
+    pde_operator->setup_solver(0.0 /*stationary ALE extension only*/);
+
+    // finally, initialize dof vector
     pde_operator->initialize_dof_vector(displacement);
+  }
+
+  std::shared_ptr<Structure::Operator<dim, Number>>
+  get_pde_operator()
+  {
+    return pde_operator;
+  }
+
+  std::shared_ptr<dealii::MatrixFree<dim, Number> const>
+  get_matrix_free() const
+  {
+    return matrix_free;
   }
 
   /**
@@ -155,6 +195,11 @@ public:
   }
 
 private:
+  // matrix-free
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
+
+  // PDE operator
   std::shared_ptr<Structure::Operator<dim, Number>> pde_operator;
 
   Structure::Parameters const & param;

@@ -44,19 +44,55 @@ public:
   /**
    * Constructor.
    */
-  GridMotionPoisson(std::shared_ptr<dealii::Mapping<dim> const>          mapping_undeformed,
-                    std::shared_ptr<Poisson::Operator<dim, dim, Number>> poisson_operator)
-    : GridMotionBase<dim, Number>(mapping_undeformed,
-                                  // extract mapping_degree_moving from Poisson operator
-                                  poisson_operator->get_dof_handler().get_fe().degree,
-                                  poisson_operator->get_dof_handler().get_triangulation()),
-      poisson(poisson_operator),
-      pcout(std::cout,
-            dealii::Utilities::MPI::this_mpi_process(
-              poisson_operator->get_dof_handler().get_communicator()) == 0),
+  GridMotionPoisson(std::shared_ptr<Grid<dim> const>                           grid,
+                    std::shared_ptr<dealii::Mapping<dim> const>                mapping_undeformed,
+                    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim> const> boundary_descriptor,
+                    std::shared_ptr<Poisson::FieldFunctions<dim> const>        field_functions,
+                    Poisson::Parameters const &                                param,
+                    std::string const &                                        field,
+                    MPI_Comm const &                                           mpi_comm)
+    : GridMotionBase<dim, Number>(mapping_undeformed, param.degree, *grid->triangulation),
+      pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       iterations({0, 0})
   {
-    poisson->initialize_dof_vector(displacement);
+    // initialize PDE operator
+    pde_operator = std::make_shared<Poisson::Operator<dim, dim, Number>>(
+      grid, mapping_undeformed, boundary_descriptor, field_functions, param, field, mpi_comm);
+
+    // initialize matrix_free_data
+    matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
+
+    if(param.enable_cell_based_face_loops)
+      Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
+
+    matrix_free_data->append(pde_operator);
+
+    // initialize matrix_free
+    matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
+    matrix_free->reinit(*mapping_undeformed,
+                        matrix_free_data->get_dof_handler_vector(),
+                        matrix_free_data->get_constraint_vector(),
+                        matrix_free_data->get_quadrature_vector(),
+                        matrix_free_data->data);
+
+    // setup PDE operator and solver
+    pde_operator->setup(matrix_free, matrix_free_data);
+    pde_operator->setup_solver();
+
+    // finally, initialize dof vector
+    pde_operator->initialize_dof_vector(displacement);
+  }
+
+  std::shared_ptr<Poisson::Operator<dim, dim, Number>>
+  get_pde_operator()
+  {
+    return pde_operator;
+  }
+
+  std::shared_ptr<dealii::MatrixFree<dim, Number> const>
+  get_matrix_free() const
+  {
+    return matrix_free;
   }
 
   /**
@@ -74,12 +110,12 @@ public:
     timer.restart();
 
     VectorType rhs;
-    poisson->initialize_dof_vector(rhs);
+    pde_operator->initialize_dof_vector(rhs);
 
     // compute rhs and solve mesh deformation problem
-    poisson->rhs(rhs, time);
+    pde_operator->rhs(rhs, time);
 
-    auto const n_iter = poisson->solve(displacement, rhs, time);
+    auto const n_iter = pde_operator->solve(displacement, rhs, time);
     iterations.first += 1;
     iterations.second += n_iter;
 
@@ -91,7 +127,7 @@ public:
 
     this->moving_mapping->initialize_mapping_q_cache(this->mapping_undeformed,
                                                      displacement,
-                                                     poisson->get_dof_handler());
+                                                     pde_operator->get_dof_handler());
   }
 
   /**
@@ -111,7 +147,12 @@ public:
   }
 
 private:
-  std::shared_ptr<Poisson::Operator<dim, dim, Number>> poisson;
+  // matrix-free
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
+
+  // PDE operator
+  std::shared_ptr<Poisson::Operator<dim, dim, Number>> pde_operator;
 
   // store solution of previous time step / iteration so that a good initial
   // guess is available in the next step, easing convergence or reducing computational
