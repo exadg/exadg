@@ -177,9 +177,6 @@ Driver<dim, Number>::setup_interface_coupling()
 
     pcout << std::endl << "Setup interface coupling fluid -> structure ..." << std::endl;
 
-    std::shared_ptr<dealii::Mapping<dim> const> mapping_fluid =
-      get_dynamic_mapping<dim, Number>(application->fluid->get_mapping(), fluid->ale_grid_motion);
-
     auto const & tria         = fluid->pde_operator->get_dof_handler_u().get_triangulation();
     auto const   boundary_ids = extract_set_of_keys_from_map(
       application->fluid->get_boundary_descriptor()->velocity->dirichlet_cached_bc);
@@ -188,7 +185,7 @@ Driver<dim, Number>::setup_interface_coupling()
     fluid_to_structure = std::make_shared<InterfaceCoupling<1, dim, Number>>();
     fluid_to_structure->setup(structure->pde_operator->get_container_interface_data_neumann(),
                               fluid->pde_operator->get_dof_handler_u(),
-                              *mapping_fluid,
+                              *application->fluid->get_mapping(),
                               marked_vertices_fluid,
                               parameters.geometric_tolerance);
 

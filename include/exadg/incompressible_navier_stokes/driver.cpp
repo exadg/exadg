@@ -103,36 +103,35 @@ Driver<dim, Number>::setup()
     };
 
     helpers_ale->update_pde_operator_after_grid_motion = [&]() {
-      std::shared_ptr<dealii::Mapping<dim> const> mapping =
-        get_dynamic_mapping<dim, Number>(application->get_mapping(), grid_motion);
-      matrix_free->update_mapping(*mapping);
+      matrix_free->update_mapping(*grid_motion);
 
       pde_operator->update_after_grid_motion();
     };
   }
 
+  std::shared_ptr<dealii::Mapping<dim> const> mapping_fluid =
+    get_dynamic_mapping<dim, Number>(application->get_mapping(), grid_motion);
+
   if(application->get_parameters().solver_type == SolverType::Unsteady)
   {
-    pde_operator =
-      create_operator<dim, Number>(application->get_grid(),
-                                   get_dynamic_mapping<dim, Number>(application->get_mapping(),
-                                                                    grid_motion),
-                                   application->get_boundary_descriptor(),
-                                   application->get_field_functions(),
-                                   application->get_parameters(),
-                                   "fluid",
-                                   mpi_comm);
+    pde_operator = create_operator<dim, Number>(application->get_grid(),
+                                                mapping_fluid,
+                                                application->get_boundary_descriptor(),
+                                                application->get_field_functions(),
+                                                application->get_parameters(),
+                                                "fluid",
+                                                mpi_comm);
   }
   else if(application->get_parameters().solver_type == SolverType::Steady)
   {
-    pde_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
-      application->get_grid(),
-      get_dynamic_mapping<dim, Number>(application->get_mapping(), grid_motion),
-      application->get_boundary_descriptor(),
-      application->get_field_functions(),
-      application->get_parameters(),
-      "fluid",
-      mpi_comm);
+    pde_operator =
+      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(application->get_grid(),
+                                                            mapping_fluid,
+                                                            application->get_boundary_descriptor(),
+                                                            application->get_field_functions(),
+                                                            application->get_parameters(),
+                                                            "fluid",
+                                                            mpi_comm);
   }
   else
   {
@@ -147,9 +146,8 @@ Driver<dim, Number>::setup()
   if(application->get_parameters().use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
                                         matrix_free_data->data);
-  std::shared_ptr<dealii::Mapping<dim> const> mapping =
-    get_dynamic_mapping<dim, Number>(application->get_mapping(), grid_motion);
-  matrix_free->reinit(*mapping,
+
+  matrix_free->reinit(*mapping_fluid,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),

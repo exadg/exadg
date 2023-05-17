@@ -64,18 +64,18 @@ public:
 
     mesh_movement_function->set_time(time);
 
-    this->initialize(triangulation, mesh_movement_function);
+    this->do_initialize(triangulation, mesh_movement_function);
   }
 
 private:
   /**
    * Initializes the dealii::MappingQCache object by providing a dealii::Function<dim> that
    * describes the displacement of the grid compared to an undeformed reference configuration
-   * described by the static mapping of this class.
+   * described by the mapping_undeformed member of the base class.
    */
   void
-  initialize(dealii::Triangulation<dim> const &     triangulation,
-             std::shared_ptr<dealii::Function<dim>> displacement_function)
+  do_initialize(dealii::Triangulation<dim> const &     triangulation,
+                std::shared_ptr<dealii::Function<dim>> displacement_function)
   {
     AssertThrow(dealii::MultithreadInfo::n_threads() == 1, dealii::ExcNotImplemented());
 
@@ -83,32 +83,30 @@ private:
     dealii::FE_Nothing<dim> dummy_fe;
     dealii::FEValues<dim>   fe_values(*this->mapping_undeformed,
                                     dummy_fe,
-                                    dealii::QGaussLobatto<dim>(this->moving_mapping->get_degree() +
-                                                               1),
+                                    dealii::QGaussLobatto<dim>(this->get_degree() + 1),
                                     dealii::update_quadrature_points);
 
-    this->moving_mapping->initialize(
-      triangulation,
-      [&](typename dealii::Triangulation<dim>::cell_iterator const & cell)
-        -> std::vector<dealii::Point<dim>> {
-        fe_values.reinit(cell);
+    this->initialize(triangulation,
+                     [&](typename dealii::Triangulation<dim>::cell_iterator const & cell)
+                       -> std::vector<dealii::Point<dim>> {
+                       fe_values.reinit(cell);
 
-        // compute displacement and add to original position
-        std::vector<dealii::Point<dim>> points_moved(fe_values.n_quadrature_points);
-        for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
-        {
-          // need to adjust for hierarchic numbering of dealii::MappingQCache
-          dealii::Point<dim> const point = fe_values.quadrature_point(
-            this->moving_mapping->hierarchic_to_lexicographic_numbering[i]);
-          dealii::Point<dim> displacement;
-          for(unsigned int d = 0; d < dim; ++d)
-            displacement[d] = displacement_function->value(point, d);
+                       // compute displacement and add to original position
+                       std::vector<dealii::Point<dim>> points_moved(fe_values.n_quadrature_points);
+                       for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
+                       {
+                         // need to adjust for hierarchic numbering of dealii::MappingQCache
+                         dealii::Point<dim> const point = fe_values.quadrature_point(
+                           this->hierarchic_to_lexicographic_numbering[i]);
+                         dealii::Point<dim> displacement;
+                         for(unsigned int d = 0; d < dim; ++d)
+                           displacement[d] = displacement_function->value(point, d);
 
-          points_moved[i] = point + displacement;
-        }
+                         points_moved[i] = point + displacement;
+                       }
 
-        return points_moved;
-      });
+                       return points_moved;
+                     });
   }
 
   std::shared_ptr<dealii::Function<dim>> mesh_movement_function;

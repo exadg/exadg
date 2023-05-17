@@ -125,9 +125,9 @@ public:
       print_solver_info_linear(pcout, n_iter, timer.wall_time());
     }
 
-    this->moving_mapping->initialize_mapping_q_cache(this->mapping_undeformed,
-                                                     displacement,
-                                                     pde_operator->get_dof_handler());
+    this->initialize_mapping_q_cache(this->mapping_undeformed,
+                                     displacement,
+                                     pde_operator->get_dof_handler());
   }
 
   /**

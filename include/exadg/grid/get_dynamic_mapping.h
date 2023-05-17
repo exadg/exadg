@@ -39,7 +39,7 @@ get_dynamic_mapping(std::shared_ptr<dealii::Mapping<dim> const>        mapping,
 {
   if(grid_motion.get() != 0)
   {
-    return grid_motion->get_mapping();
+    return grid_motion;
   }
   else
   {
