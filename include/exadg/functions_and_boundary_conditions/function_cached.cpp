@@ -24,19 +24,6 @@
 
 namespace ExaDG
 {
-template<int rank, int dim>
-FunctionCached<rank, dim>::FunctionCached()
-{
-}
-
-template<int rank, int dim>
-void
-FunctionCached<rank, dim>::set_data_pointer(
-  std::shared_ptr<ContainerInterfaceData<rank, dim, double>> const interface_data_)
-{
-  interface_data = interface_data_;
-}
-
 template class FunctionCached<0, 2>;
 template class FunctionCached<0, 3>;
 template class FunctionCached<1, 2>;

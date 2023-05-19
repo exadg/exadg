@@ -86,7 +86,7 @@ struct BoundaryDescriptorU
   // from the solution on another domain that is in contact with the actual domain
   // of interest at the given boundary (this type of Dirichlet boundary condition
   // is required for fluid-structure interaction problems)
-  std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>> dirichlet_cached_bc;
+  std::set<dealii::types::boundary_id> dirichlet_cached_bc;
 
   // Neumann: prescribe all components of the velocity gradient in normal direction
   std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> neumann_bc;
@@ -165,6 +165,26 @@ struct BoundaryDescriptorU
     AssertThrow(counter == 1,
                 dealii::ExcMessage("Boundary face with non-unique boundary type found."));
   }
+
+  void
+  initialize_function_dirichlet_cached(std::shared_ptr<ContainerInterfaceData<1, dim, double> const>
+                                         interface_data_dirichlet_cached) const
+  {
+    function_dirichlet_cached =
+      std::make_shared<FunctionCached<1, dim>>(interface_data_dirichlet_cached);
+  }
+
+  std::shared_ptr<FunctionCached<1, dim> const>
+  get_function_dirichlet_cached() const
+  {
+    AssertThrow(function_dirichlet_cached.get(),
+                dealii::ExcMessage("FunctionCached has not been initialized."));
+
+    return function_dirichlet_cached;
+  }
+
+private:
+  mutable std::shared_ptr<FunctionCached<1, dim>> function_dirichlet_cached;
 };
 
 template<int dim>

@@ -136,7 +136,7 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
         pair;
 
       dirichlet_boundary_conditions.insert(
-        pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+        pair(iter, new dealii::Functions::ZeroFunction<dim>(dim)));
     }
 
     typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
@@ -839,8 +839,7 @@ OperatorDualSplitting<dim, Number>::local_interpolate_velocity_dirichlet_bc_boun
         }
         else if(boundary_type == BoundaryTypeU::DirichletCached)
         {
-          auto bc =
-            this->boundary_descriptor->velocity->dirichlet_cached_bc.find(boundary_id)->second;
+          auto bc = this->boundary_descriptor->velocity->get_function_dirichlet_cached();
 
           g = FunctionEvaluator<1, dim, Number>::value(*bc, face, q, quad_index);
         }

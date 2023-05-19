@@ -59,7 +59,7 @@ struct BoundaryDescriptor
   // of interest at the given boundary (this type of Dirichlet boundary condition
   // is required for the ALE mesh deformation problem in fluid-structure interaction).
   // ComponentMask is not implemented/available for this type of boundary condition.
-  std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>> dirichlet_cached_bc;
+  std::set<dealii::types::boundary_id> dirichlet_cached_bc;
 
   // Neumann
   std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> neumann_bc;
@@ -68,7 +68,7 @@ struct BoundaryDescriptor
   // from the solution on another domain that is in contact with the actual domain
   // of interest at the given boundary (this type of Neumann boundary condition
   // is required for fluid-structure interaction problems)
-  std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>> neumann_cached_bc;
+  std::set<dealii::types::boundary_id> neumann_cached_bc;
 
   inline DEAL_II_ALWAYS_INLINE //
     BoundaryType
@@ -127,6 +127,44 @@ struct BoundaryDescriptor
     AssertThrow(counter == 1,
                 dealii::ExcMessage("Boundary face with non-unique boundary type found."));
   }
+
+  void
+  initialize_function_dirichlet_cached(std::shared_ptr<ContainerInterfaceData<1, dim, double> const>
+                                         interface_data_dirichlet_cached) const
+  {
+    function_dirichlet_cached =
+      std::make_shared<FunctionCached<1, dim>>(interface_data_dirichlet_cached);
+  }
+
+  std::shared_ptr<FunctionCached<1, dim> const>
+  get_function_dirichlet_cached() const
+  {
+    AssertThrow(function_dirichlet_cached.get(),
+                dealii::ExcMessage("FunctionCached has not been initialized."));
+
+    return function_dirichlet_cached;
+  }
+
+  void
+  initialize_function_neumann_cached(std::shared_ptr<ContainerInterfaceData<1, dim, double> const>
+                                       interface_data_neumann_cached) const
+  {
+    function_neumann_cached =
+      std::make_shared<FunctionCached<1, dim>>(interface_data_neumann_cached);
+  }
+
+  std::shared_ptr<FunctionCached<1, dim> const>
+  get_function_neumann_cached() const
+  {
+    AssertThrow(function_neumann_cached.get(),
+                dealii::ExcMessage("FunctionCached has not been initialized."));
+
+    return function_neumann_cached;
+  }
+
+private:
+  mutable std::shared_ptr<FunctionCached<1, dim>> function_dirichlet_cached;
+  mutable std::shared_ptr<FunctionCached<1, dim>> function_neumann_cached;
 };
 
 } // namespace Structure

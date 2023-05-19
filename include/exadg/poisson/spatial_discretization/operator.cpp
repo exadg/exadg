@@ -184,10 +184,7 @@ Operator<dim, n_components, Number>::distribute_dofs()
     for(auto it : this->boundary_descriptor->dirichlet_cached_bc)
     {
       dealii::ComponentMask mask = dealii::ComponentMask();
-      dealii::DoFTools::make_zero_boundary_constraints(dof_handler,
-                                                       it.first,
-                                                       affine_constraints,
-                                                       mask);
+      dealii::DoFTools::make_zero_boundary_constraints(dof_handler, it, affine_constraints, mask);
     }
 
     affine_constraints.close();
@@ -315,14 +312,12 @@ Operator<dim, n_components, Number>::setup(
     else
       AssertThrow(false, dealii::ExcMessage("not implemented."));
 
-    std::set<dealii::types::boundary_id> bids;
-    for(auto const & bc : boundary_descriptor->dirichlet_cached_bc)
-      bids.insert(bc.first);
+    interface_data_dirichlet_cached->setup(*matrix_free,
+                                           get_dof_index(),
+                                           quad_indices,
+                                           boundary_descriptor->dirichlet_cached_bc);
 
-    interface_data_dirichlet_cached->setup(matrix_free, get_dof_index(), quad_indices, bids);
-
-    for(auto const & bc : boundary_descriptor->dirichlet_cached_bc)
-      bc.second->set_data_pointer(interface_data_dirichlet_cached);
+    boundary_descriptor->initialize_function_dirichlet_cached(interface_data_dirichlet_cached);
   }
 
   setup_operators();
@@ -384,12 +379,12 @@ Operator<dim, n_components, Number>::setup_solver()
         pair;
 
       dirichlet_boundary_conditions.insert(
-        pair(iter.first, new dealii::Functions::ZeroFunction<dim>(n_components)));
+        pair(iter, new dealii::Functions::ZeroFunction<dim>(n_components)));
 
       typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
 
       std::vector<bool> default_mask = std::vector<bool>(n_components, true);
-      dirichlet_bc_component_mask.insert(pair_mask(iter.first, default_mask));
+      dirichlet_bc_component_mask.insert(pair_mask(iter, default_mask));
     }
 
     mg_preconditioner->initialize(mg_data,

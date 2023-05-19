@@ -57,8 +57,7 @@ struct BoundaryDescriptor
   // of interest at the given boundary (this type of Dirichlet boundary condition
   // is required for the ALE mesh deformation problem in fluid-structure interaction).
   // ComponentMask is not implemented/available for this type of boundary condition.
-  std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<rank, dim>>>
-    dirichlet_cached_bc;
+  std::set<dealii::types::boundary_id> dirichlet_cached_bc;
 
   // Neumann
   std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> neumann_bc;
@@ -102,6 +101,27 @@ struct BoundaryDescriptor
     AssertThrow(counter == 1,
                 dealii::ExcMessage("Boundary face with non-unique boundary type found."));
   }
+
+  void
+  initialize_function_dirichlet_cached(
+    std::shared_ptr<ContainerInterfaceData<rank, dim, double> const>
+      interface_data_dirichlet_cached) const
+  {
+    function_dirichlet_cached =
+      std::make_shared<FunctionCached<rank, dim>>(interface_data_dirichlet_cached);
+  }
+
+  std::shared_ptr<FunctionCached<rank, dim> const>
+  get_function_dirichlet_cached() const
+  {
+    AssertThrow(function_dirichlet_cached.get(),
+                dealii::ExcMessage("FunctionCached has not been initialized."));
+
+    return function_dirichlet_cached;
+  }
+
+private:
+  mutable std::shared_ptr<FunctionCached<rank, dim>> function_dirichlet_cached;
 };
 
 } // namespace Poisson

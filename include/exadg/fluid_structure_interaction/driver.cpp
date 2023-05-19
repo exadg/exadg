@@ -104,9 +104,8 @@ Driver<dim, Number>::setup_interface_coupling()
 
     pcout << std::endl << "Setup interface coupling structure -> ALE ..." << std::endl;
 
-    auto const & tria         = structure->pde_operator->get_dof_handler().get_triangulation();
-    auto const   boundary_ids = extract_set_of_keys_from_map(
-      application->structure->get_boundary_descriptor()->neumann_cached_bc);
+    auto const & tria       = structure->pde_operator->get_dof_handler().get_triangulation();
+    auto const boundary_ids = application->structure->get_boundary_descriptor()->neumann_cached_bc;
     auto const marked_vertices_structure = get_marked_vertices_via_boundary_ids(tria, boundary_ids);
 
     if(application->fluid->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)
@@ -153,9 +152,8 @@ Driver<dim, Number>::setup_interface_coupling()
 
     pcout << std::endl << "Setup interface coupling structure -> fluid ..." << std::endl;
 
-    auto const & tria         = structure->pde_operator->get_dof_handler().get_triangulation();
-    auto const   boundary_ids = extract_set_of_keys_from_map(
-      application->structure->get_boundary_descriptor()->neumann_cached_bc);
+    auto const & tria       = structure->pde_operator->get_dof_handler().get_triangulation();
+    auto const boundary_ids = application->structure->get_boundary_descriptor()->neumann_cached_bc;
     auto const marked_vertices_structure = get_marked_vertices_via_boundary_ids(tria, boundary_ids);
 
     structure_to_fluid = std::make_shared<InterfaceCoupling<1, dim, Number>>();
@@ -177,9 +175,9 @@ Driver<dim, Number>::setup_interface_coupling()
 
     pcout << std::endl << "Setup interface coupling fluid -> structure ..." << std::endl;
 
-    auto const & tria         = fluid->pde_operator->get_dof_handler_u().get_triangulation();
-    auto const   boundary_ids = extract_set_of_keys_from_map(
-      application->fluid->get_boundary_descriptor()->velocity->dirichlet_cached_bc);
+    auto const & tria = fluid->pde_operator->get_dof_handler_u().get_triangulation();
+    auto const   boundary_ids =
+      application->fluid->get_boundary_descriptor()->velocity->dirichlet_cached_bc;
     auto const marked_vertices_fluid = get_marked_vertices_via_boundary_ids(tria, boundary_ids);
 
     fluid_to_structure = std::make_shared<InterfaceCoupling<1, dim, Number>>();

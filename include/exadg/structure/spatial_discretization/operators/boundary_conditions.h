@@ -53,7 +53,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else if(boundary_type == BoundaryType::NeumannCached)
   {
-    auto bc = boundary_descriptor->neumann_cached_bc.find(boundary_id)->second;
+    auto bc = boundary_descriptor->get_function_neumann_cached();
 
     traction = FunctionEvaluator<1, dim, Number>::value(*bc,
                                                         integrator.get_current_cell_index(),

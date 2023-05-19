@@ -40,7 +40,10 @@ private:
   typedef typename ContainerInterfaceData<rank, dim, double>::data_type data_type;
 
 public:
-  FunctionCached();
+  FunctionCached(std::shared_ptr<ContainerInterfaceData<rank, dim, double> const> interface_data_)
+    : interface_data(interface_data_)
+  {
+  }
 
   // read data
   inline data_type
@@ -52,13 +55,8 @@ public:
     return interface_data->get_data(quad_index, face, q, v);
   }
 
-  // initialize data pointer
-  void
-  set_data_pointer(
-    std::shared_ptr<ContainerInterfaceData<rank, dim, double>> const interface_data_);
-
 private:
-  std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data;
+  std::shared_ptr<ContainerInterfaceData<rank, dim, double> const> interface_data;
 };
 
 } // namespace ExaDG

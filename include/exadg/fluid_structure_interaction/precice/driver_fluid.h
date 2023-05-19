@@ -80,15 +80,14 @@ public:
     // fluid to structure
     {
       // TODO generalize interface handling for multiple interface IDs
-      this->precice->add_write_surface(this->application->fluid->get_boundary_descriptor()
-                                         ->velocity->dirichlet_cached_bc.begin()
-                                         ->first,
-                                       this->precice_parameters.write_mesh_name,
-                                       {this->precice_parameters.stress_data_name},
-                                       this->precice_parameters.write_data_type,
-                                       fluid->matrix_free,
-                                       fluid->pde_operator->get_dof_index_velocity(),
-                                       fluid->pde_operator->get_quad_index_velocity_linear());
+      this->precice->add_write_surface(
+        *this->application->fluid->get_boundary_descriptor()->velocity->dirichlet_cached_bc.begin(),
+        this->precice_parameters.write_mesh_name,
+        {this->precice_parameters.stress_data_name},
+        this->precice_parameters.write_data_type,
+        fluid->matrix_free,
+        fluid->pde_operator->get_dof_index_velocity(),
+        fluid->pde_operator->get_quad_index_velocity_linear());
     }
 
     // structure to ALE
