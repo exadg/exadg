@@ -28,7 +28,7 @@
 #include <deal.II/base/tensor.h>
 #include <deal.II/base/vectorization.h>
 
-#include <exadg/functions_and_boundary_conditions/function_cached.h>
+#include <exadg/functions_and_boundary_conditions/container_interface_data.h>
 #include <exadg/functions_and_boundary_conditions/function_with_normal.h>
 
 #include <memory>
@@ -55,10 +55,10 @@ struct FunctionEvaluator
 
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>>
-    value(FunctionCached<rank, dim> const & function,
-          unsigned int const                face,
-          unsigned int const                q,
-          unsigned int const                quad_index)
+    value(ContainerInterfaceData<rank, dim, double> const & function,
+          unsigned int const                                face,
+          unsigned int const                                q,
+          unsigned int const                                quad_index)
   {
     (void)function;
     (void)face;
@@ -104,10 +104,10 @@ struct FunctionEvaluator
 
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::SymmetricTensor<rank, dim, dealii::VectorizedArray<Number>>
-    value_symmetric(FunctionCached<rank, dim> const & function,
-                    unsigned int const                face,
-                    unsigned int const                q,
-                    unsigned int const                quad_index)
+    value_symmetric(ContainerInterfaceData<rank, dim, double> const & function,
+                    unsigned int const                                face,
+                    unsigned int const                                q,
+                    unsigned int const                                quad_index)
   {
     (void)function;
     (void)face;
@@ -146,15 +146,15 @@ struct FunctionEvaluator<0, dim, Number>
 
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<0, dim, dealii::VectorizedArray<Number>>
-    value(FunctionCached<0, dim> const & function,
-          unsigned int const             face,
-          unsigned int const             q,
-          unsigned int const             quad_index)
+    value(ContainerInterfaceData<0, dim, double> const & function,
+          unsigned int const                             face,
+          unsigned int const                             q,
+          unsigned int const                             quad_index)
   {
     dealii::VectorizedArray<Number> value = dealii::make_vectorized_array<Number>(0.0);
 
     for(unsigned int v = 0; v < dealii::VectorizedArray<Number>::size(); ++v)
-      value[v] = function.tensor_value(face, q, v, quad_index);
+      value[v] = function.get_data(face, q, v, quad_index);
 
     return value;
   }
@@ -189,10 +189,10 @@ struct FunctionEvaluator<1, dim, Number>
 
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
-    value(FunctionCached<1, dim> const & function,
-          unsigned int const             face,
-          unsigned int const             q,
-          unsigned int const             quad_index)
+    value(ContainerInterfaceData<1, dim, double> const & function,
+          unsigned int const                             face,
+          unsigned int const                             q,
+          unsigned int const                             quad_index)
   {
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> value;
 
@@ -200,7 +200,7 @@ struct FunctionEvaluator<1, dim, Number>
       tensor_array;
 
     for(unsigned int v = 0; v < dealii::VectorizedArray<Number>::size(); ++v)
-      tensor_array[v] = function.tensor_value(face, q, v, quad_index);
+      tensor_array[v] = function.get_data(face, q, v, quad_index);
 
     for(unsigned int d = 0; d < dim; ++d)
     {
@@ -278,10 +278,10 @@ struct FunctionEvaluator<2, dim, Number>
 
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-    value(FunctionCached<2, dim> const & function,
-          unsigned int const             face,
-          unsigned int const             q,
-          unsigned int const             quad_index)
+    value(ContainerInterfaceData<2, dim, double> const & function,
+          unsigned int const                             face,
+          unsigned int const                             q,
+          unsigned int const                             quad_index)
   {
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> value;
 
@@ -289,7 +289,7 @@ struct FunctionEvaluator<2, dim, Number>
       tensor_array;
 
     for(unsigned int v = 0; v < dealii::VectorizedArray<Number>::size(); ++v)
-      tensor_array[v] = function.tensor_value(face, q, v, quad_index);
+      tensor_array[v] = function.get_data(face, q, v, quad_index);
 
     for(unsigned int d1 = 0; d1 < dim; ++d1)
     {
@@ -337,10 +337,10 @@ struct FunctionEvaluator<2, dim, Number>
 
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
-    value_symmetric(FunctionCached<2, dim> const & function,
-                    unsigned int const             face,
-                    unsigned int const             q,
-                    unsigned int const             quad_index)
+    value_symmetric(ContainerInterfaceData<2, dim, double> const & function,
+                    unsigned int const                             face,
+                    unsigned int const                             q,
+                    unsigned int const                             quad_index)
   {
     dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> value;
 
@@ -348,7 +348,7 @@ struct FunctionEvaluator<2, dim, Number>
       tensor_array;
 
     for(unsigned int v = 0; v < dealii::VectorizedArray<Number>::size(); ++v)
-      tensor_array[v] = function.tensor_value(face, q, v, quad_index);
+      tensor_array[v] = function.get_data(face, q, v, quad_index);
 
     for(unsigned int d1 = 0; d1 < dim; ++d1)
     {

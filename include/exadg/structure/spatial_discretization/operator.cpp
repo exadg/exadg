@@ -88,7 +88,7 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> con
                                            quad_indices,
                                            boundary_descriptor->dirichlet_cached_bc);
 
-    boundary_descriptor->initialize_function_dirichlet_cached(interface_data_dirichlet_cached);
+    boundary_descriptor->set_dirichlet_cached_data(interface_data_dirichlet_cached);
   }
 
   if(not(boundary_descriptor->neumann_cached_bc.empty()))
@@ -102,7 +102,7 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> con
                                          quad_indices,
                                          boundary_descriptor->neumann_cached_bc);
 
-    boundary_descriptor->initialize_function_neumann_cached(interface_data_neumann_cached);
+    boundary_descriptor->set_neumann_cached_data(interface_data_neumann_cached);
   }
 
   setup_operators();

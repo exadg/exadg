@@ -839,7 +839,7 @@ OperatorDualSplitting<dim, Number>::local_interpolate_velocity_dirichlet_bc_boun
         }
         else if(boundary_type == BoundaryTypeU::DirichletCached)
         {
-          auto bc = this->boundary_descriptor->velocity->get_function_dirichlet_cached();
+          auto bc = this->boundary_descriptor->velocity->get_dirichlet_cached_data();
 
           g = FunctionEvaluator<1, dim, Number>::value(*bc, face, q, quad_index);
         }

@@ -317,7 +317,7 @@ Operator<dim, n_components, Number>::setup(
                                            quad_indices,
                                            boundary_descriptor->dirichlet_cached_bc);
 
-    boundary_descriptor->initialize_function_dirichlet_cached(interface_data_dirichlet_cached);
+    boundary_descriptor->set_dirichlet_cached_data(interface_data_dirichlet_cached);
   }
 
   setup_operators();

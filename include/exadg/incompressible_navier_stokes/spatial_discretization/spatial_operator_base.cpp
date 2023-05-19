@@ -207,8 +207,7 @@ SpatialOperatorBase<dim, Number>::setup(
       quad_indices,
       boundary_descriptor->velocity->dirichlet_cached_bc);
 
-    boundary_descriptor->velocity->initialize_function_dirichlet_cached(
-      interface_data_dirichlet_cached);
+    boundary_descriptor->velocity->set_dirichlet_cached_data(interface_data_dirichlet_cached);
   }
 
   // initialize data structures depending on MatrixFree

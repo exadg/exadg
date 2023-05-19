@@ -27,7 +27,7 @@
 #include <deal.II/base/types.h>
 
 // ExaDG
-#include <exadg/functions_and_boundary_conditions/function_cached.h>
+#include <exadg/functions_and_boundary_conditions/container_interface_data.h>
 
 namespace ExaDG
 {
@@ -103,25 +103,23 @@ struct BoundaryDescriptor
   }
 
   void
-  initialize_function_dirichlet_cached(
-    std::shared_ptr<ContainerInterfaceData<rank, dim, double> const>
-      interface_data_dirichlet_cached) const
+  set_dirichlet_cached_data(
+    std::shared_ptr<ContainerInterfaceData<rank, dim, double> const> interface_data) const
   {
-    function_dirichlet_cached =
-      std::make_shared<FunctionCached<rank, dim>>(interface_data_dirichlet_cached);
+    dirichlet_cached_data = interface_data;
   }
 
-  std::shared_ptr<FunctionCached<rank, dim> const>
-  get_function_dirichlet_cached() const
+  std::shared_ptr<ContainerInterfaceData<rank, dim, double> const>
+  get_dirichlet_cached_data() const
   {
-    AssertThrow(function_dirichlet_cached.get(),
-                dealii::ExcMessage("FunctionCached has not been initialized."));
+    AssertThrow(dirichlet_cached_data.get(),
+                dealii::ExcMessage("Pointer to ContainerInterfaceData has not been initialized."));
 
-    return function_dirichlet_cached;
+    return dirichlet_cached_data;
   }
 
 private:
-  mutable std::shared_ptr<FunctionCached<rank, dim>> function_dirichlet_cached;
+  mutable std::shared_ptr<ContainerInterfaceData<rank, dim, double> const> dirichlet_cached_data;
 };
 
 } // namespace Poisson

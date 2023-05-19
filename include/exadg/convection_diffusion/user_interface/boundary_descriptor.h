@@ -24,15 +24,11 @@
 
 // C/C++
 #include <set>
+#include <memory>
 
 // deal.II
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
-
-// ExaDG
-#include <exadg/functions_and_boundary_conditions/function_cached.h>
-
-#include <memory>
 
 namespace ExaDG
 {
