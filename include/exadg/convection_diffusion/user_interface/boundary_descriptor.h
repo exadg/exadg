@@ -23,8 +23,8 @@
 #define INCLUDE_CONVECTION_DIFFUSION_BOUNDARY_DESCRIPTOR_H_
 
 // C/C++
-#include <set>
 #include <memory>
+#include <set>
 
 // deal.II
 #include <deal.II/base/function.h>
