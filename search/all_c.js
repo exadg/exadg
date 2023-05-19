@@ -2,7 +2,7 @@ var searchData=
 [
   ['magnitudecalculator_0',['MagnitudeCalculator',['../classExaDG_1_1MagnitudeCalculator.html',1,'ExaDG']]],
   ['magnitudecalculator_3c_20dim_2c_20double_20_3e_1',['MagnitudeCalculator&lt; dim, double &gt;',['../classExaDG_1_1MagnitudeCalculator.html',1,'ExaDG']]],
-  ['mapping_2',['mapping',['../classExaDG_1_1Grid.html#a4d54c3a7e8c952ba484c9635cdc8d48d',1,'ExaDG::Grid']]],
+  ['mapping_5fundeformed_2',['mapping_undeformed',['../classExaDG_1_1DeformedMappingBase.html#a5702ec7d01af869c259f36f7031f1535',1,'ExaDG::DeformedMappingBase']]],
   ['mappingdofvector_3',['MappingDoFVector',['../classExaDG_1_1MappingDoFVector.html',1,'ExaDG::MappingDoFVector&lt; dim, Number &gt;'],['../classExaDG_1_1MappingDoFVector.html#a02610a355efa9e0350be9647356e570b',1,'ExaDG::MappingDoFVector::MappingDoFVector()']]],
   ['mappingflags_4',['MappingFlags',['../structExaDG_1_1MappingFlags.html',1,'ExaDG']]],
   ['massconservationdata_5',['MassConservationData',['../structExaDG_1_1IncNS_1_1MassConservationData.html',1,'ExaDG::IncNS']]],

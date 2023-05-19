@@ -88,9 +88,9 @@ Inheritance diagram for ExaDG::Poisson::Operator&lt; dim, n_components, Number &
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a9d10e93cb08f2f8b233f9dc7d3fef4b7"><td class="memItemLeft" align="right" valign="top"><a id="a9d10e93cb08f2f8b233f9dc7d3fef4b7" name="a9d10e93cb08f2f8b233f9dc7d3fef4b7"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>Operator</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; rank, dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, <a class="el" href="classExaDG_1_1Poisson_1_1Parameters.html">Parameters</a> const &amp;param, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
-<tr class="separator:a9d10e93cb08f2f8b233f9dc7d3fef4b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aac665fe08d59f1bce6c9b5531a18e817"><td class="memItemLeft" align="right" valign="top"><a id="aac665fe08d59f1bce6c9b5531a18e817" name="aac665fe08d59f1bce6c9b5531a18e817"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>Operator</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; rank, dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, <a class="el" href="classExaDG_1_1Poisson_1_1Parameters.html">Parameters</a> const &amp;param, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
+<tr class="separator:aac665fe08d59f1bce6c9b5531a18e817"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a85d839d13ca1c8f40e97b81618f8e786"><td class="memItemLeft" align="right" valign="top"><a id="a85d839d13ca1c8f40e97b81618f8e786" name="a85d839d13ca1c8f40e97b81618f8e786"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data</b> (<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &amp;matrix_free_data) const</td></tr>
 <tr class="separator:a85d839d13ca1c8f40e97b81618f8e786"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -130,9 +130,9 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>get_n10</b> () cons
 <tr class="memitem:a4ff6db0568d73ed4bff7199773a70d39"><td class="memItemLeft" align="right" valign="top"><a id="a4ff6db0568d73ed4bff7199773a70d39" name="a4ff6db0568d73ed4bff7199773a70d39"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>get_average_convergence_rate</b> () const</td></tr>
 <tr class="separator:a4ff6db0568d73ed4bff7199773a70d39"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4265753e71a01d0897acd6d61c762bcc"><td class="memItemLeft" align="right" valign="top"><a id="a4265753e71a01d0897acd6d61c762bcc" name="a4265753e71a01d0897acd6d61c762bcc"></a>
-std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; rank, dim, double &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_container_interface_data</b> ()</td></tr>
-<tr class="separator:a4265753e71a01d0897acd6d61c762bcc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2810d59a6acf86d2ce8e24d25892be04"><td class="memItemLeft" align="right" valign="top"><a id="a2810d59a6acf86d2ce8e24d25892be04" name="a2810d59a6acf86d2ce8e24d25892be04"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; rank, dim, double &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_container_interface_data</b> () const</td></tr>
+<tr class="separator:a2810d59a6acf86d2ce8e24d25892be04"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae05fa65fba1104c16dc6a659f1d73092"><td class="memItemLeft" align="right" valign="top"><a id="ae05fa65fba1104c16dc6a659f1d73092" name="ae05fa65fba1104c16dc6a659f1d73092"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_timings</b> () const</td></tr>
 <tr class="separator:ae05fa65fba1104c16dc6a659f1d73092"><td class="memSeparator" colspan="2">&#160;</td></tr>

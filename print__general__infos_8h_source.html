@@ -176,34 +176,29 @@ $(function() {
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span> </div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  print_parameter(pcout, <span class="stringliteral">&quot;Max. number of refinements&quot;</span>, grid.triangulation-&gt;n_global_levels() - 1);</div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  print_parameter(pcout, <span class="stringliteral">&quot;Number of cells&quot;</span>, grid.triangulation-&gt;n_global_active_cells());</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span> </div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  std::shared_ptr&lt;dealii::MappingQ&lt;dim&gt;&gt; mapping_q =</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    std::dynamic_pointer_cast&lt;dealii::MappingQ&lt;dim&gt;&gt;(grid.mapping);</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  <span class="keywordflow">if</span>(mapping_q.get() != 0)</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    print_parameter(pcout, <span class="stringliteral">&quot;Mapping degree&quot;</span>, mapping_q-&gt;get_degree());</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>}</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span> </div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span><span class="keyword">inline</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>print_general_info(dealii::ConditionalOStream <span class="keyword">const</span> &amp; pcout,</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>                   MPI_Comm <span class="keyword">const</span> &amp;                   mpi_comm,</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>                   <span class="keywordtype">bool</span> <span class="keyword">const</span>                         is_test)</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>{</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  print_exadg_header(pcout);</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <span class="keywordflow">if</span>(not(is_test))</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  {</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>    print_exadg_info(pcout);</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>    print_dealii_info(pcout);</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    print_matrixfree_info&lt;Number&gt;(pcout);</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  }</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>}</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span> </div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> Number&gt;</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span><span class="keyword">inline</span> <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>print_general_info(dealii::ConditionalOStream <span class="keyword">const</span> &amp; pcout,</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>                   MPI_Comm <span class="keyword">const</span> &amp;                   mpi_comm,</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>                   <span class="keywordtype">bool</span> <span class="keyword">const</span>                         is_test)</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>{</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  print_exadg_header(pcout);</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  <span class="keywordflow">if</span>(not(is_test))</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  {</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    print_exadg_info(pcout);</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    print_dealii_info(pcout);</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>    print_matrixfree_info&lt;Number&gt;(pcout);</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  }</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  print_MPI_info(pcout, mpi_comm);</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>}</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span> </div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  print_MPI_info(pcout, mpi_comm);</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>}</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span> </div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_UTILITIES_PRINT_GENERAL_INFOS_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_UTILITIES_PRINT_GENERAL_INFOS_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition:</b> driver.cpp:33</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->

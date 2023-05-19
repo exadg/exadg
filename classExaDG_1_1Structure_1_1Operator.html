@@ -91,9 +91,9 @@ Inheritance diagram for ExaDG::Structure::Operator&lt; dim, Number &gt;:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a96ceaa484a0789ac1718849109ce32eb"><td class="memItemLeft" align="right" valign="top"><a id="a96ceaa484a0789ac1718849109ce32eb" name="a96ceaa484a0789ac1718849109ce32eb"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>Operator</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid_in, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor_in, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions_in, std::shared_ptr&lt; MaterialDescriptor const &gt; material_descriptor_in, <a class="el" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> const &amp;param_in, std::string const &amp;field_in, MPI_Comm const &amp;mpi_comm_in)</td></tr>
-<tr class="separator:a96ceaa484a0789ac1718849109ce32eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a092c3bce90deb04c2e65511ce0c72518"><td class="memItemLeft" align="right" valign="top"><a id="a092c3bce90deb04c2e65511ce0c72518" name="a092c3bce90deb04c2e65511ce0c72518"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>Operator</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, std::shared_ptr&lt; MaterialDescriptor const &gt; material_descriptor, <a class="el" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> const &amp;param, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
+<tr class="separator:a092c3bce90deb04c2e65511ce0c72518"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aba807f9ef18118a817463bf44adad8f5"><td class="memItemLeft" align="right" valign="top"><a id="aba807f9ef18118a817463bf44adad8f5" name="aba807f9ef18118a817463bf44adad8f5"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data</b> (<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &amp;matrix_free_data) const</td></tr>
 <tr class="separator:aba807f9ef18118a817463bf44adad8f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -146,12 +146,12 @@ dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" v
 <tr class="memitem:a22998e1d7d171f5bdcffa798bed2b78d"><td class="memItemLeft" align="right" valign="top"><a id="a22998e1d7d171f5bdcffa798bed2b78d" name="a22998e1d7d171f5bdcffa798bed2b78d"></a>
 dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>get_number_of_dofs</b> () const</td></tr>
 <tr class="separator:a22998e1d7d171f5bdcffa798bed2b78d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac8fb6e3fdda1b2de8d64816dd859550c"><td class="memItemLeft" align="right" valign="top"><a id="ac8fb6e3fdda1b2de8d64816dd859550c" name="ac8fb6e3fdda1b2de8d64816dd859550c"></a>
-std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; 1, dim, double &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_container_interface_data_neumann</b> ()</td></tr>
-<tr class="separator:ac8fb6e3fdda1b2de8d64816dd859550c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac37c79b7cecbdc392fc8326c1ecda1ab"><td class="memItemLeft" align="right" valign="top"><a id="ac37c79b7cecbdc392fc8326c1ecda1ab" name="ac37c79b7cecbdc392fc8326c1ecda1ab"></a>
-std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; 1, dim, double &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_container_interface_data_dirichlet</b> ()</td></tr>
-<tr class="separator:ac37c79b7cecbdc392fc8326c1ecda1ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a52e9b2845ee28f6dd57d2ce1af92f389"><td class="memItemLeft" align="right" valign="top"><a id="a52e9b2845ee28f6dd57d2ce1af92f389" name="a52e9b2845ee28f6dd57d2ce1af92f389"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; 1, dim, double &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_container_interface_data_neumann</b> () const</td></tr>
+<tr class="separator:a52e9b2845ee28f6dd57d2ce1af92f389"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aabaff9ee2176650ba1bb77531ce1d637"><td class="memItemLeft" align="right" valign="top"><a id="aabaff9ee2176650ba1bb77531ce1d637" name="aabaff9ee2176650ba1bb77531ce1d637"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; 1, dim, double &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_container_interface_data_dirichlet</b> () const</td></tr>
+<tr class="separator:aabaff9ee2176650ba1bb77531ce1d637"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afcd79b9442c46b6d6df28193e7a22bdc"><td class="memItemLeft" align="right" valign="top"><a id="afcd79b9442c46b6d6df28193e7a22bdc" name="afcd79b9442c46b6d6df28193e7a22bdc"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index</b> () const</td></tr>
 <tr class="separator:afcd79b9442c46b6d6df28193e7a22bdc"><td class="memSeparator" colspan="2">&#160;</td></tr>

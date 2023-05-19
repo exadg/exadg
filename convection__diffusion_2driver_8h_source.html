@@ -121,7 +121,7 @@ $(function() {
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="preprocessor">#include &lt;exadg/convection_diffusion/user_interface/field_functions.h&gt;</span></div>
 <div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="preprocessor">#include &lt;exadg/convection_diffusion/user_interface/parameters.h&gt;</span></div>
 <div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span><span class="preprocessor">#include &lt;exadg/functions_and_boundary_conditions/verify_boundary_conditions.h&gt;</span></div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="preprocessor">#include &lt;exadg/grid/grid_motion_function.h&gt;</span></div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="preprocessor">#include &lt;exadg/grid/mapping_deformation_function.h&gt;</span></div>
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="preprocessor">#include &lt;exadg/matrix_free/matrix_free_data.h&gt;</span></div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="preprocessor">#include &lt;exadg/utilities/print_functions.h&gt;</span></div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="preprocessor">#include &lt;exadg/utilities/print_general_infos.h&gt;</span></div>
@@ -195,8 +195,8 @@ $(function() {
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <span class="comment">// application</span></div>
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  std::shared_ptr&lt;ApplicationBase&lt;dim, Number&gt;&gt; application;</div>
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span> </div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  <span class="comment">// moving mapping (ALE)</span></div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  std::shared_ptr&lt;GridMotionBase&lt;dim, Number&gt;&gt; grid_motion;</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  <span class="comment">// ALE mapping</span></div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  std::shared_ptr&lt;DeformedMappingFunction&lt;dim, Number&gt;&gt; ale_mapping;</div>
 <div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span> </div>
 <div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  <span class="comment">// ALE helper functions required by time integrator</span></div>
 <div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  std::shared_ptr&lt;HelpersALE&lt;Number&gt;&gt; helpers_ale;</div>
