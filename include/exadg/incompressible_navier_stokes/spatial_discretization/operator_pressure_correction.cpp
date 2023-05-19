@@ -513,7 +513,7 @@ OperatorPressureCorrection<dim, Number>::local_interpolate_pressure_dirichlet_bc
         auto bc       = this->boundary_descriptor->pressure->dirichlet_bc.find(boundary_id)->second;
         auto q_points = integrator.quadrature_point(q);
 
-        scalar g = FunctionEvaluator<0, dim, Number>::value(bc, q_points, this->evaluation_time);
+        scalar g = FunctionEvaluator<0, dim, Number>::value(*bc, q_points, this->evaluation_time);
         integrator.submit_dof_value(g, index);
       }
 

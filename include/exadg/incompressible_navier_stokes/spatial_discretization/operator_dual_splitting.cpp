@@ -289,7 +289,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_boundary_
 
         // evaluate right-hand side
         vector rhs =
-          FunctionEvaluator<1, dim, Number>::value(this->field_functions->right_hand_side,
+          FunctionEvaluator<1, dim, Number>::value(*(this->field_functions->right_hand_side),
                                                    q_points,
                                                    this->evaluation_time);
 
@@ -543,7 +543,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_bounda
 
         // evaluate right-hand side
         vector rhs =
-          FunctionEvaluator<1, dim, Number>::value(this->field_functions->right_hand_side,
+          FunctionEvaluator<1, dim, Number>::value(*(this->field_functions->right_hand_side),
                                                    q_points,
                                                    this->evaluation_time);
 
@@ -835,14 +835,14 @@ OperatorDualSplitting<dim, Number>::local_interpolate_velocity_dirichlet_bc_boun
           auto bc = this->boundary_descriptor->velocity->dirichlet_bc.find(boundary_id)->second;
           auto q_points = integrator.quadrature_point(q);
 
-          g = FunctionEvaluator<1, dim, Number>::value(bc, q_points, this->evaluation_time);
+          g = FunctionEvaluator<1, dim, Number>::value(*bc, q_points, this->evaluation_time);
         }
         else if(boundary_type == BoundaryTypeU::DirichletCached)
         {
           auto bc =
             this->boundary_descriptor->velocity->dirichlet_cached_bc.find(boundary_id)->second;
 
-          g = FunctionEvaluator<1, dim, Number>::value(bc, face, q, quad_index);
+          g = FunctionEvaluator<1, dim, Number>::value(*bc, face, q, quad_index);
         }
         else
         {

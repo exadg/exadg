@@ -40,7 +40,7 @@ struct FunctionEvaluator
 {
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>>
-    value(std::shared_ptr<dealii::Function<dim>> const                function,
+    value(dealii::Function<dim> &                                     function,
           dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points,
           double const &                                              time)
   {
@@ -55,10 +55,10 @@ struct FunctionEvaluator
 
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>>
-    value(std::shared_ptr<FunctionCached<rank, dim>> const function,
-          unsigned int const                               face,
-          unsigned int const                               q,
-          unsigned int const                               quad_index)
+    value(FunctionCached<rank, dim> const & function,
+          unsigned int const                face,
+          unsigned int const                q,
+          unsigned int const                quad_index)
   {
     (void)function;
     (void)face;
@@ -72,12 +72,12 @@ struct FunctionEvaluator
 
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>>
-    value(std::shared_ptr<dealii::Function<dim>> const                    function,
+    value(FunctionWithNormal<dim> &                                       function_with_normal,
           dealii::Point<dim, dealii::VectorizedArray<Number>> const &     q_points,
           dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & normals,
           double const &                                                  time)
   {
-    (void)function;
+    (void)function_with_normal;
     (void)q_points;
     (void)normals;
     (void)time;
@@ -89,7 +89,7 @@ struct FunctionEvaluator
 
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::SymmetricTensor<rank, dim, dealii::VectorizedArray<Number>>
-    value_symmetric(std::shared_ptr<dealii::Function<dim>> const                function,
+    value_symmetric(dealii::Function<dim> &                                     function,
                     dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points,
                     double const &                                              time)
   {
@@ -104,10 +104,10 @@ struct FunctionEvaluator
 
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::SymmetricTensor<rank, dim, dealii::VectorizedArray<Number>>
-    value_symmetric(std::shared_ptr<FunctionCached<rank, dim>> const function,
-                    unsigned int const                               face,
-                    unsigned int const                               q,
-                    unsigned int const                               quad_index)
+    value_symmetric(FunctionCached<rank, dim> const & function,
+                    unsigned int const                face,
+                    unsigned int const                q,
+                    unsigned int const                quad_index)
   {
     (void)function;
     (void)face;
@@ -125,7 +125,7 @@ struct FunctionEvaluator<0, dim, Number>
 {
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<0, dim, dealii::VectorizedArray<Number>>
-    value(std::shared_ptr<dealii::Function<dim>> const                function,
+    value(dealii::Function<dim> &                                     function,
           dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points,
           double const &                                              time)
   {
@@ -137,8 +137,8 @@ struct FunctionEvaluator<0, dim, Number>
       for(unsigned int d = 0; d < dim; ++d)
         q_point[d] = q_points[d][v];
 
-      function->set_time(time);
-      value[v] = function->value(q_point);
+      function.set_time(time);
+      value[v] = function.value(q_point);
     }
 
     return value;
@@ -146,15 +146,15 @@ struct FunctionEvaluator<0, dim, Number>
 
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<0, dim, dealii::VectorizedArray<Number>>
-    value(std::shared_ptr<FunctionCached<0, dim>> const function,
-          unsigned int const                            face,
-          unsigned int const                            q,
-          unsigned int const                            quad_index)
+    value(FunctionCached<0, dim> const & function,
+          unsigned int const             face,
+          unsigned int const             q,
+          unsigned int const             quad_index)
   {
     dealii::VectorizedArray<Number> value = dealii::make_vectorized_array<Number>(0.0);
 
     for(unsigned int v = 0; v < dealii::VectorizedArray<Number>::size(); ++v)
-      value[v] = function->tensor_value(face, q, v, quad_index);
+      value[v] = function.tensor_value(face, q, v, quad_index);
 
     return value;
   }
@@ -165,7 +165,7 @@ struct FunctionEvaluator<1, dim, Number>
 {
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
-    value(std::shared_ptr<dealii::Function<dim>> const                function,
+    value(dealii::Function<dim> &                                     function,
           dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points,
           double const &                                              time)
   {
@@ -179,8 +179,8 @@ struct FunctionEvaluator<1, dim, Number>
         for(unsigned int i = 0; i < dim; ++i)
           q_point[i] = q_points[i][v];
 
-        function->set_time(time);
-        value[d][v] = function->value(q_point, d);
+        function.set_time(time);
+        value[d][v] = function.value(q_point, d);
       }
     }
 
@@ -189,10 +189,10 @@ struct FunctionEvaluator<1, dim, Number>
 
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
-    value(std::shared_ptr<FunctionCached<1, dim>> const function,
-          unsigned int const                            face,
-          unsigned int const                            q,
-          unsigned int const                            quad_index)
+    value(FunctionCached<1, dim> const & function,
+          unsigned int const             face,
+          unsigned int const             q,
+          unsigned int const             quad_index)
   {
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> value;
 
@@ -200,7 +200,7 @@ struct FunctionEvaluator<1, dim, Number>
       tensor_array;
 
     for(unsigned int v = 0; v < dealii::VectorizedArray<Number>::size(); ++v)
-      tensor_array[v] = function->tensor_value(face, q, v, quad_index);
+      tensor_array[v] = function.tensor_value(face, q, v, quad_index);
 
     for(unsigned int d = 0; d < dim; ++d)
     {
@@ -213,13 +213,11 @@ struct FunctionEvaluator<1, dim, Number>
 
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
-    value(std::shared_ptr<dealii::Function<dim>> const                    function,
+    value(FunctionWithNormal<dim> &                                       function_with_normal,
           dealii::Point<dim, dealii::VectorizedArray<Number>> const &     q_points,
           dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & normals,
           double const &                                                  time)
   {
-    auto function_with_normal = std::dynamic_pointer_cast<FunctionWithNormal<dim>>(function);
-
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> value;
 
     for(unsigned int d = 0; d < dim; ++d)
@@ -233,9 +231,9 @@ struct FunctionEvaluator<1, dim, Number>
           q_point[i] = q_points[i][v];
           normal[i]  = normals[i][v];
         }
-        function_with_normal->set_time(time);
-        function_with_normal->set_normal_vector(normal);
-        value[d][v] = function_with_normal->value(q_point, d);
+        function_with_normal.set_time(time);
+        function_with_normal.set_normal_vector(normal);
+        value[d][v] = function_with_normal.value(q_point, d);
       }
     }
 
@@ -248,7 +246,7 @@ struct FunctionEvaluator<2, dim, Number>
 {
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-    value(std::shared_ptr<dealii::Function<dim>> const                function,
+    value(dealii::Function<dim> &                                     function,
           dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points,
           double const &                                              time)
   {
@@ -265,12 +263,12 @@ struct FunctionEvaluator<2, dim, Number>
           for(unsigned int i = 0; i < dim; ++i)
             q_point[i] = q_points[i][v];
 
-          function->set_time(time);
+          function.set_time(time);
 
           auto const unrolled_index =
             dealii::Tensor<2, dim>::component_to_unrolled_index(dealii::TableIndices<2>(d1, d2));
 
-          value[d1][d2][v] = function->value(q_point, unrolled_index);
+          value[d1][d2][v] = function.value(q_point, unrolled_index);
         }
       }
     }
@@ -280,10 +278,10 @@ struct FunctionEvaluator<2, dim, Number>
 
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-    value(std::shared_ptr<FunctionCached<2, dim>> const function,
-          unsigned int const                            face,
-          unsigned int const                            q,
-          unsigned int const                            quad_index)
+    value(FunctionCached<2, dim> const & function,
+          unsigned int const             face,
+          unsigned int const             q,
+          unsigned int const             quad_index)
   {
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> value;
 
@@ -291,7 +289,7 @@ struct FunctionEvaluator<2, dim, Number>
       tensor_array;
 
     for(unsigned int v = 0; v < dealii::VectorizedArray<Number>::size(); ++v)
-      tensor_array[v] = function->tensor_value(face, q, v, quad_index);
+      tensor_array[v] = function.tensor_value(face, q, v, quad_index);
 
     for(unsigned int d1 = 0; d1 < dim; ++d1)
     {
@@ -307,7 +305,7 @@ struct FunctionEvaluator<2, dim, Number>
 
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
-    value_symmetric(std::shared_ptr<dealii::Function<dim>> const                function,
+    value_symmetric(dealii::Function<dim> &                                     function,
                     dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points,
                     double const &                                              time)
   {
@@ -324,12 +322,12 @@ struct FunctionEvaluator<2, dim, Number>
           for(unsigned int i = 0; i < dim; ++i)
             q_point[i] = q_points[i][v];
 
-          function->set_time(time);
+          function.set_time(time);
 
           auto const unrolled_index = dealii::SymmetricTensor<2, dim>::component_to_unrolled_index(
             dealii::TableIndices<2>(d1, d2));
 
-          value[d1][d2][v] = function->value(q_point, unrolled_index);
+          value[d1][d2][v] = function.value(q_point, unrolled_index);
         }
       }
     }
@@ -339,10 +337,10 @@ struct FunctionEvaluator<2, dim, Number>
 
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
-    value_symmetric(std::shared_ptr<FunctionCached<2, dim>> const function,
-                    unsigned int const                            face,
-                    unsigned int const                            q,
-                    unsigned int const                            quad_index)
+    value_symmetric(FunctionCached<2, dim> const & function,
+                    unsigned int const             face,
+                    unsigned int const             q,
+                    unsigned int const             quad_index)
   {
     dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> value;
 
@@ -350,7 +348,7 @@ struct FunctionEvaluator<2, dim, Number>
       tensor_array;
 
     for(unsigned int v = 0; v < dealii::VectorizedArray<Number>::size(); ++v)
-      tensor_array[v] = function->tensor_value(face, q, v, quad_index);
+      tensor_array[v] = function.tensor_value(face, q, v, quad_index);
 
     for(unsigned int d1 = 0; d1 < dim; ++d1)
     {
