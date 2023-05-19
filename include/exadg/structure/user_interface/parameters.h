@@ -172,6 +172,9 @@ public:
   // Grid data
   GridData grid;
 
+  // Mapping
+  unsigned int mapping_degree;
+
   // polynomial degree of shape functions
   unsigned int degree;
 

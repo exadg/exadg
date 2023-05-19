@@ -39,10 +39,10 @@ Physical quantities:
 Spatial discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        1
   Mapping degree:                            2
-  Element type:                              L2
+  FE space:                                  L2
   Polynomial degree velocity:                2
   Polynomial degree pressure:                MixedOrder
   Convective term - Upwind factor:           1.0000e+00
@@ -131,7 +131,6 @@ Generating grid for 2-dimensional problem:
 
   Max. number of refinements:                1
   Number of cells:                           8
-  Mapping degree:                            2
 
 Construct incompressible Navier-Stokes operator ...
 Velocity:
@@ -165,10 +164,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 7.79220e-13
+  Absolute error (L2-norm): 7.79651e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 2.10738e-11
+  Absolute error (L2-norm): 2.10835e-11
 
 
 
@@ -210,10 +209,10 @@ Physical quantities:
 Spatial discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        1
   Mapping degree:                            3
-  Element type:                              L2
+  FE space:                                  L2
   Polynomial degree velocity:                3
   Polynomial degree pressure:                MixedOrder
   Convective term - Upwind factor:           1.0000e+00
@@ -302,7 +301,6 @@ Generating grid for 2-dimensional problem:
 
   Max. number of refinements:                1
   Number of cells:                           8
-  Mapping degree:                            3
 
 Construct incompressible Navier-Stokes operator ...
 Velocity:
@@ -336,10 +334,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 7.20768e-13
+  Absolute error (L2-norm): 7.37921e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 1.37313e-11
+  Absolute error (L2-norm): 1.41420e-11
 
 
 
@@ -381,10 +379,10 @@ Physical quantities:
 Spatial discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        1
   Mapping degree:                            4
-  Element type:                              L2
+  FE space:                                  L2
   Polynomial degree velocity:                4
   Polynomial degree pressure:                MixedOrder
   Convective term - Upwind factor:           1.0000e+00
@@ -473,7 +471,6 @@ Generating grid for 2-dimensional problem:
 
   Max. number of refinements:                1
   Number of cells:                           8
-  Mapping degree:                            4
 
 Construct incompressible Navier-Stokes operator ...
 Velocity:
@@ -507,10 +504,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 3.02718e-14
+  Absolute error (L2-norm): 3.04448e-14
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 8.02726e-13
+  Absolute error (L2-norm): 8.26406e-13
 
 
 
@@ -552,10 +549,10 @@ Physical quantities:
 Spatial discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        1
   Mapping degree:                            5
-  Element type:                              L2
+  FE space:                                  L2
   Polynomial degree velocity:                5
   Polynomial degree pressure:                MixedOrder
   Convective term - Upwind factor:           1.0000e+00
@@ -644,7 +641,6 @@ Generating grid for 2-dimensional problem:
 
   Max. number of refinements:                1
   Number of cells:                           8
-  Mapping degree:                            5
 
 Construct incompressible Navier-Stokes operator ...
 Velocity:
@@ -678,7 +674,7 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 9.26348e-12
+  Absolute error (L2-norm): 8.94271e-12
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 2.29836e-10
+  Absolute error (L2-norm): 2.25122e-10

@@ -154,7 +154,7 @@ private:
     this->param.degree_p                = DegreePressure::MixedOrder;
     this->param.grid.triangulation_type = TriangulationType::Distributed;
     this->param.spatial_discretization  = SpatialDiscretization::HDIV;
-    this->param.grid.mapping_degree     = this->param.degree_u;
+    this->param.mapping_degree          = this->param.degree_u;
 
     // div-div and continuity penalty
     this->param.use_divergence_penalty                     = false;

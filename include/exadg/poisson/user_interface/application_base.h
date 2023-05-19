@@ -108,6 +108,7 @@ public:
 
     // grid
     grid->initialize(param.grid, mpi_comm);
+    GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
     create_grid();
     print_grid_info(pcout, *grid);
   }
@@ -138,6 +139,12 @@ public:
   get_grid() const
   {
     return grid;
+  }
+
+  std::shared_ptr<dealii::Mapping<dim> const>
+  get_mapping() const
+  {
+    return mapping;
   }
 
   std::shared_ptr<BoundaryDescriptor<rank, dim> const>
@@ -176,8 +183,7 @@ protected:
       auto const quad =
         reference_cells[0].template get_gauss_type_quadrature<dim>(param.degree + 1);
 
-      AR =
-        dealii::GridTools::compute_maximum_aspect_ratio(*grid->mapping, *grid->triangulation, quad);
+      AR = dealii::GridTools::compute_maximum_aspect_ratio(*mapping, *grid->triangulation, quad);
       pcout << std::endl << "Maximum aspect ratio (Jacobian) = " << AR << std::endl;
     }
   }
@@ -189,6 +195,8 @@ protected:
   Parameters param;
 
   std::shared_ptr<Grid<dim>> grid;
+
+  std::shared_ptr<dealii::Mapping<dim>> mapping;
 
   std::shared_ptr<BoundaryDescriptor<rank, dim>> boundary_descriptor;
   std::shared_ptr<FieldFunctions<dim>>           field_functions;

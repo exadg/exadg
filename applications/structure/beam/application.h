@@ -157,7 +157,7 @@ private:
     this->param.large_deformation = true;
 
     this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.grid.mapping_degree     = 1;
+    this->param.mapping_degree          = 1;
 
     this->param.load_increment = 0.1;
 

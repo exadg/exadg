@@ -46,7 +46,7 @@ private:
 
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.grid.mapping_degree     = 3;
+    this->param.mapping_degree          = 3;
     this->param.spatial_discretization  = SpatialDiscretization::DG;
     this->param.IP_factor               = 1.0e0;
 

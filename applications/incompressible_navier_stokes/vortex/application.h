@@ -286,7 +286,7 @@ private:
 
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.grid.mapping_degree     = this->param.degree_u;
+    this->param.mapping_degree          = this->param.degree_u;
     this->param.degree_p                = DegreePressure::MixedOrder;
 
     // convective term
@@ -533,7 +533,7 @@ private:
     this->poisson_param.right_hand_side = false;
 
     // SPATIAL DISCRETIZATION
-    this->poisson_param.degree = this->param.grid.mapping_degree;
+    this->poisson_param.degree = this->param.mapping_degree;
 
     this->poisson_param.spatial_discretization = Poisson::SpatialDiscretization::CG;
     this->poisson_param.IP_factor              = 1.0e0;

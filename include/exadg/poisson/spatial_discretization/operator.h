@@ -51,6 +51,7 @@ private:
 
 public:
   Operator(std::shared_ptr<Grid<dim> const>                     grid,
+           std::shared_ptr<dealii::Mapping<dim> const>          mapping,
            std::shared_ptr<BoundaryDescriptor<rank, dim> const> boundary_descriptor,
            std::shared_ptr<FieldFunctions<dim> const>           field_functions,
            Parameters const &                                   param,
@@ -106,7 +107,7 @@ public:
 
   // Multiphysics coupling via "Cached" boundary conditions
   std::shared_ptr<ContainerInterfaceData<rank, dim, double>>
-  get_container_interface_data();
+  get_container_interface_data() const;
 
   std::shared_ptr<TimerTree>
   get_timings() const;
@@ -174,6 +175,11 @@ private:
   std::shared_ptr<Grid<dim> const> grid;
 
   /*
+   * Mapping
+   */
+  std::shared_ptr<dealii::Mapping<dim> const> mapping;
+
+  /*
    * User interface: Boundary conditions and field functions.
    */
   std::shared_ptr<BoundaryDescriptor<rank, dim> const> boundary_descriptor;
@@ -205,7 +211,9 @@ private:
   /*
    * Interface coupling
    */
-  std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data_dirichlet_cached;
+  // TODO: The PDE operator should only have read access to interface data
+  mutable std::shared_ptr<ContainerInterfaceData<rank, dim, double>>
+    interface_data_dirichlet_cached;
 
   RHSOperator<dim, Number, n_components> rhs_operator;
 

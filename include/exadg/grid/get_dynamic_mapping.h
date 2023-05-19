@@ -24,7 +24,7 @@
 
 // ExaDG
 #include <exadg/grid/grid.h>
-#include <exadg/grid/grid_motion_base.h>
+#include <exadg/grid/mapping_deformation_base.h>
 
 namespace ExaDG
 {
@@ -34,19 +34,16 @@ namespace ExaDG
  */
 template<int dim, typename Number>
 std::shared_ptr<dealii::Mapping<dim> const>
-get_dynamic_mapping(std::shared_ptr<Grid<dim> const>                   grid,
-                    std::shared_ptr<GridMotionBase<dim, Number> const> grid_motion)
+get_dynamic_mapping(std::shared_ptr<dealii::Mapping<dim> const>             static_mapping,
+                    std::shared_ptr<DeformedMappingBase<dim, Number> const> dynamic_mapping)
 {
-  if(grid_motion.get() != 0)
+  if(dynamic_mapping.get() != 0)
   {
-    return grid_motion->get_mapping();
+    return dynamic_mapping;
   }
   else
   {
-    AssertThrow(grid->mapping.get() != 0,
-                dealii::ExcMessage("Uninitialized mapping object detected."));
-
-    return grid->mapping;
+    return static_mapping;
   }
 }
 } // namespace ExaDG

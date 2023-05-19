@@ -76,6 +76,7 @@ public:
 
     // grid
     grid->initialize(param.grid, mpi_comm);
+    GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
     create_grid();
     print_grid_info(pcout, *grid);
 
@@ -128,6 +129,12 @@ public:
     return grid;
   }
 
+  std::shared_ptr<dealii::Mapping<dim> const>
+  get_mapping() const
+  {
+    return mapping;
+  }
+
   std::shared_ptr<BoundaryDescriptor<dim> const>
   get_boundary_descriptor() const
   {
@@ -162,6 +169,8 @@ protected:
   Parameters param;
 
   std::shared_ptr<Grid<dim>> grid;
+
+  std::shared_ptr<dealii::Mapping<dim>> mapping;
 
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
   std::shared_ptr<MaterialDescriptor>      material_descriptor;

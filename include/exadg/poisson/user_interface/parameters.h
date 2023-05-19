@@ -80,6 +80,9 @@ public:
   // Grid data
   GridData grid;
 
+  // Mapping
+  unsigned int mapping_degree;
+
   // type of spatial discretization approach
   SpatialDiscretization spatial_discretization;
 

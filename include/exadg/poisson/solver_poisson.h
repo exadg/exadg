@@ -42,6 +42,7 @@ public:
   {
     pde_operator =
       std::make_shared<Operator<dim, n_components, Number>>(application->get_grid(),
+                                                            application->get_mapping(),
                                                             application->get_boundary_descriptor(),
                                                             application->get_field_functions(),
                                                             application->get_parameters(),
@@ -55,7 +56,7 @@ public:
     if(application->get_parameters().enable_cell_based_face_loops)
       Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
                                           matrix_free_data->data);
-    matrix_free->reinit(*application->get_grid()->mapping,
+    matrix_free->reinit(*application->get_mapping(),
                         matrix_free_data->get_dof_handler_vector(),
                         matrix_free_data->get_constraint_vector(),
                         matrix_free_data->get_quadrature_vector(),

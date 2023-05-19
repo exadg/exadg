@@ -35,6 +35,7 @@ Parameters::Parameters()
 
     // SPATIAL DISCRETIZATION
     grid(GridData()),
+    mapping_degree(1),
     spatial_discretization(SpatialDiscretization::Undefined),
     degree(1),
     IP_factor(1.0),
@@ -110,7 +111,9 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
 
   grid.print(pcout);
 
-  print_parameter(pcout, "Element type", spatial_discretization);
+  print_parameter(pcout, "Mapping degree", mapping_degree);
+
+  print_parameter(pcout, "FE space", spatial_discretization);
 
   print_parameter(pcout, "Polynomial degree", degree);
 

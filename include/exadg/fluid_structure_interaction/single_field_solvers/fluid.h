@@ -24,10 +24,8 @@
 
 // grid
 #include <exadg/grid/get_dynamic_mapping.h>
-#include <exadg/grid/grid_motion_elasticity.h>
-#include <exadg/grid/grid_motion_poisson.h>
-#include <exadg/poisson/spatial_discretization/operator.h>
-#include <exadg/structure/spatial_discretization/operator.h>
+#include <exadg/grid/mapping_deformation_poisson.h>
+#include <exadg/grid/mapping_deformation_structure.h>
 
 // IncNS
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
@@ -83,21 +81,11 @@ public:
   // Postprocessor
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> postprocessor;
 
-  // grid motion (ALE)
-  std::shared_ptr<GridMotionBase<dim, Number>> ale_grid_motion;
+  // ALE mapping
+  std::shared_ptr<DeformedMappingBase<dim, Number>> ale_mapping;
 
-  // ALE helper functions required by time integrator
+  // ALE helper functions required by fluid time integrator
   std::shared_ptr<HelpersALE<Number>> helpers_ale;
-
-  // use a PDE solver for grid motion
-  std::shared_ptr<MatrixFreeData<dim, Number>>     ale_matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> ale_matrix_free;
-
-  // Poisson-type grid motion
-  std::shared_ptr<Poisson::Operator<dim, dim, Number>> ale_poisson_operator;
-
-  // elasticity-type grid motion
-  std::shared_ptr<Structure::Operator<dim, Number>> ale_elasticity_operator;
 
   /*
    * Computation time (wall clock time).
@@ -111,11 +99,12 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
                                 MPI_Comm const                                          mpi_comm,
                                 bool const                                              is_test)
 {
-  // ALE: initialize PDE operator
+  // ALE: create grid motion object
   if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)
   {
-    ale_poisson_operator = std::make_shared<Poisson::Operator<dim, dim, Number>>(
+    ale_mapping = std::make_shared<Poisson::DeformedMapping<dim, Number>>(
       application->get_grid(),
+      application->get_mapping(),
       application->get_boundary_descriptor_ale_poisson(),
       application->get_field_functions_ale_poisson(),
       application->get_parameters_ale_poisson(),
@@ -124,8 +113,9 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   }
   else if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Elasticity)
   {
-    ale_elasticity_operator = std::make_shared<Structure::Operator<dim, Number>>(
+    ale_mapping = std::make_shared<Structure::DeformedMapping<dim, Number>>(
       application->get_grid(),
+      application->get_mapping(),
       application->get_boundary_descriptor_ale_elasticity(),
       application->get_field_functions_ale_elasticity(),
       application->get_material_descriptor_ale_elasticity(),
@@ -138,79 +128,14 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
     AssertThrow(false, dealii::ExcMessage("not implemented."));
   }
 
-  // ALE: initialize matrix_free_data
-  ale_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-
-  if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)
-  {
-    if(application->get_parameters_ale_poisson().enable_cell_based_face_loops)
-      Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
-                                          ale_matrix_free_data->data);
-
-    ale_matrix_free_data->append(ale_poisson_operator);
-  }
-  else if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Elasticity)
-  {
-    ale_matrix_free_data->append(ale_elasticity_operator);
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("not implemented."));
-  }
-
-  // ALE: initialize matrix_free
-  ale_matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-  ale_matrix_free->reinit(*application->get_grid()->mapping,
-                          ale_matrix_free_data->get_dof_handler_vector(),
-                          ale_matrix_free_data->get_constraint_vector(),
-                          ale_matrix_free_data->get_quadrature_vector(),
-                          ale_matrix_free_data->data);
-
-  // ALE: setup PDE operator and solver
-  if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)
-  {
-    ale_poisson_operator->setup(ale_matrix_free, ale_matrix_free_data);
-    ale_poisson_operator->setup_solver();
-  }
-  else if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Elasticity)
-  {
-    ale_elasticity_operator->setup(ale_matrix_free, ale_matrix_free_data);
-    ale_elasticity_operator->setup_solver(0.0 /*stationary ALE extension only*/);
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("not implemented."));
-  }
-
-  // ALE: create grid motion object
-  if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)
-  {
-    ale_grid_motion =
-      std::make_shared<GridMotionPoisson<dim, Number>>(application->get_grid()->mapping,
-                                                       ale_poisson_operator);
-  }
-  else if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Elasticity)
-  {
-    ale_grid_motion = std::make_shared<GridMotionElasticity<dim, Number>>(
-      application->get_grid()->mapping,
-      ale_elasticity_operator,
-      application->get_parameters_ale_elasticity());
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("not implemented."));
-  }
-
   // initialize pde_operator
-  pde_operator =
-    IncNS::create_operator<dim, Number>(application->get_grid(),
-                                        get_dynamic_mapping<dim, Number>(application->get_grid(),
-                                                                         ale_grid_motion),
-                                        application->get_boundary_descriptor(),
-                                        application->get_field_functions(),
-                                        application->get_parameters(),
-                                        "fluid",
-                                        mpi_comm);
+  pde_operator = IncNS::create_operator<dim, Number>(application->get_grid(),
+                                                     ale_mapping,
+                                                     application->get_boundary_descriptor(),
+                                                     application->get_field_functions(),
+                                                     application->get_parameters(),
+                                                     "fluid",
+                                                     mpi_comm);
 
   // initialize matrix_free
   matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
@@ -220,9 +145,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   if(application->get_parameters().use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
                                         matrix_free_data->data);
-  std::shared_ptr<dealii::Mapping<dim> const> mapping =
-    get_dynamic_mapping<dim, Number>(application->get_grid(), ale_grid_motion);
-  matrix_free->reinit(*mapping,
+  matrix_free->reinit(*ale_mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
@@ -244,15 +167,13 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   helpers_ale = std::make_shared<HelpersALE<Number>>();
 
   helpers_ale->move_grid = [&](double const & time) {
-    ale_grid_motion->update(time,
-                            time_integrator->print_solver_info(),
-                            this->time_integrator->get_number_of_time_steps());
+    ale_mapping->update(time,
+                        time_integrator->print_solver_info(),
+                        this->time_integrator->get_number_of_time_steps());
   };
 
   helpers_ale->update_pde_operator_after_grid_motion = [&]() {
-    std::shared_ptr<dealii::Mapping<dim> const> mapping =
-      get_dynamic_mapping<dim, Number>(application->get_grid(), ale_grid_motion);
-    matrix_free->update_mapping(*mapping);
+    matrix_free->update_mapping(*ale_mapping);
 
     pde_operator->update_after_grid_motion();
   };

@@ -75,25 +75,23 @@ Driver<dim, Number>::setup()
 
     std::shared_ptr<dealii::Function<dim>> mesh_motion;
     mesh_motion = application->create_mesh_movement_function();
-    grid_motion =
-      std::make_shared<GridMotionFunction<dim, Number>>(application->get_grid()->mapping,
-                                                        application->get_parameters().degree_u,
-                                                        *application->get_grid()->triangulation,
-                                                        mesh_motion,
-                                                        application->get_parameters().start_time);
+    ale_mapping = std::make_shared<DeformedMappingFunction<dim, Number>>(
+      application->get_mapping(),
+      application->get_parameters().degree_u,
+      *application->get_grid()->triangulation,
+      mesh_motion,
+      application->get_parameters().start_time);
 
     helpers_ale = std::make_shared<HelpersALE<Number>>();
 
     helpers_ale->move_grid = [&](double const & time) {
-      grid_motion->update(time,
+      ale_mapping->update(time,
                           false /* print_solver_info */,
                           this->fluid_time_integrator->get_number_of_time_steps());
     };
 
     helpers_ale->update_pde_operator_after_grid_motion = [&]() {
-      std::shared_ptr<dealii::Mapping<dim> const> mapping =
-        get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
-      matrix_free->update_mapping(*mapping);
+      matrix_free->update_mapping(*ale_mapping);
 
       fluid_operator->update_after_grid_motion();
       for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
@@ -101,29 +99,30 @@ Driver<dim, Number>::setup()
     };
   }
 
+  std::shared_ptr<dealii::Mapping<dim> const> dynamic_mapping =
+    get_dynamic_mapping<dim, Number>(application->get_mapping(), ale_mapping);
+
   // initialize fluid_operator
   if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
-    fluid_operator =
-      IncNS::create_operator<dim, Number>(application->get_grid(),
-                                          get_dynamic_mapping<dim, Number>(application->get_grid(),
-                                                                           grid_motion),
-                                          application->get_boundary_descriptor(),
-                                          application->get_field_functions(),
-                                          application->get_parameters(),
-                                          "fluid",
-                                          mpi_comm);
+    fluid_operator = IncNS::create_operator<dim, Number>(application->get_grid(),
+                                                         dynamic_mapping,
+                                                         application->get_boundary_descriptor(),
+                                                         application->get_field_functions(),
+                                                         application->get_parameters(),
+                                                         "fluid",
+                                                         mpi_comm);
   }
   else if(application->get_parameters().solver_type == IncNS::SolverType::Steady)
   {
-    fluid_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
-      application->get_grid(),
-      get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion),
-      application->get_boundary_descriptor(),
-      application->get_field_functions(),
-      application->get_parameters(),
-      "fluid",
-      mpi_comm);
+    fluid_operator =
+      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(application->get_grid(),
+                                                            dynamic_mapping,
+                                                            application->get_boundary_descriptor(),
+                                                            application->get_field_functions(),
+                                                            application->get_parameters(),
+                                                            "fluid",
+                                                            mpi_comm);
   }
   else
   {
@@ -139,14 +138,15 @@ Driver<dim, Number>::setup()
   // initialize convection-diffusion operator
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    scalar_operator[i] = std::make_shared<ConvDiff::Operator<dim, Number>>(
-      application->get_grid(),
-      get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion),
-      application->get_boundary_descriptor_scalar(i),
-      application->get_field_functions_scalar(i),
-      application->get_parameters_scalar(i),
-      "scalar" + std::to_string(i),
-      mpi_comm);
+    scalar_operator[i] =
+      std::make_shared<ConvDiff::Operator<dim, Number>>(application->get_grid(),
+                                                        dynamic_mapping,
+                                                        application->get_boundary_descriptor_scalar(
+                                                          i),
+                                                        application->get_field_functions_scalar(i),
+                                                        application->get_parameters_scalar(i),
+                                                        "scalar" + std::to_string(i),
+                                                        mpi_comm);
   }
 
   // initialize matrix_free
@@ -159,9 +159,8 @@ Driver<dim, Number>::setup()
   if(application->get_parameters().use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
                                         matrix_free_data->data);
-  std::shared_ptr<dealii::Mapping<dim> const> mapping =
-    get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
-  matrix_free->reinit(*mapping,
+
+  matrix_free->reinit(*dynamic_mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),

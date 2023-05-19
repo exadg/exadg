@@ -186,17 +186,17 @@ private:
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type = TriangulationType::Distributed;
     this->param.spatial_discretization  = SpatialDiscretization::L2;
-    this->param.grid.mapping_degree     = this->param.degree_u;
+    this->param.mapping_degree          = this->param.degree_u;
     this->param.degree_p                = DegreePressure::MixedOrder;
 
     // mapping
     if(mesh_type == MeshType::Cartesian)
-      this->param.grid.mapping_degree = 1;
+      this->param.mapping_degree = 1;
     else
-      this->param.grid.mapping_degree = this->param.degree_u;
+      this->param.mapping_degree = this->param.degree_u;
 
     if(this->param.ale_formulation)
-      this->param.grid.mapping_degree = this->param.degree_u;
+      this->param.mapping_degree = this->param.degree_u;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)

@@ -90,6 +90,8 @@ Parameters::Parameters()
 
     // grid
     grid(GridData()),
+    // mapping
+    mapping_degree(1),
 
     // finite element
     spatial_discretization(SpatialDiscretization::L2),
@@ -911,7 +913,9 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
 
   grid.print(pcout);
 
-  print_parameter(pcout, "Element type", spatial_discretization);
+  print_parameter(pcout, "Mapping degree", mapping_degree);
+
+  print_parameter(pcout, "FE space", spatial_discretization);
 
   if(spatial_discretization == SpatialDiscretization::L2)
   {

@@ -46,9 +46,8 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        1
-  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -83,7 +82,6 @@ Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                1
   Number of cells:                           8
-  Mapping degree:                            1
 
 Construct elasticity operator ...
 
@@ -167,9 +165,8 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        1
-  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -204,7 +201,6 @@ Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                1
   Number of cells:                           8
-  Mapping degree:                            1
 
 Construct elasticity operator ...
 
@@ -288,9 +284,8 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        1
-  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -325,7 +320,6 @@ Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                1
   Number of cells:                           8
-  Mapping degree:                            1
 
 Construct elasticity operator ...
 
@@ -409,9 +403,8 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        1
-  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -446,7 +439,6 @@ Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                1
   Number of cells:                           8
-  Mapping degree:                            1
 
 Construct elasticity operator ...
 
@@ -530,9 +522,8 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        1
-  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -567,7 +558,6 @@ Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                1
   Number of cells:                           8
-  Mapping degree:                            1
 
 Construct elasticity operator ...
 
@@ -651,9 +641,8 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        1
-  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -688,7 +677,6 @@ Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                1
   Number of cells:                           8
-  Mapping degree:                            1
 
 Construct elasticity operator ...
 
@@ -772,9 +760,8 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        1
-  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -809,7 +796,6 @@ Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                1
   Number of cells:                           8
-  Mapping degree:                            1
 
 Construct elasticity operator ...
 
@@ -893,9 +879,8 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        1
-  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -930,7 +915,6 @@ Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                1
   Number of cells:                           8
-  Mapping degree:                            1
 
 Construct elasticity operator ...
 
@@ -1014,9 +998,8 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
+  Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
-  Global refinements:                        1
-  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -1051,7 +1034,6 @@ Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                1
   Number of cells:                           8
-  Mapping degree:                            1
 
 Construct elasticity operator ...
 

@@ -48,7 +48,7 @@ public:
 
     // SPATIAL DISCRETIZATION
     p.grid.triangulation_type = TriangulationType::Distributed;
-    p.grid.mapping_degree     = 3;
+    p.mapping_degree          = 3;
     p.spatial_discretization  = SpatialDiscretization::DG;
     p.IP_factor               = 1.0e0;
 
@@ -155,7 +155,7 @@ private:
 
     // SPATIAL DISCRETIZATION
     p.grid.triangulation_type = TriangulationType::Distributed;
-    p.grid.mapping_degree     = 3;
+    p.mapping_degree          = 3;
     p.spatial_discretization  = SpatialDiscretization::DG;
     p.IP_factor               = 1.0e0;
 

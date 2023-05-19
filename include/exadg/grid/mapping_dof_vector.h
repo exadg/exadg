@@ -211,7 +211,7 @@ public:
     }
 
     // update mapping according to mesh deformation described by displacement vector
-    dealii::MappingQCache<dim>::initialize(
+    this->initialize(
       dof_handler.get_triangulation(),
       [&](const typename dealii::Triangulation<dim>::cell_iterator & cell_tria)
         -> std::vector<dealii::Point<dim>> {

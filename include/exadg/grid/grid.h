@@ -68,11 +68,6 @@ public:
   PeriodicFacePairs periodic_face_pairs;
 
   /**
-   * dealii::Mapping.
-   */
-  std::shared_ptr<dealii::Mapping<dim>> mapping;
-
-  /**
    * A vector of coarse triangulations required for global coarsening multigrid.
    */
   std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> coarse_triangulations;

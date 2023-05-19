@@ -323,7 +323,7 @@ private:
     this->param.solver_info_data.interval_time_steps = 1e4;
 
     this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.grid.mapping_degree     = 1;
+    this->param.mapping_degree          = 1;
 
     this->param.newton_solver_data  = Newton::SolverData(1e4, 1.e-10, 1.e-10);
     this->param.solver              = Solver::CG;

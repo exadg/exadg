@@ -22,30 +22,8 @@
 #ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_FLUID_H_
 #define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_FLUID_H_
 
-// application
-#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
-
-// utilities
-#include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
-#include <exadg/matrix_free/matrix_free_data.h>
-#include <exadg/utilities/print_general_infos.h>
-#include <exadg/utilities/timer_tree.h>
-
-// grid
-#include <exadg/grid/grid_motion_elasticity.h>
-#include <exadg/grid/grid_motion_poisson.h>
-#include <exadg/poisson/spatial_discretization/operator.h>
-
-// IncNS
-#include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.h>
-#include <exadg/incompressible_navier_stokes/time_integration/create_time_integrator.h>
-#include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h>
-#include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
-#include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
+// ExaDG
+#include <exadg/fluid_structure_interaction/single_field_solvers/fluid.h>
 
 namespace ExaDG
 {
@@ -119,18 +97,25 @@ public:
       if(this->application->fluid->get_parameters().mesh_movement_type ==
          IncNS::MeshMovementType::Poisson)
       {
-        this->precice->add_read_surface(fluid->ale_matrix_free,
-                                        fluid->ale_poisson_operator->get_container_interface_data(),
-                                        this->precice_parameters.ale_mesh_name,
-                                        {this->precice_parameters.displacement_data_name});
+        std::shared_ptr<Poisson::DeformedMapping<dim, Number>> poisson_ale_mapping =
+          std::dynamic_pointer_cast<Poisson::DeformedMapping<dim, Number>>(fluid->ale_mapping);
+
+        this->precice->add_read_surface(
+          poisson_ale_mapping->get_matrix_free(),
+          poisson_ale_mapping->get_pde_operator()->get_container_interface_data(),
+          this->precice_parameters.ale_mesh_name,
+          {this->precice_parameters.displacement_data_name});
       }
       // Elasticity mesh movement
       else if(this->application->fluid->get_parameters().mesh_movement_type ==
               IncNS::MeshMovementType::Elasticity)
       {
+        std::shared_ptr<Structure::DeformedMapping<dim, Number>> structure_ale_mapping =
+          std::dynamic_pointer_cast<Structure::DeformedMapping<dim, Number>>(fluid->ale_mapping);
+
         this->precice->add_read_surface(
-          fluid->ale_matrix_free,
-          fluid->ale_elasticity_operator->get_container_interface_data_dirichlet(),
+          structure_ale_mapping->get_matrix_free(),
+          structure_ale_mapping->get_pde_operator()->get_container_interface_data_dirichlet(),
           this->precice_parameters.ale_mesh_name,
           {this->precice_parameters.displacement_data_name});
       }
@@ -237,7 +222,7 @@ public:
     fluid->time_integrator->print_iterations();
 
     this->pcout << std::endl << "ALE:" << std::endl;
-    fluid->ale_grid_motion->print_iterations();
+    fluid->ale_mapping->print_iterations();
 
     // wall times
     this->pcout << std::endl << "Wall times:" << std::endl;
@@ -258,12 +243,18 @@ public:
     if(this->application->fluid->get_parameters().mesh_movement_type ==
        IncNS::MeshMovementType::Poisson)
     {
-      DoFs += fluid->ale_poisson_operator->get_number_of_dofs();
+      std::shared_ptr<Poisson::DeformedMapping<dim, Number>> poisson_ale_mapping =
+        std::dynamic_pointer_cast<Poisson::DeformedMapping<dim, Number>>(fluid->ale_mapping);
+
+      DoFs += poisson_ale_mapping->get_pde_operator()->get_number_of_dofs();
     }
     else if(this->application->fluid->get_parameters().mesh_movement_type ==
             IncNS::MeshMovementType::Elasticity)
     {
-      DoFs += fluid->ale_elasticity_operator->get_number_of_dofs();
+      std::shared_ptr<Structure::DeformedMapping<dim, Number>> elasticity_ale_mapping =
+        std::dynamic_pointer_cast<Structure::DeformedMapping<dim, Number>>(fluid->ale_mapping);
+
+      DoFs += elasticity_ale_mapping->get_pde_operator()->get_number_of_dofs();
     }
     else
     {

@@ -19,11 +19,6 @@
  *  ______________________________________________________________________
  */
 
-// deal.II
-#include <deal.II/fe/fe_simplex_p.h>
-#include <deal.II/fe/mapping_fe.h>
-#include <deal.II/fe/mapping_q.h>
-
 // ExaDG
 #include <exadg/grid/enum_types.h>
 #include <exadg/grid/grid.h>
@@ -74,21 +69,6 @@ Grid<dim>::initialize(GridData const & data, MPI_Comm const & mpi_comm)
   else
   {
     AssertThrow(false, dealii::ExcMessage("Invalid parameter triangulation_type."));
-  }
-
-  // mapping
-  if(data.element_type == ElementType::Hypercube)
-  {
-    mapping = std::make_shared<dealii::MappingQ<dim>>(data.mapping_degree);
-  }
-  else if(data.element_type == ElementType::Simplex)
-  {
-    mapping =
-      std::make_shared<dealii::MappingFE<dim>>(dealii::FE_SimplexP<dim>(data.mapping_degree));
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("Invalid parameter element_type."));
   }
 }
 

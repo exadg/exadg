@@ -179,7 +179,7 @@ private:
 
     // SPATIAL DISCRETIZATION
     param.grid.triangulation_type = TriangulationType::Distributed;
-    param.grid.mapping_degree     = param.degree_u;
+    param.mapping_degree          = param.degree_u;
     param.degree_p                = DegreePressure::MixedOrder;
 
     // convective term
@@ -560,7 +560,7 @@ private:
     param.right_hand_side = false;
 
     // SPATIAL DISCRETIZATION
-    param.degree                 = this->param.grid.mapping_degree;
+    param.degree                 = this->param.mapping_degree;
     param.spatial_discretization = SpatialDiscretization::CG;
 
     // SOLVER
@@ -635,7 +635,7 @@ private:
     param.large_deformation    = false;
     param.pull_back_traction   = false;
 
-    param.degree = this->param.grid.mapping_degree;
+    param.degree = this->param.mapping_degree;
 
     param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
     param.solver             = Structure::Solver::FGMRES;
@@ -757,7 +757,7 @@ private:
     param.solver_info_data.interval_time_steps = OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS;
 
     param.grid.triangulation_type = TriangulationType::Distributed;
-    param.grid.mapping_degree     = param.degree;
+    param.mapping_degree          = param.degree;
 
     param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
     param.solver             = Structure::Solver::FGMRES;

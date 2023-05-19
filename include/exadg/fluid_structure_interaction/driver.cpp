@@ -112,20 +112,27 @@ Driver<dim, Number>::setup_interface_coupling()
     if(application->fluid->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
       structure_to_ale = std::make_shared<InterfaceCoupling<1, dim, Number>>();
-      structure_to_ale->setup(fluid->ale_poisson_operator->get_container_interface_data(),
-                              structure->pde_operator->get_dof_handler(),
-                              *application->structure->get_grid()->mapping,
-                              marked_vertices_structure,
-                              parameters.geometric_tolerance);
+
+      std::shared_ptr<Poisson::DeformedMapping<dim, Number>> poisson_grid_motion =
+        std::dynamic_pointer_cast<Poisson::DeformedMapping<dim, Number>>(fluid->ale_mapping);
+      structure_to_ale->setup(
+        poisson_grid_motion->get_pde_operator()->get_container_interface_data(),
+        structure->pde_operator->get_dof_handler(),
+        *application->structure->get_mapping(),
+        marked_vertices_structure,
+        parameters.geometric_tolerance);
     }
     else if(application->fluid->get_parameters().mesh_movement_type ==
             IncNS::MeshMovementType::Elasticity)
     {
       structure_to_ale = std::make_shared<InterfaceCoupling<1, dim, Number>>();
+
+      std::shared_ptr<Structure::DeformedMapping<dim, Number>> elasticity_grid_motion =
+        std::dynamic_pointer_cast<Structure::DeformedMapping<dim, Number>>(fluid->ale_mapping);
       structure_to_ale->setup(
-        fluid->ale_elasticity_operator->get_container_interface_data_dirichlet(),
+        elasticity_grid_motion->get_pde_operator()->get_container_interface_data_dirichlet(),
         structure->pde_operator->get_dof_handler(),
-        *application->structure->get_grid()->mapping,
+        *application->structure->get_mapping(),
         marked_vertices_structure,
         parameters.geometric_tolerance);
     }
@@ -154,7 +161,7 @@ Driver<dim, Number>::setup_interface_coupling()
     structure_to_fluid = std::make_shared<InterfaceCoupling<1, dim, Number>>();
     structure_to_fluid->setup(fluid->pde_operator->get_container_interface_data(),
                               structure->pde_operator->get_dof_handler(),
-                              *application->structure->get_grid()->mapping,
+                              *application->structure->get_mapping(),
                               marked_vertices_structure,
                               parameters.geometric_tolerance);
 
@@ -170,9 +177,6 @@ Driver<dim, Number>::setup_interface_coupling()
 
     pcout << std::endl << "Setup interface coupling fluid -> structure ..." << std::endl;
 
-    std::shared_ptr<dealii::Mapping<dim> const> mapping_fluid =
-      get_dynamic_mapping<dim, Number>(application->fluid->get_grid(), fluid->ale_grid_motion);
-
     auto const & tria         = fluid->pde_operator->get_dof_handler_u().get_triangulation();
     auto const   boundary_ids = extract_set_of_keys_from_map(
       application->fluid->get_boundary_descriptor()->velocity->dirichlet_cached_bc);
@@ -181,7 +185,7 @@ Driver<dim, Number>::setup_interface_coupling()
     fluid_to_structure = std::make_shared<InterfaceCoupling<1, dim, Number>>();
     fluid_to_structure->setup(structure->pde_operator->get_container_interface_data_neumann(),
                               fluid->pde_operator->get_dof_handler_u(),
-                              *mapping_fluid,
+                              *application->fluid->get_mapping(),
                               marked_vertices_fluid,
                               parameters.geometric_tolerance);
 
@@ -353,7 +357,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   fluid->time_integrator->print_iterations();
 
   pcout << std::endl << "ALE:" << std::endl;
-  fluid->ale_grid_motion->print_iterations();
+  fluid->ale_mapping->print_iterations();
 
   pcout << std::endl << "Structure:" << std::endl;
   structure->time_integrator->print_iterations();
@@ -380,12 +384,18 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 
   if(application->fluid->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)
   {
-    DoFs += fluid->pde_operator->get_number_of_dofs();
+    std::shared_ptr<Poisson::DeformedMapping<dim, Number>> poisson_ale_mapping =
+      std::dynamic_pointer_cast<Poisson::DeformedMapping<dim, Number>>(fluid->ale_mapping);
+
+    DoFs += poisson_ale_mapping->get_pde_operator()->get_number_of_dofs();
   }
   else if(application->fluid->get_parameters().mesh_movement_type ==
           IncNS::MeshMovementType::Elasticity)
   {
-    DoFs += fluid->ale_elasticity_operator->get_number_of_dofs();
+    std::shared_ptr<Structure::DeformedMapping<dim, Number>> structure_ale_mapping =
+      std::dynamic_pointer_cast<Structure::DeformedMapping<dim, Number>>(fluid->ale_mapping);
+
+    DoFs += structure_ale_mapping->get_pde_operator()->get_number_of_dofs();
   }
   else
   {

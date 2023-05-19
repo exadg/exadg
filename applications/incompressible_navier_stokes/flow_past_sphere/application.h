@@ -137,7 +137,7 @@ public:
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type = TriangulationType::Distributed;
     this->param.grid.multigrid          = MultigridVariant::GlobalCoarsening;
-    this->param.grid.mapping_degree     = this->param.degree_u;
+    this->param.mapping_degree          = this->param.degree_u;
     this->param.degree_p                = DegreePressure::MixedOrder;
 
     // convective term

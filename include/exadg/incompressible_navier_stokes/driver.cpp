@@ -69,9 +69,9 @@ Driver<dim, Number>::setup()
       std::shared_ptr<dealii::Function<dim>> mesh_motion =
         application->create_mesh_movement_function();
 
-      grid_motion = std::make_shared<GridMotionFunction<dim, Number>>(
-        application->get_grid()->mapping,
-        application->get_parameters().grid.mapping_degree,
+      grid_motion = std::make_shared<DeformedMappingFunction<dim, Number>>(
+        application->get_mapping(),
+        application->get_parameters().mapping_degree,
         *application->get_grid()->triangulation,
         mesh_motion,
         application->get_parameters().start_time);
@@ -80,35 +80,14 @@ Driver<dim, Number>::setup()
     {
       application->setup_poisson();
 
-      // initialize Poisson operator
-      poisson_operator = std::make_shared<Poisson::Operator<dim, dim, Number>>(
+      grid_motion = std::make_shared<Poisson::DeformedMapping<dim, Number>>(
         application->get_grid(),
+        application->get_mapping(),
         application->get_boundary_descriptor_poisson(),
         application->get_field_functions_poisson(),
         application->get_parameters_poisson(),
         "Poisson",
         mpi_comm);
-
-      // initialize matrix_free
-      poisson_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-      poisson_matrix_free_data->append(poisson_operator);
-
-      poisson_matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-      if(application->get_parameters_poisson().enable_cell_based_face_loops)
-        Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
-                                            poisson_matrix_free_data->data);
-      poisson_matrix_free->reinit(*application->get_grid()->mapping,
-                                  poisson_matrix_free_data->get_dof_handler_vector(),
-                                  poisson_matrix_free_data->get_constraint_vector(),
-                                  poisson_matrix_free_data->get_quadrature_vector(),
-                                  poisson_matrix_free_data->data);
-
-      poisson_operator->setup(poisson_matrix_free, poisson_matrix_free_data);
-      poisson_operator->setup_solver();
-
-      grid_motion =
-        std::make_shared<GridMotionPoisson<dim, Number>>(application->get_grid()->mapping,
-                                                         poisson_operator);
     }
     else
     {
@@ -124,36 +103,35 @@ Driver<dim, Number>::setup()
     };
 
     helpers_ale->update_pde_operator_after_grid_motion = [&]() {
-      std::shared_ptr<dealii::Mapping<dim> const> mapping =
-        get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
-      matrix_free->update_mapping(*mapping);
+      matrix_free->update_mapping(*grid_motion);
 
       pde_operator->update_after_grid_motion();
     };
   }
 
+  std::shared_ptr<dealii::Mapping<dim> const> mapping_fluid =
+    get_dynamic_mapping<dim, Number>(application->get_mapping(), grid_motion);
+
   if(application->get_parameters().solver_type == SolverType::Unsteady)
   {
-    pde_operator =
-      create_operator<dim, Number>(application->get_grid(),
-                                   get_dynamic_mapping<dim, Number>(application->get_grid(),
-                                                                    grid_motion),
-                                   application->get_boundary_descriptor(),
-                                   application->get_field_functions(),
-                                   application->get_parameters(),
-                                   "fluid",
-                                   mpi_comm);
+    pde_operator = create_operator<dim, Number>(application->get_grid(),
+                                                mapping_fluid,
+                                                application->get_boundary_descriptor(),
+                                                application->get_field_functions(),
+                                                application->get_parameters(),
+                                                "fluid",
+                                                mpi_comm);
   }
   else if(application->get_parameters().solver_type == SolverType::Steady)
   {
-    pde_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
-      application->get_grid(),
-      get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion),
-      application->get_boundary_descriptor(),
-      application->get_field_functions(),
-      application->get_parameters(),
-      "fluid",
-      mpi_comm);
+    pde_operator =
+      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(application->get_grid(),
+                                                            mapping_fluid,
+                                                            application->get_boundary_descriptor(),
+                                                            application->get_field_functions(),
+                                                            application->get_parameters(),
+                                                            "fluid",
+                                                            mpi_comm);
   }
   else
   {
@@ -168,9 +146,8 @@ Driver<dim, Number>::setup()
   if(application->get_parameters().use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
                                         matrix_free_data->data);
-  std::shared_ptr<dealii::Mapping<dim> const> mapping =
-    get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
-  matrix_free->reinit(*mapping,
+
+  matrix_free->reinit(*mapping_fluid,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),

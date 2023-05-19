@@ -38,7 +38,7 @@
 
 // IncNS
 #include <exadg/convection_diffusion/spatial_discretization/operator.h>
-#include <exadg/grid/grid_motion_function.h>
+#include <exadg/grid/mapping_deformation_function.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.h>
@@ -97,7 +97,7 @@ private:
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
   // grid motion (ALE)
-  std::shared_ptr<GridMotionBase<dim, Number>> grid_motion;
+  std::shared_ptr<DeformedMappingFunction<dim, Number>> ale_mapping;
 
   // ALE helper functions required by time integrator
   std::shared_ptr<HelpersALE<Number>> helpers_ale;

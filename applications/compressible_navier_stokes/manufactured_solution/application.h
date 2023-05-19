@@ -402,7 +402,7 @@ private:
 
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.grid.mapping_degree     = this->param.degree;
+    this->param.mapping_degree          = this->param.degree;
     this->param.n_q_points_convective   = QuadratureRule::Standard;
     this->param.n_q_points_viscous      = QuadratureRule::Standard;
 

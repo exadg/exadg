@@ -23,8 +23,8 @@
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
 
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
-#include <exadg/grid/grid_motion_function.h>
-#include <exadg/grid/grid_motion_poisson.h>
+#include <exadg/grid/mapping_deformation_function.h>
+#include <exadg/grid/mapping_deformation_poisson.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor_base.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
@@ -171,15 +171,10 @@ private:
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
   // moving mapping (ALE)
-  std::shared_ptr<GridMotionBase<dim, Number>> grid_motion;
+  std::shared_ptr<DeformedMappingBase<dim, Number>> grid_motion;
 
   // ALE helper functions required by time integrator
   std::shared_ptr<HelpersALE<Number>> helpers_ale;
-
-  // solve mesh deformation by a Poisson problem
-  std::shared_ptr<MatrixFreeData<dim, Number>>         poisson_matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>>     poisson_matrix_free;
-  std::shared_ptr<Poisson::Operator<dim, dim, Number>> poisson_operator;
 
   /*
    * MatrixFree

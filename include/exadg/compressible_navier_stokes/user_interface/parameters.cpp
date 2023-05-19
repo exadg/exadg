@@ -67,6 +67,7 @@ Parameters::Parameters()
 
     // triangulation
     grid(GridData()),
+    mapping_degree(1),
     degree(1),
     n_q_points_convective(QuadratureRule::Standard),
     n_q_points_viscous(QuadratureRule::Standard),
@@ -230,6 +231,8 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
   pcout << std::endl << "Spatial Discretization:" << std::endl;
 
   grid.print(pcout);
+
+  print_parameter(pcout, "Mapping degree", mapping_degree);
 
   print_parameter(pcout, "Polynomial degree", degree);
 

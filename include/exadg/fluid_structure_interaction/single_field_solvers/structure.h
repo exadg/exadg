@@ -66,6 +66,7 @@ SolverStructure<dim, Number>::setup(
   // setup spatial operator
   pde_operator =
     std::make_shared<Structure::Operator<dim, Number>>(application->get_grid(),
+                                                       application->get_mapping(),
                                                        application->get_boundary_descriptor(),
                                                        application->get_field_functions(),
                                                        application->get_material_descriptor(),
@@ -78,7 +79,7 @@ SolverStructure<dim, Number>::setup(
   matrix_free_data->append(pde_operator);
 
   matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-  matrix_free->reinit(*application->get_grid()->mapping,
+  matrix_free->reinit(*application->get_mapping(),
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
@@ -88,7 +89,7 @@ SolverStructure<dim, Number>::setup(
 
   // initialize postprocessor
   postprocessor = application->create_postprocessor();
-  postprocessor->setup(pde_operator->get_dof_handler(), *application->get_grid()->mapping);
+  postprocessor->setup(pde_operator->get_dof_handler(), *application->get_mapping());
 
   // initialize time integrator
   time_integrator = std::make_shared<Structure::TimeIntGenAlpha<dim, Number>>(
