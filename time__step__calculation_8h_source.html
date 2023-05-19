@@ -278,7 +278,7 @@ $(function() {
 <div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>      dealii::Point&lt;dim, dealii::VectorizedArray&lt;value_type&gt;&gt; q_point = fe_eval.quadrature_point(q);</div>
 <div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span> </div>
 <div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>      dealii::Tensor&lt;1, dim, dealii::VectorizedArray&lt;value_type&gt;&gt; u_x =</div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>        FunctionEvaluator&lt;1, dim, value_type&gt;::value(velocity, q_point, time);</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>        FunctionEvaluator&lt;1, dim, value_type&gt;::value(*velocity, q_point, time);</div>
 <div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>      dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;value_type&gt;&gt; invJ =</div>
 <div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>        fe_eval.inverse_jacobian(q);</div>
 <div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>      invJ                                                              = transpose(invJ);</div>

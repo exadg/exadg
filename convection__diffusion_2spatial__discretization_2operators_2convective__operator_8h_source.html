@@ -391,7 +391,7 @@ $(function() {
 <div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>    {</div>
 <div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>      dealii::Point&lt;dim, scalar&gt; q_points = integrator.quadrature_point(q);</div>
 <div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span> </div>
-<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>      vector velocity = <a class="code hl_struct" href="structExaDG_1_1FunctionEvaluator.html">FunctionEvaluator&lt;1, dim, Number&gt;::value</a>(data.velocity, q_points, time);</div>
+<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>      vector velocity = <a class="code hl_struct" href="structExaDG_1_1FunctionEvaluator.html">FunctionEvaluator&lt;1, dim, Number&gt;::value</a>(*(data.velocity), q_points, time);</div>
 <div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span> </div>
 <div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>      scalar normal_velocity = velocity * normal_m;</div>
 <div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span> </div>
@@ -468,7 +468,7 @@ $(function() {
 <div class="line"><a id="l00390" name="l00390"></a><span class="lineno">  390</span>    {</div>
 <div class="line"><a id="l00391" name="l00391"></a><span class="lineno">  391</span>      dealii::Point&lt;dim, scalar&gt; q_points = integrator.quadrature_point(q);</div>
 <div class="line"><a id="l00392" name="l00392"></a><span class="lineno">  392</span> </div>
-<div class="line"><a id="l00393" name="l00393"></a><span class="lineno">  393</span>      velocity = <a class="code hl_struct" href="structExaDG_1_1FunctionEvaluator.html">FunctionEvaluator&lt;1, dim, Number&gt;::value</a>(data.velocity, q_points, time);</div>
+<div class="line"><a id="l00393" name="l00393"></a><span class="lineno">  393</span>      velocity = <a class="code hl_struct" href="structExaDG_1_1FunctionEvaluator.html">FunctionEvaluator&lt;1, dim, Number&gt;::value</a>(*(data.velocity), q_points, time);</div>
 <div class="line"><a id="l00394" name="l00394"></a><span class="lineno">  394</span>    }</div>
 <div class="line"><a id="l00395" name="l00395"></a><span class="lineno">  395</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(data.velocity_type == TypeVelocityField::DoFVector)</div>
 <div class="line"><a id="l00396" name="l00396"></a><span class="lineno">  396</span>    {</div>
@@ -558,7 +558,7 @@ $(function() {
 <div class="line"><a id="l00480" name="l00480"></a><span class="lineno">  480</span> </div>
 <div class="line"><a id="l00481" name="l00481"></a><span class="lineno">  481</span>    <span class="keywordflow">if</span>(data.velocity_type == TypeVelocityField::Function)</div>
 <div class="line"><a id="l00482" name="l00482"></a><span class="lineno">  482</span>    {</div>
-<div class="line"><a id="l00483" name="l00483"></a><span class="lineno">  483</span>      velocity = <a class="code hl_struct" href="structExaDG_1_1FunctionEvaluator.html">FunctionEvaluator&lt;1, dim, Number&gt;::value</a>(data.velocity,</div>
+<div class="line"><a id="l00483" name="l00483"></a><span class="lineno">  483</span>      velocity = <a class="code hl_struct" href="structExaDG_1_1FunctionEvaluator.html">FunctionEvaluator&lt;1, dim, Number&gt;::value</a>(*(data.velocity),</div>
 <div class="line"><a id="l00484" name="l00484"></a><span class="lineno">  484</span>                                                          integrator.quadrature_point(q),</div>
 <div class="line"><a id="l00485" name="l00485"></a><span class="lineno">  485</span>                                                          time);</div>
 <div class="line"><a id="l00486" name="l00486"></a><span class="lineno">  486</span>    }</div>
@@ -585,7 +585,7 @@ $(function() {
 <div class="line"><a id="l00507" name="l00507"></a><span class="lineno">  507</span> </div>
 <div class="line"><a id="l00508" name="l00508"></a><span class="lineno">  508</span>    <span class="keywordflow">if</span>(data.velocity_type == TypeVelocityField::Function)</div>
 <div class="line"><a id="l00509" name="l00509"></a><span class="lineno">  509</span>    {</div>
-<div class="line"><a id="l00510" name="l00510"></a><span class="lineno">  510</span>      velocity = <a class="code hl_struct" href="structExaDG_1_1FunctionEvaluator.html">FunctionEvaluator&lt;1, dim, Number&gt;::value</a>(data.velocity,</div>
+<div class="line"><a id="l00510" name="l00510"></a><span class="lineno">  510</span>      velocity = <a class="code hl_struct" href="structExaDG_1_1FunctionEvaluator.html">FunctionEvaluator&lt;1, dim, Number&gt;::value</a>(*(data.velocity),</div>
 <div class="line"><a id="l00511" name="l00511"></a><span class="lineno">  511</span>                                                          integrator.quadrature_point(q),</div>
 <div class="line"><a id="l00512" name="l00512"></a><span class="lineno">  512</span>                                                          time);</div>
 <div class="line"><a id="l00513" name="l00513"></a><span class="lineno">  513</span>    }</div>

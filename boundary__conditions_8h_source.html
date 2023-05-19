@@ -127,13 +127,13 @@ $(function() {
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    <span class="keyword">auto</span> bc       = boundary_descriptor-&gt;neumann_bc.find(boundary_id)-&gt;second;</div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="keyword">auto</span> q_points = integrator.quadrature_point(q);</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    traction = FunctionEvaluator&lt;1, dim, Number&gt;::value(bc, q_points, time);</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    traction = FunctionEvaluator&lt;1, dim, Number&gt;::value(*bc, q_points, time);</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  }</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keywordflow">else</span> <span class="keywordflow">if</span>(boundary_type == BoundaryType::NeumannCached)</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  {</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    <span class="keyword">auto</span> bc = boundary_descriptor-&gt;neumann_cached_bc.find(boundary_id)-&gt;second;</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    traction = FunctionEvaluator&lt;1, dim, Number&gt;::value(bc,</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    traction = FunctionEvaluator&lt;1, dim, Number&gt;::value(*bc,</div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>                                                        integrator.get_current_cell_index(),</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>                                                        q,</div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>                                                        integrator.get_quadrature_index());</div>

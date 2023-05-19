@@ -172,7 +172,7 @@ $(function() {
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>      <span class="keyword">auto</span> bc       = boundary_descriptor-&gt;dirichlet_bc.find(boundary_id)-&gt;second;</div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>      <span class="keyword">auto</span> q_points = integrator.quadrature_point(q);</div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span> </div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>      g = FunctionEvaluator&lt;0, dim, Number&gt;::value(bc, q_points, time);</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>      g = FunctionEvaluator&lt;0, dim, Number&gt;::value(*bc, q_points, time);</div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span> </div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>      value_p = -value_m + 2.0 * g;</div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    }</div>
@@ -275,7 +275,7 @@ $(function() {
 <div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>      <span class="keyword">auto</span> bc       = boundary_descriptor-&gt;neumann_bc.find(boundary_id)-&gt;second;</div>
 <div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>      <span class="keyword">auto</span> q_points = integrator.quadrature_point(q);</div>
 <div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span> </div>
-<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>      <span class="keyword">auto</span> h = FunctionEvaluator&lt;0, dim, Number&gt;::value(bc, q_points, time);</div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>      <span class="keyword">auto</span> h = FunctionEvaluator&lt;0, dim, Number&gt;::value(*bc, q_points, time);</div>
 <div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span> </div>
 <div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>      normal_gradient_p = -normal_gradient_m + 2.0 * h;</div>
 <div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>    }</div>
