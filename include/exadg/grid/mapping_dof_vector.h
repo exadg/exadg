@@ -173,7 +173,7 @@ public:
    * dealii::DoFHandler object) that describes the displacement of the mesh compared to that
    * reference configuration. There are two special cases:
    *
-   * If the mapping pointer is invalid, this implies that the references coordinates are interpreted
+   * If the mapping pointer is invalid, this implies that the reference coordinates are interpreted
    * as zero, i.e., the displacement vector describes the absolute coordinates of the grid points.
    *
    * If the displacement_vector is empty or uninitialized, this implies that no displacements will

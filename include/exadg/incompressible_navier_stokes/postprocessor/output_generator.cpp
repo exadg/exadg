@@ -164,8 +164,12 @@ OutputGenerator<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler_
     if(output_data.write_grid)
     {
       write_grid(dof_handler_velocity->get_triangulation(),
+                 *mapping,
+                 output_data.degree,
                  output_data.directory,
-                 output_data.filename);
+                 output_data.filename,
+                 0,
+                 mpi_comm);
     }
 
     // processor_id

@@ -140,14 +140,20 @@ OutputGenerator<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler_
                          output_data.degree,
                          output_data.directory,
                          output_data.filename,
-                         time_control.get_counter(),
+                         0,
                          mpi_comm);
     }
 
     // write grid
     if(output_data.write_grid)
     {
-      write_grid(dof_handler->get_triangulation(), output_data.directory, output_data.filename);
+      write_grid(dof_handler->get_triangulation(),
+                 *mapping,
+                 output_data.degree,
+                 output_data.directory,
+                 output_data.filename,
+                 0,
+                 mpi_comm);
     }
 
     // processor_id

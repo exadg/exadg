@@ -26,9 +26,13 @@
 #include <fstream>
 
 // deal.II
+#include <deal.II/base/bounding_box.h>
+#include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_out.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/data_out_faces.h>
+#include <deal.II/particles/data_out.h>
+#include <deal.II/particles/particle_handler.h>
 
 namespace ExaDG
 {
@@ -36,7 +40,7 @@ template<int dim>
 void
 write_surface_mesh(dealii::Triangulation<dim> const & triangulation,
                    dealii::Mapping<dim> const &       mapping,
-                   unsigned int                       n_subdivisions,
+                   unsigned int const                 n_subdivisions,
                    std::string const &                folder,
                    std::string const &                file,
                    unsigned int const                 counter,
@@ -78,13 +82,69 @@ write_boundary_IDs(dealii::Triangulation<dim> const & triangulation,
 template<int dim>
 void
 write_grid(dealii::Triangulation<dim> const & triangulation,
+           dealii::Mapping<dim> const &       mapping,
+           unsigned int const                 n_subdivisions,
            std::string const &                folder,
-           std::string const &                file)
+           std::string const &                file,
+           unsigned int const &               counter,
+           MPI_Comm const &                   mpi_comm)
 {
-  std::string filename = folder + file + "_grid";
+  std::string filename = file + "_grid";
 
-  dealii::GridOut grid_out;
-  grid_out.write_mesh_per_processor_as_vtu(triangulation, filename);
+  dealii::DataOut<dim> data_out;
+
+  dealii::DataOutBase::VtkFlags flags;
+  flags.write_higher_order_cells = n_subdivisions > 1;
+  data_out.set_flags(flags);
+
+  data_out.attach_triangulation(triangulation);
+  data_out.build_patches(mapping, n_subdivisions, dealii::DataOut<dim>::curved_inner_cells);
+  data_out.write_vtu_with_pvtu_record(folder, filename, counter, mpi_comm, 4);
+}
+
+template<int dim>
+void
+write_points(dealii::Triangulation<dim> const &      triangulation,
+             dealii::Mapping<dim> const &            mapping,
+             std::vector<dealii::Point<dim>> const & points,
+             std::string const &                     folder,
+             std::string const &                     file,
+             unsigned int const                      counter,
+             MPI_Comm const &                        mpi_comm)
+{
+  std::string filename = file + "_points";
+
+  dealii::Particles::ParticleHandler<dim, dim> particle_handler(triangulation, mapping);
+
+  particle_handler.insert_particles(points);
+
+  dealii::Particles::DataOut<dim, dim> particle_output;
+  particle_output.build_patches(particle_handler);
+  particle_output.write_vtu_with_pvtu_record(folder, filename, counter, mpi_comm);
+}
+
+template<int dim>
+void
+write_points_in_dummy_triangulation(std::vector<dealii::Point<dim>> const & points,
+                                    std::string const &                     folder,
+                                    std::string const &                     file,
+                                    unsigned int const                      counter,
+                                    MPI_Comm const &                        mpi_comm)
+{
+  dealii::BoundingBox<dim> bounding_box(points);
+  auto const               boundary_points =
+    bounding_box.create_extended(1e-3 * std::pow(bounding_box.volume(), 1.0 / ((double)dim)))
+      .get_boundary_points();
+
+  dealii::Triangulation<dim> particle_dummy_tria;
+  dealii::GridGenerator::hyper_rectangle(particle_dummy_tria,
+                                         boundary_points.first,
+                                         boundary_points.second);
+
+  dealii::MappingQGeneric<dim> particle_dummy_mapping(1 /* mapping_degree */);
+
+  write_points(
+    particle_dummy_tria, particle_dummy_mapping, points, folder, file, counter, mpi_comm);
 }
 
 } // namespace ExaDG
