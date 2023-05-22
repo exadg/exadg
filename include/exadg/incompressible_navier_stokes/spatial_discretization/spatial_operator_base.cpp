@@ -201,11 +201,10 @@ SpatialOperatorBase<dim, Number>::setup(
     quad_indices.emplace_back(get_quad_index_velocity_gauss_lobatto());
 
     interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<1, dim, double>>();
-    interface_data_dirichlet_cached->template setup<Number>(
-      *matrix_free,
-      get_dof_index_velocity(),
-      quad_indices,
-      boundary_descriptor->velocity->dirichlet_cached_bc);
+    interface_data_dirichlet_cached->setup(*matrix_free,
+                                           get_dof_index_velocity(),
+                                           quad_indices,
+                                           boundary_descriptor->velocity->dirichlet_cached_bc);
 
     boundary_descriptor->velocity->set_dirichlet_cached_data(interface_data_dirichlet_cached);
   }
