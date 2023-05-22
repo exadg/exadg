@@ -64,35 +64,32 @@ MultigridPreconditionerBase<dim, Number>::MultigridPreconditionerBase(MPI_Comm c
 template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize(
-  MultigridData const &                                                  data,
-  MultigridVariant const &                                               multigrid_variant,
-  dealii::Triangulation<dim> const *                                     triangulation,
-  PeriodicFacePairs const &                                              periodic_face_pairs,
-  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations,
-  std::vector<PeriodicFacePairs> const &                                 coarse_periodic_face_pairs,
-  dealii::FiniteElement<dim> const &                                     fe,
-  std::shared_ptr<dealii::Mapping<dim> const>                            mapping,
-  bool const                                                             operator_is_singular,
-  Map_DBC const &                                                        dirichlet_bc,
-  Map_DBC_ComponentMask const & dirichlet_bc_component_mask)
+  MultigridData const &                       data,
+  MultigridVariant const &                    multigrid_variant,
+  std::shared_ptr<Grid<dim> const>            grid,
+  std::shared_ptr<dealii::Mapping<dim> const> mapping,
+  dealii::FiniteElement<dim> const &          fe,
+  bool const                                  operator_is_singular,
+  Map_DBC const &                             dirichlet_bc,
+  Map_DBC_ComponentMask const &               dirichlet_bc_component_mask)
 {
   this->data = data;
 
   this->multigrid_variant = multigrid_variant;
 
-  this->triangulation = triangulation;
+  this->triangulation = grid->triangulation;
 
-  this->periodic_face_pairs = periodic_face_pairs;
+  this->periodic_face_pairs = grid->periodic_face_pairs;
 
-  this->coarse_triangulations = coarse_triangulations;
+  this->coarse_triangulations = grid->coarse_triangulations;
 
-  this->coarse_periodic_face_pairs = coarse_periodic_face_pairs;
+  this->coarse_periodic_face_pairs = grid->coarse_periodic_face_pairs;
 
   this->mapping = mapping;
 
   bool const is_dg = fe.dofs_per_vertex == 0;
 
-  this->initialize_levels(this->triangulation, fe.degree, is_dg);
+  this->initialize_levels(fe.degree, is_dg);
 
   this->initialize_mapping();
 
@@ -150,8 +147,7 @@ MultigridPreconditionerBase<dim, Number>::initialize(
 
 template<int dim, typename Number>
 void
-MultigridPreconditionerBase<dim, Number>::initialize_levels(dealii::Triangulation<dim> const * tria,
-                                                            unsigned int const degree,
+MultigridPreconditionerBase<dim, Number>::initialize_levels(unsigned int const degree,
                                                             bool const         is_dg)
 {
   MultigridType const mg_type = data.type;
@@ -162,7 +158,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(dealii::Triangulatio
   if(mg_type == MultigridType::pMG or mg_type == MultigridType::cpMG or
      mg_type == MultigridType::pcMG)
   {
-    h_levels.push_back(tria->n_global_levels() - 1);
+    h_levels.push_back(this->triangulation->n_global_levels() - 1);
   }
   else // h-MG is involved working on all mesh levels
   {
@@ -178,7 +174,8 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(dealii::Triangulatio
     }
 
     unsigned int const n_h_levels =
-      (use_global_coarsening ? coarse_triangulations.size() : tria->n_global_levels());
+      (use_global_coarsening ? coarse_triangulations.size() :
+                               this->triangulation->n_global_levels());
 
     for(unsigned int h = 0; h < n_h_levels; h++)
       h_levels.push_back(h);

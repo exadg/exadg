@@ -34,18 +34,15 @@ MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & m
 template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize(
-  MultigridData const &                                                  mg_data,
-  MultigridVariant const &                                               multigrid_variant,
-  dealii::Triangulation<dim> const *                                     triangulation,
-  PeriodicFacePairs const &                                              periodic_face_pairs,
-  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations,
-  std::vector<PeriodicFacePairs> const &                                 coarse_periodic_face_pairs,
-  dealii::FiniteElement<dim> const &                                     fe,
-  std::shared_ptr<dealii::Mapping<dim> const>                            mapping,
-  ElasticityOperatorBase<dim, Number> const &                            pde_operator,
-  bool const                                                             nonlinear_operator,
-  Map_DBC const &                                                        dirichlet_bc,
-  Map_DBC_ComponentMask const & dirichlet_bc_component_mask)
+  MultigridData const &                       mg_data,
+  MultigridVariant const &                    multigrid_variant,
+  std::shared_ptr<Grid<dim> const>            grid,
+  std::shared_ptr<dealii::Mapping<dim> const> mapping,
+  dealii::FiniteElement<dim> const &          fe,
+  ElasticityOperatorBase<dim, Number> const & pde_operator,
+  bool const                                  nonlinear_operator,
+  Map_DBC const &                             dirichlet_bc,
+  Map_DBC_ComponentMask const &               dirichlet_bc_component_mask)
 {
   this->pde_operator = &pde_operator;
 
@@ -55,12 +52,9 @@ MultigridPreconditioner<dim, Number>::initialize(
 
   Base::initialize(mg_data,
                    multigrid_variant,
-                   triangulation,
-                   periodic_face_pairs,
-                   coarse_triangulations,
-                   coarse_periodic_face_pairs,
-                   fe,
+                   grid,
                    mapping,
+                   fe,
                    false /*operator_is_singular*/,
                    dirichlet_bc,
                    dirichlet_bc_component_mask);
