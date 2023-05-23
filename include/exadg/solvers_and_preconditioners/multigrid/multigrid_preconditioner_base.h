@@ -232,12 +232,7 @@ private:
   check_levels(std::vector<MGLevelInfo> const & level_info);
 
   unsigned int
-  get_number_of_h_levels() const
-  {
-    return (multigrid_variant == MultigridVariant::GlobalCoarsening ?
-              coarse_triangulations.size() :
-              this->triangulation->n_global_levels());
-  }
+  get_number_of_h_levels() const;
 
   /*
    * Returns the correct mapping depending on the multigrid transfer type and the current h-level.

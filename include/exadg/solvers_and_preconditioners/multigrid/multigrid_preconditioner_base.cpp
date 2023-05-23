@@ -355,16 +355,29 @@ template<int dim, typename Number>
 dealii::Mapping<dim> const &
 MultigridPreconditionerBase<dim, Number>::get_mapping(unsigned int const h_level) const
 {
-  if(data.involves_h_transfer())
+  if(h_level < coarse_grid_mappings.size())
   {
-    AssertThrow(h_level < coarse_grid_mappings.size(),
-                dealii::ExcMessage("coarse_grid_mappings are not initialized correctly."));
-
     return *(coarse_grid_mappings[h_level]);
   }
   else
   {
     return *mapping;
+  }
+}
+
+template<int dim, typename Number>
+unsigned int
+MultigridPreconditionerBase<dim, Number>::get_number_of_h_levels() const
+{
+  if(data.involves_h_transfer())
+  {
+    return (multigrid_variant == MultigridVariant::GlobalCoarsening ?
+              coarse_triangulations.size() :
+              this->triangulation->n_global_levels());
+  }
+  else
+  {
+    return 1;
   }
 }
 
