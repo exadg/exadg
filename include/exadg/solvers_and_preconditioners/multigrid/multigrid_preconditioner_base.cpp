@@ -56,8 +56,7 @@ MultigridPreconditionerBase<dim, Number>::MultigridPreconditionerBase(MPI_Comm c
     coarse_level(0),
     fine_level(0),
     mpi_comm(comm),
-    multigrid_variant(MultigridVariant::LocalSmoothing),
-    triangulation(nullptr)
+    multigrid_variant(MultigridVariant::LocalSmoothing)
 {
 }
 
@@ -77,13 +76,7 @@ MultigridPreconditionerBase<dim, Number>::initialize(
 
   this->multigrid_variant = multigrid_variant;
 
-  this->triangulation = grid->triangulation;
-
-  this->periodic_face_pairs = grid->periodic_face_pairs;
-
-  this->coarse_triangulations = grid->coarse_triangulations;
-
-  this->coarse_periodic_face_pairs = grid->coarse_periodic_face_pairs;
+  this->grid = grid;
 
   this->mapping = mapping;
 
@@ -158,7 +151,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(unsigned int const d
   if(mg_type == MultigridType::pMG or mg_type == MultigridType::cpMG or
      mg_type == MultigridType::pcMG)
   {
-    h_levels.push_back(this->triangulation->n_global_levels() - 1);
+    h_levels.push_back(grid->triangulation->n_global_levels() - 1);
   }
   else // h-MG is involved working on all mesh levels
   {
@@ -167,15 +160,15 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(unsigned int const d
     if(use_global_coarsening)
     {
       AssertThrow(
-        coarse_triangulations.size() > 0,
+        grid->coarse_triangulations.size() > 0,
         dealii::ExcMessage(
           "You are using global coarsening multigrid, but the vector coarse_triangulations is empty. "
           "Most likely, you forgot to set the parameter GridData::create_coarse_triangulations."));
     }
 
     unsigned int const n_h_levels =
-      (use_global_coarsening ? coarse_triangulations.size() :
-                               this->triangulation->n_global_levels());
+      (use_global_coarsening ? grid->coarse_triangulations.size() :
+                               grid->triangulation->n_global_levels());
 
     for(unsigned int h = 0; h < n_h_levels; h++)
       h_levels.push_back(h);
@@ -363,14 +356,14 @@ MultigridPreconditionerBase<dim, Number>::initialize_mapping()
     {
       MappingTools::initialize_multigrid(coarse_grid_mappings,
                                          mapping_q_cache,
-                                         coarse_triangulations);
+                                         grid->coarse_triangulations);
     }
     else if(multigrid_variant == MultigridVariant::LocalSmoothing)
     {
       mapping_dof_vector =
         std::make_shared<MappingDoFVector<dim, Number>>(mapping_q_cache->get_degree());
 
-      MappingTools::initialize_multigrid(mapping_dof_vector, mapping_q_cache, *triangulation);
+      MappingTools::initialize_multigrid(mapping_dof_vector, mapping_q_cache, *grid->triangulation);
     }
     else
     {
@@ -457,13 +450,13 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
     {
       auto const & level = level_info[i];
 
-      AssertThrow(level.h_level() < coarse_triangulations.size(),
+      AssertThrow(level.h_level() < grid->coarse_triangulations.size(),
                   dealii::ExcMessage(
                     "Vector of coarse_triangulations does not seem to be initialized correctly."));
 
-      auto dof_handler = new dealii::DoFHandler<dim>(*coarse_triangulations[level.h_level()]);
+      auto dof_handler = new dealii::DoFHandler<dim>(*grid->coarse_triangulations[level.h_level()]);
 
-      if(triangulation->all_reference_cells_are_hyper_cube())
+      if(grid->triangulation->all_reference_cells_are_hyper_cube())
       {
         if(level.is_dg())
           dof_handler->distribute_dofs(
@@ -472,7 +465,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
           dof_handler->distribute_dofs(
             dealii::FESystem<dim>(dealii::FE_Q<dim>(level.degree()), fe.n_components()));
       }
-      else if(triangulation->all_reference_cells_are_simplex())
+      else if(grid->triangulation->all_reference_cells_are_simplex())
       {
         if(level.is_dg())
           dof_handler->distribute_dofs(
@@ -499,10 +492,10 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       dealii::DoFTools::make_hanging_node_constraints(*dof_handler, *affine_constraints_own);
 
       // constraints from periodic boundary conditions
-      if(not(this->coarse_periodic_face_pairs[level.h_level()].empty()))
+      if(not(grid->coarse_periodic_face_pairs[level.h_level()].empty()))
       {
         auto periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
-          this->coarse_periodic_face_pairs[level.h_level()], *dof_handler);
+          grid->coarse_periodic_face_pairs[level.h_level()], *dof_handler);
 
         dealii::DoFTools::make_periodicity_constraints<dim, dim, MultigridNumber>(
           periodic_faces_dof, *affine_constraints_own);
@@ -535,10 +528,10 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
   }
   else if(multigrid_variant == MultigridVariant::LocalSmoothing)
   {
-    AssertThrow(triangulation->has_hanging_nodes() == false,
+    AssertThrow(grid->triangulation->has_hanging_nodes() == false,
                 dealii::ExcMessage("Hanging nodes are only supported with the option "
                                    "use_global_coarsening enabled."));
-    AssertThrow(triangulation->all_reference_cells_are_hyper_cube(),
+    AssertThrow(grid->triangulation->all_reference_cells_are_hyper_cube(),
                 dealii::ExcMessage("This multigrid implementation is currently only available for "
                                    "hyper-cube elements. Other grids need to enable the option "
                                    "use_global_coarsening."));
@@ -555,7 +548,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
     for(auto level : p_levels)
     {
       // setup dof_handler
-      auto dof_handler = new dealii::DoFHandler<dim>(*triangulation);
+      auto dof_handler = new dealii::DoFHandler<dim>(*grid->triangulation);
 
       // distribute dofs
       if(level.is_dg)
@@ -615,7 +608,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
                                            *dof_handlers[level],
                                            *affine_constraints_own,
                                            *constrained_dofs[level],
-                                           periodic_face_pairs,
+                                           grid->periodic_face_pairs,
                                            level_info[level].h_level());
 
       constraints[level].reset(affine_constraints_own);

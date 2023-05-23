@@ -296,13 +296,7 @@ private:
 
   MultigridVariant multigrid_variant;
 
-  std::shared_ptr<dealii::Triangulation<dim> const> triangulation;
-  PeriodicFacePairs                                 periodic_face_pairs;
-
-  // Only relevant for global coarsening, where this vector contains coarse level triangulations,
-  // and the fine level triangulation as the last element of the vector.
-  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> coarse_triangulations;
-  std::vector<PeriodicFacePairs>                                 coarse_periodic_face_pairs;
+  std::shared_ptr<Grid<dim> const> grid;
 
   // In case of global coarsening, this is the mapping associated to the fine level triangulation.
   std::shared_ptr<dealii::Mapping<dim> const> mapping;
