@@ -346,8 +346,11 @@ MultigridPreconditionerBase<dim, Number>::initialize_mapping()
   {
     coarse_grid_mappings.resize(n_h_levels);
 
-    MappingTools::initialize_coarse_mappings<dim, Number>(
-      coarse_grid_mappings, mapping, multigrid_variant, triangulation, coarse_triangulations);
+    MappingTools::initialize_coarse_mappings<dim, Number>(coarse_grid_mappings,
+                                                          mapping,
+                                                          multigrid_variant,
+                                                          grid->triangulation,
+                                                          grid->coarse_triangulations);
   }
 }
 
@@ -372,8 +375,8 @@ MultigridPreconditionerBase<dim, Number>::get_number_of_h_levels() const
   if(data.involves_h_transfer())
   {
     return (multigrid_variant == MultigridVariant::GlobalCoarsening ?
-              coarse_triangulations.size() :
-              this->triangulation->n_global_levels());
+              grid->coarse_triangulations.size() :
+              grid->triangulation->n_global_levels());
   }
   else
   {

@@ -508,7 +508,7 @@ initialize_coarse_mappings(
   std::vector<std::shared_ptr<dealii::Mapping<dim> const>> &             coarse_mappings,
   std::shared_ptr<dealii::Mapping<dim> const> const &                    fine_mapping,
   MultigridVariant const &                                               multigrid_variant,
-  dealii::Triangulation<dim> const *                                     fine_triangulation,
+  std::shared_ptr<dealii::Triangulation<dim> const> const &              fine_triangulation,
   std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations)
 {
   // We only need to explicitly initialize the mapping for all multigrid h-levels if it is of type
