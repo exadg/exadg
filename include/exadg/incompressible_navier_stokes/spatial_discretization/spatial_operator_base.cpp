@@ -195,23 +195,18 @@ SpatialOperatorBase<dim, Number>::setup(
   // initialize data container for DirichletCached boundary conditions
   if(not(boundary_descriptor->velocity->dirichlet_cached_bc.empty()))
   {
-    interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<1, dim, double>>();
     std::vector<unsigned int> quad_indices;
     quad_indices.emplace_back(get_quad_index_velocity_linear());
     quad_indices.emplace_back(get_quad_index_velocity_nonlinear());
     quad_indices.emplace_back(get_quad_index_velocity_gauss_lobatto());
 
-    std::set<dealii::types::boundary_id> bids;
-    for(auto const & bc : boundary_descriptor->velocity->dirichlet_cached_bc)
-      bids.insert(bc.first);
-
-    interface_data_dirichlet_cached->setup(matrix_free,
+    interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<1, dim, double>>();
+    interface_data_dirichlet_cached->setup(*matrix_free,
                                            get_dof_index_velocity(),
                                            quad_indices,
-                                           bids);
+                                           boundary_descriptor->velocity->dirichlet_cached_bc);
 
-    for(auto const & bc : boundary_descriptor->velocity->dirichlet_cached_bc)
-      bc.second->set_data_pointer(interface_data_dirichlet_cached);
+    boundary_descriptor->velocity->set_dirichlet_cached_data(interface_data_dirichlet_cached);
   }
 
   // initialize data structures depending on MatrixFree
@@ -1680,7 +1675,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       // dealii::Functions::ZeroFunction for DirichletCached BCs.
       for(auto iter : this->projection_operator->get_data().bc->dirichlet_cached_bc)
         dirichlet_boundary_conditions.insert(
-          pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+          pair(iter, new dealii::Functions::ZeroFunction<dim>(dim)));
 
       typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
       Map_DBC_ComponentMask dirichlet_bc_component_mask;

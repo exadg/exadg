@@ -93,7 +93,7 @@ inline DEAL_II_ALWAYS_INLINE //
       }
       else if(boundary_type == BoundaryTypeU::DirichletCached)
       {
-        auto bc = boundary_descriptor->dirichlet_cached_bc.find(boundary_id)->second;
+        auto bc = boundary_descriptor->get_dirichlet_cached_data();
         g       = FunctionEvaluator<1, dim, Number>::value(*bc,
                                                      integrator.get_current_cell_index(),
                                                      q,
@@ -173,7 +173,7 @@ inline DEAL_II_ALWAYS_INLINE //
     }
     else if(boundary_type == BoundaryTypeU::DirichletCached)
     {
-      auto bc = boundary_descriptor->dirichlet_cached_bc.find(boundary_id)->second;
+      auto bc = boundary_descriptor->get_dirichlet_cached_data();
       g       = FunctionEvaluator<1, dim, Number>::value(*bc,
                                                    integrator.get_current_cell_index(),
                                                    q,

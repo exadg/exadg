@@ -143,7 +143,7 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
         pair;
 
       dirichlet_boundary_conditions.insert(
-        pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+        pair(iter, new dealii::Functions::ZeroFunction<dim>(dim)));
     }
 
     typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;

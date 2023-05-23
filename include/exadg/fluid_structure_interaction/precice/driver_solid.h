@@ -84,7 +84,7 @@ public:
     {
       // TODO generalize interface handling for multiple interface IDs
       this->precice->add_write_surface(
-        this->application->structure->get_boundary_descriptor()->neumann_cached_bc.begin()->first,
+        *this->application->structure->get_boundary_descriptor()->neumann_cached_bc.begin(),
         this->precice_parameters.write_mesh_name,
         {this->precice_parameters.displacement_data_name,
          this->precice_parameters.velocity_data_name},

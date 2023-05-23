@@ -453,7 +453,7 @@ LaplaceOperator<dim, Number, n_components>::set_constrained_values(VectorType & 
 
           if(boundary_type == BoundaryType::DirichletCached)
           {
-            auto bc = operator_data.bc->dirichlet_cached_bc.find(boundary_id)->second;
+            auto bc = operator_data.bc->get_dirichlet_cached_data();
 
             g = FunctionEvaluator<rank, dim, Number>::value(*bc, face, q, quad_index);
           }

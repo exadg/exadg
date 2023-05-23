@@ -98,7 +98,7 @@ inline DEAL_II_ALWAYS_INLINE //
       }
       else if(boundary_type == BoundaryType::DirichletCached)
       {
-        auto bc = boundary_descriptor->dirichlet_cached_bc.find(boundary_id)->second;
+        auto bc = boundary_descriptor->get_dirichlet_cached_data();
         g       = FunctionEvaluator<rank, dim, Number>::value(*bc,
                                                         integrator.get_current_cell_index(),
                                                         q,

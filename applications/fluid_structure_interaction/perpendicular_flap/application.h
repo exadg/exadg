@@ -379,8 +379,6 @@ private:
 
     typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
       pair;
-    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
-      pair_fsi;
 
     // fill boundary descriptor velocity
     boundary_descriptor->velocity->dirichlet_bc.insert(
@@ -392,8 +390,7 @@ private:
     boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(BOUNDARY_ID_BOTTOM_WALL, new dealii::Functions::ZeroFunction<dim>(dim)));
     // fluid-structure interface
-    boundary_descriptor->velocity->dirichlet_cached_bc.insert(
-      pair_fsi(BOUNDARY_ID_FLAG, new FunctionCached<1, dim>()));
+    boundary_descriptor->velocity->dirichlet_cached_bc.insert(BOUNDARY_ID_FLAG);
 
     // fill boundary descriptor pressure
     boundary_descriptor->pressure->neumann_bc.insert(BOUNDARY_ID_WALLS);
@@ -472,8 +469,6 @@ private:
 
     typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
       pair;
-    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
-      pair_fsi;
 
     boundary_descriptor->dirichlet_bc.insert(
       pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
@@ -485,8 +480,7 @@ private:
       pair(BOUNDARY_ID_BOTTOM_WALL, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // fluid-structure interface
-    boundary_descriptor->dirichlet_cached_bc.insert(
-      pair_fsi(BOUNDARY_ID_FLAG, new FunctionCached<1, dim>()));
+    boundary_descriptor->dirichlet_cached_bc.insert(BOUNDARY_ID_FLAG);
   }
 
 
@@ -540,9 +534,6 @@ private:
                                                                                   pair;
     typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
 
-    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
-      pair_fsi;
-
     boundary_descriptor->dirichlet_bc.insert(
       pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
@@ -561,8 +552,7 @@ private:
       pair_mask(BOUNDARY_ID_BOTTOM_WALL, dealii::ComponentMask()));
 
     // fluid-structure interface
-    boundary_descriptor->dirichlet_cached_bc.insert(
-      pair_fsi(BOUNDARY_ID_FLAG, new FunctionCached<1, dim>()));
+    boundary_descriptor->dirichlet_cached_bc.insert(BOUNDARY_ID_FLAG);
   }
 
   void
@@ -722,17 +712,13 @@ public:
                                                                                   pair;
     typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
 
-    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
-      pair_fsi;
-
     boundary_descriptor->dirichlet_bc.insert(
       pair(BOUNDARY_ID_BOTTOM_WALL, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
       pair_mask(BOUNDARY_ID_BOTTOM_WALL, dealii::ComponentMask()));
 
     // fluid-structure interface
-    boundary_descriptor->neumann_cached_bc.insert(
-      pair_fsi(BOUNDARY_ID_FLAG, new FunctionCached<1, dim>()));
+    boundary_descriptor->neumann_cached_bc.insert(BOUNDARY_ID_FLAG);
   }
 
   void

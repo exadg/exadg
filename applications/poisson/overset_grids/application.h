@@ -91,16 +91,11 @@ public:
     typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
       pair;
 
-    typedef
-      typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<rank, dim>>>
-        pair_cached;
-
     this->boundary_descriptor->dirichlet_bc.insert(
       pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     this->boundary_descriptor->dirichlet_cached_bc.insert(
-      pair_cached(std::numeric_limits<dealii::types::boundary_id>::max() - 1,
-                  new FunctionCached<rank, dim>()));
+      std::numeric_limits<dealii::types::boundary_id>::max() - 1);
   }
 
   void
@@ -198,15 +193,10 @@ private:
     typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
       pair;
 
-    typedef
-      typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<rank, dim>>>
-        pair_cached;
-
     this->boundary_descriptor->dirichlet_bc.insert(
       pair(0, new dealii::Functions::ZeroFunction<dim>(n_components)));
     this->boundary_descriptor->dirichlet_cached_bc.insert(
-      pair_cached(std::numeric_limits<dealii::types::boundary_id>::max() - 1,
-                  new FunctionCached<rank, dim>()));
+      std::numeric_limits<dealii::types::boundary_id>::max() - 1);
   }
 
   void

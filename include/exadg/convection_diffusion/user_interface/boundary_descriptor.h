@@ -23,16 +23,12 @@
 #define INCLUDE_CONVECTION_DIFFUSION_BOUNDARY_DESCRIPTOR_H_
 
 // C/C++
+#include <memory>
 #include <set>
 
 // deal.II
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
-
-// ExaDG
-#include <exadg/functions_and_boundary_conditions/function_cached.h>
-
-#include <memory>
 
 namespace ExaDG
 {

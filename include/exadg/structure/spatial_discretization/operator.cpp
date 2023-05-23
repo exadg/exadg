@@ -83,14 +83,12 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> con
     // Gauss-Lobatto quadrature rule for DirichletCached boundary conditions!
     quad_indices.emplace_back(get_quad_index_gauss_lobatto());
 
-    std::set<dealii::types::boundary_id> bids;
-    for(auto const & bc : boundary_descriptor->dirichlet_cached_bc)
-      bids.insert(bc.first);
+    interface_data_dirichlet_cached->setup(*matrix_free,
+                                           get_dof_index(),
+                                           quad_indices,
+                                           boundary_descriptor->dirichlet_cached_bc);
 
-    interface_data_dirichlet_cached->setup(matrix_free, get_dof_index(), quad_indices, bids);
-
-    for(auto const & bc : boundary_descriptor->dirichlet_cached_bc)
-      bc.second->set_data_pointer(interface_data_dirichlet_cached);
+    boundary_descriptor->set_dirichlet_cached_data(interface_data_dirichlet_cached);
   }
 
   if(not(boundary_descriptor->neumann_cached_bc.empty()))
@@ -99,14 +97,12 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> con
     std::vector<unsigned int> quad_indices;
     quad_indices.emplace_back(get_quad_index());
 
-    std::set<dealii::types::boundary_id> bids;
-    for(auto const & bc : boundary_descriptor->neumann_cached_bc)
-      bids.insert(bc.first);
+    interface_data_neumann_cached->setup(*matrix_free,
+                                         get_dof_index(),
+                                         quad_indices,
+                                         boundary_descriptor->neumann_cached_bc);
 
-    interface_data_neumann_cached->setup(matrix_free, get_dof_index(), quad_indices, bids);
-
-    for(auto const & bc : boundary_descriptor->neumann_cached_bc)
-      bc.second->set_data_pointer(interface_data_neumann_cached);
+    boundary_descriptor->set_neumann_cached_data(interface_data_neumann_cached);
   }
 
   setup_operators();
@@ -177,10 +173,7 @@ Operator<dim, Number>::distribute_dofs()
   for(auto it : this->boundary_descriptor->dirichlet_cached_bc)
   {
     dealii::ComponentMask mask = dealii::ComponentMask();
-    dealii::DoFTools::make_zero_boundary_constraints(dof_handler,
-                                                     it.first,
-                                                     affine_constraints,
-                                                     mask);
+    dealii::DoFTools::make_zero_boundary_constraints(dof_handler, it, affine_constraints, mask);
   }
 
   affine_constraints.close();
@@ -496,12 +489,12 @@ Operator<dim, Number>::initialize_preconditioner()
             pair;
 
         dirichlet_boundary_conditions.insert(
-          pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+          pair(iter, new dealii::Functions::ZeroFunction<dim>(dim)));
 
         typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
 
         std::vector<bool> default_mask = std::vector<bool>(dim, true);
-        dirichlet_bc_component_mask.insert(pair_mask(iter.first, default_mask));
+        dirichlet_bc_component_mask.insert(pair_mask(iter, default_mask));
       }
 
       mg_preconditioner->initialize(param.multigrid_data,
@@ -544,12 +537,12 @@ Operator<dim, Number>::initialize_preconditioner()
             pair;
 
         dirichlet_boundary_conditions.insert(
-          pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+          pair(iter, new dealii::Functions::ZeroFunction<dim>(dim)));
 
         typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
 
         std::vector<bool> default_mask = std::vector<bool>(dim, true);
-        dirichlet_bc_component_mask.insert(pair_mask(iter.first, default_mask));
+        dirichlet_bc_component_mask.insert(pair_mask(iter, default_mask));
       }
 
       mg_preconditioner->initialize(param.multigrid_data,

@@ -30,7 +30,7 @@
 #include <deal.II/base/types.h>
 
 // ExaDG
-#include <exadg/functions_and_boundary_conditions/function_cached.h>
+#include <exadg/functions_and_boundary_conditions/container_interface_data.h>
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 
 namespace ExaDG
@@ -86,7 +86,7 @@ struct BoundaryDescriptorU
   // from the solution on another domain that is in contact with the actual domain
   // of interest at the given boundary (this type of Dirichlet boundary condition
   // is required for fluid-structure interaction problems)
-  std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>> dirichlet_cached_bc;
+  std::set<dealii::types::boundary_id> dirichlet_cached_bc;
 
   // Neumann: prescribe all components of the velocity gradient in normal direction
   std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> neumann_bc;
@@ -165,6 +165,25 @@ struct BoundaryDescriptorU
     AssertThrow(counter == 1,
                 dealii::ExcMessage("Boundary face with non-unique boundary type found."));
   }
+
+  void
+  set_dirichlet_cached_data(
+    std::shared_ptr<ContainerInterfaceData<1, dim, double> const> interface_data) const
+  {
+    dirichlet_cached_data = interface_data;
+  }
+
+  std::shared_ptr<ContainerInterfaceData<1, dim, double> const>
+  get_dirichlet_cached_data() const
+  {
+    AssertThrow(dirichlet_cached_data.get(),
+                dealii::ExcMessage("Pointer to ContainerInterfaceData has not been initialized."));
+
+    return dirichlet_cached_data;
+  }
+
+private:
+  mutable std::shared_ptr<ContainerInterfaceData<1, dim, double> const> dirichlet_cached_data;
 };
 
 template<int dim>

@@ -66,10 +66,10 @@ public:
 
   template<typename Number>
   void
-  setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_,
-        unsigned int const                                     dof_index_,
-        std::vector<quad_index> const &                        quad_indices_,
-        SetBoundaryIDs const &                                 set_bids_)
+  setup(dealii::MatrixFree<dim, Number> const & matrix_free_,
+        unsigned int const                      dof_index_,
+        std::vector<quad_index> const &         quad_indices_,
+        SetBoundaryIDs const &                  set_bids_)
   {
     quad_indices = quad_indices_;
 
@@ -85,14 +85,14 @@ public:
       ArraySolutionValues &   array_solution_dst = map_solution.find(q_index)->second;
 
       // create map "ID = {face, q, v} <-> vector_index" and fill array of quadrature points
-      for(unsigned int face = matrix_free_->n_inner_face_batches();
-          face < matrix_free_->n_inner_face_batches() + matrix_free_->n_boundary_face_batches();
+      for(unsigned int face = matrix_free_.n_inner_face_batches();
+          face < matrix_free_.n_inner_face_batches() + matrix_free_.n_boundary_face_batches();
           ++face)
       {
         // only consider relevant boundary IDs
-        if(set_bids_.find(matrix_free_->get_boundary_id(face)) != set_bids_.end())
+        if(set_bids_.find(matrix_free_.get_boundary_id(face)) != set_bids_.end())
         {
-          FaceIntegrator<dim, n_components, Number> integrator(*matrix_free_,
+          FaceIntegrator<dim, n_components, Number> integrator(matrix_free_,
                                                                true,
                                                                dof_index_,
                                                                q_index);

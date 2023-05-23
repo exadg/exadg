@@ -492,8 +492,7 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
   {
     typedef std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> pair;
 
-    dirichlet_boundary_conditions.insert(
-      pair(iter.first, new dealii::Functions::ZeroFunction<dim>(dim)));
+    dirichlet_boundary_conditions.insert(pair(iter, new dealii::Functions::ZeroFunction<dim>(dim)));
   }
 
   typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
@@ -521,7 +520,7 @@ OperatorCoupled<dim, Number>::setup_iterative_solver_momentum()
   AssertThrow(preconditioner_momentum.get() != 0,
               dealii::ExcMessage("preconditioner_momentum is uninitialized"));
 
-  // use FMGRES for "exact" solution of velocity block system
+  // use FGMRES for "exact" solution of velocity block system
   Krylov::SolverDataFGMRES gmres_data;
   gmres_data.use_preconditioner   = true;
   gmres_data.max_iter             = this->param.solver_data_velocity_block.max_iter;

@@ -25,19 +25,6 @@
 // deal.II
 #include <deal.II/grid/tria.h>
 
-template<typename Key, typename Data>
-std::set<Key>
-extract_set_of_keys_from_map(std::map<Key, Data> const & map)
-{
-  std::set<Key> set;
-  for(auto iter : map)
-  {
-    set.insert(iter.first);
-  }
-
-  return set;
-}
-
 template<int dim>
 std::vector<bool>
 get_marked_vertices_via_boundary_ids(dealii::Triangulation<dim> const &           triangulation,
