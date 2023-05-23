@@ -59,19 +59,15 @@ public:
   MultigridPreconditioner(MPI_Comm const & mpi_comm);
 
   void
-  initialize(
-    MultigridData const &                                                  mg_data,
-    MultigridVariant const &                                               multigrid_variant,
-    dealii::Triangulation<dim> const *                                     triangulation,
-    PeriodicFacePairs const &                                              periodic_face_pairs,
-    std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations,
-    std::vector<PeriodicFacePairs> const &      coarse_periodic_face_pairs,
-    dealii::FiniteElement<dim> const &          fe,
-    std::shared_ptr<dealii::Mapping<dim> const> mapping,
-    LaplaceOperatorData<rank, dim> const &      data_in,
-    bool const                                  mesh_is_moving,
-    Map_DBC const &                             dirichlet_bc,
-    Map_DBC_ComponentMask const &               dirichlet_bc_component_mask);
+  initialize(MultigridData const &                       mg_data,
+             MultigridVariant const &                    multigrid_variant,
+             std::shared_ptr<Grid<dim> const>            grid,
+             std::shared_ptr<dealii::Mapping<dim> const> mapping,
+             dealii::FiniteElement<dim> const &          fe,
+             LaplaceOperatorData<rank, dim> const &      data,
+             bool const                                  mesh_is_moving,
+             Map_DBC const &                             dirichlet_bc,
+             Map_DBC_ComponentMask const &               dirichlet_bc_component_mask);
 
   void
   update() override;

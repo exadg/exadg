@@ -96,18 +96,14 @@ public:
    * Initialization function.
    */
   void
-  initialize(
-    MultigridData const &                                                  data,
-    MultigridVariant const &                                               multigrid_variant,
-    dealii::Triangulation<dim> const *                                     triangulation,
-    PeriodicFacePairs const &                                              periodic_face_pairs,
-    std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations,
-    std::vector<PeriodicFacePairs> const &      coarse_periodic_face_pairs,
-    dealii::FiniteElement<dim> const &          fe,
-    std::shared_ptr<dealii::Mapping<dim> const> mapping,
-    bool const                                  operator_is_singular,
-    Map_DBC const &                             dirichlet_bc,
-    Map_DBC_ComponentMask const &               dirichlet_bc_component_mask);
+  initialize(MultigridData const &                       data,
+             MultigridVariant const &                    multigrid_variant,
+             std::shared_ptr<Grid<dim> const>            grid,
+             std::shared_ptr<dealii::Mapping<dim> const> mapping,
+             dealii::FiniteElement<dim> const &          fe,
+             bool const                                  operator_is_singular,
+             Map_DBC const &                             dirichlet_bc,
+             Map_DBC_ComponentMask const &               dirichlet_bc_component_mask);
 
   /*
    * This function applies the multigrid preconditioner dst = P^{-1} src.
@@ -230,9 +226,7 @@ private:
    * Multigrid levels (i.e. coarsening strategy, h-/p-/hp-/ph-MG).
    */
   void
-  initialize_levels(dealii::Triangulation<dim> const * tria,
-                    unsigned int const                 degree,
-                    bool const                         is_dg);
+  initialize_levels(unsigned int const degree, bool const is_dg);
 
   void
   check_levels(std::vector<MGLevelInfo> const & level_info);
@@ -302,13 +296,7 @@ private:
 
   MultigridVariant multigrid_variant;
 
-  dealii::Triangulation<dim> const * triangulation;
-  PeriodicFacePairs                  periodic_face_pairs;
-
-  // Only relevant for global coarsening, where this vector contains coarse level triangulations,
-  // and the fine level triangulation as the last element of the vector.
-  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> coarse_triangulations;
-  std::vector<PeriodicFacePairs>                                 coarse_periodic_face_pairs;
+  std::shared_ptr<Grid<dim> const> grid;
 
   // In case of global coarsening, this is the mapping associated to the fine level triangulation.
   std::shared_ptr<dealii::Mapping<dim> const> mapping;
