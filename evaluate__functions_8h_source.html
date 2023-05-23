@@ -106,7 +106,7 @@ $(function() {
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &lt;deal.II/base/tensor.h&gt;</span></div>
 <div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#include &lt;deal.II/base/vectorization.h&gt;</span></div>
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#include &lt;exadg/functions_and_boundary_conditions/function_cached.h&gt;</span></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#include &lt;exadg/functions_and_boundary_conditions/container_interface_data.h&gt;</span></div>
 <div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="preprocessor">#include &lt;exadg/functions_and_boundary_conditions/function_with_normal.h&gt;</span></div>
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="preprocessor">#include &lt;memory&gt;</span></div>
@@ -133,10 +133,10 @@ $(function() {
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keyword">static</span> <span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    dealii::Tensor&lt;rank, dim, dealii::VectorizedArray&lt;Number&gt;&gt;</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    value(<a class="code hl_class" href="classExaDG_1_1FunctionCached.html">FunctionCached&lt;rank, dim&gt;</a> <span class="keyword">const</span> &amp; function,</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                face,</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                q,</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                quad_index)</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    value(<a class="code hl_class" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData&lt;rank, dim, double&gt;</a> <span class="keyword">const</span> &amp; function,</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                face,</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                q,</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                quad_index)</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  {</div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    (void)function;</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    (void)face;</div>
@@ -182,10 +182,10 @@ $(function() {
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span> </div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  <span class="keyword">static</span> <span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    dealii::SymmetricTensor&lt;rank, dim, dealii::VectorizedArray&lt;Number&gt;&gt;</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    value_symmetric(<a class="code hl_class" href="classExaDG_1_1FunctionCached.html">FunctionCached&lt;rank, dim&gt;</a> <span class="keyword">const</span> &amp; function,</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>                    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                face,</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>                    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                q,</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>                    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                quad_index)</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    value_symmetric(<a class="code hl_class" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData&lt;rank, dim, double&gt;</a> <span class="keyword">const</span> &amp; function,</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>                    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                face,</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>                    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                q,</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>                    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                quad_index)</div>
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  {</div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    (void)function;</div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    (void)face;</div>
@@ -224,15 +224,15 @@ $(function() {
 <div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span> </div>
 <div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>  <span class="keyword">static</span> <span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
 <div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>    dealii::Tensor&lt;0, dim, dealii::VectorizedArray&lt;Number&gt;&gt;</div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>    value(<a class="code hl_class" href="classExaDG_1_1FunctionCached.html">FunctionCached&lt;0, dim&gt;</a> <span class="keyword">const</span> &amp; function,</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>             face,</div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>             q,</div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>             quad_index)</div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>    value(<a class="code hl_class" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData&lt;0, dim, double&gt;</a> <span class="keyword">const</span> &amp; function,</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                             face,</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                             q,</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                             quad_index)</div>
 <div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  {</div>
 <div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>    dealii::VectorizedArray&lt;Number&gt; value = dealii::make_vectorized_array&lt;Number&gt;(0.0);</div>
 <div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span> </div>
 <div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> v = 0; v &lt; dealii::VectorizedArray&lt;Number&gt;::size(); ++v)</div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>      value[v] = function.tensor_value(face, q, v, quad_index);</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>      value[v] = function.get_data(face, q, v, quad_index);</div>
 <div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span> </div>
 <div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>    <span class="keywordflow">return</span> value;</div>
 <div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>  }</div>
@@ -267,10 +267,10 @@ $(function() {
 <div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span> </div>
 <div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  <span class="keyword">static</span> <span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
 <div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>    dealii::Tensor&lt;1, dim, dealii::VectorizedArray&lt;Number&gt;&gt;</div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>    value(<a class="code hl_class" href="classExaDG_1_1FunctionCached.html">FunctionCached&lt;1, dim&gt;</a> <span class="keyword">const</span> &amp; function,</div>
-<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>             face,</div>
-<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>             q,</div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>             quad_index)</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>    value(<a class="code hl_class" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData&lt;1, dim, double&gt;</a> <span class="keyword">const</span> &amp; function,</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                             face,</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                             q,</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                             quad_index)</div>
 <div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>  {</div>
 <div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>    dealii::Tensor&lt;1, dim, dealii::VectorizedArray&lt;Number&gt;&gt; value;</div>
 <div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span> </div>
@@ -278,7 +278,7 @@ $(function() {
 <div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>      tensor_array;</div>
 <div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span> </div>
 <div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> v = 0; v &lt; dealii::VectorizedArray&lt;Number&gt;::size(); ++v)</div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>      tensor_array[v] = function.tensor_value(face, q, v, quad_index);</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>      tensor_array[v] = function.get_data(face, q, v, quad_index);</div>
 <div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span> </div>
 <div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> d = 0; d &lt; dim; ++d)</div>
 <div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>    {</div>
@@ -356,10 +356,10 @@ $(function() {
 <div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span> </div>
 <div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>  <span class="keyword">static</span> <span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
 <div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>    dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt;</div>
-<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>    value(<a class="code hl_class" href="classExaDG_1_1FunctionCached.html">FunctionCached&lt;2, dim&gt;</a> <span class="keyword">const</span> &amp; function,</div>
-<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>             face,</div>
-<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>             q,</div>
-<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>             quad_index)</div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>    value(<a class="code hl_class" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData&lt;2, dim, double&gt;</a> <span class="keyword">const</span> &amp; function,</div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                             face,</div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                             q,</div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                             quad_index)</div>
 <div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>  {</div>
 <div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>    dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt; value;</div>
 <div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span> </div>
@@ -367,7 +367,7 @@ $(function() {
 <div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>      tensor_array;</div>
 <div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span> </div>
 <div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> v = 0; v &lt; dealii::VectorizedArray&lt;Number&gt;::size(); ++v)</div>
-<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>      tensor_array[v] = function.tensor_value(face, q, v, quad_index);</div>
+<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>      tensor_array[v] = function.get_data(face, q, v, quad_index);</div>
 <div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span> </div>
 <div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> d1 = 0; d1 &lt; dim; ++d1)</div>
 <div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>    {</div>
@@ -415,10 +415,10 @@ $(function() {
 <div class="line"><a id="l00337" name="l00337"></a><span class="lineno">  337</span> </div>
 <div class="line"><a id="l00338" name="l00338"></a><span class="lineno">  338</span>  <span class="keyword">static</span> <span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
 <div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span>    dealii::SymmetricTensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt;</div>
-<div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span>    value_symmetric(<a class="code hl_class" href="classExaDG_1_1FunctionCached.html">FunctionCached&lt;2, dim&gt;</a> <span class="keyword">const</span> &amp; function,</div>
-<div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span>                    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>             face,</div>
-<div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span>                    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>             q,</div>
-<div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>                    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>             quad_index)</div>
+<div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span>    value_symmetric(<a class="code hl_class" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData&lt;2, dim, double&gt;</a> <span class="keyword">const</span> &amp; function,</div>
+<div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span>                    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                             face,</div>
+<div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span>                    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                             q,</div>
+<div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>                    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                             quad_index)</div>
 <div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span>  {</div>
 <div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span>    dealii::SymmetricTensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt; value;</div>
 <div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span> </div>
@@ -426,7 +426,7 @@ $(function() {
 <div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span>      tensor_array;</div>
 <div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span> </div>
 <div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> v = 0; v &lt; dealii::VectorizedArray&lt;Number&gt;::size(); ++v)</div>
-<div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span>      tensor_array[v] = function.tensor_value(face, q, v, quad_index);</div>
+<div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span>      tensor_array[v] = function.get_data(face, q, v, quad_index);</div>
 <div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span> </div>
 <div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> d1 = 0; d1 &lt; dim; ++d1)</div>
 <div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span>    {</div>
@@ -444,7 +444,7 @@ $(function() {
 <div class="line"><a id="l00366" name="l00366"></a><span class="lineno">  366</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00367" name="l00367"></a><span class="lineno">  367</span> </div>
 <div class="line"><a id="l00368" name="l00368"></a><span class="lineno">  368</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_EVALUATE_FUNCTIONS_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1FunctionCached_html"><div class="ttname"><a href="classExaDG_1_1FunctionCached.html">ExaDG::FunctionCached</a></div><div class="ttdef"><b>Definition</b> function_cached.h:38</div></div>
+<div class="ttc" id="aclassExaDG_1_1ContainerInterfaceData_html"><div class="ttname"><a href="classExaDG_1_1ContainerInterfaceData.html">ExaDG::ContainerInterfaceData</a></div><div class="ttdef"><b>Definition</b> container_interface_data.h:45</div></div>
 <div class="ttc" id="aclassExaDG_1_1FunctionWithNormal_html"><div class="ttname"><a href="classExaDG_1_1FunctionWithNormal.html">ExaDG::FunctionWithNormal</a></div><div class="ttdef"><b>Definition</b> function_with_normal.h:33</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 <div class="ttc" id="astructExaDG_1_1FunctionEvaluator_html"><div class="ttname"><a href="structExaDG_1_1FunctionEvaluator.html">ExaDG::FunctionEvaluator</a></div><div class="ttdef"><b>Definition</b> evaluate_functions.h:40</div></div>

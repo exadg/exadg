@@ -89,6 +89,18 @@ DEAL_II_ALWAYS_INLINE BoundaryType&#160;</td><td class="memItemRight" valign="bo
 <tr class="memitem:ad3599fd8823faf3bd99ea3ec15141671"><td class="memItemLeft" align="right" valign="top"><a id="ad3599fd8823faf3bd99ea3ec15141671" name="ad3599fd8823faf3bd99ea3ec15141671"></a>
 DEAL_II_ALWAYS_INLINE void&#160;</td><td class="memItemRight" valign="bottom"><b>verify_boundary_conditions</b> (dealii::types::boundary_id const boundary_id, std::set&lt; dealii::types::boundary_id &gt; const &amp;periodic_boundary_ids) const</td></tr>
 <tr class="separator:ad3599fd8823faf3bd99ea3ec15141671"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3fb632561b12b90ca5aeecf70a7cb578"><td class="memItemLeft" align="right" valign="top"><a id="a3fb632561b12b90ca5aeecf70a7cb578" name="a3fb632561b12b90ca5aeecf70a7cb578"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_dirichlet_cached_data</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; 1, dim, double &gt; const &gt; interface_data) const</td></tr>
+<tr class="separator:a3fb632561b12b90ca5aeecf70a7cb578"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2387a7888f5bd59acaafae7f8456a9d4"><td class="memItemLeft" align="right" valign="top"><a id="a2387a7888f5bd59acaafae7f8456a9d4" name="a2387a7888f5bd59acaafae7f8456a9d4"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_neumann_cached_data</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; 1, dim, double &gt; const &gt; interface_data) const</td></tr>
+<tr class="separator:a2387a7888f5bd59acaafae7f8456a9d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9b53ea2c0a4ba0fa7b580918d7931995"><td class="memItemLeft" align="right" valign="top"><a id="a9b53ea2c0a4ba0fa7b580918d7931995" name="a9b53ea2c0a4ba0fa7b580918d7931995"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; 1, dim, double &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dirichlet_cached_data</b> () const</td></tr>
+<tr class="separator:a9b53ea2c0a4ba0fa7b580918d7931995"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a48d72e24011e3f855692c6d23bc59550"><td class="memItemLeft" align="right" valign="top"><a id="a48d72e24011e3f855692c6d23bc59550" name="a48d72e24011e3f855692c6d23bc59550"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; 1, dim, double &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_neumann_cached_data</b> () const</td></tr>
+<tr class="separator:a48d72e24011e3f855692c6d23bc59550"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -98,15 +110,15 @@ std::map&lt; dealii::types::boundary_id, std::shared_ptr&lt; dealii::Function&lt
 <tr class="memitem:aa2ebcd41973bce5f4296aa36a26603db"><td class="memItemLeft" align="right" valign="top"><a id="aa2ebcd41973bce5f4296aa36a26603db" name="aa2ebcd41973bce5f4296aa36a26603db"></a>
 std::map&lt; dealii::types::boundary_id, dealii::ComponentMask &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>dirichlet_bc_component_mask</b></td></tr>
 <tr class="separator:aa2ebcd41973bce5f4296aa36a26603db"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afd429cf41a5ee50f33b084a0fb7194ba"><td class="memItemLeft" align="right" valign="top"><a id="afd429cf41a5ee50f33b084a0fb7194ba" name="afd429cf41a5ee50f33b084a0fb7194ba"></a>
-std::map&lt; dealii::types::boundary_id, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1FunctionCached.html">FunctionCached</a>&lt; 1, dim &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>dirichlet_cached_bc</b></td></tr>
-<tr class="separator:afd429cf41a5ee50f33b084a0fb7194ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aba68a4467a567ba14fb611d973bbe3d7"><td class="memItemLeft" align="right" valign="top"><a id="aba68a4467a567ba14fb611d973bbe3d7" name="aba68a4467a567ba14fb611d973bbe3d7"></a>
+std::set&lt; dealii::types::boundary_id &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>dirichlet_cached_bc</b></td></tr>
+<tr class="separator:aba68a4467a567ba14fb611d973bbe3d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aed0eaa8e3ff42187456f0dc6608d1bf1"><td class="memItemLeft" align="right" valign="top"><a id="aed0eaa8e3ff42187456f0dc6608d1bf1" name="aed0eaa8e3ff42187456f0dc6608d1bf1"></a>
 std::map&lt; dealii::types::boundary_id, std::shared_ptr&lt; dealii::Function&lt; dim &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>neumann_bc</b></td></tr>
 <tr class="separator:aed0eaa8e3ff42187456f0dc6608d1bf1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aebba9e20781e7138cb2417ab06d6c502"><td class="memItemLeft" align="right" valign="top"><a id="aebba9e20781e7138cb2417ab06d6c502" name="aebba9e20781e7138cb2417ab06d6c502"></a>
-std::map&lt; dealii::types::boundary_id, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1FunctionCached.html">FunctionCached</a>&lt; 1, dim &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>neumann_cached_bc</b></td></tr>
-<tr class="separator:aebba9e20781e7138cb2417ab06d6c502"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf4b0664ba536e70e58b74c65b7387af"><td class="memItemLeft" align="right" valign="top"><a id="adf4b0664ba536e70e58b74c65b7387af" name="adf4b0664ba536e70e58b74c65b7387af"></a>
+std::set&lt; dealii::types::boundary_id &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>neumann_cached_bc</b></td></tr>
+<tr class="separator:adf4b0664ba536e70e58b74c65b7387af"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li>include/exadg/structure/user_interface/<a class="el" href="structure_2user__interface_2boundary__descriptor_8h_source.html">boundary_descriptor.h</a></li>
