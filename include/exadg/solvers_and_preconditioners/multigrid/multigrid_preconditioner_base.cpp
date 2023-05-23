@@ -346,11 +346,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_mapping()
   {
     coarse_grid_mappings.resize(n_h_levels);
 
-    MappingTools::initialize_coarse_mappings<dim, Number>(coarse_grid_mappings,
-                                                          mapping,
-                                                          multigrid_variant,
-                                                          grid->triangulation,
-                                                          grid->coarse_triangulations);
+    grid->initialize_coarse_mappings(coarse_grid_mappings, mapping);
   }
 }
 
