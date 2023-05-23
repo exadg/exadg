@@ -340,36 +340,14 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_mapping()
 {
-  // We only need to explicitly initialize the mapping for all multigrid h-levels if it is of type
-  // dealii::MappingQCache (including MappingDoFVector as a derived class)
-  std::shared_ptr<dealii::MappingQCache<dim> const> mapping_q_cache =
-    std::dynamic_pointer_cast<dealii::MappingQCache<dim> const>(fine_mapping);
+  unsigned int const n_h_levels = get_number_of_h_levels();
 
-  if(mapping_q_cache.get() != 0)
+  if(n_h_levels > 1)
   {
-    if(multigrid_variant == MultigridVariant::GlobalCoarsening)
-    {
-      MappingTools::initialize_coarse_mappings<dim, Number>(coarse_mappings,
-                                                            mapping_q_cache,
-                                                            coarse_triangulations);
-    }
-    else if(multigrid_variant == MultigridVariant::LocalSmoothing)
-    {
-      MappingTools::initialize_coarse_mappings<dim, Number>(coarse_mappings,
-                                                            mapping_q_cache,
-                                                            *fine_triangulation);
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("not implemented."));
-    }
-  }
-  else
-  {
-    for(unsigned int h_level = 0; h_level < coarse_mappings.size(); ++h_level)
-    {
-      coarse_mappings[h_level] = fine_mapping;
-    }
+    coarse_grid_mappings.resize(n_h_levels);
+
+    MappingTools::initialize_coarse_grid_mappings<dim, Number>(
+      coarse_grid_mappings, mapping, multigrid_variant, triangulation, coarse_triangulations);
   }
 }
 

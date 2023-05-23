@@ -37,6 +37,7 @@
 #include <deal.II/multigrid/mg_transfer_matrix_free.h>
 
 // ExaDG
+#include <exadg/grid/grid_data.h>
 #include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_global_coarsening.h>
 
 namespace ExaDG
@@ -389,7 +390,7 @@ template<int dim, typename Number>
 void
 initialize_multigrid(
   std::vector<std::shared_ptr<dealii::Mapping<dim> const>> &             coarse_grid_mappings,
-  std::shared_ptr<dealii::MappingQCache<dim> const> &                    mapping_q_cache,
+  std::shared_ptr<dealii::MappingQCache<dim> const> const &              mapping_q_cache,
   std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_grid_triangulations)
 {
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -467,6 +468,64 @@ initialize_multigrid(
     coarse_grid_mappings[h_level] = mapping_dof_vector;
   }
 }
+
+/**
+ * This function unifies the two functions above as determined by the parameter multigrid_variant.
+ * In all cases, a vector of coarse grid mappings is filled. It depends on the parameter
+ * multigrid_variant which of the Triangulation arguments will be used.
+ *
+ * If the fine_mapping provided as second argument is not of type dealii::MappingQCache, all coarse
+ * grid mappings will simply point to the fine_mapping.
+ */
+template<int dim, typename Number>
+void
+initialize_coarse_grid_mappings(
+  std::vector<std::shared_ptr<dealii::Mapping<dim> const>> &             coarse_grid_mappings,
+  std::shared_ptr<dealii::Mapping<dim> const> const &                    fine_mapping,
+  MultigridVariant const &                                               multigrid_variant,
+  dealii::Triangulation<dim> const *                                     fine_triangulation,
+  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations)
+{
+  // We only need to explicitly initialize the mapping for all multigrid h-levels if it is of type
+  // dealii::MappingQCache (including MappingDoFVector as a derived class)
+  std::shared_ptr<dealii::MappingQCache<dim> const> mapping_q_cache =
+    std::dynamic_pointer_cast<dealii::MappingQCache<dim> const>(fine_mapping);
+
+  if(mapping_q_cache.get() != 0)
+  {
+    if(multigrid_variant == MultigridVariant::GlobalCoarsening)
+    {
+      MappingTools::initialize_multigrid<dim, Number>(coarse_grid_mappings,
+                                                      mapping_q_cache,
+                                                      coarse_triangulations);
+    }
+    else if(multigrid_variant == MultigridVariant::LocalSmoothing)
+    {
+      std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector =
+        std::make_shared<MappingDoFVector<dim, Number>>(mapping_q_cache->get_degree());
+
+      MappingTools::initialize_multigrid(mapping_dof_vector, mapping_q_cache, *fine_triangulation);
+
+      for(unsigned int h_level = 0; h_level < coarse_grid_mappings.size(); ++h_level)
+      {
+        coarse_grid_mappings[h_level] = mapping_dof_vector;
+      }
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
+    }
+  }
+  else
+  {
+    for(unsigned int h_level = 0; h_level < coarse_grid_mappings.size(); ++h_level)
+    {
+      coarse_grid_mappings[h_level] = fine_mapping;
+    }
+  }
+}
+
+
 } // namespace MappingTools
 
 } // namespace ExaDG
