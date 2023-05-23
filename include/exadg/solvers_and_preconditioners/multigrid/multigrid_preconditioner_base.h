@@ -306,10 +306,10 @@ private:
 
   std::shared_ptr<Grid<dim> const> grid;
 
-  // In case of global coarsening, this is the mapping associated to the fine level triangulation.
+  // The mapping associated to the fine level triangulation.
   std::shared_ptr<dealii::Mapping<dim> const> mapping;
 
-  // Only relevant for global coarsening, where this vector contains coarse level mappings,
+  // In case of h-multigrid with more than one h-level, this vector contains coarse level mappings,
   // and the fine level mapping as the last element of the vector.
   std::vector<std::shared_ptr<dealii::Mapping<dim> const>> coarse_grid_mappings;
 
