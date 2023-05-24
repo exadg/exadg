@@ -442,7 +442,7 @@ create_fine_and_coarse_triangulations(
 
   // Depending on the type of geometric multigrid coarsening, we need to explicitly create the
   // coarse triangulations.
-  if(data.multigrid == MultigridVariant::GlobalCoarsening and involves_h_multigrid)
+  if(data.multigrid == MultigridVariant::GlobalCoarsening)
   {
     if(involves_h_multigrid)
     {

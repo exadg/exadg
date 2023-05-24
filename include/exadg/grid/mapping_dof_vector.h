@@ -532,6 +532,7 @@ initialize_coarse_mappings(
     {
       MappingTools::initialize_coarse_mappings<dim, Number>(coarse_mappings,
                                                             mapping_q_cache,
+                                                            fine_triangulation,
                                                             coarse_triangulations);
     }
     else if(multigrid_variant == MultigridVariant::LocalSmoothing)
