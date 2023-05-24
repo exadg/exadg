@@ -231,6 +231,9 @@ private:
   void
   check_levels(std::vector<MGLevelInfo> const & level_info);
 
+  unsigned int
+  get_number_of_h_levels() const;
+
   /*
    * Returns the correct mapping depending on the multigrid transfer type and the current h-level.
    */
@@ -298,16 +301,12 @@ private:
 
   std::shared_ptr<Grid<dim> const> grid;
 
-  // In case of global coarsening, this is the mapping associated to the fine level triangulation.
+  // The mapping associated to the fine level triangulation.
   std::shared_ptr<dealii::Mapping<dim> const> mapping;
 
-  // Only relevant for global coarsening,where this vector contains coarse level mappings,
+  // In case of h-multigrid with more than one h-level, this vector contains coarse level mappings,
   // and the fine level mapping as the last element of the vector.
-  std::vector<std::shared_ptr<MappingDoFVector<dim, Number>>> coarse_grid_mappings;
-
-  // Only relevant for local-smoothing-multigrid and in case that a mapping of type MappingQCache is
-  // used.
-  std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector;
+  std::vector<std::shared_ptr<dealii::Mapping<dim> const>> coarse_grid_mappings;
 
   dealii::MGLevelObject<std::shared_ptr<Smoother>> smoothers;
 

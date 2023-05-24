@@ -29,6 +29,7 @@
 
 // ExaDG
 #include <exadg/grid/grid_data.h>
+#include <exadg/grid/mapping_dof_vector.h>
 
 namespace ExaDG
 {
@@ -68,15 +69,35 @@ public:
   PeriodicFacePairs periodic_face_pairs;
 
   /**
-   * A vector of coarse triangulations required for global coarsening multigrid.
+   * A vector of coarse triangulations required for h-multigrid with global-coarsening transfer
+   * type.
    */
   std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> coarse_triangulations;
 
   /**
    * A vector of dealii::GridTools::PeriodicFacePair's for the coarse triangulations required for
-   * global coarsening multigrid.
+   * h-multigrid with global-coarsening transfer type.
    */
   std::vector<PeriodicFacePairs> coarse_periodic_face_pairs;
+
+  /**
+   * This function creates coarse mappings for use in multigrid with h-transfer.
+   *
+   * The default implementation uses an interpolation of the fine-level mapping to coarser grids.
+   * You can overwrite this function in order to realize a user-specific construction of the mapping
+   * on coarser grids.
+   */
+  std::function<void(std::vector<std::shared_ptr<dealii::Mapping<dim> const>> & coarse_mappings,
+                     std::shared_ptr<dealii::Mapping<dim> const> const &        fine_mapping)>
+    initialize_coarse_mappings =
+      [&](std::vector<std::shared_ptr<dealii::Mapping<dim> const>> & coarse_mappings,
+          std::shared_ptr<dealii::Mapping<dim> const> const &        fine_mapping) {
+        MappingTools::initialize_coarse_mappings<dim, double>(
+          coarse_mappings, fine_mapping, data.multigrid, triangulation, coarse_triangulations);
+      };
+
+private:
+  GridData data;
 };
 
 } // namespace ExaDG
