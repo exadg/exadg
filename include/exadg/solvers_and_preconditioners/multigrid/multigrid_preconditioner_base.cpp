@@ -76,7 +76,7 @@ MultigridPreconditionerBase<dim, Number>::initialize(
 
   this->mapping = mapping;
 
-  bool const is_dg = fe.dofs_per_vertex == 0;
+  bool const is_dg = (fe.dofs_per_vertex == 0);
 
   this->initialize_levels(fe.degree, is_dg);
 
@@ -100,45 +100,45 @@ MultigridPreconditionerBase<dim, Number>::initialize(
   this->initialize_multigrid_algorithm();
 }
 
-/*
- *
- * example: h_levels = [0 1 2], p_levels = [1 3 7]
- *
- * p-MG:
- * levels  h_levels  p_levels
- * 2       2         7
- * 1       2         3
- * 0       2         1
- *
- * ph-MG:
- * levels  h_levels  p_levels
- * 4       2         7
- * 3       2         3
- * 2       2         1
- * 1       1         1
- * 0       0         1
- *
- * h-MG:
- * levels  h_levels  p_levels
- * 2       2         7
- * 1       1         7
- * 0       0         7
- *
- * hp-MG:
- * levels  h_levels  p_levels
- * 4       2         7
- * 3       1         7
- * 2       0         7
- * 1       0         3
- * 0       0         1
- *
- */
-
 template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_levels(unsigned int const degree,
                                                             bool const         is_dg)
 {
+  /*
+   *
+   * example: h_levels = [0 1 2], p_levels = [1 3 7]
+   *
+   * p-MG:
+   * levels  h_levels  p_levels
+   * 2       2         7
+   * 1       2         3
+   * 0       2         1
+   *
+   * ph-MG:
+   * levels  h_levels  p_levels
+   * 4       2         7
+   * 3       2         3
+   * 2       2         1
+   * 1       1         1
+   * 0       0         1
+   *
+   * h-MG:
+   * levels  h_levels  p_levels
+   * 2       2         7
+   * 1       1         7
+   * 0       0         7
+   *
+   * hp-MG:
+   * levels  h_levels  p_levels
+   * 4       2         7
+   * 3       1         7
+   * 2       0         7
+   * 1       0         3
+   * 0       0         1
+   *
+   */
+
   MultigridType const mg_type = data.type;
 
   std::vector<unsigned int> h_levels;
@@ -422,23 +422,33 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       if(grid->triangulation->all_reference_cells_are_hyper_cube())
       {
         if(level.is_dg())
+        {
           dof_handler->distribute_dofs(
             dealii::FESystem<dim>(dealii::FE_DGQ<dim>(level.degree()), fe.n_components()));
+        }
         else
+        {
           dof_handler->distribute_dofs(
             dealii::FESystem<dim>(dealii::FE_Q<dim>(level.degree()), fe.n_components()));
+        }
       }
       else if(grid->triangulation->all_reference_cells_are_simplex())
       {
         if(level.is_dg())
+        {
           dof_handler->distribute_dofs(
             dealii::FESystem<dim>(dealii::FE_SimplexDGP<dim>(level.degree()), fe.n_components()));
+        }
         else
+        {
           dof_handler->distribute_dofs(
             dealii::FESystem<dim>(dealii::FE_SimplexP<dim>(level.degree()), fe.n_components()));
+        }
       }
       else
+      {
         AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
+      }
 
       dof_handlers[i].reset(dof_handler);
 
@@ -696,7 +706,7 @@ void
 MultigridPreconditionerBase<dim, Number>::initialize_smoother(Operator &   mg_operator,
                                                               unsigned int level)
 {
-  AssertThrow(level > 0,
+  AssertThrow(level > 0 and level < this->get_number_of_levels(),
               dealii::ExcMessage(
                 "Multigrid level is invalid when initializing multigrid smoother!"));
 
@@ -771,7 +781,8 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::update_smoothers()
 {
-  // Skip coarsest level
+  // level l = 0 is the coarse-grid problem where we do not have a smoother,
+  // so we skip the coarsest level
   for(unsigned int level = 1; level <= get_number_of_levels() - 1; ++level)
   {
     this->update_smoother(level);
@@ -782,7 +793,7 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::update_smoother(unsigned int level)
 {
-  AssertThrow(level > 0,
+  AssertThrow(level > 0 and level < this->get_number_of_levels(),
               dealii::ExcMessage(
                 "Multigrid level is invalid when initializing multigrid smoother!"));
 
@@ -995,9 +1006,8 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_multigrid_algorithm()
 {
-  this
-    ->multigrid_algorithm = std::make_shared<MultigridAlgorithm<VectorTypeMG, Operator, Smoother>>(
-    this->operators, *this->coarse_grid_solver, *this->transfers, this->smoothers, this->mpi_comm);
+  multigrid_algorithm = std::make_shared<MultigridAlgorithm<VectorTypeMG, Operator, Smoother>>(
+    operators, *coarse_grid_solver, *transfers, smoothers, mpi_comm);
 }
 
 template<int dim, typename Number>
