@@ -460,7 +460,7 @@ initialize_coarse_mappings(
                                                    coarse_grid_coordinates[n_h_levels - 1],
                                                    coarse_grid_dof_handlers[n_h_levels - 1]);
 
-  AssertThrow(coarse_mappings.size() == coarse_triangulations.size(),
+  AssertThrow(coarse_mappings.size() == n_h_levels,
               dealii::ExcMessage("The vector coarse_mappings has incorrect size."));
   coarse_mappings[n_h_levels - 1] = mapping_dof_vector;
 
