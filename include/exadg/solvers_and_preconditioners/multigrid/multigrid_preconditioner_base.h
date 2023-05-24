@@ -304,12 +304,12 @@ private:
 
   std::shared_ptr<Grid<dim> const> grid;
 
-  // The mapping associated to the fine level triangulation.
+  // The mapping associated to the fine triangulation.
   std::shared_ptr<dealii::Mapping<dim> const> mapping;
 
-  // In case of h-multigrid with more than one h-level, this vector contains coarse level mappings,
-  // and the fine level mapping as the last element of the vector.
-  std::vector<std::shared_ptr<dealii::Mapping<dim> const>> coarse_grid_mappings;
+  // In case of h-multigrid with more than one h-level, this vector contains the mappings for all
+  // levels coarser than the fine level.
+  std::vector<std::shared_ptr<dealii::Mapping<dim> const>> coarse_mappings;
 
   dealii::MGLevelObject<std::shared_ptr<Smoother>> smoothers;
 
