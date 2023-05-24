@@ -180,15 +180,18 @@ MultigridPreconditionerProjection<dim, Number>::update_operators()
     velocity_multigrid_type_ptr  = &velocity_multigrid_type_copy;
   }
 
+  unsigned int const fine_level   = this->get_number_of_levels() - 1;
+  unsigned int const coarse_level = 0;
+
   // update operator on fine level
-  this->get_operator(this->fine_level)->update(*velocity_multigrid_type_ptr, time_step_size);
+  this->get_operator(fine_level)->update(*velocity_multigrid_type_ptr, time_step_size);
 
   // we store only two vectors since the velocity is no longer needed after having updated the
   // operators
   VectorTypeMG velocity_fine_level = *velocity_multigrid_type_ptr;
   VectorTypeMG velocity_coarse_level;
 
-  for(unsigned int level = this->fine_level; level > this->coarse_level; --level)
+  for(unsigned int level = fine_level; level > coarse_level; --level)
   {
     // interpolate velocity from fine to coarse level
     this->get_operator(level - 1)->initialize_dof_vector(velocity_coarse_level);

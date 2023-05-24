@@ -148,7 +148,7 @@ template<int dim, typename Number, int n_components>
 void
 MultigridPreconditioner<dim, Number, n_components>::update_operators_after_mesh_movement()
 {
-  for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
+  for(unsigned int level = 0; level <= this->get_number_of_levels() - 1; ++level)
   {
     get_operator(level)->update_penalty_parameter();
   }

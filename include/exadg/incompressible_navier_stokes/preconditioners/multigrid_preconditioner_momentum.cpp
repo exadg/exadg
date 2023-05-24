@@ -215,11 +215,14 @@ void
 MultigridPreconditioner<dim, Number>::set_vector_linearization(
   VectorTypeMG const & vector_linearization)
 {
+  unsigned int const fine_level   = this->get_number_of_levels() - 1;
+  unsigned int const coarse_level = 0;
+
   // copy velocity to finest level
-  this->get_operator(this->fine_level)->set_velocity_copy(vector_linearization);
+  this->get_operator(fine_level)->set_velocity_copy(vector_linearization);
 
   // interpolate velocity from fine to coarse level
-  for(unsigned int level = this->fine_level; level > this->coarse_level; --level)
+  for(unsigned int level = fine_level; level > coarse_level; --level)
   {
     auto & vector_fine_level   = this->get_operator(level - 0)->get_velocity();
     auto   vector_coarse_level = this->get_operator(level - 1)->get_velocity();
@@ -232,7 +235,7 @@ template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::set_time(double const & time)
 {
-  for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
+  for(unsigned int level = 0; level <= this->get_number_of_levels() - 1; ++level)
   {
     get_operator(level)->set_time(time);
   }
@@ -242,7 +245,7 @@ template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::update_operators_after_grid_motion()
 {
-  for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
+  for(unsigned int level = 0; level <= this->get_number_of_levels() - 1; ++level)
   {
     get_operator(level)->update_after_grid_motion();
   }
@@ -253,7 +256,7 @@ void
 MultigridPreconditioner<dim, Number>::set_scaling_factor_mass_operator(
   double const & scaling_factor_mass)
 {
-  for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
+  for(unsigned int level = 0; level <= this->get_number_of_levels() - 1; ++level)
   {
     get_operator(level)->set_scaling_factor_mass_operator(scaling_factor_mass);
   }
