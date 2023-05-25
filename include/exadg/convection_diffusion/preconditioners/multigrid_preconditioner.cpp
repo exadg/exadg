@@ -327,7 +327,7 @@ void
 MultigridPreconditioner<dim, Number>::update_smoothers()
 {
   // Skip coarsest level
-  for(unsigned int level = 0; level <= this->get_number_of_levels() - 1; ++level)
+  for(unsigned int level = 1; level <= this->get_number_of_levels() - 1; ++level)
     this->update_smoother(level);
 }
 
