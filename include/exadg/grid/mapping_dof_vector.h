@@ -281,7 +281,8 @@ namespace MappingTools
  * Use this function to initialize the mapping for use in multigrid.
  *
  * The second argument mapping_q_cache describes the mapping of the fine triangulation provided as
- * third argument.
+ * third argument. Hence, this function only makes sense for triangulations with mappings that can
+ * be described by dealii::MappingQCache.
  *
  * This function only takes the grid coordinates described by mapping_q_cache without adding
  * displacements in order to initialize mapping_multigrid for all multigrid h-levels.
@@ -293,7 +294,7 @@ namespace MappingTools
  */
 template<int dim, typename Number>
 void
-initialize_coarse_mappings(
+initialize_coarse_mappings_from_mapping_q_cache(
   std::vector<std::shared_ptr<dealii::Mapping<dim> const>> & coarse_mappings,
   std::shared_ptr<dealii::MappingQCache<dim> const> const &  mapping_q_cache,
   dealii::Triangulation<dim> const &                         triangulation)
@@ -403,7 +404,9 @@ initialize_coarse_mappings(
  * Free function used to initialize the mapping for all multigrid h-levels of
  * coarse_triangulations.
  *
- * The second argument mapping_q_cache describes the mapping of the fine triangulation.
+ * The second argument mapping_q_cache describes the mapping of the fine triangulation. Hence, this
+ * function only makes sense for triangulations with mappings that can be described by
+ * dealii::MappingQCache.
  *
  * This function only takes the grid coordinates described by mapping_q_cache without adding
  * displacements in order to initialize the mapping for all multigrid h-levels.
@@ -415,7 +418,7 @@ initialize_coarse_mappings(
  */
 template<int dim, typename Number>
 void
-initialize_coarse_mappings(
+initialize_coarse_mappings_from_mapping_q_cache(
   std::vector<std::shared_ptr<dealii::Mapping<dim> const>> &             coarse_mappings,
   std::shared_ptr<dealii::MappingQCache<dim> const> const &              mapping_q_cache,
   std::shared_ptr<dealii::Triangulation<dim> const> const &              fine_triangulation,
@@ -509,7 +512,7 @@ initialize_coarse_mappings(
  * triangulation.
  *
  * Depending on the type of geometric multigrid coarsening, only one of the triangulation arguments
- * will be used.
+ * might be used.
  *
  * If the fine_mapping provided as second argument is not of type dealii::MappingQCache, all coarse
  * grid mappings will simply point to the fine_mapping.
@@ -532,16 +535,13 @@ initialize_coarse_mappings(
   {
     if(multigrid_variant == MultigridVariant::GlobalCoarsening)
     {
-      MappingTools::initialize_coarse_mappings<dim, Number>(coarse_mappings,
-                                                            mapping_q_cache,
-                                                            fine_triangulation,
-                                                            coarse_triangulations);
+      MappingTools::initialize_coarse_mappings_from_mapping_q_cache<dim, Number>(
+        coarse_mappings, mapping_q_cache, fine_triangulation, coarse_triangulations);
     }
     else if(multigrid_variant == MultigridVariant::LocalSmoothing)
     {
-      MappingTools::initialize_coarse_mappings<dim, Number>(coarse_mappings,
-                                                            mapping_q_cache,
-                                                            *fine_triangulation);
+      MappingTools::initialize_coarse_mappings_from_mapping_q_cache<dim, Number>(
+        coarse_mappings, mapping_q_cache, *fine_triangulation);
     }
     else
     {
