@@ -8,7 +8,8 @@ var searchData=
   ['get_5fdynamic_5fmapping_5',['get_dynamic_mapping',['../namespaceExaDG.html#ab4898d48bd5a12243fb8ad2c7ccce491',1,'ExaDG']]],
   ['get_5fequidistant_5finner_6',['get_equidistant_inner',['../classdealspectrum_1_1Interpolator.html#a1d9b8f5517c976d12a6b3fb499e21f73',1,'dealspectrum::Interpolator']]],
   ['get_5fmax_5flevel_7',['get_max_level',['../classExaDG_1_1TimerTree.html#a84ea0da9640ad1883cf374123959c285',1,'ExaDG::TimerTree']]],
-  ['get_5fresults_8',['get_results',['../classdealspectrum_1_1SpectralAnalysis.html#a83c895003af56a97b5004e8a429527d3',1,'dealspectrum::SpectralAnalysis']]],
-  ['getlocalrange_9',['getLocalRange',['../classdealspectrum_1_1SpectralAnalysis.html#ad521541cf55622d07d58e83ddb360ed7',1,'dealspectrum::SpectralAnalysis']]],
-  ['grid_10',['Grid',['../classExaDG_1_1Grid.html#ad5140eefba0bf93ceaa72282a89225c1',1,'ExaDG::Grid']]]
+  ['get_5fnumber_5fof_5flevels_8',['get_number_of_levels',['../classExaDG_1_1MultigridPreconditionerBase.html#a6f9e9e58c3979ba70388c9d4d6198d26',1,'ExaDG::MultigridPreconditionerBase']]],
+  ['get_5fresults_9',['get_results',['../classdealspectrum_1_1SpectralAnalysis.html#a83c895003af56a97b5004e8a429527d3',1,'dealspectrum::SpectralAnalysis']]],
+  ['getlocalrange_10',['getLocalRange',['../classdealspectrum_1_1SpectralAnalysis.html#ad521541cf55622d07d58e83ddb360ed7',1,'dealspectrum::SpectralAnalysis']]],
+  ['grid_11',['Grid',['../classExaDG_1_1Grid.html#ad5140eefba0bf93ceaa72282a89225c1',1,'ExaDG::Grid']]]
 ];
