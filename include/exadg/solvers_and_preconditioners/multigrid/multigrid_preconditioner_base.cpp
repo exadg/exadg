@@ -20,18 +20,14 @@
  */
 
 // deal.II
-#include <deal.II/distributed/fully_distributed_tria.h>
-#include <deal.II/distributed/repartitioning_policy_tools.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_simplex_p.h>
 #include <deal.II/fe/fe_system.h>
-#include <deal.II/fe/mapping_q.h>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
-#include <deal.II/fe/mapping_fe.h>
 #include <exadg/grid/grid_utilities.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/matrix_free/categorization.h>
@@ -144,27 +140,9 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(unsigned int const d
   std::vector<unsigned int> h_levels;
 
   // setup h-levels
-  if(mg_type == MultigridType::pMG or mg_type == MultigridType::cpMG or
-     mg_type == MultigridType::pcMG)
-  {
-    h_levels.push_back(grid->triangulation->n_global_levels() - 1);
-  }
-  else // h-MG is involved working on all mesh levels
-  {
-    if(multigrid_variant == MultigridVariant::GlobalCoarsening)
-    {
-      AssertThrow(
-        grid->coarse_triangulations.size() > 0,
-        dealii::ExcMessage(
-          "You are using global coarsening multigrid, but the vector coarse_triangulations is empty. "
-          "Most likely, you forgot to set the parameter GridData::create_coarse_triangulations."));
-    }
-
-    unsigned int const n_h_levels = this->get_number_of_h_levels();
-
-    for(unsigned int h = 0; h < n_h_levels; h++)
-      h_levels.push_back(h);
-  }
+  unsigned int const n_h_levels = get_number_of_h_levels();
+  for(unsigned int h = 0; h < n_h_levels; h++)
+    h_levels.push_back(h);
 
   // setup p-levels
   if(mg_type == MultigridType::hMG)
@@ -322,9 +300,9 @@ MultigridPreconditionerBase<dim, Number>::initialize_mapping()
 
   if(n_h_levels > 1)
   {
-    coarse_grid_mappings.resize(n_h_levels);
+    coarse_mappings.resize(n_h_levels - 1);
 
-    grid->initialize_coarse_mappings(coarse_grid_mappings, mapping);
+    grid->initialize_coarse_mappings(coarse_mappings, mapping);
   }
 }
 
@@ -332,9 +310,9 @@ template<int dim, typename Number>
 dealii::Mapping<dim> const &
 MultigridPreconditionerBase<dim, Number>::get_mapping(unsigned int const h_level) const
 {
-  if(h_level < coarse_grid_mappings.size())
+  if(h_level < coarse_mappings.size())
   {
-    return *(coarse_grid_mappings[h_level]);
+    return *(coarse_mappings[h_level]);
   }
   else
   {
@@ -359,9 +337,19 @@ MultigridPreconditionerBase<dim, Number>::get_number_of_h_levels() const
 {
   if(data.involves_h_transfer())
   {
-    return (multigrid_variant == MultigridVariant::GlobalCoarsening ?
-              grid->coarse_triangulations.size() :
-              grid->triangulation->n_global_levels());
+    if(multigrid_variant == MultigridVariant::LocalSmoothing)
+    {
+      return grid->triangulation->n_global_levels();
+    }
+    else if(multigrid_variant == MultigridVariant::GlobalCoarsening)
+    {
+      return grid->coarse_triangulations.size() + 1;
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      return 0;
+    }
   }
   else
   {
@@ -413,11 +401,21 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
     {
       auto const & level = level_info[i];
 
-      AssertThrow(level.h_level() < grid->coarse_triangulations.size(),
-                  dealii::ExcMessage(
-                    "Vector of coarse_triangulations does not seem to be initialized correctly."));
+      std::shared_ptr<dealii::DoFHandler<dim>> dof_handler;
+      if(level.h_level() == get_number_of_h_levels() - 1)
+      {
+        dof_handler = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
+      }
+      else
+      {
+        AssertThrow(
+          level.h_level() < grid->coarse_triangulations.size(),
+          dealii::ExcMessage(
+            "Vector of coarse_triangulations does not seem to be initialized correctly."));
 
-      auto dof_handler = new dealii::DoFHandler<dim>(*grid->coarse_triangulations[level.h_level()]);
+        dof_handler = std::make_shared<dealii::DoFHandler<dim>>(
+          *(grid->coarse_triangulations[level.h_level()]));
+      }
 
       if(grid->triangulation->all_reference_cells_are_hyper_cube())
       {
@@ -450,7 +448,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
         AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
       }
 
-      dof_handlers[i].reset(dof_handler);
+      dof_handlers[i] = dof_handler;
 
       auto affine_constraints_own = new dealii::AffineConstraints<MultigridNumber>();
 
@@ -465,10 +463,22 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       dealii::DoFTools::make_hanging_node_constraints(*dof_handler, *affine_constraints_own);
 
       // constraints from periodic boundary conditions
-      if(not(grid->coarse_periodic_face_pairs[level.h_level()].empty()))
+      if(not(grid->periodic_face_pairs.empty()))
       {
-        auto periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
-          grid->coarse_periodic_face_pairs[level.h_level()], *dof_handler);
+        std::vector<
+          dealii::GridTools::PeriodicFacePair<typename dealii::DoFHandler<dim>::cell_iterator>>
+          periodic_faces_dof;
+
+        if(level.h_level() == get_number_of_h_levels() - 1)
+        {
+          periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
+            grid->periodic_face_pairs, *dof_handler);
+        }
+        else
+        {
+          periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
+            grid->coarse_periodic_face_pairs[level.h_level()], *dof_handler);
+        }
 
         dealii::DoFTools::make_periodicity_constraints<dim, dim, MultigridNumber>(
           periodic_faces_dof, *affine_constraints_own);

@@ -69,14 +69,20 @@ public:
   PeriodicFacePairs periodic_face_pairs;
 
   /**
-   * A vector of coarse triangulations required for h-multigrid with global-coarsening transfer
-   * type.
+   * A vector of coarse triangulations required for h-multigrid with geometric coarsening types that
+   * require a vector of triangulations.
+   *
+   * This vector only contains levels coarser than the fine triangulation. The first entry
+   * corresponds to the coarsest triangulation.
    */
   std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> coarse_triangulations;
 
   /**
    * A vector of dealii::GridTools::PeriodicFacePair's for the coarse triangulations required for
-   * h-multigrid with global-coarsening transfer type.
+   * h-multigrid with geometric coarsening types that require a vector of triangulations.
+   *
+   * This vector only contains levels coarser than the fine triangulation. The first entry
+   * corresponds to the coarsest triangulation.
    */
   std::vector<PeriodicFacePairs> coarse_periodic_face_pairs;
 
@@ -86,6 +92,9 @@ public:
    * The default implementation uses an interpolation of the fine-level mapping to coarser grids.
    * You can overwrite this function in order to realize a user-specific construction of the mapping
    * on coarser grids.
+   *
+   * The vector of coarse_mappings includes mapping objects for all h-multigrid levels coarser than
+   * the fine triangulation. The first entry corresponds to the coarsest triangulation.
    */
   std::function<void(std::vector<std::shared_ptr<dealii::Mapping<dim> const>> & coarse_mappings,
                      std::shared_ptr<dealii::Mapping<dim> const> const &        fine_mapping)>
