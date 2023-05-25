@@ -205,6 +205,15 @@ protected:
     dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> & constrained_dofs,
     unsigned int const                                                  dof_index);
 
+  /**
+   * Returns the number of levels.
+   *
+   * The number of levels includes the coarse level and the finer smoothing levels, i.e.
+   * n_levels = 1 if the multigrid preconditioner is a coarse-grid solve on the coarse level only.
+   */
+  unsigned int
+  get_number_of_levels() const;
+
   dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> dof_handlers;
   dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>>     constrained_dofs;
   dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> constraints;
@@ -217,19 +226,13 @@ protected:
 
   std::vector<MGDoFHandlerIdentifier> p_levels;
   std::vector<MGLevelInfo>            level_info;
-  unsigned int                        n_levels;
-  unsigned int                        coarse_level;
-  unsigned int                        fine_level;
 
 private:
-  /*
-   * Multigrid levels (i.e. coarsening strategy, h-/p-/hp-/ph-MG).
+  /**
+   * Initializes multigrid levels according to coarsening strategy (h-/p-/hp-/ph-MG).
    */
   void
   initialize_levels(unsigned int const degree, bool const is_dg);
-
-  void
-  check_levels(std::vector<MGLevelInfo> const & level_info);
 
   unsigned int
   get_number_of_h_levels() const;

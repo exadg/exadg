@@ -79,7 +79,7 @@ template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::set_time(double const & time)
 {
-  for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
+  for(unsigned int level = 0; level <= this->get_number_of_levels() - 1; ++level)
   {
     if(nonlinear)
       get_operator_nonlinear(level)->set_time(time);
@@ -93,7 +93,7 @@ void
 MultigridPreconditioner<dim, Number>::set_scaling_factor_mass_operator(
   double const & scaling_factor_mass)
 {
-  for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
+  for(unsigned int level = 0; level <= this->get_number_of_levels() - 1; ++level)
   {
     if(nonlinear)
       get_operator_nonlinear(level)->set_scaling_factor_mass_operator(scaling_factor_mass);
@@ -178,11 +178,14 @@ void
 MultigridPreconditioner<dim, Number>::set_solution_linearization(
   VectorTypeMG const & vector_linearization)
 {
+  unsigned int const fine_level   = this->get_number_of_levels() - 1;
+  unsigned int const coarse_level = 0;
+
   // copy velocity to finest level
-  this->get_operator_nonlinear(this->fine_level)->set_solution_linearization(vector_linearization);
+  this->get_operator_nonlinear(fine_level)->set_solution_linearization(vector_linearization);
 
   // interpolate velocity from fine to coarse level
-  for(unsigned int level = this->fine_level; level > this->coarse_level; --level)
+  for(unsigned int level = fine_level; level > coarse_level; --level)
   {
     auto & vector_fine_level =
       this->get_operator_nonlinear(level - 0)->get_solution_linearization();
