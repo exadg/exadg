@@ -308,6 +308,7 @@ create_coarse_triangulations(
         dealii::ExcMessage(
           "The create_geometric_coarsening_sequence function of dealii does currently not support "
           "simplicial elements."));
+
       coarse_triangulations =
         dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
           fine_triangulation);
@@ -341,7 +342,7 @@ create_coarse_triangulations(
   }
   else if(data.triangulation_type == TriangulationType::FullyDistributed)
   {
-    if(fine_triangulation.n_global_levels() > 1)
+    if(fine_triangulation.n_global_levels() >= 2)
     {
       // resize the empty coarse_triangulations and coarse_periodic_face_pairs vectors
       coarse_triangulations = std::vector<std::shared_ptr<dealii::Triangulation<dim> const>>(
@@ -374,15 +375,19 @@ create_coarse_triangulations(
       std::vector<unsigned int> refine_local = vector_local_refinements;
 
       // undo global refinements
-      for(int refine_global = data.n_refine_global - 1; refine_global >= 0; --refine_global)
+      if(data.n_refine_global >= 1)
       {
-        coarse_triangulations[level] =
-          lambda_create_level_triangulation(coarse_periodic_face_pairs[level],
-                                            refine_global,
-                                            refine_local);
+        unsigned int const n_refine_global_start = (unsigned int)(data.n_refine_global - 1);
+        for(int refine_global = n_refine_global_start; refine_global >= 0; --refine_global)
+        {
+          coarse_triangulations[level] =
+            lambda_create_level_triangulation(coarse_periodic_face_pairs[level],
+                                              refine_global,
+                                              refine_local);
 
-        if(level > 0)
-          level--;
+          if(level > 0)
+            level--;
+        }
       }
 
       // undo local refinements
@@ -397,17 +402,21 @@ create_coarse_triangulations(
               refine_local[material_id]--;
             }
           }
+
           coarse_triangulations[level] =
-            lambda_create_level_triangulation(coarse_periodic_face_pairs[level], 0, refine_local);
+            lambda_create_level_triangulation(coarse_periodic_face_pairs[level],
+                                              0 /*refine_global*/,
+                                              refine_local);
 
           if(level > 0)
             level--;
         }
       }
 
-      AssertThrow(level == 0,
-                  dealii::ExcMessage(
-                    "There occurred a logical error when creating geometric coarsening sequence."));
+      AssertThrow(
+        level == 0,
+        dealii::ExcMessage(
+          "There occurred a logical error when creating the geometric coarsening sequence."));
     }
   }
   else
