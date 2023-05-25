@@ -25,6 +25,7 @@
 // deal.II
 #include <deal.II/base/mg_level_object.h>
 #include <deal.II/distributed/tria.h>
+#include <deal.II/fe/mapping.h>
 #include <deal.II/multigrid/mg_constrained_dofs.h>
 
 // ExaDG
