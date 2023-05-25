@@ -211,7 +211,8 @@ public:
                                                 dealii::update_quadrature_points);
     }
 
-    // update mapping according to mesh deformation described by displacement vector
+    // take the grid coordinates described by mapping and add deformation described by displacement
+    // vector
     this->initialize(
       dof_handler.get_triangulation(),
       [&](const typename dealii::Triangulation<dim>::cell_iterator & cell_tria)
@@ -344,8 +345,8 @@ initialize_coarse_mappings(
   AssertThrow(fe.element_multiplicity(0) == dim,
               dealii::ExcMessage("Expected finite element with dim components."));
 
-  // update mapping for all multigrid levels according to grid coordinates described by static
-  // mapping
+  // Call the initialize() function of dealii::MappingQCache, which initializes the mapping for all
+  // levels according to grid_coordinates_all_levels_ghosted.
   mapping_dof_vector->initialize(
     dof_handler.get_triangulation(),
     [&](const typename dealii::Triangulation<dim>::cell_iterator & cell_tria)
@@ -387,7 +388,8 @@ initialize_coarse_mappings(
     });
 
 
-  // let all coarse grid mappings point to the MappingDoFVector object
+  // let all coarse grid mappings (excluding the fine triangulation) point to the MappingDoFVector
+  // object
   for(unsigned int h_level = 0; h_level < coarse_mappings.size(); ++h_level)
   {
     // using the same Mapping object for all multigrid h-levels is some form of legacy code. The
