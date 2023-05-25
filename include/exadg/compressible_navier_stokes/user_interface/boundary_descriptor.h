@@ -113,7 +113,7 @@ struct BoundaryDescriptor
   BoundaryDescriptorEnergy<dim> energy;
 };
 
-template<int dim, typename Number>
+template<int dim>
 inline void
 verify_boundary_conditions(BoundaryDescriptor<dim> const & boundary_descriptor,
                            Grid<dim> const &               grid)

@@ -248,7 +248,7 @@ struct BoundaryDescriptor
   std::shared_ptr<BoundaryDescriptorP<dim>> pressure;
 };
 
-template<int dim, typename Number>
+template<int dim>
 inline void
 verify_boundary_conditions(BoundaryDescriptor<dim> const & boundary_descriptor,
                            Grid<dim> const &               grid)

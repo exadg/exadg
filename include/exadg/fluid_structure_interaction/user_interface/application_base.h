@@ -267,7 +267,7 @@ public:
     // boundary conditions
     boundary_descriptor = std::make_shared<IncNS::BoundaryDescriptor<dim>>();
     set_boundary_descriptor();
-    IncNS::verify_boundary_conditions<dim, Number>(*boundary_descriptor, *grid);
+    IncNS::verify_boundary_conditions<dim>(*boundary_descriptor, *grid);
 
     // field functions
     field_functions = std::make_shared<IncNS::FieldFunctions<dim>>();
