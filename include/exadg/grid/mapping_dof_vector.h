@@ -469,14 +469,15 @@ initialize_coarse_mappings_from_mapping_q_cache(
     std::make_shared<MappingDoFVector<dim, Number>>(mapping_q_cache->get_degree());
 
   // get dof-vector with grid coordinates from the finest h-level
+  VectorType   grid_coordinates_fine_level(grid_coordinates_all_levels[n_h_levels - 1]);
+  auto const & dof_handler_fine_level = dof_handlers_all_levels[n_h_levels - 1];
   mapping_dof_vector->fill_grid_coordinates_vector(*mapping_q_cache,
-                                                   grid_coordinates_all_levels[n_h_levels - 1],
-                                                   dof_handlers_all_levels[n_h_levels - 1]);
+                                                   grid_coordinates_fine_level,
+                                                   dof_handler_fine_level);
 
   // Transfer grid coordinates to coarser h-levels.
   // The dealii::DoFHandler object will not be used for global coarsening.
   dealii::DoFHandler<dim> dof_handler_dummy;
-  VectorType              grid_coordinates_fine_level(grid_coordinates_all_levels[n_h_levels - 1]);
   mg_transfer_global_coarsening.interpolate_to_mg(dof_handler_dummy,
                                                   grid_coordinates_all_levels,
                                                   grid_coordinates_fine_level);
