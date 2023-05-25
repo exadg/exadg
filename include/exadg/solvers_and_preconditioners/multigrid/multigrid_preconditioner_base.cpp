@@ -463,10 +463,22 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       dealii::DoFTools::make_hanging_node_constraints(*dof_handler, *affine_constraints_own);
 
       // constraints from periodic boundary conditions
-      if(not(grid->coarse_periodic_face_pairs[level.h_level()].empty()))
+      if(not(grid->periodic_face_pairs.empty()))
       {
-        auto periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
-          grid->coarse_periodic_face_pairs[level.h_level()], *dof_handler);
+        std::vector<
+          dealii::GridTools::PeriodicFacePair<typename dealii::DoFHandler<dim>::cell_iterator>>
+          periodic_faces_dof;
+
+        if(level.h_level() == get_number_of_h_levels() - 1)
+        {
+          periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
+            grid->periodic_face_pairs, *dof_handler);
+        }
+        else
+        {
+          periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
+            grid->coarse_periodic_face_pairs[level.h_level()], *dof_handler);
+        }
 
         dealii::DoFTools::make_periodicity_constraints<dim, dim, MultigridNumber>(
           periodic_faces_dof, *affine_constraints_own);
