@@ -227,7 +227,7 @@ protected:
   }
 
   /**
-   * This is a generic function allowing to loop over all multigrid levels (including the coarsest
+   * This is a generic function allowing to loop over all smoothing levels (excluding the coarsest
    * level). The operation to be performed on each level is passed as a lambda with argument level.
    */
   void
