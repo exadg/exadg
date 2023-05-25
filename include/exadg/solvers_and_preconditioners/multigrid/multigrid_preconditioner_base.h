@@ -215,6 +215,30 @@ protected:
   unsigned int
   get_number_of_levels() const;
 
+  /**
+   * This is a generic function allowing to loop over all multigrid levels (including the coarsest
+   * level). The operation to be performed on each level is passed as a lambda with argument level.
+   */
+  void
+  for_all_levels(std::function<void(unsigned int const)> const & function_on_level)
+  {
+    for(unsigned int level = 0; level < this->get_number_of_levels(); ++level)
+      function_on_level(level);
+  }
+
+  /**
+   * This is a generic function allowing to loop over all multigrid levels (including the coarsest
+   * level). The operation to be performed on each level is passed as a lambda with argument level.
+   */
+  void
+  for_all_smoothing_levels(std::function<void(unsigned int const)> const & function_on_level)
+  {
+    // level l = 0 is the coarse problem where we do not have a smoother,
+    // so we skip the coarsest level
+    for(unsigned int level = 1; level < this->get_number_of_levels(); ++level)
+      function_on_level(level);
+  }
+
   dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> dof_handlers;
   dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>>     constrained_dofs;
   dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> constraints;
