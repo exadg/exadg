@@ -104,7 +104,7 @@ public:
     // boundary conditions
     boundary_descriptor = std::make_shared<BoundaryDescriptor<dim>>();
     set_boundary_descriptor();
-    verify_boundary_conditions<dim, Number>(*boundary_descriptor, *grid);
+    verify_boundary_conditions<dim>(*boundary_descriptor, *grid);
 
     // field functions
     field_functions = std::make_shared<FieldFunctions<dim>>();
