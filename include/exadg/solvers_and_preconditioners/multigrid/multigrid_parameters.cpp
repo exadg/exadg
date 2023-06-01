@@ -60,9 +60,13 @@ MultigridData::involves_p_transfer() const
 {
   if(type != MultigridType::hMG and type != MultigridType::hcMG and type != MultigridType::chMG and
      type != MultigridType::cMG)
+  {
     return true;
+  }
   else
+  {
     return false;
+  }
 }
 
 } // namespace ExaDG
