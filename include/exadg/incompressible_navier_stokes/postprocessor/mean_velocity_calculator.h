@@ -160,7 +160,7 @@ private:
                                    VectorType const &                            src,
                                    std::pair<unsigned int, unsigned int> const & cell_range) const;
 
-  MeanVelocityCalculatorData<dim> const & data;
+  MeanVelocityCalculatorData<dim> const   data;
   dealii::MatrixFree<dim, Number> const & matrix_free;
   unsigned int                            dof_index, quad_index;
   bool                                    area_has_been_initialized, volume_has_been_initialized;
