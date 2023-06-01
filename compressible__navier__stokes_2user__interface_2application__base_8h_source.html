@@ -182,7 +182,7 @@ $(function() {
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    <span class="comment">// boundary conditions</span></div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    boundary_descriptor = std::make_shared&lt;BoundaryDescriptor&lt;dim&gt;&gt;();</div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    set_boundary_descriptor();</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    verify_boundary_conditions&lt;dim, Number&gt;(*boundary_descriptor, *grid);</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    verify_boundary_conditions&lt;dim&gt;(*boundary_descriptor, *grid);</div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span> </div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    <span class="comment">// field functions</span></div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    field_functions = std::make_shared&lt;FieldFunctions&lt;dim&gt;&gt;();</div>

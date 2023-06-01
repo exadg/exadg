@@ -345,7 +345,7 @@ $(function() {
 <div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>    <span class="comment">// boundary conditions</span></div>
 <div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>    boundary_descriptor = std::make_shared&lt;IncNS::BoundaryDescriptor&lt;dim&gt;&gt;();</div>
 <div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>    set_boundary_descriptor();</div>
-<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>    IncNS::verify_boundary_conditions&lt;dim, Number&gt;(*boundary_descriptor, *grid);</div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>    IncNS::verify_boundary_conditions&lt;dim&gt;(*boundary_descriptor, *grid);</div>
 <div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span> </div>
 <div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>    <span class="comment">// field functions</span></div>
 <div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>    field_functions = std::make_shared&lt;IncNS::FieldFunctions&lt;dim&gt;&gt;();</div>

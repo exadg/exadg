@@ -189,7 +189,7 @@ $(function() {
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    <span class="comment">// boundary conditions</span></div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    boundary_descriptor = std::make_shared&lt;BoundaryDescriptor&lt;dim&gt;&gt;();</div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    set_boundary_descriptor();</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    verify_boundary_conditions&lt;dim, Number&gt;(*boundary_descriptor, *grid);</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    verify_boundary_conditions&lt;dim&gt;(*boundary_descriptor, *grid);</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>    <span class="comment">// field functions</span></div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>    field_functions = std::make_shared&lt;FieldFunctions&lt;dim&gt;&gt;();</div>
@@ -427,7 +427,7 @@ $(function() {
 <div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span>    <span class="comment">// boundary conditions</span></div>
 <div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span>    boundary_descriptor_pre = std::make_shared&lt;BoundaryDescriptor&lt;dim&gt;&gt;();</div>
 <div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span>    set_boundary_descriptor_precursor();</div>
-<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>    verify_boundary_conditions&lt;dim, Number&gt;(*boundary_descriptor_pre, *grid_pre);</div>
+<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>    verify_boundary_conditions&lt;dim&gt;(*boundary_descriptor_pre, *grid_pre);</div>
 <div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span> </div>
 <div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span>    <span class="comment">// field functions</span></div>
 <div class="line"><a id="l00355" name="l00355"></a><span class="lineno">  355</span>    field_functions_pre = std::make_shared&lt;FieldFunctions&lt;dim&gt;&gt;();</div>
