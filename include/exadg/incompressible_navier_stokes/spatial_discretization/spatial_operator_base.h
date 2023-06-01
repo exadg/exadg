@@ -139,12 +139,12 @@ public:
   unsigned int
   get_quad_index_velocity_linear() const;
 
+  unsigned int
+  get_quad_index_pressure() const;
+
 protected:
   unsigned int
   get_dof_index_velocity_scalar() const;
-
-  unsigned int
-  get_quad_index_pressure() const;
 
   unsigned int
   get_quad_index_velocity_nonlinear() const;
