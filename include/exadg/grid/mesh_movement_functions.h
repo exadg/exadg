@@ -297,6 +297,48 @@ protected:
   double const                time_period;
 };
 
+
+template<int dim>
+struct RotationMeshMovementData
+{
+  RotationMeshMovementData() : counter_clockwise_degrees_per_s(0.0)
+  {
+  }
+
+  double counter_clockwise_degrees_per_s;
+};
+
+template<int dim>
+class RotationMeshMovementFunctions : public dealii::Function<dim>
+{
+public:
+  RotationMeshMovementFunctions(RotationMeshMovementData<dim> const & data)
+    : dealii::Function<dim>(dim),
+      angular_velocity{dealii::numbers::PI / 180. * data.counter_clockwise_degrees_per_s}
+  {
+  }
+
+  double
+  value(dealii::Point<dim> const & x, unsigned int const coordinate_direction = 0) const override
+  {
+    double displacement = 0.0;
+
+    double const phi = std::atan2(x(1), x(0)) + this->get_time() * angular_velocity;
+    double const r   = std::sqrt(x(0) * x(0) + x(1) * x(1));
+    if(coordinate_direction == 0)
+      displacement = -r * std::cos(phi) - x(0);
+    else if(coordinate_direction == 1)
+      displacement = -r * std::sin(phi) - x(1);
+    else if(coordinate_direction == 2)
+      displacement = 0.;
+
+    return displacement;
+  }
+
+private:
+  double const angular_velocity;
+};
+
 } // namespace ExaDG
 
 #endif /*INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_*/
