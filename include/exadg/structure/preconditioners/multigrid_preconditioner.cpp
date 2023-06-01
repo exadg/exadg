@@ -39,16 +39,16 @@ MultigridPreconditioner<dim, Number>::initialize(
   std::shared_ptr<Grid<dim> const>            grid,
   std::shared_ptr<dealii::Mapping<dim> const> mapping,
   dealii::FiniteElement<dim> const &          fe,
-  ElasticityOperatorBase<dim, Number> const & pde_operator,
-  bool const                                  nonlinear_operator,
+  ElasticityOperatorBase<dim, Number> const & pde_operator_in,
+  bool const                                  nonlinear_in,
   Map_DBC const &                             dirichlet_bc,
   Map_DBC_ComponentMask const &               dirichlet_bc_component_mask)
 {
-  this->pde_operator = &pde_operator;
+  pde_operator = &pde_operator_in;
 
-  this->data = this->pde_operator->get_data();
+  data = this->pde_operator->get_data();
 
-  this->nonlinear = nonlinear_operator;
+  nonlinear = nonlinear_in;
 
   Base::initialize(mg_data,
                    multigrid_variant,
@@ -64,41 +64,72 @@ template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::update()
 {
+  // update operators for all levels
+  if(data.unsteady)
+  {
+    this->for_all_levels([&](unsigned int const level) {
+      if(nonlinear)
+      {
+        this->get_operator_nonlinear(level)->set_time(pde_operator->get_time());
+        this->get_operator_nonlinear(level)->set_scaling_factor_mass_operator(
+          pde_operator->get_scaling_factor_mass_operator());
+      }
+      else
+      {
+        this->get_operator_linear(level)->set_time(pde_operator->get_time());
+        this->get_operator_linear(level)->set_scaling_factor_mass_operator(
+          pde_operator->get_scaling_factor_mass_operator());
+      }
+    });
+  }
+
+  if(nonlinear)
+  {
+    PDEOperatorNonlinear const * pde_operator_nonlinear =
+      dynamic_cast<PDEOperatorNonlinear const *>(pde_operator);
+
+    VectorType const & vector_linearization = pde_operator_nonlinear->get_solution_linearization();
+
+    // convert Number --> MultigridNumber, e.g., double --> float, but only if necessary
+    VectorTypeMG         vector_multigrid_type_copy;
+    VectorTypeMG const * vector_multigrid_type_ptr;
+    if(std::is_same<MultigridNumber, Number>::value)
+    {
+      vector_multigrid_type_ptr = reinterpret_cast<VectorTypeMG const *>(&vector_linearization);
+    }
+    else
+    {
+      vector_multigrid_type_copy = vector_linearization;
+      vector_multigrid_type_ptr  = &vector_multigrid_type_copy;
+    }
+
+    unsigned int const fine_level   = this->get_number_of_levels() - 1;
+    unsigned int const coarse_level = 0;
+
+    // copy velocity to finest level
+    this->get_operator_nonlinear(fine_level)
+      ->set_solution_linearization(*vector_multigrid_type_ptr);
+
+    // interpolate velocity from fine to coarse level
+    for(unsigned int level = fine_level; level > coarse_level; --level)
+    {
+      auto & vector_fine_level =
+        this->get_operator_nonlinear(level - 0)->get_solution_linearization();
+      auto vector_coarse_level =
+        this->get_operator_nonlinear(level - 1)->get_solution_linearization();
+      this->transfers->interpolate(level, vector_coarse_level, vector_fine_level);
+      this->get_operator_nonlinear(level - 1)->set_solution_linearization(vector_coarse_level);
+    }
+  }
+
+  // In case that the operators have been updated, we also need to update the smoothers and the
+  // coarse grid solver. This is generic functionality implemented in the base class.
   if(nonlinear or data.unsteady)
   {
-    update_operators();
-
     this->update_smoothers();
 
     // singular operators do not occur for this operator
     this->update_coarse_solver(false /* operator_is_singular */);
-  }
-}
-
-template<int dim, typename Number>
-void
-MultigridPreconditioner<dim, Number>::set_time(double const & time)
-{
-  for(unsigned int level = 0; level <= this->get_number_of_levels() - 1; ++level)
-  {
-    if(nonlinear)
-      get_operator_nonlinear(level)->set_time(time);
-    else
-      get_operator_linear(level)->set_time(time);
-  }
-}
-
-template<int dim, typename Number>
-void
-MultigridPreconditioner<dim, Number>::set_scaling_factor_mass_operator(
-  double const & scaling_factor_mass)
-{
-  for(unsigned int level = 0; level <= this->get_number_of_levels() - 1; ++level)
-  {
-    if(nonlinear)
-      get_operator_nonlinear(level)->set_scaling_factor_mass_operator(scaling_factor_mass);
-    else
-      get_operator_linear(level)->set_scaling_factor_mass_operator(scaling_factor_mass);
   }
 }
 
@@ -136,63 +167,6 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
       false,
       dealii::ExcMessage(
         "Only pure hypercube or pure simplex meshes are implemented for Structure::MultigridPreconditioner."));
-  }
-}
-
-template<int dim, typename Number>
-void
-MultigridPreconditioner<dim, Number>::update_operators()
-{
-  if(data.unsteady)
-  {
-    set_time(pde_operator->get_time());
-    set_scaling_factor_mass_operator(pde_operator->get_scaling_factor_mass_operator());
-  }
-
-  if(nonlinear)
-  {
-    PDEOperatorNonlinear const * pde_operator_nonlinear =
-      dynamic_cast<PDEOperatorNonlinear const *>(pde_operator);
-
-    VectorType const & vector_linearization = pde_operator_nonlinear->get_solution_linearization();
-
-    // convert Number --> MultigridNumber, e.g., double --> float, but only if necessary
-    VectorTypeMG         vector_multigrid_type_copy;
-    VectorTypeMG const * vector_multigrid_type_ptr;
-    if(std::is_same<MultigridNumber, Number>::value)
-    {
-      vector_multigrid_type_ptr = reinterpret_cast<VectorTypeMG const *>(&vector_linearization);
-    }
-    else
-    {
-      vector_multigrid_type_copy = vector_linearization;
-      vector_multigrid_type_ptr  = &vector_multigrid_type_copy;
-    }
-
-    set_solution_linearization(*vector_multigrid_type_ptr);
-  }
-}
-
-template<int dim, typename Number>
-void
-MultigridPreconditioner<dim, Number>::set_solution_linearization(
-  VectorTypeMG const & vector_linearization)
-{
-  unsigned int const fine_level   = this->get_number_of_levels() - 1;
-  unsigned int const coarse_level = 0;
-
-  // copy velocity to finest level
-  this->get_operator_nonlinear(fine_level)->set_solution_linearization(vector_linearization);
-
-  // interpolate velocity from fine to coarse level
-  for(unsigned int level = fine_level; level > coarse_level; --level)
-  {
-    auto & vector_fine_level =
-      this->get_operator_nonlinear(level - 0)->get_solution_linearization();
-    auto vector_coarse_level =
-      this->get_operator_nonlinear(level - 1)->get_solution_linearization();
-    this->transfers->interpolate(level, vector_coarse_level, vector_fine_level);
-    this->get_operator_nonlinear(level - 1)->set_solution_linearization(vector_coarse_level);
   }
 }
 

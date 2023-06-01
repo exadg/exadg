@@ -83,7 +83,7 @@ MultigridPreconditionerBase<dim, Number>::initialize(
                                                dirichlet_bc,
                                                dirichlet_bc_component_mask);
 
-  this->initialize_matrix_free();
+  this->initialize_matrix_free_objects();
 
   this->initialize_operators();
 
@@ -603,7 +603,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
 
 template<int dim, typename Number>
 void
-MultigridPreconditionerBase<dim, Number>::initialize_matrix_free()
+MultigridPreconditionerBase<dim, Number>::initialize_matrix_free_objects()
 {
   matrix_free_data_objects.resize(0, get_number_of_levels() - 1);
   matrix_free_objects.resize(0, get_number_of_levels() - 1);
@@ -628,7 +628,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_matrix_free()
 
 template<int dim, typename Number>
 void
-MultigridPreconditionerBase<dim, Number>::update_matrix_free()
+MultigridPreconditionerBase<dim, Number>::update_matrix_free_objects()
 {
   for_all_levels([&](unsigned int const level) {
     matrix_free_objects[level]->update_mapping(get_mapping(level_info[level].h_level()));

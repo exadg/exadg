@@ -147,14 +147,14 @@ protected:
    * This function initializes the matrix-free objects for all multigrid levels.
    */
   virtual void
-  initialize_matrix_free();
+  initialize_matrix_free_objects();
 
   /*
    * This function updates the matrix-free objects for all multigrid levels, which
    * is necessary if the domain changes over time.
    */
   void
-  update_matrix_free();
+  update_matrix_free_objects();
 
   /*
    * This function updates the smoother for all multigrid levels.

@@ -70,23 +70,16 @@ public:
              Map_DBC_ComponentMask const &               dirichlet_bc_component_mask);
 
   void
-  update() override;
+  update() final;
 
 private:
   void
   fill_matrix_free_data(MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
                         unsigned int const                     level,
-                        unsigned int const                     h_level) override;
+                        unsigned int const                     h_level) final;
 
   std::shared_ptr<MGOperatorBase>
-  initialize_operator(unsigned int const level) override;
-
-  /*
-   * This function performs the updates that are necessary after the mesh has been moved
-   * and after matrix_free has been updated.
-   */
-  void
-  update_operators_after_mesh_movement();
+  initialize_operator(unsigned int const level) final;
 
   std::shared_ptr<Laplace>
   get_operator(unsigned int level);

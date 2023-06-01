@@ -71,10 +71,13 @@ MultigridPreconditioner<dim, Number, n_components>::update()
   {
     this->initialize_mapping();
 
-    this->update_matrix_free();
+    this->update_matrix_free_objects();
 
-    update_operators_after_mesh_movement();
+    this->for_all_levels(
+      [&](unsigned int const level) { get_operator(level)->update_penalty_parameter(); });
 
+    // Once the operators are updated, the update of smoothers and the coarse grid solver is generic
+    // functionality implemented in the base class.
     this->update_smoothers();
 
     // singular operators do not occur for this operator
@@ -142,16 +145,6 @@ MultigridPreconditioner<dim, Number, n_components>::initialize_operator(unsigned
   std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator));
 
   return mg_operator;
-}
-
-template<int dim, typename Number, int n_components>
-void
-MultigridPreconditioner<dim, Number, n_components>::update_operators_after_mesh_movement()
-{
-  for(unsigned int level = 0; level <= this->get_number_of_levels() - 1; ++level)
-  {
-    get_operator(level)->update_penalty_parameter();
-  }
 }
 
 template<int dim, typename Number, int n_components>
