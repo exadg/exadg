@@ -72,7 +72,7 @@ private:
 
   template<int degree>
   void
-  do_prolongate(VectorType & dst, VectorType const & src) const;
+  do_prolongate_and_add(VectorType & dst, VectorType const & src) const;
 
   unsigned int const              fe_degree;
   dealii::MatrixFree<dim, Number> data_composite;
