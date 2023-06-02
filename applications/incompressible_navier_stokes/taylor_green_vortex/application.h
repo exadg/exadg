@@ -100,18 +100,23 @@ public:
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
-    // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("MeshType",        mesh_type,                         "Type of mesh (Cartesian versus Curvilinear).") ;
-      prm.add_parameter("NCoarseCells1D",  n_subdivisions_1d_hypercube,       "Number of cells per direction on coarse grid.", dealii::Patterns::Integer(1,5));
-      prm.add_parameter("ExploitSymmetry", exploit_symmetry,                  "Exploit symmetry and reduce DoFs by a factor of 8?");
-      prm.add_parameter("MovingMesh",      ALE,                               "Moving mesh?");
-      prm.add_parameter("Inviscid",        inviscid,                          "Is this an inviscid simulation?");
-      prm.add_parameter("ReynoldsNumber",  Re,                                "Reynolds number (ignored if Inviscid = true)");
-      prm.add_parameter("WriteRestart",    write_restart,                     "Should restart files be written?");
-      prm.add_parameter("ReadRestart",     read_restart,                      "Is this a restarted simulation?");
+    {
+      prm.add_parameter("MeshType", mesh_type, "Type of mesh (Cartesian versus Curvilinear).");
+      prm.add_parameter("NCoarseCells1D",
+                        n_subdivisions_1d_hypercube,
+                        "Number of cells per direction on coarse grid.",
+                        dealii::Patterns::Integer(1, 5));
+      prm.add_parameter("ExploitSymmetry",
+                        exploit_symmetry,
+                        "Exploit symmetry and reduce DoFs by a factor of 8?");
+      prm.add_parameter("MovingMesh", ALE, "Moving mesh?");
+      prm.add_parameter("Inviscid", inviscid, "Is this an inviscid simulation?");
+      prm.add_parameter("ReynoldsNumber", Re, "Reynolds number (ignored if Inviscid = true)");
+      prm.add_parameter("WriteRestart", write_restart, "Should restart files be written?");
+      prm.add_parameter("ReadRestart", read_restart, "Is this a restarted simulation?");
+    }
     prm.leave_subsection();
-    // clang-format on
   }
 
 private:

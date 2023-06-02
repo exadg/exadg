@@ -175,17 +175,15 @@ public:
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
-    // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("BoundaryConditionType",
-                        boundary_condition,
-                        "Type of boundary condition.");
+    {
+      prm.add_parameter("BoundaryConditionType", boundary_condition, "Type of boundary condition.");
       prm.add_parameter("ApplySymmetryBC",
                         apply_symmetry_bc,
                         "Apply symmetry boundary condition.",
                         dealii::Patterns::Bool());
+    }
     prm.leave_subsection();
-    // clang-format on
   }
 
 private:

@@ -40,11 +40,10 @@ public:
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
-    // clang-format off
     prm.enter_subsection("Application");
-      // add parameters
+    {
+    }
     prm.leave_subsection();
-    // clang-format on
   }
 
 private:

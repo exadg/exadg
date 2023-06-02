@@ -191,18 +191,24 @@ public:
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
-    // clang-format off
     prm.enter_subsection("Application");
-    prm.add_parameter("Length",           length,           "Length of domain.");
-    prm.add_parameter("Height",           height,           "Height of domain.");
-    prm.add_parameter("Width",            width,            "Width of domain.");
-    prm.add_parameter("UseVolumeForce",   use_volume_force, "Use volume force.");
-    prm.add_parameter("VolumeForce",      volume_force,     "Volume force.");
-    prm.add_parameter("BoundaryType",     boundary_type,    "Type of boundary condition, Dirichlet vs Neumann.");
-    prm.add_parameter("Displacement",     displacement,     "Displacement of right boundary in case of Dirichlet BC.");
-    prm.add_parameter("Traction",         area_force,       "Traction acting on right boundary in case of Neumann BC.");
+    {
+      prm.add_parameter("Length", length, "Length of domain.");
+      prm.add_parameter("Height", height, "Height of domain.");
+      prm.add_parameter("Width", width, "Width of domain.");
+      prm.add_parameter("UseVolumeForce", use_volume_force, "Use volume force.");
+      prm.add_parameter("VolumeForce", volume_force, "Volume force.");
+      prm.add_parameter("BoundaryType",
+                        boundary_type,
+                        "Type of boundary condition, Dirichlet vs Neumann.");
+      prm.add_parameter("Displacement",
+                        displacement,
+                        "Displacement of right boundary in case of Dirichlet BC.");
+      prm.add_parameter("Traction",
+                        area_force,
+                        "Traction acting on right boundary in case of Neumann BC.");
+    }
     prm.leave_subsection();
-    // clang-format on
   }
 
 private:

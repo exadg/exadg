@@ -173,13 +173,10 @@ struct HypercubeResolutionParameters
   void
   add_parameters(dealii::ParameterHandler & prm)
   {
-    // clang-format off
     prm.enter_subsection("Resolution");
-      prm.add_parameter("RunType",
-                        run_type,
-                        "Type of throughput study.",
-                        Patterns::Enum<RunType>(),
-                        true);
+    {
+      prm.add_parameter(
+        "RunType", run_type, "Type of throughput study.", Patterns::Enum<RunType>(), true);
       prm.add_parameter("DegreeMin",
                         degree_min,
                         "Minimal polynomial degree of shape functions.",
@@ -193,12 +190,12 @@ struct HypercubeResolutionParameters
       prm.add_parameter("RefineSpaceMin",
                         refine_space_min,
                         "Minimal number of mesh refinements.",
-                        dealii::Patterns::Integer(0,20),
+                        dealii::Patterns::Integer(0, 20),
                         true);
       prm.add_parameter("RefineSpaceMax",
                         refine_space_max,
                         "Maximal number of mesh refinements.",
-                        dealii::Patterns::Integer(0,20),
+                        dealii::Patterns::Integer(0, 20),
                         true);
       prm.add_parameter("DofsMin",
                         n_dofs_min,
@@ -210,8 +207,8 @@ struct HypercubeResolutionParameters
                         "Maximal number of degrees of freedom.",
                         dealii::Patterns::Integer(1),
                         true);
+    }
     prm.leave_subsection();
-    // clang-format on
   }
 
   void

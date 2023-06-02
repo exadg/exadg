@@ -348,8 +348,8 @@ public:
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
-    // clang-format off
     prm.enter_subsection("Application");
+    {
       prm.add_parameter("IncludeConvectiveTerm",
                         include_convective_term,
                         "Include the nonlinear convective term.",
@@ -362,10 +362,7 @@ public:
                         start_time,
                         "Simulation start time.",
                         dealii::Patterns::Double());
-      prm.add_parameter("EndTime",
-                        end_time,
-                        "Simulation end time.",
-                        dealii::Patterns::Double());
+      prm.add_parameter("EndTime", end_time, "Simulation end time.", dealii::Patterns::Double());
       prm.add_parameter("IntervalStart",
                         interval_start,
                         "Hypercube domain start.",
@@ -421,8 +418,8 @@ public:
                         generalized_newtonian_model_data.n,
                         "Generalized Newtonian models: n.",
                         dealii::Patterns::Double());
+    }
     prm.leave_subsection();
-    // clang-format on
   }
 
 private:

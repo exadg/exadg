@@ -178,12 +178,20 @@ public:
       unsigned int refine_space = 0;
 
       dealii::ParameterHandler prm;
-      // clang-format off
+
       prm.enter_subsection("General");
-        prm.add_parameter("DegreeMin",      degree,       "Polynomial degree of shape functions.", dealii::Patterns::Integer(1,15));
-        prm.add_parameter("RefineSpaceMin", refine_space, "Number of mesh refinements.",           dealii::Patterns::Integer(0,20));
+      {
+        prm.add_parameter("DegreeMin",
+                          degree,
+                          "Polynomial degree of shape functions.",
+                          dealii::Patterns::Integer(1, 15));
+        prm.add_parameter("RefineSpaceMin",
+                          refine_space,
+                          "Number of mesh refinements.",
+                          dealii::Patterns::Integer(0, 20));
+      }
       prm.leave_subsection();
-      // clang-format on
+
       prm.parse_input(input_file, "", true, true);
 
       n_points = 20 * (degree + 1) * dealii::Utilities::pow(2, refine_space);

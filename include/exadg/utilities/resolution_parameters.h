@@ -44,8 +44,8 @@ struct SpatialResolutionParameters
   void
   add_parameters(dealii::ParameterHandler & prm)
   {
-    // clang-format off
     prm.enter_subsection("SpatialResolution");
+    {
       prm.add_parameter("DegreeMin",
                         degree_min,
                         "Minimal polynomial degree of shape functions.",
@@ -59,15 +59,15 @@ struct SpatialResolutionParameters
       prm.add_parameter("RefineSpaceMin",
                         refine_space_min,
                         "Minimal number of mesh refinements.",
-                        dealii::Patterns::Integer(0,20),
+                        dealii::Patterns::Integer(0, 20),
                         true);
       prm.add_parameter("RefineSpaceMax",
                         refine_space_max,
                         "Maximal number of mesh refinements.",
-                        dealii::Patterns::Integer(0,20),
+                        dealii::Patterns::Integer(0, 20),
                         true);
+    }
     prm.leave_subsection();
-    // clang-format on
   }
 
   unsigned int degree_min = 3;
@@ -93,20 +93,20 @@ struct TemporalResolutionParameters
   void
   add_parameters(dealii::ParameterHandler & prm)
   {
-    // clang-format off
     prm.enter_subsection("TemporalResolution");
+    {
       prm.add_parameter("RefineTimeMin",
                         refine_time_min,
                         "Minimal number of time refinements.",
-                        dealii::Patterns::Integer(0,20),
+                        dealii::Patterns::Integer(0, 20),
                         true);
       prm.add_parameter("RefineTimeMax",
                         refine_time_max,
                         "Maximal number of time refinements.",
-                        dealii::Patterns::Integer(0,20),
+                        dealii::Patterns::Integer(0, 20),
                         true);
+    }
     prm.leave_subsection();
-    // clang-format on
   }
 
   unsigned int refine_time_min = 0;
@@ -130,8 +130,8 @@ struct ResolutionParameters
   add_parameters(dealii::ParameterHandler & prm,
                  std::string const &        subsection_name = "SpatialResolution")
   {
-    // clang-format off
     prm.enter_subsection(subsection_name);
+    {
       prm.add_parameter("Degree",
                         degree,
                         "Polynomial degree of shape functions.",
@@ -140,10 +140,10 @@ struct ResolutionParameters
       prm.add_parameter("RefineSpace",
                         refine_space,
                         "Number of global, uniform mesh refinements.",
-                        dealii::Patterns::Integer(0,20),
+                        dealii::Patterns::Integer(0, 20),
                         true);
+    }
     prm.leave_subsection();
-    // clang-format on
   }
 
   unsigned int degree = 3;
