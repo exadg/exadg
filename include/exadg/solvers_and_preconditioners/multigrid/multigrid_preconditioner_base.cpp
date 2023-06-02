@@ -315,8 +315,7 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_mapping()
 {
-  unsigned int const n_h_levels =
-    level_info[level_info.size() - 1].h_level() - level_info[0].h_level() + 1;
+  unsigned int const n_h_levels = level_info.back().h_level() - level_info.front().h_level() + 1;
 
   if(n_h_levels > 1)
   {
@@ -396,7 +395,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       auto const & level = level_info[i];
 
       std::shared_ptr<dealii::DoFHandler<dim>> dof_handler;
-      if(level.h_level() == level_info[level_info.size() - 1].h_level())
+      if(level.h_level() == level_info.back().h_level()) // fine-level triangulation
       {
         dof_handler = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
       }
@@ -463,7 +462,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
           dealii::GridTools::PeriodicFacePair<typename dealii::DoFHandler<dim>::cell_iterator>>
           periodic_faces_dof;
 
-        if(level.h_level() == level_info[level_info.size() - 1].h_level())
+        if(level.h_level() == level_info.back().h_level()) // fine-level triangulation
         {
           periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
             grid->periodic_face_pairs, *dof_handler);
