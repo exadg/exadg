@@ -304,98 +304,95 @@ $(function() {
 <div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>  initialize_levels(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> degree, <span class="keywordtype">bool</span> <span class="keyword">const</span> is_dg);</div>
 <div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span> </div>
-<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span></div>
-<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>  get_number_of_h_levels() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span> </div>
-<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span><span class="comment">   * Returns the correct mapping depending on the multigrid transfer type and the current h-level.</span></div>
-<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  dealii::Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;</div>
-<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>  get_mapping(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> h_level) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span> </div>
-<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span><span class="comment">   * Data structures needed for matrix-free operator evaluation.</span></div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>  fill_matrix_free_data(<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, MultigridNumber&gt;</a> &amp; matrix_free_data,</div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>                        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                     level,</div>
-<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>                        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                     h_level) = 0;</div>
-<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span> </div>
-<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span><span class="comment">   * Initializes the multigrid operators for all multigrid levels.</span></div>
-<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>  initialize_operators();</div>
-<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span> </div>
-<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span><span class="comment">   * This function initializes an operator for a specified level. It needs to be implemented by</span></div>
-<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span><span class="comment">   * derived classes.</span></div>
-<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>  <span class="keyword">virtual</span> std::shared_ptr&lt;Operator&gt;</div>
-<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>  initialize_operator(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> level);</div>
-<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span> </div>
-<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span><span class="comment">   * Smoother.</span></div>
-<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span><span class="comment">   * Returns the correct mapping depending on the multigrid transfer type and the current h-level.</span></div>
+<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>  dealii::Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;</div>
+<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>  get_mapping(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> h_level) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span> </div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span><span class="comment">   * Data structures needed for matrix-free operator evaluation.</span></div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>  fill_matrix_free_data(<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, MultigridNumber&gt;</a> &amp; matrix_free_data,</div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>                        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                     level,</div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>                        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                     h_level) = 0;</div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span> </div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span><span class="comment">   * Initializes the multigrid operators for all multigrid levels.</span></div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>  initialize_operators();</div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span> </div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span><span class="comment">   * This function initializes an operator for a specified level. It needs to be implemented by</span></div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span><span class="comment">   * derived classes.</span></div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>  <span class="keyword">virtual</span> std::shared_ptr&lt;Operator&gt;</div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>  initialize_operator(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> level);</div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span> </div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span><span class="comment">   * Smoother.</span></div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>  initialize_smoothers();</div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span> </div>
 <div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>  initialize_smoothers();</div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>  initialize_smoother(<a class="code hl_class" href="classExaDG_1_1MultigridOperatorBase.html">Operator</a> &amp; matrix, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> level);</div>
 <div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span> </div>
 <div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>  initialize_smoother(<a class="code hl_class" href="classExaDG_1_1MultigridOperatorBase.html">Operator</a> &amp; matrix, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> level);</div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>  initialize_chebyshev_smoother_point_jacobi(<a class="code hl_class" href="classExaDG_1_1MultigridOperatorBase.html">Operator</a> &amp; matrix, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> level);</div>
 <div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span> </div>
 <div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>  initialize_chebyshev_smoother_point_jacobi(<a class="code hl_class" href="classExaDG_1_1MultigridOperatorBase.html">Operator</a> &amp; matrix, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> level);</div>
+<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>  initialize_chebyshev_smoother_block_jacobi(<a class="code hl_class" href="classExaDG_1_1MultigridOperatorBase.html">Operator</a> &amp; matrix, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> level);</div>
 <div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span> </div>
-<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>  initialize_chebyshev_smoother_block_jacobi(<a class="code hl_class" href="classExaDG_1_1MultigridOperatorBase.html">Operator</a> &amp; matrix, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> level);</div>
-<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span> </div>
-<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span><span class="comment">   * Coarse grid solver.</span></div>
-<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span><span class="comment">   * Coarse grid solver.</span></div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>  initialize_coarse_solver(<span class="keywordtype">bool</span> <span class="keyword">const</span> operator_is_singular);</div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span> </div>
 <div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>  initialize_coarse_solver(<span class="keywordtype">bool</span> <span class="keyword">const</span> operator_is_singular);</div>
-<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span> </div>
-<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span>  initialize_chebyshev_smoother_coarse_grid(<a class="code hl_class" href="classExaDG_1_1MultigridOperatorBase.html">Operator</a> &amp;         matrix,</div>
-<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>                                            <a class="code hl_struct" href="structExaDG_1_1SolverData.html">SolverData</a> <span class="keyword">const</span> &amp; solver_data,</div>
-<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>                                            <span class="keywordtype">bool</span> <span class="keyword">const</span>         operator_is_singular);</div>
-<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span> </div>
-<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span><span class="comment">   * Initialization of actual multigrid algorithm.</span></div>
-<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>  initialize_multigrid_algorithm();</div>
-<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span> </div>
-<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
-<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span> </div>
-<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span>  <a class="code hl_struct" href="structExaDG_1_1MultigridData.html">MultigridData</a> data;</div>
-<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span> </div>
-<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>  MultigridVariant multigrid_variant;</div>
-<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span> </div>
-<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>  std::shared_ptr&lt;Grid&lt;dim&gt; <span class="keyword">const</span>&gt; grid;</div>
+<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>  initialize_chebyshev_smoother_coarse_grid(<a class="code hl_class" href="classExaDG_1_1MultigridOperatorBase.html">Operator</a> &amp;         matrix,</div>
+<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>                                            <a class="code hl_struct" href="structExaDG_1_1SolverData.html">SolverData</a> <span class="keyword">const</span> &amp; solver_data,</div>
+<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>                                            <span class="keywordtype">bool</span> <span class="keyword">const</span>         operator_is_singular);</div>
+<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span> </div>
+<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span><span class="comment">   * Initialization of actual multigrid algorithm.</span></div>
+<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>  initialize_multigrid_algorithm();</div>
+<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span> </div>
+<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
+<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span> </div>
+<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>  <a class="code hl_struct" href="structExaDG_1_1MultigridData.html">MultigridData</a> data;</div>
+<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span> </div>
+<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>  MultigridVariant multigrid_variant;</div>
+<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span> </div>
+<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>  std::shared_ptr&lt;Grid&lt;dim&gt; <span class="keyword">const</span>&gt; grid;</div>
+<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span> </div>
+<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>  <span class="comment">// The mapping associated to the fine triangulation.</span></div>
+<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; mapping;</div>
 <div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span> </div>
-<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>  <span class="comment">// The mapping associated to the fine triangulation.</span></div>
-<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; mapping;</div>
-<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span> </div>
-<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span>  <span class="comment">// In case of h-multigrid with more than one h-level, this vector contains the mappings for all</span></div>
-<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>  <span class="comment">// levels coarser than the fine level.</span></div>
-<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>  std::vector&lt;std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;&gt; coarse_mappings;</div>
-<div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span> </div>
-<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span>  dealii::MGLevelObject&lt;std::shared_ptr&lt;Smoother&gt;&gt; smoothers;</div>
-<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span> </div>
-<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>  std::shared_ptr&lt;dealii::MGCoarseGridBase&lt;VectorTypeMG&gt;&gt; coarse_grid_solver;</div>
-<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span> </div>
-<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>  std::shared_ptr&lt;MultigridAlgorithm&lt;VectorTypeMG, Operator, Smoother&gt;&gt; multigrid_algorithm;</div>
-<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span>};</div>
-<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span> </div>
-<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_ADAPTER_BASE_H_ \</span></div>
-<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span><span class="comment">        */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>  <span class="comment">// In case of h-multigrid with more than one h-level, this vector contains the mappings for all</span></div>
+<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>  <span class="comment">// levels coarser than the fine level.</span></div>
+<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span>  std::vector&lt;std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;&gt; coarse_mappings;</div>
+<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span> </div>
+<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>  dealii::MGLevelObject&lt;std::shared_ptr&lt;Smoother&gt;&gt; smoothers;</div>
+<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span> </div>
+<div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>  std::shared_ptr&lt;dealii::MGCoarseGridBase&lt;VectorTypeMG&gt;&gt; coarse_grid_solver;</div>
+<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span> </div>
+<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>  std::shared_ptr&lt;MultigridAlgorithm&lt;VectorTypeMG, Operator, Smoother&gt;&gt; multigrid_algorithm;</div>
+<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>};</div>
+<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span> </div>
+<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_ADAPTER_BASE_H_ \</span></div>
+<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span><span class="comment">        */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1Grid_html"><div class="ttname"><a href="classExaDG_1_1Grid.html">ExaDG::Grid</a></div><div class="ttdef"><b>Definition</b> grid.h:42</div></div>
 <div class="ttc" id="aclassExaDG_1_1MGTransfer_html"><div class="ttname"><a href="classExaDG_1_1MGTransfer.html">ExaDG::MGTransfer</a></div><div class="ttdef"><b>Definition</b> mg_transfer.h:29</div></div>
 <div class="ttc" id="aclassExaDG_1_1MultigridOperatorBase_html"><div class="ttname"><a href="classExaDG_1_1MultigridOperatorBase.html">ExaDG::MultigridOperatorBase</a></div><div class="ttdef"><b>Definition</b> multigrid_operator_base.h:35</div></div>
 <div class="ttc" id="aclassExaDG_1_1MultigridPreconditionerBase_html"><div class="ttname"><a href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a></div><div class="ttdef"><b>Definition</b> multigrid_preconditioner_base.h:61</div></div>
-<div class="ttc" id="aclassExaDG_1_1MultigridPreconditionerBase_html_a6f9e9e58c3979ba70388c9d4d6198d26"><div class="ttname"><a href="classExaDG_1_1MultigridPreconditionerBase.html#a6f9e9e58c3979ba70388c9d4d6198d26">ExaDG::MultigridPreconditionerBase::get_number_of_levels</a></div><div class="ttdeci">unsigned int get_number_of_levels() const</div><div class="ttdef"><b>Definition</b> multigrid_preconditioner_base.cpp:325</div></div>
+<div class="ttc" id="aclassExaDG_1_1MultigridPreconditionerBase_html_a6f9e9e58c3979ba70388c9d4d6198d26"><div class="ttname"><a href="classExaDG_1_1MultigridPreconditionerBase.html#a6f9e9e58c3979ba70388c9d4d6198d26">ExaDG::MultigridPreconditionerBase::get_number_of_levels</a></div><div class="ttdeci">unsigned int get_number_of_levels() const</div><div class="ttdef"><b>Definition</b> multigrid_preconditioner_base.cpp:344</div></div>
 <div class="ttc" id="aclassExaDG_1_1PreconditionerBase_html"><div class="ttname"><a href="classExaDG_1_1PreconditionerBase.html">ExaDG::PreconditionerBase</a></div><div class="ttdef"><b>Definition</b> preconditioner_base.h:35</div></div>
 <div class="ttc" id="aclassExaDG_1_1SmootherBase_html"><div class="ttname"><a href="classExaDG_1_1SmootherBase.html">ExaDG::SmootherBase</a></div><div class="ttdef"><b>Definition</b> smoother_base.h:29</div></div>
 <div class="ttc" id="aclassdealii_1_1MGCoarseGridBase_html"><div class="ttname"><a href="classdealii_1_1MGCoarseGridBase.html">dealii::MGCoarseGridBase</a></div><div class="ttdef"><b>Definition</b> multigrid_preconditioner_base.h:54</div></div>
