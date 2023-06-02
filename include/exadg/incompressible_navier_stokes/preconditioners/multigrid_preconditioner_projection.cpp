@@ -91,30 +91,28 @@ MultigridPreconditionerProjection<dim, Number>::update()
     velocity_multigrid_type_ptr  = &velocity_multigrid_type_copy;
   }
 
-  unsigned int const fine_level   = this->get_number_of_levels() - 1;
-  unsigned int const coarse_level = 0;
-
   // update operator on fine level
-  this->get_operator(fine_level)->update(*velocity_multigrid_type_ptr, time_step_size);
+  this->get_operator(this->get_number_of_levels() - 1)
+    ->update(*velocity_multigrid_type_ptr, time_step_size);
 
   // we store only two vectors since the velocity is no longer needed after having updated the
   // operators
   VectorTypeMG velocity_fine_level = *velocity_multigrid_type_ptr;
   VectorTypeMG velocity_coarse_level;
 
-  for(unsigned int level = fine_level; level > coarse_level; --level)
-  {
-    // interpolate velocity from fine to coarse level
-    this->get_operator(level - 1)->initialize_dof_vector(velocity_coarse_level);
-    this->transfers->interpolate(level, velocity_coarse_level, velocity_fine_level);
+  this->transfer_from_fine_to_coarse_levels(
+    [&](unsigned int const fine_level, unsigned int const coarse_level) {
+      // interpolate velocity from fine to coarse level
+      this->get_operator(coarse_level)->initialize_dof_vector(velocity_coarse_level);
+      this->transfers->interpolate(fine_level, velocity_coarse_level, velocity_fine_level);
 
-    // update operator
-    this->get_operator(level - 1)->update(velocity_coarse_level, time_step_size);
+      // update operator
+      this->get_operator(coarse_level)->update(velocity_coarse_level, time_step_size);
 
-    // current coarse level becomes the fine level in the next iteration
-    this->get_operator(level - 1)->initialize_dof_vector(velocity_fine_level);
-    velocity_fine_level.copy_locally_owned_data_from(velocity_coarse_level);
-  }
+      // current coarse level becomes the fine level in the next iteration
+      this->get_operator(coarse_level)->initialize_dof_vector(velocity_fine_level);
+      velocity_fine_level.copy_locally_owned_data_from(velocity_coarse_level);
+    });
 
   // Once the operators are updated, the update of smoothers and the coarse grid solver is generic
   // functionality implemented in the base class.

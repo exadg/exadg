@@ -103,23 +103,20 @@ MultigridPreconditioner<dim, Number>::update()
       vector_multigrid_type_ptr  = &vector_multigrid_type_copy;
     }
 
-    unsigned int const fine_level   = this->get_number_of_levels() - 1;
-    unsigned int const coarse_level = 0;
-
     // copy velocity to finest level
-    this->get_operator_nonlinear(fine_level)
+    this->get_operator_nonlinear(this->get_number_of_levels() - 1)
       ->set_solution_linearization(*vector_multigrid_type_ptr);
 
     // interpolate velocity from fine to coarse level
-    for(unsigned int level = fine_level; level > coarse_level; --level)
-    {
-      auto & vector_fine_level =
-        this->get_operator_nonlinear(level - 0)->get_solution_linearization();
-      auto vector_coarse_level =
-        this->get_operator_nonlinear(level - 1)->get_solution_linearization();
-      this->transfers->interpolate(level, vector_coarse_level, vector_fine_level);
-      this->get_operator_nonlinear(level - 1)->set_solution_linearization(vector_coarse_level);
-    }
+    this->transfer_from_fine_to_coarse_levels(
+      [&](unsigned int const fine_level, unsigned int const coarse_level) {
+        auto & vector_fine_level =
+          this->get_operator_nonlinear(fine_level)->get_solution_linearization();
+        auto vector_coarse_level =
+          this->get_operator_nonlinear(coarse_level)->get_solution_linearization();
+        this->transfers->interpolate(fine_level, vector_coarse_level, vector_fine_level);
+        this->get_operator_nonlinear(coarse_level)->set_solution_linearization(vector_coarse_level);
+      });
   }
 
   // In case that the operators have been updated, we also need to update the smoothers and the

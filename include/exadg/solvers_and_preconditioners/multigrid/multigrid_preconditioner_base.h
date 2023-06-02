@@ -163,12 +163,6 @@ protected:
   void
   update_smoothers();
 
-  /*
-   * Update functions that have to be called/implemented by derived classes.
-   */
-  virtual void
-  update_smoother(unsigned int level);
-
   virtual void
   update_coarse_solver(bool const operator_is_singular);
 
@@ -239,6 +233,20 @@ protected:
       function_on_level(level);
   }
 
+  /**
+   * This is a generic function allowing to successively transfer information from the fine level to
+   * all coarser multigrid levels. The operation to be performed for a transfer between two
+   * successive levels is passed as a lambda with fine_level as the first argument and coarse_level
+   * as the second argument.
+   */
+  void
+  transfer_from_fine_to_coarse_levels(
+    std::function<void(unsigned int const, unsigned int const)> const & levelwise_transfer)
+  {
+    for(unsigned int fine_level = this->get_number_of_levels() - 1; fine_level > 0; --fine_level)
+      levelwise_transfer(fine_level, fine_level - 1);
+  }
+
   dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> dof_handlers;
   dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>>     constrained_dofs;
   dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> constraints;
@@ -297,6 +305,12 @@ private:
 
   void
   initialize_smoother(Operator & matrix, unsigned int level);
+
+  /*
+   * Update functions that have to be implemented by derived classes.
+   */
+  virtual void
+  update_smoother(unsigned int level);
 
   void
   initialize_chebyshev_smoother_point_jacobi(Operator & matrix, unsigned int const level);

@@ -119,8 +119,8 @@ MultigridPreconditioner<dim, Number>::update()
   this->for_all_levels([&](unsigned int const level) {
     // the velocity field of the convective term is a function of the time
     this->get_operator(level)->set_time(pde_operator->get_time());
-    // in case of adaptive time stepping, the scaling factor of the derivative term changes over
-    // time
+    // in case of adaptive time stepping, the scaling factor of the time derivative term changes
+    // over time
     this->get_operator(level)->set_scaling_factor_mass_operator(
       pde_operator->get_scaling_factor_mass_operator());
   });
@@ -146,20 +146,18 @@ MultigridPreconditioner<dim, Number>::update()
       vector_multigrid_type_ptr  = &vector_multigrid_type_copy;
     }
 
-    unsigned int const fine_level   = this->get_number_of_levels() - 1;
-    unsigned int const coarse_level = 0;
-
     // copy velocity to finest level
-    this->get_operator(fine_level)->set_velocity_copy(*vector_multigrid_type_ptr);
+    this->get_operator(this->get_number_of_levels() - 1)
+      ->set_velocity_copy(*vector_multigrid_type_ptr);
 
     // interpolate velocity from fine to coarse level
-    for(unsigned int level = fine_level; level > coarse_level; --level)
-    {
-      auto & vector_fine_level   = this->get_operator(level - 0)->get_velocity();
-      auto   vector_coarse_level = this->get_operator(level - 1)->get_velocity();
-      transfers_velocity->interpolate(level, vector_coarse_level, vector_fine_level);
-      this->get_operator(level - 1)->set_velocity_copy(vector_coarse_level);
-    }
+    this->transfer_from_fine_to_coarse_levels(
+      [&](unsigned int const fine_level, unsigned int const coarse_level) {
+        auto & vector_fine_level   = this->get_operator(fine_level)->get_velocity();
+        auto   vector_coarse_level = this->get_operator(coarse_level)->get_velocity();
+        transfers_velocity->interpolate(fine_level, vector_coarse_level, vector_fine_level);
+        this->get_operator(coarse_level)->set_velocity_copy(vector_coarse_level);
+      });
   }
 
   // Once the operators are updated, the update of smoothers and the coarse grid solver is generic
