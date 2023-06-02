@@ -14,18 +14,16 @@
 #include <deal.II/particles/data_out.h>
 #include <deal.II/particles/particle_handler.h>
 
-using namespace dealii;
-
 template<int dim>
-class VelocityField : public Function<dim>
+class VelocityField : public dealii::Function<dim>
 {
 public:
-  VelocityField() : Function<dim>(dim)
+  VelocityField() : dealii::Function<dim>(dim)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component) const final
+  value(dealii::Point<dim> const & p, unsigned int const component) const final
   {
     if(component == 0)
       return p[1];
@@ -39,40 +37,41 @@ main()
   int const dim = 2;
 
   // backgroud mesh ...
-  Triangulation<dim> tria;
-  GridGenerator::hyper_cube(tria);
+  dealii::Triangulation<dim> tria;
+  dealii::GridGenerator::hyper_cube(tria);
   tria.refine_global(3);
 
-  MappingQ1<dim> mapping;
+  dealii::MappingQ1<dim> mapping;
 
   // ... and velocity
-  FESystem<dim>   fe{FE_Q<dim>{1}, dim};
-  DoFHandler<dim> dof_handler(tria);
+  dealii::FESystem<dim>   fe{dealii::FE_Q<dim>{1}, dim};
+  dealii::DoFHandler<dim> dof_handler(tria);
   dof_handler.distribute_dofs(fe);
 
-  Vector<double> velocity_vector(dof_handler.n_dofs());
-  VectorTools::interpolate(mapping, dof_handler, VelocityField<dim>(), velocity_vector);
+  dealii::Vector<double> velocity_vector(dof_handler.n_dofs());
+  dealii::VectorTools::interpolate(mapping, dof_handler, VelocityField<dim>(), velocity_vector);
 
-  DataOut<dim> data_out;
+  dealii::DataOut<dim> data_out;
   data_out.add_data_vector(dof_handler, velocity_vector, "velocity");
   data_out.build_patches();
   std::ofstream output("background.vtu");
   data_out.write_vtu(output);
 
   // particle handler and initial position of particles
-  Particles::ParticleHandler<dim> particle_handler(tria, mapping);
-  std::vector<Point<dim>>         particle_positions(100);
+  dealii::Particles::ParticleHandler<dim> particle_handler(tria, mapping);
+  std::vector<dealii::Point<dim>>         particle_positions(100);
   for(unsigned int i = 0; i < particle_positions.size(); ++i)
   {
-    double const rad      = 2 * numbers::PI * i / particle_positions.size();
-    particle_positions[i] = Point<dim>(0.3 + 0.25 * std::cos(rad), 0.5 + 0.25 * std::sin(rad));
+    double const rad = 2 * dealii::numbers::PI * i / particle_positions.size();
+    particle_positions[i] =
+      dealii::Point<dim>(0.3 + 0.25 * std::cos(rad), 0.5 + 0.25 * std::sin(rad));
   }
 
   particle_handler.insert_particles(particle_positions);
 
   // helper function to print partciles
   auto const post = [&]() {
-    Particles::DataOut<dim> data_out;
+    dealii::Particles::DataOut<dim> data_out;
     data_out.build_patches(particle_handler);
     static int    counter = 0;
     std::ofstream output("particles." + std::to_string(counter++) + ".vtu");
@@ -86,8 +85,8 @@ main()
   double const dt = 0.1;
   for(double t = 0.0; t < 0.7; t += dt)
   {
-    Vector<double>              solution_values(fe.n_dofs_per_cell());
-    FEPointEvaluation<dim, dim> evaluator(mapping, fe, update_values);
+    dealii::Vector<double>              solution_values(fe.n_dofs_per_cell());
+    dealii::FEPointEvaluation<dim, dim> evaluator(mapping, fe, dealii::update_values);
 
     // loop over all cells
     for(auto const & cell : dof_handler.active_cell_iterators())
@@ -96,14 +95,14 @@ main()
         continue; // this cell has not particles
 
       // collect current refernce position of particles
-      std::vector<Point<dim>> particle_positions;
+      std::vector<dealii::Point<dim>> particle_positions;
       for(auto const & particle : particle_handler.particles_in_cell(cell))
         particle_positions.push_back(particle.get_reference_location());
 
       // compute velocity at these positions
       cell->get_dof_values(velocity_vector, solution_values);
       evaluator.reinit(cell, particle_positions);
-      evaluator.evaluate(make_array_view(solution_values), EvaluationFlags::values);
+      evaluator.evaluate(make_array_view(solution_values), dealii::EvaluationFlags::values);
 
       // update position of particles in real space
       unsigned int p = 0;
