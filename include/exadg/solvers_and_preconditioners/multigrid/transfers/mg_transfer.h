@@ -28,9 +28,7 @@ template<typename VectorType>
 class MGTransfer
 {
 public:
-  virtual ~MGTransfer()
-  {
-  }
+  virtual ~MGTransfer() = default;
 
   virtual void
   interpolate(unsigned int const level, VectorType & dst, VectorType const & src) const = 0;

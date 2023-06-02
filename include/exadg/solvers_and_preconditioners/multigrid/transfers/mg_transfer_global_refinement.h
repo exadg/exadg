@@ -27,6 +27,7 @@
 #include <deal.II/fe/mapping.h>
 #include <deal.II/matrix_free/matrix_free.h>
 #include <deal.II/multigrid/mg_constrained_dofs.h>
+#include <deal.II/multigrid/mg_transfer_global_coarsening.h>
 
 // ExaDG
 #include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer.h>
@@ -39,15 +40,11 @@ template<int dim,
 class MGTransferGlobalRefinement : virtual public MGTransfer<VectorType>
 {
 public:
-  virtual ~MGTransferGlobalRefinement()
-  {
-  }
+  virtual ~MGTransferGlobalRefinement() = default;
 
   void
-  reinit(dealii::Mapping<dim> const &                                              mapping,
-         dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> & mg_matrixfree,
-         dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> & mg_constrained_dofs,
-         unsigned int const                                                  dof_handler_index = 0);
+  reinit(dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> & mg_matrixfree,
+         unsigned int const dof_handler_index = 0);
 
   virtual void
   interpolate(unsigned int const level, VectorType & dst, VectorType const & src) const final;
@@ -61,7 +58,10 @@ public:
                      VectorType const & src) const final;
 
 private:
-  dealii::MGLevelObject<std::shared_ptr<MGTransfer<VectorType>>> mg_level_object;
+  dealii::MGLevelObject<dealii::MGTwoLevelTransfer<dim, VectorType>> transfers;
+
+  std::unique_ptr<dealii::MGTransferGlobalCoarsening<dim, VectorType>>
+    mg_transfer_global_coarsening;
 };
 
 } // namespace ExaDG

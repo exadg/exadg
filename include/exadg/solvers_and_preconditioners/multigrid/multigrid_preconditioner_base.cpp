@@ -984,6 +984,8 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_transfer_operators(
   dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> & constrained_dofs,
   unsigned int const                                                  dof_index)
 {
+  (void)constrained_dofs;
+
   if(multigrid_variant == MultigridVariant::GlobalCoarsening)
   {
     auto tmp = std::make_shared<MGTransferGlobalCoarsening<dim, MultigridNumber, VectorTypeMG>>();
@@ -996,7 +998,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_transfer_operators(
   {
     auto tmp = std::make_shared<MGTransferGlobalRefinement<dim, MultigridNumber, VectorTypeMG>>();
 
-    tmp->reinit(*mapping, matrix_free_objects, constrained_dofs, dof_index);
+    tmp->reinit(matrix_free_objects, dof_index);
 
     transfers = tmp;
   }

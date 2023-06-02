@@ -38,9 +38,7 @@ template<int dim, typename Number, typename VectorType>
 class MGTransferGlobalCoarsening : virtual public MGTransfer<VectorType>
 {
 public:
-  virtual ~MGTransferGlobalCoarsening()
-  {
-  }
+  virtual ~MGTransferGlobalCoarsening() = default;
 
   void
   reinit(dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> & mg_matrixfree,

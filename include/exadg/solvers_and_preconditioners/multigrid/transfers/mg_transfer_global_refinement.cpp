@@ -20,30 +20,22 @@
  */
 
 #include <exadg/solvers_and_preconditioners/multigrid/levels_hybrid_multigrid.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_c.h>
 #include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_global_refinement.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_h.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_p.h>
 
 namespace ExaDG
 {
 template<int dim, typename Number, typename VectorType>
 void
 MGTransferGlobalRefinement<dim, Number, VectorType>::reinit(
-  dealii::Mapping<dim> const &                                              mapping,
   dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> & mg_matrixfree,
-  dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> &       mg_constrained_dofs,
   unsigned int const                                                        dof_handler_index)
 {
-  std::vector<MGLevelInfo>            global_levels;
-  std::vector<MGDoFHandlerIdentifier> p_levels;
+  std::vector<MGLevelInfo> global_levels;
 
   unsigned int const min_level = mg_matrixfree.min_level();
   AssertThrow(min_level == 0, dealii::ExcMessage("Currently, we expect min_level==0!"));
 
   unsigned int const max_level = mg_matrixfree.max_level();
-  int const          n_components =
-    mg_matrixfree[max_level]->get_dof_handler(dof_handler_index).get_fe().n_components();
 
   // construct global_levels
   for(unsigned int global_level = min_level; global_level <= max_level; global_level++)
@@ -52,128 +44,46 @@ MGTransferGlobalRefinement<dim, Number, VectorType>::reinit(
     auto const &       fe         = matrixfree->get_dof_handler(dof_handler_index).get_fe();
     bool const         is_dg      = fe.dofs_per_vertex == 0;
     unsigned int const level      = matrixfree->get_mg_level();
-    unsigned int const degree =
-      (int)round(std::pow(fe.n_dofs_per_cell() / fe.n_components(), 1.0 / dim)) - 1;
+    unsigned int const degree     = fe.degree;
 
     global_levels.push_back(MGLevelInfo(level, degree, is_dg));
   }
 
-  // construct and p_levels
-  for(auto i : global_levels)
-    p_levels.push_back(i.dof_handler_id());
-
-  sort(p_levels.begin(), p_levels.end());
-  p_levels.erase(unique(p_levels.begin(), p_levels.end()), p_levels.end());
-  std::reverse(std::begin(p_levels), std::end(p_levels));
-
   // create transfer-operator instances
-  mg_level_object.resize(0, global_levels.size() - 1);
-
-  std::map<MGDoFHandlerIdentifier, std::shared_ptr<MGTransferH<dim, Number>>> mg_tranfers_temp;
-  std::map<MGDoFHandlerIdentifier, std::map<unsigned int, unsigned int>>
-    map_global_level_to_h_levels;
-
-  // initialize maps so that we do not have to check existence later on
-  for(auto deg : p_levels)
-    map_global_level_to_h_levels[deg] = {};
-
-  // fill the maps
-  for(unsigned int i = 0; i < global_levels.size(); i++)
-  {
-    auto level = global_levels[i];
-
-    map_global_level_to_h_levels[level.dof_handler_id()][i] = level.h_level();
-  }
-
-  // create h-transfer operators between levels
-  for(auto deg : p_levels)
-  {
-    if(map_global_level_to_h_levels[deg].size() > 1)
-    {
-      // create actual h-transfer-operator
-      unsigned int global_level = map_global_level_to_h_levels[deg].begin()->first;
-      std::shared_ptr<MGTransferH<dim, Number>> transfer(new MGTransferH<dim, Number>(
-        map_global_level_to_h_levels[deg],
-        mg_matrixfree[global_level]->get_dof_handler(dof_handler_index)));
-
-      // dof-handlers and constrains are saved for global levels
-      // so we have to convert degree to any global level which has this degree
-      // (these share the same dof-handlers and constraints)
-      transfer->initialize_constraints(*mg_constrained_dofs[global_level]);
-      transfer->build(mg_matrixfree[global_level]->get_dof_handler(dof_handler_index));
-      mg_tranfers_temp[deg] = transfer;
-    } // else: there is only one global level (and one h-level) on this p-level
-  }
+  transfers.resize(0, global_levels.size() - 1);
 
   // fill mg_transfer with the correct transfers
   for(unsigned int i = 1; i < global_levels.size(); i++)
   {
-    auto coarse_level = global_levels[i - 1];
-    auto fine_level   = global_levels[i];
-
-    std::shared_ptr<MGTransfer<VectorType>> temp;
+    auto const coarse_level = global_levels[i - 1];
+    auto const fine_level   = global_levels[i];
 
     if(coarse_level.h_level() != fine_level.h_level()) // h-transfer
     {
-      temp =
-        mg_tranfers_temp[coarse_level.dof_handler_id()]; // get the previously h-transfer operator
+      transfers[i].reinit_geometric_transfer(
+        mg_matrixfree[i]->get_dof_handler(dof_handler_index),
+        mg_matrixfree[i - 1]->get_dof_handler(dof_handler_index),
+        mg_matrixfree[i]->get_affine_constraints(dof_handler_index),
+        mg_matrixfree[i - 1]->get_affine_constraints(dof_handler_index),
+        fine_level.h_level(),
+        coarse_level.h_level());
     }
-    else if(coarse_level.degree() != fine_level.degree()) // p-transfer
+    else if(coarse_level.degree() != fine_level.degree() or // p-transfer
+            coarse_level.is_dg() != fine_level.is_dg())     // c-transfer
     {
-      if(n_components == 1)
-      {
-        temp = std::make_shared<MGTransferP<dim, Number, VectorType, 1>>(&*mg_matrixfree[i],
-                                                                         &*mg_matrixfree[i - 1],
-                                                                         fine_level.degree(),
-                                                                         coarse_level.degree(),
-                                                                         dof_handler_index);
-      }
-      else if(n_components == dim)
-      {
-        temp = std::make_shared<MGTransferP<dim, Number, VectorType, dim>>(&*mg_matrixfree[i],
-                                                                           &*mg_matrixfree[i - 1],
-                                                                           fine_level.degree(),
-                                                                           coarse_level.degree(),
-                                                                           dof_handler_index);
-      }
-      else
-      {
-        AssertThrow(false, dealii::ExcMessage("Cannot create MGTransferP!"));
-      }
+      transfers[i].reinit_polynomial_transfer(
+        mg_matrixfree[i]->get_dof_handler(dof_handler_index),
+        mg_matrixfree[i - 1]->get_dof_handler(dof_handler_index),
+        mg_matrixfree[i]->get_affine_constraints(dof_handler_index),
+        mg_matrixfree[i - 1]->get_affine_constraints(dof_handler_index),
+        fine_level.h_level(),
+        coarse_level.h_level());
     }
-    else if(coarse_level.is_dg() != fine_level.is_dg()) // c-transfer
-    {
-      if(n_components == 1)
-      {
-        temp = std::make_shared<MGTransferC<dim, Number, VectorType, 1>>(
-          mapping,
-          *mg_matrixfree[i],
-          *mg_matrixfree[i - 1],
-          mg_matrixfree[i]->get_affine_constraints(dof_handler_index),
-          mg_matrixfree[i - 1]->get_affine_constraints(dof_handler_index),
-          fine_level.h_level(),
-          coarse_level.degree(),
-          dof_handler_index);
-      }
-      else if(n_components == dim)
-      {
-        temp = std::make_shared<MGTransferC<dim, Number, VectorType, dim>>(
-          mapping,
-          *mg_matrixfree[i],
-          *mg_matrixfree[i - 1],
-          mg_matrixfree[i]->get_affine_constraints(dof_handler_index),
-          mg_matrixfree[i - 1]->get_affine_constraints(dof_handler_index),
-          fine_level.h_level(),
-          coarse_level.degree(),
-          dof_handler_index);
-      }
-      else
-      {
-        AssertThrow(false, dealii::ExcMessage("Cannot create MGTransferP!"));
-      }
-    }
-    mg_level_object[i] = temp;
   }
+
+  mg_transfer_global_coarsening =
+    std::make_unique<dealii::MGTransferGlobalCoarsening<dim, VectorType>>(
+      transfers, [&](const auto l, auto & vec) { mg_matrixfree[l]->initialize_dof_vector(vec); });
 }
 
 template<int dim, typename Number, typename VectorType>
@@ -182,7 +92,7 @@ MGTransferGlobalRefinement<dim, Number, VectorType>::interpolate(unsigned int co
                                                                  VectorType &       dst,
                                                                  VectorType const & src) const
 {
-  this->mg_level_object[level]->interpolate(level, dst, src);
+  transfers[level].interpolate(dst, src);
 }
 
 template<int dim, typename Number, typename VectorType>
@@ -191,7 +101,7 @@ MGTransferGlobalRefinement<dim, Number, VectorType>::restrict_and_add(unsigned i
                                                                       VectorType &       dst,
                                                                       VectorType const & src) const
 {
-  this->mg_level_object[level]->restrict_and_add(level, dst, src);
+  mg_transfer_global_coarsening->restrict_and_add(level, dst, src);
 }
 
 template<int dim, typename Number, typename VectorType>
@@ -201,7 +111,7 @@ MGTransferGlobalRefinement<dim, Number, VectorType>::prolongate_and_add(
   VectorType &       dst,
   VectorType const & src) const
 {
-  this->mg_level_object[level]->prolongate_and_add(level, dst, src);
+  mg_transfer_global_coarsening->prolongate_and_add(level, dst, src);
 }
 
 typedef dealii::LinearAlgebra::distributed::Vector<float>  VectorTypeFloat;
