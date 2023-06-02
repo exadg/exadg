@@ -233,7 +233,8 @@ MGTransferC<dim, Number, VectorType, components>::prolongate_and_add(unsigned in
     case 14: do_prolongate_and_add<14>(dst, src); break;
     case 15: do_prolongate_and_add<15>(dst, src); break;
     default:
-      AssertThrow(false, dealii::ExcMessage("MGTransferC::prolongate() not implemented for this degree!"));
+      AssertThrow(false, dealii::ExcMessage("MGTransferC::prolongate_and_add() not "
+                                            "implemented for this degree!"));
       // clang-format on
   }
 }
