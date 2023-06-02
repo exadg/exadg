@@ -111,7 +111,8 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
   }
 
   mg_transfer_global_coarsening =
-    std::make_unique<dealii::MGTransferGlobalCoarsening<dim, VectorType>>(transfers);
+    std::make_unique<dealii::MGTransferGlobalCoarsening<dim, VectorType>>(
+      transfers, [&](const auto l, auto & vec) { mg_matrixfree[l]->initialize_dof_vector(vec); });
 }
 
 template<int dim, typename Number, typename VectorType>

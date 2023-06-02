@@ -139,10 +139,29 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(unsigned int const d
 
   std::vector<unsigned int> h_levels;
 
+
   // setup h-levels
-  unsigned int const n_h_levels = get_number_of_h_levels();
-  for(unsigned int h = 0; h < n_h_levels; h++)
-    h_levels.push_back(h);
+  if(data.involves_h_transfer())
+  {
+    if(multigrid_variant == MultigridVariant::LocalSmoothing)
+    {
+      for(unsigned int h = 0; h < grid->triangulation->n_global_levels(); h++)
+        h_levels.push_back(h);
+    }
+    else if(multigrid_variant == MultigridVariant::GlobalCoarsening)
+    {
+      for(unsigned int h = 0; h < grid->coarse_triangulations.size() + 1; h++)
+        h_levels.push_back(h);
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+    }
+  }
+  else // no h-MG is involved
+  {
+    h_levels.push_back(grid->triangulation->n_global_levels() - 1);
+  }
 
   // setup p-levels
   if(mg_type == MultigridType::hMG)
@@ -296,7 +315,7 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_mapping()
 {
-  unsigned int const n_h_levels = get_number_of_h_levels();
+  unsigned int const n_h_levels = level_info.back().h_level() - level_info.front().h_level() + 1;
 
   if(n_h_levels > 1)
   {
@@ -329,32 +348,6 @@ MultigridPreconditionerBase<dim, Number>::get_number_of_levels() const
                 "MultigridPreconditionerBase: level_info seems to be uninitialized."));
 
   return level_info.size();
-}
-
-template<int dim, typename Number>
-unsigned int
-MultigridPreconditionerBase<dim, Number>::get_number_of_h_levels() const
-{
-  if(data.involves_h_transfer())
-  {
-    if(multigrid_variant == MultigridVariant::LocalSmoothing)
-    {
-      return grid->triangulation->n_global_levels();
-    }
-    else if(multigrid_variant == MultigridVariant::GlobalCoarsening)
-    {
-      return grid->coarse_triangulations.size() + 1;
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
-      return 0;
-    }
-  }
-  else
-  {
-    return 1;
-  }
 }
 
 template<int dim, typename Number>
@@ -402,7 +395,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       auto const & level = level_info[i];
 
       std::shared_ptr<dealii::DoFHandler<dim>> dof_handler;
-      if(level.h_level() == get_number_of_h_levels() - 1)
+      if(level.h_level() == level_info.back().h_level()) // fine-level triangulation
       {
         dof_handler = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
       }
@@ -469,7 +462,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
           dealii::GridTools::PeriodicFacePair<typename dealii::DoFHandler<dim>::cell_iterator>>
           periodic_faces_dof;
 
-        if(level.h_level() == get_number_of_h_levels() - 1)
+        if(level.h_level() == level_info.back().h_level()) // fine-level triangulation
         {
           periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
             grid->periodic_face_pairs, *dof_handler);

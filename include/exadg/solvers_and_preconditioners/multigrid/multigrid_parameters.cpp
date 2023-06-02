@@ -30,29 +30,43 @@ namespace ExaDG
 bool
 MultigridData::involves_h_transfer() const
 {
-  if(type != MultigridType::pMG and type != MultigridType::cpMG and type != MultigridType::pcMG)
+  if(type != MultigridType::pMG and type != MultigridType::cpMG and type != MultigridType::pcMG and
+     type != MultigridType::cMG)
+  {
     return true;
+  }
   else
+  {
     return false;
+  }
 }
 
 bool
 MultigridData::involves_c_transfer() const
 {
-  if(type == MultigridType::hMG or type == MultigridType::pMG or type == MultigridType::hpMG ||
+  if(type == MultigridType::hMG or type == MultigridType::pMG or type == MultigridType::hpMG or
      type == MultigridType::phMG)
+  {
     return false;
+  }
   else
+  {
     return true;
+  }
 }
 
 bool
 MultigridData::involves_p_transfer() const
 {
-  if(type != MultigridType::hMG and type != MultigridType::hcMG and type != MultigridType::chMG)
+  if(type != MultigridType::hMG and type != MultigridType::hcMG and type != MultigridType::chMG and
+     type != MultigridType::cMG)
+  {
     return true;
+  }
   else
+  {
     return false;
+  }
 }
 
 } // namespace ExaDG

@@ -235,9 +235,6 @@ private:
   void
   initialize_levels(unsigned int const degree, bool const is_dg);
 
-  unsigned int
-  get_number_of_h_levels() const;
-
   /*
    * Returns the correct mapping depending on the multigrid transfer type and the current h-level.
    */
