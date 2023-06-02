@@ -31,7 +31,7 @@
 #include <deal.II/base/parameter_handler.h>
 
 // ExaDG
-#include "print_solver_results.h"
+#include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
 {
