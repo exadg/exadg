@@ -42,12 +42,12 @@ template<typename Number>
 class PostProcessorInterface;
 
 template<int dim, typename Number>
-class TimeIntBDF : public TimeIntBDFBase<Number>
+class TimeIntBDF : public TimeIntBDFBase
 {
 public:
-  typedef TimeIntBDFBase<Number>                                  Base;
-  typedef typename Base::VectorType                               VectorType;
-  typedef dealii::LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
+  using Base            = TimeIntBDFBase;
+  using VectorType      = dealii::LinearAlgebra::distributed::Vector<Number>;
+  using BlockVectorType = dealii::LinearAlgebra::distributed::BlockVector<Number>;
 
   TimeIntBDF(std::shared_ptr<SpatialOperatorBase<dim, Number>> operator_in,
              std::shared_ptr<HelpersALE<Number> const>         helpers_ale_in,
