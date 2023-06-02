@@ -28,19 +28,18 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
 using namespace FlowPastSphere;
 
 template<int dim>
-class InflowBC : public Function<dim>
+class InflowBC : public dealii::Function<dim>
 {
 public:
-  InflowBC() : Function<dim>(dim, 0.0)
+  InflowBC() : dealii::Function<dim>(dim, 0.0)
   {
   }
 
   virtual double
-  value(Point<dim> const &, unsigned int const component = 0) const final
+  value(dealii::Point<dim> const &, unsigned int const component = 0) const final
   {
     if(component == 0)
       return 1.0;
@@ -58,20 +57,20 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
 
   void
-  add_parameters(ParameterHandler & prm) final
+  add_parameters(dealii::ParameterHandler & prm) final
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
     // clang-format off
     prm.enter_subsection("Application");
-    prm.add_parameter("CFL",        cfl_number, "CFL number.",      Patterns::Double(0.0, 1.0e6), true);
-    prm.add_parameter("Viscosity",  viscosity,  "Fluid viscosity.", Patterns::Double(0.0, 1e30),  false);
+    prm.add_parameter("CFL",        cfl_number, "CFL number.",      dealii::Patterns::Double(0.0, 1.0e6), true);
+    prm.add_parameter("Viscosity",  viscosity,  "Fluid viscosity.", dealii::Patterns::Double(0.0, 1e30),  false);
     prm.leave_subsection();
     // clang-format on
   }
@@ -287,32 +286,36 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     // fill boundary descriptor velocity
     this->boundary_descriptor->velocity->dirichlet_bc.insert(pair(1, new InflowBC<dim>()));
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(3, new Functions::ZeroFunction<dim>(dim)));
+      pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
     this->boundary_descriptor->velocity->symmetry_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
     this->boundary_descriptor->velocity->neumann_bc.insert(
-      pair(2, new Functions::ZeroFunction<dim>(dim)));
+      pair(2, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // fill boundary descriptor pressure
     this->boundary_descriptor->pressure->neumann_bc.insert(1);
     this->boundary_descriptor->pressure->neumann_bc.insert(3);
     this->boundary_descriptor->pressure->neumann_bc.insert(0);
     this->boundary_descriptor->pressure->dirichlet_bc.insert(
-      pair(2, new Functions::ZeroFunction<dim>(1)));
+      pair(2, new dealii::Functions::ZeroFunction<dim>(1)));
   }
 
   void
   set_field_functions() final
   {
-    this->field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_velocity.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->analytical_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
@@ -359,7 +362,7 @@ public:
     pp_data.pressure_difference_data.time_control_data.is_active                = true;
     pp_data.pressure_difference_data.time_control_data.trigger_every_time_steps = 1;
     pp_data.pressure_difference_data.time_control_data.start_time               = start_time;
-    Point<dim> point_1, point_2;
+    dealii::Point<dim> point_1, point_2;
     point_1[0]                               = -radius;
     point_2[0]                               = radius;
     pp_data.pressure_difference_data.point_1 = point_1;

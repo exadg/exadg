@@ -6,15 +6,11 @@
 
 #include <deal.II/numerics/data_out.h>
 
-
-using namespace dealii;
-
-
 template<int dim>
 void
-print_mesh(const Triangulation<dim> & tria)
+print_mesh(const dealii::Triangulation<dim> & tria)
 {
-  DataOut<dim> data_out;
+  dealii::DataOut<dim> data_out;
   data_out.attach_triangulation(tria);
   data_out.build_patches(1);
   data_out.write_vtu_in_parallel("output/mesh_active.vtu", tria.get_communicator());
@@ -22,10 +18,10 @@ print_mesh(const Triangulation<dim> & tria)
 
 template<int dim>
 void
-print_mesh(const Triangulation<dim> &                                      tria,
-           const std::vector<LinearAlgebra::distributed::Vector<double>> & refinement_state)
+print_mesh(const dealii::Triangulation<dim> &                                      tria,
+           const std::vector<dealii::LinearAlgebra::distributed::Vector<double>> & refinement_state)
 {
-  DataOut<dim> data_out;
+  dealii::DataOut<dim> data_out;
   data_out.attach_triangulation(tria);
 
   const auto next_cell = [&](const auto & tria, const auto & cell_in) {
@@ -71,7 +67,7 @@ print_mesh(const Triangulation<dim> &                                      tria,
       if(i == 1.0)
         level = l;
 
-  level = Utilities::MPI::max(level, tria.get_communicator());
+  level = dealii::Utilities::MPI::max(level, tria.get_communicator());
 
   data_out.write_vtu_in_parallel("output/mesh_level_" + std::to_string(level) + ".vtu",
                                  MPI_COMM_WORLD);
@@ -84,12 +80,12 @@ test(const unsigned int n_local_refinements)
   const MPI_Comm comm = MPI_COMM_WORLD;
 
   // create locally refined mesh
-  parallel::distributed::Triangulation<dim> tria(
+  dealii::parallel::distributed::Triangulation<dim> tria(
     comm,
-    Triangulation<dim>::none,
-    parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy);
+    dealii::Triangulation<dim>::none,
+    dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy);
 
-  GridGenerator::subdivided_hyper_cube(tria, 2, -1.0, 1.0);
+  dealii::GridGenerator::subdivided_hyper_cube(tria, 2, -1.0, 1.0);
 
   for(unsigned int i = 0; i < n_local_refinements; ++i)
   {
@@ -110,7 +106,8 @@ test(const unsigned int n_local_refinements)
   print_mesh(tria);
 
   // data structure to track if a cell is "active" or not
-  std::vector<LinearAlgebra::distributed::Vector<double>> refinement_state(tria.n_global_levels());
+  std::vector<dealii::LinearAlgebra::distributed::Vector<double>> refinement_state(
+    tria.n_global_levels());
   for(unsigned int l = 0; l < tria.n_global_levels(); ++l)
     refinement_state[l].reinit(tria.global_level_cell_index_partitioner(l).lock());
 
@@ -189,7 +186,7 @@ test(const unsigned int n_local_refinements)
           i = 0.0; // not needed any more
 
       // notify owning cells about changing state
-      refinement_state_temp[l].compress(VectorOperation::add);
+      refinement_state_temp[l].compress(dealii::VectorOperation::add);
 
       // copy new state
       refinement_state[l].zero_out_ghost_values();
@@ -204,7 +201,7 @@ test(const unsigned int n_local_refinements)
 int
 main(int argc, char * argv[])
 {
-  Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
+  dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
 
   test<2>(7);
 }
