@@ -117,8 +117,9 @@ MGTransferC<dim, Number, VectorType, components>::do_restrict_and_add(VectorType
 template<int dim, typename Number, typename VectorType, int components>
 template<int degree>
 void
-MGTransferC<dim, Number, VectorType, components>::do_prolongate(VectorType &       dst,
-                                                                VectorType const & src) const
+MGTransferC<dim, Number, VectorType, components>::do_prolongate_and_add(
+  VectorType &       dst,
+  VectorType const & src) const
 {
   src.update_ghost_values();
 
@@ -142,7 +143,7 @@ MGTransferC<dim, Number, VectorType, components>::do_prolongate(VectorType &    
   }
 
   src.zero_out_ghost_values();
-  dst.copy_locally_owned_data_from(dst_temp);
+  dst += dst_temp;
 }
 
 template<int dim, typename Number, typename VectorType, int components>
@@ -216,23 +217,24 @@ MGTransferC<dim, Number, VectorType, components>::prolongate_and_add(unsigned in
   switch(this->fe_degree)
   {
       // clang-format off
-    case  1: do_prolongate< 1>(dst, src); break;
-    case  2: do_prolongate< 2>(dst, src); break;
-    case  3: do_prolongate< 3>(dst, src); break;
-    case  4: do_prolongate< 4>(dst, src); break;
-    case  5: do_prolongate< 5>(dst, src); break;
-    case  6: do_prolongate< 6>(dst, src); break;
-    case  7: do_prolongate< 7>(dst, src); break;
-    case  8: do_prolongate< 8>(dst, src); break;
-    case  9: do_prolongate< 9>(dst, src); break;
-    case 10: do_prolongate<10>(dst, src); break;
-    case 11: do_prolongate<11>(dst, src); break;
-    case 12: do_prolongate<12>(dst, src); break;
-    case 13: do_prolongate<13>(dst, src); break;
-    case 14: do_prolongate<14>(dst, src); break;
-    case 15: do_prolongate<15>(dst, src); break;
+    case  1: do_prolongate_and_add< 1>(dst, src); break;
+    case  2: do_prolongate_and_add< 2>(dst, src); break;
+    case  3: do_prolongate_and_add< 3>(dst, src); break;
+    case  4: do_prolongate_and_add< 4>(dst, src); break;
+    case  5: do_prolongate_and_add< 5>(dst, src); break;
+    case  6: do_prolongate_and_add< 6>(dst, src); break;
+    case  7: do_prolongate_and_add< 7>(dst, src); break;
+    case  8: do_prolongate_and_add< 8>(dst, src); break;
+    case  9: do_prolongate_and_add< 9>(dst, src); break;
+    case 10: do_prolongate_and_add<10>(dst, src); break;
+    case 11: do_prolongate_and_add<11>(dst, src); break;
+    case 12: do_prolongate_and_add<12>(dst, src); break;
+    case 13: do_prolongate_and_add<13>(dst, src); break;
+    case 14: do_prolongate_and_add<14>(dst, src); break;
+    case 15: do_prolongate_and_add<15>(dst, src); break;
     default:
-      AssertThrow(false, dealii::ExcMessage("MGTransferC::prolongate() not implemented for this degree!"));
+      AssertThrow(false, dealii::ExcMessage("MGTransferC::prolongate_and_add() not "
+                                            "implemented for this degree!"));
       // clang-format on
   }
 }
