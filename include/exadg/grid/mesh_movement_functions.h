@@ -22,6 +22,8 @@
 #ifndef INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_
 #define INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_
 
+#include <deal.II/base/function.h>
+
 namespace ExaDG
 {
 enum class MeshMovementAdvanceInTime
