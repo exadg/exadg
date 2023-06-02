@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_BDF_TIME_INTEGRATION_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_BDF_TIME_INTEGRATION_H_
+#ifndef INCLUDE_EXADG_TIME_INTEGRATION_AB_CONSTANTS_H_
+#define INCLUDE_EXADG_TIME_INTEGRATION_AB_CONSTANTS_H_
 
 // C/C++
 #include <vector>
@@ -33,13 +33,13 @@
 
 namespace ExaDG
 {
-class BDFTimeIntegratorConstants : public TimeIntegratorConstantsBase
+/**
+ * Class that manages Adams--Bashforth time integrator constants.
+ */
+class ABTimeIntegratorConstants : public TimeIntegratorConstantsBase
 {
 public:
-  BDFTimeIntegratorConstants(unsigned int const order, bool const start_with_low_order);
-
-  double
-  get_gamma0() const;
+  ABTimeIntegratorConstants(unsigned int const order, bool const start_with_low_order);
 
   double
   get_alpha(unsigned int const i) const;
@@ -56,35 +56,13 @@ private:
                          std::vector<double> const & time_steps) final;
 
   /*
-   *  BDF time integrator constants:
+   *  AB time integrator constants:
    *
-   *  du/dt = (gamma_0 u^{n+1} - alpha_0 u^{n} - alpha_1 u^{n-1} ... - alpha_{J-1} u^{n-J+1})/dt
+   *  du/dt = (alpha_0 f^{n+1} + alpha_1 f^{n} + alpha_2 f^{n-1} +...)
    */
-  double gamma0;
-
   std::vector<double> alpha;
 };
 
-/*
- * Calculates the time derivative
- *
- *  derivative = du/dt = (gamma_0 u^{n+1} - alpha_0 u^{n} - alpha_1 u^{n-1} ... - alpha_{J-1}
- * u^{n-J+1})/dt
- */
-template<typename VectorType>
-void
-compute_bdf_time_derivative(VectorType &                       derivative,
-                            VectorType const &                 solution_np,
-                            std::vector<VectorType> const &    previous_solutions,
-                            BDFTimeIntegratorConstants const & bdf,
-                            double const &                     time_step_size)
-{
-  derivative.equ(bdf.get_gamma0() / time_step_size, solution_np);
-
-  for(unsigned int i = 0; i < previous_solutions.size(); ++i)
-    derivative.add(-bdf.get_alpha(i) / time_step_size, previous_solutions[i]);
-}
-
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_BDF_TIME_INTEGRATION_H_ */
+#endif /* INCLUDE_EXADG_TIME_INTEGRATION_AB_CONSTANTS_H_ */

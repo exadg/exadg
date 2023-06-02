@@ -26,7 +26,7 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
-#include <exadg/time_integration/bdf_time_integration.h>
+#include <exadg/time_integration/bdf_constants.h>
 #include <exadg/time_integration/extrapolation_scheme.h>
 #include <exadg/time_integration/time_int_base.h>
 

@@ -22,6 +22,7 @@
 #ifndef INCLUDE_EXADG_TIME_INTEGRATION_TIME_INTEGRATION_CONSTANTS_BASE_H_
 #define INCLUDE_EXADG_TIME_INTEGRATION_TIME_INTEGRATION_CONSTANTS_BASE_H_
 
+#include <vector>
 
 namespace ExaDG
 {
@@ -70,6 +71,19 @@ public:
   print(dealii::ConditionalOStream & pcout) const = 0;
 
 protected:
+  /**
+   * Can be used to zero out components of the vector which should not be used.
+   * This is needed if start_with_low_order = true. We ensure only relevant vectors
+   * are used during summation over constant[i]*vector[i] by setting unused constants=0.
+   */
+  void
+  disable_high_order_constants(unsigned int const current_order, std::vector<double> & constants)
+  {
+    for(unsigned int i = current_order; i < constants.size(); ++i)
+      constants[i] = 0.0;
+  }
+
+
   // order of time integrator
   unsigned int const order;
 
