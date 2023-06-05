@@ -137,15 +137,15 @@ public:
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
-    // clang-format off
     prm.enter_subsection("Application");
-    prm.add_parameter("Length",           length,           "Length of domain.");
-    prm.add_parameter("Height",           height,           "Height of domain.");
-    prm.add_parameter("Width",            width,            "Width of domain.");
-    prm.add_parameter("BoundaryType",     boundary_type,    "Type of Neumann BC at right boundary.");
-    prm.add_parameter("Force",            force,            "Value of force on right boundary.");
+    {
+      prm.add_parameter("Length", length, "Length of domain.");
+      prm.add_parameter("Height", height, "Height of domain.");
+      prm.add_parameter("Width", width, "Width of domain.");
+      prm.add_parameter("BoundaryType", boundary_type, "Type of Neumann BC at right boundary.");
+      prm.add_parameter("Force", force, "Value of force on right boundary.");
+    }
     prm.leave_subsection();
-    // clang-format on
   }
 
 private:

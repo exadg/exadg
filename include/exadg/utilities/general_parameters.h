@@ -44,25 +44,22 @@ struct GeneralParameters
   void
   add_parameters(dealii::ParameterHandler & prm)
   {
-    // clang-format off
     prm.enter_subsection("General");
+    {
       prm.add_parameter("Precision",
                         precision,
                         "Floating point precision.",
                         dealii::Patterns::Selection("float|double"),
                         false);
-      prm.add_parameter("Dim",
-                        dim,
-                        "Number of space dimension.",
-                        dealii::Patterns::Integer(2,3),
-                        true);
+      prm.add_parameter(
+        "Dim", dim, "Number of space dimension.", dealii::Patterns::Integer(2, 3), true);
       prm.add_parameter("IsTest",
                         is_test,
                         "Set to true if the program is run as a test.",
                         dealii::Patterns::Bool(),
                         false);
+    }
     prm.leave_subsection();
-    // clang-format on
   }
 
   std::string precision = "double";

@@ -105,18 +105,34 @@ public:
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
-    // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("Inviscid",             inviscid,                     "Is this an inviscid simulation?");
-      prm.add_parameter("ReynoldsNumber",       Re,                           "Reynolds number (ignored if Inviscid = true)");
-      prm.add_parameter("EndTime",              end_time_multiples,           "End time in multiples of flow through time.", dealii::Patterns::Integer(0.0,1000.0));
-      prm.add_parameter("GridStretchFactor",    grid_stretch_factor,          "Factor describing grid stretching in vertical direction.");
-      prm.add_parameter("CalculateStatistics",  calculate_statistics,         "Decides whether statistics are calculated.");
-      prm.add_parameter("SampleStartTime",      sample_start_time_multiples,  "Start time of sampling in multiples of flow through time.", dealii::Patterns::Integer(0.0,1000.0));
-      prm.add_parameter("SampleEveryTimeSteps", sample_every_timesteps,       "Sample every ... time steps.", dealii::Patterns::Integer(1,1000));
-      prm.add_parameter("PointsPerLine",        points_per_line,              "Points per line in vertical direction.", dealii::Patterns::Integer(1,10000));
+    {
+      prm.add_parameter("Inviscid", inviscid, "Is this an inviscid simulation?");
+      prm.add_parameter("ReynoldsNumber", Re, "Reynolds number (ignored if Inviscid = true)");
+      prm.add_parameter("EndTime",
+                        end_time_multiples,
+                        "End time in multiples of flow through time.",
+                        dealii::Patterns::Integer(0.0, 1000.0));
+      prm.add_parameter("GridStretchFactor",
+                        grid_stretch_factor,
+                        "Factor describing grid stretching in vertical direction.");
+      prm.add_parameter("CalculateStatistics",
+                        calculate_statistics,
+                        "Decides whether statistics are calculated.");
+      prm.add_parameter("SampleStartTime",
+                        sample_start_time_multiples,
+                        "Start time of sampling in multiples of flow through time.",
+                        dealii::Patterns::Integer(0.0, 1000.0));
+      prm.add_parameter("SampleEveryTimeSteps",
+                        sample_every_timesteps,
+                        "Sample every ... time steps.",
+                        dealii::Patterns::Integer(1, 1000));
+      prm.add_parameter("PointsPerLine",
+                        points_per_line,
+                        "Points per line in vertical direction.",
+                        dealii::Patterns::Integer(1, 10000));
+    }
     prm.leave_subsection();
-    // clang-format on
   }
 
 private:

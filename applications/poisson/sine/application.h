@@ -118,11 +118,11 @@ public:
   {
     ApplicationBase<dim, n_components, Number>::add_parameters(prm);
 
-    // clang-format off
     prm.enter_subsection("Application");
+    {
       prm.add_parameter("MeshType", mesh_type, "Type of mesh (Cartesian versus curvilinear).");
+    }
     prm.leave_subsection();
-    // clang-format on
   }
 
 private:

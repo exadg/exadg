@@ -33,11 +33,11 @@ struct GridParameters
   void
   add_parameters(dealii::ParameterHandler & prm, std::string const & subsection_name = "Grid")
   {
-    // clang-format off
     prm.enter_subsection(subsection_name);
+    {
       prm.add_parameter("FileName", file_name, "External input grid file.");
+    }
     prm.leave_subsection();
-    // clang-format on
   }
 
   std::string file_name;

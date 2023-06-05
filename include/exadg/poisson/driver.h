@@ -53,11 +53,13 @@ get_dofs_per_element(std::string const & input_file,
 
   dealii::ParameterHandler prm;
   prm.enter_subsection("Discretization");
-  prm.add_parameter("SpatialDiscretization",
-                    spatial_discretization,
-                    "Spatial discretization (CG vs. DG).",
-                    Patterns::Enum<SpatialDiscretization>(),
-                    true);
+  {
+    prm.add_parameter("SpatialDiscretization",
+                      spatial_discretization,
+                      "Spatial discretization (CG vs. DG).",
+                      Patterns::Enum<SpatialDiscretization>(),
+                      true);
+  }
   prm.leave_subsection();
 
   prm.parse_input(input_file, "", true, true);

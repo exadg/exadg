@@ -61,14 +61,11 @@ public:
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
-    // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("ALE",
-                        ALE,
-                        "Moving mesh (ALE).",
-                        dealii::Patterns::Bool());
+    {
+      prm.add_parameter("ALE", ALE, "Moving mesh (ALE).", dealii::Patterns::Bool());
+    }
     prm.leave_subsection();
-    // clang-format on
   }
 
 private:

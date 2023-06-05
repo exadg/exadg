@@ -102,13 +102,10 @@ struct ThroughputParameters
   void
   add_parameters(dealii::ParameterHandler & prm)
   {
-    // clang-format off
     prm.enter_subsection("Throughput");
-      prm.add_parameter("OperatorType",
-                        operator_type,
-                        "Type of operator.",
-                        dealii::Patterns::Anything(),
-                        true);
+    {
+      prm.add_parameter(
+        "OperatorType", operator_type, "Type of operator.", dealii::Patterns::Anything(), true);
       prm.add_parameter("RepetitionsInner",
                         n_repetitions_inner,
                         "Number of operator evaluations.",
@@ -117,10 +114,10 @@ struct ThroughputParameters
       prm.add_parameter("RepetitionsOuter",
                         n_repetitions_outer,
                         "Number of runs (taking minimum wall time).",
-                        dealii::Patterns::Integer(1,10),
+                        dealii::Patterns::Integer(1, 10),
                         true);
+    }
     prm.leave_subsection();
-    // clang-format on
   }
 
   void

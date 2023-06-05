@@ -49,27 +49,18 @@ struct Parameters
   void
   add_parameters(dealii::ParameterHandler & prm, std::string const & subsection_name = "FSI")
   {
-    // clang-format off
     prm.enter_subsection(subsection_name);
-      prm.add_parameter("Method",
-                        method,
-                        "Acceleration method.",
-                        Patterns::Enum<AccelerationMethod>(),
-                        true);
-      prm.add_parameter("AbsTol",
-                        abs_tol,
-                        "Absolute solver tolerance.",
-                        dealii::Patterns::Double(0.0,1.0),
-                        true);
-      prm.add_parameter("RelTol",
-                        rel_tol,
-                        "Relative solver tolerance.",
-                        dealii::Patterns::Double(0.0,1.0),
-                        true);
+    {
+      prm.add_parameter(
+        "Method", method, "Acceleration method.", Patterns::Enum<AccelerationMethod>(), true);
+      prm.add_parameter(
+        "AbsTol", abs_tol, "Absolute solver tolerance.", dealii::Patterns::Double(0.0, 1.0), true);
+      prm.add_parameter(
+        "RelTol", rel_tol, "Relative solver tolerance.", dealii::Patterns::Double(0.0, 1.0), true);
       prm.add_parameter("OmegaInit",
                         omega_init,
                         "Initial relaxation parameter.",
-                        dealii::Patterns::Double(0.0,1.0),
+                        dealii::Patterns::Double(0.0, 1.0),
                         true);
       prm.add_parameter("ReusedTimeSteps",
                         reused_time_steps,
@@ -79,15 +70,15 @@ struct Parameters
       prm.add_parameter("PartitionedIterMax",
                         partitioned_iter_max,
                         "Maximum number of fixed-point iterations.",
-                        dealii::Patterns::Integer(1,1000),
+                        dealii::Patterns::Integer(1, 1000),
                         true);
       prm.add_parameter("GeometricTolerance",
                         geometric_tolerance,
                         "Tolerance used to locate points at FSI interface.",
                         dealii::Patterns::Double(0.0, 1.0),
                         false);
+    }
     prm.leave_subsection();
-    // clang-format on
   }
 
   AccelerationMethod method;

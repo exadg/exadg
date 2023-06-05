@@ -75,22 +75,24 @@ get_dofs_per_element(std::string const & input_file,
   OperatorType   operator_type;
 
   dealii::ParameterHandler prm;
-  // clang-format off
+
   prm.enter_subsection("Discretization");
+  {
     prm.add_parameter("PressureDegree",
                       pressure_degree,
                       "Degree of pressure shape functions.",
                       Patterns::Enum<PressureDegree>(),
                       true);
+  }
   prm.leave_subsection();
+
   prm.enter_subsection("Throughput");
-    prm.add_parameter("OperatorType",
-                      operator_type,
-                      "Type of operator.",
-                      Patterns::Enum<OperatorType>(),
-                      true);
+  {
+    prm.add_parameter(
+      "OperatorType", operator_type, "Type of operator.", Patterns::Enum<OperatorType>(), true);
+  }
   prm.leave_subsection();
-  // clang-format on
+
   prm.parse_input(input_file, "", true, true);
 
   unsigned int const velocity_dofs_per_element = dim * dealii::Utilities::pow(degree + 1, dim);

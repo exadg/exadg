@@ -140,13 +140,17 @@ public:
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
-    // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("TestCase",     test_case,     "Number of test case.", dealii::Patterns::Integer(1,3));
+    {
+      prm.add_parameter("TestCase",
+                        test_case,
+                        "Number of test case.",
+                        dealii::Patterns::Integer(1, 3));
       prm.add_parameter("CylinderType", cylinder_type, "Type of cylinder.");
-      prm.add_parameter("CFL",          cfl_number,    "CFL number.",          dealii::Patterns::Double(0.0, 1.0e6), true);
+      prm.add_parameter(
+        "CFL", cfl_number, "CFL number.", dealii::Patterns::Double(0.0, 1.0e6), true);
+    }
     prm.leave_subsection();
-    // clang-format on
   }
 
 private:

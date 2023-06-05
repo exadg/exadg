@@ -184,12 +184,15 @@ public:
   {
     ApplicationBase<dim, n_components, Number>::add_parameters(prm);
 
-    // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("MeshType",         mesh_type,         "Type of mesh (Cartesian versus curvilinear).");
-      prm.add_parameter("GlobalCoarsening", global_coarsening, "Use Global Coarsening", dealii::Patterns::Bool());
+    {
+      prm.add_parameter("MeshType", mesh_type, "Type of mesh (Cartesian versus curvilinear).");
+      prm.add_parameter("GlobalCoarsening",
+                        global_coarsening,
+                        "Use Global Coarsening",
+                        dealii::Patterns::Bool());
+    }
     prm.leave_subsection();
-    // clang-format on
   }
 
 private:
