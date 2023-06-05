@@ -198,7 +198,7 @@ public:
     prm.add_parameter("Width",            width,            "Width of domain.");
     prm.add_parameter("UseVolumeForce",   use_volume_force, "Use volume force.");
     prm.add_parameter("VolumeForce",      volume_force,     "Volume force.");
-    prm.add_parameter("BoundaryType",     boundary_type,    "Type of boundary condition, Dirichlet vs Neumann.", dealii::Patterns::Selection("Dirichlet|Neumann"));
+    prm.add_parameter("BoundaryType",     boundary_type,    "Type of boundary condition, Dirichlet vs Neumann.");
     prm.add_parameter("Displacement",     displacement,     "Displacement of right boundary in case of Dirichlet BC.");
     prm.add_parameter("Traction",         area_force,       "Traction acting on right boundary in case of Neumann BC.");
     prm.leave_subsection();
@@ -387,7 +387,7 @@ private:
     if(this->param.problem_type == ProblemType::QuasiStatic)
       quasistatic_solver = true;
 
-    if(boundary_type == "Dirichlet")
+    if(boundary_type == BoundaryType::Dirichlet)
     {
       std::vector<bool> mask_right = {true, clamp_at_right_boundary};
       if(dim == 3)
@@ -401,7 +401,7 @@ private:
         pair(2, new DisplacementDBC<dim>(displacement, quasistatic_solver, unsteady, end_time)));
       this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(2, mask_right));
     }
-    else if(boundary_type == "Neumann")
+    else if(boundary_type == BoundaryType::Neumann)
     {
       this->boundary_descriptor->neumann_bc.insert(
         pair(2, new AreaForce<dim>(area_force, quasistatic_solver)));
@@ -493,12 +493,12 @@ private:
     pp_data.error_data.time_control_data.is_active = true;
     pp_data.error_data.calculate_relative_errors   = true;
     double const vol_force                         = use_volume_force ? this->volume_force : 0.0;
-    if(boundary_type == "Dirichlet")
+    if(boundary_type == BoundaryType::Dirichlet)
     {
       pp_data.error_data.analytical_solution.reset(
         new SolutionDBC<dim>(this->length, this->displacement, vol_force, this->E_modul));
     }
-    else if(boundary_type == "Neumann")
+    else if(boundary_type == BoundaryType::Neumann)
     {
       pp_data.error_data.analytical_solution.reset(
         new SolutionNBC<dim>(this->length, this->area_force, vol_force, this->E_modul));
@@ -523,7 +523,12 @@ private:
 
   double volume_force = 1.0;
 
-  std::string boundary_type = "Dirichlet";
+  enum class BoundaryType
+  {
+    Dirichlet,
+    Neumann
+  };
+  BoundaryType boundary_type = BoundaryType::Dirichlet;
 
   double displacement = 1.0; // "Dirichlet"
   double area_force   = 1.0; // "Neumann"

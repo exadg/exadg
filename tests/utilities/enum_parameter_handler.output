@@ -1,0 +1,48 @@
+Listing of Parameters:
+
+set EnumType  =   Any one of Undefined, AScoped, BScoped, CScoped
+
+# Listing of Parameters
+# ---------------------
+set EnumType = Undefined
+
+# Listing of Parameters
+# ---------------------
+set EnumType = Undefined
+
+# Listing of Parameters
+# ---------------------
+set EnumType = AScoped # default: Undefined
+
+# Listing of Parameters
+# ---------------------
+set EnumType = BScoped # default: Undefined
+
+# Listing of Parameters
+# ---------------------
+set EnumType = CScoped # default: Undefined
+
+Listing of Parameters:
+
+set EnumType  =   Any one of Undefined, A, B, C
+
+# Listing of Parameters
+# ---------------------
+set EnumType = Undefined
+
+# Listing of Parameters
+# ---------------------
+set EnumType = Undefined
+
+# Listing of Parameters
+# ---------------------
+set EnumType = A # default: Undefined
+
+# Listing of Parameters
+# ---------------------
+set EnumType = B # default: Undefined
+
+# Listing of Parameters
+# ---------------------
+set EnumType = C # default: Undefined
+

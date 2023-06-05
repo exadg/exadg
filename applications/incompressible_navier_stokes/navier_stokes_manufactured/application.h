@@ -391,9 +391,8 @@ public:
                         "Use Laplace or Divergence formulation for viscous term.",
                         dealii::Patterns::Bool());
       prm.add_parameter("TemporalDiscretization",
-                        temporal_discretization_string,
-                        "Temporal discretization.",
-                        dealii::Patterns::Selection("BDFCoupledSolution|BDFPressureCorrection|BDFDualSplittingScheme"));
+                        temporal_discretization,
+                        "Temporal discretization.");
       prm.add_parameter("TreatmentOfConvectiveTermImplicit",
                         treatment_of_convective_term_implicit,
                         "Treat convective term implicit, else explicit",
@@ -427,18 +426,6 @@ public:
   }
 
 private:
-  void
-  parse_parameters() final
-  {
-    ApplicationBase<dim, Number>::parse_parameters();
-
-    // clang-format off
-    if     (temporal_discretization_string == "BDFCoupledSolution")     temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
-    else if(temporal_discretization_string == "BDFPressureCorrection")  temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
-    else if(temporal_discretization_string == "BDFDualSplittingScheme") temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
-    else AssertThrow(false, dealii::ExcMessage("Unknown temporal discretization. Not implemented."));
-    // clang-format on
-  }
   void
   set_parameters() final
   {
@@ -752,10 +739,10 @@ private:
   double                 kinematic_viscosity                          = 5e-6;
   bool                   use_turbulence_model                         = false;
   bool                   formulation_viscous_term_laplace_formulation = true;
-  TemporalDiscretization temporal_discretization               = TemporalDiscretization::Undefined;
-  std::string            temporal_discretization_string        = "BDFCoupledSolution";
-  bool                   treatment_of_convective_term_implicit = false;
-  bool                   treatment_of_variable_viscosity_implicit = false;
+  TemporalDiscretization temporal_discretization = TemporalDiscretization::Undefined;
+
+  bool treatment_of_convective_term_implicit    = false;
+  bool treatment_of_variable_viscosity_implicit = false;
 
   GeneralizedNewtonianModelData generalized_newtonian_model_data;
   double                        interval_start = 0.0;

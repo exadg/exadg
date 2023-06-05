@@ -22,8 +22,9 @@
 #ifndef INCLUDE_EXADG_UTILITIES_HYPERCUBE_RESOLUTION_PARAMETERS_H_
 #define INCLUDE_EXADG_UTILITIES_HYPERCUBE_RESOLUTION_PARAMETERS_H_
 
-// deal.II
 #include <deal.II/base/parameter_handler.h>
+
+#include <exadg/utilities/enum_patterns.h>
 
 namespace ExaDG
 {
@@ -166,8 +167,6 @@ struct HypercubeResolutionParameters
     add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
 
-    Utilities::string_to_enum(run_type, run_type_string);
-
     verify_parameters();
   }
 
@@ -177,9 +176,9 @@ struct HypercubeResolutionParameters
     // clang-format off
     prm.enter_subsection("Resolution");
       prm.add_parameter("RunType",
-                        run_type_string,
+                        run_type,
                         "Type of throughput study.",
-                        dealii::Patterns::Selection("RefineHAndP|FixedProblemSize|IncreasingProblemSize"),
+                        Patterns::Enum<RunType>(),
                         true);
       prm.add_parameter("DegreeMin",
                         degree_min,
@@ -282,8 +281,7 @@ struct HypercubeResolutionParameters
 
   unsigned int dim = 2; // number of space dimensions
 
-  std::string run_type_string = "RefineHAndP";
-  RunType     run_type        = RunType::RefineHAndP;
+  RunType run_type = RunType::RefineHAndP;
 
   unsigned int degree_min = 3; // minimal polynomial degree
   unsigned int degree_max = 3; // maximal polynomial degree

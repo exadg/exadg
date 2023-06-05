@@ -60,12 +60,19 @@ enum class OperatorType{
 };
 // clang-format on
 
+enum class PressureDegree
+{
+  MixedOrder,
+  EqualOrder
+};
+
 inline unsigned int
 get_dofs_per_element(std::string const & input_file,
                      unsigned int const  dim,
                      unsigned int const  degree)
 {
-  std::string operator_type_string, pressure_degree = "MixedOrder";
+  PressureDegree pressure_degree = PressureDegree::MixedOrder;
+  OperatorType   operator_type;
 
   dealii::ParameterHandler prm;
   // clang-format off
@@ -73,27 +80,24 @@ get_dofs_per_element(std::string const & input_file,
     prm.add_parameter("PressureDegree",
                       pressure_degree,
                       "Degree of pressure shape functions.",
-                      dealii::Patterns::Selection("MixedOrder|EqualOrder"),
+                      Patterns::Enum<PressureDegree>(),
                       true);
   prm.leave_subsection();
   prm.enter_subsection("Throughput");
     prm.add_parameter("OperatorType",
-                      operator_type_string,
+                      operator_type,
                       "Type of operator.",
-                      dealii::Patterns::Anything(),
+                      Patterns::Enum<OperatorType>(),
                       true);
   prm.leave_subsection();
   // clang-format on
   prm.parse_input(input_file, "", true, true);
 
-  OperatorType operator_type;
-  Utilities::string_to_enum(operator_type, operator_type_string);
-
   unsigned int const velocity_dofs_per_element = dim * dealii::Utilities::pow(degree + 1, dim);
   unsigned int       pressure_dofs_per_element = 1;
-  if(pressure_degree == "MixedOrder")
+  if(pressure_degree == PressureDegree::MixedOrder)
     pressure_dofs_per_element = dealii::Utilities::pow(degree, dim);
-  else if(pressure_degree == "EqualOrder")
+  else if(pressure_degree == PressureDegree::EqualOrder)
     pressure_dofs_per_element = dealii::Utilities::pow(degree + 1, dim);
   else
     AssertThrow(false, dealii::ExcMessage("Not implemented."));

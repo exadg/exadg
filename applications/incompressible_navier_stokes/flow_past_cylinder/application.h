@@ -142,9 +142,9 @@ public:
 
     // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("TestCase",     test_case,            "Number of test case.", dealii::Patterns::Integer(1,3));
-      prm.add_parameter("CylinderType", cylinder_type_string, "Type of cylinder.",    dealii::Patterns::Selection("circular|square"));
-      prm.add_parameter("CFL",          cfl_number,           "CFL number.",          dealii::Patterns::Double(0.0, 1.0e6), true);
+      prm.add_parameter("TestCase",     test_case,     "Number of test case.", dealii::Patterns::Integer(1,3));
+      prm.add_parameter("CylinderType", cylinder_type, "Type of cylinder.");
+      prm.add_parameter("CFL",          cfl_number,    "CFL number.",          dealii::Patterns::Double(0.0, 1.0e6), true);
     prm.leave_subsection();
     // clang-format on
   }
@@ -335,7 +335,7 @@ private:
         (void)periodic_face_pairs;
         create_coarse_grid<dim>(tria,
                                 this->grid->periodic_face_pairs,
-                                cylinder_type_string,
+                                cylinder_type,
                                 this->param.grid.element_type);
 
         if(vector_local_refinements.size() > 0)
@@ -506,8 +506,8 @@ private:
     }
   }
 
-  // string to read parameter
-  std::string cylinder_type_string = "circular";
+  // type of cylinder
+  CylinderType cylinder_type = CylinderType::Circular;
 
   // select test case according to Schaefer and Turek benchmark definition: 2D-1/2/3, 3D-1/2/3
   unsigned int test_case = 3; // 1, 2 or 3

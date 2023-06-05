@@ -25,12 +25,11 @@
 // deal.II
 #include <deal.II/base/parameter_handler.h>
 
-// ExaDG
-
 // driver
 #include <exadg/incompressible_flow_with_transport/driver.h>
 
 // utilities
+#include <exadg/utilities/enum_patterns.h>
 #include <exadg/utilities/general_parameters.h>
 #include <exadg/utilities/resolution_parameters.h>
 
