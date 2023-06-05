@@ -75,6 +75,7 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pro-methods">Protected Member Functions</a> &#124;
 <a href="#pro-attribs">Protected Attributes</a> &#124;
 <a href="classExaDG_1_1TimeIntegratorConstantsBase-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">ExaDG::TimeIntegratorConstantsBase Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div></div>
@@ -86,8 +87,10 @@ Inheritance diagram for ExaDG::TimeIntegratorConstantsBase:</div>
  <div class="center">
   <img src="classExaDG_1_1TimeIntegratorConstantsBase.png" usemap="#ExaDG::TimeIntegratorConstantsBase_map" alt=""/>
   <map id="ExaDG::TimeIntegratorConstantsBase_map" name="ExaDG::TimeIntegratorConstantsBase_map">
-<area href="classExaDG_1_1BDFTimeIntegratorConstants.html" alt="ExaDG::BDFTimeIntegratorConstants" shape="rect" coords="0,56,220,80"/>
-<area href="classExaDG_1_1ExtrapolationConstants.html" alt="ExaDG::ExtrapolationConstants" shape="rect" coords="230,56,450,80"/>
+<area href="classExaDG_1_1ABTimeIntegratorConstants.html" alt="ExaDG::ABTimeIntegratorConstants" shape="rect" coords="0,56,220,80"/>
+<area href="classExaDG_1_1AMTimeIntegratorConstants.html" alt="ExaDG::AMTimeIntegratorConstants" shape="rect" coords="230,56,450,80"/>
+<area href="classExaDG_1_1BDFTimeIntegratorConstants.html" alt="ExaDG::BDFTimeIntegratorConstants" shape="rect" coords="460,56,680,80"/>
+<area href="classExaDG_1_1ExtrapolationConstants.html" alt="ExaDG::ExtrapolationConstants" shape="rect" coords="690,56,910,80"/>
   </map>
 </div></div>
 <table class="memberdecls">
@@ -106,6 +109,11 @@ unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_order</b>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>print</b> (dealii::ConditionalOStream &amp;pcout) const =0</td></tr>
 <tr class="separator:a4548589c396803865dfebcc4af601418"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-methods" name="pro-methods"></a>
+Protected Member Functions</h2></td></tr>
+<tr class="memitem:a72710849ce4a0630d752febbe16313d0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1TimeIntegratorConstantsBase.html#a72710849ce4a0630d752febbe16313d0">disable_high_order_constants</a> (unsigned int const current_order, std::vector&lt; double &gt; &amp;constants)</td></tr>
+<tr class="separator:a72710849ce4a0630d752febbe16313d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
 <tr class="memitem:ae72b133575587c8601d5d93e84b9b8d1"><td class="memItemLeft" align="right" valign="top"><a id="ae72b133575587c8601d5d93e84b9b8d1" name="ae72b133575587c8601d5d93e84b9b8d1"></a>
@@ -115,6 +123,44 @@ unsigned int const&#160;</td><td class="memItemRight" valign="bottom"><b>order</
 bool const&#160;</td><td class="memItemRight" valign="bottom"><b>start_with_low_order</b></td></tr>
 <tr class="separator:a05069eafea0e2feb181446c35a05a072"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a72710849ce4a0630d752febbe16313d0" name="a72710849ce4a0630d752febbe16313d0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a72710849ce4a0630d752febbe16313d0">&#9670;&#160;</a></span>disable_high_order_constants()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ExaDG::TimeIntegratorConstantsBase::disable_high_order_constants </td>
+          <td>(</td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>current_order</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; double &gt; &amp;&#160;</td>
+          <td class="paramname"><em>constants</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Can be used to zero out components of the vector which should not be used. This is needed if start_with_low_order = true. We ensure only relevant vectors are used during summation over constant[i]*vector[i] by setting unused constants=0. </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/time_integration/<a class="el" href="time__integration__constants__base_8h_source.html">time_integration_constants_base.h</a></li>
 </ul>
