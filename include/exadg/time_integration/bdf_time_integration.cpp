@@ -23,7 +23,7 @@
 #include <deal.II/base/exceptions.h>
 
 // ExaDG
-#include <exadg/time_integration/bdf_time_integration.h>
+#include <exadg/time_integration/bdf_constants.h>
 
 namespace ExaDG
 {
@@ -61,49 +61,43 @@ BDFTimeIntegratorConstants::get_alpha(unsigned int const i) const
 void
 BDFTimeIntegratorConstants::set_constant_time_step(unsigned int const current_order)
 {
-  AssertThrow(current_order <= order,
-              dealii::ExcMessage(
-                "There is a logical error when updating the BDF time integrator constants."));
-
-  if(current_order == 1) // BDF 1
+  switch(current_order)
   {
-    gamma0 = 1.0;
-
-    alpha[0] = 1.0;
+    case 1:
+    {
+      gamma0   = 1.0;
+      alpha[0] = 1.0;
+      break;
+    }
+    case 2:
+    {
+      gamma0   = 3.0 / 2.0;
+      alpha[0] = 2.0;
+      alpha[1] = -0.5;
+      break;
+    }
+    case 3:
+    {
+      gamma0   = 11. / 6.;
+      alpha[0] = 3.;
+      alpha[1] = -1.5;
+      alpha[2] = 1. / 3.;
+      break;
+    }
+    case 4:
+    {
+      gamma0   = 25. / 12.;
+      alpha[0] = 4.;
+      alpha[1] = -3.;
+      alpha[2] = 4. / 3.;
+      alpha[3] = -1. / 4.;
+      break;
+    }
+    default:
+      AssertThrow(false, dealii::ExcMessage("Should not arrive here."));
   }
-  else if(current_order == 2) // BDF 2
-  {
-    gamma0 = 3.0 / 2.0;
 
-    alpha[0] = 2.0;
-    alpha[1] = -0.5;
-  }
-  else if(current_order == 3) // BDF 3
-  {
-    gamma0 = 11. / 6.;
-
-    alpha[0] = 3.;
-    alpha[1] = -1.5;
-    alpha[2] = 1. / 3.;
-  }
-  else if(current_order == 4) // BDF 4
-  {
-    gamma0 = 25. / 12.;
-
-    alpha[0] = 4.;
-    alpha[1] = -3.;
-    alpha[2] = 4. / 3.;
-    alpha[3] = -1. / 4.;
-  }
-
-  /*
-   * Fill the rest of the vectors with zeros since current_order might be
-   * smaller than order, e.g., when using start_with_low_order = true
-   */
-  for(unsigned int i = current_order; i < order; ++i)
-  {
-    alpha[i] = 0.0;
-  }
+  disable_high_order_constants(current_order, alpha);
 }
 
 
@@ -111,77 +105,67 @@ void
 BDFTimeIntegratorConstants::set_adaptive_time_step(unsigned int const          current_order,
                                                    std::vector<double> const & time_steps)
 {
-  AssertThrow(current_order <= order,
-              dealii::ExcMessage(
-                "There is a logical error when updating the time integrator constants."));
-
-  AssertThrow(
-    time_steps.size() == order,
-    dealii::ExcMessage(
-      "Length of vector containing time step sizes has to be equal to order of time integration scheme."));
-
-  if(current_order == 1) // BDF 1
+  switch(current_order)
   {
-    gamma0 = 1.0;
+    case 1:
+    {
+      gamma0   = 1.0;
+      alpha[0] = 1.0;
+      break;
+    }
+    case 2:
+    {
+      gamma0   = (2 * time_steps[0] + time_steps[1]) / (time_steps[0] + time_steps[1]);
+      alpha[0] = (time_steps[0] + time_steps[1]) / time_steps[1];
+      alpha[1] = -time_steps[0] * time_steps[0] / ((time_steps[0] + time_steps[1]) * time_steps[1]);
+      break;
+    }
+    case 3:
+    {
+      gamma0 = 1.0 + time_steps[0] / (time_steps[0] + time_steps[1]) +
+               time_steps[0] / (time_steps[0] + time_steps[1] + time_steps[2]);
+      alpha[0] = +(time_steps[0] + time_steps[1]) *
+                 (time_steps[0] + time_steps[1] + time_steps[2]) /
+                 (time_steps[1] * (time_steps[1] + time_steps[2]));
+      alpha[1] = -time_steps[0] * time_steps[0] * (time_steps[0] + time_steps[1] + time_steps[2]) /
+                 ((time_steps[0] + time_steps[1]) * time_steps[1] * time_steps[2]);
+      alpha[2] = +time_steps[0] * time_steps[0] * (time_steps[0] + time_steps[1]) /
+                 ((time_steps[0] + time_steps[1] + time_steps[2]) *
+                  (time_steps[1] + time_steps[2]) * time_steps[2]);
+      break;
+    }
+    case 4:
+    {
+      gamma0 = 1.0 + time_steps[0] / (time_steps[0] + time_steps[1]) +
+               time_steps[0] / (time_steps[0] + time_steps[1] + time_steps[2]) +
+               time_steps[0] / (time_steps[0] + time_steps[1] + time_steps[2] + time_steps[3]);
+      alpha[0] = (time_steps[0] + time_steps[1]) * (time_steps[0] + time_steps[1] + time_steps[2]) *
+                 (time_steps[0] + time_steps[1] + time_steps[2] + time_steps[3]) /
+                 (time_steps[1] * (time_steps[1] + time_steps[2]) *
+                  (time_steps[1] + time_steps[2] + time_steps[3]));
 
-    alpha[0] = 1.0;
-  }
-  else if(current_order == 2) // BDF 2
-  {
-    gamma0 = (2 * time_steps[0] + time_steps[1]) / (time_steps[0] + time_steps[1]);
+      alpha[1] = -time_steps[0] * time_steps[0] * (time_steps[0] + time_steps[1] + time_steps[2]) *
+                 (time_steps[0] + time_steps[1] + time_steps[2] + time_steps[3]) /
+                 ((time_steps[0] + time_steps[1]) * time_steps[1] * time_steps[2] *
+                  (time_steps[2] + time_steps[3]));
 
-    alpha[0] = (time_steps[0] + time_steps[1]) / time_steps[1];
-    alpha[1] = -time_steps[0] * time_steps[0] / ((time_steps[0] + time_steps[1]) * time_steps[1]);
-  }
-  else if(current_order == 3) // BDF 3
-  {
-    gamma0 = 1.0 + time_steps[0] / (time_steps[0] + time_steps[1]) +
-             time_steps[0] / (time_steps[0] + time_steps[1] + time_steps[2]);
+      alpha[2] = time_steps[0] * time_steps[0] * (time_steps[0] + time_steps[1]) *
+                 (time_steps[0] + time_steps[1] + time_steps[2] + time_steps[3]) /
+                 ((time_steps[0] + time_steps[1] + time_steps[2]) *
+                  (time_steps[1] + time_steps[2]) * time_steps[2] * time_steps[3]);
 
-    alpha[0] = +(time_steps[0] + time_steps[1]) * (time_steps[0] + time_steps[1] + time_steps[2]) /
-               (time_steps[1] * (time_steps[1] + time_steps[2]));
-    alpha[1] = -time_steps[0] * time_steps[0] * (time_steps[0] + time_steps[1] + time_steps[2]) /
-               ((time_steps[0] + time_steps[1]) * time_steps[1] * time_steps[2]);
-    alpha[2] = +time_steps[0] * time_steps[0] * (time_steps[0] + time_steps[1]) /
-               ((time_steps[0] + time_steps[1] + time_steps[2]) * (time_steps[1] + time_steps[2]) *
-                time_steps[2]);
-  }
-  else if(current_order == 4) // BDF 4
-  {
-    gamma0 = 1.0 + time_steps[0] / (time_steps[0] + time_steps[1]) +
-             time_steps[0] / (time_steps[0] + time_steps[1] + time_steps[2]) +
-             time_steps[0] / (time_steps[0] + time_steps[1] + time_steps[2] + time_steps[3]);
-
-    alpha[0] = (time_steps[0] + time_steps[1]) * (time_steps[0] + time_steps[1] + time_steps[2]) *
-               (time_steps[0] + time_steps[1] + time_steps[2] + time_steps[3]) /
-               (time_steps[1] * (time_steps[1] + time_steps[2]) *
-                (time_steps[1] + time_steps[2] + time_steps[3]));
-
-    alpha[1] = -time_steps[0] * time_steps[0] * (time_steps[0] + time_steps[1] + time_steps[2]) *
-               (time_steps[0] + time_steps[1] + time_steps[2] + time_steps[3]) /
-               ((time_steps[0] + time_steps[1]) * time_steps[1] * time_steps[2] *
-                (time_steps[2] + time_steps[3]));
-
-    alpha[2] = time_steps[0] * time_steps[0] * (time_steps[0] + time_steps[1]) *
-               (time_steps[0] + time_steps[1] + time_steps[2] + time_steps[3]) /
-               ((time_steps[0] + time_steps[1] + time_steps[2]) * (time_steps[1] + time_steps[2]) *
-                time_steps[2] * time_steps[3]);
-
-    alpha[3] = -time_steps[0] * time_steps[0] * (time_steps[0] + time_steps[1]) *
-               (time_steps[0] + time_steps[1] + time_steps[2]) /
-               ((time_steps[0] + time_steps[1] + time_steps[2] + time_steps[3]) *
-                (time_steps[1] + time_steps[2] + time_steps[3]) * (time_steps[2] + time_steps[3]) *
-                time_steps[3]);
+      alpha[3] = -time_steps[0] * time_steps[0] * (time_steps[0] + time_steps[1]) *
+                 (time_steps[0] + time_steps[1] + time_steps[2]) /
+                 ((time_steps[0] + time_steps[1] + time_steps[2] + time_steps[3]) *
+                  (time_steps[1] + time_steps[2] + time_steps[3]) *
+                  (time_steps[2] + time_steps[3]) * time_steps[3]);
+      break;
+    }
+    default:
+      AssertThrow(false, dealii::ExcMessage("Should not arrive here."));
   }
 
-  /*
-   * Fill the rest of the vectors with zeros since current_order might be
-   * smaller than order, e.g. when using start_with_low_order = true
-   */
-  for(unsigned int i = current_order; i < order; ++i)
-  {
-    alpha[i] = 0.0;
-  }
+  disable_high_order_constants(current_order, alpha);
 }
 
 void
