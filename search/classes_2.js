@@ -18,8 +18,9 @@ var searchData=
   ['convectiveoperator_15',['ConvectiveOperator',['../classExaDG_1_1CompNS_1_1ConvectiveOperator.html',1,'ExaDG::CompNS::ConvectiveOperator&lt; dim, Number &gt;'],['../classExaDG_1_1ConvDiff_1_1ConvectiveOperator.html',1,'ExaDG::ConvDiff::ConvectiveOperator&lt; dim, Number &gt;'],['../classExaDG_1_1IncNS_1_1ConvectiveOperator.html',1,'ExaDG::IncNS::ConvectiveOperator&lt; dim, Number &gt;']]],
   ['convectiveoperator_3c_20dim_2c_20double_20_3e_16',['ConvectiveOperator&lt; dim, double &gt;',['../classExaDG_1_1IncNS_1_1ConvectiveOperator.html',1,'ExaDG::IncNS']]],
   ['convectiveoperatordata_17',['ConvectiveOperatorData',['../structExaDG_1_1CompNS_1_1ConvectiveOperatorData.html',1,'ExaDG::CompNS::ConvectiveOperatorData&lt; dim &gt;'],['../structExaDG_1_1ConvDiff_1_1ConvectiveOperatorData.html',1,'ExaDG::ConvDiff::ConvectiveOperatorData&lt; dim &gt;'],['../structExaDG_1_1IncNS_1_1ConvectiveOperatorData.html',1,'ExaDG::IncNS::ConvectiveOperatorData&lt; dim &gt;']]],
-  ['couplingbase_18',['CouplingBase',['../classExaDG_1_1preCICE_1_1CouplingBase.html',1,'ExaDG::preCICE']]],
-  ['cubemeshmovementfunctions_19',['CubeMeshMovementFunctions',['../classExaDG_1_1CubeMeshMovementFunctions.html',1,'ExaDG']]],
-  ['curlcompute_20',['CurlCompute',['../structExaDG_1_1IncNS_1_1CurlCompute.html',1,'ExaDG::IncNS']]],
-  ['curlcompute_3c_202_2c_20feeval_20_3e_21',['CurlCompute&lt; 2, FEEval &gt;',['../structExaDG_1_1IncNS_1_1CurlCompute_3_012_00_01FEEval_01_4.html',1,'ExaDG::IncNS']]]
+  ['convert_3c_20t_2c_20typename_20std_3a_3aenable_5fif_3c_20exadg_3a_3autilities_3a_3ais_5fenum_3c_20t_20_3e_28_29_3e_3a_3atype_20_3e_18',['Convert&lt; T, typename std::enable_if&lt; ExaDG::Utilities::is_enum&lt; T &gt;()&gt;::type &gt;',['../structdealii_1_1Patterns_1_1Tools_1_1Convert_3_01T_00_01typename_01std_1_1enable__if_3_01ExaDG_17e2282df0b559ad12488d39de0fb1c19.html',1,'dealii::Patterns::Tools']]],
+  ['couplingbase_19',['CouplingBase',['../classExaDG_1_1preCICE_1_1CouplingBase.html',1,'ExaDG::preCICE']]],
+  ['cubemeshmovementfunctions_20',['CubeMeshMovementFunctions',['../classExaDG_1_1CubeMeshMovementFunctions.html',1,'ExaDG']]],
+  ['curlcompute_21',['CurlCompute',['../structExaDG_1_1IncNS_1_1CurlCompute.html',1,'ExaDG::IncNS']]],
+  ['curlcompute_3c_202_2c_20feeval_20_3e_22',['CurlCompute&lt; 2, FEEval &gt;',['../structExaDG_1_1IncNS_1_1CurlCompute_3_012_00_01FEEval_01_4.html',1,'ExaDG::IncNS']]]
 ];

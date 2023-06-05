@@ -127,14 +127,14 @@ $(function() {
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>                     <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>  dim,</div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>                     <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>  degree)</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>{</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  std::string spatial_discretization = <span class="stringliteral">&quot;DG&quot;</span>;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  SpatialDiscretization spatial_discretization = SpatialDiscretization::Undefined;</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  dealii::ParameterHandler prm;</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  prm.enter_subsection(<span class="stringliteral">&quot;Discretization&quot;</span>);</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  prm.add_parameter(<span class="stringliteral">&quot;SpatialDiscretization&quot;</span>,</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>                    spatial_discretization,</div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>                    <span class="stringliteral">&quot;Spatial discretization (CG vs. DG).&quot;</span>,</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>                    dealii::Patterns::Selection(<span class="stringliteral">&quot;CG|DG&quot;</span>),</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>                    Patterns::Enum&lt;SpatialDiscretization&gt;(),</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>                    <span class="keyword">true</span>);</div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  prm.leave_subsection();</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
@@ -142,9 +142,9 @@ $(function() {
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> dofs_per_element = 1;</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="keywordflow">if</span>(spatial_discretization == <span class="stringliteral">&quot;CG&quot;</span>)</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="keywordflow">if</span>(spatial_discretization == SpatialDiscretization::CG)</div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>    dofs_per_element = dealii::Utilities::pow(degree, dim);</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keywordflow">else</span> <span class="keywordflow">if</span>(spatial_discretization == <span class="stringliteral">&quot;DG&quot;</span>)</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keywordflow">else</span> <span class="keywordflow">if</span>(spatial_discretization == SpatialDiscretization::DG)</div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    dofs_per_element = dealii::Utilities::pow(degree + 1, dim);</div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  <span class="keywordflow">else</span></div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    AssertThrow(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;Not implemented.&quot;</span>));</div>
