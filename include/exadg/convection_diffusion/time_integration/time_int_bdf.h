@@ -46,10 +46,10 @@ class PostProcessorInterface;
 namespace ConvDiff
 {
 template<int dim, typename Number>
-class TimeIntBDF : public TimeIntBDFBase<Number>
+class TimeIntBDF : public TimeIntBDFBase
 {
 public:
-  typedef typename TimeIntBDFBase<Number>::VectorType VectorType;
+  using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
 
   TimeIntBDF(std::shared_ptr<Operator<dim, Number>>          operator_in,
              std::shared_ptr<HelpersALE<Number> const>       helpers_ale_in,
