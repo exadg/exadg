@@ -111,11 +111,11 @@ $(function() {
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  add_parameters(dealii::ParameterHandler &amp; prm, std::string <span class="keyword">const</span> &amp; subsection_name = <span class="stringliteral">&quot;Grid&quot;</span>)</div>
 <div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  {</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>    <span class="comment">// clang-format off</span></div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>    prm.enter_subsection(subsection_name);</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>    prm.enter_subsection(subsection_name);</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>    {</div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>      prm.add_parameter(<span class="stringliteral">&quot;FileName&quot;</span>, file_name, <span class="stringliteral">&quot;External input grid file.&quot;</span>);</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>    prm.leave_subsection();</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    <span class="comment">// clang-format on</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>    }</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    prm.leave_subsection();</div>
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  }</div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  std::string file_name;</div>
