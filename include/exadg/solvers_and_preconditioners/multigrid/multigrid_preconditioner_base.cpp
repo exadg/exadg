@@ -657,7 +657,7 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_smoothers()
 {
-  this->smoothers.resize(0, get_number_of_levels() - 1);
+  this->smoothers.resize(1, get_number_of_levels() - 1);
 
   for_all_smoothing_levels(
     [&](unsigned int const level) { this->initialize_smoother(*this->operators[level], level); });
@@ -840,7 +840,7 @@ MultigridPreconditionerBase<dim, Number>::update_smoother(unsigned int level)
 
 template<int dim, typename Number>
 void
-MultigridPreconditionerBase<dim, Number>::update_coarse_solver(bool const operator_is_singular)
+MultigridPreconditionerBase<dim, Number>::update_coarse_solver()
 {
   switch(data.coarse_problem.solver)
   {
@@ -851,9 +851,10 @@ MultigridPreconditionerBase<dim, Number>::update_coarse_solver(bool const operat
         dealii::ExcMessage(
           "Only PointJacobi preconditioner implemented for Chebyshev coarse grid solver."));
 
-      initialize_chebyshev_smoother_coarse_grid(*operators[0],
-                                                data.coarse_problem.solver_data,
-                                                operator_is_singular);
+      std::shared_ptr<MGCoarseChebyshev<Operator>> coarse_solver =
+        std::dynamic_pointer_cast<MGCoarseChebyshev<Operator>>(coarse_grid_solver);
+      coarse_solver->update();
+
       break;
     }
     case MultigridCoarseGridSolver::CG:
@@ -898,14 +899,10 @@ MultigridPreconditionerBase<dim, Number>::initialize_coarse_solver(bool const op
         dealii::ExcMessage(
           "Only PointJacobi preconditioner implemented for Chebyshev coarse grid solver."));
 
-      smoothers[0] = std::make_shared<
-        ChebyshevSmoother<Operator, VectorTypeMG, dealii::DiagonalMatrix<VectorTypeMG>>>();
-      initialize_chebyshev_smoother_coarse_grid(coarse_operator,
-                                                data.coarse_problem.solver_data,
-                                                operator_is_singular);
-
       coarse_grid_solver =
-        std::make_shared<MGCoarseChebyshev<VectorTypeMG, Smoother>>(smoothers[0]);
+        std::make_shared<MGCoarseChebyshev<Operator>>(coarse_operator,
+                                                      data.coarse_problem.solver_data,
+                                                      operator_is_singular);
       break;
     }
     case MultigridCoarseGridSolver::CG:
@@ -1050,49 +1047,6 @@ MultigridPreconditionerBase<dim, Number>::initialize_chebyshev_smoother_block_ja
   std::shared_ptr<Chebyshev> smoother = std::dynamic_pointer_cast<Chebyshev>(smoothers[level]);
   smoother->initialize(mg_operator, smoother_data);
 }
-
-template<int dim, typename Number>
-void
-MultigridPreconditionerBase<dim, Number>::initialize_chebyshev_smoother_coarse_grid(
-  Operator &         coarse_operator,
-  SolverData const & solver_data,
-  bool const         operator_is_singular)
-{
-  // use Chebyshev smoother of high degree to solve the coarse grid problem approximately
-  typedef ChebyshevSmoother<Operator, VectorTypeMG, dealii::DiagonalMatrix<VectorTypeMG>> Chebyshev;
-  typename Chebyshev::AdditionalData smoother_data;
-
-  std::shared_ptr<dealii::DiagonalMatrix<VectorTypeMG>> diagonal_matrix =
-    std::make_shared<dealii::DiagonalMatrix<VectorTypeMG>>();
-  VectorTypeMG & diagonal_vector = diagonal_matrix->get_vector();
-
-  coarse_operator.initialize_dof_vector(diagonal_vector);
-  coarse_operator.calculate_inverse_diagonal(diagonal_vector);
-
-  std::pair<double, double> eigenvalues =
-    compute_eigenvalues(coarse_operator, diagonal_vector, operator_is_singular);
-
-  double const factor = 1.1;
-
-  smoother_data.preconditioner  = diagonal_matrix;
-  smoother_data.max_eigenvalue  = factor * eigenvalues.second;
-  smoother_data.smoothing_range = eigenvalues.second / eigenvalues.first * factor;
-
-  double sigma = (1. - std::sqrt(1. / smoother_data.smoothing_range)) /
-                 (1. + std::sqrt(1. / smoother_data.smoothing_range));
-
-  // calculate/estimate the number of Chebyshev iterations needed to reach a specified relative
-  // solver tolerance
-  double const eps = solver_data.rel_tol;
-
-  smoother_data.degree = static_cast<unsigned int>(
-    std::log(1. / eps + std::sqrt(1. / eps / eps - 1.)) / std::log(1. / sigma));
-  smoother_data.eig_cg_n_iterations = 0;
-
-  std::shared_ptr<Chebyshev> smoother = std::dynamic_pointer_cast<Chebyshev>(smoothers[0]);
-  smoother->initialize(coarse_operator, smoother_data);
-}
-
 
 template class MultigridPreconditionerBase<2, float>;
 template class MultigridPreconditionerBase<2, double>;

@@ -79,9 +79,7 @@ MultigridPreconditioner<dim, Number, n_components>::update()
     // Once the operators are updated, the update of smoothers and the coarse grid solver is generic
     // functionality implemented in the base class.
     this->update_smoothers();
-
-    // singular operators do not occur for this operator
-    this->update_coarse_solver(data.operator_is_singular);
+    this->update_coarse_solver();
   }
 }
 
