@@ -26,7 +26,7 @@
 #include <deal.II/base/exceptions.h>
 
 // ExaDG
-#include <exadg/time_integration/extrapolation_scheme.h>
+#include <exadg/time_integration/extrapolation_constants.h>
 
 namespace ExaDG
 {
