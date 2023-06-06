@@ -124,9 +124,7 @@ MultigridPreconditioner<dim, Number>::update()
   if(nonlinear or data.unsteady)
   {
     this->update_smoothers();
-
-    // singular operators do not occur for this operator
-    this->update_coarse_solver(false /* operator_is_singular */);
+    this->update_coarse_solver();
   }
 }
 

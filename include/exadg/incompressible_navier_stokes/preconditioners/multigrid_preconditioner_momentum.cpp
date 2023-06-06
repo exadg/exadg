@@ -150,12 +150,14 @@ MultigridPreconditioner<dim, Number>::update()
       });
   }
 
-  // Once the operators are updated, the update of smoothers and the coarse grid solver is generic
-  // functionality implemented in the base class.
-  this->update_smoothers();
-
-  // singular operators do not occur for this operator
-  this->update_coarse_solver(false /* operator_is_singular */);
+  // In case the operators have been updated, we also need to update the smoothers and the coarse
+  // grid solver. This is generic functionality implemented in the base class.
+  if(mesh_is_moving or data.unsteady_problem or
+     (mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion))
+  {
+    this->update_smoothers();
+    this->update_coarse_solver();
+  }
 }
 
 template<int dim, typename Number>

@@ -156,15 +156,19 @@ protected:
   void
   update_matrix_free_objects();
 
-  /*
-   * This function updates the smoother for all multigrid levels.
+  /**
+   * This function updates the smoother for all smoothing levels.
    * The prerequisite to call this function is that the multigrid operators have been updated.
    */
   void
   update_smoothers();
 
-  virtual void
-  update_coarse_solver(bool const operator_is_singular);
+  /**
+   * This function updates the coarse-grid solver.
+   * The prerequisite to call this function is that the coarse-grid operator has been updated.
+   */
+  void
+  update_coarse_solver();
 
   /*
    * Dof-handlers and constraints.
@@ -320,11 +324,6 @@ private:
    */
   void
   initialize_coarse_solver(bool const operator_is_singular);
-
-  void
-  initialize_chebyshev_smoother_coarse_grid(Operator &         matrix,
-                                            SolverData const & solver_data,
-                                            bool const         operator_is_singular);
 
   /*
    * Initialization of actual multigrid algorithm.

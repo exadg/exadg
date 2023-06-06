@@ -163,7 +163,7 @@ MultigridPreconditioner<dim, Number>::update()
   // Once the operators are updated, the update of smoothers and the coarse grid solver is generic
   // functionality implemented in the base class.
   this->update_smoothers();
-  this->update_coarse_solver(data.operator_is_singular);
+  this->update_coarse_solver();
 }
 
 template<int dim, typename Number>
