@@ -60,7 +60,7 @@ public:
 
   virtual ~MultigridPreconditioner(){};
 
-  /*
+  /**
    *  This function initializes the multigrid preconditioner.
    */
   void
@@ -75,71 +75,30 @@ public:
              Map_DBC const &                             dirichlet_bc,
              Map_DBC_ComponentMask const &               dirichlet_bc_component_mask);
 
-  /*
+  /**
    *  This function updates the multigrid preconditioner.
    */
   void
-  update() override;
+  update() final;
 
 private:
   void
   fill_matrix_free_data(MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
                         unsigned int const                     level,
-                        unsigned int const                     h_level) override;
+                        unsigned int const                     h_level) final;
 
   std::shared_ptr<MGOperatorBase>
-  initialize_operator(unsigned int const level) override;
+  initialize_operator(unsigned int const level) final;
 
   void
   initialize_dof_handler_and_constraints(
     bool const                         operator_is_singular,
     dealii::FiniteElement<dim> const & fe,
     Map_DBC const &                    dirichlet_bc,
-    Map_DBC_ComponentMask const &      dirichlet_bc_component_mask) override;
+    Map_DBC_ComponentMask const &      dirichlet_bc_component_mask) final;
 
   void
-  initialize_transfer_operators() override;
-
-  /*
-   * This function updates the velocity field for all levels.
-   * In order to update mg_matrices[level] this function has to be called.
-   */
-  void
-  set_velocity(VectorTypeMG const & velocity);
-
-  /*
-   * This function performs the updates that are necessary after the grid has been moved
-   * and after matrix_free has been updated.
-   */
-  void
-  update_operators_after_grid_motion();
-
-  /*
-   *  This function sets the current the time.
-   *  In order to update operators[level] this function has to be called.
-   *  (This is due to the fact that the velocity field of the convective term
-   *  is a function of the time.)
-   */
-  void
-  set_time(double const & time);
-
-  /*
-   *  This function updates the scaling factor of the mass operator.
-   *  In order to update operators[level] this function has to be called.
-   *  This is necessary if adaptive time stepping is used where
-   *  the scaling factor of the derivative term is variable.
-   */
-  void
-  set_scaling_factor_mass_operator(double const & scaling_factor);
-
-  /*
-   *  This function updates the smoother for all levels of the multigrid
-   *  algorithm.
-   *  The prerequisite to call this function is that operators[level] have
-   *  been updated.
-   */
-  void
-  update_smoothers();
+  initialize_transfer_operators() final;
 
   std::shared_ptr<PDEOperatorMG>
   get_operator(unsigned int level) const;

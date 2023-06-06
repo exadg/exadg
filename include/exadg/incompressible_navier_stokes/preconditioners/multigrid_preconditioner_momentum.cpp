@@ -94,19 +94,29 @@ template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::update()
 {
+  // Update matrix-free objects and operators
   if(mesh_is_moving)
   {
     this->initialize_mapping();
 
-    this->update_matrix_free();
+    this->update_matrix_free_objects();
 
-    update_operators_after_grid_motion();
+    this->for_all_levels(
+      [&](unsigned int const level) { this->get_operator(level)->update_after_grid_motion(); });
   }
 
   if(data.unsteady_problem)
   {
-    set_time(pde_operator->get_time());
-    set_scaling_factor_mass_operator(pde_operator->get_scaling_factor_mass_operator());
+    this->for_all_levels([&](unsigned int const level) {
+      // The operator also depends on the time. This is due to the fact that the linearized
+      // convective term does not only depend on the linearized velocity field but also on Dirichlet
+      // boundary data which itself depends on the current time.
+      this->get_operator(level)->set_time(pde_operator->get_time());
+      // In case of adaptive time stepping, the scaling factor of the time derivative term changes
+      // over time.
+      this->get_operator(level)->set_scaling_factor_mass_operator(
+        pde_operator->get_scaling_factor_mass_operator());
+    });
   }
 
   if(mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
@@ -126,12 +136,22 @@ MultigridPreconditioner<dim, Number>::update()
       vector_multigrid_type_ptr  = &vector_multigrid_type_copy;
     }
 
-    set_vector_linearization(*vector_multigrid_type_ptr);
+    // copy velocity to finest level
+    this->get_operator(this->get_number_of_levels() - 1)
+      ->set_velocity_copy(*vector_multigrid_type_ptr);
+
+    // interpolate velocity from fine to coarse level
+    this->transfer_from_fine_to_coarse_levels(
+      [&](unsigned int const fine_level, unsigned int const coarse_level) {
+        auto & vector_fine_level   = this->get_operator(fine_level)->get_velocity();
+        auto   vector_coarse_level = this->get_operator(coarse_level)->get_velocity();
+        this->transfers->interpolate(fine_level, vector_coarse_level, vector_fine_level);
+        this->get_operator(coarse_level)->set_velocity_copy(vector_coarse_level);
+      });
   }
 
   // Once the operators are updated, the update of smoothers and the coarse grid solver is generic
-  // functionality implemented in the base class
-
+  // functionality implemented in the base class.
   this->update_smoothers();
 
   // singular operators do not occur for this operator
@@ -208,58 +228,6 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
   std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator_level));
 
   return mg_operator;
-}
-
-template<int dim, typename Number>
-void
-MultigridPreconditioner<dim, Number>::set_vector_linearization(
-  VectorTypeMG const & vector_linearization)
-{
-  unsigned int const fine_level   = this->get_number_of_levels() - 1;
-  unsigned int const coarse_level = 0;
-
-  // copy velocity to finest level
-  this->get_operator(fine_level)->set_velocity_copy(vector_linearization);
-
-  // interpolate velocity from fine to coarse level
-  for(unsigned int level = fine_level; level > coarse_level; --level)
-  {
-    auto & vector_fine_level   = this->get_operator(level - 0)->get_velocity();
-    auto   vector_coarse_level = this->get_operator(level - 1)->get_velocity();
-    this->transfers->interpolate(level, vector_coarse_level, vector_fine_level);
-    this->get_operator(level - 1)->set_velocity_copy(vector_coarse_level);
-  }
-}
-
-template<int dim, typename Number>
-void
-MultigridPreconditioner<dim, Number>::set_time(double const & time)
-{
-  for(unsigned int level = 0; level <= this->get_number_of_levels() - 1; ++level)
-  {
-    get_operator(level)->set_time(time);
-  }
-}
-
-template<int dim, typename Number>
-void
-MultigridPreconditioner<dim, Number>::update_operators_after_grid_motion()
-{
-  for(unsigned int level = 0; level <= this->get_number_of_levels() - 1; ++level)
-  {
-    get_operator(level)->update_after_grid_motion();
-  }
-}
-
-template<int dim, typename Number>
-void
-MultigridPreconditioner<dim, Number>::set_scaling_factor_mass_operator(
-  double const & scaling_factor_mass)
-{
-  for(unsigned int level = 0; level <= this->get_number_of_levels() - 1; ++level)
-  {
-    get_operator(level)->set_scaling_factor_mass_operator(scaling_factor_mass);
-  }
 }
 
 template<int dim, typename Number>

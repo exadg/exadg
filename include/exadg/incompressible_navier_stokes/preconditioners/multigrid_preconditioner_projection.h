@@ -72,22 +72,16 @@ public:
    * This function updates the multigrid preconditioner.
    */
   void
-  update() override;
+  update() final;
 
 private:
   void
   fill_matrix_free_data(MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
                         unsigned int const                     level,
-                        unsigned int const                     h_level) override;
+                        unsigned int const                     h_level) final;
 
   std::shared_ptr<MGOperatorBase>
-  initialize_operator(unsigned int const level) override;
-
-  /*
-   * This function updates the multigrid operators for all levels
-   */
-  void
-  update_operators();
+  initialize_operator(unsigned int const level) final;
 
   std::shared_ptr<PDEOperatorMG>
   get_operator(unsigned int level);

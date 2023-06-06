@@ -73,47 +73,16 @@ public:
    * This function updates the multigrid preconditioner.
    */
   void
-  update() override;
+  update() final;
 
 private:
   void
   fill_matrix_free_data(MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
                         unsigned int const                     level,
-                        unsigned int const                     h_level) override;
+                        unsigned int const                     h_level) final;
 
   std::shared_ptr<MGOperatorBase>
-  initialize_operator(unsigned int const level) override;
-
-  /*
-   * This function updates vector_linearization.
-   * In order to update operators[level] this function has to be called.
-   */
-  void
-  set_vector_linearization(VectorTypeMG const & vector_linearization);
-
-  /*
-   * This function updates the evaluation time. In order to update the operators this function
-   * has to be called. (This is due to the fact that the linearized convective term does not only
-   * depend on the linearized velocity field but also on Dirichlet boundary data which itself
-   * depends on the current time.)
-   */
-  void
-  set_time(double const & time);
-
-  /*
-   * This function performs the updates that are necessary after the grid has been moved
-   * and after matrix_free has been updated.
-   */
-  void
-  update_operators_after_grid_motion();
-
-  /*
-   * This function updates scaling_factor_time_derivative_term. In order to update the
-   * operators this function has to be called. This is necessary if adaptive time stepping
-   * is used where the scaling factor of the mass operator is variable.
-   */
-  void
-  set_scaling_factor_mass_operator(double const & scaling_factor_mass);
+  initialize_operator(unsigned int const level) final;
 
   std::shared_ptr<PDEOperatorMG>
   get_operator(unsigned int level);
