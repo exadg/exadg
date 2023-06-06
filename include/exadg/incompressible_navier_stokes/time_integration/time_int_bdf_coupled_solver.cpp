@@ -176,21 +176,6 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
     solution_np = solution_last_iter;
   }
 
-  // update viscosity model
-  if(this->param.viscosity_is_variable())
-  {
-    dealii::Timer timer_viscosity_update;
-    timer_viscosity_update.restart();
-
-    pde_operator->update_viscosity(solution_np.block(0));
-
-    if(this->print_solver_info() and not(this->is_test))
-    {
-      this->pcout << std::endl << "Update of variable viscosity:";
-      print_wall_time(this->pcout, timer_viscosity_update.wall_time());
-    }
-  }
-
   // Update divergence and continuity penalty operator in case
   // that these terms are added to the monolithic system of equations.
   if(this->param.apply_penalty_terms_in_postprocessing_step == false)
@@ -241,6 +226,28 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
     if(this->param.right_hand_side)
       pde_operator->evaluate_add_body_force_term(rhs, this->get_next_time());
 
+    // Add the convective term to the right-hand side of the equations
+    // if the convective term is treated explicitly (additive decomposition):
+    // evaluate convective term and add extrapolation of convective term to the rhs (-> minus sign!)
+    if(this->param.convective_problem() and
+       this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+    {
+      if(this->param.ale_formulation)
+      {
+        // evaluate convective term for all previous times since the mesh has been updated
+        for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
+        {
+          // in a general setting, we only know the boundary conditions at time t_{n+1}
+          pde_operator->evaluate_convective_term(this->vec_convective_term[i],
+                                                 solution[i].block(0),
+                                                 this->get_next_time());
+        }
+      }
+
+      for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
+        rhs.add(-this->extra.get_beta(i), this->vec_convective_term[i]);
+    }
+
     // Newton solver
     auto const iter =
       pde_operator->solve_nonlinear_problem(solution_np,
@@ -265,6 +272,21 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
   }
   else // linear problem
   {
+    // explicit viscosity update
+    if(this->param.viscosity_is_variable())
+    {
+      dealii::Timer timer_viscosity_update;
+      timer_viscosity_update.restart();
+
+      pde_operator->update_viscosity(solution_np.block(0));
+
+      if(this->print_solver_info() and not(this->is_test))
+      {
+        this->pcout << std::endl << "Update of variable viscosity:";
+        print_wall_time(this->pcout, timer_viscosity_update.wall_time());
+      }
+    }
+
     BlockVectorType rhs_vector;
     pde_operator->initialize_block_vector_velocity_pressure(rhs_vector);
 

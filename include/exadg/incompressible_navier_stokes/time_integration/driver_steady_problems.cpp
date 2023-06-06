@@ -141,21 +141,6 @@ DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_pro
       pde_operator->update_continuity_penalty_operator(solution.block(0));
   }
 
-  // update viscosity
-  if(this->param.viscosity_is_variable())
-  {
-    dealii::Timer timer_viscosity_update;
-    timer_viscosity_update.restart();
-
-    pde_operator->update_viscosity(solution.block(0));
-
-    if(print_solver_info(time, unsteady_problem) and not(this->is_test))
-    {
-      this->pcout << std::endl << "Update of variable viscosity:";
-      print_wall_time(this->pcout, timer_viscosity_update.wall_time());
-    }
-  }
-
   if(this->param.nonlinear_problem_has_to_be_solved())
   {
     VectorType rhs(solution.block(0));
@@ -163,7 +148,7 @@ DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_pro
     if(this->param.right_hand_side)
       pde_operator->evaluate_add_body_force_term(rhs, time);
 
-    // Newton solver
+    // Newton solver with viscosity update
     auto const iter = pde_operator->solve_nonlinear_problem(
       solution, rhs, this->param.update_preconditioner_coupled, time);
 
@@ -176,6 +161,21 @@ DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_pro
   }
   else // linear problem
   {
+    // explicit viscosity update
+    if(this->param.viscosity_is_variable())
+    {
+      dealii::Timer timer_viscosity_update;
+      timer_viscosity_update.restart();
+
+      pde_operator->update_viscosity(solution.block(0));
+
+      if(print_solver_info(time, unsteady_problem) and not(this->is_test))
+      {
+        this->pcout << std::endl << "Update of variable viscosity:";
+        print_wall_time(this->pcout, timer_viscosity_update.wall_time());
+      }
+    }
+
     // calculate rhs vector
     pde_operator->rhs_stokes_problem(rhs_vector, time);
 
