@@ -21,7 +21,7 @@
 
 #include <iostream>
 
-#include <exadg/time_integration/extrapolation_scheme.h>
+#include <exadg/time_integration/extrapolation_constants.h>
 
 // Check extrapolation constants
 
