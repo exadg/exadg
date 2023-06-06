@@ -24,7 +24,7 @@
 
 // ExaDG
 #include <exadg/time_integration/bdf_constants.h>
-#include <exadg/time_integration/extrapolation_scheme.h>
+#include <exadg/time_integration/extrapolation_constants.h>
 #include <exadg/time_integration/time_int_base.h>
 
 namespace ExaDG
