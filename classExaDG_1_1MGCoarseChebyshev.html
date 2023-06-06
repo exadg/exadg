@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.7"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::MGCoarseChebyshev&lt; Vector, InverseOperator &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::MGCoarseChebyshev&lt; Operator &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -74,36 +74,45 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="classExaDG_1_1MGCoarseChebyshev-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::MGCoarseChebyshev&lt; Vector, InverseOperator &gt; Class Template Reference</div></div>
+  <div class="headertitle"><div class="title">ExaDG::MGCoarseChebyshev&lt; Operator &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <div class="dynheader">
-Inheritance diagram for ExaDG::MGCoarseChebyshev&lt; Vector, InverseOperator &gt;:</div>
+Inheritance diagram for ExaDG::MGCoarseChebyshev&lt; Operator &gt;:</div>
 <div class="dyncontent">
  <div class="center">
-  <img src="classExaDG_1_1MGCoarseChebyshev.png" usemap="#ExaDG::MGCoarseChebyshev_3C_20Vector_2C_20InverseOperator_20_3E_map" alt=""/>
-  <map id="ExaDG::MGCoarseChebyshev_3C_20Vector_2C_20InverseOperator_20_3E_map" name="ExaDG::MGCoarseChebyshev_3C_20Vector_2C_20InverseOperator_20_3E_map">
-<area href="classdealii_1_1MGCoarseGridBase.html" alt="dealii::MGCoarseGridBase&lt; Vector &gt;" shape="rect" coords="0,0,346,24"/>
+  <img src="classExaDG_1_1MGCoarseChebyshev.png" usemap="#ExaDG::MGCoarseChebyshev_3C_20Operator_20_3E_map" alt=""/>
+  <map id="ExaDG::MGCoarseChebyshev_3C_20Operator_20_3E_map" name="ExaDG::MGCoarseChebyshev_3C_20Operator_20_3E_map">
+<area href="classdealii_1_1MGCoarseGridBase.html" alt="dealii::MGCoarseGridBase&lt; dealii::LinearAlgebra::distributed::Vector&lt; Operator::value_type &gt; &gt;" shape="rect" coords="0,0,553,24"/>
   </map>
 </div></div>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a09b47cd18d475bcfaacf01d34da94454"><td class="memItemLeft" align="right" valign="top"><a id="a09b47cd18d475bcfaacf01d34da94454" name="a09b47cd18d475bcfaacf01d34da94454"></a>
+typedef Operator::value_type&#160;</td><td class="memItemRight" valign="bottom"><b>MultigridNumber</b></td></tr>
+<tr class="separator:a09b47cd18d475bcfaacf01d34da94454"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9bc4b10ef0e7e0ee66e7a4b2dddb4d90"><td class="memItemLeft" align="right" valign="top"><a id="a9bc4b10ef0e7e0ee66e7a4b2dddb4d90" name="a9bc4b10ef0e7e0ee66e7a4b2dddb4d90"></a>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; MultigridNumber &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<tr class="separator:a9bc4b10ef0e7e0ee66e7a4b2dddb4d90"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a66d94c78e9727005de97be16ff89be62"><td class="memItemLeft" align="right" valign="top"><a id="a66d94c78e9727005de97be16ff89be62" name="a66d94c78e9727005de97be16ff89be62"></a>
+typedef <a class="el" href="classExaDG_1_1ChebyshevSmoother.html">ChebyshevSmoother</a>&lt; Operator, VectorType, dealii::DiagonalMatrix&lt; VectorType &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Chebyshev</b></td></tr>
+<tr class="separator:a66d94c78e9727005de97be16ff89be62"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aa6a02b934fbdf928a50ebb2ca2075529"><td class="memItemLeft" align="right" valign="top"><a id="aa6a02b934fbdf928a50ebb2ca2075529" name="aa6a02b934fbdf928a50ebb2ca2075529"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MGCoarseChebyshev</b> (std::shared_ptr&lt; InverseOperator const &gt; inverse)</td></tr>
-<tr class="separator:aa6a02b934fbdf928a50ebb2ca2075529"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a694492d71d533e6148d2f0afdfaa3d44"><td class="memItemLeft" align="right" valign="top"><a id="a694492d71d533e6148d2f0afdfaa3d44" name="a694492d71d533e6148d2f0afdfaa3d44"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>operator()</b> (unsigned int const level, Vector &amp;dst, const Vector &amp;src) const final</td></tr>
-<tr class="separator:a694492d71d533e6148d2f0afdfaa3d44"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:a1e5fe19a099fd85c51ed0d22b5eff939"><td class="memItemLeft" align="right" valign="top"><a id="a1e5fe19a099fd85c51ed0d22b5eff939" name="a1e5fe19a099fd85c51ed0d22b5eff939"></a>
-std::shared_ptr&lt; InverseOperator const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>inverse_operator</b></td></tr>
-<tr class="separator:a1e5fe19a099fd85c51ed0d22b5eff939"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaeb0aa3cd549332e7336cccebc071476"><td class="memItemLeft" align="right" valign="top"><a id="aaeb0aa3cd549332e7336cccebc071476" name="aaeb0aa3cd549332e7336cccebc071476"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MGCoarseChebyshev</b> (Operator const &amp;coarse_operator_in, <a class="el" href="structExaDG_1_1SolverData.html">SolverData</a> const &amp;solver_data_in, bool const operator_is_singular_in)</td></tr>
+<tr class="separator:aaeb0aa3cd549332e7336cccebc071476"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf8a425865f2cad0f9200febfb876170"><td class="memItemLeft" align="right" valign="top"><a id="adf8a425865f2cad0f9200febfb876170" name="adf8a425865f2cad0f9200febfb876170"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>update</b> ()</td></tr>
+<tr class="separator:adf8a425865f2cad0f9200febfb876170"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7f07f7f7dde4c2da266bd4d4db86f1a8"><td class="memItemLeft" align="right" valign="top"><a id="a7f07f7f7dde4c2da266bd4d4db86f1a8" name="a7f07f7f7dde4c2da266bd4d4db86f1a8"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>operator()</b> (unsigned int const level, VectorType &amp;dst, const VectorType &amp;src) const final</td></tr>
+<tr class="separator:a7f07f7f7dde4c2da266bd4d4db86f1a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/solvers_and_preconditioners/multigrid/<a class="el" href="coarse__grid__solvers_8h_source.html">coarse_grid_solvers.h</a></li>
