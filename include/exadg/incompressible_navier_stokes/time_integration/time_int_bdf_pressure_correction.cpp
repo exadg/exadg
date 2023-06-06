@@ -355,7 +355,7 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
   /*
    *  explicit variable viscosity update executed prior to calculation of rhs_momentum
    */
-  if(this->param.viscosity_is_variable() and not(this->param.nonlinear_problem_has_to_be_solved()))
+  if(this->param.viscosity_is_variable() and not this->param.viscous_term_is_nonlinear())
   {
     dealii::Timer timer_viscosity_update;
     timer_viscosity_update.restart();
@@ -368,7 +368,6 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
       print_wall_time(this->pcout, timer_viscosity_update.wall_time());
     }
   }
-
 
   /*
    *  Calculate the right-hand side of the linear system of equations

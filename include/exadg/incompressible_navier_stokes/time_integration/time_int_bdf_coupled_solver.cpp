@@ -176,6 +176,21 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
     solution_np = solution_last_iter;
   }
 
+  // explicit viscosity update
+  if(this->param.viscosity_is_variable() and not this->param.viscous_term_is_nonlinear())
+  {
+    dealii::Timer timer_viscosity_update;
+    timer_viscosity_update.restart();
+
+    pde_operator->update_viscosity(solution_np.block(0));
+
+    if(this->print_solver_info() and not(this->is_test))
+    {
+      this->pcout << std::endl << "Update of variable viscosity:";
+      print_wall_time(this->pcout, timer_viscosity_update.wall_time());
+    }
+  }
+
   // Update divergence and continuity penalty operator in case
   // that these terms are added to the monolithic system of equations.
   if(this->param.apply_penalty_terms_in_postprocessing_step == false)
@@ -272,21 +287,6 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
   }
   else // linear problem
   {
-    // explicit viscosity update
-    if(this->param.viscosity_is_variable())
-    {
-      dealii::Timer timer_viscosity_update;
-      timer_viscosity_update.restart();
-
-      pde_operator->update_viscosity(solution_np.block(0));
-
-      if(this->print_solver_info() and not(this->is_test))
-      {
-        this->pcout << std::endl << "Update of variable viscosity:";
-        print_wall_time(this->pcout, timer_viscosity_update.wall_time());
-      }
-    }
-
     BlockVectorType rhs_vector;
     pde_operator->initialize_block_vector_velocity_pressure(rhs_vector);
 
