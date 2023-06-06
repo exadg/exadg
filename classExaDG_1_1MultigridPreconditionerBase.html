@@ -131,8 +131,7 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_smoothe
 <tr class="memitem:a74358c9117ee01847ccc3a368dfadf05"><td class="memItemLeft" align="right" valign="top"><a id="a74358c9117ee01847ccc3a368dfadf05" name="a74358c9117ee01847ccc3a368dfadf05"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (VectorType &amp;dst, VectorType const &amp;src) const=0</td></tr>
 <tr class="separator:a74358c9117ee01847ccc3a368dfadf05"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0a70b943910b95ea3ead0f9f80aa0df4"><td class="memItemLeft" align="right" valign="top"><a id="a0a70b943910b95ea3ead0f9f80aa0df4" name="a0a70b943910b95ea3ead0f9f80aa0df4"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update</b> ()=0</td></tr>
+<tr class="memitem:a0a70b943910b95ea3ead0f9f80aa0df4"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1PreconditionerBase.html#a0a70b943910b95ea3ead0f9f80aa0df4">update</a> ()=0</td></tr>
 <tr class="separator:a0a70b943910b95ea3ead0f9f80aa0df4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abe7ccce9fd4fcea2f022aa64d174ba36"><td class="memItemLeft" align="right" valign="top"><a id="abe7ccce9fd4fcea2f022aa64d174ba36" name="abe7ccce9fd4fcea2f022aa64d174ba36"></a>
 virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_timings</b> () const</td></tr>
@@ -161,18 +160,15 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:ac1313f6ddb5bd31cc89bcdf3a52a9ac8"><td class="memItemLeft" align="right" valign="top"><a id="ac1313f6ddb5bd31cc89bcdf3a52a9ac8" name="ac1313f6ddb5bd31cc89bcdf3a52a9ac8"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_mapping</b> ()</td></tr>
 <tr class="separator:ac1313f6ddb5bd31cc89bcdf3a52a9ac8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:add57813200587f248d9e8ef37bc6ab88"><td class="memItemLeft" align="right" valign="top"><a id="add57813200587f248d9e8ef37bc6ab88" name="add57813200587f248d9e8ef37bc6ab88"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_matrix_free</b> ()</td></tr>
-<tr class="separator:add57813200587f248d9e8ef37bc6ab88"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab6aa45947f97cf9564d2930c136695f8"><td class="memItemLeft" align="right" valign="top"><a id="ab6aa45947f97cf9564d2930c136695f8" name="ab6aa45947f97cf9564d2930c136695f8"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>update_matrix_free</b> ()</td></tr>
-<tr class="separator:ab6aa45947f97cf9564d2930c136695f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acf6198e1e6660fa97dfc5f9276177a1e"><td class="memItemLeft" align="right" valign="top"><a id="acf6198e1e6660fa97dfc5f9276177a1e" name="acf6198e1e6660fa97dfc5f9276177a1e"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_matrix_free_objects</b> ()</td></tr>
+<tr class="separator:acf6198e1e6660fa97dfc5f9276177a1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a65e53c36b73aaee921055cdbb705ea45"><td class="memItemLeft" align="right" valign="top"><a id="a65e53c36b73aaee921055cdbb705ea45" name="a65e53c36b73aaee921055cdbb705ea45"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>update_matrix_free_objects</b> ()</td></tr>
+<tr class="separator:a65e53c36b73aaee921055cdbb705ea45"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0ba9a82ba61f882ce17031d0c178f26d"><td class="memItemLeft" align="right" valign="top"><a id="a0ba9a82ba61f882ce17031d0c178f26d" name="a0ba9a82ba61f882ce17031d0c178f26d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update_smoothers</b> ()</td></tr>
 <tr class="separator:a0ba9a82ba61f882ce17031d0c178f26d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a61a2cbe9523bc345956e3471489086c2"><td class="memItemLeft" align="right" valign="top"><a id="a61a2cbe9523bc345956e3471489086c2" name="a61a2cbe9523bc345956e3471489086c2"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update_smoother</b> (unsigned int level)</td></tr>
-<tr class="separator:a61a2cbe9523bc345956e3471489086c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa44a1aa1231541c02a56da1937f3ff6c"><td class="memItemLeft" align="right" valign="top"><a id="aa44a1aa1231541c02a56da1937f3ff6c" name="aa44a1aa1231541c02a56da1937f3ff6c"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update_coarse_solver</b> (bool const operator_is_singular)</td></tr>
 <tr class="separator:aa44a1aa1231541c02a56da1937f3ff6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -190,6 +186,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>do_initialize_transfe
 <tr class="separator:a957effb03b38bcd1d94ee308e7bb8260"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f9e9e58c3979ba70388c9d4d6198d26"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a6f9e9e58c3979ba70388c9d4d6198d26">get_number_of_levels</a> () const</td></tr>
 <tr class="separator:a6f9e9e58c3979ba70388c9d4d6198d26"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a07b810576315f8daf49f79017bac426d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a07b810576315f8daf49f79017bac426d">for_all_levels</a> (std::function&lt; void(unsigned int const)&gt; const &amp;function_on_level)</td></tr>
+<tr class="separator:a07b810576315f8daf49f79017bac426d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8e2bbec687d7878aff9c14f1ed303270"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a8e2bbec687d7878aff9c14f1ed303270">for_all_smoothing_levels</a> (std::function&lt; void(unsigned int const)&gt; const &amp;function_on_level)</td></tr>
+<tr class="separator:a8e2bbec687d7878aff9c14f1ed303270"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac153fa62e7afab3ad2dabbec78e7e52f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#ac153fa62e7afab3ad2dabbec78e7e52f">transfer_from_fine_to_coarse_levels</a> (std::function&lt; void(unsigned int const, unsigned int const)&gt; const &amp;levelwise_transfer)</td></tr>
+<tr class="separator:ac153fa62e7afab3ad2dabbec78e7e52f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
@@ -222,6 +224,64 @@ std::vector&lt; <a class="el" href="structExaDG_1_1MGLevelInfo.html">MGLevelInfo
 <tr class="separator:a8959ed38f2dd6d87b6bed3b5ffa516b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a07b810576315f8daf49f79017bac426d" name="a07b810576315f8daf49f79017bac426d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a07b810576315f8daf49f79017bac426d">&#9670;&#160;</a></span>for_all_levels()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number &gt;::for_all_levels </td>
+          <td>(</td>
+          <td class="paramtype">std::function&lt; void(unsigned int const)&gt; const &amp;&#160;</td>
+          <td class="paramname"><em>function_on_level</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>This is a generic function allowing to loop over all multigrid levels (including the coarsest level). The operation to be performed on each level is passed as a lambda with argument level. </p>
+
+</div>
+</div>
+<a id="a8e2bbec687d7878aff9c14f1ed303270" name="a8e2bbec687d7878aff9c14f1ed303270"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8e2bbec687d7878aff9c14f1ed303270">&#9670;&#160;</a></span>for_all_smoothing_levels()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number &gt;::for_all_smoothing_levels </td>
+          <td>(</td>
+          <td class="paramtype">std::function&lt; void(unsigned int const)&gt; const &amp;&#160;</td>
+          <td class="paramname"><em>function_on_level</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>This is a generic function allowing to loop over all smoothing levels (excluding the coarsest level). The operation to be performed on each level is passed as a lambda with argument level. </p>
+
+</div>
+</div>
 <a id="a6f9e9e58c3979ba70388c9d4d6198d26" name="a6f9e9e58c3979ba70388c9d4d6198d26"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6f9e9e58c3979ba70388c9d4d6198d26">&#9670;&#160;</a></span>get_number_of_levels()</h2>
 
@@ -271,6 +331,35 @@ template&lt;int dim, typename Number &gt; </div>
 </div><div class="memdoc">
 
 <p>Reimplemented from <a class="el" href="classExaDG_1_1PreconditionerBase.html">ExaDG::PreconditionerBase&lt; Number &gt;</a>.</p>
+
+</div>
+</div>
+<a id="ac153fa62e7afab3ad2dabbec78e7e52f" name="ac153fa62e7afab3ad2dabbec78e7e52f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac153fa62e7afab3ad2dabbec78e7e52f">&#9670;&#160;</a></span>transfer_from_fine_to_coarse_levels()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number &gt;::transfer_from_fine_to_coarse_levels </td>
+          <td>(</td>
+          <td class="paramtype">std::function&lt; void(unsigned int const, unsigned int const)&gt; const &amp;&#160;</td>
+          <td class="paramname"><em>levelwise_transfer</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>This is a generic function allowing to successively transfer information from the fine level to all coarser multigrid levels. The operation to be performed for a transfer between two successive levels is passed as a lambda with fine_level as the first argument and coarse_level as the second argument. </p>
 
 </div>
 </div>
