@@ -657,7 +657,8 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_smoothers()
 {
-  this->smoothers.resize(1, get_number_of_levels() - 1);
+  if(get_number_of_levels() >= 2)
+    this->smoothers.resize(1, get_number_of_levels() - 1);
 
   for_all_smoothing_levels(
     [&](unsigned int const level) { this->initialize_smoother(*this->operators[level], level); });
