@@ -48,6 +48,7 @@ Spatial Discretization:
   Element type:                              Hypercube
   Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -167,6 +168,7 @@ Spatial Discretization:
   Element type:                              Hypercube
   Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -286,6 +288,7 @@ Spatial Discretization:
   Element type:                              Hypercube
   Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -405,6 +408,7 @@ Spatial Discretization:
   Element type:                              Hypercube
   Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -524,6 +528,7 @@ Spatial Discretization:
   Element type:                              Hypercube
   Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -643,6 +648,7 @@ Spatial Discretization:
   Element type:                              Hypercube
   Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -762,6 +768,7 @@ Spatial Discretization:
   Element type:                              Hypercube
   Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -881,6 +888,7 @@ Spatial Discretization:
   Element type:                              Hypercube
   Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -1000,6 +1008,7 @@ Spatial Discretization:
   Element type:                              Hypercube
   Number of global refinements:              1
   Multigrid variant:                         LocalSmoothing
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:

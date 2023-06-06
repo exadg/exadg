@@ -58,6 +58,7 @@ Parameters::Parameters()
 
     // SPATIAL DISCRETIZATION
     grid(GridData()),
+    mapping_degree(1),
     degree(1),
 
     // SOLVER
@@ -191,6 +192,8 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
   pcout << std::endl << "Spatial Discretization:" << std::endl;
 
   grid.print(pcout);
+
+  print_parameter(pcout, "Mapping degree", mapping_degree);
 
   print_parameter(pcout, "Polynomial degree", degree);
 }
