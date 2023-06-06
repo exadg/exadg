@@ -207,17 +207,17 @@ private:
 
 
     // TEMPORAL DISCRETIZATION
-    this->param.solver_type                   = SolverType::Unsteady;
-    this->param.temporal_discretization       = TemporalDiscretization::BDFDualSplittingScheme;
-    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
-    this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
-    this->param.adaptive_time_stepping        = true;
-    this->param.max_velocity                  = max_velocity;
-    this->param.cfl                           = 2.0e-1;
+    this->param.solver_type                     = SolverType::Unsteady;
+    this->param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
+    this->param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
+    this->param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
+    this->param.adaptive_time_stepping          = true;
+    this->param.max_velocity                    = max_velocity;
+    this->param.cfl                             = 2.0e-1;
     this->param.cfl_exponent_fe_degree_velocity = 1.5;
-    this->param.time_step_size                = 1.0e-1;
-    this->param.order_time_integrator         = 2;    // 1; // 2; // 3;
-    this->param.start_with_low_order          = true; // true; // false;
+    this->param.time_step_size                  = 1.0e-1;
+    this->param.order_time_integrator           = 2;    // 1; // 2; // 3;
+    this->param.start_with_low_order            = true; // true; // false;
 
     this->param.convergence_criterion_steady_problem =
       ConvergenceCriterionSteadyProblem::SolutionIncrement; // ResidualSteadyNavierStokes;
