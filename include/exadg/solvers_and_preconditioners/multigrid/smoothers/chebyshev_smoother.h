@@ -64,6 +64,7 @@ public:
     // sets the smoothing range (range of eigenvalues to be smoothed)
     double smoothing_range;
 
+    // degree of Chebyshev smoother
     unsigned int degree;
 
     // number of CG iterations for estimation of eigenvalues
