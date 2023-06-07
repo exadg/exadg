@@ -710,23 +710,6 @@ MultigridPreconditionerBase<dim, Number>::initialize_smoother(Operator &   mg_op
   {
     case MultigridSmoother::Chebyshev:
     {
-      // TODO
-      //      if(data.smoother_data.preconditioner == PreconditionerSmoother::PointJacobi)
-      //      {
-      //        smoothers[level] = std::make_shared<
-      //          ChebyshevSmoother<Operator, VectorTypeMG,
-      //          dealii::DiagonalMatrix<VectorTypeMG>>>();
-      //        initialize_chebyshev_smoother_point_jacobi(mg_operator, level);
-      //      }
-      //      else if(data.smoother_data.preconditioner == PreconditionerSmoother::BlockJacobi)
-      //      {
-      //        smoothers[level] = std::make_shared<
-      //          ChebyshevSmoother<Operator, VectorTypeMG, BlockJacobiPreconditioner<Operator>>>();
-      //        initialize_chebyshev_smoother_block_jacobi(mg_operator, level);
-      //      }
-      //      else
-      //        AssertThrow(false, dealii::ExcNotImplemented());
-
       typedef ChebyshevSmoother<Operator, VectorTypeMG> Chebyshev;
       smoothers[level] = std::make_shared<Chebyshev>();
 
