@@ -710,20 +710,35 @@ MultigridPreconditionerBase<dim, Number>::initialize_smoother(Operator &   mg_op
   {
     case MultigridSmoother::Chebyshev:
     {
-      if(data.smoother_data.preconditioner == PreconditionerSmoother::PointJacobi)
-      {
-        smoothers[level] = std::make_shared<
-          ChebyshevSmoother<Operator, VectorTypeMG, dealii::DiagonalMatrix<VectorTypeMG>>>();
-        initialize_chebyshev_smoother_point_jacobi(mg_operator, level);
-      }
-      else if(data.smoother_data.preconditioner == PreconditionerSmoother::BlockJacobi)
-      {
-        smoothers[level] = std::make_shared<
-          ChebyshevSmoother<Operator, VectorTypeMG, BlockJacobiPreconditioner<Operator>>>();
-        initialize_chebyshev_smoother_block_jacobi(mg_operator, level);
-      }
-      else
-        AssertThrow(false, dealii::ExcNotImplemented());
+      // TODO
+      //      if(data.smoother_data.preconditioner == PreconditionerSmoother::PointJacobi)
+      //      {
+      //        smoothers[level] = std::make_shared<
+      //          ChebyshevSmoother<Operator, VectorTypeMG,
+      //          dealii::DiagonalMatrix<VectorTypeMG>>>();
+      //        initialize_chebyshev_smoother_point_jacobi(mg_operator, level);
+      //      }
+      //      else if(data.smoother_data.preconditioner == PreconditionerSmoother::BlockJacobi)
+      //      {
+      //        smoothers[level] = std::make_shared<
+      //          ChebyshevSmoother<Operator, VectorTypeMG, BlockJacobiPreconditioner<Operator>>>();
+      //        initialize_chebyshev_smoother_block_jacobi(mg_operator, level);
+      //      }
+      //      else
+      //        AssertThrow(false, dealii::ExcNotImplemented());
+
+      typedef ChebyshevSmoother<Operator, VectorTypeMG> Chebyshev;
+      smoothers[level] = std::make_shared<Chebyshev>();
+
+      typename Chebyshev::AdditionalData smoother_data;
+      smoother_data.preconditioner  = data.smoother_data.preconditioner;
+      smoother_data.smoothing_range = data.smoother_data.smoothing_range;
+      smoother_data.degree          = data.smoother_data.iterations;
+      smoother_data.iterations_eigenvalue_estimation =
+        data.smoother_data.iterations_eigenvalue_estimation;
+
+      std::shared_ptr<Chebyshev> smoother = std::dynamic_pointer_cast<Chebyshev>(smoothers[level]);
+      smoother->initialize(mg_operator, smoother_data);
       break;
     }
     case MultigridSmoother::GMRES:
@@ -792,20 +807,10 @@ MultigridPreconditionerBase<dim, Number>::update_smoother(unsigned int level)
   {
     case MultigridSmoother::Chebyshev:
     {
-      if(data.smoother_data.preconditioner == PreconditionerSmoother::PointJacobi)
-      {
-        smoothers[level] = std::make_shared<
-          ChebyshevSmoother<Operator, VectorTypeMG, dealii::DiagonalMatrix<VectorTypeMG>>>();
-        initialize_chebyshev_smoother_point_jacobi(*operators[level], level);
-      }
-      else if(data.smoother_data.preconditioner == PreconditionerSmoother::BlockJacobi)
-      {
-        smoothers[level] = std::make_shared<
-          ChebyshevSmoother<Operator, VectorTypeMG, BlockJacobiPreconditioner<Operator>>>();
-        initialize_chebyshev_smoother_block_jacobi(*operators[level], level);
-      }
-      else
-        AssertThrow(false, dealii::ExcNotImplemented());
+      typedef ChebyshevSmoother<Operator, VectorTypeMG> Chebyshev;
+
+      std::shared_ptr<Chebyshev> smoother = std::dynamic_pointer_cast<Chebyshev>(smoothers[level]);
+      smoother->update();
       break;
     }
     case MultigridSmoother::GMRES:
@@ -847,11 +852,6 @@ MultigridPreconditionerBase<dim, Number>::update_coarse_solver()
   {
     case MultigridCoarseGridSolver::Chebyshev:
     {
-      AssertThrow(
-        data.coarse_problem.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi,
-        dealii::ExcMessage(
-          "Only PointJacobi preconditioner implemented for Chebyshev coarse grid solver."));
-
       std::shared_ptr<MGCoarseChebyshev<Operator>> coarse_solver =
         std::dynamic_pointer_cast<MGCoarseChebyshev<Operator>>(coarse_grid_solver);
       coarse_solver->update();
@@ -895,14 +895,10 @@ MultigridPreconditionerBase<dim, Number>::initialize_coarse_solver(bool const op
   {
     case MultigridCoarseGridSolver::Chebyshev:
     {
-      AssertThrow(
-        data.coarse_problem.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi,
-        dealii::ExcMessage(
-          "Only PointJacobi preconditioner implemented for Chebyshev coarse grid solver."));
-
       coarse_grid_solver =
         std::make_shared<MGCoarseChebyshev<Operator>>(coarse_operator,
                                                       data.coarse_problem.solver_data,
+                                                      data.coarse_problem.preconditioner,
                                                       operator_is_singular);
       break;
     }
@@ -996,57 +992,6 @@ MultigridPreconditionerBase<dim, Number>::initialize_multigrid_algorithm()
 {
   multigrid_algorithm = std::make_shared<MultigridAlgorithm<VectorTypeMG, Operator, Smoother>>(
     operators, *coarse_grid_solver, *transfers, smoothers, mpi_comm);
-}
-
-template<int dim, typename Number>
-void
-MultigridPreconditionerBase<dim, Number>::initialize_chebyshev_smoother_point_jacobi(
-  Operator &         mg_operator,
-  unsigned int const level)
-{
-  AssertThrow(data.smoother_data.preconditioner == PreconditionerSmoother::PointJacobi,
-              dealii::ExcNotImplemented());
-
-  typedef ChebyshevSmoother<Operator, VectorTypeMG, dealii::DiagonalMatrix<VectorTypeMG>> Chebyshev;
-  typename Chebyshev::AdditionalData smoother_data;
-
-  std::shared_ptr<dealii::DiagonalMatrix<VectorTypeMG>> diagonal_matrix =
-    std::make_shared<dealii::DiagonalMatrix<VectorTypeMG>>();
-  VectorTypeMG & diagonal_vector = diagonal_matrix->get_vector();
-
-  mg_operator.initialize_dof_vector(diagonal_vector);
-  mg_operator.calculate_inverse_diagonal(diagonal_vector);
-
-  smoother_data.preconditioner = diagonal_matrix;
-
-  smoother_data.smoothing_range     = data.smoother_data.smoothing_range;
-  smoother_data.degree              = data.smoother_data.iterations;
-  smoother_data.eig_cg_n_iterations = data.smoother_data.iterations_eigenvalue_estimation;
-
-  std::shared_ptr<Chebyshev> smoother = std::dynamic_pointer_cast<Chebyshev>(smoothers[level]);
-  smoother->initialize(mg_operator, smoother_data);
-}
-
-template<int dim, typename Number>
-void
-MultigridPreconditionerBase<dim, Number>::initialize_chebyshev_smoother_block_jacobi(
-  Operator &         mg_operator,
-  unsigned int const level)
-{
-  AssertThrow(data.smoother_data.preconditioner == PreconditionerSmoother::BlockJacobi,
-              dealii::ExcNotImplemented());
-
-  typedef ChebyshevSmoother<Operator, VectorTypeMG, BlockJacobiPreconditioner<Operator>> Chebyshev;
-  typename Chebyshev::AdditionalData smoother_data;
-
-  smoother_data.preconditioner = std::make_shared<BlockJacobiPreconditioner<Operator>>(mg_operator);
-
-  smoother_data.smoothing_range     = data.smoother_data.smoothing_range;
-  smoother_data.degree              = data.smoother_data.iterations;
-  smoother_data.eig_cg_n_iterations = data.smoother_data.iterations_eigenvalue_estimation;
-
-  std::shared_ptr<Chebyshev> smoother = std::dynamic_pointer_cast<Chebyshev>(smoothers[level]);
-  smoother->initialize(mg_operator, smoother_data);
 }
 
 template class MultigridPreconditionerBase<2, float>;
