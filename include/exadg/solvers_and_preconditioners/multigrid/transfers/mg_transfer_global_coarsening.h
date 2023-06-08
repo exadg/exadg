@@ -42,7 +42,8 @@ public:
 
   void
   reinit(dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> & mg_matrixfree,
-         unsigned int const dof_handler_index = 0);
+         unsigned int const dof_handler_index,
+         bool const         with_global_refinement);
 
   void
   interpolate(unsigned int const level, VectorType & dst, VectorType const & src) const final;

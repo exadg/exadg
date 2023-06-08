@@ -40,7 +40,6 @@
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/gmres_smoother.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/jacobi_smoother.h>
 #include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_global_coarsening.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_global_refinement.h>
 #include <exadg/solvers_and_preconditioners/utilities/compute_eigenvalues.h>
 #include <exadg/utilities/mpi.h>
 
@@ -986,19 +985,14 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_transfer_operators(
 {
   (void)constrained_dofs;
 
-  if(multigrid_variant == MultigridVariant::GlobalCoarsening)
+  if(multigrid_variant == MultigridVariant::GlobalCoarsening ||
+     multigrid_variant == MultigridVariant::LocalSmoothing)
   {
     auto tmp = std::make_shared<MGTransferGlobalCoarsening<dim, MultigridNumber, VectorTypeMG>>();
 
-    tmp->reinit(matrix_free_objects, dof_index);
-
-    transfers = tmp;
-  }
-  else if(multigrid_variant == MultigridVariant::LocalSmoothing)
-  {
-    auto tmp = std::make_shared<MGTransferGlobalRefinement<dim, MultigridNumber, VectorTypeMG>>();
-
-    tmp->reinit(matrix_free_objects, dof_index);
+    tmp->reinit(matrix_free_objects,
+                dof_index,
+                multigrid_variant == MultigridVariant::LocalSmoothing);
 
     transfers = tmp;
   }
