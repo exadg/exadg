@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.7"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::MGTransferGlobalCoarsening&lt; dim, Number, VectorType &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::MultigridTransfer&lt; dim, Number, VectorType &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -69,50 +69,50 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><a class="el" href="classExaDG_1_1MGTransferGlobalCoarsening.html">MGTransferGlobalCoarsening</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><a class="el" href="classExaDG_1_1MultigridTransfer.html">MultigridTransfer</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="classExaDG_1_1MGTransferGlobalCoarsening-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::MGTransferGlobalCoarsening&lt; dim, Number, VectorType &gt; Class Template Reference</div></div>
+<a href="classExaDG_1_1MultigridTransfer-members.html">List of all members</a>  </div>
+  <div class="headertitle"><div class="title">ExaDG::MultigridTransfer&lt; dim, Number, VectorType &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <div class="dynheader">
-Inheritance diagram for ExaDG::MGTransferGlobalCoarsening&lt; dim, Number, VectorType &gt;:</div>
+Inheritance diagram for ExaDG::MultigridTransfer&lt; dim, Number, VectorType &gt;:</div>
 <div class="dyncontent">
  <div class="center">
-  <img src="classExaDG_1_1MGTransferGlobalCoarsening.png" usemap="#ExaDG::MGTransferGlobalCoarsening_3C_20dim_2C_20Number_2C_20VectorType_20_3E_map" alt=""/>
-  <map id="ExaDG::MGTransferGlobalCoarsening_3C_20dim_2C_20Number_2C_20VectorType_20_3E_map" name="ExaDG::MGTransferGlobalCoarsening_3C_20dim_2C_20Number_2C_20VectorType_20_3E_map">
-<area href="classExaDG_1_1MGTransfer.html" alt="ExaDG::MGTransfer&lt; VectorType &gt;" shape="rect" coords="0,0,397,24"/>
+  <img src="classExaDG_1_1MultigridTransfer.png" usemap="#ExaDG::MultigridTransfer_3C_20dim_2C_20Number_2C_20VectorType_20_3E_map" alt=""/>
+  <map id="ExaDG::MultigridTransfer_3C_20dim_2C_20Number_2C_20VectorType_20_3E_map" name="ExaDG::MultigridTransfer_3C_20dim_2C_20Number_2C_20VectorType_20_3E_map">
+<area href="classExaDG_1_1MultigridTransferBase.html" alt="ExaDG::MultigridTransferBase&lt; VectorType &gt;" shape="rect" coords="0,0,325,24"/>
   </map>
 </div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a4390300eaeb56d62c0dc092948451c42"><td class="memItemLeft" align="right" valign="top"><a id="a4390300eaeb56d62c0dc092948451c42" name="a4390300eaeb56d62c0dc092948451c42"></a>
+<tr class="memitem:a09085d4b371e14bce7fbca0bd1558c51"><td class="memItemLeft" align="right" valign="top"><a id="a09085d4b371e14bce7fbca0bd1558c51" name="a09085d4b371e14bce7fbca0bd1558c51"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit</b> (dealii::MGLevelObject&lt; std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; &gt; &gt; &amp;mg_matrixfree, unsigned int const dof_handler_index, bool const with_global_refinement)</td></tr>
-<tr class="separator:a4390300eaeb56d62c0dc092948451c42"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa115f5633f944a15d3c837837fd27f9e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferGlobalCoarsening.html#aa115f5633f944a15d3c837837fd27f9e">interpolate</a> (unsigned int const level, VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
-<tr class="separator:aa115f5633f944a15d3c837837fd27f9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a58e81e6d6fd326e55721155cf7df5aa1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferGlobalCoarsening.html#a58e81e6d6fd326e55721155cf7df5aa1">restrict_and_add</a> (unsigned int const level, VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
-<tr class="separator:a58e81e6d6fd326e55721155cf7df5aa1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac6a1a39fa344e080528a54f3e0d07e8a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferGlobalCoarsening.html#ac6a1a39fa344e080528a54f3e0d07e8a">prolongate_and_add</a> (unsigned int const level, VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
-<tr class="separator:ac6a1a39fa344e080528a54f3e0d07e8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab05e642da4e8960f222e6ca81f33b736"><td class="memItemLeft" align="right" valign="top"><a id="ab05e642da4e8960f222e6ca81f33b736" name="ab05e642da4e8960f222e6ca81f33b736"></a>
+<tr class="separator:a09085d4b371e14bce7fbca0bd1558c51"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae536187106eede07a63c482705328b55"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridTransfer.html#ae536187106eede07a63c482705328b55">interpolate</a> (unsigned int const level, VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:ae536187106eede07a63c482705328b55"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f6c08f279438119eea8e5d5cf3cec1d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridTransfer.html#a9f6c08f279438119eea8e5d5cf3cec1d">restrict_and_add</a> (unsigned int const level, VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:a9f6c08f279438119eea8e5d5cf3cec1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abed5358c4031abd60aa03cc7685720a3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridTransfer.html#abed5358c4031abd60aa03cc7685720a3">prolongate_and_add</a> (unsigned int const level, VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:abed5358c4031abd60aa03cc7685720a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4467d9ffde6fb06ec8e5358c14549623"><td class="memItemLeft" align="right" valign="top"><a id="a4467d9ffde6fb06ec8e5358c14549623" name="a4467d9ffde6fb06ec8e5358c14549623"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>interpolate</b> (unsigned int const level, VectorType &amp;dst, VectorType const &amp;src) const =0</td></tr>
-<tr class="separator:ab05e642da4e8960f222e6ca81f33b736"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad0f2f355ad397cfcd23fa6f5eeb5eafe"><td class="memItemLeft" align="right" valign="top"><a id="ad0f2f355ad397cfcd23fa6f5eeb5eafe" name="ad0f2f355ad397cfcd23fa6f5eeb5eafe"></a>
+<tr class="separator:a4467d9ffde6fb06ec8e5358c14549623"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac959b5df5f7f80b0864c0adc1dec9821"><td class="memItemLeft" align="right" valign="top"><a id="ac959b5df5f7f80b0864c0adc1dec9821" name="ac959b5df5f7f80b0864c0adc1dec9821"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>restrict_and_add</b> (unsigned int const level, VectorType &amp;dst, VectorType const &amp;src) const =0</td></tr>
-<tr class="separator:ad0f2f355ad397cfcd23fa6f5eeb5eafe"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1a0a299f50406e99bcc10dfb78444bfd"><td class="memItemLeft" align="right" valign="top"><a id="a1a0a299f50406e99bcc10dfb78444bfd" name="a1a0a299f50406e99bcc10dfb78444bfd"></a>
+<tr class="separator:ac959b5df5f7f80b0864c0adc1dec9821"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aac7c9f4b07ec78d9406eebb745885efb"><td class="memItemLeft" align="right" valign="top"><a id="aac7c9f4b07ec78d9406eebb745885efb" name="aac7c9f4b07ec78d9406eebb745885efb"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>prolongate_and_add</b> (unsigned int const level, VectorType &amp;dst, VectorType const &amp;src) const =0</td></tr>
-<tr class="separator:a1a0a299f50406e99bcc10dfb78444bfd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:aac7c9f4b07ec78d9406eebb745885efb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="aa115f5633f944a15d3c837837fd27f9e" name="aa115f5633f944a15d3c837837fd27f9e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa115f5633f944a15d3c837837fd27f9e">&#9670;&#160;</a></span>interpolate()</h2>
+<a id="ae536187106eede07a63c482705328b55" name="ae536187106eede07a63c482705328b55"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae536187106eede07a63c482705328b55">&#9670;&#160;</a></span>interpolate()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -123,7 +123,7 @@ template&lt;int dim, typename Number , typename VectorType &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1MGTransferGlobalCoarsening.html">ExaDG::MGTransferGlobalCoarsening</a>&lt; dim, Number, VectorType &gt;::interpolate </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridTransfer.html">ExaDG::MultigridTransfer</a>&lt; dim, Number, VectorType &gt;::interpolate </td>
           <td>(</td>
           <td class="paramtype">unsigned int const&#160;</td>
           <td class="paramname"><em>level</em>, </td>
@@ -153,12 +153,12 @@ template&lt;int dim, typename Number , typename VectorType &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Implements <a class="el" href="classExaDG_1_1MGTransfer.html">ExaDG::MGTransfer&lt; VectorType &gt;</a>.</p>
+<p>Implements <a class="el" href="classExaDG_1_1MultigridTransferBase.html">ExaDG::MultigridTransferBase&lt; VectorType &gt;</a>.</p>
 
 </div>
 </div>
-<a id="ac6a1a39fa344e080528a54f3e0d07e8a" name="ac6a1a39fa344e080528a54f3e0d07e8a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac6a1a39fa344e080528a54f3e0d07e8a">&#9670;&#160;</a></span>prolongate_and_add()</h2>
+<a id="abed5358c4031abd60aa03cc7685720a3" name="abed5358c4031abd60aa03cc7685720a3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abed5358c4031abd60aa03cc7685720a3">&#9670;&#160;</a></span>prolongate_and_add()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -169,7 +169,7 @@ template&lt;int dim, typename Number , typename VectorType &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1MGTransferGlobalCoarsening.html">ExaDG::MGTransferGlobalCoarsening</a>&lt; dim, Number, VectorType &gt;::prolongate_and_add </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridTransfer.html">ExaDG::MultigridTransfer</a>&lt; dim, Number, VectorType &gt;::prolongate_and_add </td>
           <td>(</td>
           <td class="paramtype">unsigned int const&#160;</td>
           <td class="paramname"><em>level</em>, </td>
@@ -199,12 +199,12 @@ template&lt;int dim, typename Number , typename VectorType &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Implements <a class="el" href="classExaDG_1_1MGTransfer.html">ExaDG::MGTransfer&lt; VectorType &gt;</a>.</p>
+<p>Implements <a class="el" href="classExaDG_1_1MultigridTransferBase.html">ExaDG::MultigridTransferBase&lt; VectorType &gt;</a>.</p>
 
 </div>
 </div>
-<a id="a58e81e6d6fd326e55721155cf7df5aa1" name="a58e81e6d6fd326e55721155cf7df5aa1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a58e81e6d6fd326e55721155cf7df5aa1">&#9670;&#160;</a></span>restrict_and_add()</h2>
+<a id="a9f6c08f279438119eea8e5d5cf3cec1d" name="a9f6c08f279438119eea8e5d5cf3cec1d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9f6c08f279438119eea8e5d5cf3cec1d">&#9670;&#160;</a></span>restrict_and_add()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -215,7 +215,7 @@ template&lt;int dim, typename Number , typename VectorType &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1MGTransferGlobalCoarsening.html">ExaDG::MGTransferGlobalCoarsening</a>&lt; dim, Number, VectorType &gt;::restrict_and_add </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridTransfer.html">ExaDG::MultigridTransfer</a>&lt; dim, Number, VectorType &gt;::restrict_and_add </td>
           <td>(</td>
           <td class="paramtype">unsigned int const&#160;</td>
           <td class="paramname"><em>level</em>, </td>
@@ -245,13 +245,13 @@ template&lt;int dim, typename Number , typename VectorType &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Implements <a class="el" href="classExaDG_1_1MGTransfer.html">ExaDG::MGTransfer&lt; VectorType &gt;</a>.</p>
+<p>Implements <a class="el" href="classExaDG_1_1MultigridTransferBase.html">ExaDG::MultigridTransferBase&lt; VectorType &gt;</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>include/exadg/solvers_and_preconditioners/multigrid/transfers/<a class="el" href="mg__transfer__global__coarsening_8h_source.html">mg_transfer_global_coarsening.h</a></li>
-<li>include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_global_coarsening.cpp</li>
+<li>include/exadg/solvers_and_preconditioners/multigrid/<a class="el" href="transfer_8h_source.html">transfer.h</a></li>
+<li>include/exadg/solvers_and_preconditioners/multigrid/transfer.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

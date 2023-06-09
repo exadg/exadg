@@ -175,7 +175,7 @@ $(function() {
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  std::shared_ptr&lt;PDEOperatorMG&gt;</div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  get_operator(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> level) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span> </div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  std::shared_ptr&lt;MGTransfer&lt;VectorTypeMG&gt;&gt; transfers_velocity;</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  std::shared_ptr&lt;MultigridTransfer&lt;dim, MultigridNumber, VectorTypeMG&gt;&gt; transfers_velocity;</div>
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span> </div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  dealii::MGLevelObject&lt;std::shared_ptr&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt;&gt; dof_handlers_velocity;</div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  dealii::MGLevelObject&lt;std::shared_ptr&lt;dealii::MGConstrainedDoFs&gt;&gt;     constrained_dofs_velocity;</div>

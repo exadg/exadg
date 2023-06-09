@@ -183,9 +183,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>do_initialize_dof_han
 <tr class="memitem:a7d88836617de97be3addf665e2fba802 inherit pro_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memItemLeft" align="right" valign="top">
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_transfer_operators</b> ()</td></tr>
 <tr class="separator:a7d88836617de97be3addf665e2fba802 inherit pro_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a957effb03b38bcd1d94ee308e7bb8260 inherit pro_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memItemLeft" align="right" valign="top">
-void&#160;</td><td class="memItemRight" valign="bottom"><b>do_initialize_transfer_operators</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MGTransfer.html">MGTransfer</a>&lt; VectorTypeMG &gt; &gt; &amp;transfers, dealii::MGLevelObject&lt; std::shared_ptr&lt; dealii::MGConstrainedDoFs &gt; &gt; &amp;constrained_dofs, unsigned int const dof_index)</td></tr>
-<tr class="separator:a957effb03b38bcd1d94ee308e7bb8260 inherit pro_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ed61ca851567d68060d16c2bf82ea73 inherit pro_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memItemLeft" align="right" valign="top">
+void&#160;</td><td class="memItemRight" valign="bottom"><b>do_initialize_transfer_operators</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridTransfer.html">MultigridTransfer</a>&lt; dim, MultigridNumber, VectorTypeMG &gt; &gt; &amp;transfers, unsigned int const dof_index)</td></tr>
+<tr class="separator:a5ed61ca851567d68060d16c2bf82ea73 inherit pro_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f9e9e58c3979ba70388c9d4d6198d26 inherit pro_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a6f9e9e58c3979ba70388c9d4d6198d26">get_number_of_levels</a> () const</td></tr>
 <tr class="separator:a6f9e9e58c3979ba70388c9d4d6198d26 inherit pro_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a07b810576315f8daf49f79017bac426d inherit pro_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a07b810576315f8daf49f79017bac426d">for_all_levels</a> (std::function&lt; void(unsigned int const)&gt; const &amp;function_on_level)</td></tr>
@@ -213,9 +213,9 @@ dealii::MGLevelObject&lt; std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Multig
 <tr class="memitem:aa048b040922fb8feae99ce4e99b259a8 inherit pro_attribs_classExaDG_1_1MultigridPreconditionerBase"><td class="memItemLeft" align="right" valign="top">
 dealii::MGLevelObject&lt; std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridOperatorBase.html">Operator</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>operators</b></td></tr>
 <tr class="separator:aa048b040922fb8feae99ce4e99b259a8 inherit pro_attribs_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7f2cba5359b0e0288b25f3f3f1277df6 inherit pro_attribs_classExaDG_1_1MultigridPreconditionerBase"><td class="memItemLeft" align="right" valign="top">
-std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MGTransfer.html">MGTransfer</a>&lt; VectorTypeMG &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>transfers</b></td></tr>
-<tr class="separator:a7f2cba5359b0e0288b25f3f3f1277df6 inherit pro_attribs_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a55a0c3c96fafddf6551f5d1928c07876 inherit pro_attribs_classExaDG_1_1MultigridPreconditionerBase"><td class="memItemLeft" align="right" valign="top">
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridTransfer.html">MultigridTransfer</a>&lt; dim, MultigridNumber, VectorTypeMG &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>transfers</b></td></tr>
+<tr class="separator:a55a0c3c96fafddf6551f5d1928c07876 inherit pro_attribs_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad577c30b89f8536ce9a6cf8468121d92 inherit pro_attribs_classExaDG_1_1MultigridPreconditionerBase"><td class="memItemLeft" align="right" valign="top">
 std::vector&lt; <a class="el" href="structExaDG_1_1MGDoFHandlerIdentifier.html">MGDoFHandlerIdentifier</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>p_levels</b></td></tr>
 <tr class="separator:ad577c30b89f8536ce9a6cf8468121d92 inherit pro_attribs_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>

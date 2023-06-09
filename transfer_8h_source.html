@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.7"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_global_coarsening.h Source File</title>
+<title>ExaDG: include/exadg/solvers_and_preconditioners/multigrid/transfer.h Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -69,11 +69,11 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_0b4591dde26de212b152a147f5a814f3.html">exadg</a></li><li class="navelem"><a class="el" href="dir_54db5b947dbe74f83af98e3cbad536d1.html">solvers_and_preconditioners</a></li><li class="navelem"><a class="el" href="dir_4a9778ef8f4bfe4e8fa8fc3e67bd29a1.html">multigrid</a></li><li class="navelem"><a class="el" href="dir_047cc0f49b8c9815c9df9f87ccb1eaa2.html">transfers</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_0b4591dde26de212b152a147f5a814f3.html">exadg</a></li><li class="navelem"><a class="el" href="dir_54db5b947dbe74f83af98e3cbad536d1.html">solvers_and_preconditioners</a></li><li class="navelem"><a class="el" href="dir_4a9778ef8f4bfe4e8fa8fc3e67bd29a1.html">multigrid</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
-  <div class="headertitle"><div class="title">mg_transfer_global_coarsening.h</div></div>
+  <div class="headertitle"><div class="title">transfer.h</div></div>
 </div><!--header-->
 <div class="contents">
 <div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="comment">/*  ______________________________________________________________________</span></div>
@@ -97,8 +97,8 @@ $(function() {
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="comment"> *  ______________________________________________________________________</span></div>
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="comment"> */</span></div>
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#ifndef EXADG_MG_TRANSFER_GLOBAL_COARSENING_H</span></div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#define EXADG_MG_TRANSFER_GLOBAL_COARSENING_H</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MUTLIGRID_TRANSFER_H_</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MUTLIGRID_TRANSFER_H_</span></div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="comment">// deal.II</span></div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;deal.II/fe/mapping.h&gt;</span></div>
@@ -108,43 +108,40 @@ $(function() {
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
 <div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="comment">// ExaDG</span></div>
 <div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="preprocessor">#include &lt;exadg/solvers_and_preconditioners/multigrid/levels_hybrid_multigrid.h&gt;</span></div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="preprocessor">#include &lt;exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer.h&gt;</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="preprocessor">#include &lt;exadg/solvers_and_preconditioners/multigrid/transfer_base.h&gt;</span></div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span> </div>
 <div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespaceExaDG.html">ExaDG</a></div>
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>{</div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number, <span class="keyword">typename</span> VectorType&gt;</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno"><a class="line" href="classExaDG_1_1MGTransferGlobalCoarsening.html">   38</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1MGTransferGlobalCoarsening.html">MGTransferGlobalCoarsening</a> : <span class="keyword">virtual</span> <span class="keyword">public</span> <a class="code hl_class" href="classExaDG_1_1MGTransfer.html">MGTransfer</a>&lt;VectorType&gt;</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno"><a class="line" href="classExaDG_1_1MultigridTransfer.html">   38</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1MultigridTransfer.html">MultigridTransfer</a> : <span class="keyword">public</span> <a class="code hl_class" href="classExaDG_1_1MultigridTransferBase.html">MultigridTransferBase</a>&lt;VectorType&gt;</div>
 <div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>{</div>
 <div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keyword">virtual</span> <a class="code hl_class" href="classExaDG_1_1MGTransferGlobalCoarsening.html">~MGTransferGlobalCoarsening</a>() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  reinit(dealii::MGLevelObject&lt;std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt;&gt;&gt; &amp; mg_matrixfree,</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>         <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> dof_handler_index,</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>         <span class="keywordtype">bool</span> <span class="keyword">const</span>         with_global_refinement);</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  interpolate(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> level, VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  restrict_and_add(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> level, VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  prolongate_and_add(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> level,</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>                     VectorType &amp;       dst,</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>                     VectorType <span class="keyword">const</span> &amp; src) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  dealii::MGLevelObject&lt;dealii::MGTwoLevelTransfer&lt;dim, VectorType&gt;&gt; transfers;</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  std::unique_ptr&lt;dealii::MGTransferGlobalCoarsening&lt;dim, VectorType&gt;&gt;</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    mg_transfer_global_coarsening;</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>};</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span><span class="preprocessor">#endif </span><span class="comment">// EXADG_MG_TRANSFER_GLOBAL_COARSENING_H</span></div>
-<div class="ttc" id="aclassExaDG_1_1MGTransferGlobalCoarsening_html"><div class="ttname"><a href="classExaDG_1_1MGTransferGlobalCoarsening.html">ExaDG::MGTransferGlobalCoarsening</a></div><div class="ttdef"><b>Definition</b> mg_transfer_global_coarsening.h:39</div></div>
-<div class="ttc" id="aclassExaDG_1_1MGTransfer_html"><div class="ttname"><a href="classExaDG_1_1MGTransfer.html">ExaDG::MGTransfer</a></div><div class="ttdef"><b>Definition</b> mg_transfer.h:29</div></div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  reinit(dealii::MGLevelObject&lt;std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt;&gt;&gt; &amp; mg_matrixfree,</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>         <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> dof_handler_index,</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>         <span class="keywordtype">bool</span> <span class="keyword">const</span>         with_global_refinement);</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  interpolate(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> level, VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  restrict_and_add(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> level, VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  prolongate_and_add(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> level,</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>                     VectorType &amp;       dst,</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>                     VectorType <span class="keyword">const</span> &amp; src) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  dealii::MGLevelObject&lt;dealii::MGTwoLevelTransfer&lt;dim, VectorType&gt;&gt; transfers;</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  std::unique_ptr&lt;dealii::MGTransferGlobalCoarsening&lt;dim, VectorType&gt;&gt; mg_transfer;</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>};</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span><span class="preprocessor">#endif </span><span class="comment">// INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MUTLIGRID_TRANSFER_H_</span></div>
+<div class="ttc" id="aclassExaDG_1_1MultigridTransferBase_html"><div class="ttname"><a href="classExaDG_1_1MultigridTransferBase.html">ExaDG::MultigridTransferBase</a></div><div class="ttdef"><b>Definition</b> transfer_base.h:29</div></div>
+<div class="ttc" id="aclassExaDG_1_1MultigridTransfer_html"><div class="ttname"><a href="classExaDG_1_1MultigridTransfer.html">ExaDG::MultigridTransfer</a></div><div class="ttdef"><b>Definition</b> transfer.h:39</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
