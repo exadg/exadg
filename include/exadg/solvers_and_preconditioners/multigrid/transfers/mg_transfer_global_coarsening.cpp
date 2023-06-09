@@ -27,31 +27,12 @@ namespace ExaDG
 {
 template<int dim, typename Number, typename VectorType>
 void
-MGTransferGlobalCoarsening<dim, Number, VectorType>::restrict_and_add(unsigned int const level,
-                                                                      VectorType &       dst,
-                                                                      VectorType const & src) const
-{
-  mg_transfer_global_coarsening->restrict_and_add(level, dst, src);
-}
-
-template<int dim, typename Number, typename VectorType>
-void
-MGTransferGlobalCoarsening<dim, Number, VectorType>::prolongate_and_add(
-  unsigned int const level,
-  VectorType &       dst,
-  VectorType const & src) const
-{
-  mg_transfer_global_coarsening->prolongate_and_add(level, dst, src);
-}
-
-template<int dim, typename Number, typename VectorType>
-void
 MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
   dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> & mg_matrixfree,
-  unsigned int const                                                        dof_handler_index)
+  unsigned int const                                                        dof_handler_index,
+  bool const                                                                with_global_refinement)
 {
-  std::vector<MGLevelInfo>            global_levels;
-  std::vector<MGDoFHandlerIdentifier> p_levels;
+  std::vector<MGLevelInfo> global_levels;
 
   unsigned int const min_level = mg_matrixfree.min_level();
   AssertThrow(min_level == 0, dealii::ExcMessage("Currently, we expect min_level==0!"));
@@ -64,19 +45,13 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
     auto const &       matrixfree = mg_matrixfree[global_level];
     auto const &       fe         = matrixfree->get_dof_handler(dof_handler_index).get_fe();
     bool const         is_dg      = fe.dofs_per_vertex == 0;
-    unsigned int const level  = matrixfree->get_dof_handler().get_triangulation().n_global_levels();
+    unsigned int const level =
+      with_global_refinement ? matrixfree->get_mg_level() :
+                               matrixfree->get_dof_handler().get_triangulation().n_global_levels();
     unsigned int const degree = fe.degree;
 
     global_levels.push_back(MGLevelInfo(level, degree, is_dg));
   }
-
-  // construct and p_levels
-  for(auto i : global_levels)
-    p_levels.push_back(i.dof_handler_id());
-
-  sort(p_levels.begin(), p_levels.end());
-  p_levels.erase(unique(p_levels.begin(), p_levels.end()), p_levels.end());
-  std::reverse(std::begin(p_levels), std::end(p_levels));
 
   // create transfer-operator instances
   transfers.resize(0, global_levels.size() - 1);
@@ -84,8 +59,8 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
   // fill mg_transfer with the correct transfers
   for(unsigned int i = 1; i < global_levels.size(); i++)
   {
-    auto coarse_level = global_levels[i - 1];
-    auto fine_level   = global_levels[i];
+    auto const coarse_level = global_levels[i - 1];
+    auto const fine_level   = global_levels[i];
 
     if(coarse_level.h_level() != fine_level.h_level()) // h-transfer
     {
@@ -93,7 +68,9 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
         mg_matrixfree[i]->get_dof_handler(dof_handler_index),
         mg_matrixfree[i - 1]->get_dof_handler(dof_handler_index),
         mg_matrixfree[i]->get_affine_constraints(dof_handler_index),
-        mg_matrixfree[i - 1]->get_affine_constraints(dof_handler_index));
+        mg_matrixfree[i - 1]->get_affine_constraints(dof_handler_index),
+        with_global_refinement ? fine_level.h_level() : dealii::numbers::invalid_unsigned_int,
+        with_global_refinement ? coarse_level.h_level() : dealii::numbers::invalid_unsigned_int);
     }
     else if(coarse_level.degree() != fine_level.degree() or // p-transfer
             coarse_level.is_dg() != fine_level.is_dg())     // c-transfer
@@ -102,11 +79,9 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
         mg_matrixfree[i]->get_dof_handler(dof_handler_index),
         mg_matrixfree[i - 1]->get_dof_handler(dof_handler_index),
         mg_matrixfree[i]->get_affine_constraints(dof_handler_index),
-        mg_matrixfree[i - 1]->get_affine_constraints(dof_handler_index));
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Cannot create MGTransfer!"));
+        mg_matrixfree[i - 1]->get_affine_constraints(dof_handler_index),
+        with_global_refinement ? fine_level.h_level() : dealii::numbers::invalid_unsigned_int,
+        with_global_refinement ? coarse_level.h_level() : dealii::numbers::invalid_unsigned_int);
     }
   }
 
@@ -122,6 +97,25 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::interpolate(unsigned int co
                                                                  VectorType const & src) const
 {
   transfers[level].interpolate(dst, src);
+}
+
+template<int dim, typename Number, typename VectorType>
+void
+MGTransferGlobalCoarsening<dim, Number, VectorType>::restrict_and_add(unsigned int const level,
+                                                                      VectorType &       dst,
+                                                                      VectorType const & src) const
+{
+  mg_transfer_global_coarsening->restrict_and_add(level, dst, src);
+}
+
+template<int dim, typename Number, typename VectorType>
+void
+MGTransferGlobalCoarsening<dim, Number, VectorType>::prolongate_and_add(
+  unsigned int const level,
+  VectorType &       dst,
+  VectorType const & src) const
+{
+  mg_transfer_global_coarsening->prolongate_and_add(level, dst, src);
 }
 
 typedef dealii::LinearAlgebra::distributed::Vector<float>  VectorTypeFloat;
