@@ -106,9 +106,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:adad0645c16c29881a6343bf8806024af"><td class="memItemLeft" align="right" valign="top"><a id="adad0645c16c29881a6343bf8806024af" name="adad0645c16c29881a6343bf8806024af"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (Operator const &amp;operator_in, <a class="el" href="structExaDG_1_1CGSmoother_1_1AdditionalData.html">AdditionalData</a> const &amp;additional_data_in)</td></tr>
 <tr class="separator:adad0645c16c29881a6343bf8806024af"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a233eb2e32fac1c81842299ad59269309"><td class="memItemLeft" align="right" valign="top"><a id="a233eb2e32fac1c81842299ad59269309" name="a233eb2e32fac1c81842299ad59269309"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>update</b> ()</td></tr>
-<tr class="separator:a233eb2e32fac1c81842299ad59269309"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e8540a6cf671e13281cdf7d396a5794"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1CGSmoother.html#a3e8540a6cf671e13281cdf7d396a5794">update</a> () final</td></tr>
+<tr class="separator:a3e8540a6cf671e13281cdf7d396a5794"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae9ea5d0cee3bee65436fa5256dabaedf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1CGSmoother.html#ae9ea5d0cee3bee65436fa5256dabaedf">vmult</a> (VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
 <tr class="separator:ae9ea5d0cee3bee65436fa5256dabaedf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a98fc9cd37a88edd96b793aa4be221f49"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1CGSmoother.html#a98fc9cd37a88edd96b793aa4be221f49">step</a> (VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
@@ -119,6 +118,9 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (Ve
 <tr class="memitem:a06093b23a79d8b6449d05f75466355c5"><td class="memItemLeft" align="right" valign="top"><a id="a06093b23a79d8b6449d05f75466355c5" name="a06093b23a79d8b6449d05f75466355c5"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>step</b> (VectorType &amp;dst, VectorType const &amp;src) const =0</td></tr>
 <tr class="separator:a06093b23a79d8b6449d05f75466355c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a05b2a2c4222b4ee7984750a36797df99"><td class="memItemLeft" align="right" valign="top"><a id="a05b2a2c4222b4ee7984750a36797df99" name="a05b2a2c4222b4ee7984750a36797df99"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update</b> ()=0</td></tr>
+<tr class="separator:a05b2a2c4222b4ee7984750a36797df99"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a id="a98fc9cd37a88edd96b793aa4be221f49" name="a98fc9cd37a88edd96b793aa4be221f49"></a>
@@ -148,6 +150,35 @@ template&lt;typename Operator , typename VectorType &gt; </div>
           <td></td>
           <td>)</td>
           <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1SmootherBase.html">ExaDG::SmootherBase&lt; VectorType &gt;</a>.</p>
+
+</div>
+</div>
+<a id="a3e8540a6cf671e13281cdf7d396a5794" name="a3e8540a6cf671e13281cdf7d396a5794"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3e8540a6cf671e13281cdf7d396a5794">&#9670;&#160;</a></span>update()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Operator , typename VectorType &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1CGSmoother.html">ExaDG::CGSmoother</a>&lt; Operator, VectorType &gt;::update </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
         </tr>
       </table>
   </td>

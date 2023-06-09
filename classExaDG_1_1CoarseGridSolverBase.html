@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.7"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::MGCoarseAMG&lt; Operator &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::CoarseGridSolverBase&lt; Operator &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -69,72 +69,41 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><a class="el" href="classExaDG_1_1MGCoarseAMG.html">MGCoarseAMG</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><a class="el" href="classExaDG_1_1CoarseGridSolverBase.html">CoarseGridSolverBase</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="classExaDG_1_1MGCoarseAMG-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::MGCoarseAMG&lt; Operator &gt; Class Template Reference</div></div>
+<a href="classExaDG_1_1CoarseGridSolverBase-members.html">List of all members</a>  </div>
+  <div class="headertitle"><div class="title">ExaDG::CoarseGridSolverBase&lt; Operator &gt; Class Template Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div></div>
 </div><!--header-->
 <div class="contents">
+
+<p><code>#include &lt;<a class="el" href="coarse__grid__solvers_8h_source.html">coarse_grid_solvers.h</a>&gt;</code></p>
 <div class="dynheader">
-Inheritance diagram for ExaDG::MGCoarseAMG&lt; Operator &gt;:</div>
+Inheritance diagram for ExaDG::CoarseGridSolverBase&lt; Operator &gt;:</div>
 <div class="dyncontent">
  <div class="center">
-  <img src="classExaDG_1_1MGCoarseAMG.png" usemap="#ExaDG::MGCoarseAMG_3C_20Operator_20_3E_map" alt=""/>
-  <map id="ExaDG::MGCoarseAMG_3C_20Operator_20_3E_map" name="ExaDG::MGCoarseAMG_3C_20Operator_20_3E_map">
-<area href="classExaDG_1_1CoarseGridSolverBase.html" alt="ExaDG::CoarseGridSolverBase&lt; Operator &gt;" shape="rect" coords="0,56,553,80"/>
-<area href="classdealii_1_1MGCoarseGridBase.html" alt="dealii::MGCoarseGridBase&lt; dealii::LinearAlgebra::distributed::Vector&lt; Operator::value_type &gt; &gt;" shape="rect" coords="0,0,553,24"/>
+  <img src="classExaDG_1_1CoarseGridSolverBase.png" usemap="#ExaDG::CoarseGridSolverBase_3C_20Operator_20_3E_map" alt=""/>
+  <map id="ExaDG::CoarseGridSolverBase_3C_20Operator_20_3E_map" name="ExaDG::CoarseGridSolverBase_3C_20Operator_20_3E_map">
+<area href="classdealii_1_1MGCoarseGridBase.html" alt="dealii::MGCoarseGridBase&lt; dealii::LinearAlgebra::distributed::Vector&lt; Operator::value_type &gt; &gt;" shape="rect" coords="563,0,1116,24"/>
+<area href="classExaDG_1_1MGCoarseAMG.html" alt="ExaDG::MGCoarseAMG&lt; Operator &gt;" shape="rect" coords="0,112,553,136"/>
+<area href="classExaDG_1_1MGCoarseChebyshev.html" alt="ExaDG::MGCoarseChebyshev&lt; Operator &gt;" shape="rect" coords="563,112,1116,136"/>
+<area href="classExaDG_1_1MGCoarseKrylov.html" alt="ExaDG::MGCoarseKrylov&lt; Operator &gt;" shape="rect" coords="1126,112,1679,136"/>
   </map>
 </div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a8a1c152bcdf2b7368ba68bf9c3c5a56f"><td class="memItemLeft" align="right" valign="top"><a id="a8a1c152bcdf2b7368ba68bf9c3c5a56f" name="a8a1c152bcdf2b7368ba68bf9c3c5a56f"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MGCoarseAMG</b> (Operator const &amp;op, <a class="el" href="structExaDG_1_1AMGData.html">AMGData</a> data=<a class="el" href="structExaDG_1_1AMGData.html">AMGData</a>())</td></tr>
-<tr class="separator:a8a1c152bcdf2b7368ba68bf9c3c5a56f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5fc82565c893927dde93ba7baf8eb9f0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGCoarseAMG.html#a5fc82565c893927dde93ba7baf8eb9f0">update</a> () final</td></tr>
-<tr class="separator:a5fc82565c893927dde93ba7baf8eb9f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8b60a61659fc9094edd599aaae2c5aeb"><td class="memItemLeft" align="right" valign="top"><a id="a8b60a61659fc9094edd599aaae2c5aeb" name="a8b60a61659fc9094edd599aaae2c5aeb"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>operator()</b> (unsigned int const, VectorTypeMultigrid &amp;dst, VectorTypeMultigrid const &amp;src) const final</td></tr>
-<tr class="separator:a8b60a61659fc9094edd599aaae2c5aeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9f179ceab76296bd8a6c4c7b58fd2003"><td class="memItemLeft" align="right" valign="top"><a id="a9f179ceab76296bd8a6c4c7b58fd2003" name="a9f179ceab76296bd8a6c4c7b58fd2003"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update</b> ()=0</td></tr>
 <tr class="separator:a9f179ceab76296bd8a6c4c7b58fd2003"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a5fc82565c893927dde93ba7baf8eb9f0" name="a5fc82565c893927dde93ba7baf8eb9f0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5fc82565c893927dde93ba7baf8eb9f0">&#9670;&#160;</a></span>update()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename Operator &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1MGCoarseAMG.html">ExaDG::MGCoarseAMG</a>&lt; Operator &gt;::update </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classExaDG_1_1CoarseGridSolverBase.html">ExaDG::CoarseGridSolverBase&lt; Operator &gt;</a>.</p>
-
-</div>
-</div>
-<hr/>The documentation for this class was generated from the following file:<ul>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><div class="compoundTemplParams">template&lt;typename Operator&gt;<br />
+class ExaDG::CoarseGridSolverBase&lt; Operator &gt;</div><p>Base class for multigrid coarse-grid solvers in order to define update() function in addition to the interface of <a class="el" href="classdealii_1_1MGCoarseGridBase.html">dealii::MGCoarseGridBase</a>. </p>
+</div><hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/solvers_and_preconditioners/multigrid/<a class="el" href="coarse__grid__solvers_8h_source.html">coarse_grid_solvers.h</a></li>
 </ul>
 </div><!-- contents -->
