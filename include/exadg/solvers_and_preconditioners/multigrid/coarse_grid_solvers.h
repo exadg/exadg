@@ -42,6 +42,22 @@
 
 namespace ExaDG
 {
+/**
+ * Base class for multigrid coarse-grid solvers in order to define update() function in addition to
+ * the interface of dealii::MGCoarseGridBase.
+ */
+template<typename Operator>
+class CoarseGridSolverBase
+  : public dealii::MGCoarseGridBase<
+      dealii::LinearAlgebra::distributed::Vector<typename Operator::value_type>>
+{
+public:
+  virtual ~CoarseGridSolverBase(){};
+
+  virtual void
+  update() = 0;
+};
+
 enum class KrylovSolverType
 {
   CG,
@@ -49,8 +65,7 @@ enum class KrylovSolverType
 };
 
 template<typename Operator>
-class MGCoarseKrylov : public dealii::MGCoarseGridBase<
-                         dealii::LinearAlgebra::distributed::Vector<typename Operator::value_type>>
+class MGCoarseKrylov : public CoarseGridSolverBase<Operator>
 {
 public:
   typedef double NumberAMG;
@@ -146,12 +161,8 @@ public:
     }
   }
 
-  virtual ~MGCoarseKrylov()
-  {
-  }
-
   void
-  update()
+  update() final
   {
     if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::None)
     {
@@ -349,9 +360,7 @@ private:
 
 
 template<typename Operator>
-class MGCoarseChebyshev
-  : public dealii::MGCoarseGridBase<
-      dealii::LinearAlgebra::distributed::Vector<typename Operator::value_type>>
+class MGCoarseChebyshev : public CoarseGridSolverBase<Operator>
 {
 public:
   typedef typename Operator::value_type MultigridNumber;
@@ -376,12 +385,8 @@ public:
     initialize_chebyshev_smoother_coarse_grid(coarse_operator, solver_data, operator_is_singular);
   }
 
-  virtual ~MGCoarseChebyshev()
-  {
-  }
-
   void
-  update()
+  update() final
   {
     initialize_chebyshev_smoother_coarse_grid(coarse_operator, solver_data, operator_is_singular);
   }
@@ -445,8 +450,7 @@ private:
 };
 
 template<typename Operator>
-class MGCoarseAMG : public dealii::MGCoarseGridBase<
-                      dealii::LinearAlgebra::distributed::Vector<typename Operator::value_type>>
+class MGCoarseAMG : public CoarseGridSolverBase<Operator>
 {
 private:
   typedef double NumberAMG;
@@ -487,7 +491,7 @@ public:
   }
 
   void
-  update()
+  update() final
   {
     amg_preconditioner->update();
   }

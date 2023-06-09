@@ -32,6 +32,7 @@
 #include <exadg/grid/grid.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/multigrid_operator_base.h>
+#include <exadg/solvers_and_preconditioners/multigrid/coarse_grid_solvers.h>
 #include <exadg/solvers_and_preconditioners/multigrid/levels_hybrid_multigrid.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/smoother_base.h>
@@ -308,12 +309,6 @@ private:
   initialize_smoother(Operator & matrix, unsigned int level);
 
   /*
-   * Update functions that have to be implemented by derived classes.
-   */
-  virtual void
-  update_smoother(unsigned int level);
-
-  /*
    * Coarse grid solver.
    */
   void
@@ -342,7 +337,7 @@ private:
 
   dealii::MGLevelObject<std::shared_ptr<Smoother>> smoothers;
 
-  std::shared_ptr<dealii::MGCoarseGridBase<VectorTypeMG>> coarse_grid_solver;
+  std::shared_ptr<CoarseGridSolverBase<Operator>> coarse_grid_solver;
 
   std::shared_ptr<MultigridAlgorithm<VectorTypeMG, Operator, Smoother>> multigrid_algorithm;
 };
