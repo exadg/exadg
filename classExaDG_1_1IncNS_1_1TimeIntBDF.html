@@ -131,6 +131,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>get_velocities_and_ti
 <tr class="memitem:a8bd50e3db9a81d4a9d35271a4999828b"><td class="memItemLeft" align="right" valign="top"><a id="a8bd50e3db9a81d4a9d35271a4999828b" name="a8bd50e3db9a81d4a9d35271a4999828b"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>get_velocities_and_times_np</b> (std::vector&lt; VectorType const * &gt; &amp;velocities, std::vector&lt; double &gt; &amp;times) const</td></tr>
 <tr class="separator:a8bd50e3db9a81d4a9d35271a4999828b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1a192b1274684d01590fc6d125b678de"><td class="memItemLeft" align="right" valign="top"><a id="a1a192b1274684d01590fc6d125b678de" name="a1a192b1274684d01590fc6d125b678de"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>get_pressures_and_times</b> (std::vector&lt; VectorType const * &gt; &amp;pressures, std::vector&lt; double &gt; &amp;times) const</td></tr>
+<tr class="separator:a1a192b1274684d01590fc6d125b678de"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2b1f3075e7d252f58507f042efe1924"><td class="memItemLeft" align="right" valign="top"><a id="ab2b1f3075e7d252f58507f042efe1924" name="ab2b1f3075e7d252f58507f042efe1924"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>get_pressures_and_times_np</b> (std::vector&lt; VectorType const * &gt; &amp;pressures, std::vector&lt; double &gt; &amp;times) const</td></tr>
+<tr class="separator:ab2b1f3075e7d252f58507f042efe1924"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab2e20f4d2f5c8cc544e16867fb20098d"><td class="memItemLeft" align="right" valign="top"><a id="ab2e20f4d2f5c8cc544e16867fb20098d" name="ab2e20f4d2f5c8cc544e16867fb20098d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ale_update</b> ()</td></tr>
 <tr class="separator:ab2e20f4d2f5c8cc544e16867fb20098d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -227,6 +233,9 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:aa102fe0c6032b6673862e19099584c81"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1TimeIntBDF.html#aa102fe0c6032b6673862e19099584c81">prepare_vectors_for_next_timestep</a> () override</td></tr>
 <tr class="separator:aa102fe0c6032b6673862e19099584c81"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classExaDG_1_1TimeIntBDFBase"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classExaDG_1_1TimeIntBDFBase')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classExaDG_1_1TimeIntBDFBase.html">ExaDG::TimeIntBDFBase</a></td></tr>
+<tr class="memitem:a3c90b9ec71db18280e9115b876f9e0e2 inherit pro_methods_classExaDG_1_1TimeIntBDFBase"><td class="memItemLeft" align="right" valign="top">
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_current_order</b> () const</td></tr>
+<tr class="separator:a3c90b9ec71db18280e9115b876f9e0e2 inherit pro_methods_classExaDG_1_1TimeIntBDFBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a46a82552ad1e1aa31e7d9e8f04450398 inherit pro_methods_classExaDG_1_1TimeIntBDFBase"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1TimeIntBDFBase.html#a46a82552ad1e1aa31e7d9e8f04450398">do_timestep_pre_solve</a> (bool const print_header) final</td></tr>
 <tr class="separator:a46a82552ad1e1aa31e7d9e8f04450398 inherit pro_methods_classExaDG_1_1TimeIntBDFBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a16162b3aa4ccf71122871f945a368a6f inherit pro_methods_classExaDG_1_1TimeIntBDFBase"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1TimeIntBDFBase.html#a16162b3aa4ccf71122871f945a368a6f">do_timestep_post_solve</a> () final</td></tr>
