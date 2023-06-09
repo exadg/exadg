@@ -20,14 +20,14 @@
  */
 
 // ExaDG
-#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_global_coarsening.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfer.h>
 
 
 namespace ExaDG
 {
 template<int dim, typename Number, typename VectorType>
 void
-MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
+MultigridTransfer<dim, Number, VectorType>::reinit(
   dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> & mg_matrixfree,
   unsigned int const                                                        dof_handler_index,
   bool const                                                                with_global_refinement)
@@ -85,48 +85,46 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
     }
   }
 
-  mg_transfer_global_coarsening =
-    std::make_unique<dealii::MGTransferGlobalCoarsening<dim, VectorType>>(
-      transfers, [&](const auto l, auto & vec) { mg_matrixfree[l]->initialize_dof_vector(vec); });
+  mg_transfer = std::make_unique<dealii::MGTransferGlobalCoarsening<dim, VectorType>>(
+    transfers, [&](const auto l, auto & vec) { mg_matrixfree[l]->initialize_dof_vector(vec); });
 }
 
 template<int dim, typename Number, typename VectorType>
 void
-MGTransferGlobalCoarsening<dim, Number, VectorType>::interpolate(unsigned int const level,
-                                                                 VectorType &       dst,
-                                                                 VectorType const & src) const
+MultigridTransfer<dim, Number, VectorType>::interpolate(unsigned int const level,
+                                                        VectorType &       dst,
+                                                        VectorType const & src) const
 {
   transfers[level].interpolate(dst, src);
 }
 
 template<int dim, typename Number, typename VectorType>
 void
-MGTransferGlobalCoarsening<dim, Number, VectorType>::restrict_and_add(unsigned int const level,
-                                                                      VectorType &       dst,
-                                                                      VectorType const & src) const
+MultigridTransfer<dim, Number, VectorType>::restrict_and_add(unsigned int const level,
+                                                             VectorType &       dst,
+                                                             VectorType const & src) const
 {
-  mg_transfer_global_coarsening->restrict_and_add(level, dst, src);
+  mg_transfer->restrict_and_add(level, dst, src);
 }
 
 template<int dim, typename Number, typename VectorType>
 void
-MGTransferGlobalCoarsening<dim, Number, VectorType>::prolongate_and_add(
-  unsigned int const level,
-  VectorType &       dst,
-  VectorType const & src) const
+MultigridTransfer<dim, Number, VectorType>::prolongate_and_add(unsigned int const level,
+                                                               VectorType &       dst,
+                                                               VectorType const & src) const
 {
-  mg_transfer_global_coarsening->prolongate_and_add(level, dst, src);
+  mg_transfer->prolongate_and_add(level, dst, src);
 }
 
 typedef dealii::LinearAlgebra::distributed::Vector<float>  VectorTypeFloat;
 typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 
-template class MGTransferGlobalCoarsening<2, float, VectorTypeFloat>;
+template class MultigridTransfer<2, float, VectorTypeFloat>;
 
-template class MGTransferGlobalCoarsening<3, float, VectorTypeFloat>;
+template class MultigridTransfer<3, float, VectorTypeFloat>;
 
-template class MGTransferGlobalCoarsening<2, double, VectorTypeDouble>;
+template class MultigridTransfer<2, double, VectorTypeDouble>;
 
-template class MGTransferGlobalCoarsening<3, double, VectorTypeDouble>;
+template class MultigridTransfer<3, double, VectorTypeDouble>;
 
 } // namespace ExaDG

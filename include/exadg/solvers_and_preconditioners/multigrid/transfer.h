@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef EXADG_MG_TRANSFER_GLOBAL_COARSENING_H
-#define EXADG_MG_TRANSFER_GLOBAL_COARSENING_H
+#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MUTLIGRID_TRANSFER_H_
+#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MUTLIGRID_TRANSFER_H_
 
 // deal.II
 #include <deal.II/fe/mapping.h>
@@ -30,16 +30,14 @@
 
 // ExaDG
 #include <exadg/solvers_and_preconditioners/multigrid/levels_hybrid_multigrid.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfer_base.h>
 
 namespace ExaDG
 {
 template<int dim, typename Number, typename VectorType>
-class MGTransferGlobalCoarsening : virtual public MGTransfer<VectorType>
+class MultigridTransfer : public MultigridTransferBase<VectorType>
 {
 public:
-  virtual ~MGTransferGlobalCoarsening() = default;
-
   void
   reinit(dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> & mg_matrixfree,
          unsigned int const dof_handler_index,
@@ -59,9 +57,8 @@ public:
 private:
   dealii::MGLevelObject<dealii::MGTwoLevelTransfer<dim, VectorType>> transfers;
 
-  std::unique_ptr<dealii::MGTransferGlobalCoarsening<dim, VectorType>>
-    mg_transfer_global_coarsening;
+  std::unique_ptr<dealii::MGTransferGlobalCoarsening<dim, VectorType>> mg_transfer;
 };
 } // namespace ExaDG
 
-#endif // EXADG_MG_TRANSFER_GLOBAL_COARSENING_H
+#endif // INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MUTLIGRID_TRANSFER_H_
