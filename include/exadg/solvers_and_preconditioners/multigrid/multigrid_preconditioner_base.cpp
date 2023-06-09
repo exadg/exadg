@@ -31,7 +31,6 @@
 #include <exadg/grid/grid_utilities.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/matrix_free/categorization.h>
-#include <exadg/solvers_and_preconditioners/multigrid/coarse_grid_solvers.h>
 #include <exadg/solvers_and_preconditioners/multigrid/constraints.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_algorithm.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h>
@@ -705,6 +704,10 @@ void
 MultigridPreconditionerBase<dim, Number>::initialize_smoother(Operator &   mg_operator,
                                                               unsigned int level)
 {
+  AssertThrow(level > 0 and level < this->get_number_of_levels(),
+              dealii::ExcMessage(
+                "Multigrid level is invalid when initializing multigrid smoother!"));
+
   switch(data.smoother_data.smoother)
   {
     case MultigridSmoother::Chebyshev:
@@ -774,97 +777,14 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::update_smoothers()
 {
-  for_all_smoothing_levels([&](unsigned int const level) { this->update_smoother(level); });
-}
-
-template<int dim, typename Number>
-void
-MultigridPreconditionerBase<dim, Number>::update_smoother(unsigned int level)
-{
-  AssertThrow(level > 0 and level < this->get_number_of_levels(),
-              dealii::ExcMessage(
-                "Multigrid level is invalid when initializing multigrid smoother!"));
-
-  switch(data.smoother_data.smoother)
-  {
-    case MultigridSmoother::Chebyshev:
-    {
-      typedef ChebyshevSmoother<Operator, VectorTypeMG> Chebyshev;
-
-      std::shared_ptr<Chebyshev> smoother = std::dynamic_pointer_cast<Chebyshev>(smoothers[level]);
-      smoother->update();
-      break;
-    }
-    case MultigridSmoother::GMRES:
-    {
-      typedef GMRESSmoother<Operator, VectorTypeMG> GMRES;
-
-      std::shared_ptr<GMRES> smoother = std::dynamic_pointer_cast<GMRES>(smoothers[level]);
-      smoother->update();
-      break;
-    }
-    case MultigridSmoother::CG:
-    {
-      typedef CGSmoother<Operator, VectorTypeMG> CG;
-
-      std::shared_ptr<CG> smoother = std::dynamic_pointer_cast<CG>(smoothers[level]);
-      smoother->update();
-      break;
-    }
-    case MultigridSmoother::Jacobi:
-    {
-      typedef JacobiSmoother<Operator, VectorTypeMG> Jacobi;
-
-      std::shared_ptr<Jacobi> smoother = std::dynamic_pointer_cast<Jacobi>(smoothers[level]);
-      smoother->update();
-      break;
-    }
-    default:
-    {
-      AssertThrow(false, dealii::ExcMessage("Specified MultigridSmoother not implemented!"));
-    }
-  }
+  for_all_smoothing_levels([&](unsigned int const level) { smoothers[level]->update(); });
 }
 
 template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::update_coarse_solver()
 {
-  switch(data.coarse_problem.solver)
-  {
-    case MultigridCoarseGridSolver::Chebyshev:
-    {
-      std::shared_ptr<MGCoarseChebyshev<Operator>> coarse_solver =
-        std::dynamic_pointer_cast<MGCoarseChebyshev<Operator>>(coarse_grid_solver);
-      coarse_solver->update();
-
-      break;
-    }
-    case MultigridCoarseGridSolver::CG:
-    case MultigridCoarseGridSolver::GMRES:
-    {
-      if(data.coarse_problem.preconditioner != MultigridCoarseGridPreconditioner::None)
-      {
-        std::shared_ptr<MGCoarseKrylov<Operator>> coarse_solver =
-          std::dynamic_pointer_cast<MGCoarseKrylov<Operator>>(coarse_grid_solver);
-        coarse_solver->update();
-      }
-
-      break;
-    }
-    case MultigridCoarseGridSolver::AMG:
-    {
-      std::shared_ptr<MGCoarseAMG<Operator>> coarse_solver =
-        std::dynamic_pointer_cast<MGCoarseAMG<Operator>>(coarse_grid_solver);
-      coarse_solver->update();
-
-      break;
-    }
-    default:
-    {
-      AssertThrow(false, dealii::ExcMessage("Unknown coarse-grid solver given"));
-    }
-  }
+  coarse_grid_solver->update();
 }
 
 template<int dim, typename Number>

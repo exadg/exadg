@@ -92,7 +92,7 @@ public:
   }
 
   void
-  update()
+  update() final
   {
     if(preconditioner != nullptr)
       preconditioner->update();

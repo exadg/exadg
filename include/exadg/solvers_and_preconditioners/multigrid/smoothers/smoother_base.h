@@ -37,6 +37,9 @@ public:
 
   virtual void
   step(VectorType & dst, VectorType const & src) const = 0;
+
+  virtual void
+  update() = 0;
 };
 
 } // namespace ExaDG

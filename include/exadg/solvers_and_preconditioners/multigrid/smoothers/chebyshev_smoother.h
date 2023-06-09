@@ -106,7 +106,7 @@ public:
   }
 
   void
-  update()
+  update() final
   {
     AssertThrow(underlying_operator != nullptr,
                 dealii::ExcMessage("Pointer underlying_operator is uninitialized."));
