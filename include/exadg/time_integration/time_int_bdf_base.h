@@ -97,6 +97,12 @@ public:
 
 protected:
   /*
+   * Get current order of time integrator
+   */
+  unsigned int
+  get_current_order() const;
+
+  /*
    * Do one time step including different updates before and after the actual solution of the
    * current time step.
    */
