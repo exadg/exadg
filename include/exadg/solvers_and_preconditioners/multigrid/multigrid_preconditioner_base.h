@@ -313,12 +313,6 @@ private:
   virtual void
   update_smoother(unsigned int level);
 
-  void
-  initialize_chebyshev_smoother_point_jacobi(Operator & matrix, unsigned int const level);
-
-  void
-  initialize_chebyshev_smoother_block_jacobi(Operator & matrix, unsigned int const level);
-
   /*
    * Coarse grid solver.
    */
