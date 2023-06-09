@@ -128,7 +128,7 @@ $(function() {
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="comment">// when starting the time integrator with a low order method, ensure that</span></div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    <span class="comment">// the time integrator constants are set properly</span></div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> update_order =</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>      (current_order &lt;= order &amp;&amp; start_with_low_order == <span class="keyword">true</span>) ? current_order : order;</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>      (current_order &lt;= order and start_with_low_order == <span class="keyword">true</span>) ? current_order : order;</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    <span class="keywordflow">if</span>(adaptive_time_stepping)</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>      set_adaptive_time_step(update_order, time_steps);</div>
