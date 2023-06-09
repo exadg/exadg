@@ -35,7 +35,7 @@
 #include <exadg/solvers_and_preconditioners/multigrid/levels_hybrid_multigrid.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/smoother_base.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfer.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 
 // forward declarations
@@ -200,9 +200,8 @@ protected:
 
   void
   do_initialize_transfer_operators(
-    std::shared_ptr<MGTransfer<VectorTypeMG>> &                         transfers,
-    dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> & constrained_dofs,
-    unsigned int const                                                  dof_index);
+    std::shared_ptr<MultigridTransfer<dim, MultigridNumber, VectorTypeMG>> & transfers,
+    unsigned int const                                                       dof_index);
 
   /**
    * Returns the number of levels.
@@ -257,9 +256,9 @@ protected:
   dealii::MGLevelObject<std::shared_ptr<MatrixFreeData<dim, MultigridNumber>>>
     matrix_free_data_objects;
   dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, MultigridNumber>>>
-                                                   matrix_free_objects;
-  dealii::MGLevelObject<std::shared_ptr<Operator>> operators;
-  std::shared_ptr<MGTransfer<VectorTypeMG>>        transfers;
+                                                                         matrix_free_objects;
+  dealii::MGLevelObject<std::shared_ptr<Operator>>                       operators;
+  std::shared_ptr<MultigridTransfer<dim, MultigridNumber, VectorTypeMG>> transfers;
 
   std::vector<MGDoFHandlerIdentifier> p_levels;
   std::vector<MGLevelInfo>            level_info;

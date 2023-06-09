@@ -19,16 +19,16 @@
  *  ______________________________________________________________________
  */
 
-#ifndef MG_TRANSFER_MF
-#define MG_TRANSFER_MF
+#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MUTLIGRID_TRANSFER_BASE_H_
+#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MUTLIGRID_TRANSFER_BASE_H_
 
 namespace ExaDG
 {
 template<typename VectorType>
-class MGTransfer
+class MultigridTransferBase
 {
 public:
-  virtual ~MGTransfer() = default;
+  virtual ~MultigridTransferBase() = default;
 
   virtual void
   interpolate(unsigned int const level, VectorType & dst, VectorType const & src) const = 0;

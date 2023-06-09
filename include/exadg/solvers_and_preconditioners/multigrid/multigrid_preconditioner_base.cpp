@@ -39,7 +39,7 @@
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/chebyshev_smoother.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/gmres_smoother.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/jacobi_smoother.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_global_coarsening.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfer.h>
 #include <exadg/solvers_and_preconditioners/utilities/compute_eigenvalues.h>
 #include <exadg/utilities/mpi.h>
 
@@ -936,33 +936,20 @@ void
 MultigridPreconditionerBase<dim, Number>::initialize_transfer_operators()
 {
   unsigned int const dof_index = 0;
-  this->do_initialize_transfer_operators(transfers, constrained_dofs, dof_index);
+  this->do_initialize_transfer_operators(transfers, dof_index);
 }
 
 template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::do_initialize_transfer_operators(
-  std::shared_ptr<MGTransfer<VectorTypeMG>> &                         transfers,
-  dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> & constrained_dofs,
-  unsigned int const                                                  dof_index)
+  std::shared_ptr<MultigridTransfer<dim, MultigridNumber, VectorTypeMG>> & transfers,
+  unsigned int const                                                       dof_index)
 {
-  (void)constrained_dofs;
+  transfers = std::make_shared<MultigridTransfer<dim, MultigridNumber, VectorTypeMG>>();
 
-  if(multigrid_variant == MultigridVariant::GlobalCoarsening ||
-     multigrid_variant == MultigridVariant::LocalSmoothing)
-  {
-    auto tmp = std::make_shared<MGTransferGlobalCoarsening<dim, MultigridNumber, VectorTypeMG>>();
-
-    tmp->reinit(matrix_free_objects,
-                dof_index,
-                multigrid_variant == MultigridVariant::LocalSmoothing);
-
-    transfers = tmp;
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("not implemented."));
-  }
+  transfers->reinit(matrix_free_objects,
+                    dof_index,
+                    multigrid_variant == MultigridVariant::LocalSmoothing);
 }
 
 template<int dim, typename Number>

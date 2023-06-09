@@ -103,7 +103,7 @@ private:
   std::shared_ptr<PDEOperatorMG>
   get_operator(unsigned int level) const;
 
-  std::shared_ptr<MGTransfer<VectorTypeMG>> transfers_velocity;
+  std::shared_ptr<MultigridTransfer<dim, MultigridNumber, VectorTypeMG>> transfers_velocity;
 
   dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> dof_handlers_velocity;
   dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>>     constrained_dofs_velocity;

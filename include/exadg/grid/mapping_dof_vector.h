@@ -38,7 +38,7 @@
 
 // ExaDG
 #include <exadg/grid/grid_data.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_global_coarsening.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfer.h>
 
 namespace ExaDG
 {

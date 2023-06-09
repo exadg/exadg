@@ -291,9 +291,7 @@ MultigridPreconditioner<dim, Number>::initialize_transfer_operators()
      data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
   {
     unsigned int const dof_index = 1;
-    this->do_initialize_transfer_operators(transfers_velocity,
-                                           constrained_dofs_velocity,
-                                           dof_index);
+    this->do_initialize_transfer_operators(transfers_velocity, dof_index);
   }
 }
 

@@ -32,7 +32,7 @@
 #include <deal.II/multigrid/multigrid.h>
 
 // ExaDG
-#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfer_base.h>
 #include <exadg/utilities/timer_tree.h>
 
 /*
@@ -56,7 +56,7 @@ class MultigridAlgorithm
 public:
   MultigridAlgorithm(dealii::MGLevelObject<std::shared_ptr<MatrixType>> const &   matrix,
                      dealii::MGCoarseGridBase<VectorType> const &                 coarse,
-                     MGTransfer<VectorType> const &                               transfer,
+                     MultigridTransferBase<VectorType> const &                    transfer,
                      dealii::MGLevelObject<std::shared_ptr<SmootherType>> const & smoother,
                      MPI_Comm const &                                             comm,
                      unsigned int const                                           n_cycles = 1)
@@ -278,7 +278,7 @@ private:
   /**
    * Object for grid transfer.
    */
-  MGTransfer<VectorType> const & transfer;
+  MultigridTransferBase<VectorType> const & transfer;
 
   /**
    * The smoothing object.
