@@ -98,15 +98,15 @@ typedef Operator::value_type&#160;</td><td class="memItemRight" valign="bottom">
 <tr class="memitem:a9bc4b10ef0e7e0ee66e7a4b2dddb4d90"><td class="memItemLeft" align="right" valign="top"><a id="a9bc4b10ef0e7e0ee66e7a4b2dddb4d90" name="a9bc4b10ef0e7e0ee66e7a4b2dddb4d90"></a>
 typedef dealii::LinearAlgebra::distributed::Vector&lt; MultigridNumber &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
 <tr class="separator:a9bc4b10ef0e7e0ee66e7a4b2dddb4d90"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a66d94c78e9727005de97be16ff89be62"><td class="memItemLeft" align="right" valign="top"><a id="a66d94c78e9727005de97be16ff89be62" name="a66d94c78e9727005de97be16ff89be62"></a>
-typedef <a class="el" href="classExaDG_1_1ChebyshevSmoother.html">ChebyshevSmoother</a>&lt; Operator, VectorType, dealii::DiagonalMatrix&lt; VectorType &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Chebyshev</b></td></tr>
-<tr class="separator:a66d94c78e9727005de97be16ff89be62"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa59ce4ec5df3528de11f9f3c31548fb0"><td class="memItemLeft" align="right" valign="top"><a id="aa59ce4ec5df3528de11f9f3c31548fb0" name="aa59ce4ec5df3528de11f9f3c31548fb0"></a>
+typedef dealii::PreconditionChebyshev&lt; Operator, VectorType, dealii::DiagonalMatrix&lt; VectorType &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>DealiiChebyshev</b></td></tr>
+<tr class="separator:aa59ce4ec5df3528de11f9f3c31548fb0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aaeb0aa3cd549332e7336cccebc071476"><td class="memItemLeft" align="right" valign="top"><a id="aaeb0aa3cd549332e7336cccebc071476" name="aaeb0aa3cd549332e7336cccebc071476"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MGCoarseChebyshev</b> (Operator const &amp;coarse_operator_in, <a class="el" href="structExaDG_1_1SolverData.html">SolverData</a> const &amp;solver_data_in, bool const operator_is_singular_in)</td></tr>
-<tr class="separator:aaeb0aa3cd549332e7336cccebc071476"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d570299e76a35435dcfca8b971e4f43"><td class="memItemLeft" align="right" valign="top"><a id="a1d570299e76a35435dcfca8b971e4f43" name="a1d570299e76a35435dcfca8b971e4f43"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MGCoarseChebyshev</b> (Operator const &amp;coarse_operator_in, <a class="el" href="structExaDG_1_1SolverData.html">SolverData</a> const &amp;solver_data_in, MultigridCoarseGridPreconditioner const &amp;preconditioner, bool const operator_is_singular_in)</td></tr>
+<tr class="separator:a1d570299e76a35435dcfca8b971e4f43"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adf8a425865f2cad0f9200febfb876170"><td class="memItemLeft" align="right" valign="top"><a id="adf8a425865f2cad0f9200febfb876170" name="adf8a425865f2cad0f9200febfb876170"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update</b> ()</td></tr>
 <tr class="separator:adf8a425865f2cad0f9200febfb876170"><td class="memSeparator" colspan="2">&#160;</td></tr>
