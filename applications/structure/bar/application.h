@@ -205,8 +205,8 @@ public:
                         problem_type,
                         "Problem type considered, QuasiStatic vs Unsteady vs. Steady");
       prm.add_parameter("WeakDamping",
-    		  	  	  	weak_damping_coefficient,
-						"Weak damping coefficient for unsteady problems.");
+                        weak_damping_coefficient,
+                        "Weak damping coefficient for unsteady problems.");
       prm.add_parameter("Displacement",
                         displacement,
                         "Displacement of right boundary in case of Dirichlet BC.");
@@ -546,7 +546,7 @@ private:
     Neumann
   };
   BoundaryType boundary_type = BoundaryType::Dirichlet;
-  ProblemType problem_type = ProblemType::Unsteady;
+  ProblemType  problem_type  = ProblemType::Unsteady;
 
   double weak_damping_coefficient = 0.0;
 
