@@ -280,6 +280,7 @@ public:
   ApplicationBasePrecursor(std::string parameter_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(parameter_file, comm)
   {
+    grid_pre = std::make_shared<Grid<dim>>();
   }
 
   virtual ~ApplicationBasePrecursor()
