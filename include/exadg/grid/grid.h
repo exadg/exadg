@@ -101,8 +101,10 @@ public:
     initialize_coarse_mappings =
       [&](std::vector<std::shared_ptr<dealii::Mapping<dim> const>> & coarse_mappings,
           std::shared_ptr<dealii::Mapping<dim> const> const &        fine_mapping) {
-        MappingTools::initialize_coarse_mappings<dim, double>(
-          coarse_mappings, fine_mapping, data.multigrid, triangulation, coarse_triangulations);
+        MappingTools::initialize_coarse_mappings<dim, double>(coarse_mappings,
+                                                              fine_mapping,
+                                                              triangulation,
+                                                              coarse_triangulations);
       };
 
 private:

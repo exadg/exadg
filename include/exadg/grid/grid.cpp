@@ -20,7 +20,6 @@
  */
 
 // ExaDG
-#include <exadg/grid/enum_types.h>
 #include <exadg/grid/grid.h>
 #include <exadg/grid/grid_utilities.h>
 #include <exadg/grid/perform_local_refinements.h>
@@ -38,26 +37,25 @@ Grid<dim>::initialize(GridData const & data, MPI_Comm const & mpi_comm)
   // triangulation
   if(data.triangulation_type == TriangulationType::Serial)
   {
-    auto const mesh_smoothing =
-      GridUtilities::get_mesh_smoothing<dim>(data.multigrid == MultigridVariant::LocalSmoothing,
-                                             data.element_type);
+    auto mesh_smoothing = dealii::Triangulation<dim>::none;
+
+    if(data.fine_triangulation_contains_multigrid_hierarchy)
+      mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
 
     AssertDimension(dealii::Utilities::MPI::n_mpi_processes(mpi_comm), 1);
     triangulation = std::make_shared<dealii::Triangulation<dim>>(mesh_smoothing);
   }
   else if(data.triangulation_type == TriangulationType::Distributed)
   {
+    auto mesh_smoothing = dealii::Triangulation<dim>::none;
     typename dealii::parallel::distributed::Triangulation<dim>::Settings distributed_settings;
 
-    if(data.multigrid == MultigridVariant::LocalSmoothing)
+    if(data.fine_triangulation_contains_multigrid_hierarchy)
+    {
+      mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
       distributed_settings =
         dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy;
-    else
-      distributed_settings = dealii::parallel::distributed::Triangulation<dim>::default_setting;
-
-    auto const mesh_smoothing =
-      GridUtilities::get_mesh_smoothing<dim>(data.multigrid == MultigridVariant::LocalSmoothing,
-                                             data.element_type);
+    }
 
     triangulation =
       std::make_shared<dealii::parallel::distributed::Triangulation<dim>>(mpi_comm,

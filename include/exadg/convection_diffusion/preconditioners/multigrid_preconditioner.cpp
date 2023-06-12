@@ -44,7 +44,6 @@ template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize(
   MultigridData const &                       mg_data,
-  MultigridVariant const &                    multigrid_variant,
   std::shared_ptr<Grid<dim> const>            grid,
   std::shared_ptr<dealii::Mapping<dim> const> mapping,
   dealii::FiniteElement<dim> const &          fe,
@@ -92,7 +91,6 @@ MultigridPreconditioner<dim, Number>::initialize(
   }
 
   Base::initialize(mg_data,
-                   multigrid_variant,
                    grid,
                    mapping,
                    fe,
@@ -171,9 +169,9 @@ void
 MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
   MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
   unsigned int const                     level,
-  unsigned int const                     h_level)
+  unsigned int const                     dealii_tria_level)
 {
-  matrix_free_data.data.mg_level = h_level;
+  matrix_free_data.data.mg_level = dealii_tria_level;
 
   MappingFlags flags;
   if(data.unsteady_problem)
@@ -190,7 +188,7 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
   {
     auto tria = dynamic_cast<dealii::parallel::distributed::Triangulation<dim> const *>(
       &this->dof_handlers[level]->get_triangulation());
-    Categorization::do_cell_based_loops(*tria, matrix_free_data.data, h_level);
+    Categorization::do_cell_based_loops(*tria, matrix_free_data.data, dealii_tria_level);
   }
 
   matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "std_dof_handler");
@@ -273,10 +271,7 @@ MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
                                                     fe_velocity,
                                                     dirichlet_bc_velocity,
                                                     dirichlet_bc_velocity_component_mask,
-                                                    this->level_info,
-                                                    this->p_levels,
                                                     dof_handlers_velocity,
-                                                    constrained_dofs_velocity,
                                                     constraints_velocity);
   }
 }

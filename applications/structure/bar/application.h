@@ -235,12 +235,11 @@ private:
     if(this->param.grid.element_type == ElementType::Simplex)
     {
       this->param.grid.triangulation_type = TriangulationType::FullyDistributed;
-      this->param.grid.multigrid          = MultigridVariant::GlobalCoarsening;
+      this->param.grid.fine_triangulation_contains_multigrid_hierarchy = false;
     }
     else if(this->param.grid.element_type == ElementType::Hypercube)
     {
       this->param.grid.triangulation_type = TriangulationType::Distributed;
-      this->param.grid.multigrid          = MultigridVariant::LocalSmoothing;
     }
 
     this->param.load_increment = 0.1;
@@ -363,7 +362,8 @@ private:
     GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
                                                               this->param.grid,
                                                               this->param.involves_h_multigrid(),
-                                                              lambda_create_triangulation);
+                                                              lambda_create_triangulation,
+                                                              {} /* no local refinements */);
   }
 
   void

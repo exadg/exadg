@@ -137,9 +137,10 @@ public:
 
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.grid.multigrid          = MultigridVariant::GlobalCoarsening;
-    this->param.mapping_degree          = this->param.degree_u;
-    this->param.degree_p                = DegreePressure::MixedOrder;
+    this->param.grid.fine_triangulation_contains_multigrid_hierarchy = false;
+
+    this->param.mapping_degree = this->param.degree_u;
+    this->param.degree_p       = DegreePressure::MixedOrder;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -282,7 +283,8 @@ public:
     GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
                                                               this->param.grid,
                                                               this->param.involves_h_multigrid(),
-                                                              lambda_create_triangulation);
+                                                              lambda_create_triangulation,
+                                                              {});
   }
 
   void

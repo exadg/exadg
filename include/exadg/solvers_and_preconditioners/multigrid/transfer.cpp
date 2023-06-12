@@ -30,29 +30,8 @@ void
 MultigridTransfer<dim, Number, VectorType>::reinit(
   dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> & mg_matrixfree,
   unsigned int const                                                        dof_handler_index,
-  bool const                                                                with_global_refinement)
+  std::vector<MGLevelInfo> const &                                          global_levels)
 {
-  std::vector<MGLevelInfo> global_levels;
-
-  unsigned int const min_level = mg_matrixfree.min_level();
-  AssertThrow(min_level == 0, dealii::ExcMessage("Currently, we expect min_level==0!"));
-
-  unsigned int const max_level = mg_matrixfree.max_level();
-
-  // construct global_levels
-  for(unsigned int global_level = min_level; global_level <= max_level; global_level++)
-  {
-    auto const &       matrixfree = mg_matrixfree[global_level];
-    auto const &       fe         = matrixfree->get_dof_handler(dof_handler_index).get_fe();
-    bool const         is_dg      = fe.dofs_per_vertex == 0;
-    unsigned int const level =
-      with_global_refinement ? matrixfree->get_mg_level() :
-                               matrixfree->get_dof_handler().get_triangulation().n_global_levels();
-    unsigned int const degree = fe.degree;
-
-    global_levels.push_back(MGLevelInfo(level, degree, is_dg));
-  }
-
   // create transfer-operator instances
   transfers.resize(0, global_levels.size() - 1);
 
@@ -69,8 +48,8 @@ MultigridTransfer<dim, Number, VectorType>::reinit(
         mg_matrixfree[i - 1]->get_dof_handler(dof_handler_index),
         mg_matrixfree[i]->get_affine_constraints(dof_handler_index),
         mg_matrixfree[i - 1]->get_affine_constraints(dof_handler_index),
-        with_global_refinement ? fine_level.h_level() : dealii::numbers::invalid_unsigned_int,
-        with_global_refinement ? coarse_level.h_level() : dealii::numbers::invalid_unsigned_int);
+        mg_matrixfree[i]->get_mg_level(),
+        mg_matrixfree[i - 1]->get_mg_level());
     }
     else if(coarse_level.degree() != fine_level.degree() or // p-transfer
             coarse_level.is_dg() != fine_level.is_dg())     // c-transfer
@@ -80,8 +59,8 @@ MultigridTransfer<dim, Number, VectorType>::reinit(
         mg_matrixfree[i - 1]->get_dof_handler(dof_handler_index),
         mg_matrixfree[i]->get_affine_constraints(dof_handler_index),
         mg_matrixfree[i - 1]->get_affine_constraints(dof_handler_index),
-        with_global_refinement ? fine_level.h_level() : dealii::numbers::invalid_unsigned_int,
-        with_global_refinement ? coarse_level.h_level() : dealii::numbers::invalid_unsigned_int);
+        mg_matrixfree[i]->get_mg_level(),
+        mg_matrixfree[i - 1]->get_mg_level());
     }
   }
 

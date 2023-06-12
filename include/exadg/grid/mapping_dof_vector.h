@@ -525,7 +525,6 @@ void
 initialize_coarse_mappings(
   std::vector<std::shared_ptr<dealii::Mapping<dim> const>> &             coarse_mappings,
   std::shared_ptr<dealii::Mapping<dim> const> const &                    fine_mapping,
-  MultigridVariant const &                                               multigrid_variant,
   std::shared_ptr<dealii::Triangulation<dim> const> const &              fine_triangulation,
   std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations)
 {
@@ -536,19 +535,15 @@ initialize_coarse_mappings(
 
   if(mapping_q_cache.get() != 0)
   {
-    if(multigrid_variant == MultigridVariant::GlobalCoarsening)
+    if(coarse_triangulations.size() > 0)
     {
       MappingTools::initialize_coarse_mappings_from_mapping_q_cache<dim, Number>(
         coarse_mappings, mapping_q_cache, fine_triangulation, coarse_triangulations);
     }
-    else if(multigrid_variant == MultigridVariant::LocalSmoothing)
+    else
     {
       MappingTools::initialize_coarse_mappings_from_mapping_q_cache<dim, Number>(
         coarse_mappings, mapping_q_cache, *fine_triangulation);
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("not implemented."));
     }
   }
   else

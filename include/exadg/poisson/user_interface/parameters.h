@@ -22,7 +22,6 @@
 #ifndef INCLUDE_LAPLACE_INPUT_PARAMETERS_H_
 #define INCLUDE_LAPLACE_INPUT_PARAMETERS_H_
 
-#include <exadg/grid/enum_types.h>
 #include <exadg/grid/grid_data.h>
 #include <exadg/poisson/user_interface/enum_types.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>

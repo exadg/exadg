@@ -499,7 +499,6 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
   Map_DBC_ComponentMask                                               dirichlet_bc_component_mask;
 
   mg_preconditioner->initialize(this->param.multigrid_data_velocity_block,
-                                this->param.grid.multigrid,
                                 this->grid,
                                 this->get_mapping(),
                                 this->get_dof_handler_u().get_fe(),
@@ -650,7 +649,6 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complement()
 
   auto & dof_handler = this->get_dof_handler_p();
   mg_preconditioner->initialize(mg_data,
-                                this->param.grid.multigrid,
                                 this->grid,
                                 this->get_mapping(),
                                 dof_handler.get_fe(),

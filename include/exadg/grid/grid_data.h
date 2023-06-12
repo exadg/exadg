@@ -22,12 +22,41 @@
 #ifndef INCLUDE_EXADG_GRID_GRID_DATA_H_
 #define INCLUDE_EXADG_GRID_GRID_DATA_H_
 
+#include <string>
+
 // ExaDG
-#include <exadg/grid/enum_types.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
 {
+/*
+ * Triangulation type
+ */
+enum class TriangulationType
+{
+  Serial,
+  Distributed,
+  FullyDistributed
+};
+
+/*
+ * Element type
+ */
+enum class ElementType
+{
+  Hypercube,
+  Simplex
+};
+
+/*
+ * Partitioning type (relevant for fully-distributed triangulation)
+ */
+enum class PartitioningType
+{
+  Metis,
+  z_order
+};
+
 struct GridData
 {
   GridData()
@@ -36,7 +65,7 @@ struct GridData
       partitioning_type(PartitioningType::Metis),
       n_refine_global(0),
       file_name(),
-      multigrid(MultigridVariant::LocalSmoothing)
+      fine_triangulation_contains_multigrid_hierarchy(true)
   {
   }
 
@@ -60,7 +89,9 @@ struct GridData
     if(not file_name.empty())
       print_parameter(pcout, "Grid file name", file_name);
 
-    print_parameter(pcout, "Multigrid variant", multigrid);
+    print_parameter(pcout,
+                    "Fine grid contains multigrid hierarchy",
+                    fine_triangulation_contains_multigrid_hierarchy);
   }
 
   TriangulationType triangulation_type;
@@ -77,7 +108,10 @@ struct GridData
   // deduce the correct type of the file format
   std::string file_name;
 
-  MultigridVariant multigrid;
+  // In case of a hypercube mesh that is globally refined, i.e. without hanging nodes, the fine
+  // triangulation can be used for all multgrid h-levels without the need to create coarse
+  // triangulations explicitly.
+  bool fine_triangulation_contains_multigrid_hierarchy;
 };
 
 } // namespace ExaDG

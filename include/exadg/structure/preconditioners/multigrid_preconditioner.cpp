@@ -35,7 +35,6 @@ template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize(
   MultigridData const &                       mg_data,
-  MultigridVariant const &                    multigrid_variant,
   std::shared_ptr<Grid<dim> const>            grid,
   std::shared_ptr<dealii::Mapping<dim> const> mapping,
   dealii::FiniteElement<dim> const &          fe,
@@ -51,7 +50,6 @@ MultigridPreconditioner<dim, Number>::initialize(
   nonlinear = nonlinear_in;
 
   Base::initialize(mg_data,
-                   multigrid_variant,
                    grid,
                    mapping,
                    fe,
@@ -133,9 +131,9 @@ void
 MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
   MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
   unsigned int const                     level,
-  unsigned int const                     h_level)
+  unsigned int const                     dealii_tria_level)
 {
-  matrix_free_data.data.mg_level = h_level;
+  matrix_free_data.data.mg_level = dealii_tria_level;
 
   if(nonlinear)
     matrix_free_data.append_mapping_flags(PDEOperatorNonlinear::get_mapping_flags());
