@@ -28,7 +28,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              3
-  Multigrid variant:                         LocalSmoothing
+  Fine grid contains multigrid hierarchy:    true
   Mapping degree:                            1
   FE space:                                  DG
   Polynomial degree:                         1
@@ -121,7 +121,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              3
-  Multigrid variant:                         LocalSmoothing
+  Fine grid contains multigrid hierarchy:    true
   Mapping degree:                            2
   FE space:                                  DG
   Polynomial degree:                         2
@@ -214,7 +214,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              3
-  Multigrid variant:                         LocalSmoothing
+  Fine grid contains multigrid hierarchy:    true
   Mapping degree:                            3
   FE space:                                  DG
   Polynomial degree:                         3
@@ -307,7 +307,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              3
-  Multigrid variant:                         LocalSmoothing
+  Fine grid contains multigrid hierarchy:    true
   Mapping degree:                            4
   FE space:                                  DG
   Polynomial degree:                         4
@@ -400,7 +400,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              3
-  Multigrid variant:                         LocalSmoothing
+  Fine grid contains multigrid hierarchy:    true
   Mapping degree:                            5
   FE space:                                  DG
   Polynomial degree:                         5
@@ -493,7 +493,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              3
-  Multigrid variant:                         LocalSmoothing
+  Fine grid contains multigrid hierarchy:    true
   Mapping degree:                            6
   FE space:                                  DG
   Polynomial degree:                         6
@@ -586,7 +586,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              3
-  Multigrid variant:                         LocalSmoothing
+  Fine grid contains multigrid hierarchy:    true
   Mapping degree:                            7
   FE space:                                  DG
   Polynomial degree:                         7
@@ -679,7 +679,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              3
-  Multigrid variant:                         LocalSmoothing
+  Fine grid contains multigrid hierarchy:    true
   Mapping degree:                            8
   FE space:                                  DG
   Polynomial degree:                         8
@@ -772,7 +772,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              3
-  Multigrid variant:                         LocalSmoothing
+  Fine grid contains multigrid hierarchy:    true
   Mapping degree:                            9
   FE space:                                  DG
   Polynomial degree:                         9
@@ -865,7 +865,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              3
-  Multigrid variant:                         LocalSmoothing
+  Fine grid contains multigrid hierarchy:    true
   Mapping degree:                            10
   FE space:                                  DG
   Polynomial degree:                         10
@@ -958,7 +958,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              3
-  Multigrid variant:                         LocalSmoothing
+  Fine grid contains multigrid hierarchy:    true
   Mapping degree:                            11
   FE space:                                  DG
   Polynomial degree:                         11
@@ -1051,7 +1051,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              3
-  Multigrid variant:                         LocalSmoothing
+  Fine grid contains multigrid hierarchy:    true
   Mapping degree:                            12
   FE space:                                  DG
   Polynomial degree:                         12
@@ -1113,7 +1113,7 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 4.59454e-11
+  Relative error (L2-norm): 4.58639e-11
 
 
 
@@ -1144,7 +1144,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              3
-  Multigrid variant:                         LocalSmoothing
+  Fine grid contains multigrid hierarchy:    true
   Mapping degree:                            13
   FE space:                                  DG
   Polynomial degree:                         13
@@ -1206,7 +1206,7 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 4.20802e-11
+  Relative error (L2-norm): 4.25198e-11
 
 
 
@@ -1237,7 +1237,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              3
-  Multigrid variant:                         LocalSmoothing
+  Fine grid contains multigrid hierarchy:    true
   Mapping degree:                            14
   FE space:                                  DG
   Polynomial degree:                         14
@@ -1299,7 +1299,7 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 2.47256e-12
+  Relative error (L2-norm): 2.43692e-12
 
 
 
@@ -1330,7 +1330,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              3
-  Multigrid variant:                         LocalSmoothing
+  Fine grid contains multigrid hierarchy:    true
   Mapping degree:                            15
   FE space:                                  DG
   Polynomial degree:                         15
@@ -1392,4 +1392,4 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 1.10960e-12
+  Relative error (L2-norm): 1.54749e-12

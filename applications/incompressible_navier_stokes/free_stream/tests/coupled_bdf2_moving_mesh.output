@@ -64,7 +64,7 @@ Spatial discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              2
-  Multigrid variant:                         LocalSmoothing
+  Fine grid contains multigrid hierarchy:    true
   Mapping degree:                            3
   FE space:                                  L2
   Polynomial degree velocity:                3
@@ -198,61 +198,61 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for velocity at time t = 1.0002e+00:
-  Relative error (L2-norm): 1.18688e-15
+  Relative error (L2-norm): 1.06527e-15
 
 Calculate error for pressure at time t = 1.0002e+00:
-  Relative error (L2-norm): 1.18731e-12
+  Relative error (L2-norm): 3.29946e-13
 
 Calculate error for velocity at time t = 2.0015e+00:
-  Relative error (L2-norm): 1.01054e-15
+  Relative error (L2-norm): 9.26990e-16
 
 Calculate error for pressure at time t = 2.0015e+00:
-  Relative error (L2-norm): 2.77309e-13
+  Relative error (L2-norm): 2.53822e-13
 
 Calculate error for velocity at time t = 3.0028e+00:
-  Relative error (L2-norm): 2.73402e-15
+  Relative error (L2-norm): 1.03044e-15
 
 Calculate error for pressure at time t = 3.0028e+00:
-  Relative error (L2-norm): 2.78247e-13
+  Relative error (L2-norm): 1.02882e-12
 
 Calculate error for velocity at time t = 4.0042e+00:
-  Relative error (L2-norm): 3.68023e-15
+  Relative error (L2-norm): 9.32372e-16
 
 Calculate error for pressure at time t = 4.0042e+00:
-  Relative error (L2-norm): 5.31945e-13
+  Relative error (L2-norm): 4.65284e-13
 
 Calculate error for velocity at time t = 5.0055e+00:
-  Relative error (L2-norm): 2.09836e-15
+  Relative error (L2-norm): 1.09248e-15
 
 Calculate error for pressure at time t = 5.0055e+00:
-  Relative error (L2-norm): 2.33994e-13
+  Relative error (L2-norm): 9.46283e-13
 
 Calculate error for velocity at time t = 6.0011e+00:
-  Relative error (L2-norm): 1.19326e-15
+  Relative error (L2-norm): 1.75710e-15
 
 Calculate error for pressure at time t = 6.0011e+00:
-  Relative error (L2-norm): 8.64173e-14
+  Relative error (L2-norm): 2.37917e-13
 
 Calculate error for velocity at time t = 7.0024e+00:
-  Relative error (L2-norm): 2.08988e-15
+  Relative error (L2-norm): 1.14458e-15
 
 Calculate error for pressure at time t = 7.0024e+00:
-  Relative error (L2-norm): 4.17441e-13
+  Relative error (L2-norm): 1.98658e-13
 
 Calculate error for velocity at time t = 8.0037e+00:
-  Relative error (L2-norm): 1.59950e-15
+  Relative error (L2-norm): 1.02685e-15
 
 Calculate error for pressure at time t = 8.0037e+00:
-  Relative error (L2-norm): 1.80994e-13
+  Relative error (L2-norm): 1.69781e-13
 
 Calculate error for velocity at time t = 9.0051e+00:
-  Relative error (L2-norm): 1.02624e-15
+  Relative error (L2-norm): 1.56211e-15
 
 Calculate error for pressure at time t = 9.0051e+00:
-  Relative error (L2-norm): 1.04763e-13
+  Relative error (L2-norm): 2.23709e-13
 
 Calculate error for velocity at time t = 1.0001e+01:
-  Relative error (L2-norm): 1.00910e-15
+  Relative error (L2-norm): 1.18744e-15
 
 Calculate error for pressure at time t = 1.0001e+01:
-  Relative error (L2-norm): 1.06831e-13
+  Relative error (L2-norm): 2.62521e-13

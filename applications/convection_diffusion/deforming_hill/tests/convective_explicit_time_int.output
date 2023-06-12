@@ -48,7 +48,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              2
-  Multigrid variant:                         LocalSmoothing
+  Fine grid contains multigrid hierarchy:    true
   Mapping degree:                            1
   Polynomial degree:                         15
   Numerical flux convective term:            LaxFriedrichsFlux

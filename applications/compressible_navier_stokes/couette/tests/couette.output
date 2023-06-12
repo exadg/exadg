@@ -52,7 +52,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              0
-  Multigrid variant:                         LocalSmoothing
+  Fine grid contains multigrid hierarchy:    true
   Mapping degree:                            3
   Polynomial degree:                         3
   Quadrature rule convective term:           Standard
