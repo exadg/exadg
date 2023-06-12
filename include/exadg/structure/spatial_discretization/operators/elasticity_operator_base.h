@@ -39,6 +39,7 @@ struct OperatorData : public OperatorBaseData
       pull_back_traction(false),
       unsteady(false),
       density(1.0),
+      weak_damping_coefficient(0.0),
       quad_index_gauss_lobatto(0)
   {
   }
@@ -56,6 +57,9 @@ struct OperatorData : public OperatorBaseData
 
   // density
   double density;
+
+  // linear weak damping coefficient (mass proportional) for unsteady problems
+  double weak_damping_coefficient;
 
   // for DirichletCached boundary conditions, another quadrature rule
   // is needed to set the constrained DoFs.

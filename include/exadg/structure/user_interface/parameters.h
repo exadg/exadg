@@ -130,6 +130,9 @@ public:
   // density rho_0 in initial configuration (only relevant for unsteady problems)
   double density;
 
+  // linear weak damping coefficient (mass proportional) for unsteady problems
+  double weak_damping_coefficient;
+
   /**************************************************************************************/
   /*                                                                                    */
   /*                             TEMPORAL DISCRETIZATION                                */

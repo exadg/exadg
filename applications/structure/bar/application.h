@@ -222,6 +222,8 @@ private:
     this->param.pull_back_traction   = false;
 
     this->param.density = density;
+    this->param.weak_damping_coefficient =
+      this->param.problem_type == ProblemType::Unsteady ? 0.01 * density : 0.0;
 
     this->param.start_time                           = start_time;
     this->param.end_time                             = end_time;
@@ -495,6 +497,9 @@ private:
     pp_data.output_data.filename           = this->output_parameters.filename;
     pp_data.output_data.write_higher_order = true;
     pp_data.output_data.degree             = this->param.degree;
+
+    pp_data.error_data.time_control_data.start_time       = start_time;
+    pp_data.error_data.time_control_data.trigger_interval = (end_time - start_time);
 
     pp_data.error_data.time_control_data.is_active = true;
     pp_data.error_data.calculate_relative_errors   = true;

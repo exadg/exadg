@@ -347,10 +347,11 @@ Operator<dim, Number>::setup_operators()
 
     operator_data.quad_index_gauss_lobatto = get_quad_index_gauss_lobatto();
   }
-  operator_data.bc                  = boundary_descriptor;
-  operator_data.material_descriptor = material_descriptor;
-  operator_data.unsteady            = (param.problem_type == ProblemType::Unsteady);
-  operator_data.density             = param.density;
+  operator_data.bc                       = boundary_descriptor;
+  operator_data.material_descriptor      = material_descriptor;
+  operator_data.unsteady                 = (param.problem_type == ProblemType::Unsteady);
+  operator_data.density                  = param.density;
+  operator_data.weak_damping_coefficient = param.weak_damping_coefficient;
   if(param.large_deformation)
   {
     operator_data.pull_back_traction = param.pull_back_traction;

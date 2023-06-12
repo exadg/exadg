@@ -113,9 +113,17 @@ Driver<dim, Number>::setup()
     }
 
     if(application->get_parameters().problem_type == ProblemType::Unsteady)
-      pde_operator->setup_solver(time_integrator->get_scaling_factor_mass());
+    {
+      double const total_scaling_factor_mass =
+        time_integrator->get_scaling_factor_mass_from_acceleration() +
+        application->get_parameters().weak_damping_coefficient *
+          time_integrator->get_scaling_factor_mass_from_velocity();
+      pde_operator->setup_solver(total_scaling_factor_mass);
+    }
     else
+    {
       pde_operator->setup_solver(0.0);
+    }
   }
 
   timer_tree.insert({"Elasticity", "Setup"}, timer.wall_time());

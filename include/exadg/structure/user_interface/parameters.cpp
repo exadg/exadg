@@ -40,6 +40,7 @@ Parameters::Parameters()
 
     // PHYSICAL QUANTITIES
     density(1.0),
+    weak_damping_coefficient(0.0),
 
     // TEMPORAL DISCRETIZATION
     start_time(0.0),
@@ -159,6 +160,7 @@ Parameters::print_parameters_physical_quantities(dealii::ConditionalOStream cons
   if(problem_type == ProblemType::Unsteady)
   {
     print_parameter(pcout, "Density", density);
+    print_parameter(pcout, "Weak damping coefficient", weak_damping_coefficient);
   }
 }
 

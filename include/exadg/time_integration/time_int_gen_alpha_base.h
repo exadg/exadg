@@ -53,17 +53,26 @@ public:
   set_current_time_step_size(double const & time_step_size) final;
 
   double
-  get_scaling_factor_mass() const;
+  get_scaling_factor_mass_from_acceleration() const;
+
+  double
+  get_scaling_factor_mass_from_velocity() const;
 
 protected:
   double
   get_mid_time() const;
 
   void
-  compute_const_vector(VectorType &       const_vector,
-                       VectorType const & displacement_n,
-                       VectorType const & velocity_n,
-                       VectorType const & acceleration_n) const;
+  compute_const_vector_acceleration_remainder(VectorType &       const_vector,
+                                              VectorType const & displacement_n,
+                                              VectorType const & velocity_n,
+                                              VectorType const & acceleration_n) const;
+
+  void
+  compute_const_vector_velocity_remainder(VectorType &       const_vector,
+                                          VectorType const & displacement_n,
+                                          VectorType const & velocity_n,
+                                          VectorType const & acceleration_n) const;
 
   void
   update_displacement(VectorType & displacement_np, VectorType const & displacement_n) const;
