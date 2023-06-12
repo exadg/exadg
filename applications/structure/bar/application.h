@@ -201,6 +201,12 @@ public:
       prm.add_parameter("BoundaryType",
                         boundary_type,
                         "Type of boundary condition, Dirichlet vs Neumann.");
+      prm.add_parameter("ProblemType",
+                        problem_type,
+                        "Problem type considered, QuasiStatic vs Unsteady vs. Steady");
+      prm.add_parameter("WeakDamping",
+    		  	  	  	weak_damping_coefficient,
+						"Weak damping coefficient for unsteady problems.");
       prm.add_parameter("Displacement",
                         displacement,
                         "Displacement of right boundary in case of Dirichlet BC.");
@@ -215,7 +221,7 @@ private:
   void
   set_parameters() final
   {
-    this->param.problem_type         = ProblemType::QuasiStatic;
+    this->param.problem_type         = problem_type;
     this->param.body_force           = use_volume_force;
     this->param.large_deformation    = true;
     this->param.pull_back_body_force = false;
@@ -223,7 +229,7 @@ private:
 
     this->param.density = density;
     this->param.weak_damping_coefficient =
-      this->param.problem_type == ProblemType::Unsteady ? 0.01 * density : 0.0;
+      this->param.problem_type == ProblemType::Unsteady ? weak_damping_coefficient : 0.0;
 
     this->param.start_time                           = start_time;
     this->param.end_time                             = end_time;
@@ -540,6 +546,9 @@ private:
     Neumann
   };
   BoundaryType boundary_type = BoundaryType::Dirichlet;
+  ProblemType problem_type = ProblemType::Unsteady;
+
+  double weak_damping_coefficient = 0.0;
 
   double displacement = 1.0; // "Dirichlet"
   double area_force   = 1.0; // "Neumann"
