@@ -106,9 +106,6 @@ public:
                                                               triangulation,
                                                               coarse_triangulations);
       };
-
-private:
-  GridData data;
 };
 
 } // namespace ExaDG

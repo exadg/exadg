@@ -31,9 +31,6 @@ template<int dim>
 void
 Grid<dim>::initialize(GridData const & data, MPI_Comm const & mpi_comm)
 {
-  // copy data
-  this->data = data;
-
   // triangulation
   if(data.triangulation_type == TriangulationType::Serial)
   {
