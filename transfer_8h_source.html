@@ -118,8 +118,8 @@ $(function() {
 <div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="keyword">public</span>:</div>
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  reinit(dealii::MGLevelObject&lt;std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt;&gt;&gt; &amp; mg_matrixfree,</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>         <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> dof_handler_index,</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>         <span class="keywordtype">bool</span> <span class="keyword">const</span>         with_global_refinement);</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>         <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>               dof_handler_index,</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>         std::vector&lt;MGLevelInfo&gt; <span class="keyword">const</span> &amp; global_levels);</div>
 <div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  interpolate(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> level, VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src) <span class="keyword">const</span> <span class="keyword">final</span>;</div>

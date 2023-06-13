@@ -91,9 +91,9 @@ Inheritance diagram for ExaDG::MultigridTransfer&lt; dim, Number, VectorType &gt
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a09085d4b371e14bce7fbca0bd1558c51"><td class="memItemLeft" align="right" valign="top"><a id="a09085d4b371e14bce7fbca0bd1558c51" name="a09085d4b371e14bce7fbca0bd1558c51"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit</b> (dealii::MGLevelObject&lt; std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; &gt; &gt; &amp;mg_matrixfree, unsigned int const dof_handler_index, bool const with_global_refinement)</td></tr>
-<tr class="separator:a09085d4b371e14bce7fbca0bd1558c51"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afacf5f57a508741d5e691e9eaef97c76"><td class="memItemLeft" align="right" valign="top"><a id="afacf5f57a508741d5e691e9eaef97c76" name="afacf5f57a508741d5e691e9eaef97c76"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit</b> (dealii::MGLevelObject&lt; std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; &gt; &gt; &amp;mg_matrixfree, unsigned int const dof_handler_index, std::vector&lt; <a class="el" href="structExaDG_1_1MGLevelInfo.html">MGLevelInfo</a> &gt; const &amp;global_levels)</td></tr>
+<tr class="separator:afacf5f57a508741d5e691e9eaef97c76"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae536187106eede07a63c482705328b55"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridTransfer.html#ae536187106eede07a63c482705328b55">interpolate</a> (unsigned int const level, VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
 <tr class="separator:ae536187106eede07a63c482705328b55"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9f6c08f279438119eea8e5d5cf3cec1d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridTransfer.html#a9f6c08f279438119eea8e5d5cf3cec1d">restrict_and_add</a> (unsigned int const level, VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>

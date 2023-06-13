@@ -227,8 +227,10 @@ template&lt;int dim&gt; </div>
 <b>Initial value:</b><div class="fragment"><div class="line">=</div>
 <div class="line">      [&amp;](std::vector&lt;std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;&gt; &amp; coarse_mappings,</div>
 <div class="line">          std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; <span class="keyword">const</span> &amp;        fine_mapping) {</div>
-<div class="line">        MappingTools::initialize_coarse_mappings&lt;dim, double&gt;(</div>
-<div class="line">          coarse_mappings, fine_mapping, data.multigrid, <a class="code hl_variable" href="classExaDG_1_1Grid.html#a5655b41ce6108b3c3e50a5eb7fb2bcf5">triangulation</a>, <a class="code hl_variable" href="classExaDG_1_1Grid.html#adb00c7653c234f42a17eb41b48587acf">coarse_triangulations</a>);</div>
+<div class="line">        MappingTools::initialize_coarse_mappings&lt;dim, double&gt;(coarse_mappings,</div>
+<div class="line">                                                              fine_mapping,</div>
+<div class="line">                                                              <a class="code hl_variable" href="classExaDG_1_1Grid.html#a5655b41ce6108b3c3e50a5eb7fb2bcf5">triangulation</a>,</div>
+<div class="line">                                                              <a class="code hl_variable" href="classExaDG_1_1Grid.html#adb00c7653c234f42a17eb41b48587acf">coarse_triangulations</a>);</div>
 <div class="line">      }</div>
 <div class="ttc" id="aclassExaDG_1_1Grid_html_a5655b41ce6108b3c3e50a5eb7fb2bcf5"><div class="ttname"><a href="classExaDG_1_1Grid.html#a5655b41ce6108b3c3e50a5eb7fb2bcf5">ExaDG::Grid::triangulation</a></div><div class="ttdeci">std::shared_ptr&lt; dealii::Triangulation&lt; dim &gt; &gt; triangulation</div><div class="ttdef"><b>Definition</b> grid.h:64</div></div>
 <div class="ttc" id="aclassExaDG_1_1Grid_html_adb00c7653c234f42a17eb41b48587acf"><div class="ttname"><a href="classExaDG_1_1Grid.html#adb00c7653c234f42a17eb41b48587acf">ExaDG::Grid::coarse_triangulations</a></div><div class="ttdeci">std::vector&lt; std::shared_ptr&lt; dealii::Triangulation&lt; dim &gt; const  &gt; &gt; coarse_triangulations</div><div class="ttdef"><b>Definition</b> grid.h:78</div></div>
