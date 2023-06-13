@@ -23,12 +23,10 @@
 #define INCLUDE_EXADG_GRID_GRID_H_
 
 // deal.II
-#include <deal.II/distributed/fully_distributed_tria.h>
-#include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
+#include <deal.II/grid/tria.h>
 
 // ExaDG
-#include <exadg/grid/grid_data.h>
 #include <exadg/grid/mapping_dof_vector.h>
 
 namespace ExaDG
