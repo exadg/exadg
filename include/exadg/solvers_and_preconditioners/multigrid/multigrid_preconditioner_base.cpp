@@ -46,7 +46,7 @@ namespace ExaDG
 {
 template<int dim, typename Number>
 MultigridPreconditionerBase<dim, Number>::MultigridPreconditionerBase(MPI_Comm const & comm)
-  : mpi_comm(comm), multigrid_variant(MultigridVariant::LocalSmoothing)
+  : mpi_comm(comm)
 {
 }
 
@@ -54,7 +54,6 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize(
   MultigridData const &                       data,
-  MultigridVariant const &                    multigrid_variant,
   std::shared_ptr<Grid<dim> const>            grid,
   std::shared_ptr<dealii::Mapping<dim> const> mapping,
   dealii::FiniteElement<dim> const &          fe,
@@ -63,8 +62,6 @@ MultigridPreconditionerBase<dim, Number>::initialize(
   Map_DBC_ComponentMask const &               dirichlet_bc_component_mask)
 {
   this->data = data;
-
-  this->multigrid_variant = multigrid_variant;
 
   this->grid = grid;
 
@@ -136,30 +133,39 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(unsigned int const d
   MultigridType const mg_type = data.type;
 
   std::vector<unsigned int> h_levels;
+  std::vector<unsigned int> dealii_tria_levels;
 
 
   // setup h-levels
-  if(data.involves_h_transfer())
+
+  // In case only a single h-level exists
+  if(not(data.involves_h_transfer()) or (grid->triangulation->n_global_levels() == 1))
   {
-    if(multigrid_variant == MultigridVariant::LocalSmoothing)
-    {
-      for(unsigned int h = 0; h < grid->triangulation->n_global_levels(); h++)
-        h_levels.push_back(h);
-    }
-    else if(multigrid_variant == MultigridVariant::GlobalCoarsening)
+    h_levels.push_back(0);
+    // the only h-level that exists is an active level
+    dealii_tria_levels.push_back(dealii::numbers::invalid_unsigned_int);
+  }
+  else // involves_h_transfer == true and n_global_levels() > 1
+  {
+    // In case we have a separate Triangulation object for each h-level
+    if(grid->coarse_triangulations.size() > 0)
     {
       for(unsigned int h = 0; h < grid->coarse_triangulations.size() + 1; h++)
+      {
         h_levels.push_back(h);
+        dealii_tria_levels.push_back(dealii::numbers::invalid_unsigned_int);
+      }
     }
     else
     {
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      for(unsigned int h = 0; h < grid->triangulation->n_global_levels(); h++)
+      {
+        h_levels.push_back(h);
+        dealii_tria_levels.push_back(h);
+      }
     }
   }
-  else // no h-MG is involved
-  {
-    h_levels.push_back(grid->triangulation->n_global_levels() - 1);
-  }
+
 
   // setup p-levels
   if(mg_type == MultigridType::hMG)
@@ -223,73 +229,73 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(unsigned int const d
   if(mg_type == MultigridType::hMG)
   {
     for(unsigned int h = 0; h < h_levels.size(); h++)
-      level_info.push_back({h_levels[h], p_levels.front()});
+      level_info.push_back({h_levels[h], dealii_tria_levels[h], p_levels.front()});
   }
   else if(mg_type == MultigridType::cMG)
   {
-    level_info.push_back({h_levels.back(), p_levels.front()});
-    level_info.push_back({h_levels.back(), p_levels.back()});
+    level_info.push_back({h_levels.back(), dealii_tria_levels.back(), p_levels.front()});
+    level_info.push_back({h_levels.back(), dealii_tria_levels.back(), p_levels.back()});
   }
   else if(mg_type == MultigridType::chMG)
   {
     for(unsigned int h = 0; h < h_levels.size(); h++)
-      level_info.push_back({h_levels[h], p_levels.front()});
+      level_info.push_back({h_levels[h], dealii_tria_levels[h], p_levels.front()});
 
-    level_info.push_back({h_levels.back(), p_levels.back()});
+    level_info.push_back({h_levels.back(), dealii_tria_levels.back(), p_levels.back()});
   }
   else if(mg_type == MultigridType::hcMG)
   {
-    level_info.push_back({h_levels.front(), p_levels.front()});
+    level_info.push_back({h_levels.front(), dealii_tria_levels.front(), p_levels.front()});
 
     for(unsigned int h = 0; h < h_levels.size(); h++)
-      level_info.push_back({h_levels[h], p_levels.back()});
+      level_info.push_back({h_levels[h], dealii_tria_levels[h], p_levels.back()});
   }
   else if(mg_type == MultigridType::pMG or mg_type == MultigridType::pcMG or
           mg_type == MultigridType::cpMG)
   {
     for(unsigned int p = 0; p < p_levels.size(); p++)
-      level_info.push_back({h_levels.front(), p_levels[p]});
+      level_info.push_back({h_levels.front(), dealii_tria_levels.front(), p_levels[p]});
   }
   else if(mg_type == MultigridType::phMG or mg_type == MultigridType::cphMG or
           mg_type == MultigridType::pchMG)
   {
     for(unsigned int h = 0; h < h_levels.size() - 1; h++)
-      level_info.push_back({h_levels[h], p_levels.front()});
+      level_info.push_back({h_levels[h], dealii_tria_levels[h], p_levels.front()});
 
     for(auto p : p_levels)
-      level_info.push_back({h_levels.back(), p});
+      level_info.push_back({h_levels.back(), dealii_tria_levels.back(), p});
   }
   else if(mg_type == MultigridType::hpMG or mg_type == MultigridType::hcpMG or
           mg_type == MultigridType::hpcMG)
   {
     for(unsigned int p = 0; p < p_levels.size() - 1; p++)
-      level_info.push_back({h_levels.front(), p_levels[p]});
+      level_info.push_back({h_levels.front(), dealii_tria_levels.front(), p_levels[p]});
 
-    for(auto h : h_levels)
-      level_info.push_back({h, p_levels.back()});
+    for(unsigned int h = 0; h < h_levels.size(); h++)
+      level_info.push_back({h_levels[h], dealii_tria_levels[h], p_levels.back()});
   }
   else if(mg_type == MultigridType::phcMG)
   {
-    level_info.push_back({h_levels.front(), p_levels.front()});
+    level_info.push_back({h_levels.front(), dealii_tria_levels.front(), p_levels.front()});
 
     std::vector<MGDoFHandlerIdentifier>::iterator it = p_levels.begin();
     ++it;
 
     for(unsigned int h = 0; h < h_levels.size() - 1; h++)
-      level_info.push_back({h_levels[h], *it});
+      level_info.push_back({h_levels[h], dealii_tria_levels[h], *it});
 
     for(; it != p_levels.end(); ++it)
-      level_info.push_back({h_levels.back(), *it});
+      level_info.push_back({h_levels.back(), dealii_tria_levels.back(), *it});
   }
   else if(mg_type == MultigridType::chpMG)
   {
     for(unsigned int p = 0; p < p_levels.size() - 2; p++)
-      level_info.push_back({h_levels.front(), p_levels[p]});
+      level_info.push_back({h_levels.front(), dealii_tria_levels.front(), p_levels[p]});
 
-    for(auto h : h_levels)
-      level_info.push_back({h, p_levels[p_levels.size() - 2]});
+    for(unsigned int h = 0; h < h_levels.size(); h++)
+      level_info.push_back({h_levels[h], dealii_tria_levels[h], p_levels[p_levels.size() - 2]});
 
-    level_info.push_back({h_levels.back(), p_levels.back()});
+    level_info.push_back({h_levels.back(), dealii_tria_levels.back(), p_levels.back()});
   }
   else
   {
@@ -307,6 +313,9 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(unsigned int const d
       dealii::ExcMessage(
         "Between two consecutive multigrid levels, only one type of transfer is allowed."));
   }
+
+  AssertThrow(h_levels.size() == dealii_tria_levels.size(),
+              dealii::ExcMessage("h_levels and dealii_tria_levels have different size."));
 }
 
 template<int dim, typename Number>
@@ -360,32 +369,30 @@ MultigridPreconditionerBase<dim, Number>::initialize_dof_handler_and_constraints
                                                   fe,
                                                   dirichlet_bc,
                                                   dirichlet_bc_component_mask,
-                                                  this->level_info,
-                                                  this->p_levels,
                                                   this->dof_handlers,
-                                                  this->constrained_dofs,
                                                   this->constraints);
 }
 
 template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constraints(
-  bool                                  is_singular,
-  dealii::FiniteElement<dim> const &    fe,
-  Map_DBC const &                       dirichlet_bc,
-  Map_DBC_ComponentMask const &         dirichlet_bc_component_mask,
-  std::vector<MGLevelInfo> &            level_info,
-  std::vector<MGDoFHandlerIdentifier> & p_levels,
-  dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> & dof_handlers,
-  dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> &     constrained_dofs,
+  bool                               is_singular,
+  dealii::FiniteElement<dim> const & fe,
+  Map_DBC const &                    dirichlet_bc,
+  Map_DBC_ComponentMask const &      dirichlet_bc_component_mask,
+  dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> &              dof_handlers,
   dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> & constraints)
 {
+  dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> constrained_dofs;
   constrained_dofs.resize(0, get_number_of_levels() - 1);
   dof_handlers.resize(0, get_number_of_levels() - 1);
   constraints.resize(0, get_number_of_levels() - 1);
 
-  // this type of transfer has to be used for triangulations with hanging nodes
-  if(multigrid_variant == MultigridVariant::GlobalCoarsening)
+  bool const is_hypercube_mesh_without_hanging_nodes =
+    grid->triangulation->all_reference_cells_are_hyper_cube() and
+    not(grid->triangulation->has_hanging_nodes());
+
+  if(grid->coarse_triangulations.size() > 0 or not(is_hypercube_mesh_without_hanging_nodes))
   {
     // setup dof-handler and constrained dofs for all multigrid levels
     for_all_levels([&](unsigned int const l) {
@@ -398,10 +405,9 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       }
       else
       {
-        AssertThrow(
-          level.h_level() < grid->coarse_triangulations.size(),
-          dealii::ExcMessage(
-            "Vector of coarse_triangulations does not seem to be initialized correctly."));
+        AssertThrow(level.h_level() < grid->coarse_triangulations.size(),
+                    dealii::ExcMessage(
+                      "The vector of coarse_triangulations does not have correct size."));
 
         dof_handler = std::make_shared<dealii::DoFHandler<dim>>(
           *(grid->coarse_triangulations[level.h_level()]));
@@ -455,6 +461,10 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       // constraints from periodic boundary conditions
       if(not(grid->periodic_face_pairs.empty()))
       {
+        AssertThrow(grid->coarse_periodic_face_pairs.size() == level_info.back().h_level(),
+                    dealii::ExcMessage(
+                      "The vector of coarse_triangulations does not have correct size."));
+
         std::vector<
           dealii::GridTools::PeriodicFacePair<typename dealii::DoFHandler<dim>::cell_iterator>>
           periodic_faces_dof;
@@ -499,15 +509,11 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       constraints[l].reset(affine_constraints_own);
     });
   }
-  else if(multigrid_variant == MultigridVariant::LocalSmoothing)
+  else
   {
-    AssertThrow(grid->triangulation->has_hanging_nodes() == false,
-                dealii::ExcMessage("Hanging nodes are only supported with the option "
-                                   "use_global_coarsening enabled."));
-    AssertThrow(grid->triangulation->all_reference_cells_are_hyper_cube(),
-                dealii::ExcMessage("This multigrid implementation is currently only available for "
-                                   "hyper-cube elements. Other grids need to enable the option "
-                                   "use_global_coarsening."));
+    AssertThrow(is_hypercube_mesh_without_hanging_nodes,
+                dealii::ExcMessage(
+                  "This implementation only allows globally refined hypercube meshes."));
 
     unsigned int const n_components = fe.n_components();
 
@@ -586,10 +592,6 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       constraints[level].reset(affine_constraints_own);
     });
   }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("not implemented."));
-  }
 }
 
 template<int dim, typename Number>
@@ -600,12 +602,10 @@ MultigridPreconditionerBase<dim, Number>::initialize_matrix_free_objects()
   matrix_free_objects.resize(0, get_number_of_levels() - 1);
 
   for_all_levels([&](unsigned int const level) {
-    unsigned int const h_level = (multigrid_variant == MultigridVariant::GlobalCoarsening) ?
-                                   dealii::numbers::invalid_unsigned_int :
-                                   level_info[level].h_level();
-
     matrix_free_data_objects[level] = std::make_shared<MatrixFreeData<dim, MultigridNumber>>();
-    fill_matrix_free_data(*matrix_free_data_objects[level], level, h_level);
+    fill_matrix_free_data(*matrix_free_data_objects[level],
+                          level,
+                          level_info[level].dealii_tria_level());
 
     matrix_free_objects[level] = std::make_shared<dealii::MatrixFree<dim, MultigridNumber>>();
 
@@ -867,9 +867,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_transfer_operators(
 {
   transfers = std::make_shared<MultigridTransfer<dim, MultigridNumber, VectorTypeMG>>();
 
-  transfers->reinit(matrix_free_objects,
-                    dof_index,
-                    multigrid_variant == MultigridVariant::LocalSmoothing);
+  transfers->reinit(matrix_free_objects, dof_index, level_info);
 }
 
 template<int dim, typename Number>

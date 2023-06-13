@@ -498,7 +498,6 @@ Operator<dim, Number>::initialize_preconditioner()
       }
 
       mg_preconditioner->initialize(param.multigrid_data,
-                                    param.grid.multigrid,
                                     grid,
                                     mapping,
                                     dof_handler.get_fe(),
@@ -543,7 +542,6 @@ Operator<dim, Number>::initialize_preconditioner()
       }
 
       mg_preconditioner->initialize(param.multigrid_data,
-                                    param.grid.multigrid,
                                     grid,
                                     mapping,
                                     dof_handler.get_fe(),

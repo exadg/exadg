@@ -20,7 +20,6 @@
  */
 
 // ExaDG
-#include <exadg/grid/enum_types.h>
 #include <exadg/grid/grid.h>
 #include <exadg/grid/grid_utilities.h>
 #include <exadg/grid/perform_local_refinements.h>
@@ -32,32 +31,31 @@ template<int dim>
 void
 Grid<dim>::initialize(GridData const & data, MPI_Comm const & mpi_comm)
 {
-  // copy data
-  this->data = data;
-
   // triangulation
   if(data.triangulation_type == TriangulationType::Serial)
   {
-    auto const mesh_smoothing =
-      GridUtilities::get_mesh_smoothing<dim>(data.multigrid == MultigridVariant::LocalSmoothing,
-                                             data.element_type);
+    auto mesh_smoothing = dealii::Triangulation<dim>::none;
+
+    if(not data.create_coarse_triangulations)
+      mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
 
     AssertDimension(dealii::Utilities::MPI::n_mpi_processes(mpi_comm), 1);
     triangulation = std::make_shared<dealii::Triangulation<dim>>(mesh_smoothing);
   }
   else if(data.triangulation_type == TriangulationType::Distributed)
   {
+    auto mesh_smoothing = dealii::Triangulation<dim>::none;
     typename dealii::parallel::distributed::Triangulation<dim>::Settings distributed_settings;
 
-    if(data.multigrid == MultigridVariant::LocalSmoothing)
+    // TODO It seems as if we set these values in case where we do not want/need this.
+    // Assume for example one wants to use only p-multigrid or no multigrid at all. In that case,
+    // it seems as if construct_multigrid_hierarchy is set unnecessarily.
+    if(not data.create_coarse_triangulations)
+    {
+      mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
       distributed_settings =
         dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy;
-    else
-      distributed_settings = dealii::parallel::distributed::Triangulation<dim>::default_setting;
-
-    auto const mesh_smoothing =
-      GridUtilities::get_mesh_smoothing<dim>(data.multigrid == MultigridVariant::LocalSmoothing,
-                                             data.element_type);
+    }
 
     triangulation =
       std::make_shared<dealii::parallel::distributed::Triangulation<dim>>(mpi_comm,

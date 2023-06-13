@@ -200,7 +200,6 @@ private:
     this->param.mapping_degree          = this->param.degree_u;
     this->param.degree_p                = DegreePressure::MixedOrder;
     this->param.grid.element_type       = ElementType::Hypercube;
-    this->param.grid.multigrid          = MultigridVariant::LocalSmoothing;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -352,7 +351,8 @@ private:
     GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
                                                               this->param.grid,
                                                               this->param.involves_h_multigrid(),
-                                                              lambda_create_triangulation);
+                                                              lambda_create_triangulation,
+                                                              {} /* no local refinements */);
   }
 
   void

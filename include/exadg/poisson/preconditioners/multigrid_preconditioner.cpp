@@ -36,7 +36,6 @@ template<int dim, typename Number, int n_components>
 void
 MultigridPreconditioner<dim, Number, n_components>::initialize(
   MultigridData const &                       mg_data,
-  MultigridVariant const &                    multigrid_variant,
   std::shared_ptr<Grid<dim> const>            grid,
   std::shared_ptr<dealii::Mapping<dim> const> mapping,
   dealii::FiniteElement<dim> const &          fe,
@@ -52,7 +51,6 @@ MultigridPreconditioner<dim, Number, n_components>::initialize(
   this->mesh_is_moving = mesh_is_moving;
 
   Base::initialize(mg_data,
-                   multigrid_variant,
                    grid,
                    mapping,
                    fe,
@@ -88,9 +86,9 @@ void
 MultigridPreconditioner<dim, Number, n_components>::fill_matrix_free_data(
   MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
   unsigned int const                     level,
-  unsigned int const                     h_level)
+  unsigned int const                     dealii_triangulation_level)
 {
-  matrix_free_data.data.mg_level = h_level;
+  matrix_free_data.data.mg_level = dealii_triangulation_level;
 
   matrix_free_data.append_mapping_flags(
     Operators::LaplaceKernel<dim, Number>::get_mapping_flags(this->level_info[level].is_dg(),
@@ -100,7 +98,7 @@ MultigridPreconditioner<dim, Number, n_components>::fill_matrix_free_data(
   if(data.use_cell_based_loops and this->level_info[level].is_dg())
   {
     auto tria = &this->dof_handlers[level]->get_triangulation();
-    Categorization::do_cell_based_loops(*tria, matrix_free_data.data, h_level);
+    Categorization::do_cell_based_loops(*tria, matrix_free_data.data, dealii_triangulation_level);
   }
 
   matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "laplace_dof_handler");

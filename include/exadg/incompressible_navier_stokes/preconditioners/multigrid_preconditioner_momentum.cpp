@@ -38,7 +38,6 @@ template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize(
   MultigridData const &                       mg_data,
-  MultigridVariant const &                    multigrid_variant,
   std::shared_ptr<Grid<dim> const>            grid,
   std::shared_ptr<dealii::Mapping<dim> const> mapping,
   dealii::FiniteElement<dim> const &          fe,
@@ -80,7 +79,6 @@ MultigridPreconditioner<dim, Number>::initialize(
   }
 
   Base::initialize(mg_data,
-                   multigrid_variant,
                    grid,
                    mapping,
                    fe,
@@ -165,9 +163,9 @@ void
 MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
   MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
   unsigned int const                     level,
-  unsigned int const                     h_level)
+  unsigned int const                     dealii_tria_level)
 {
-  matrix_free_data.data.mg_level = h_level;
+  matrix_free_data.data.mg_level = dealii_tria_level;
 
   if(data.unsteady_problem)
     matrix_free_data.append_mapping_flags(MassKernel<dim, Number>::get_mapping_flags());
@@ -182,7 +180,7 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
   if(data.use_cell_based_loops and this->level_info[level].is_dg())
   {
     auto tria = &this->dof_handlers[level]->get_triangulation();
-    Categorization::do_cell_based_loops(*tria, matrix_free_data.data, h_level);
+    Categorization::do_cell_based_loops(*tria, matrix_free_data.data, dealii_tria_level);
   }
 
   matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "std_dof_handler");

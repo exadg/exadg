@@ -38,7 +38,7 @@ public:
   {
   }
 
-  virtual double
+  double
   value(dealii::Point<dim> const &, unsigned int const component = 0) const final
   {
     if(component == 0)
@@ -136,10 +136,11 @@ public:
     this->param.rel_tol_steady = 1.e-8;
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.grid.multigrid          = MultigridVariant::GlobalCoarsening;
-    this->param.mapping_degree          = this->param.degree_u;
-    this->param.degree_p                = DegreePressure::MixedOrder;
+    this->param.grid.triangulation_type           = TriangulationType::Distributed;
+    this->param.grid.create_coarse_triangulations = true;
+
+    this->param.mapping_degree = this->param.degree_u;
+    this->param.degree_p       = DegreePressure::MixedOrder;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -282,7 +283,8 @@ public:
     GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
                                                               this->param.grid,
                                                               this->param.involves_h_multigrid(),
-                                                              lambda_create_triangulation);
+                                                              lambda_create_triangulation,
+                                                              {});
   }
 
   void

@@ -99,7 +99,6 @@ public:
    */
   void
   initialize(MultigridData const &                       data,
-             MultigridVariant const &                    multigrid_variant,
              std::shared_ptr<Grid<dim> const>            grid,
              std::shared_ptr<dealii::Mapping<dim> const> mapping,
              dealii::FiniteElement<dim> const &          fe,
@@ -182,14 +181,11 @@ protected:
 
   void
   do_initialize_dof_handler_and_constraints(
-    bool                                  is_singular,
-    dealii::FiniteElement<dim> const &    fe,
-    Map_DBC const &                       dirichlet_bc,
-    Map_DBC_ComponentMask const &         dirichlet_bc_component_mask,
-    std::vector<MGLevelInfo> &            level_info,
-    std::vector<MGDoFHandlerIdentifier> & p_levels,
+    bool                               is_singular,
+    dealii::FiniteElement<dim> const & fe,
+    Map_DBC const &                    dirichlet_bc,
+    Map_DBC_ComponentMask const &      dirichlet_bc_component_mask,
     dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> & dofhandlers,
-    dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> &     constrained_dofs,
     dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> &
       constraints);
 
@@ -251,18 +247,19 @@ protected:
       levelwise_transfer(fine_level, fine_level - 1);
   }
 
-  dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> dof_handlers;
-  dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>>     constrained_dofs;
+  dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>>              dof_handlers;
   dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> constraints;
+
   dealii::MGLevelObject<std::shared_ptr<MatrixFreeData<dim, MultigridNumber>>>
     matrix_free_data_objects;
   dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, MultigridNumber>>>
-                                                                         matrix_free_objects;
-  dealii::MGLevelObject<std::shared_ptr<Operator>>                       operators;
+    matrix_free_objects;
+
+  dealii::MGLevelObject<std::shared_ptr<Operator>> operators;
+
   std::shared_ptr<MultigridTransfer<dim, MultigridNumber, VectorTypeMG>> transfers;
 
-  std::vector<MGDoFHandlerIdentifier> p_levels;
-  std::vector<MGLevelInfo>            level_info;
+  std::vector<MGLevelInfo> level_info;
 
 private:
   /**
@@ -323,8 +320,11 @@ private:
 
   MultigridData data;
 
-  MultigridVariant multigrid_variant;
+  // TODO try to avoid this private member variable by extracting this information from level_info
+  // when needed.
+  std::vector<MGDoFHandlerIdentifier> p_levels;
 
+  // Pointer to grid class.
   std::shared_ptr<Grid<dim> const> grid;
 
   // The mapping associated to the fine triangulation.

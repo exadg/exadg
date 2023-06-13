@@ -488,7 +488,6 @@ Operator<dim, Number>::initialize_preconditioner()
     Map_DBC_ComponentMask                                               dirichlet_bc_component_mask;
 
     mg_preconditioner->initialize(mg_data,
-                                  param.grid.multigrid,
                                   grid,
                                   get_mapping(),
                                   dof_handler.get_fe(),

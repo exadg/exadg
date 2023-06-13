@@ -1313,7 +1313,6 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   Map_DBC_ComponentMask                                               dirichlet_bc_component_mask;
 
   mg_preconditioner->initialize(mg_data,
-                                param.grid.multigrid,
                                 grid,
                                 get_mapping(),
                                 dof_handler_u_scalar.get_fe(),
@@ -1679,7 +1678,6 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
 
       auto const & dof_handler = this->get_dof_handler_u();
       mg_preconditioner->initialize(this->param.multigrid_data_projection,
-                                    this->param.grid.multigrid,
                                     grid,
                                     get_mapping(),
                                     dof_handler.get_fe(),

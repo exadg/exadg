@@ -388,7 +388,6 @@ Operator<dim, n_components, Number>::setup_solver()
     }
 
     mg_preconditioner->initialize(mg_data,
-                                  param.grid.multigrid,
                                   grid,
                                   mapping,
                                   dof_handler.get_fe(),

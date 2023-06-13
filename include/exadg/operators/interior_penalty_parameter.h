@@ -30,7 +30,7 @@
 #include <deal.II/matrix_free/matrix_free.h>
 
 // ExaDG
-#include <exadg/grid/enum_types.h>
+#include <exadg/grid/grid_data.h>
 
 namespace ExaDG
 {

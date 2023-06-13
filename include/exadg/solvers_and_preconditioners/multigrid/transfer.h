@@ -40,8 +40,8 @@ class MultigridTransfer : public MultigridTransferBase<VectorType>
 public:
   void
   reinit(dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> & mg_matrixfree,
-         unsigned int const dof_handler_index,
-         bool const         with_global_refinement);
+         unsigned int const               dof_handler_index,
+         std::vector<MGLevelInfo> const & global_levels);
 
   void
   interpolate(unsigned int const level, VectorType & dst, VectorType const & src) const final;
