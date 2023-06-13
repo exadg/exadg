@@ -39,7 +39,7 @@ Grid<dim>::initialize(GridData const & data, MPI_Comm const & mpi_comm)
   {
     auto mesh_smoothing = dealii::Triangulation<dim>::none;
 
-    if(data.fine_triangulation_contains_multigrid_hierarchy)
+    if(not data.create_coarse_triangulations)
       mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
 
     AssertDimension(dealii::Utilities::MPI::n_mpi_processes(mpi_comm), 1);
@@ -50,7 +50,10 @@ Grid<dim>::initialize(GridData const & data, MPI_Comm const & mpi_comm)
     auto mesh_smoothing = dealii::Triangulation<dim>::none;
     typename dealii::parallel::distributed::Triangulation<dim>::Settings distributed_settings;
 
-    if(data.fine_triangulation_contains_multigrid_hierarchy)
+    // TODO It seems as if we set these values in case where we do not want/need this.
+    // Assume for example one wants to use only p-multigrid or no multigrid at all. In that case,
+    // it seems as if construct_multigrid_hierarchy is set unnecessarily.
+    if(not data.create_coarse_triangulations)
     {
       mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
       distributed_settings =

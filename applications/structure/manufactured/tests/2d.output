@@ -47,7 +47,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              1
-  Fine grid contains multigrid hierarchy:    true
+  Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         3
 
@@ -167,7 +167,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              1
-  Fine grid contains multigrid hierarchy:    true
+  Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         3
 
@@ -287,7 +287,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              1
-  Fine grid contains multigrid hierarchy:    true
+  Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         3
 
@@ -407,7 +407,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              1
-  Fine grid contains multigrid hierarchy:    true
+  Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         3
 
@@ -527,7 +527,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              1
-  Fine grid contains multigrid hierarchy:    true
+  Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         3
 
@@ -647,7 +647,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              1
-  Fine grid contains multigrid hierarchy:    true
+  Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         3
 
@@ -767,7 +767,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              1
-  Fine grid contains multigrid hierarchy:    true
+  Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         3
 
@@ -887,7 +887,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              1
-  Fine grid contains multigrid hierarchy:    true
+  Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         3
 
@@ -1007,7 +1007,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              1
-  Fine grid contains multigrid hierarchy:    true
+  Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         3
 

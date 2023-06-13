@@ -284,8 +284,8 @@ public:
       AssertThrow(ale_poisson_param.right_hand_side == false,
                   dealii::ExcMessage("Parameter does not make sense in context of FSI."));
       AssertThrow(
-        ale_poisson_param.grid.fine_triangulation_contains_multigrid_hierarchy ==
-          param.grid.fine_triangulation_contains_multigrid_hierarchy,
+        ale_poisson_param.grid.create_coarse_triangulations ==
+          param.grid.create_coarse_triangulations,
         dealii::ExcMessage(
           "ALE and fluid use the same Grid, requiring the same settings in terms of multigrid coarsening."));
 
@@ -308,8 +308,8 @@ public:
       AssertThrow(ale_elasticity_param.body_force == false,
                   dealii::ExcMessage("Parameter does not make sense in context of FSI."));
       AssertThrow(
-        ale_poisson_param.grid.fine_triangulation_contains_multigrid_hierarchy ==
-          param.grid.fine_triangulation_contains_multigrid_hierarchy,
+        ale_poisson_param.grid.create_coarse_triangulations ==
+          param.grid.create_coarse_triangulations,
         dealii::ExcMessage(
           "ALE and fluid use the same Grid, requiring the same settings in terms of multigrid coarsening."));
 

@@ -198,7 +198,10 @@ create_triangulation(
     typename dealii::TriangulationDescription::Settings triangulation_description_setting =
       dealii::TriangulationDescription::default_setting;
 
-    if(data.fine_triangulation_contains_multigrid_hierarchy)
+    // TODO It seems as if we set these values in case where we do not want/need this.
+    // Assume for example one wants to use only p-multigrid or no multigrid at all. In that case,
+    // it seems as if construct_multigrid_hierarchy is set unnecessarily.
+    if(not data.create_coarse_triangulations)
     {
       mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
       triangulation_description_setting =
@@ -218,14 +221,6 @@ create_triangulation(
   else
   {
     AssertThrow(false, dealii::ExcMessage("Invalid parameter triangulation_type."));
-  }
-
-  if(not(triangulation.all_reference_cells_are_hyper_cube()) or triangulation.has_hanging_nodes())
-  {
-    AssertThrow(data.fine_triangulation_contains_multigrid_hierarchy == false,
-                dealii::ExcMessage(
-                  "The parameter GridData::fine_triangulation_contains_multigrid_hierarchy can "
-                  "currently only be used for globally-refined hypercube meshes."));
   }
 }
 
@@ -406,7 +401,7 @@ create_fine_and_coarse_triangulations(
 
   // Depending on the properties of the fine triangulation, we need to explicitly create the coarse
   // triangulations.
-  if(involves_h_multigrid and not(data.fine_triangulation_contains_multigrid_hierarchy))
+  if(involves_h_multigrid and data.create_coarse_triangulations)
   {
     GridUtilities::create_coarse_triangulations(*grid.triangulation,
                                                 grid.periodic_face_pairs,

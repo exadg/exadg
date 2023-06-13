@@ -138,27 +138,10 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(unsigned int const d
 
   // setup h-levels
 
-  // under these conditions, we can use the same Triangualtion for all multigrid h-levels
-  if(grid->triangulation->all_reference_cells_are_hyper_cube() and
-     not(grid->triangulation->has_hanging_nodes()))
+  if(data.involves_h_transfer())
   {
-    if(data.involves_h_transfer())
-    {
-      for(unsigned int h = 0; h < grid->triangulation->n_global_levels(); h++)
-      {
-        h_levels.push_back(h);
-        dealii_tria_levels.push_back(h);
-      }
-    }
-    else // no h-MG is involved
-    {
-      h_levels.push_back(grid->triangulation->n_global_levels() - 1);
-      dealii_tria_levels.push_back(grid->triangulation->n_global_levels() - 1);
-    }
-  }
-  else // we need a separate Triangulation object for each h-level
-  {
-    if(data.involves_h_transfer())
+    // In case we have a separate Triangulation object for each h-level
+    if(grid->coarse_triangulations.size() > 0)
     {
       for(unsigned int h = 0; h < grid->coarse_triangulations.size() + 1; h++)
       {
@@ -166,12 +149,22 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(unsigned int const d
         dealii_tria_levels.push_back(dealii::numbers::invalid_unsigned_int);
       }
     }
-    else // no h-MG is involved
+    else
     {
-      h_levels.push_back(0);
-      dealii_tria_levels.push_back(dealii::numbers::invalid_unsigned_int);
+      for(unsigned int h = 0; h < grid->triangulation->n_global_levels(); h++)
+      {
+        h_levels.push_back(h);
+        dealii_tria_levels.push_back(h);
+      }
     }
   }
+  else // no h-MG is involved
+  {
+    h_levels.push_back(0);
+    // the only h-level that exists is an active level
+    dealii_tria_levels.push_back(dealii::numbers::invalid_unsigned_int);
+  }
+
 
   // setup p-levels
   if(mg_type == MultigridType::hMG)
@@ -394,93 +387,12 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
   dof_handlers.resize(0, get_number_of_levels() - 1);
   constraints.resize(0, get_number_of_levels() - 1);
 
-  // under these conditions, we can use the same DoFHandler for all multigrid h-levels
-  if(grid->triangulation->all_reference_cells_are_hyper_cube() and
-     not(grid->triangulation->has_hanging_nodes()))
+  bool const is_hypercube_mesh_without_hanging_nodes =
+    grid->triangulation->all_reference_cells_are_hyper_cube() and
+    not(grid->triangulation->has_hanging_nodes());
+
+  if(grid->coarse_triangulations.size() > 0 or not(is_hypercube_mesh_without_hanging_nodes))
   {
-    unsigned int const n_components = fe.n_components();
-
-    // temporal storage for new DoFHandlers and constraints on each p-level
-    std::map<MGDoFHandlerIdentifier, std::shared_ptr<dealii::DoFHandler<dim> const>>
-      map_dofhandlers;
-    std::map<MGDoFHandlerIdentifier, std::shared_ptr<dealii::MGConstrainedDoFs>>
-      map_constrained_dofs;
-
-    // setup dof-handler and constrained dofs for each p-level
-    for(auto level : p_levels)
-    {
-      // setup dof_handler
-      auto dof_handler = new dealii::DoFHandler<dim>(*grid->triangulation);
-
-      // distribute dofs
-      if(level.is_dg)
-      {
-        dof_handler->distribute_dofs(
-          dealii::FESystem<dim>(dealii::FE_DGQ<dim>(level.degree), n_components));
-      }
-      else
-      {
-        dof_handler->distribute_dofs(
-          dealii::FESystem<dim>(dealii::FE_Q<dim>(level.degree), n_components));
-      }
-
-      // distribute MG dofs
-      dof_handler->distribute_mg_dofs();
-
-      // constrained dofs
-      auto constrained_dofs = new dealii::MGConstrainedDoFs();
-      constrained_dofs->clear();
-      constrained_dofs->initialize(*dof_handler);
-
-      if(not(level.is_dg))
-      {
-        for(auto it : dirichlet_bc)
-        {
-          std::set<dealii::types::boundary_id> dirichlet_boundary;
-          dirichlet_boundary.insert(it.first);
-
-          dealii::ComponentMask mask    = dealii::ComponentMask();
-          auto                  it_mask = dirichlet_bc_component_mask.find(it.first);
-          if(it_mask != dirichlet_bc_component_mask.end())
-            mask = it_mask->second;
-
-          constrained_dofs->make_zero_boundary_constraints(*dof_handler, dirichlet_boundary, mask);
-        }
-      }
-
-      // put in temporal storage
-      map_dofhandlers[level]      = std::shared_ptr<dealii::DoFHandler<dim> const>(dof_handler);
-      map_constrained_dofs[level] = std::shared_ptr<dealii::MGConstrainedDoFs>(constrained_dofs);
-    }
-
-    // populate dof-handler and constrained dofs of a certain p-levels to all multigrid levels with
-    // the same FE / DoFHandler
-    for_all_levels([&](unsigned int const level) {
-      auto p_level            = level_info[level].dof_handler_id();
-      dof_handlers[level]     = map_dofhandlers[p_level];
-      constrained_dofs[level] = map_constrained_dofs[p_level];
-    });
-
-    for_all_levels([&](unsigned int const level) {
-      auto affine_constraints_own = new dealii::AffineConstraints<MultigridNumber>;
-
-      ConstraintUtil::add_constraints<dim>(level_info[level].is_dg(),
-                                           is_singular,
-                                           *dof_handlers[level],
-                                           *affine_constraints_own,
-                                           *constrained_dofs[level],
-                                           grid->periodic_face_pairs,
-                                           level_info[level].h_level());
-
-      constraints[level].reset(affine_constraints_own);
-    });
-  }
-  else // we need a separate Triangulation / DoFHandler object for each h-level
-  {
-    AssertThrow(grid->coarse_triangulations.size() == level_info.back().h_level(),
-                dealii::ExcMessage(
-                  "The vector of coarse_triangulations does not have correct size."));
-
     // setup dof-handler and constrained dofs for all multigrid levels
     for_all_levels([&](unsigned int const l) {
       auto const & level = level_info[l];
@@ -492,8 +404,9 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       }
       else
       {
-        AssertThrow(level.h_level() < level_info.back().h_level(),
-                    dealii::ExcMessage("The variable level.h_level() takes an invalid value."));
+        AssertThrow(level.h_level() < grid->coarse_triangulations.size(),
+                    dealii::ExcMessage(
+                      "The vector of coarse_triangulations does not have correct size."));
 
         dof_handler = std::make_shared<dealii::DoFHandler<dim>>(
           *(grid->coarse_triangulations[level.h_level()]));
@@ -593,6 +506,89 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       affine_constraints_own->close();
 
       constraints[l].reset(affine_constraints_own);
+    });
+  }
+  else
+  {
+    AssertThrow(is_hypercube_mesh_without_hanging_nodes,
+                dealii::ExcMessage(
+                  "This implementation only allows globally refined hypercube meshes."));
+
+    unsigned int const n_components = fe.n_components();
+
+    // temporal storage for new DoFHandlers and constraints on each p-level
+    std::map<MGDoFHandlerIdentifier, std::shared_ptr<dealii::DoFHandler<dim> const>>
+      map_dofhandlers;
+    std::map<MGDoFHandlerIdentifier, std::shared_ptr<dealii::MGConstrainedDoFs>>
+      map_constrained_dofs;
+
+    // setup dof-handler and constrained dofs for each p-level
+    for(auto level : p_levels)
+    {
+      // setup dof_handler
+      auto dof_handler = new dealii::DoFHandler<dim>(*grid->triangulation);
+
+      // distribute dofs
+      if(level.is_dg)
+      {
+        dof_handler->distribute_dofs(
+          dealii::FESystem<dim>(dealii::FE_DGQ<dim>(level.degree), n_components));
+      }
+      else
+      {
+        dof_handler->distribute_dofs(
+          dealii::FESystem<dim>(dealii::FE_Q<dim>(level.degree), n_components));
+      }
+
+      // distribute MG dofs
+      dof_handler->distribute_mg_dofs();
+
+      // constrained dofs
+      auto constrained_dofs = new dealii::MGConstrainedDoFs();
+      constrained_dofs->clear();
+      constrained_dofs->initialize(*dof_handler);
+
+      if(not(level.is_dg))
+      {
+        for(auto it : dirichlet_bc)
+        {
+          std::set<dealii::types::boundary_id> dirichlet_boundary;
+          dirichlet_boundary.insert(it.first);
+
+          dealii::ComponentMask mask    = dealii::ComponentMask();
+          auto                  it_mask = dirichlet_bc_component_mask.find(it.first);
+          if(it_mask != dirichlet_bc_component_mask.end())
+            mask = it_mask->second;
+
+          constrained_dofs->make_zero_boundary_constraints(*dof_handler, dirichlet_boundary, mask);
+        }
+      }
+
+      // put in temporal storage
+      map_dofhandlers[level]      = std::shared_ptr<dealii::DoFHandler<dim> const>(dof_handler);
+      map_constrained_dofs[level] = std::shared_ptr<dealii::MGConstrainedDoFs>(constrained_dofs);
+    }
+
+    // populate dof-handler and constrained dofs of a certain p-levels to all multigrid levels with
+    // the same FE / DoFHandler
+    for_all_levels([&](unsigned int const level) {
+      auto p_level            = level_info[level].dof_handler_id();
+      dof_handlers[level]     = map_dofhandlers[p_level];
+      constrained_dofs[level] = map_constrained_dofs[p_level];
+    });
+
+    for_all_levels([&](unsigned int const level) {
+      auto affine_constraints_own = new dealii::AffineConstraints<MultigridNumber>;
+
+      ConstraintUtil::add_constraints<dim>(level_info[level].is_dg(),
+                                           is_singular,
+                                           *dof_handlers[level],
+                                           *affine_constraints_own,
+                                           *constrained_dofs[level],
+                                           grid->periodic_face_pairs,
+                                           level_info[level].h_level());
+
+      constraints[level].reset(affine_constraints_own);
     });
   }
 }

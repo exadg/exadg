@@ -65,7 +65,7 @@ struct GridData
       partitioning_type(PartitioningType::Metis),
       n_refine_global(0),
       file_name(),
-      fine_triangulation_contains_multigrid_hierarchy(true)
+      create_coarse_triangulations(false)
   {
   }
 
@@ -89,9 +89,7 @@ struct GridData
     if(not file_name.empty())
       print_parameter(pcout, "Grid file name", file_name);
 
-    print_parameter(pcout,
-                    "Fine grid contains multigrid hierarchy",
-                    fine_triangulation_contains_multigrid_hierarchy);
+    print_parameter(pcout, "Create coarse triangulations", create_coarse_triangulations);
   }
 
   TriangulationType triangulation_type;
@@ -109,9 +107,15 @@ struct GridData
   std::string file_name;
 
   // In case of a hypercube mesh that is globally refined, i.e. without hanging nodes, the fine
-  // triangulation can be used for all multgrid h-levels without the need to create coarse
-  // triangulations explicitly.
-  bool fine_triangulation_contains_multigrid_hierarchy;
+  // triangulation can be used for all multigrid h-levels without the need to create coarse
+  // triangulations explicitly. Hence, this parameter is typically set to false for globally-refined
+  // hypercube meshes.
+  // Nevertheless, it is possible to set this parameter to true for globally-refined hypercube
+  // meshes. In that case, the coarse triangulations are created explicitly for use in
+  // h-multigrid methods.
+  // This parameter needs to be set to true if one wants to use h-multigrid methods for
+  // locally-refined hypercube meshes or non-hypercube meshes.
+  bool create_coarse_triangulations;
 };
 
 } // namespace ExaDG

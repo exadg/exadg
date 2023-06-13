@@ -234,12 +234,13 @@ private:
     this->param.grid.element_type = ElementType::Hypercube; // Simplex;
     if(this->param.grid.element_type == ElementType::Simplex)
     {
-      this->param.grid.triangulation_type = TriangulationType::FullyDistributed;
-      this->param.grid.fine_triangulation_contains_multigrid_hierarchy = false;
+      this->param.grid.triangulation_type           = TriangulationType::FullyDistributed;
+      this->param.grid.create_coarse_triangulations = true;
     }
     else if(this->param.grid.element_type == ElementType::Hypercube)
     {
-      this->param.grid.triangulation_type = TriangulationType::Distributed;
+      this->param.grid.triangulation_type           = TriangulationType::Distributed;
+      this->param.grid.create_coarse_triangulations = false; // can also be set to true if desired
     }
 
     this->param.load_increment = 0.1;
