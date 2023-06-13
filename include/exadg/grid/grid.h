@@ -46,19 +46,6 @@ public:
     PeriodicFacePairs;
 
   /**
-   * Constructor.
-   */
-  Grid()
-  {
-  }
-
-  /**
-   * Initialize function
-   */
-  void
-  initialize(GridData const & data, MPI_Comm const & mpi_comm);
-
-  /**
    * dealii::Triangulation.
    */
   std::shared_ptr<dealii::Triangulation<dim>> triangulation;
