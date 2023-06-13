@@ -138,7 +138,14 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(unsigned int const d
 
   // setup h-levels
 
-  if(data.involves_h_transfer())
+  // In case only a single h-level exists
+  if(not(data.involves_h_transfer()) or (grid->triangulation->n_global_levels() == 1))
+  {
+    h_levels.push_back(0);
+    // the only h-level that exists is an active level
+    dealii_tria_levels.push_back(dealii::numbers::invalid_unsigned_int);
+  }
+  else // involves_h_transfer == true and n_global_levels() > 1
   {
     // In case we have a separate Triangulation object for each h-level
     if(grid->coarse_triangulations.size() > 0)
@@ -157,12 +164,6 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(unsigned int const d
         dealii_tria_levels.push_back(h);
       }
     }
-  }
-  else // no h-MG is involved
-  {
-    h_levels.push_back(0);
-    // the only h-level that exists is an active level
-    dealii_tria_levels.push_back(dealii::numbers::invalid_unsigned_int);
   }
 
 
