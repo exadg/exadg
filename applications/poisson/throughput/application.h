@@ -77,31 +77,48 @@ private:
   void
   create_grid() final
   {
-    double const left = -1.0, right = 1.0;
-    double const deformation = 0.1;
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)vector_local_refinements;
 
-    bool curvilinear_mesh = false;
-    if(mesh_type == MeshType::Cartesian)
-    {
-      // do nothing
-    }
-    else if(mesh_type == MeshType::Curvilinear)
-    {
-      curvilinear_mesh = true;
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
-    }
+        double const left = -1.0, right = 1.0;
+        double const deformation = 0.1;
 
-    create_periodic_box(this->grid->triangulation,
-                        this->param.grid.n_refine_global,
-                        this->grid->periodic_face_pairs,
-                        this->n_subdivisions_1d_hypercube,
-                        left,
-                        right,
-                        curvilinear_mesh,
-                        deformation);
+        bool curvilinear_mesh = false;
+        if(mesh_type == MeshType::Cartesian)
+        {
+          // do nothing
+        }
+        else if(mesh_type == MeshType::Curvilinear)
+        {
+          curvilinear_mesh = true;
+        }
+        else
+        {
+          AssertThrow(false, dealii::ExcMessage("Not implemented."));
+        }
+
+        create_periodic_box(tria,
+                            global_refinements,
+                            periodic_face_pairs,
+                            this->n_subdivisions_1d_hypercube,
+                            left,
+                            right,
+                            curvilinear_mesh,
+                            deformation);
+      };
+
+
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->mpi_comm,
+                                                              this->param.grid,
+                                                              this->param.involves_h_multigrid(),
+                                                              lambda_create_triangulation,
+                                                              {} /* no local refinements */);
   }
 
   void

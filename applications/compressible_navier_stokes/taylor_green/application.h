@@ -217,7 +217,7 @@ private:
       AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
-    create_periodic_box(this->grid->triangulation,
+    create_periodic_box(*this->grid->triangulation,
                         this->param.grid.n_refine_global,
                         this->grid->periodic_face_pairs,
                         this->n_subdivisions_1d_hypercube,

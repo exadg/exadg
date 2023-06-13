@@ -326,7 +326,7 @@ private:
 
     if(exploit_symmetry == false) // periodic box
     {
-      create_periodic_box(this->grid->triangulation,
+      create_periodic_box(*this->grid->triangulation,
                           this->param.grid.n_refine_global,
                           this->grid->periodic_face_pairs,
                           n_subdivisions_1d_hypercube,
