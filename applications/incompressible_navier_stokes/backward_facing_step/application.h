@@ -199,8 +199,10 @@ private:
 
     // SPATIAL DISCRETIZATION
     param.grid.triangulation_type = TriangulationType::Distributed;
-    param.mapping_degree          = param.degree_u;
-    param.degree_p                = DegreePressure::MixedOrder;
+    if(is_precursor)
+      param.grid.n_refine_global = param.grid.n_refine_global + additional_refinements_precursor;
+    param.mapping_degree = param.degree_u;
+    param.degree_p       = DegreePressure::MixedOrder;
 
     // convective term
     if(param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -339,18 +341,48 @@ private:
   void
   create_grid() final
   {
-    Geometry::create_grid(this->grid->triangulation,
-                          this->param.grid.n_refine_global,
-                          this->grid->periodic_face_pairs);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
+
+        Geometry::create_grid(tria, global_refinements, periodic_face_pairs);
+      };
+
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->mpi_comm,
+                                                              this->param.grid,
+                                                              this->param.involves_h_multigrid(),
+                                                              lambda_create_triangulation,
+                                                              {} /* no local refinements */);
   }
 
   void
   create_grid_precursor() final
   {
-    Geometry::create_grid_precursor(this->grid_pre->triangulation,
-                                    this->param_pre.grid.n_refine_global +
-                                      additional_refinements_precursor,
-                                    this->grid_pre->periodic_face_pairs);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
+
+        Geometry::create_grid_precursor(tria, global_refinements, periodic_face_pairs);
+      };
+
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(
+      *this->grid_pre,
+      this->mpi_comm,
+      this->param_pre.grid,
+      this->param_pre.involves_h_multigrid(),
+      lambda_create_triangulation,
+      {} /* no local refinements */);
   }
 
   void

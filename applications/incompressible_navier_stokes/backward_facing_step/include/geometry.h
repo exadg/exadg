@@ -159,7 +159,7 @@ public:
 
 template<int dim>
 void
-create_grid(std::shared_ptr<dealii::Triangulation<dim>>              triangulation,
+create_grid(dealii::Triangulation<dim> &                             triangulation,
             unsigned int const                                       n_refine_space,
             std::vector<dealii::GridTools::PeriodicFacePair<
               typename dealii::Triangulation<dim>::cell_iterator>> & periodic_faces)
@@ -193,11 +193,11 @@ create_grid(std::shared_ptr<dealii::Triangulation<dim>>              triangulati
 
   dealii::Triangulation<dim> tmp1;
   dealii::GridGenerator::merge_triangulations(tria_1, tria_2, tmp1);
-  dealii::GridGenerator::merge_triangulations(tmp1, tria_3, *triangulation);
+  dealii::GridGenerator::merge_triangulations(tmp1, tria_3, triangulation);
 
 
   // set boundary ID's
-  for(auto cell : triangulation->cell_iterators())
+  for(auto cell : triangulation.cell_iterators())
   {
     for(auto const & f : cell->face_indices())
     {
@@ -220,27 +220,27 @@ create_grid(std::shared_ptr<dealii::Triangulation<dim>>              triangulati
   {
     // manifold
     unsigned int manifold_id = 1;
-    for(auto cell : triangulation->cell_iterators())
+    for(auto cell : triangulation.cell_iterators())
     {
       cell->set_all_manifold_ids(manifold_id);
     }
 
     // apply mesh stretching towards no-slip boundaries in y-direction
     static const MyManifold<dim> manifold;
-    triangulation->set_manifold(manifold_id, manifold);
+    triangulation.set_manifold(manifold_id, manifold);
   }
 
   // periodicity in z-direction
-  dealii::GridTools::collect_periodic_faces(*triangulation, 2 + 10, 3 + 10, 2, periodic_faces);
-  triangulation->add_periodicity(periodic_faces);
+  dealii::GridTools::collect_periodic_faces(triangulation, 2 + 10, 3 + 10, 2, periodic_faces);
+  triangulation.add_periodicity(periodic_faces);
 
   // perform global refinements
-  triangulation->refine_global(n_refine_space);
+  triangulation.refine_global(n_refine_space);
 }
 
 template<int dim>
 void
-create_grid_precursor(std::shared_ptr<dealii::Triangulation<dim>>              triangulation,
+create_grid_precursor(dealii::Triangulation<dim> &                             triangulation,
                       unsigned int const                                       n_refine_space,
                       std::vector<dealii::GridTools::PeriodicFacePair<
                         typename dealii::Triangulation<dim>::cell_iterator>> & periodic_faces)
@@ -256,7 +256,7 @@ create_grid_precursor(std::shared_ptr<dealii::Triangulation<dim>>              t
   center[0] = -(LENGTH_BFS_UP + GAP_CHANNEL_BFS + LENGTH_CHANNEL / 2.0);
   center[1] = HEIGHT_CHANNEL / 2.0;
 
-  dealii::GridGenerator::subdivided_hyper_rectangle(*triangulation,
+  dealii::GridGenerator::subdivided_hyper_rectangle(triangulation,
                                                     std::vector<unsigned int>(
                                                       {2, 1, 1}), // refinements
                                                     dealii::Point<dim>(center - dimensions / 2.0),
@@ -266,18 +266,18 @@ create_grid_precursor(std::shared_ptr<dealii::Triangulation<dim>>              t
   {
     // manifold
     unsigned int manifold_id = 1;
-    for(auto cell : triangulation->cell_iterators())
+    for(auto cell : triangulation.cell_iterators())
     {
       cell->set_all_manifold_ids(manifold_id);
     }
 
     // apply mesh stretching towards no-slip boundaries in y-direction
     static const MyManifold<dim> manifold;
-    triangulation->set_manifold(manifold_id, manifold);
+    triangulation.set_manifold(manifold_id, manifold);
   }
 
   // set boundary ID's: periodicity
-  for(auto cell : triangulation->cell_iterators())
+  for(auto cell : triangulation.cell_iterators())
   {
     for(auto const & f : cell->face_indices())
     {
@@ -295,12 +295,12 @@ create_grid_precursor(std::shared_ptr<dealii::Triangulation<dim>>              t
     }
   }
 
-  dealii::GridTools::collect_periodic_faces(*triangulation, 0 + 10, 1 + 10, 0, periodic_faces);
-  dealii::GridTools::collect_periodic_faces(*triangulation, 2 + 10, 3 + 10, 2, periodic_faces);
-  triangulation->add_periodicity(periodic_faces);
+  dealii::GridTools::collect_periodic_faces(triangulation, 0 + 10, 1 + 10, 0, periodic_faces);
+  dealii::GridTools::collect_periodic_faces(triangulation, 2 + 10, 3 + 10, 2, periodic_faces);
+  triangulation.add_periodicity(periodic_faces);
 
   // perform global refinements: use one level finer for the channel
-  triangulation->refine_global(n_refine_space);
+  triangulation.refine_global(n_refine_space);
 }
 
 } // namespace Geometry

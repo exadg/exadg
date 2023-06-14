@@ -301,74 +301,58 @@ private:
   void
   create_grid() final
   {
-    double const deformation = 0.5;
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)vector_local_refinements;
 
-    if(ALE)
-    {
-      AssertThrow(mesh_type == MeshType::Cartesian,
-                  dealii::ExcMessage(
-                    "Taylor-Green vortex: Parameter MESH_TYPE is invalid for ALE."));
-    }
+        double const deformation = 0.5;
 
-    bool curvilinear_mesh = false;
-    if(mesh_type == MeshType::Cartesian)
-    {
-      // do nothing
-    }
-    else if(mesh_type == MeshType::Curvilinear)
-    {
-      curvilinear_mesh = true;
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
-    }
-
-    if(exploit_symmetry == false) // periodic box
-    {
-      create_periodic_box(*this->grid->triangulation,
-                          this->param.grid.n_refine_global,
-                          this->grid->periodic_face_pairs,
-                          n_subdivisions_1d_hypercube,
-                          left,
-                          right,
-                          curvilinear_mesh,
-                          deformation);
-    }
-    else // symmetric box
-    {
-      dealii::GridGenerator::subdivided_hyper_cube(*this->grid->triangulation,
-                                                   n_subdivisions_1d_hypercube,
-                                                   0.0,
-                                                   right);
-
-      if(curvilinear_mesh)
-      {
-        unsigned int const               frequency = 2;
-        static DeformedCubeManifold<dim> manifold(0.0, right, deformation, frequency);
-        this->grid->triangulation->set_all_manifold_ids(1);
-        this->grid->triangulation->set_manifold(1, manifold);
-
-        std::vector<bool> vertex_touched(this->grid->triangulation->n_vertices(), false);
-
-        for(auto cell : this->grid->triangulation->cell_iterators())
+        if(ALE)
         {
-          for(auto const & v : cell->vertex_indices())
-          {
-            if(vertex_touched[cell->vertex_index(v)] == false)
-            {
-              dealii::Point<dim> & vertex           = cell->vertex(v);
-              dealii::Point<dim>   new_point        = manifold.push_forward(vertex);
-              vertex                                = new_point;
-              vertex_touched[cell->vertex_index(v)] = true;
-            }
-          }
+          AssertThrow(mesh_type == MeshType::Cartesian,
+                      dealii::ExcMessage(
+                        "Taylor-Green vortex: Parameter mesh_type is invalid for ALE."));
         }
-      }
 
-      // perform global refinements
-      this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
-    }
+        if(exploit_symmetry == false) // periodic box
+        {
+          create_periodic_box(tria,
+                              global_refinements,
+                              periodic_face_pairs,
+                              n_subdivisions_1d_hypercube,
+                              left,
+                              right,
+                              mesh_type == MeshType::Curvilinear,
+                              deformation);
+        }
+        else // symmetric box
+        {
+          dealii::GridGenerator::subdivided_hyper_cube(tria,
+                                                       n_subdivisions_1d_hypercube,
+                                                       0.0,
+                                                       right);
+
+          if(mesh_type == MeshType::Curvilinear)
+          {
+            unsigned int const frequency = 2;
+
+            apply_deformed_cube_manifold(tria, 0.0, right, deformation, frequency);
+          }
+
+          tria.refine_global(global_refinements);
+        }
+      };
+
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->mpi_comm,
+                                                              this->param.grid,
+                                                              this->param.involves_h_multigrid(),
+                                                              lambda_create_triangulation,
+                                                              {} /* no local refinements */);
   }
 
   std::shared_ptr<dealii::Function<dim>>

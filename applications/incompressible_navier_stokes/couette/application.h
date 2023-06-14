@@ -178,35 +178,49 @@ private:
   void
   create_grid() final
   {
-    std::vector<unsigned int> repetitions(dim, 1);
-    repetitions[0] = 2;
-    dealii::Point<dim> point1, point2;
-    point1[0] = 0.0;
-    point1[1] = -H / 2;
-    if(dim == 3)
-      point1[2] = 0.0;
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    point2[0] = L;
-    point2[1] = H / 2;
-    if(dim == 3)
-      point2[2] = H;
+        std::vector<unsigned int> repetitions(dim, 1);
+        repetitions[0] = 2;
+        dealii::Point<dim> point1, point2;
+        point1[0] = 0.0;
+        point1[1] = -H / 2;
+        if(dim == 3)
+          point1[2] = 0.0;
 
-    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                                      repetitions,
-                                                      point1,
-                                                      point2);
+        point2[0] = L;
+        point2[1] = H / 2;
+        if(dim == 3)
+          point2[2] = H;
 
-    // set boundary indicator
-    for(auto cell : this->grid->triangulation->cell_iterators())
-    {
-      for(auto const & face : cell->face_indices())
-      {
-        if((std::fabs(cell->face(face)->center()(0) - L) < 1e-12))
-          cell->face(face)->set_boundary_id(1);
-      }
-    }
+        dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, point1, point2);
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        // set boundary indicator
+        for(auto cell : tria.cell_iterators())
+        {
+          for(auto const & face : cell->face_indices())
+          {
+            if((std::fabs(cell->face(face)->center()(0) - L) < 1e-12))
+              cell->face(face)->set_boundary_id(1);
+          }
+        }
+
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->mpi_comm,
+                                                              this->param.grid,
+                                                              this->param.involves_h_multigrid(),
+                                                              lambda_create_triangulation,
+                                                              {} /* no local refinements */);
   }
 
   void
