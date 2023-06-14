@@ -408,6 +408,32 @@ create_coarse_triangulations(
   }
 }
 
+/**
+ * This utility function initializes a Grid object by creating a triangulation and filling the
+ * periodic_face_pairs. According to the settings in GridData, the corresponding constructor of
+ * dealii::Triangulation (or derived classes) is called. The actual functionality "creating" the
+ * triangulation needs to be provided via lambda_create_triangulation.
+ */
+template<int dim>
+inline void
+create_triangulation(
+  Grid<dim> &                                                    grid,
+  MPI_Comm const &                                               mpi_comm,
+  GridData const &                                               data,
+  std::function<void(dealii::Triangulation<dim> &,
+                     PeriodicFacePairs<dim> &,
+                     unsigned int const,
+                     std::vector<unsigned int> const &)> const & lambda_create_triangulation,
+  std::vector<unsigned int> const                                vector_local_refinements)
+{
+  GridUtilities::create_triangulation(grid.triangulation,
+                                      grid.periodic_face_pairs,
+                                      mpi_comm,
+                                      data,
+                                      lambda_create_triangulation,
+                                      data.n_refine_global,
+                                      vector_local_refinements);
+}
 
 /**
  * This function creates both the fine triangulation and, if needed, the coarse triangulations

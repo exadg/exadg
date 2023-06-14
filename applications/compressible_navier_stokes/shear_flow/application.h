@@ -179,14 +179,27 @@ private:
   void
   create_grid() final
   {
-    std::vector<unsigned int> repetitions({1, 1});
-    dealii::Point<dim>        point1(0.0, 0.0), point2(L, H);
-    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                                      repetitions,
-                                                      point1,
-                                                      point2);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        std::vector<unsigned int> repetitions({1, 1});
+        dealii::Point<dim>        point1(0.0, 0.0), point2(L, H);
+        dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, point1, point2);
+
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_triangulation<dim>(*this->grid,
+                                             this->mpi_comm,
+                                             this->param.grid,
+                                             lambda_create_triangulation,
+                                             {} /* no local refinements */);
   }
 
   void
