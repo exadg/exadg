@@ -65,7 +65,6 @@ public:
    */
   void
   initialize(MultigridData const &                       mg_data,
-             MultigridVariant const &                    multigrid_variant,
              std::shared_ptr<Grid<dim> const>            grid,
              std::shared_ptr<dealii::Mapping<dim> const> mapping,
              dealii::FiniteElement<dim> const &          fe,
@@ -85,7 +84,7 @@ private:
   void
   fill_matrix_free_data(MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
                         unsigned int const                     level,
-                        unsigned int const                     h_level) final;
+                        unsigned int const                     dealii_tria_level) final;
 
   std::shared_ptr<MGOperatorBase>
   initialize_operator(unsigned int const level) final;
@@ -103,10 +102,9 @@ private:
   std::shared_ptr<PDEOperatorMG>
   get_operator(unsigned int level) const;
 
-  std::shared_ptr<MGTransfer<VectorTypeMG>> transfers_velocity;
+  std::shared_ptr<MultigridTransfer<dim, MultigridNumber, VectorTypeMG>> transfers_velocity;
 
   dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> dof_handlers_velocity;
-  dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>>     constrained_dofs_velocity;
   dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>>
     constraints_velocity;
 

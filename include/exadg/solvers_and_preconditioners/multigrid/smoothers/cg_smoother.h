@@ -69,7 +69,7 @@ public:
   };
 
   void
-  initialize(Operator & operator_in, AdditionalData const & additional_data_in)
+  initialize(Operator const & operator_in, AdditionalData const & additional_data_in)
   {
     underlying_operator = &operator_in;
     data                = additional_data_in;
@@ -90,7 +90,7 @@ public:
   }
 
   void
-  update()
+  update() final
   {
     if(preconditioner != nullptr)
       preconditioner->update();
@@ -118,8 +118,8 @@ public:
   }
 
 private:
-  Operator *     underlying_operator;
-  AdditionalData data;
+  Operator const * underlying_operator;
+  AdditionalData   data;
 
   PreconditionerBase<typename Operator::value_type> * preconditioner;
 };

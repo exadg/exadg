@@ -42,6 +42,22 @@
 
 namespace ExaDG
 {
+/**
+ * Base class for multigrid coarse-grid solvers in order to define update() function in addition to
+ * the interface of dealii::MGCoarseGridBase.
+ */
+template<typename Operator>
+class CoarseGridSolverBase
+  : public dealii::MGCoarseGridBase<
+      dealii::LinearAlgebra::distributed::Vector<typename Operator::value_type>>
+{
+public:
+  virtual ~CoarseGridSolverBase(){};
+
+  virtual void
+  update() = 0;
+};
+
 enum class KrylovSolverType
 {
   CG,
@@ -49,8 +65,7 @@ enum class KrylovSolverType
 };
 
 template<typename Operator>
-class MGCoarseKrylov : public dealii::MGCoarseGridBase<
-                         dealii::LinearAlgebra::distributed::Vector<typename Operator::value_type>>
+class MGCoarseKrylov : public CoarseGridSolverBase<Operator>
 {
 public:
   typedef double NumberAMG;
@@ -146,12 +161,8 @@ public:
     }
   }
 
-  virtual ~MGCoarseKrylov()
-  {
-  }
-
   void
-  update()
+  update() final
   {
     if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::None)
     {
@@ -349,33 +360,33 @@ private:
 
 
 template<typename Operator>
-class MGCoarseChebyshev
-  : public dealii::MGCoarseGridBase<
-      dealii::LinearAlgebra::distributed::Vector<typename Operator::value_type>>
+class MGCoarseChebyshev : public CoarseGridSolverBase<Operator>
 {
 public:
   typedef typename Operator::value_type MultigridNumber;
 
   typedef dealii::LinearAlgebra::distributed::Vector<MultigridNumber> VectorType;
 
-  typedef ChebyshevSmoother<Operator, VectorType, dealii::DiagonalMatrix<VectorType>> Chebyshev;
+  typedef dealii::PreconditionChebyshev<Operator, VectorType, dealii::DiagonalMatrix<VectorType>>
+    DealiiChebyshev;
 
-  MGCoarseChebyshev(Operator const &   coarse_operator_in,
-                    SolverData const & solver_data_in,
-                    bool const         operator_is_singular_in)
+  MGCoarseChebyshev(Operator const &                          coarse_operator_in,
+                    SolverData const &                        solver_data_in,
+                    MultigridCoarseGridPreconditioner const & preconditioner,
+                    bool const                                operator_is_singular_in)
     : coarse_operator(coarse_operator_in),
       solver_data(solver_data_in),
       operator_is_singular(operator_is_singular_in)
   {
+    AssertThrow(preconditioner == MultigridCoarseGridPreconditioner::PointJacobi,
+                dealii::ExcMessage(
+                  "Only PointJacobi preconditioner implemented for Chebyshev coarse-grid solver."));
+
     initialize_chebyshev_smoother_coarse_grid(coarse_operator, solver_data, operator_is_singular);
   }
 
-  virtual ~MGCoarseChebyshev()
-  {
-  }
-
   void
-  update()
+  update() final
   {
     initialize_chebyshev_smoother_coarse_grid(coarse_operator, solver_data, operator_is_singular);
   }
@@ -398,7 +409,7 @@ private:
                                             bool const         operator_is_singular)
   {
     // use Chebyshev smoother of high degree to solve the coarse grid problem approximately
-    typename Chebyshev::AdditionalData smoother_data;
+    typename DealiiChebyshev::AdditionalData dealii_additional_data;
 
     std::shared_ptr<dealii::DiagonalMatrix<VectorType>> diagonal_matrix =
       std::make_shared<dealii::DiagonalMatrix<VectorType>>();
@@ -412,35 +423,34 @@ private:
 
     double const factor = 1.1;
 
-    smoother_data.preconditioner  = diagonal_matrix;
-    smoother_data.max_eigenvalue  = factor * eigenvalues.second;
-    smoother_data.smoothing_range = eigenvalues.second / eigenvalues.first * factor;
+    dealii_additional_data.preconditioner  = diagonal_matrix;
+    dealii_additional_data.max_eigenvalue  = factor * eigenvalues.second;
+    dealii_additional_data.smoothing_range = eigenvalues.second / eigenvalues.first * factor;
 
-    double sigma = (1. - std::sqrt(1. / smoother_data.smoothing_range)) /
-                   (1. + std::sqrt(1. / smoother_data.smoothing_range));
+    double sigma = (1. - std::sqrt(1. / dealii_additional_data.smoothing_range)) /
+                   (1. + std::sqrt(1. / dealii_additional_data.smoothing_range));
 
     // calculate/estimate the number of Chebyshev iterations needed to reach a specified relative
     // solver tolerance
     double const eps = solver_data.rel_tol;
 
-    smoother_data.degree = static_cast<unsigned int>(
+    dealii_additional_data.degree = static_cast<unsigned int>(
       std::log(1. / eps + std::sqrt(1. / eps / eps - 1.)) / std::log(1. / sigma));
-    smoother_data.eig_cg_n_iterations = 0;
+    dealii_additional_data.eig_cg_n_iterations = 0;
 
-    chebyshev_smoother = std::make_shared<Chebyshev>();
-    chebyshev_smoother->initialize(coarse_operator, smoother_data);
+    chebyshev_smoother = std::make_shared<DealiiChebyshev>();
+    chebyshev_smoother->initialize(coarse_operator, dealii_additional_data);
   }
 
   Operator const & coarse_operator;
   SolverData const solver_data;
   bool const       operator_is_singular;
 
-  std::shared_ptr<Chebyshev> chebyshev_smoother;
+  std::shared_ptr<DealiiChebyshev> chebyshev_smoother;
 };
 
 template<typename Operator>
-class MGCoarseAMG : public dealii::MGCoarseGridBase<
-                      dealii::LinearAlgebra::distributed::Vector<typename Operator::value_type>>
+class MGCoarseAMG : public CoarseGridSolverBase<Operator>
 {
 private:
   typedef double NumberAMG;
@@ -481,7 +491,7 @@ public:
   }
 
   void
-  update()
+  update() final
   {
     amg_preconditioner->update();
   }

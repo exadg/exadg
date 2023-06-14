@@ -48,12 +48,15 @@ struct MGDoFHandlerIdentifier
 
 struct MGLevelInfo
 {
-  MGLevelInfo(unsigned int h_level, unsigned int degree, bool is_dg)
-    : _h_level(h_level), _dof_handler_id(degree, is_dg)
+  MGLevelInfo(unsigned int h_level, unsigned int dealii_tria_level, unsigned int degree, bool is_dg)
+    : _h_level(h_level), _dealii_tria_level(dealii_tria_level), _dof_handler_id(degree, is_dg)
   {
   }
-  MGLevelInfo(unsigned int h_level, MGDoFHandlerIdentifier dof_handler_id)
-    : _h_level(h_level), _dof_handler_id(dof_handler_id)
+
+  MGLevelInfo(unsigned int           h_level,
+              unsigned int           dealii_tria_level,
+              MGDoFHandlerIdentifier dof_handler_id)
+    : _h_level(h_level), _dealii_tria_level(dealii_tria_level), _dof_handler_id(dof_handler_id)
   {
   }
 
@@ -61,6 +64,12 @@ struct MGLevelInfo
   h_level() const
   {
     return _h_level;
+  }
+
+  unsigned int
+  dealii_tria_level() const
+  {
+    return _dealii_tria_level;
   }
 
   unsigned int
@@ -82,7 +91,19 @@ struct MGLevelInfo
   }
 
 private:
-  unsigned int           _h_level;
+  /**
+   * Counter for h-level running from 0 (coarse) to n_h_levels (fine)
+   */
+  unsigned int _h_level;
+
+  /**
+   * Triangulation level in dealii nomenclature, which is -1 in case we have a separate
+   * Triangulation object for each multigrid h-level (MG h-level = active level of Triangulation
+   * object corresponding to coarser MG h-level).
+   */
+  unsigned int _dealii_tria_level;
+
+
   MGDoFHandlerIdentifier _dof_handler_id;
 };
 

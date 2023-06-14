@@ -143,7 +143,6 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
     Map_DBC_ComponentMask                                               dirichlet_bc_component_mask;
 
     mg_preconditioner->initialize(this->param.multigrid_data_viscous,
-                                  this->param.grid.multigrid,
                                   this->grid,
                                   this->get_mapping(),
                                   this->get_dof_handler_u().get_fe(),

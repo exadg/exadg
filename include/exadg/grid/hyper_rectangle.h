@@ -27,7 +27,7 @@
 #include <deal.II/grid/grid_generator.h>
 
 // ExaDG
-#include <exadg/grid/enum_types.h>
+#include <exadg/grid/grid_data.h>
 
 namespace ExaDG
 {

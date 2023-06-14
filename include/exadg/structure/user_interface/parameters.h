@@ -23,7 +23,6 @@
 #define INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_INPUT_PARAMETERS_H_
 
 // ExaDG
-#include <exadg/grid/enum_types.h>
 #include <exadg/grid/grid_data.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver_data.h>

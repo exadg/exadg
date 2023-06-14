@@ -22,7 +22,6 @@
 #define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_
 
 #include <exadg/compressible_navier_stokes/user_interface/enum_types.h>
-#include <exadg/grid/enum_types.h>
 #include <exadg/grid/grid_data.h>
 #include <exadg/time_integration/restart_data.h>
 #include <exadg/time_integration/solver_info_data.h>

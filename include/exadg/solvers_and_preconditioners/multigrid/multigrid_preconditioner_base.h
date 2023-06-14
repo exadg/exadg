@@ -32,10 +32,11 @@
 #include <exadg/grid/grid.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/multigrid_operator_base.h>
+#include <exadg/solvers_and_preconditioners/multigrid/coarse_grid_solvers.h>
 #include <exadg/solvers_and_preconditioners/multigrid/levels_hybrid_multigrid.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/smoother_base.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfer.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 
 // forward declarations
@@ -98,7 +99,6 @@ public:
    */
   void
   initialize(MultigridData const &                       data,
-             MultigridVariant const &                    multigrid_variant,
              std::shared_ptr<Grid<dim> const>            grid,
              std::shared_ptr<dealii::Mapping<dim> const> mapping,
              dealii::FiniteElement<dim> const &          fe,
@@ -181,14 +181,11 @@ protected:
 
   void
   do_initialize_dof_handler_and_constraints(
-    bool                                  is_singular,
-    dealii::FiniteElement<dim> const &    fe,
-    Map_DBC const &                       dirichlet_bc,
-    Map_DBC_ComponentMask const &         dirichlet_bc_component_mask,
-    std::vector<MGLevelInfo> &            level_info,
-    std::vector<MGDoFHandlerIdentifier> & p_levels,
+    bool                               is_singular,
+    dealii::FiniteElement<dim> const & fe,
+    Map_DBC const &                    dirichlet_bc,
+    Map_DBC_ComponentMask const &      dirichlet_bc_component_mask,
     dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> & dofhandlers,
-    dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> &     constrained_dofs,
     dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> &
       constraints);
 
@@ -200,9 +197,8 @@ protected:
 
   void
   do_initialize_transfer_operators(
-    std::shared_ptr<MGTransfer<VectorTypeMG>> &                         transfers,
-    dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> & constrained_dofs,
-    unsigned int const                                                  dof_index);
+    std::shared_ptr<MultigridTransfer<dim, MultigridNumber, VectorTypeMG>> & transfers,
+    unsigned int const                                                       dof_index);
 
   /**
    * Returns the number of levels.
@@ -251,18 +247,19 @@ protected:
       levelwise_transfer(fine_level, fine_level - 1);
   }
 
-  dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> dof_handlers;
-  dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>>     constrained_dofs;
+  dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>>              dof_handlers;
   dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> constraints;
+
   dealii::MGLevelObject<std::shared_ptr<MatrixFreeData<dim, MultigridNumber>>>
     matrix_free_data_objects;
   dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, MultigridNumber>>>
-                                                   matrix_free_objects;
-  dealii::MGLevelObject<std::shared_ptr<Operator>> operators;
-  std::shared_ptr<MGTransfer<VectorTypeMG>>        transfers;
+    matrix_free_objects;
 
-  std::vector<MGDoFHandlerIdentifier> p_levels;
-  std::vector<MGLevelInfo>            level_info;
+  dealii::MGLevelObject<std::shared_ptr<Operator>> operators;
+
+  std::shared_ptr<MultigridTransfer<dim, MultigridNumber, VectorTypeMG>> transfers;
+
+  std::vector<MGLevelInfo> level_info;
 
 private:
   /**
@@ -308,18 +305,6 @@ private:
   initialize_smoother(Operator & matrix, unsigned int level);
 
   /*
-   * Update functions that have to be implemented by derived classes.
-   */
-  virtual void
-  update_smoother(unsigned int level);
-
-  void
-  initialize_chebyshev_smoother_point_jacobi(Operator & matrix, unsigned int const level);
-
-  void
-  initialize_chebyshev_smoother_block_jacobi(Operator & matrix, unsigned int const level);
-
-  /*
    * Coarse grid solver.
    */
   void
@@ -335,8 +320,11 @@ private:
 
   MultigridData data;
 
-  MultigridVariant multigrid_variant;
+  // TODO try to avoid this private member variable by extracting this information from level_info
+  // when needed.
+  std::vector<MGDoFHandlerIdentifier> p_levels;
 
+  // Pointer to grid class.
   std::shared_ptr<Grid<dim> const> grid;
 
   // The mapping associated to the fine triangulation.
@@ -348,7 +336,7 @@ private:
 
   dealii::MGLevelObject<std::shared_ptr<Smoother>> smoothers;
 
-  std::shared_ptr<dealii::MGCoarseGridBase<VectorTypeMG>> coarse_grid_solver;
+  std::shared_ptr<CoarseGridSolverBase<Operator>> coarse_grid_solver;
 
   std::shared_ptr<MultigridAlgorithm<VectorTypeMG, Operator, Smoother>> multigrid_algorithm;
 };

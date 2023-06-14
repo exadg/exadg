@@ -180,7 +180,6 @@ OperatorProjectionMethods<dim, Number>::initialize_preconditioner_pressure_poiss
 
     auto & dof_handler = this->get_dof_handler_p();
     mg_preconditioner->initialize(mg_data,
-                                  this->param.grid.multigrid,
                                   this->grid,
                                   this->get_mapping(),
                                   dof_handler.get_fe(),
