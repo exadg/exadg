@@ -48,7 +48,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              0
-  Multigrid variant:                         LocalSmoothing
+  Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         1
 
