@@ -303,35 +303,52 @@ private:
   void
   create_grid() final
   {
-    dealii::GridGenerator::hyper_shell(
-      *this->grid->triangulation, dealii::Point<dim>(), R0, R1, (dim == 3) ? 48 : 12);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    dealii::Point<dim> center =
-      dim == 2 ? dealii::Point<dim>(0., 0.) : dealii::Point<dim>(0., 0., 0.);
+        dealii::GridGenerator::hyper_shell(
+          tria, dealii::Point<dim>(), R0, R1, (dim == 3) ? 48 : 12);
 
-    for(auto cell : this->grid->triangulation->cell_iterators())
-    {
-      for(auto const & f : cell->face_indices())
-      {
-        if(cell->face(f)->at_boundary())
+        dealii::Point<dim> center =
+          dim == 2 ? dealii::Point<dim>(0., 0.) : dealii::Point<dim>(0., 0., 0.);
+
+        for(auto cell : tria.cell_iterators())
         {
-          bool face_at_outer_boundary = true;
-          for(auto const & v : cell->face(f)->vertex_indices())
+          for(auto const & f : cell->face_indices())
           {
-            if(std::abs(center.distance(cell->face(f)->vertex(v)) - R1) > 1e-12 * R1)
+            if(cell->face(f)->at_boundary())
             {
-              face_at_outer_boundary = false;
-              break;
+              bool face_at_outer_boundary = true;
+              for(auto const & v : cell->face(f)->vertex_indices())
+              {
+                if(std::abs(center.distance(cell->face(f)->vertex(v)) - R1) > 1e-12 * R1)
+                {
+                  face_at_outer_boundary = false;
+                  break;
+                }
+              }
+
+              if(face_at_outer_boundary)
+                cell->face(f)->set_boundary_id(1);
             }
           }
-
-          if(face_at_outer_boundary)
-            cell->face(f)->set_boundary_id(1);
         }
-      }
-    }
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->mpi_comm,
+                                                              this->param.grid,
+                                                              this->param.involves_h_multigrid(),
+                                                              lambda_create_triangulation,
+                                                              {} /* no local refinements */);
   }
 
   void
