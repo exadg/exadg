@@ -64,10 +64,6 @@ private:
   void
   create_grid() final
   {
-    // create triangulation
-
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
     auto const lambda_create_triangulation =
       [&](dealii::Triangulation<dim, dim> &                        tria,
           std::vector<dealii::GridTools::PeriodicFacePair<

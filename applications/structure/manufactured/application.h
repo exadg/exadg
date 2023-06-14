@@ -341,29 +341,43 @@ private:
   void
   create_grid() final
   {
-    // left-bottom-front and right-top-back point
-    dealii::Point<dim> p1, p2;
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    for(unsigned d = 0; d < dim; d++)
-      p1[d] = 0.0;
+        // left-bottom-front and right-top-back point
+        dealii::Point<dim> p1, p2;
 
-    p2[0] = this->length;
-    p2[1] = this->height;
-    if(dim == 3)
-      p2[2] = this->width;
+        for(unsigned d = 0; d < dim; d++)
+          p1[d] = 0.0;
 
-    std::vector<unsigned int> repetitions(dim);
-    repetitions[0] = this->n_subdivisions_1d_hypercube;
-    repetitions[1] = this->n_subdivisions_1d_hypercube;
-    if(dim == 3)
-      repetitions[2] = this->n_subdivisions_1d_hypercube;
+        p2[0] = this->length;
+        p2[1] = this->height;
+        if(dim == 3)
+          p2[2] = this->width;
 
-    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                                      repetitions,
-                                                      p1,
-                                                      p2);
+        std::vector<unsigned int> repetitions(dim);
+        repetitions[0] = this->n_subdivisions_1d_hypercube;
+        repetitions[1] = this->n_subdivisions_1d_hypercube;
+        if(dim == 3)
+          repetitions[2] = this->n_subdivisions_1d_hypercube;
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, p1, p2);
+
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->mpi_comm,
+                                                              this->param.grid,
+                                                              this->param.involves_h_multigrid(),
+                                                              lambda_create_triangulation,
+                                                              {} /* no local refinements */);
   }
 
   void
