@@ -48,26 +48,8 @@ create_periodic_box(dealii::Triangulation<dim> &                             tri
 
   if(curvilinear_mesh)
   {
-    unsigned int const               frequency = 2;
-    static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
-    triangulation.set_all_manifold_ids(1);
-    triangulation.set_manifold(1, manifold);
-
-    std::vector<bool> vertex_touched(triangulation.n_vertices(), false);
-
-    for(auto const & cell : triangulation.cell_iterators())
-    {
-      for(unsigned int const v : cell->vertex_indices())
-      {
-        if(vertex_touched[cell->vertex_index(v)] == false)
-        {
-          dealii::Point<dim> & vertex           = cell->vertex(v);
-          dealii::Point<dim>   new_point        = manifold.push_forward(vertex);
-          vertex                                = new_point;
-          vertex_touched[cell->vertex_index(v)] = true;
-        }
-      }
-    }
+    unsigned int const frequency = 2;
+    apply_deformed_cube_manifold(triangulation, left, right, deformation, frequency);
   }
 
   for(auto const & cell : triangulation.cell_iterators())

@@ -114,6 +114,38 @@ private:
   unsigned int const frequency;
 };
 
+template<int dim>
+void
+apply_deformed_cube_manifold(dealii::Triangulation<dim> & triangulation,
+                             double const                 left,
+                             double const                 right,
+                             double const                 deformation,
+                             unsigned int const           frequency)
+{
+  static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
+  triangulation.set_all_manifold_ids(1);
+  triangulation.set_manifold(1, manifold);
+
+  // the vertices need to be placed correctly according to the manifold description such that mesh
+  // refinements and high-order mappings are done correctly (which invoke pull-back and push-forward
+  // operations)
+  std::vector<bool> vertex_touched(triangulation.n_vertices(), false);
+
+  for(auto const & cell : triangulation.cell_iterators())
+  {
+    for(unsigned int const v : cell->vertex_indices())
+    {
+      if(vertex_touched[cell->vertex_index(v)] == false)
+      {
+        dealii::Point<dim> & vertex           = cell->vertex(v);
+        dealii::Point<dim>   new_point        = manifold.push_forward(vertex);
+        vertex                                = new_point;
+        vertex_touched[cell->vertex_index(v)] = true;
+      }
+    }
+  }
+}
+
 } // namespace ExaDG
 
 #endif /* APPLICATIONS_GRID_TOOLS_DEFORMED_CUBE_MANIFOLD_H_ */
