@@ -131,6 +131,7 @@ public:
   double density;
 
   // linear weak damping coefficient (mass proportional) for unsteady problems
+  bool   weak_damping_active;
   double weak_damping_coefficient;
 
   /**************************************************************************************/

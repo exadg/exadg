@@ -40,6 +40,9 @@ Parameters::Parameters()
 
     // PHYSICAL QUANTITIES
     density(1.0),
+
+    // WEAK LINEAR DAMPING
+    weak_damping_active(false),
     weak_damping_coefficient(0.0),
 
     // TEMPORAL DISCRETIZATION
@@ -93,6 +96,12 @@ Parameters::check() const
   {
     AssertThrow(restarted_simulation == false,
                 dealii::ExcMessage("Restart has not been implemented."));
+
+    if(weak_damping_active)
+    {
+      AssertThrow(weak_damping_coefficient > 0.0,
+                  dealii::ExcMessage("Weak linear damping requires positive coefficient."));
+    }
   }
 
   // SPATIAL DISCRETIZATION
@@ -160,7 +169,11 @@ Parameters::print_parameters_physical_quantities(dealii::ConditionalOStream cons
   if(problem_type == ProblemType::Unsteady)
   {
     print_parameter(pcout, "Density", density);
-    print_parameter(pcout, "Weak damping coefficient", weak_damping_coefficient);
+
+    if(weak_damping_active)
+    {
+      print_parameter(pcout, "Weak damping coefficient", weak_damping_coefficient);
+    }
   }
 }
 

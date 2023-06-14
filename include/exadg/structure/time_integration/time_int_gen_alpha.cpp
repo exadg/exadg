@@ -120,30 +120,27 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
   dealii::Timer timer;
   timer.restart();
 
-  // compute const_vector
-  VectorType const_vector, rhs;
-  const_vector.reinit(displacement_n);
-  rhs.reinit(displacement_n);
-
-  // add const_vector resulting from acceleration and weak damping terms
-  double total_scaling_factor_mass = this->get_scaling_factor_mass_from_acceleration();
-  this->compute_const_vector_acceleration_remainder(rhs /* placeholder */,
+  // add acceleration term remainder to rhs
+  VectorType tmp;
+  tmp.reinit(displacement_n);
+  this->compute_const_vector_acceleration_remainder(tmp,
                                                     displacement_n,
                                                     velocity_n,
                                                     acceleration_n);
-  if(this->param.weak_damping_coefficient > 1e-20 * this->param.density)
-  {
-    this->compute_const_vector_velocity_remainder(const_vector /* placeholder */,
-                                                  displacement_n,
-                                                  velocity_n,
-                                                  acceleration_n);
-    rhs.add(param.weak_damping_coefficient, const_vector);
-    const_vector = 0; // set to 0 since we apply_mass_operator
-    total_scaling_factor_mass +=
-      param.weak_damping_coefficient * this->get_scaling_factor_mass_from_velocity();
-  }
-  pde_operator->apply_mass_operator(const_vector, rhs);
 
+  VectorType const_vector;
+  const_vector.reinit(displacement_n);
+  pde_operator->apply_mass_operator(const_vector, tmp);
+
+  // add weak damping term remainder to rhs
+  if(this->param.weak_damping_active)
+  {
+    this->compute_const_vector_velocity_remainder(tmp, displacement_n, velocity_n, acceleration_n);
+    pde_operator->apply_add_weak_damping_operator(const_vector, tmp);
+  }
+
+  VectorType rhs;
+  rhs.reinit(displacement_n);
   if(param.large_deformation == false) // linear case
   {
     // calculate right-hand side vector
@@ -169,11 +166,13 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
 
   if(param.large_deformation) // nonlinear case
   {
-    auto const iter = pde_operator->solve_nonlinear(displacement_np,
-                                                    const_vector,
-                                                    total_scaling_factor_mass,
-                                                    this->get_mid_time(),
-                                                    update_preconditioner);
+    auto const iter =
+      pde_operator->solve_nonlinear(displacement_np,
+                                    const_vector,
+                                    this->get_scaling_factor_mass_from_acceleration(),
+                                    this->get_scaling_factor_mass_from_velocity(),
+                                    this->get_mid_time(),
+                                    update_preconditioner);
 
     iterations.first += 1;
     std::get<0>(iterations.second) += std::get<0>(iter);
@@ -188,8 +187,13 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
   else // linear case
   {
     // solve linear system of equations
-    unsigned int const iter = pde_operator->solve_linear(
-      displacement_np, rhs, total_scaling_factor_mass, this->get_mid_time(), update_preconditioner);
+    unsigned int const iter =
+      pde_operator->solve_linear(displacement_np,
+                                 rhs,
+                                 this->get_scaling_factor_mass_from_acceleration(),
+                                 this->get_scaling_factor_mass_from_velocity(),
+                                 this->get_mid_time(),
+                                 update_preconditioner);
 
     iterations.first += 1;
     std::get<1>(iterations.second) += iter;

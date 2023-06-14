@@ -228,15 +228,19 @@ private:
     this->param.pull_back_traction   = false;
 
     this->param.density = density;
-    this->param.weak_damping_coefficient =
-      this->param.problem_type == ProblemType::Unsteady ? weak_damping_coefficient : 0.0;
+    if(this->param.problem_type == ProblemType::Unsteady and weak_damping_coefficient > 0.0)
+    {
+      this->param.weak_damping_active      = true;
+      this->param.weak_damping_coefficient = weak_damping_coefficient;
+    }
 
-    this->param.start_time                           = start_time;
-    this->param.end_time                             = end_time;
-    this->param.time_step_size                       = end_time / 200.;
-    this->param.gen_alpha_type                       = GenAlphaType::BossakAlpha;
-    this->param.spectral_radius                      = 0.8;
-    this->param.solver_info_data.interval_time_steps = 2;
+    this->param.start_time      = start_time;
+    this->param.end_time        = end_time;
+    this->param.time_step_size  = end_time / 200.;
+    this->param.gen_alpha_type  = GenAlphaType::BossakAlpha;
+    this->param.spectral_radius = 0.8;
+    this->param.solver_info_data.interval_time_steps =
+      problem_type == ProblemType::Unsteady ? 200 : 2;
 
     this->param.mapping_degree    = 1;
     this->param.grid.element_type = ElementType::Hypercube; // Simplex;

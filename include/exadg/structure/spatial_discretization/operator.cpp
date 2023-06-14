@@ -273,6 +273,20 @@ Operator<dim, Number>::get_quad_index_gauss_lobatto() const
 }
 
 template<int dim, typename Number>
+double
+Operator<dim, Number>::compute_scaling_factor_mass(
+  double const scaling_factor_mass_from_acceleration,
+  double const scaling_factor_mass_from_velocity) const
+{
+  double scaling_factor_mass = scaling_factor_mass_from_acceleration;
+  if(param.weak_damping_active)
+  {
+    scaling_factor_mass += param.weak_damping_coefficient * scaling_factor_mass_from_velocity;
+  }
+  return scaling_factor_mass;
+}
+
+template<int dim, typename Number>
 std::shared_ptr<ContainerInterfaceData<1, dim, double>>
 Operator<dim, Number>::get_container_interface_data_neumann() const
 {
@@ -347,11 +361,10 @@ Operator<dim, Number>::setup_operators()
 
     operator_data.quad_index_gauss_lobatto = get_quad_index_gauss_lobatto();
   }
-  operator_data.bc                       = boundary_descriptor;
-  operator_data.material_descriptor      = material_descriptor;
-  operator_data.unsteady                 = (param.problem_type == ProblemType::Unsteady);
-  operator_data.density                  = param.density;
-  operator_data.weak_damping_coefficient = param.weak_damping_coefficient;
+  operator_data.bc                  = boundary_descriptor;
+  operator_data.material_descriptor = material_descriptor;
+  operator_data.unsteady            = (param.problem_type == ProblemType::Unsteady);
+  operator_data.density             = param.density;
   if(param.large_deformation)
   {
     operator_data.pull_back_traction = param.pull_back_traction;
@@ -424,10 +437,14 @@ Operator<dim, Number>::setup_operators()
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::setup_solver(double const & scaling_factor_mass)
+Operator<dim, Number>::setup_solver(double const & scaling_factor_mass_from_acceleration,
+                                    double const & scaling_factor_mass_from_velocity)
 {
   pcout << std::endl << "Setup elasticity solver ..." << std::endl;
 
+  double const scaling_factor_mass =
+    compute_scaling_factor_mass(scaling_factor_mass_from_acceleration,
+                                scaling_factor_mass_from_velocity);
   if(param.large_deformation)
     elasticity_operator_nonlinear.set_scaling_factor_mass_operator(scaling_factor_mass);
   else
@@ -773,6 +790,15 @@ Operator<dim, Number>::apply_mass_operator(VectorType & dst, VectorType const & 
 
 template<int dim, typename Number>
 void
+Operator<dim, Number>::apply_add_weak_damping_operator(VectorType & dst, VectorType & src) const
+{
+  src *= param.weak_damping_coefficient;
+  mass_operator.apply_add(dst, src);
+}
+
+
+template<int dim, typename Number>
+void
 Operator<dim, Number>::compute_rhs_linear(VectorType & dst, double const time) const
 {
   dst = 0.0;
@@ -874,13 +900,17 @@ template<int dim, typename Number>
 std::tuple<unsigned int, unsigned int>
 Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
                                        VectorType const & rhs,
-                                       double const       factor,
+                                       double const       scaling_factor_mass_from_acceleration,
+                                       double const       scaling_factor_mass_from_velocity,
                                        double const       time,
                                        bool const         update_preconditioner) const
 {
   // update operators
-  residual_operator.update(rhs, factor, time);
-  linearized_operator.update(factor, time);
+  double const scaling_factor_mass =
+    compute_scaling_factor_mass(scaling_factor_mass_from_acceleration,
+                                scaling_factor_mass_from_velocity);
+  residual_operator.update(rhs, scaling_factor_mass, time);
+  linearized_operator.update(scaling_factor_mass, time);
 
   // set inhomogeneous Dirichlet values (this is necessary since we use
   // FEEvaluation::read_dof_values_plain() to evaluate the operator)
@@ -911,12 +941,16 @@ template<int dim, typename Number>
 unsigned int
 Operator<dim, Number>::solve_linear(VectorType &       sol,
                                     VectorType const & rhs,
-                                    double const       factor,
+                                    double const       scaling_factor_mass_from_acceleration,
+                                    double const       scaling_factor_mass_from_velocity,
                                     double const       time,
                                     bool const         update_preconditioner) const
 {
   // unsteady problems
-  elasticity_operator_linear.set_scaling_factor_mass_operator(factor);
+  double const scaling_factor_mass =
+    compute_scaling_factor_mass(scaling_factor_mass_from_acceleration,
+                                scaling_factor_mass_from_velocity);
+  elasticity_operator_linear.set_scaling_factor_mass_operator(scaling_factor_mass);
   elasticity_operator_linear.set_time(time);
 
   linear_solver->update_preconditioner(update_preconditioner);

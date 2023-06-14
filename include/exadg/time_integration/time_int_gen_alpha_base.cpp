@@ -96,21 +96,21 @@ template<typename Number>
 double
 TimeIntGenAlphaBase<Number>::get_scaling_factor_mass_from_acceleration() const
 {
-  return (1.0 - alpha_m) / ((1.0 - alpha_f) * beta * std::pow(time_step, 2.0));
+  return ((1.0 - alpha_m) / ((1.0 - alpha_f) * beta * std::pow(time_step, 2.0)));
 }
 
 template<typename Number>
 double
 TimeIntGenAlphaBase<Number>::get_scaling_factor_mass_from_velocity() const
 {
-  return gamma / (beta * time_step);
+  return (gamma / (beta * time_step));
 }
 
 template<typename Number>
 double
 TimeIntGenAlphaBase<Number>::get_mid_time() const
 {
-  return this->time + (1.0 - alpha_f) * this->time_step;
+  return (this->time + (1.0 - alpha_f) * this->time_step);
 }
 
 template<typename Number>

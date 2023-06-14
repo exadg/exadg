@@ -30,7 +30,6 @@ Mathematical model:
 
 Physical quantities:
   Density:                                   1.0000e+00
-  Weak damping coefficient:                  0.0000e+00
 
 Temporal discretization:
   Start time:                                0.0000e+00
@@ -151,7 +150,6 @@ Mathematical model:
 
 Physical quantities:
   Density:                                   1.0000e+00
-  Weak damping coefficient:                  0.0000e+00
 
 Temporal discretization:
   Start time:                                0.0000e+00
@@ -272,7 +270,6 @@ Mathematical model:
 
 Physical quantities:
   Density:                                   1.0000e+00
-  Weak damping coefficient:                  0.0000e+00
 
 Temporal discretization:
   Start time:                                0.0000e+00
@@ -393,7 +390,6 @@ Mathematical model:
 
 Physical quantities:
   Density:                                   1.0000e+00
-  Weak damping coefficient:                  0.0000e+00
 
 Temporal discretization:
   Start time:                                0.0000e+00
@@ -514,7 +510,6 @@ Mathematical model:
 
 Physical quantities:
   Density:                                   1.0000e+00
-  Weak damping coefficient:                  0.0000e+00
 
 Temporal discretization:
   Start time:                                0.0000e+00
@@ -635,7 +630,6 @@ Mathematical model:
 
 Physical quantities:
   Density:                                   1.0000e+00
-  Weak damping coefficient:                  0.0000e+00
 
 Temporal discretization:
   Start time:                                0.0000e+00
@@ -756,7 +750,6 @@ Mathematical model:
 
 Physical quantities:
   Density:                                   1.0000e+00
-  Weak damping coefficient:                  0.0000e+00
 
 Temporal discretization:
   Start time:                                0.0000e+00
@@ -877,7 +870,6 @@ Mathematical model:
 
 Physical quantities:
   Density:                                   1.0000e+00
-  Weak damping coefficient:                  0.0000e+00
 
 Temporal discretization:
   Start time:                                0.0000e+00
@@ -998,7 +990,6 @@ Mathematical model:
 
 Physical quantities:
   Density:                                   1.0000e+00
-  Weak damping coefficient:                  0.0000e+00
 
 Temporal discretization:
   Start time:                                0.0000e+00

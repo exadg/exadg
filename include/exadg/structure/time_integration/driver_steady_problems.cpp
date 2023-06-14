@@ -109,7 +109,8 @@ DriverSteady<dim, Number>::do_solve()
     VectorType const const_vector_dummy; // will not be used
     auto const       iter = pde_operator->solve_nonlinear(solution,
                                                     const_vector_dummy,
-                                                    0.0 /* no mass term */,
+                                                    0.0 /* no mass terms */,
+                                                    0.0 /* no mass terms */,
                                                     0.0 /* time */,
                                                     param.update_preconditioner);
 
@@ -128,6 +129,7 @@ DriverSteady<dim, Number>::do_solve()
       pde_operator->solve_linear(solution,
                                  rhs_vector,
                                  0.0 /* no mass term */,
+                                 0.0 /* no mass terms */,
                                  0.0 /* time */,
                                  false /* update preconditioner */);
 

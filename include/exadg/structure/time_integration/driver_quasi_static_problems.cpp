@@ -260,8 +260,12 @@ DriverQuasiStatic<dim, Number>::solve_step(double const load_factor,
 
   VectorType const const_vector; // will not be used
 
-  auto const iter = pde_operator->solve_nonlinear(
-    solution, const_vector, 0.0 /*no mass term*/, load_factor /* = time */, update_preconditioner);
+  auto const iter = pde_operator->solve_nonlinear(solution,
+                                                  const_vector,
+                                                  0.0 /*no mass terms*/,
+                                                  0.0 /*no mass terms*/,
+                                                  load_factor /* = time */,
+                                                  update_preconditioner);
 
   unsigned int const N_iter_nonlinear = std::get<0>(iter);
   unsigned int const N_iter_linear    = std::get<1>(iter);
