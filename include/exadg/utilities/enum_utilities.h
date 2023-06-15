@@ -30,11 +30,11 @@
 namespace ExaDG
 {
 /**
- * Collection of enums utilities.
+ * Collection of enum utilities.
  */
 namespace Utilities
 {
-/// constexpr which checks if given type is an enum or enum class
+/// Checks if given type is an enum or enum class.
 template<typename Type>
 constexpr bool
 is_enum()
@@ -42,6 +42,7 @@ is_enum()
   return (std::is_enum_v<Type> or magic_enum::is_scoped_enum_v<Type>);
 }
 
+/// Returns the first value of EnumType. This is well-defined as compared to EnumType().
 template<typename EnumType>
 EnumType
 default_constructor()
@@ -49,7 +50,7 @@ default_constructor()
   return magic_enum::enum_values<EnumType>()[0];
 }
 
-/// returns the names of the enums joined with |
+/// Returns the names of the enums joined with "|".
 template<typename EnumType>
 std::string
 serialized_string()
@@ -60,6 +61,7 @@ serialized_string()
   return boost::algorithm::join(enums_strings_vec, "|");
 }
 
+/// Converts and enum to a string, returning the string.
 template<typename EnumType>
 std::string
 enum_to_string(EnumType const enum_type)
@@ -67,6 +69,7 @@ enum_to_string(EnumType const enum_type)
   return (std::string)magic_enum::enum_name(enum_type);
 }
 
+/// Converts a string to an enum, which is provided as first function argument.
 template<typename EnumType>
 void
 string_to_enum(EnumType & enum_type, std::string const & enum_name)

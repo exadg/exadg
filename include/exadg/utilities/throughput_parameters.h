@@ -86,7 +86,7 @@ measure_operator_evaluation_time(std::function<void(void)> const & evaluate_oper
   return wall_time;
 }
 
-template<typename OperatorType>
+template<typename EnumOperatorType>
 struct ThroughputParameters
 {
   ThroughputParameters()
@@ -105,8 +105,11 @@ struct ThroughputParameters
   {
     prm.enter_subsection("Throughput");
     {
-      prm.add_parameter(
-        "OperatorType", operator_type, "Operator type.", Patterns::Enum<OperatorType>(), true);
+      prm.add_parameter("EnumOperatorType",
+                        operator_type,
+                        "Operator type.",
+                        Patterns::Enum<EnumOperatorType>(),
+                        true);
       prm.add_parameter("RepetitionsInner",
                         n_repetitions_inner,
                         "Number of operator evaluations.",
@@ -128,7 +131,7 @@ struct ThroughputParameters
   }
 
   // type of PDE operator
-  OperatorType operator_type = Utilities::default_constructor<OperatorType>();
+  EnumOperatorType operator_type = Utilities::default_constructor<EnumOperatorType>();
 
   // number of repetitions used to determine the average/minimum wall time required
   // to compute the matrix-vector product
