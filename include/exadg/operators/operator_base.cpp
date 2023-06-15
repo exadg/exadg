@@ -325,11 +325,11 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
 {
-  VectorType tmp;
-  tmp.reinit(rhs, false);
-
   if(evaluate_face_integrals())
   {
+    VectorType tmp;
+    tmp.reinit(rhs, false);
+
     matrix_free->loop(&This::cell_loop_empty,
                       &This::face_loop_empty,
                       &This::boundary_face_loop_inhom_operator,
