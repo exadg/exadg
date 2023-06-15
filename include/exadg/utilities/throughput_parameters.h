@@ -128,7 +128,7 @@ struct ThroughputParameters
   }
 
   // type of PDE operator
-  OperatorType operator_type = OperatorType();
+  OperatorType operator_type = Utilities::default_constructor<OperatorType>();
 
   // number of repetitions used to determine the average/minimum wall time required
   // to compute the matrix-vector product

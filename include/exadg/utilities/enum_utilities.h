@@ -39,7 +39,14 @@ template<typename Type>
 constexpr bool
 is_enum()
 {
-  return (std::is_enum_v<Type> || magic_enum::is_scoped_enum_v<Type>);
+  return (std::is_enum_v<Type> or magic_enum::is_scoped_enum_v<Type>);
+}
+
+template<typename EnumType>
+EnumType
+default_constructor()
+{
+  return magic_enum::enum_values<EnumType>()[0];
 }
 
 /// returns the names of the enums joined with |
