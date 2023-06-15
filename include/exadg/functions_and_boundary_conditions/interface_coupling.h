@@ -27,7 +27,7 @@
 
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/container_interface_data.h>
-#include <exadg/utilities/n_components_to_rank.h>
+#include <exadg/utilities/tensor_utilities.h>
 
 namespace ExaDG
 {

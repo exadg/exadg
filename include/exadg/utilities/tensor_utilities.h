@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_EXTRACT_COMPONENT_FROM_TENSORS_H_
-#define INCLUDE_EXADG_UTILITIES_EXTRACT_COMPONENT_FROM_TENSORS_H_
+#ifndef INCLUDE_EXADG_UTILITIES_TENSOR_UTILITIES_H_
+#define INCLUDE_EXADG_UTILITIES_TENSOR_UTILITIES_H_
 
 // C/C++
 #include <memory>
@@ -72,8 +72,23 @@ extract_component_from_tensors(dealii::Vector<Number> &                         
   }
 }
 
+template<int rank, int dim>
+constexpr unsigned int
+rank_to_n_components()
+{
+  return (rank == 0) ? 1 : ((rank == 1) ? dim : dealii::numbers::invalid_unsigned_int);
+}
+
+template<int n_components, int dim>
+constexpr unsigned int
+n_components_to_rank()
+{
+  return (n_components == 1) ? 0 :
+                               ((n_components == dim) ? 1 : dealii::numbers::invalid_unsigned_int);
+}
+
 } // namespace ExaDG
 
 
 
-#endif /* INCLUDE_EXADG_UTILITIES_EXTRACT_COMPONENT_FROM_TENSORS_H_ */
+#endif /* INCLUDE_EXADG_UTILITIES_TENSOR_UTILITIES_H_ */
