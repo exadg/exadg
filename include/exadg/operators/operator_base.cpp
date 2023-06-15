@@ -392,12 +392,19 @@ OperatorBase<dim, Number, n_components>::evaluate_add(VectorType &       dst,
   }
   else
   {
-    matrix_free->loop(&This::cell_loop,
-                      &This::face_loop_empty,
-                      &This::boundary_face_loop_inhom_operator,
-                      this,
-                      dst,
-                      src);
+    if(evaluate_face_integrals())
+    {
+      matrix_free->loop(&This::cell_loop,
+                        &This::face_loop_empty,
+                        &This::boundary_face_loop_inhom_operator,
+                        this,
+                        dst,
+                        src);
+    }
+    else
+    {
+      matrix_free->cell_loop(&This::cell_loop, this, dst, src);
+    }
   }
 }
 
