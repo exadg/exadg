@@ -13,11 +13,9 @@
         "DofsMin": "200000",
         "DofsMax": "500000"
     },
-    "Discretization": {
-        "PressureDegree" : "MixedOrder"
-    },
     "Throughput": {
         "OperatorType": "HelmholtzOperator",
+        "PressureDegree" : "MixedOrder",
         "RepetitionsInner": "100",
         "RepetitionsOuter": "1"
     },

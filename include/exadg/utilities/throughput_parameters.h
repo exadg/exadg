@@ -86,6 +86,7 @@ measure_operator_evaluation_time(std::function<void(void)> const & evaluate_oper
   return wall_time;
 }
 
+template<typename OperatorType>
 struct ThroughputParameters
 {
   ThroughputParameters()
@@ -105,7 +106,7 @@ struct ThroughputParameters
     prm.enter_subsection("Throughput");
     {
       prm.add_parameter(
-        "OperatorType", operator_type, "Type of operator.", dealii::Patterns::Anything(), true);
+        "OperatorType", operator_type, "Operator type.", Patterns::Enum<OperatorType>(), true);
       prm.add_parameter("RepetitionsInner",
                         n_repetitions_inner,
                         "Number of operator evaluations.",
@@ -123,10 +124,11 @@ struct ThroughputParameters
   void
   print_results(MPI_Comm const & mpi_comm)
   {
-    print_throughput(wall_times, operator_type, mpi_comm);
+    print_throughput(wall_times, ExaDG::Utilities::enum_to_string(operator_type), mpi_comm);
   }
 
-  std::string operator_type = "Undefined";
+  // type of PDE operator
+  OperatorType operator_type = OperatorType();
 
   // number of repetitions used to determine the average/minimum wall time required
   // to compute the matrix-vector product
