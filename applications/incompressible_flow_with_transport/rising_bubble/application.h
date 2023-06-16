@@ -226,7 +226,7 @@ private:
 
     // MATHEMATICAL MODEL
     param.problem_type                = ProblemType::Unsteady;
-    param.equation_type               = EquationType::ConvectionDiffusion;
+    param.equation_type               = EquationType::Convection;
     param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
     param.analytical_velocity_field   = false;
     param.right_hand_side             = false;

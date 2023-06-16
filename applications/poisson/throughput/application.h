@@ -88,27 +88,13 @@ private:
         double const left = -1.0, right = 1.0;
         double const deformation = 0.1;
 
-        bool curvilinear_mesh = false;
-        if(mesh_type == MeshType::Cartesian)
-        {
-          // do nothing
-        }
-        else if(mesh_type == MeshType::Curvilinear)
-        {
-          curvilinear_mesh = true;
-        }
-        else
-        {
-          AssertThrow(false, dealii::ExcMessage("Not implemented."));
-        }
-
         create_periodic_box(tria,
                             global_refinements,
                             periodic_face_pairs,
                             this->n_subdivisions_1d_hypercube,
                             left,
                             right,
-                            curvilinear_mesh,
+                            mesh_type == MeshType::Curvilinear,
                             deformation);
       };
 
