@@ -1,7 +1,7 @@
 var searchData=
 [
   ['save_5fcurrent_5fstate_5fif_5frequired_0',['save_current_state_if_required',['../classExaDG_1_1preCICE_1_1Adapter.html#a7a4afd77dd457397b831862cce372cde',1,'ExaDG::preCICE::Adapter']]],
-  ['serialize_1',['serialize',['../classdealspectrum_1_1Interpolator.html#a8283a193758ed7bc6fd68fd2f3cd9847',1,'dealspectrum::Interpolator::serialize(char const *filename)'],['../classdealspectrum_1_1Interpolator.html#a6b09f98b6b45095290fa3ea8269f0c16',1,'dealspectrum::Interpolator::serialize(char const *filename, double const *&amp;src)'],['../classdealspectrum_1_1SpectralAnalysis.html#a5823986be9b1e140e8a408cdcdd5b59c',1,'dealspectrum::SpectralAnalysis::serialize()']]],
+  ['serialize_1',['serialize',['../classdealspectrum_1_1SpectralAnalysis.html#a5823986be9b1e140e8a408cdcdd5b59c',1,'dealspectrum::SpectralAnalysis::serialize()'],['../classdealspectrum_1_1Interpolator.html#a6b09f98b6b45095290fa3ea8269f0c16',1,'dealspectrum::Interpolator::serialize(char const *filename, double const *&amp;src)'],['../classdealspectrum_1_1Interpolator.html#a8283a193758ed7bc6fd68fd2f3cd9847',1,'dealspectrum::Interpolator::serialize(char const *filename)']]],
   ['serialized_5fstring_2',['serialized_string',['../namespaceExaDG_1_1Utilities.html#a37f982dd84fb544d186dde3dda54073b',1,'ExaDG::Utilities']]],
   ['set_5fcoefficient_5fcell_3',['set_coefficient_cell',['../classExaDG_1_1VariableCoefficients.html#aac75b341696a34a88505a352269f5ed6',1,'ExaDG::VariableCoefficients']]],
   ['set_5fcoefficient_5fface_4',['set_coefficient_face',['../classExaDG_1_1VariableCoefficients.html#ab5f2f622fa96ed41c6ffecd248ef0ac3',1,'ExaDG::VariableCoefficients']]],
@@ -43,6 +43,7 @@ var searchData=
   ['statisticsmanager_40',['StatisticsManager',['../classExaDG_1_1StatisticsManager.html',1,'ExaDG']]],
   ['stop_41',['stop',['../classdealspectrum_1_1DealSpectrumTimer.html#ac7f6fa0118b49c8c58f1b8357cc2a371',1,'dealspectrum::DealSpectrumTimer']]],
   ['streamfunctioncalculatorrhsoperator_42',['StreamfunctionCalculatorRHSOperator',['../classExaDG_1_1IncNS_1_1StreamfunctionCalculatorRHSOperator.html',1,'ExaDG::IncNS']]],
-  ['stvenantkirchhoff_43',['StVenantKirchhoff',['../classExaDG_1_1Structure_1_1StVenantKirchhoff.html',1,'ExaDG::Structure']]],
-  ['stvenantkirchhoffdata_44',['StVenantKirchhoffData',['../structExaDG_1_1Structure_1_1StVenantKirchhoffData.html',1,'ExaDG::Structure']]]
+  ['string_5fto_5fenum_43',['string_to_enum',['../namespaceExaDG_1_1Utilities.html#a19aec684f8b02f55a5fc67b5f3484f8a',1,'ExaDG::Utilities']]],
+  ['stvenantkirchhoff_44',['StVenantKirchhoff',['../classExaDG_1_1Structure_1_1StVenantKirchhoff.html',1,'ExaDG::Structure']]],
+  ['stvenantkirchhoffdata_45',['StVenantKirchhoffData',['../structExaDG_1_1Structure_1_1StVenantKirchhoffData.html',1,'ExaDG::Structure']]]
 ];

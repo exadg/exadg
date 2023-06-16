@@ -84,20 +84,27 @@ Functions</h2></td></tr>
 <tr class="memitem:a51f3067c518a233b7f58b2b52d7da930"><td class="memTemplParams" colspan="2"><a id="a51f3067c518a233b7f58b2b52d7da930" name="a51f3067c518a233b7f58b2b52d7da930"></a>
 template&lt;typename Type &gt; </td></tr>
 <tr class="memitem:a51f3067c518a233b7f58b2b52d7da930"><td class="memTemplItemLeft" align="right" valign="top">constexpr bool&#160;</td><td class="memTemplItemRight" valign="bottom"><b>is_enum</b> ()</td></tr>
-<tr class="memdesc:a51f3067c518a233b7f58b2b52d7da930"><td class="mdescLeft">&#160;</td><td class="mdescRight">constexpr which checks if given type is an enum or enum class <br /></td></tr>
+<tr class="memdesc:a51f3067c518a233b7f58b2b52d7da930"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if given type is an enum or enum class. <br /></td></tr>
 <tr class="separator:a51f3067c518a233b7f58b2b52d7da930"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a87bd76da466cc67ef6dffd2e0627a3e1"><td class="memTemplParams" colspan="2"><a id="a87bd76da466cc67ef6dffd2e0627a3e1" name="a87bd76da466cc67ef6dffd2e0627a3e1"></a>
+template&lt;typename EnumType &gt; </td></tr>
+<tr class="memitem:a87bd76da466cc67ef6dffd2e0627a3e1"><td class="memTemplItemLeft" align="right" valign="top">EnumType&#160;</td><td class="memTemplItemRight" valign="bottom"><b>default_constructor</b> ()</td></tr>
+<tr class="memdesc:a87bd76da466cc67ef6dffd2e0627a3e1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the first value of EnumType. This is well-defined as compared to EnumType(). <br /></td></tr>
+<tr class="separator:a87bd76da466cc67ef6dffd2e0627a3e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a37f982dd84fb544d186dde3dda54073b"><td class="memTemplParams" colspan="2"><a id="a37f982dd84fb544d186dde3dda54073b" name="a37f982dd84fb544d186dde3dda54073b"></a>
 template&lt;typename EnumType &gt; </td></tr>
 <tr class="memitem:a37f982dd84fb544d186dde3dda54073b"><td class="memTemplItemLeft" align="right" valign="top">std::string&#160;</td><td class="memTemplItemRight" valign="bottom"><b>serialized_string</b> ()</td></tr>
-<tr class="memdesc:a37f982dd84fb544d186dde3dda54073b"><td class="mdescLeft">&#160;</td><td class="mdescRight">returns the names of the enums joined with | <br /></td></tr>
+<tr class="memdesc:a37f982dd84fb544d186dde3dda54073b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the names of the enums joined with "|". <br /></td></tr>
 <tr class="separator:a37f982dd84fb544d186dde3dda54073b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae64d79cc4a7f0b1f68c9d6bee85d8118"><td class="memTemplParams" colspan="2"><a id="ae64d79cc4a7f0b1f68c9d6bee85d8118" name="ae64d79cc4a7f0b1f68c9d6bee85d8118"></a>
 template&lt;typename EnumType &gt; </td></tr>
 <tr class="memitem:ae64d79cc4a7f0b1f68c9d6bee85d8118"><td class="memTemplItemLeft" align="right" valign="top">std::string&#160;</td><td class="memTemplItemRight" valign="bottom"><b>enum_to_string</b> (EnumType const enum_type)</td></tr>
+<tr class="memdesc:ae64d79cc4a7f0b1f68c9d6bee85d8118"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts and enum to a string, returning the string. <br /></td></tr>
 <tr class="separator:ae64d79cc4a7f0b1f68c9d6bee85d8118"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a19aec684f8b02f55a5fc67b5f3484f8a"><td class="memTemplParams" colspan="2"><a id="a19aec684f8b02f55a5fc67b5f3484f8a" name="a19aec684f8b02f55a5fc67b5f3484f8a"></a>
 template&lt;typename EnumType &gt; </td></tr>
 <tr class="memitem:a19aec684f8b02f55a5fc67b5f3484f8a"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>string_to_enum</b> (EnumType &amp;enum_type, std::string const &amp;enum_name)</td></tr>
+<tr class="memdesc:a19aec684f8b02f55a5fc67b5f3484f8a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a string to an enum, which is provided as first function argument. <br /></td></tr>
 <tr class="separator:a19aec684f8b02f55a5fc67b5f3484f8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6dbca108186d6814aaf9afaa328e0d61"><td class="memItemLeft" align="right" valign="top"><a id="a6dbca108186d6814aaf9afaa328e0d61" name="a6dbca108186d6814aaf9afaa328e0d61"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>is_unsteady_timestep</b> (types::time_step const timestep)</td></tr>
@@ -107,7 +114,7 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>is_valid_timestep</b>
 <tr class="separator:a15d7ab5d6c62ed7775296c04d574cea3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Collection of enums utilities. </p>
+<div class="textblock"><p>Collection of enum utilities. </p>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
