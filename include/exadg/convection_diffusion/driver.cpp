@@ -322,14 +322,11 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 
 template<int dim, typename Number>
 std::tuple<unsigned int, dealii::types::global_dof_index, double>
-Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
-                                    unsigned int const  n_repetitions_inner,
-                                    unsigned int const  n_repetitions_outer) const
+Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
+                                    unsigned int const   n_repetitions_inner,
+                                    unsigned int const   n_repetitions_outer) const
 {
   pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
-
-  OperatorType operator_type;
-  Utilities::string_to_enum(operator_type, operator_type_string);
 
   dealii::LinearAlgebra::distributed::Vector<Number> dst, src;
 

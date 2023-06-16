@@ -45,25 +45,10 @@ enum class OperatorType
 };
 
 inline unsigned int
-get_dofs_per_element(std::string const & input_file,
-                     unsigned int const  dim,
-                     unsigned int const  degree)
+get_dofs_per_element(SpatialDiscretization const & spatial_discretization,
+                     unsigned int const            dim,
+                     unsigned int const            degree)
 {
-  SpatialDiscretization spatial_discretization = SpatialDiscretization::Undefined;
-
-  dealii::ParameterHandler prm;
-  prm.enter_subsection("Discretization");
-  {
-    prm.add_parameter("SpatialDiscretization",
-                      spatial_discretization,
-                      "Spatial discretization (CG vs. DG).",
-                      Patterns::Enum<SpatialDiscretization>(),
-                      true);
-  }
-  prm.leave_subsection();
-
-  prm.parse_input(input_file, "", true, true);
-
   unsigned int dofs_per_element = 1;
 
   if(spatial_discretization == SpatialDiscretization::CG)
@@ -98,9 +83,9 @@ public:
    * Throughput study
    */
   std::tuple<unsigned int, dealii::types::global_dof_index, double>
-  apply_operator(std::string const & operator_type_string,
-                 unsigned int const  n_repetitions_inner,
-                 unsigned int const  n_repetitions_outer) const;
+  apply_operator(OperatorType const & operator_type,
+                 unsigned int const   n_repetitions_inner,
+                 unsigned int const   n_repetitions_outer) const;
 
 private:
   // MPI communicator

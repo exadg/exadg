@@ -123,8 +123,29 @@ main(int argc, char ** argv)
   ExaDG::GeneralParameters             general(input_file);
   ExaDG::HypercubeResolutionParameters resolution(input_file, general.dim);
 
+  // get additional parameters
+  ExaDG::Poisson::SpatialDiscretization spatial_discretization =
+    ExaDG::Poisson::SpatialDiscretization::Undefined;
+
+  dealii::ParameterHandler prm;
+  prm.enter_subsection("Throughput");
+  {
+    prm.add_parameter("SpatialDiscretization",
+                      spatial_discretization,
+                      "Spatial discretization (CG vs. DG).",
+                      ExaDG::Patterns::Enum<ExaDG::Poisson::SpatialDiscretization>(),
+                      false);
+  }
+  prm.leave_subsection();
+
+  prm.parse_input(input_file, "", true, true);
+
+  auto const lambda_get_dofs_per_element = [&](unsigned int const dim, unsigned int const degree) {
+    return ExaDG::Poisson::get_dofs_per_element(spatial_discretization, dim, degree);
+  };
+
   // fill resolution vector
-  resolution.fill_resolution_vector(&ExaDG::Poisson::get_dofs_per_element, input_file);
+  resolution.fill_resolution_vector(lambda_get_dofs_per_element);
 
   std::vector<ExaDG::SolverResult> results;
 
@@ -136,20 +157,30 @@ main(int argc, char ** argv)
     unsigned int const n_cells_1d   = std::get<2>(*iter);
 
     if(general.dim == 2 and general.precision == "float")
+    {
       ExaDG::run<2, float>(
         results, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
+    }
     else if(general.dim == 2 and general.precision == "double")
+    {
       ExaDG::run<2, double>(
         results, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
+    }
     else if(general.dim == 3 and general.precision == "float")
+    {
       ExaDG::run<3, float>(
         results, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
+    }
     else if(general.dim == 3 and general.precision == "double")
+    {
       ExaDG::run<3, double>(
         results, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
+    }
     else
+    {
       AssertThrow(false,
                   dealii::ExcMessage("Only dim = 2|3 and precision = float|double implemented."));
+    }
   }
 
   if(not(general.is_test))

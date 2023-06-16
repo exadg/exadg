@@ -67,34 +67,11 @@ enum class PressureDegree
 };
 
 inline unsigned int
-get_dofs_per_element(std::string const & input_file,
-                     unsigned int const  dim,
-                     unsigned int const  degree)
+get_dofs_per_element(OperatorType const &   operator_type,
+                     PressureDegree const & pressure_degree,
+                     unsigned int const     dim,
+                     unsigned int const     degree)
 {
-  PressureDegree pressure_degree = PressureDegree::MixedOrder;
-  OperatorType   operator_type;
-
-  dealii::ParameterHandler prm;
-
-  prm.enter_subsection("Discretization");
-  {
-    prm.add_parameter("PressureDegree",
-                      pressure_degree,
-                      "Degree of pressure shape functions.",
-                      Patterns::Enum<PressureDegree>(),
-                      true);
-  }
-  prm.leave_subsection();
-
-  prm.enter_subsection("Throughput");
-  {
-    prm.add_parameter(
-      "OperatorType", operator_type, "Type of operator.", Patterns::Enum<OperatorType>(), true);
-  }
-  prm.leave_subsection();
-
-  prm.parse_input(input_file, "", true, true);
-
   unsigned int const velocity_dofs_per_element = dim * dealii::Utilities::pow(degree + 1, dim);
   unsigned int       pressure_dofs_per_element = 1;
   if(pressure_degree == PressureDegree::MixedOrder)
@@ -153,9 +130,9 @@ public:
    * Throughput study
    */
   std::tuple<unsigned int, dealii::types::global_dof_index, double>
-  apply_operator(std::string const & operator_type,
-                 unsigned int const  n_repetitions_inner,
-                 unsigned int const  n_repetitions_outer) const;
+  apply_operator(OperatorType const & operator_type,
+                 unsigned int const   n_repetitions_inner,
+                 unsigned int const   n_repetitions_outer) const;
 
 private:
   void

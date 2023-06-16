@@ -86,6 +86,7 @@ measure_operator_evaluation_time(std::function<void(void)> const & evaluate_oper
   return wall_time;
 }
 
+template<typename EnumOperatorType>
 struct ThroughputParameters
 {
   ThroughputParameters()
@@ -104,8 +105,11 @@ struct ThroughputParameters
   {
     prm.enter_subsection("Throughput");
     {
-      prm.add_parameter(
-        "OperatorType", operator_type, "Type of operator.", dealii::Patterns::Anything(), true);
+      prm.add_parameter("EnumOperatorType",
+                        operator_type,
+                        "Operator type.",
+                        Patterns::Enum<EnumOperatorType>(),
+                        true);
       prm.add_parameter("RepetitionsInner",
                         n_repetitions_inner,
                         "Number of operator evaluations.",
@@ -123,17 +127,18 @@ struct ThroughputParameters
   void
   print_results(MPI_Comm const & mpi_comm)
   {
-    print_throughput(wall_times, operator_type, mpi_comm);
+    print_throughput(wall_times, ExaDG::Utilities::enum_to_string(operator_type), mpi_comm);
   }
 
-  std::string operator_type = "Undefined";
+  // type of PDE operator
+  EnumOperatorType operator_type = Utilities::default_constructor<EnumOperatorType>();
 
   // number of repetitions used to determine the average/minimum wall time required
   // to compute the matrix-vector product
   unsigned int n_repetitions_inner = 100; // take the average of inner repetitions
   unsigned int n_repetitions_outer = 1;   // take the minimum of outer repetitions
 
-  // global variable used to store the wall times for different polynomial degrees and problem sizes
+  // variable used to store the wall times for different polynomial degrees and problem sizes
   mutable std::vector<std::tuple<unsigned int, dealii::types::global_dof_index, double>> wall_times;
 };
 } // namespace ExaDG

@@ -241,9 +241,7 @@ struct HypercubeResolutionParameters
 
   void
   fill_resolution_vector(
-    std::function<unsigned int(std::string, unsigned int, unsigned int)> const &
-                get_dofs_per_element,
-    std::string input_file)
+    std::function<unsigned int(unsigned int, unsigned int)> const & get_dofs_per_element)
   {
     if(run_type == RunType::RefineHAndP)
     {
@@ -265,7 +263,7 @@ struct HypercubeResolutionParameters
     {
       for(unsigned int degree = degree_min; degree <= degree_max; ++degree)
       {
-        unsigned int dofs_per_element = get_dofs_per_element(input_file, dim, degree);
+        unsigned int dofs_per_element = get_dofs_per_element(dim, degree);
         fill_resolutions_vector(
           resolutions, dim, degree, dofs_per_element, n_dofs_min, n_dofs_max, run_type);
       }

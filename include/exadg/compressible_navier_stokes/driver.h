@@ -51,12 +51,8 @@ enum class OperatorType
 };
 
 inline unsigned int
-get_dofs_per_element(std::string const & input_file,
-                     unsigned int const  dim,
-                     unsigned int const  degree)
+get_dofs_per_element(unsigned int const dim, unsigned int const degree)
 {
-  (void)input_file;
-
   unsigned int const dofs_per_element = (dim + 2) * dealii::Utilities::pow(degree + 1, dim);
 
   return dofs_per_element;
@@ -86,9 +82,9 @@ public:
    * Throughput study
    */
   std::tuple<unsigned int, dealii::types::global_dof_index, double>
-  apply_operator(std::string const & operator_type,
-                 unsigned int const  n_repetitions_inner,
-                 unsigned int const  n_repetitions_outer) const;
+  apply_operator(OperatorType const & operator_type,
+                 unsigned int const   n_repetitions_inner,
+                 unsigned int const   n_repetitions_outer) const;
 
 private:
   MPI_Comm const mpi_comm;
