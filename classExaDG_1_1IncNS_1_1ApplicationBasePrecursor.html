@@ -95,8 +95,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a0eee9694a44db167c082b84d2c6291b2"><td class="memItemLeft" align="right" valign="top"><a id="a0eee9694a44db167c082b84d2c6291b2" name="a0eee9694a44db167c082b84d2c6291b2"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>ApplicationBasePrecursor</b> (std::string parameter_file, MPI_Comm const &amp;comm)</td></tr>
 <tr class="separator:a0eee9694a44db167c082b84d2c6291b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a981e9105182b5a13b54cd3f29d6484f2"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBasePrecursor.html#a981e9105182b5a13b54cd3f29d6484f2">add_parameters</a> (dealii::ParameterHandler &amp;prm) final</td></tr>
-<tr class="separator:a981e9105182b5a13b54cd3f29d6484f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a292f451a6f462653589bc786e864430f"><td class="memItemLeft" align="right" valign="top"><a id="a292f451a6f462653589bc786e864430f" name="a292f451a6f462653589bc786e864430f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_resolution_parameters_solver_precursor</b> (unsigned int const degree, unsigned int const refine_space)</td></tr>
+<tr class="separator:a292f451a6f462653589bc786e864430f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac952ea042583d0c05c40b09fec2dcf2b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBasePrecursor.html#ac952ea042583d0c05c40b09fec2dcf2b">setup</a> () final</td></tr>
 <tr class="separator:ac952ea042583d0c05c40b09fec2dcf2b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a138e6a1c30b36e331c21d0b54766fa03"><td class="memItemLeft" align="right" valign="top"><a id="a138e6a1c30b36e331c21d0b54766fa03" name="a138e6a1c30b36e331c21d0b54766fa03"></a>
@@ -233,36 +234,6 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>parse_paramet
 <tr class="separator:aec3e7dd01b34447dd01852f2c2991b6c inherit pro_methods_classExaDG_1_1IncNS_1_1ApplicationBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a981e9105182b5a13b54cd3f29d6484f2" name="a981e9105182b5a13b54cd3f29d6484f2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a981e9105182b5a13b54cd3f29d6484f2">&#9670;&#160;</a></span>add_parameters()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">virtual void <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBasePrecursor.html">ExaDG::IncNS::ApplicationBasePrecursor</a>&lt; dim, Number &gt;::add_parameters </td>
-          <td>(</td>
-          <td class="paramtype">dealii::ParameterHandler &amp;&#160;</td>
-          <td class="paramname"><em>prm</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Reimplemented from <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">ExaDG::IncNS::ApplicationBase&lt; dim, Number &gt;</a>.</p>
-
-</div>
-</div>
 <a id="ac952ea042583d0c05c40b09fec2dcf2b" name="ac952ea042583d0c05c40b09fec2dcf2b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac952ea042583d0c05c40b09fec2dcf2b">&#9670;&#160;</a></span>setup()</h2>
 
