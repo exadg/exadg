@@ -789,8 +789,6 @@ private:
 
 } // namespace ExaDG
 
-#include <exadg/incompressible_navier_stokes/user_interface/implement_get_application.h>
-
 #include <exadg/incompressible_navier_stokes/user_interface/implement_get_application_precursor.h>
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TURBULENT_CHANNEL_H_ */
