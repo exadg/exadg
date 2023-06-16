@@ -31,7 +31,7 @@
 #include <exadg/poisson/solver_poisson.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 #include <exadg/poisson/user_interface/application_base.h>
-#include <exadg/utilities/solver_result.h>
+#include <exadg/utilities/print_solver_results.h>
 #include <exadg/utilities/timer_tree.h>
 
 namespace ExaDG

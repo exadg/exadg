@@ -36,7 +36,7 @@
 #include <exadg/fluid_structure_interaction/precice/dof_coupling.h>
 #include <exadg/fluid_structure_interaction/precice/exadg_coupling.h>
 #include <exadg/fluid_structure_interaction/precice/quad_coupling.h>
-#include <exadg/utilities/n_components_to_rank.h>
+#include <exadg/utilities/tensor_utilities.h>
 
 // preCICE
 #ifdef EXADG_WITH_PRECICE
