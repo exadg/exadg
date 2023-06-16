@@ -138,7 +138,7 @@ struct ThroughputParameters
   unsigned int n_repetitions_inner = 100; // take the average of inner repetitions
   unsigned int n_repetitions_outer = 1;   // take the minimum of outer repetitions
 
-  // global variable used to store the wall times for different polynomial degrees and problem sizes
+  // variable used to store the wall times for different polynomial degrees and problem sizes
   mutable std::vector<std::tuple<unsigned int, dealii::types::global_dof_index, double>> wall_times;
 };
 } // namespace ExaDG
