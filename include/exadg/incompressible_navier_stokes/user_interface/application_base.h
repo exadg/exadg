@@ -287,21 +287,21 @@ public:
   {
   }
 
-  virtual void
-  add_parameters(dealii::ParameterHandler & prm) final
+  void
+  set_resolution_parameters_solver_precursor(unsigned int const degree,
+                                             unsigned int const refine_space)
   {
-    ApplicationBase<dim, Number>::add_parameters(prm);
+    this->param.degree_u             = degree;
+    this->param.grid.n_refine_global = refine_space;
 
-    resolution.add_parameters(prm);
+    this->param_pre.degree_u             = degree;
+    this->param_pre.grid.n_refine_global = refine_space;
   }
 
   void
   setup() final
   {
     this->parse_parameters();
-
-    // resolution parameters
-    set_resolution_parameters();
 
     // actual domain
     ApplicationBase<dim, Number>::setup();
@@ -401,16 +401,6 @@ protected:
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_pre;
 
 private:
-  void
-  set_resolution_parameters()
-  {
-    this->param.degree_u             = resolution.degree;
-    this->param.grid.n_refine_global = resolution.refine_space;
-
-    this->param_pre.degree_u             = resolution.degree;
-    this->param_pre.grid.n_refine_global = resolution.refine_space;
-  }
-
   virtual void
   set_parameters_precursor() = 0;
 
@@ -422,8 +412,6 @@ private:
 
   virtual void
   set_field_functions_precursor() = 0;
-
-  ResolutionParameters resolution;
 };
 
 

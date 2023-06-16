@@ -163,45 +163,6 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBasePrecursor<dim, Number>(input_file, comm)
   {
-    flow_rate_controller.reset(new FlowRateController(target_flow_rate,
-                                                      viscosity,
-                                                      max_velocity,
-                                                      FDANozzle::R_OUTER,
-                                                      mean_velocity_inflow,
-                                                      FDANozzle::D,
-                                                      start_time_precursor));
-
-    // compute number of points for inflow data array depending on spatial resolution of problem
-    unsigned int n_points = 1;
-    {
-      unsigned int degree       = 1;
-      unsigned int refine_space = 0;
-
-      dealii::ParameterHandler prm;
-
-      prm.enter_subsection("General");
-      {
-        prm.add_parameter("DegreeMin",
-                          degree,
-                          "Polynomial degree of shape functions.",
-                          dealii::Patterns::Integer(1, 15));
-        prm.add_parameter("RefineSpaceMin",
-                          refine_space,
-                          "Number of mesh refinements.",
-                          dealii::Patterns::Integer(0, 20));
-      }
-      prm.leave_subsection();
-
-      prm.parse_input(input_file, "", true, true);
-
-      n_points = 20 * (degree + 1) * dealii::Utilities::pow(2, refine_space);
-    }
-
-    inflow_data_storage.reset(new InflowDataStorage<dim>(n_points,
-                                                         FDANozzle::R_OUTER,
-                                                         max_velocity,
-                                                         use_random_perturbations,
-                                                         factor_random_perturbations));
   }
 
 private:
@@ -493,6 +454,16 @@ private:
 
     // inflow boundary condition at left boundary with ID=1: prescribe velocity profile which
     // is obtained as the results of the simulation on DOMAIN 1
+    // compute number of points for inflow data array depending on spatial resolution of problem
+    unsigned int const n_points =
+      20 * (this->param.degree_u + 1) * dealii::Utilities::pow(2, this->param.grid.n_refine_global);
+
+    inflow_data_storage.reset(new InflowDataStorage<dim>(n_points,
+                                                         FDANozzle::R_OUTER,
+                                                         max_velocity,
+                                                         use_random_perturbations,
+                                                         factor_random_perturbations));
+
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(1, new InflowProfile<dim>(*inflow_data_storage)));
 
@@ -505,8 +476,6 @@ private:
     this->boundary_descriptor->pressure->neumann_bc.insert(0);
 
     // inflow boundary condition at left boundary with ID=1
-    // the inflow boundary condition is time dependent (du/dt != 0) but, for simplicity,
-    // we assume that this is negligible when using the dual splitting scheme
     this->boundary_descriptor->pressure->neumann_bc.insert(1);
 
     // outflow boundary condition at right boundary with ID=2: set pressure to zero
@@ -554,7 +523,16 @@ private:
       new dealii::Functions::ZeroFunction<dim>(1));
     this->field_functions_pre->analytical_solution_pressure.reset(
       new dealii::Functions::ZeroFunction<dim>(1));
+
     // prescribe body force for the turbulent pipe flow (precursor) to adjust the desired flow rate
+    flow_rate_controller.reset(new FlowRateController(target_flow_rate,
+                                                      viscosity,
+                                                      max_velocity,
+                                                      FDANozzle::R_OUTER,
+                                                      mean_velocity_inflow,
+                                                      FDANozzle::D,
+                                                      start_time_precursor));
+
     this->field_functions_pre->right_hand_side.reset(new RightHandSide<dim>(*flow_rate_controller));
   }
 
@@ -751,6 +729,11 @@ private:
     pp_data_fda.line_plot_data.lines.push_back(radial_profile_z11);
     pp_data_fda.line_plot_data.lines.push_back(radial_profile_z12);
 
+    AssertThrow(flow_rate_controller.get(),
+                dealii::ExcMessage("flow_rate_controller is uninitialized."));
+    AssertThrow(inflow_data_storage.get(),
+                dealii::ExcMessage("inflow_data_storage is uninitialized."));
+
     pp.reset(new PostProcessorFDA<dim, Number>(pp_data_fda,
                                                this->mpi_comm,
                                                area_inflow,
@@ -806,6 +789,11 @@ private:
     direction[2]                                 = 1.0;
     pp_data_fda.mean_velocity_data.direction     = direction;
     pp_data_fda.mean_velocity_data.write_to_file = true;
+
+    AssertThrow(flow_rate_controller.get(),
+                dealii::ExcMessage("flow_rate_controller is uninitialized."));
+    AssertThrow(inflow_data_storage.get(),
+                dealii::ExcMessage("inflow_data_storage is uninitialized."));
 
     pp.reset(new PostProcessorFDA<dim, Number>(pp_data_fda,
                                                this->mpi_comm,
