@@ -75,7 +75,6 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
-<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="classExaDG_1_1Grid-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">ExaDG::Grid&lt; dim &gt; Class Template Reference</div></div>
@@ -89,13 +88,6 @@ Public Types</h2></td></tr>
 <tr class="memitem:a53dbd23b9275f3a36605dad97762f9d6"><td class="memItemLeft" align="right" valign="top"><a id="a53dbd23b9275f3a36605dad97762f9d6" name="a53dbd23b9275f3a36605dad97762f9d6"></a>
 typedef std::vector&lt; dealii::GridTools::PeriodicFacePair&lt; typename dealii::Triangulation&lt; dim &gt;::cell_iterator &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>PeriodicFacePairs</b></td></tr>
 <tr class="separator:a53dbd23b9275f3a36605dad97762f9d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
-Public Member Functions</h2></td></tr>
-<tr class="memitem:ad5140eefba0bf93ceaa72282a89225c1"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#ad5140eefba0bf93ceaa72282a89225c1">Grid</a> ()</td></tr>
-<tr class="separator:ad5140eefba0bf93ceaa72282a89225c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afd62287523bfb336f31b90dad241febd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#afd62287523bfb336f31b90dad241febd">initialize</a> (<a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;data, MPI_Comm const &amp;mpi_comm)</td></tr>
-<tr class="separator:afd62287523bfb336f31b90dad241febd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -113,68 +105,7 @@ Public Attributes</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;int dim&gt;<br />
 class ExaDG::Grid&lt; dim &gt;</div><p>A struct of dealii data structures occurring in close proximity to each other so that it makes sense to group them together to keep interfaces lean. </p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ad5140eefba0bf93ceaa72282a89225c1" name="ad5140eefba0bf93ceaa72282a89225c1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad5140eefba0bf93ceaa72282a89225c1">&#9670;&#160;</a></span>Grid()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classExaDG_1_1Grid.html">ExaDG::Grid</a>&lt; dim &gt;::Grid </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Constructor. </p>
-
-</div>
-</div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="afd62287523bfb336f31b90dad241febd" name="afd62287523bfb336f31b90dad241febd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afd62287523bfb336f31b90dad241febd">&#9670;&#160;</a></span>initialize()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim&gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Grid.html">ExaDG::Grid</a>&lt; dim &gt;::initialize </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;&#160;</td>
-          <td class="paramname"><em>data</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">MPI_Comm const &amp;&#160;</td>
-          <td class="paramname"><em>mpi_comm</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Initialize function </p>
-
-</div>
-</div>
-<h2 class="groupheader">Member Data Documentation</h2>
+</div><h2 class="groupheader">Member Data Documentation</h2>
 <a id="aa9e786659b6d2b2657a75710efc3295e" name="aa9e786659b6d2b2657a75710efc3295e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa9e786659b6d2b2657a75710efc3295e">&#9670;&#160;</a></span>coarse_periodic_face_pairs</h2>
 
@@ -232,8 +163,8 @@ template&lt;int dim&gt; </div>
 <div class="line">                                                              <a class="code hl_variable" href="classExaDG_1_1Grid.html#a5655b41ce6108b3c3e50a5eb7fb2bcf5">triangulation</a>,</div>
 <div class="line">                                                              <a class="code hl_variable" href="classExaDG_1_1Grid.html#adb00c7653c234f42a17eb41b48587acf">coarse_triangulations</a>);</div>
 <div class="line">      }</div>
-<div class="ttc" id="aclassExaDG_1_1Grid_html_a5655b41ce6108b3c3e50a5eb7fb2bcf5"><div class="ttname"><a href="classExaDG_1_1Grid.html#a5655b41ce6108b3c3e50a5eb7fb2bcf5">ExaDG::Grid::triangulation</a></div><div class="ttdeci">std::shared_ptr&lt; dealii::Triangulation&lt; dim &gt; &gt; triangulation</div><div class="ttdef"><b>Definition</b> grid.h:64</div></div>
-<div class="ttc" id="aclassExaDG_1_1Grid_html_adb00c7653c234f42a17eb41b48587acf"><div class="ttname"><a href="classExaDG_1_1Grid.html#adb00c7653c234f42a17eb41b48587acf">ExaDG::Grid::coarse_triangulations</a></div><div class="ttdeci">std::vector&lt; std::shared_ptr&lt; dealii::Triangulation&lt; dim &gt; const  &gt; &gt; coarse_triangulations</div><div class="ttdef"><b>Definition</b> grid.h:78</div></div>
+<div class="ttc" id="aclassExaDG_1_1Grid_html_a5655b41ce6108b3c3e50a5eb7fb2bcf5"><div class="ttname"><a href="classExaDG_1_1Grid.html#a5655b41ce6108b3c3e50a5eb7fb2bcf5">ExaDG::Grid::triangulation</a></div><div class="ttdeci">std::shared_ptr&lt; dealii::Triangulation&lt; dim &gt; &gt; triangulation</div><div class="ttdef"><b>Definition</b> grid.h:49</div></div>
+<div class="ttc" id="aclassExaDG_1_1Grid_html_adb00c7653c234f42a17eb41b48587acf"><div class="ttname"><a href="classExaDG_1_1Grid.html#adb00c7653c234f42a17eb41b48587acf">ExaDG::Grid::coarse_triangulations</a></div><div class="ttdeci">std::vector&lt; std::shared_ptr&lt; dealii::Triangulation&lt; dim &gt; const  &gt; &gt; coarse_triangulations</div><div class="ttdef"><b>Definition</b> grid.h:63</div></div>
 </div><!-- fragment --><p>This function creates coarse mappings for use in multigrid with h-transfer.</p>
 <p>The default implementation uses an interpolation of the fine-level mapping to coarser grids. You can overwrite this function in order to realize a user-specific construction of the mapping on coarser grids.</p>
 <p>The vector of coarse_mappings includes mapping objects for all h-multigrid levels coarser than the fine triangulation. The first entry corresponds to the coarsest triangulation. </p>
@@ -274,9 +205,8 @@ template&lt;int dim&gt; </div>
 
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following files:<ul>
+<hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/grid/<a class="el" href="grid_8h_source.html">grid.h</a></li>
-<li>include/exadg/grid/grid.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

@@ -20,7 +20,7 @@ var searchData=
   ['gradientoperator_17',['GradientOperator',['../classExaDG_1_1IncNS_1_1GradientOperator.html',1,'ExaDG::IncNS']]],
   ['gradientoperator_3c_20dim_2c_20double_20_3e_18',['GradientOperator&lt; dim, double &gt;',['../classExaDG_1_1IncNS_1_1GradientOperator.html',1,'ExaDG::IncNS']]],
   ['gradientoperatordata_19',['GradientOperatorData',['../structExaDG_1_1IncNS_1_1GradientOperatorData.html',1,'ExaDG::IncNS']]],
-  ['grid_20',['Grid',['../classExaDG_1_1Grid.html',1,'ExaDG::Grid&lt; dim &gt;'],['../classExaDG_1_1Grid.html#ad5140eefba0bf93ceaa72282a89225c1',1,'ExaDG::Grid::Grid()']]],
+  ['grid_20',['Grid',['../classExaDG_1_1Grid.html',1,'ExaDG']]],
   ['griddata_21',['GridData',['../structExaDG_1_1GridData.html',1,'ExaDG']]],
   ['gridparameters_22',['GridParameters',['../structExaDG_1_1GridParameters.html',1,'ExaDG']]]
 ];
