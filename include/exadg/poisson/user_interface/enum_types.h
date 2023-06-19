@@ -51,7 +51,7 @@ enum class SpatialDiscretization
 /*
  *   Solver for linear system of equations
  */
-enum class Solver
+enum class LinearSolver
 {
   Undefined,
   CG,

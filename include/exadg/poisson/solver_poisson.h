@@ -32,7 +32,7 @@ namespace ExaDG
 namespace Poisson
 {
 template<int dim, int n_components, typename Number>
-class SolverPoisson
+class Solver
 {
 public:
   void

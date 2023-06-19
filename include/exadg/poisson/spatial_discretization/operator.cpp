@@ -401,7 +401,7 @@ Operator<dim, n_components, Number>::setup_solver()
     AssertThrow(false, dealii::ExcMessage("Specified preconditioner is not implemented!"));
   }
 
-  if(param.solver == Poisson::Solver::CG)
+  if(param.solver == LinearSolver::CG)
   {
     // initialize solver_data
     Krylov::SolverDataCG solver_data;
@@ -418,7 +418,7 @@ Operator<dim, n_components, Number>::setup_solver()
       std::make_shared<Krylov::SolverCG<Laplace, PreconditionerBase<Number>, VectorType>>(
         laplace_operator, *preconditioner, solver_data);
   }
-  else if(param.solver == Solver::FGMRES)
+  else if(param.solver == LinearSolver::FGMRES)
   {
     // initialize solver_data
     Krylov::SolverDataFGMRES solver_data;
