@@ -216,8 +216,10 @@ private:
 
     // SPATIAL DISCRETIZATION
     param.grid.triangulation_type = TriangulationType::Distributed;
-    param.mapping_degree          = param.degree_u;
-    param.degree_p                = DegreePressure::MixedOrder;
+    if(is_precursor)
+      param.grid.n_refine_global = param.grid.n_refine_global + additional_refinements_precursor;
+    param.mapping_degree = param.degree_u;
+    param.degree_p       = DegreePressure::MixedOrder;
 
     // convective term
     param.upwind_factor = 1.0;
@@ -341,101 +343,50 @@ private:
   void
   create_grid() final
   {
-    FDANozzle::create_grid_and_set_boundary_ids_nozzle(this->grid->triangulation,
-                                                       this->param.grid.n_refine_global,
-                                                       this->grid->periodic_face_pairs);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)vector_local_refinements;
+
+        FDANozzle::create_grid_and_set_boundary_ids_nozzle(tria,
+                                                           global_refinements,
+                                                           periodic_face_pairs);
+      };
+
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->mpi_comm,
+                                                              this->param.grid,
+                                                              this->param.involves_h_multigrid(),
+                                                              lambda_create_triangulation,
+                                                              {} /* no local refinements */);
   }
 
   void
   create_grid_precursor() final
   {
-    dealii::Triangulation<2> tria_2d;
-    dealii::GridGenerator::hyper_ball(tria_2d, dealii::Point<2>(), FDANozzle::R_OUTER);
-    dealii::GridGenerator::extrude_triangulation(tria_2d,
-                                                 FDANozzle::N_CELLS_AXIAL_PRECURSOR + 1,
-                                                 FDANozzle::LENGTH_PRECURSOR,
-                                                 *this->grid_pre->triangulation);
-    dealii::Tensor<1, dim> offset = dealii::Tensor<1, dim>();
-    offset[2]                     = FDANozzle::Z1_PRECURSOR;
-    dealii::GridTools::shift(offset, *this->grid_pre->triangulation);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)vector_local_refinements;
 
-    /*
-     *  MANIFOLDS
-     */
-    this->grid_pre->triangulation->set_all_manifold_ids(0);
+        FDANozzle::create_grid_and_set_boundary_ids_precursor(tria,
+                                                              global_refinements,
+                                                              periodic_face_pairs);
+      };
 
-    // first fill vectors of manifold_ids and face_ids
-    std::vector<unsigned int> manifold_ids;
-    std::vector<unsigned int> face_ids;
-
-    for(auto cell : this->grid_pre->triangulation->cell_iterators())
-    {
-      for(auto const & f : cell->face_indices())
-      {
-        bool face_at_sphere_boundary = true;
-        for(auto const & v : cell->face(f)->vertex_indices())
-        {
-          dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
-
-          if(std::abs((cell->face(f)->vertex(v) - point).norm() - FDANozzle::R_OUTER) > 1e-12)
-            face_at_sphere_boundary = false;
-        }
-        if(face_at_sphere_boundary)
-        {
-          face_ids.push_back(f);
-          unsigned int manifold_id = manifold_ids.size() + 1;
-          cell->set_all_manifold_ids(manifold_id);
-          manifold_ids.push_back(manifold_id);
-        }
-      }
-    }
-
-    // generate vector of manifolds and apply manifold to all cells that have been marked
-    static std::vector<std::shared_ptr<dealii::Manifold<dim>>> manifold_vec;
-    manifold_vec.resize(manifold_ids.size());
-
-    for(unsigned int i = 0; i < manifold_ids.size(); ++i)
-    {
-      for(auto cell : this->grid_pre->triangulation->cell_iterators())
-      {
-        if(cell->manifold_id() == manifold_ids[i])
-        {
-          manifold_vec[i] =
-            std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
-              new OneSidedCylindricalManifold<dim>(cell, face_ids[i], dealii::Point<dim>())));
-          this->grid_pre->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
-        }
-      }
-    }
-
-    /*
-     *  BOUNDARY ID's
-     */
-    for(auto cell : this->grid_pre->triangulation->cell_iterators())
-    {
-      for(auto const & face : cell->face_indices())
-      {
-        // left boundary
-        if((std::fabs(cell->face(face)->center()[2] - FDANozzle::Z1_PRECURSOR) < 1e-12))
-        {
-          cell->face(face)->set_boundary_id(0 + 10);
-        }
-
-        // right boundary
-        if((std::fabs(cell->face(face)->center()[2] - FDANozzle::Z2_PRECURSOR) < 1e-12))
-        {
-          cell->face(face)->set_boundary_id(1 + 10);
-        }
-      }
-    }
-
-    dealii::GridTools::collect_periodic_faces(
-      *this->grid_pre->triangulation, 0 + 10, 1 + 10, 2, this->grid_pre->periodic_face_pairs);
-    this->grid_pre->triangulation->add_periodicity(this->grid_pre->periodic_face_pairs);
-
-    // perform global refinements
-    this->grid_pre->triangulation->refine_global(this->param_pre.grid.n_refine_global +
-                                                 additional_refinements_precursor);
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(
+      *this->grid_pre,
+      this->mpi_comm,
+      this->param_pre.grid,
+      this->param_pre.involves_h_multigrid(),
+      lambda_create_triangulation,
+      {} /* no local refinements */);
   }
 
   void

@@ -128,25 +128,42 @@ private:
   void
   create_grid() final
   {
-    // hypercube volume is [left,right]^dim
-    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    // set boundary indicator
-    for(auto cell : *this->grid->triangulation)
-    {
-      for(auto const & f : cell.face_indices())
-      {
-        if((std::fabs(cell.face(f)->center()(1) - left) < 1e-12) or
-           (std::fabs(cell.face(f)->center()(1) - right) < 1e-12) or
-           ((dim == 3) and ((std::fabs(cell.face(f)->center()(2) - left) < 1e-12) or
-                            (std::fabs(cell.face(f)->center()(2) - right) < 1e-12))))
+        // hypercube volume is [left,right]^dim
+        dealii::GridGenerator::hyper_cube(tria, left, right);
+
+        // set boundary indicator
+        for(auto cell : tria)
         {
-          cell.face(f)->set_boundary_id(1);
+          for(auto const & f : cell.face_indices())
+          {
+            if((std::fabs(cell.face(f)->center()(1) - left) < 1e-12) or
+               (std::fabs(cell.face(f)->center()(1) - right) < 1e-12) or
+               ((dim == 3) and ((std::fabs(cell.face(f)->center()(2) - left) < 1e-12) or
+                                (std::fabs(cell.face(f)->center()(2) - right) < 1e-12))))
+            {
+              cell.face(f)->set_boundary_id(1);
+            }
+          }
         }
-      }
-    }
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->mpi_comm,
+                                                              this->param.grid,
+                                                              this->param.involves_h_multigrid(),
+                                                              lambda_create_triangulation,
+                                                              {} /* no local refinements */);
   }
 
   void

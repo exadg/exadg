@@ -103,7 +103,6 @@ public:
     param.print(pcout, "List of parameters:");
 
     // grid
-    grid->initialize(param.grid, mpi_comm);
     GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
     create_grid();
     print_grid_info(pcout, *grid);
@@ -340,7 +339,6 @@ public:
                 dealii::ExcMessage("start_with_low_order has to be true for two-domain solver."));
 
     // grid
-    grid_pre->initialize(param_pre.grid, this->mpi_comm);
     GridUtilities::create_mapping(mapping_pre,
                                   param_pre.grid.element_type,
                                   param_pre.mapping_degree);

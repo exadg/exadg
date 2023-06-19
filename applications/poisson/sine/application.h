@@ -263,27 +263,9 @@ private:
         }
         else if(mesh_type == MeshType::Curvilinear)
         {
-          double const              deformation = 0.15;
-          unsigned int const        frequency   = 2;
-          DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
-          tria.set_all_manifold_ids(1);
-          tria.set_manifold(1, manifold);
-
-          std::vector<bool> vertex_touched(tria.n_vertices(), false);
-
-          for(auto cell : tria)
-          {
-            for(auto const & v : cell.vertex_indices())
-            {
-              if(vertex_touched[cell.vertex_index(v)] == false)
-              {
-                dealii::Point<dim> & vertex          = cell.vertex(v);
-                dealii::Point<dim>   new_point       = manifold.push_forward(vertex);
-                vertex                               = new_point;
-                vertex_touched[cell.vertex_index(v)] = true;
-              }
-            }
-          }
+          double const       deformation = 0.15;
+          unsigned int const frequency   = 2;
+          apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
         }
         else
         {
@@ -292,6 +274,7 @@ private:
       };
 
     GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->mpi_comm,
                                                               this->param.grid,
                                                               this->param.involves_h_multigrid(),
                                                               lambda_create_triangulation,

@@ -332,44 +332,62 @@ private:
   void
   create_grid() final
   {
-    create_triangulation(*this->grid->triangulation);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    this->grid->triangulation->set_all_manifold_ids(0);
+        create_triangulation(tria);
 
-    for(auto cell : this->grid->triangulation->cell_iterators())
-    {
-      for(auto const & f : cell->face_indices())
-      {
-        if(cell->face(f)->at_boundary())
+        tria.set_all_manifold_ids(0);
+
+        for(auto cell : tria.cell_iterators())
         {
-          double const x   = cell->face(f)->center()(0);
-          double const y   = cell->face(f)->center()(1);
-          double const TOL = 1.e-12;
+          for(auto const & f : cell->face_indices())
+          {
+            if(cell->face(f)->at_boundary())
+            {
+              double const x   = cell->face(f)->center()(0);
+              double const y   = cell->face(f)->center()(1);
+              double const TOL = 1.e-12;
 
-          if(std::fabs(x - X_0) < TOL)
-          {
-            cell->face(f)->set_boundary_id(BOUNDARY_ID_INFLOW);
-          }
-          else if(std::fabs(y - Y_0) < TOL or std::fabs(y - H) < TOL)
-          {
-            cell->face(f)->set_boundary_id(BOUNDARY_ID_WALLS);
-          }
-          else if(std::fabs(x - L) < TOL)
-          {
-            cell->face(f)->set_boundary_id(BOUNDARY_ID_OUTFLOW);
-          }
-          else if(std::fabs(x - CENTER_S) < (THICKNESS_S * 0.5) + TOL and y < HEIGHT_S + TOL)
-          {
-            cell->face(f)->set_boundary_id(BOUNDARY_ID_FLAG);
-          }
-          else
-          {
-            AssertThrow(false, dealii::ExcNotImplemented());
+              if(std::fabs(x - X_0) < TOL)
+              {
+                cell->face(f)->set_boundary_id(BOUNDARY_ID_INFLOW);
+              }
+              else if(std::fabs(y - Y_0) < TOL or std::fabs(y - H) < TOL)
+              {
+                cell->face(f)->set_boundary_id(BOUNDARY_ID_WALLS);
+              }
+              else if(std::fabs(x - L) < TOL)
+              {
+                cell->face(f)->set_boundary_id(BOUNDARY_ID_OUTFLOW);
+              }
+              else if(std::fabs(x - CENTER_S) < (THICKNESS_S * 0.5) + TOL and y < HEIGHT_S + TOL)
+              {
+                cell->face(f)->set_boundary_id(BOUNDARY_ID_FLAG);
+              }
+              else
+              {
+                AssertThrow(false, dealii::ExcNotImplemented());
+              }
+            }
           }
         }
-      }
-    }
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->mpi_comm,
+                                                              this->param.grid,
+                                                              this->param.involves_h_multigrid(),
+                                                              lambda_create_triangulation,
+                                                              {} /* no local refinements */);
   }
 
   void
@@ -670,36 +688,53 @@ public:
   void
   create_grid() final
   {
-    create_triangulation(*this->grid->triangulation);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    this->grid->triangulation->set_all_manifold_ids(0);
+        create_triangulation(tria);
 
-    for(auto cell : this->grid->triangulation->cell_iterators())
-    {
-      for(auto const & f : cell->face_indices())
-      {
-        double const y   = cell->face(f)->center()(1);
-        double const TOL = 1.e-12;
+        tria.set_all_manifold_ids(0);
 
-        if(cell->face(f)->at_boundary())
+        for(auto cell : tria.cell_iterators())
         {
-          if(y < 0 + TOL)
+          for(auto const & f : cell->face_indices())
           {
-            cell->face(f)->set_boundary_id(BOUNDARY_ID_BOTTOM_WALL);
-          }
-          else if(y > 0 + TOL)
-          {
-            cell->face(f)->set_boundary_id(BOUNDARY_ID_FLAG);
-          }
-          else
-          {
-            AssertThrow(false, dealii::ExcInternalError());
+            double const y   = cell->face(f)->center()(1);
+            double const TOL = 1.e-12;
+
+            if(cell->face(f)->at_boundary())
+            {
+              if(y < 0 + TOL)
+              {
+                cell->face(f)->set_boundary_id(BOUNDARY_ID_BOTTOM_WALL);
+              }
+              else if(y > 0 + TOL)
+              {
+                cell->face(f)->set_boundary_id(BOUNDARY_ID_FLAG);
+              }
+              else
+              {
+                AssertThrow(false, dealii::ExcInternalError());
+              }
+            }
           }
         }
-      }
-    }
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->mpi_comm,
+                                                              this->param.grid,
+                                                              this->param.involves_h_multigrid(),
+                                                              lambda_create_triangulation,
+                                                              {} /* no local refinements */);
   }
 
   void

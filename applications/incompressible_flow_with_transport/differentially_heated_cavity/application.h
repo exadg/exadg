@@ -270,28 +270,45 @@ private:
   void
   create_grid() final
   {
-    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    // set boundary IDs: 0 by default, set left boundary to 1
-    for(auto cell : this->grid->triangulation->cell_iterators())
-    {
-      for(auto const & f : cell->face_indices())
-      {
-        if((std::fabs(cell->face(f)->center()(0) - left) < 1e-12))
+        dealii::GridGenerator::hyper_cube(tria, left, right);
+
+        // set boundary IDs: 0 by default, set left boundary to 1
+        for(auto cell : tria.cell_iterators())
         {
-          cell->face(f)->set_boundary_id(1);
+          for(auto const & f : cell->face_indices())
+          {
+            if((std::fabs(cell->face(f)->center()(0) - left) < 1e-12))
+            {
+              cell->face(f)->set_boundary_id(1);
+            }
+
+            // lower and upper boundary
+            if((std::fabs(cell->face(f)->center()(1) - left) < 1e-12) or
+               (std::fabs(cell->face(f)->center()(1) - right) < 1e-12))
+            {
+              cell->face(f)->set_boundary_id(2);
+            }
+          }
         }
 
-        // lower and upper boundary
-        if((std::fabs(cell->face(f)->center()(1) - left) < 1e-12) or
-           (std::fabs(cell->face(f)->center()(1) - right) < 1e-12))
-        {
-          cell->face(f)->set_boundary_id(2);
-        }
-      }
-    }
+        tria.refine_global(global_refinements);
+      };
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->mpi_comm,
+                                                              this->param.grid,
+                                                              this->param.involves_h_multigrid(),
+                                                              lambda_create_triangulation,
+                                                              {} /* no local refinements */);
   }
 
   std::shared_ptr<dealii::Function<dim>>

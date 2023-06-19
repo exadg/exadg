@@ -137,8 +137,9 @@ transform_periodic_face_pairs_to_dof_cell_iterator(
 template<int dim>
 inline void
 create_triangulation(
-  dealii::Triangulation<dim> &                                   triangulation,
+  std::shared_ptr<dealii::Triangulation<dim>> &                  triangulation,
   PeriodicFacePairs<dim> &                                       periodic_face_pairs,
+  MPI_Comm const &                                               mpi_comm,
   GridData const &                                               data,
   std::function<void(dealii::Triangulation<dim> &,
                      PeriodicFacePairs<dim> &,
@@ -155,10 +156,42 @@ create_triangulation(
         "Currently, dealii triangulations composed of simplicial elements do not allow local refinements."));
   }
 
-  if(data.triangulation_type == TriangulationType::Serial or
-     data.triangulation_type == TriangulationType::Distributed)
+  if(data.triangulation_type == TriangulationType::Serial)
   {
-    lambda_create_triangulation(triangulation,
+    auto mesh_smoothing = dealii::Triangulation<dim>::none;
+
+    if(not data.create_coarse_triangulations)
+      mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
+
+    AssertDimension(dealii::Utilities::MPI::n_mpi_processes(mpi_comm), 1);
+    triangulation = std::make_shared<dealii::Triangulation<dim>>(mesh_smoothing);
+
+    lambda_create_triangulation(*triangulation,
+                                periodic_face_pairs,
+                                global_refinements,
+                                vector_local_refinements);
+  }
+  else if(data.triangulation_type == TriangulationType::Distributed)
+  {
+    auto mesh_smoothing = dealii::Triangulation<dim>::none;
+    typename dealii::parallel::distributed::Triangulation<dim>::Settings distributed_settings;
+
+    // TODO It seems as if we set these values in case where we do not want/need this.
+    // Assume for example one wants to use only p-multigrid or no multigrid at all. In that case,
+    // it seems as if construct_multigrid_hierarchy is set unnecessarily.
+    if(not data.create_coarse_triangulations)
+    {
+      mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
+      distributed_settings =
+        dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy;
+    }
+
+    triangulation =
+      std::make_shared<dealii::parallel::distributed::Triangulation<dim>>(mpi_comm,
+                                                                          mesh_smoothing,
+                                                                          distributed_settings);
+
+    lambda_create_triangulation(*triangulation,
                                 periodic_face_pairs,
                                 global_refinements,
                                 vector_local_refinements);
@@ -217,12 +250,15 @@ create_triangulation(
     auto const description = dealii::TriangulationDescription::Utilities::
       create_description_from_triangulation_in_groups<dim, dim>(serial_grid_generator,
                                                                 serial_grid_partitioner,
-                                                                triangulation.get_communicator(),
+                                                                triangulation->get_communicator(),
                                                                 group_size,
                                                                 mesh_smoothing,
                                                                 triangulation_description_setting);
 
-    triangulation.create_triangulation(description);
+    triangulation =
+      std::make_shared<dealii::parallel::fullydistributed::Triangulation<dim>>(mpi_comm);
+
+    triangulation->create_triangulation(description);
   }
   else
   {
@@ -242,7 +278,7 @@ inline void
 create_coarse_triangulations(
   dealii::Triangulation<dim> const &                               fine_triangulation,
   PeriodicFacePairs<dim> const &                                   fine_periodic_face_pairs,
-  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> & coarse_triangulations,
+  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> & coarse_triangulations_const,
   std::vector<PeriodicFacePairs<dim>> &                            coarse_periodic_face_pairs,
   GridData const &                                                 data,
   std::function<void(dealii::Triangulation<dim> &,
@@ -264,7 +300,7 @@ create_coarse_triangulations(
           "The create_geometric_coarsening_sequence function of dealii does currently not support "
           "simplicial elements."));
 
-      coarse_triangulations =
+      coarse_triangulations_const =
         dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
           fine_triangulation);
     }
@@ -275,7 +311,7 @@ create_coarse_triangulations(
         dealii::ExcMessage(
           "dealii::parallel::distributed::Triangulation does not support simplicial elements."));
 
-      coarse_triangulations =
+      coarse_triangulations_const =
         dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
           fine_triangulation,
           BalancedGranularityPartitionPolicy<dim>(
@@ -289,9 +325,9 @@ create_coarse_triangulations(
     // deal.II adds the fine triangulation as the last entry of the vector. According to our
     // convention in ExaDG, we only include the triangulations coarser than the fine level. Hence,
     // we remove the last entry of the vector.
-    coarse_triangulations.pop_back();
+    coarse_triangulations_const.pop_back();
 
-    coarse_periodic_face_pairs.resize(coarse_triangulations.size());
+    coarse_periodic_face_pairs.resize(coarse_triangulations_const.size());
     for(unsigned int level = 0; level < coarse_periodic_face_pairs.size(); ++level)
       coarse_periodic_face_pairs[level] = fine_periodic_face_pairs;
   }
@@ -300,30 +336,12 @@ create_coarse_triangulations(
     if(fine_triangulation.n_global_levels() >= 2)
     {
       // resize the empty coarse_triangulations and coarse_periodic_face_pairs vectors
-      coarse_triangulations = std::vector<std::shared_ptr<dealii::Triangulation<dim> const>>(
-        fine_triangulation.n_global_levels() - 1);
+      std::vector<std::shared_ptr<dealii::Triangulation<dim>>> coarse_triangulations =
+        std::vector<std::shared_ptr<dealii::Triangulation<dim>>>(
+          fine_triangulation.n_global_levels() - 1);
 
       coarse_periodic_face_pairs =
         std::vector<PeriodicFacePairs<dim>>(coarse_triangulations.size());
-
-      // lambda function for creating the coarse triangulations
-      auto const lambda_create_level_triangulation =
-        [&](PeriodicFacePairs<dim> &  level_periodic_face_pairs,
-            unsigned int              refine_global,
-            std::vector<unsigned int> refine_local) {
-          auto level_triangulation =
-            std::make_shared<dealii::parallel::fullydistributed::Triangulation<dim>>(
-              fine_triangulation.get_communicator());
-
-          GridUtilities::create_triangulation<dim>(*level_triangulation,
-                                                   level_periodic_face_pairs,
-                                                   data,
-                                                   lambda_create_triangulation,
-                                                   refine_global,
-                                                   refine_local);
-
-          return level_triangulation;
-        };
 
       // we start with one level below the fine triangulation
       unsigned int              level        = fine_triangulation.n_global_levels() - 2;
@@ -335,10 +353,13 @@ create_coarse_triangulations(
         unsigned int const n_refine_global_start = (unsigned int)(data.n_refine_global - 1);
         for(int refine_global = n_refine_global_start; refine_global >= 0; --refine_global)
         {
-          coarse_triangulations[level] =
-            lambda_create_level_triangulation(coarse_periodic_face_pairs[level],
-                                              refine_global,
-                                              refine_local);
+          GridUtilities::create_triangulation<dim>(coarse_triangulations[level],
+                                                   coarse_periodic_face_pairs[level],
+                                                   fine_triangulation.get_communicator(),
+                                                   data,
+                                                   lambda_create_triangulation,
+                                                   refine_global,
+                                                   refine_local);
 
           if(level > 0)
             level--;
@@ -358,10 +379,13 @@ create_coarse_triangulations(
             }
           }
 
-          coarse_triangulations[level] =
-            lambda_create_level_triangulation(coarse_periodic_face_pairs[level],
-                                              0 /*refine_global*/,
-                                              refine_local);
+          GridUtilities::create_triangulation<dim>(coarse_triangulations[level],
+                                                   coarse_periodic_face_pairs[level],
+                                                   fine_triangulation.get_communicator(),
+                                                   data,
+                                                   lambda_create_triangulation,
+                                                   0 /*refine_global*/,
+                                                   refine_local);
 
           if(level > 0)
             level--;
@@ -372,6 +396,10 @@ create_coarse_triangulations(
         level == 0,
         dealii::ExcMessage(
           "There occurred a logical error when creating the geometric coarsening sequence."));
+
+      // make all vector entries shared_ptr's to const
+      for(auto const & it : coarse_triangulations)
+        coarse_triangulations_const.push_back(it);
     }
   }
   else
@@ -380,6 +408,32 @@ create_coarse_triangulations(
   }
 }
 
+/**
+ * This utility function initializes a Grid object by creating a triangulation and filling the
+ * periodic_face_pairs. According to the settings in GridData, the corresponding constructor of
+ * dealii::Triangulation (or derived classes) is called. The actual functionality "creating" the
+ * triangulation needs to be provided via lambda_create_triangulation.
+ */
+template<int dim>
+inline void
+create_triangulation(
+  Grid<dim> &                                                    grid,
+  MPI_Comm const &                                               mpi_comm,
+  GridData const &                                               data,
+  std::function<void(dealii::Triangulation<dim> &,
+                     PeriodicFacePairs<dim> &,
+                     unsigned int const,
+                     std::vector<unsigned int> const &)> const & lambda_create_triangulation,
+  std::vector<unsigned int> const                                vector_local_refinements)
+{
+  GridUtilities::create_triangulation(grid.triangulation,
+                                      grid.periodic_face_pairs,
+                                      mpi_comm,
+                                      data,
+                                      lambda_create_triangulation,
+                                      data.n_refine_global,
+                                      vector_local_refinements);
+}
 
 /**
  * This function creates both the fine triangulation and, if needed, the coarse triangulations
@@ -390,6 +444,7 @@ template<int dim>
 inline void
 create_fine_and_coarse_triangulations(
   Grid<dim> &                                                    grid,
+  MPI_Comm const &                                               mpi_comm,
   GridData const &                                               data,
   bool const                                                     involves_h_multigrid,
   std::function<void(dealii::Triangulation<dim> &,
@@ -398,8 +453,9 @@ create_fine_and_coarse_triangulations(
                      std::vector<unsigned int> const &)> const & lambda_create_triangulation,
   std::vector<unsigned int> const                                vector_local_refinements)
 {
-  GridUtilities::create_triangulation(*grid.triangulation,
+  GridUtilities::create_triangulation(grid.triangulation,
                                       grid.periodic_face_pairs,
+                                      mpi_comm,
                                       data,
                                       lambda_create_triangulation,
                                       data.n_refine_global,
