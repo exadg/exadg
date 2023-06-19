@@ -105,11 +105,8 @@ struct ThroughputParameters
   {
     prm.enter_subsection("Throughput");
     {
-      prm.add_parameter("EnumOperatorType",
-                        operator_type,
-                        "Operator type.",
-                        Patterns::Enum<EnumOperatorType>(),
-                        true);
+      prm.add_parameter(
+        "OperatorType", operator_type, "Operator type.", Patterns::Enum<EnumOperatorType>(), true);
       prm.add_parameter("RepetitionsInner",
                         n_repetitions_inner,
                         "Number of operator evaluations.",
