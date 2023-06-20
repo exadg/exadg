@@ -135,7 +135,7 @@ $(function() {
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  std::shared_ptr&lt;ApplicationOversetGridsBase&lt;dim, n_components, Number&gt;&gt; application;</div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="comment">// Poisson solvers</span></div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  std::shared_ptr&lt;SolverPoisson&lt;dim, n_components, Number&gt;&gt; poisson1, poisson2;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  std::shared_ptr&lt;Solver&lt;dim, n_components, Number&gt;&gt; poisson1, poisson2;</div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  <span class="comment">// interface coupling</span></div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  std::shared_ptr&lt;InterfaceCoupling&lt;rank, dim, Number&gt;&gt; first_to_second, second_to_first;</div>
