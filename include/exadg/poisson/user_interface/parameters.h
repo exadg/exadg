@@ -100,7 +100,7 @@ public:
   /**************************************************************************************/
 
   // description: see enum declaration
-  Solver solver;
+  LinearSolver solver;
 
   // solver data
   SolverData solver_data;

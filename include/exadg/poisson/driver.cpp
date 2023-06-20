@@ -50,7 +50,7 @@ Driver<dim, Number>::Driver(MPI_Comm const &                                 com
 {
   print_general_info<Number>(pcout, mpi_comm, is_test);
 
-  poisson = std::make_shared<SolverPoisson<dim, 1, Number>>();
+  poisson = std::make_shared<Solver<dim, 1, Number>>();
 }
 
 template<int dim, typename Number>

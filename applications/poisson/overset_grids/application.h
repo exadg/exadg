@@ -53,7 +53,7 @@ public:
     p.IP_factor               = 1.0e0;
 
     // SOLVER
-    p.solver                      = Solver::CG;
+    p.solver                      = LinearSolver::CG;
     p.solver_data.abs_tol         = 1.e-20;
     p.solver_data.rel_tol         = 1.e-10;
     p.solver_data.max_iter        = 1e4;
@@ -173,7 +173,7 @@ private:
     p.IP_factor               = 1.0e0;
 
     // SOLVER
-    p.solver                      = Solver::CG;
+    p.solver                      = LinearSolver::CG;
     p.solver_data.abs_tol         = 1.e-20;
     p.solver_data.rel_tol         = 1.e-10;
     p.solver_data.max_iter        = 1e4;

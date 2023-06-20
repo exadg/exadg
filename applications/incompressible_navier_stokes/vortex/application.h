@@ -550,7 +550,7 @@ private:
     this->poisson_param.IP_factor              = 1.0e0;
 
     // SOLVER
-    this->poisson_param.solver                    = Poisson::Solver::CG;
+    this->poisson_param.solver                    = Poisson::LinearSolver::CG;
     this->poisson_param.solver_data.abs_tol       = 1.e-20;
     this->poisson_param.solver_data.rel_tol       = 1.e-10;
     this->poisson_param.solver_data.max_iter      = 1e4;

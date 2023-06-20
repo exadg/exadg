@@ -579,7 +579,7 @@ private:
     param.spatial_discretization = SpatialDiscretization::CG;
 
     // SOLVER
-    param.solver         = Poisson::Solver::FGMRES;
+    param.solver         = Poisson::LinearSolver::FGMRES;
     param.solver_data    = SolverData(1e4, ABS_TOL, REL_TOL, 100);
     param.preconditioner = Preconditioner::Multigrid;
 

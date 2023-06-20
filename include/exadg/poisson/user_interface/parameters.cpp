@@ -41,7 +41,7 @@ Parameters::Parameters()
     IP_factor(1.0),
 
     // SOLVER
-    solver(Solver::Undefined),
+    solver(LinearSolver::Undefined),
     solver_data(SolverData(1e4, 1.e-20, 1.e-12)),
     compute_performance_metrics(false),
     preconditioner(Preconditioner::Undefined),
@@ -64,7 +64,7 @@ Parameters::check() const
   AssertThrow(degree > 0, dealii::ExcMessage("Polynomial degree must be larger than zero."));
 
   // SOLVER
-  AssertThrow(solver != Solver::Undefined, dealii::ExcMessage("parameter must be defined."));
+  AssertThrow(solver != LinearSolver::Undefined, dealii::ExcMessage("parameter must be defined."));
   AssertThrow(preconditioner != Preconditioner::Undefined,
               dealii::ExcMessage("parameter must be defined."));
 }

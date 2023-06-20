@@ -103,7 +103,7 @@ private:
   // application
   std::shared_ptr<ApplicationBase<dim, 1, Number>> application;
 
-  std::shared_ptr<SolverPoisson<dim, 1, Number>> poisson;
+  std::shared_ptr<Solver<dim, 1, Number>> poisson;
 
   // number of iterations
   mutable unsigned int iterations;
