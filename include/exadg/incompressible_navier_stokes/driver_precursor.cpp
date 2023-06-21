@@ -75,10 +75,14 @@ DriverPrecursor<dim, Number>::synchronize_time_step_size() const
   {
     if(precursor.time_integrator->get_time() >
        application->get_parameters_precursor().start_time - EPSILON)
+    {
       time_step_size_pre = precursor.time_integrator->get_time_step_size();
+    }
 
     if(main.time_integrator->get_time() > application->get_parameters().start_time - EPSILON)
+    {
       time_step_size = main.time_integrator->get_time_step_size();
+    }
   }
   else
   {
@@ -121,6 +125,10 @@ DriverPrecursor<dim, Number>::setup()
   // constant vs. adaptive time stepping
   use_adaptive_time_stepping = application->get_parameters().adaptive_time_stepping;
 
+  /*
+   * main domain
+   */
+
   // TODO
   main.postprocessor = application->create_postprocessor();
 
@@ -133,12 +141,11 @@ DriverPrecursor<dim, Number>::setup()
              mpi_comm,
              is_test);
 
-  timer_tree.insert({"Incompressible flow", "Setup", "Main domain"}, timer.wall_time());
-
+  /*
+   * precursor domain
+   */
   if(application->precursor_is_active())
   {
-    timer.restart();
-
     // TODO
     precursor.postprocessor = application->create_postprocessor_precursor();
 
@@ -150,9 +157,9 @@ DriverPrecursor<dim, Number>::setup()
                     "precursor",
                     mpi_comm,
                     is_test);
-
-    timer_tree.insert({"Incompressible flow", "Setup", "Precursor"}, timer.wall_time());
   }
+
+  timer_tree.insert({"Incompressible flow", "Setup"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -183,7 +190,9 @@ DriverPrecursor<dim, Number>::solve() const
       // function advance_one_timestep(). Here, we have to synchronize the time step size for
       // both domains.
       if(use_adaptive_time_stepping == true)
+      {
         synchronize_time_step_size();
+      }
     } while(not(precursor.time_integrator->finished()) or not(main.time_integrator->finished()));
   }
   else
