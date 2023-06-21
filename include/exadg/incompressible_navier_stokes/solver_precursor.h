@@ -55,7 +55,7 @@ create_input_file(std::string const & input_file)
   // for the automatic generation of a default input file
   unsigned int const Dim = 2;
   typedef double     Number;
-  IncNS::get_application<Dim, Number>(input_file, MPI_COMM_WORLD)->add_parameters(prm);
+  IncNS::Precursor::get_application<Dim, Number>(input_file, MPI_COMM_WORLD)->add_parameters(prm);
 
   prm.print_parameters(input_file,
                        dealii::ParameterHandler::Short |
@@ -73,13 +73,13 @@ run(std::string const & input_file,
   dealii::Timer timer;
   timer.restart();
 
-  std::shared_ptr<IncNS::ApplicationBasePrecursor<dim, Number>> application =
-    IncNS::get_application<dim, Number>(input_file, mpi_comm);
+  std::shared_ptr<IncNS::Precursor::ApplicationBase<dim, Number>> application =
+    IncNS::Precursor::get_application<dim, Number>(input_file, mpi_comm);
 
   application->set_resolution_parameters(degree, refine_space);
 
-  std::shared_ptr<IncNS::DriverPrecursor<dim, Number>> driver =
-    std::make_shared<IncNS::DriverPrecursor<dim, Number>>(mpi_comm, application, is_test);
+  std::shared_ptr<IncNS::Precursor::Driver<dim, Number>> driver =
+    std::make_shared<IncNS::Precursor::Driver<dim, Number>>(mpi_comm, application, is_test);
 
   driver->setup();
 

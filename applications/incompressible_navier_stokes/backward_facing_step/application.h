@@ -144,11 +144,11 @@ public:
 
 
 template<int dim, typename Number>
-class Application : public ApplicationBasePrecursor<dim, Number>
+class Application : public Precursor::ApplicationBase<dim, Number>
 {
 public:
   Application(std::string input_file, MPI_Comm const & comm)
-    : ApplicationBasePrecursor<dim, Number>(input_file, comm)
+    : Precursor::ApplicationBase<dim, Number>(input_file, comm)
   {
     inflow_data_storage.reset(new InflowDataStorage<dim>(n_points_inflow));
   }

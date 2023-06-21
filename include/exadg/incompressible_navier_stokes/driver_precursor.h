@@ -40,35 +40,39 @@ namespace ExaDG
 {
 namespace IncNS
 {
+namespace Precursor
+{
 template<int dim, typename Number>
 class Solver
 {
 public:
   void
-  setup(std::shared_ptr<Grid<dim> const>               grid,
-        std::shared_ptr<dealii::Mapping<dim> const>    mapping,
-        std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
-        std::shared_ptr<FieldFunctions<dim> const>     field_functions,
-        Parameters const &                             parameters,
-        std::string const &                            field,
-        MPI_Comm const &                               mpi_comm,
-        bool const                                     is_test)
+  setup(std::shared_ptr<Domain<dim, Number>> & domain,
+        std::string const &                    field,
+        MPI_Comm const &                       mpi_comm,
+        bool const                             is_test)
   {
     // ALE is not used for this solver
     std::shared_ptr<HelpersALE<Number>> helpers_ale_dummy;
 
     // initialize pde_operator
-    pde_operator = create_operator<dim, Number>(
-      grid, mapping, boundary_descriptor, field_functions, parameters, field, mpi_comm);
+    pde_operator = create_operator<dim, Number>(domain->get_grid(),
+                                                domain->get_mapping(),
+                                                domain->get_boundary_descriptor(),
+                                                domain->get_field_functions(),
+                                                domain->get_parameters(),
+                                                field,
+                                                mpi_comm);
 
     // initialize matrix_free
     matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
     matrix_free_data->append(pde_operator);
 
     matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-    if(parameters.use_cell_based_face_loops)
-      Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
-    matrix_free->reinit(*mapping,
+    if(domain->get_parameters().use_cell_based_face_loops)
+      Categorization::do_cell_based_loops(*domain->get_grid()->triangulation,
+                                          matrix_free_data->data);
+    matrix_free->reinit(*domain->get_mapping(),
                         matrix_free_data->get_dof_handler_vector(),
                         matrix_free_data->get_constraint_vector(),
                         matrix_free_data->get_quadrature_vector(),
@@ -78,15 +82,16 @@ public:
     pde_operator->setup(matrix_free, matrix_free_data);
 
     // setup postprocessor
+    postprocessor = domain->create_postprocessor();
     postprocessor->setup(*pde_operator);
 
     // Setup time integrator
     time_integrator = create_time_integrator<dim, Number>(
-      pde_operator, helpers_ale_dummy, postprocessor, parameters, mpi_comm, is_test);
+      pde_operator, helpers_ale_dummy, postprocessor, domain->get_parameters(), mpi_comm, is_test);
 
     // setup time integrator before calling setup_solvers (this is necessary since the setup of the
     // solvers depends on quantities such as the time_step_size or gamma0!)
-    time_integrator->setup(parameters.restarted_simulation);
+    time_integrator->setup(domain->get_parameters().restarted_simulation);
 
     // setup solvers
     pde_operator->setup_solvers(time_integrator->get_scaling_factor_time_derivative_term(),
@@ -118,12 +123,12 @@ public:
 };
 
 template<int dim, typename Number>
-class DriverPrecursor
+class Driver
 {
 public:
-  DriverPrecursor(MPI_Comm const &                                       mpi_comm,
-                  std::shared_ptr<ApplicationBasePrecursor<dim, Number>> application,
-                  bool const                                             is_test);
+  Driver(MPI_Comm const &                              mpi_comm,
+         std::shared_ptr<ApplicationBase<dim, Number>> application,
+         bool const                                    is_test);
 
   void
   setup();
@@ -151,7 +156,7 @@ private:
   bool const is_test;
 
   // application
-  std::shared_ptr<ApplicationBasePrecursor<dim, Number>> application;
+  std::shared_ptr<ApplicationBase<dim, Number>> application;
 
   Solver<dim, Number> main, precursor;
 
@@ -163,6 +168,7 @@ private:
   mutable TimerTree timer_tree;
 };
 
+} // namespace Precursor
 } // namespace IncNS
 } // namespace ExaDG
 

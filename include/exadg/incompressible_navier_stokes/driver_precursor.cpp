@@ -27,11 +27,12 @@ namespace ExaDG
 {
 namespace IncNS
 {
+namespace Precursor
+{
 template<int dim, typename Number>
-DriverPrecursor<dim, Number>::DriverPrecursor(
-  MPI_Comm const &                                       comm,
-  std::shared_ptr<ApplicationBasePrecursor<dim, Number>> app,
-  bool const                                             is_test)
+Driver<dim, Number>::Driver(MPI_Comm const &                              comm,
+                            std::shared_ptr<ApplicationBase<dim, Number>> app,
+                            bool const                                    is_test)
   : mpi_comm(comm),
     pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     is_test(is_test),
@@ -43,14 +44,14 @@ DriverPrecursor<dim, Number>::DriverPrecursor(
 
 template<int dim, typename Number>
 void
-DriverPrecursor<dim, Number>::set_start_time() const
+Driver<dim, Number>::set_start_time() const
 {
   AssertThrow(application->precursor_is_active(),
               dealii::ExcMessage("One should only arrive here if precursor is active."));
 
   // Setup time integrator and get time step size
-  double const start_time = std::min(application->get_parameters_precursor().start_time,
-                                     application->get_parameters().start_time);
+  double const start_time = std::min(application->precursor->get_parameters().start_time,
+                                     application->main->get_parameters().start_time);
 
   // Set the same time step size for both time integrators
   precursor.time_integrator->reset_time(start_time);
@@ -59,7 +60,7 @@ DriverPrecursor<dim, Number>::set_start_time() const
 
 template<int dim, typename Number>
 void
-DriverPrecursor<dim, Number>::synchronize_time_step_size() const
+Driver<dim, Number>::synchronize_time_step_size() const
 {
   AssertThrow(application->precursor_is_active(),
               dealii::ExcMessage("One should only arrive here if precursor is active."));
@@ -74,12 +75,12 @@ DriverPrecursor<dim, Number>::synchronize_time_step_size() const
   if(use_adaptive_time_stepping == true)
   {
     if(precursor.time_integrator->get_time() >
-       application->get_parameters_precursor().start_time - EPSILON)
+       application->precursor->get_parameters().start_time - EPSILON)
     {
       time_step_size_pre = precursor.time_integrator->get_time_step_size();
     }
 
-    if(main.time_integrator->get_time() > application->get_parameters().start_time - EPSILON)
+    if(main.time_integrator->get_time() > application->main->get_parameters().start_time - EPSILON)
     {
       time_step_size = main.time_integrator->get_time_step_size();
     }
@@ -98,8 +99,8 @@ DriverPrecursor<dim, Number>::synchronize_time_step_size() const
   {
     // assume that the precursor domain is the first to start and the last to end
     time_step_size =
-      adjust_time_step_to_hit_end_time(application->get_parameters_precursor().start_time,
-                                       application->get_parameters_precursor().end_time,
+      adjust_time_step_to_hit_end_time(application->precursor->get_parameters().start_time,
+                                       application->precursor->get_parameters().end_time,
                                        time_step_size);
 
     pcout << std::endl
@@ -113,7 +114,7 @@ DriverPrecursor<dim, Number>::synchronize_time_step_size() const
 
 template<int dim, typename Number>
 void
-DriverPrecursor<dim, Number>::setup()
+Driver<dim, Number>::setup()
 {
   dealii::Timer timer;
   timer.restart();
@@ -123,40 +124,19 @@ DriverPrecursor<dim, Number>::setup()
   application->setup();
 
   // constant vs. adaptive time stepping
-  use_adaptive_time_stepping = application->get_parameters().adaptive_time_stepping;
+  use_adaptive_time_stepping = application->main->get_parameters().adaptive_time_stepping;
 
   /*
    * main domain
    */
-
-  // TODO
-  main.postprocessor = application->create_postprocessor();
-
-  main.setup(application->get_grid(),
-             application->get_mapping(),
-             application->get_boundary_descriptor(),
-             application->get_field_functions(),
-             application->get_parameters(),
-             "main",
-             mpi_comm,
-             is_test);
+  main.setup(application->main, "main", mpi_comm, is_test);
 
   /*
    * precursor domain
    */
   if(application->precursor_is_active())
   {
-    // TODO
-    precursor.postprocessor = application->create_postprocessor_precursor();
-
-    precursor.setup(application->get_grid_precursor(),
-                    application->get_mapping_precursor(),
-                    application->get_boundary_descriptor_precursor(),
-                    application->get_field_functions_precursor(),
-                    application->get_parameters_precursor(),
-                    "precursor",
-                    mpi_comm,
-                    is_test);
+    precursor.setup(application->precursor, "precursor", mpi_comm, is_test);
   }
 
   timer_tree.insert({"Incompressible flow", "Setup"}, timer.wall_time());
@@ -164,7 +144,7 @@ DriverPrecursor<dim, Number>::setup()
 
 template<int dim, typename Number>
 void
-DriverPrecursor<dim, Number>::solve() const
+Driver<dim, Number>::solve() const
 {
   // time loop
   if(application->precursor_is_active())
@@ -203,7 +183,7 @@ DriverPrecursor<dim, Number>::solve() const
 
 template<int dim, typename Number>
 void
-DriverPrecursor<dim, Number>::print_performance_results(double const total_time) const
+Driver<dim, Number>::print_performance_results(double const total_time) const
 {
   pcout << std::endl
         << "_________________________________________________________________________________"
@@ -253,11 +233,12 @@ DriverPrecursor<dim, Number>::print_performance_results(double const total_time)
         << std::endl;
 }
 
-template class DriverPrecursor<2, float>;
-template class DriverPrecursor<3, float>;
+template class Driver<2, float>;
+template class Driver<3, float>;
 
-template class DriverPrecursor<2, double>;
-template class DriverPrecursor<3, double>;
+template class Driver<2, double>;
+template class Driver<3, double>;
 
+} // namespace Precursor
 } // namespace IncNS
 } // namespace ExaDG

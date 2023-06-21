@@ -28,10 +28,13 @@ namespace ExaDG
 {
 namespace IncNS
 {
+namespace Precursor
+{
 template<int dim, typename Number>
-std::shared_ptr<ApplicationBasePrecursor<dim, Number>>
+std::shared_ptr<ApplicationBase<dim, Number>>
 get_application(std::string input_file, MPI_Comm const & comm);
 
+}
 } // namespace IncNS
 } // namespace ExaDG
 
