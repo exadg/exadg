@@ -20,8 +20,6 @@
  */
 
 #include <exadg/incompressible_navier_stokes/driver_precursor.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
-#include <exadg/incompressible_navier_stokes/time_integration/create_time_integrator.h>
 #include <exadg/time_integration/time_step_calculation.h>
 #include <exadg/utilities/print_solver_results.h>
 
@@ -55,8 +53,8 @@ DriverPrecursor<dim, Number>::set_start_time() const
                                      application->get_parameters().start_time);
 
   // Set the same time step size for both time integrators
-  time_integrator_pre->reset_time(start_time);
-  time_integrator->reset_time(start_time);
+  precursor.time_integrator->reset_time(start_time);
+  main.time_integrator->reset_time(start_time);
 }
 
 template<int dim, typename Number>
@@ -75,17 +73,17 @@ DriverPrecursor<dim, Number>::synchronize_time_step_size() const
   // get time step sizes
   if(use_adaptive_time_stepping == true)
   {
-    if(time_integrator_pre->get_time() >
+    if(precursor.time_integrator->get_time() >
        application->get_parameters_precursor().start_time - EPSILON)
-      time_step_size_pre = time_integrator_pre->get_time_step_size();
+      time_step_size_pre = precursor.time_integrator->get_time_step_size();
 
-    if(time_integrator->get_time() > application->get_parameters().start_time - EPSILON)
-      time_step_size = time_integrator->get_time_step_size();
+    if(main.time_integrator->get_time() > application->get_parameters().start_time - EPSILON)
+      time_step_size = main.time_integrator->get_time_step_size();
   }
   else
   {
-    time_step_size_pre = time_integrator_pre->get_time_step_size();
-    time_step_size     = time_integrator->get_time_step_size();
+    time_step_size_pre = precursor.time_integrator->get_time_step_size();
+    time_step_size     = main.time_integrator->get_time_step_size();
   }
 
   // take the minimum
@@ -105,8 +103,8 @@ DriverPrecursor<dim, Number>::synchronize_time_step_size() const
   }
 
   // set the time step size
-  time_integrator_pre->set_current_time_step_size(time_step_size);
-  time_integrator->set_current_time_step_size(time_step_size);
+  precursor.time_integrator->set_current_time_step_size(time_step_size);
+  main.time_integrator->set_current_time_step_size(time_step_size);
 }
 
 template<int dim, typename Number>
@@ -123,111 +121,38 @@ DriverPrecursor<dim, Number>::setup()
   // constant vs. adaptive time stepping
   use_adaptive_time_stepping = application->get_parameters().adaptive_time_stepping;
 
-  // ALE is not used for this solver
-  std::shared_ptr<HelpersALE<Number>> helpers_ale_dummy;
+  // TODO
+  main.postprocessor = application->create_postprocessor();
 
-  // initialize pde_operator (main domain)
-  pde_operator = create_operator<dim, Number>(application->get_grid(),
-                                              application->get_mapping(),
-                                              application->get_boundary_descriptor(),
-                                              application->get_field_functions(),
-                                              application->get_parameters(),
-                                              "fluid",
-                                              mpi_comm);
-
-  // initialize matrix_free
-  matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-  matrix_free_data->append(pde_operator);
-
-  matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-  if(application->get_parameters().use_cell_based_face_loops)
-    Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
-                                        matrix_free_data->data);
-  matrix_free->reinit(*application->get_mapping(),
-                      matrix_free_data->get_dof_handler_vector(),
-                      matrix_free_data->get_constraint_vector(),
-                      matrix_free_data->get_quadrature_vector(),
-                      matrix_free_data->data);
-
-
-  // setup Navier-Stokes operator
-  pde_operator->setup(matrix_free, matrix_free_data);
-
-  // setup postprocessor
-  postprocessor = application->create_postprocessor();
-  postprocessor->setup(*pde_operator);
-
-  // Setup time integrator
-  time_integrator = create_time_integrator<dim, Number>(pde_operator,
-                                                        helpers_ale_dummy,
-                                                        postprocessor,
-                                                        application->get_parameters(),
-                                                        mpi_comm,
-                                                        is_test);
-
-  // setup time integrator before calling setup_solvers (this is necessary since the setup of the
-  // solvers depends on quantities such as the time_step_size or gamma0!)
-  time_integrator->setup(application->get_parameters().restarted_simulation);
-
-  // setup solvers
-  pde_operator->setup_solvers(time_integrator->get_scaling_factor_time_derivative_term(),
-                              time_integrator->get_velocity());
+  main.setup(application->get_grid(),
+             application->get_mapping(),
+             application->get_boundary_descriptor(),
+             application->get_field_functions(),
+             application->get_parameters(),
+             "main",
+             mpi_comm,
+             is_test);
 
   timer_tree.insert({"Incompressible flow", "Setup", "Main domain"}, timer.wall_time());
-  timer.restart();
 
   if(application->precursor_is_active())
   {
-    // initialize pde_operator_pre (precursor domain)
-    pde_operator_pre =
-      create_operator<dim, Number>(application->get_grid_precursor(),
-                                   application->get_mapping_precursor(),
-                                   application->get_boundary_descriptor_precursor(),
-                                   application->get_field_functions_precursor(),
-                                   application->get_parameters_precursor(),
-                                   "fluid",
-                                   mpi_comm);
+    timer.restart();
 
-    // initialize matrix_free precursor
-    matrix_free_data_pre = std::make_shared<MatrixFreeData<dim, Number>>();
-    matrix_free_data_pre->append(pde_operator_pre);
+    // TODO
+    precursor.postprocessor = application->create_postprocessor_precursor();
 
-    matrix_free_pre = std::make_shared<dealii::MatrixFree<dim, Number>>();
-    if(application->get_parameters_precursor().use_cell_based_face_loops)
-      Categorization::do_cell_based_loops(*application->get_grid_precursor()->triangulation,
-                                          matrix_free_data_pre->data);
-    matrix_free_pre->reinit(*application->get_mapping_precursor(),
-                            matrix_free_data_pre->get_dof_handler_vector(),
-                            matrix_free_data_pre->get_constraint_vector(),
-                            matrix_free_data_pre->get_quadrature_vector(),
-                            matrix_free_data_pre->data);
+    precursor.setup(application->get_grid_precursor(),
+                    application->get_mapping_precursor(),
+                    application->get_boundary_descriptor_precursor(),
+                    application->get_field_functions_precursor(),
+                    application->get_parameters_precursor(),
+                    "precursor",
+                    mpi_comm,
+                    is_test);
 
-    // setup Navier-Stokes operator
-    pde_operator_pre->setup(matrix_free_pre, matrix_free_data_pre);
-
-    // setup postprocessor
-    postprocessor_pre = application->create_postprocessor_precursor();
-    postprocessor_pre->setup(*pde_operator_pre);
-
-    // Setup time integrator
-    time_integrator_pre =
-      create_time_integrator<dim, Number>(pde_operator_pre,
-                                          helpers_ale_dummy,
-                                          postprocessor_pre,
-                                          application->get_parameters_precursor(),
-                                          mpi_comm,
-                                          is_test);
-
-    // setup time integrator before calling setup_solvers (this is necessary since the setup of the
-    // solvers depends on quantities such as the time_step_size or gamma0!)
-    time_integrator_pre->setup(application->get_parameters_precursor().restarted_simulation);
-
-    // setup solvers
-    pde_operator_pre->setup_solvers(time_integrator_pre->get_scaling_factor_time_derivative_term(),
-                                    time_integrator_pre->get_velocity());
+    timer_tree.insert({"Incompressible flow", "Setup", "Precursor"}, timer.wall_time());
   }
-
-  timer_tree.insert({"Incompressible flow", "Setup", "Precursor"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -244,7 +169,7 @@ DriverPrecursor<dim, Number>::solve() const
     do
     {
       // advance one time step for precursor domain
-      time_integrator_pre->advance_one_timestep();
+      precursor.time_integrator->advance_one_timestep();
 
       // Note that the coupling of both solvers via the inflow boundary conditions is
       // performed in the postprocessing step of the solver for the precursor domain,
@@ -252,18 +177,18 @@ DriverPrecursor<dim, Number>::solve() const
       // solver for the actual domain to evaluate the boundary conditions.
 
       // advance one time step for actual domain
-      time_integrator->advance_one_timestep();
+      main.time_integrator->advance_one_timestep();
 
       // Both domains have already calculated the new, adaptive time step size individually in
       // function advance_one_timestep(). Here, we have to synchronize the time step size for
       // both domains.
       if(use_adaptive_time_stepping == true)
         synchronize_time_step_size();
-    } while(not(time_integrator_pre->finished()) or not(time_integrator->finished()));
+    } while(not(precursor.time_integrator->finished()) or not(main.time_integrator->finished()));
   }
   else
   {
-    time_integrator->timeloop();
+    main.time_integrator->timeloop();
   }
 }
 
@@ -282,11 +207,11 @@ DriverPrecursor<dim, Number>::print_performance_results(double const total_time)
 
   pcout << std::endl << "Precursor:" << std::endl;
 
-  time_integrator_pre->print_iterations();
+  precursor.time_integrator->print_iterations();
 
   pcout << std::endl << "Main:" << std::endl;
 
-  time_integrator->print_iterations();
+  main.time_integrator->print_iterations();
 
   // Wall times
   pcout << std::endl << "Wall times for incompressible Navier-Stokes solver:" << std::endl;
@@ -294,10 +219,10 @@ DriverPrecursor<dim, Number>::print_performance_results(double const total_time)
   timer_tree.insert({"Incompressible flow"}, total_time);
 
   timer_tree.insert({"Incompressible flow"},
-                    time_integrator_pre->get_timings(),
+                    precursor.time_integrator->get_timings(),
                     "Timeloop precursor");
 
-  timer_tree.insert({"Incompressible flow"}, time_integrator->get_timings(), "Timeloop main");
+  timer_tree.insert({"Incompressible flow"}, main.time_integrator->get_timings(), "Timeloop main");
 
   pcout << std::endl << "Timings for level 1:" << std::endl;
   timer_tree.print_level(pcout, 1);

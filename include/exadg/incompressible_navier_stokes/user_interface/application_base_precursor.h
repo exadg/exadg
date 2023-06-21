@@ -40,9 +40,6 @@
 #include <exadg/postprocessor/output_parameters.h>
 #include <exadg/utilities/resolution_parameters.h>
 
-// TODO
-#include <exadg/incompressible_navier_stokes/user_interface/application_base.h>
-
 namespace ExaDG
 {
 namespace IncNS

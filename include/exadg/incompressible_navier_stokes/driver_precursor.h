@@ -24,9 +24,11 @@
 
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor_base.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.h>
+#include <exadg/incompressible_navier_stokes/time_integration/create_time_integrator.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
@@ -38,6 +40,83 @@ namespace ExaDG
 {
 namespace IncNS
 {
+template<int dim, typename Number>
+class Solver
+{
+public:
+  void
+  setup(std::shared_ptr<Grid<dim> const>               grid,
+        std::shared_ptr<dealii::Mapping<dim> const>    mapping,
+        std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
+        std::shared_ptr<FieldFunctions<dim> const>     field_functions,
+        Parameters const &                             parameters,
+        std::string const &                            field,
+        MPI_Comm const &                               mpi_comm,
+        bool const                                     is_test)
+  {
+    // ALE is not used for this solver
+    std::shared_ptr<HelpersALE<Number>> helpers_ale_dummy;
+
+    // initialize pde_operator
+    pde_operator = create_operator<dim, Number>(
+      grid, mapping, boundary_descriptor, field_functions, parameters, field, mpi_comm);
+
+    // initialize matrix_free
+    matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
+    matrix_free_data->append(pde_operator);
+
+    matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
+    if(parameters.use_cell_based_face_loops)
+      Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
+    matrix_free->reinit(*mapping,
+                        matrix_free_data->get_dof_handler_vector(),
+                        matrix_free_data->get_constraint_vector(),
+                        matrix_free_data->get_quadrature_vector(),
+                        matrix_free_data->data);
+
+    // setup Navier-Stokes operator
+    pde_operator->setup(matrix_free, matrix_free_data);
+
+    // setup postprocessor
+    postprocessor->setup(*pde_operator);
+
+    // Setup time integrator
+    time_integrator = create_time_integrator<dim, Number>(
+      pde_operator, helpers_ale_dummy, postprocessor, parameters, mpi_comm, is_test);
+
+    // setup time integrator before calling setup_solvers (this is necessary since the setup of the
+    // solvers depends on quantities such as the time_step_size or gamma0!)
+    time_integrator->setup(parameters.restarted_simulation);
+
+    // setup solvers
+    pde_operator->setup_solvers(time_integrator->get_scaling_factor_time_derivative_term(),
+                                time_integrator->get_velocity());
+  }
+
+  /*
+   * MatrixFree
+   */
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
+
+  /*
+   * Spatial discretization
+   */
+  std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_operator;
+
+  /*
+   * Postprocessor
+   */
+  typedef PostProcessorBase<dim, Number> Postprocessor;
+
+  std::shared_ptr<Postprocessor> postprocessor;
+
+  /*
+   * Temporal discretization
+   */
+  std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator;
+};
+
 template<int dim, typename Number>
 class DriverPrecursor
 {
@@ -74,29 +153,7 @@ private:
   // application
   std::shared_ptr<ApplicationBasePrecursor<dim, Number>> application;
 
-  /*
-   * MatrixFree
-   */
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data_pre, matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_pre, matrix_free;
-
-  /*
-   * Spatial discretization
-   */
-  std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_operator_pre;
-  std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_operator;
-
-  /*
-   * Postprocessor
-   */
-  typedef PostProcessorBase<dim, Number> Postprocessor;
-
-  std::shared_ptr<Postprocessor> postprocessor_pre, postprocessor;
-
-  /*
-   * Temporal discretization
-   */
-  std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator_pre, time_integrator;
+  Solver<dim, Number> main, precursor;
 
   bool use_adaptive_time_stepping;
 
