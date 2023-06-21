@@ -76,7 +76,7 @@ run(std::string const & input_file,
   std::shared_ptr<IncNS::ApplicationBasePrecursor<dim, Number>> application =
     IncNS::get_application<dim, Number>(input_file, mpi_comm);
 
-  application->set_resolution_parameters_solver_precursor(degree, refine_space);
+  application->set_resolution_parameters(degree, refine_space);
 
   std::shared_ptr<IncNS::DriverPrecursor<dim, Number>> driver =
     std::make_shared<IncNS::DriverPrecursor<dim, Number>>(mpi_comm, application, is_test);

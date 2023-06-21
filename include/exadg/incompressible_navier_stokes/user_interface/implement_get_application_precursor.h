@@ -23,7 +23,7 @@
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_PRECURSOR_H_
 
 
-#include <exadg/incompressible_navier_stokes/user_interface/application_base.h>
+#include <exadg/incompressible_navier_stokes/user_interface/application_base_precursor.h>
 
 namespace ExaDG
 {

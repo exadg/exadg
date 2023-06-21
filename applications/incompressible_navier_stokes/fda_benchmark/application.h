@@ -163,6 +163,7 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBasePrecursor<dim, Number>(input_file, comm)
   {
+    this->switch_off_precursor = false;
   }
 
 private:
@@ -680,17 +681,15 @@ private:
     pp_data_fda.line_plot_data.lines.push_back(radial_profile_z11);
     pp_data_fda.line_plot_data.lines.push_back(radial_profile_z12);
 
-    AssertThrow(flow_rate_controller.get(),
-                dealii::ExcMessage("flow_rate_controller is uninitialized."));
     AssertThrow(inflow_data_storage.get(),
                 dealii::ExcMessage("inflow_data_storage is uninitialized."));
 
     pp.reset(new PostProcessorFDA<dim, Number>(pp_data_fda,
                                                this->mpi_comm,
                                                area_inflow,
-                                               *flow_rate_controller,
-                                               *inflow_data_storage,
-                                               use_precursor,
+                                               flow_rate_controller,
+                                               inflow_data_storage,
+                                               this->precursor_is_active(),
                                                use_random_perturbations));
 
     return pp;
@@ -722,6 +721,9 @@ private:
     // inflow data
     // prescribe solution at the right boundary of the precursor domain
     // as weak Dirichlet boundary condition at the left boundary of the nozzle domain
+    AssertThrow(inflow_data_storage.get(),
+                dealii::ExcMessage("inflow_data_storage is uninitialized."));
+
     pp_data_fda.inflow_data.write_inflow_data = true;
     pp_data_fda.inflow_data.inflow_geometry   = InflowGeometry::Cylindrical;
     pp_data_fda.inflow_data.normal_direction  = 2;
@@ -741,18 +743,13 @@ private:
     pp_data_fda.mean_velocity_data.direction     = direction;
     pp_data_fda.mean_velocity_data.write_to_file = true;
 
-    AssertThrow(flow_rate_controller.get(),
-                dealii::ExcMessage("flow_rate_controller is uninitialized."));
-    AssertThrow(inflow_data_storage.get(),
-                dealii::ExcMessage("inflow_data_storage is uninitialized."));
-
     pp.reset(new PostProcessorFDA<dim, Number>(pp_data_fda,
                                                this->mpi_comm,
                                                area_inflow,
-                                               *flow_rate_controller,
-                                               *inflow_data_storage,
-                                               use_precursor,
-                                               use_random_perturbations));
+                                               flow_rate_controller,
+                                               inflow_data_storage,
+                                               this->precursor_is_active(),
+                                               false));
 
     return pp;
   }
@@ -773,9 +770,7 @@ private:
   double const max_velocity     = 2.0 * target_flow_rate / area_inflow;
   double const max_velocity_cfl = 2.0 * target_flow_rate / area_throat;
 
-  // prescribe velocity inflow profile for nozzle domain via precursor simulation?
-  // If yes, specify additional mesh_refinements for precursor domain
-  bool const         use_precursor                    = true;
+  // additional mesh_refinements for precursor domain (if precursor is activated)
   unsigned int const additional_refinements_precursor = 1;
 
   // use prescribed velocity profile at inflow superimposed by random perturbations (white noise)?

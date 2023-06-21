@@ -47,6 +47,9 @@ template<int dim, typename Number>
 void
 DriverPrecursor<dim, Number>::set_start_time() const
 {
+  AssertThrow(application->precursor_is_active(),
+              dealii::ExcMessage("One should only arrive here if precursor is active."));
+
   // Setup time integrator and get time step size
   double const start_time = std::min(application->get_parameters_precursor().start_time,
                                      application->get_parameters().start_time);
@@ -60,6 +63,9 @@ template<int dim, typename Number>
 void
 DriverPrecursor<dim, Number>::synchronize_time_step_size() const
 {
+  AssertThrow(application->precursor_is_active(),
+              dealii::ExcMessage("One should only arrive here if precursor is active."));
+
   double const EPSILON = 1.e-10;
 
   // Setup time integrator and get time step size
@@ -115,18 +121,12 @@ DriverPrecursor<dim, Number>::setup()
   application->setup();
 
   // constant vs. adaptive time stepping
-  use_adaptive_time_stepping = application->get_parameters_precursor().adaptive_time_stepping;
+  use_adaptive_time_stepping = application->get_parameters().adaptive_time_stepping;
 
-  // initialize pde_operator_pre (precursor domain)
-  pde_operator_pre = create_operator<dim, Number>(application->get_grid_precursor(),
-                                                  application->get_mapping_precursor(),
-                                                  application->get_boundary_descriptor_precursor(),
-                                                  application->get_field_functions_precursor(),
-                                                  application->get_parameters_precursor(),
-                                                  "fluid",
-                                                  mpi_comm);
+  // ALE is not used for this solver
+  std::shared_ptr<HelpersALE<Number>> helpers_ale_dummy;
 
-  // initialize operator_base (actual domain)
+  // initialize pde_operator (main domain)
   pde_operator = create_operator<dim, Number>(application->get_grid(),
                                               application->get_mapping(),
                                               application->get_boundary_descriptor(),
@@ -134,21 +134,6 @@ DriverPrecursor<dim, Number>::setup()
                                               application->get_parameters(),
                                               "fluid",
                                               mpi_comm);
-
-
-  // initialize matrix_free precursor
-  matrix_free_data_pre = std::make_shared<MatrixFreeData<dim, Number>>();
-  matrix_free_data_pre->append(pde_operator_pre);
-
-  matrix_free_pre = std::make_shared<dealii::MatrixFree<dim, Number>>();
-  if(application->get_parameters_precursor().use_cell_based_face_loops)
-    Categorization::do_cell_based_loops(*application->get_grid_precursor()->triangulation,
-                                        matrix_free_data_pre->data);
-  matrix_free_pre->reinit(*application->get_mapping_precursor(),
-                          matrix_free_data_pre->get_dof_handler_vector(),
-                          matrix_free_data_pre->get_constraint_vector(),
-                          matrix_free_data_pre->get_quadrature_vector(),
-                          matrix_free_data_pre->data);
 
   // initialize matrix_free
   matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
@@ -166,26 +151,13 @@ DriverPrecursor<dim, Number>::setup()
 
 
   // setup Navier-Stokes operator
-  pde_operator_pre->setup(matrix_free_pre, matrix_free_data_pre);
   pde_operator->setup(matrix_free, matrix_free_data);
 
   // setup postprocessor
-  postprocessor_pre = application->create_postprocessor_precursor();
-  postprocessor_pre->setup(*pde_operator_pre);
-
   postprocessor = application->create_postprocessor();
   postprocessor->setup(*pde_operator);
 
-
   // Setup time integrator
-  std::shared_ptr<HelpersALE<Number>> helpers_ale_dummy;
-  time_integrator_pre = create_time_integrator<dim, Number>(pde_operator_pre,
-                                                            helpers_ale_dummy,
-                                                            postprocessor_pre,
-                                                            application->get_parameters_precursor(),
-                                                            mpi_comm,
-                                                            is_test);
-
   time_integrator = create_time_integrator<dim, Number>(pde_operator,
                                                         helpers_ale_dummy,
                                                         postprocessor,
@@ -195,47 +167,104 @@ DriverPrecursor<dim, Number>::setup()
 
   // setup time integrator before calling setup_solvers (this is necessary since the setup of the
   // solvers depends on quantities such as the time_step_size or gamma0!)
-  time_integrator_pre->setup(application->get_parameters_precursor().restarted_simulation);
   time_integrator->setup(application->get_parameters().restarted_simulation);
 
   // setup solvers
-  pde_operator_pre->setup_solvers(time_integrator_pre->get_scaling_factor_time_derivative_term(),
-                                  time_integrator_pre->get_velocity());
-
   pde_operator->setup_solvers(time_integrator->get_scaling_factor_time_derivative_term(),
                               time_integrator->get_velocity());
 
-  timer_tree.insert({"Incompressible flow", "Setup"}, timer.wall_time());
+  timer_tree.insert({"Incompressible flow", "Setup", "Main domain"}, timer.wall_time());
+  timer.restart();
+
+  if(application->precursor_is_active())
+  {
+    // initialize pde_operator_pre (precursor domain)
+    pde_operator_pre =
+      create_operator<dim, Number>(application->get_grid_precursor(),
+                                   application->get_mapping_precursor(),
+                                   application->get_boundary_descriptor_precursor(),
+                                   application->get_field_functions_precursor(),
+                                   application->get_parameters_precursor(),
+                                   "fluid",
+                                   mpi_comm);
+
+    // initialize matrix_free precursor
+    matrix_free_data_pre = std::make_shared<MatrixFreeData<dim, Number>>();
+    matrix_free_data_pre->append(pde_operator_pre);
+
+    matrix_free_pre = std::make_shared<dealii::MatrixFree<dim, Number>>();
+    if(application->get_parameters_precursor().use_cell_based_face_loops)
+      Categorization::do_cell_based_loops(*application->get_grid_precursor()->triangulation,
+                                          matrix_free_data_pre->data);
+    matrix_free_pre->reinit(*application->get_mapping_precursor(),
+                            matrix_free_data_pre->get_dof_handler_vector(),
+                            matrix_free_data_pre->get_constraint_vector(),
+                            matrix_free_data_pre->get_quadrature_vector(),
+                            matrix_free_data_pre->data);
+
+    // setup Navier-Stokes operator
+    pde_operator_pre->setup(matrix_free_pre, matrix_free_data_pre);
+
+    // setup postprocessor
+    postprocessor_pre = application->create_postprocessor_precursor();
+    postprocessor_pre->setup(*pde_operator_pre);
+
+    // Setup time integrator
+    time_integrator_pre =
+      create_time_integrator<dim, Number>(pde_operator_pre,
+                                          helpers_ale_dummy,
+                                          postprocessor_pre,
+                                          application->get_parameters_precursor(),
+                                          mpi_comm,
+                                          is_test);
+
+    // setup time integrator before calling setup_solvers (this is necessary since the setup of the
+    // solvers depends on quantities such as the time_step_size or gamma0!)
+    time_integrator_pre->setup(application->get_parameters_precursor().restarted_simulation);
+
+    // setup solvers
+    pde_operator_pre->setup_solvers(time_integrator_pre->get_scaling_factor_time_derivative_term(),
+                                    time_integrator_pre->get_velocity());
+  }
+
+  timer_tree.insert({"Incompressible flow", "Setup", "Precursor"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
 void
 DriverPrecursor<dim, Number>::solve() const
 {
-  set_start_time();
-
-  synchronize_time_step_size();
-
   // time loop
-  do
+  if(application->precursor_is_active())
   {
-    // advance one time step for precursor domain
-    time_integrator_pre->advance_one_timestep();
+    set_start_time();
 
-    // Note that the coupling of both solvers via the inflow boundary conditions is
-    // performed in the postprocessing step of the solver for the precursor domain,
-    // overwriting the data global structures which are subsequently used by the
-    // solver for the actual domain to evaluate the boundary conditions.
+    synchronize_time_step_size();
 
-    // advance one time step for actual domain
-    time_integrator->advance_one_timestep();
+    do
+    {
+      // advance one time step for precursor domain
+      time_integrator_pre->advance_one_timestep();
 
-    // Both domains have already calculated the new, adaptive time step size individually in
-    // function advance_one_timestep(). Here, we have to synchronize the time step size for
-    // both domains.
-    if(use_adaptive_time_stepping == true)
-      synchronize_time_step_size();
-  } while(not(time_integrator_pre->finished()) or not(time_integrator->finished()));
+      // Note that the coupling of both solvers via the inflow boundary conditions is
+      // performed in the postprocessing step of the solver for the precursor domain,
+      // overwriting the data global structures which are subsequently used by the
+      // solver for the actual domain to evaluate the boundary conditions.
+
+      // advance one time step for actual domain
+      time_integrator->advance_one_timestep();
+
+      // Both domains have already calculated the new, adaptive time step size individually in
+      // function advance_one_timestep(). Here, we have to synchronize the time step size for
+      // both domains.
+      if(use_adaptive_time_stepping == true)
+        synchronize_time_step_size();
+    } while(not(time_integrator_pre->finished()) or not(time_integrator->finished()));
+  }
+  else
+  {
+    time_integrator->timeloop();
+  }
 }
 
 template<int dim, typename Number>

@@ -52,22 +52,30 @@ public:
 
   typedef typename Base::Operator Operator;
 
-  PostProcessorFDA(PostProcessorDataFDA<dim> const & pp_data_in,
-                   MPI_Comm const &                  mpi_comm_in,
-                   double const                      area_in,
-                   FlowRateController &              flow_rate_controller_in,
-                   InflowDataStorage<dim> &          inflow_data_storage_in,
-                   bool const                        use_precursor_in,
-                   bool const                        add_random_perturbations_in)
+  PostProcessorFDA(PostProcessorDataFDA<dim> const &         pp_data_in,
+                   MPI_Comm const &                          mpi_comm_in,
+                   double const                              area_in,
+                   std::shared_ptr<FlowRateController> &     flow_rate_controller_in,
+                   std::shared_ptr<InflowDataStorage<dim>> & inflow_data_storage_in,
+                   bool const                                use_precursor_in,
+                   bool const                                add_random_perturbations_in)
     : Base(pp_data_in.pp_data, mpi_comm_in),
       mpi_comm(mpi_comm_in),
       pp_data_fda(pp_data_in),
+      use_precursor(use_precursor_in),
       area(area_in),
       flow_rate_controller(flow_rate_controller_in),
-      inflow_data_storage(inflow_data_storage_in),
-      use_precursor(use_precursor_in),
-      add_random_perturbations(add_random_perturbations_in)
+      add_random_perturbations(add_random_perturbations_in),
+      inflow_data_storage(inflow_data_storage_in)
   {
+    if(use_precursor)
+    {
+      if(pp_data_fda.mean_velocity_data.calculate)
+      {
+        AssertThrow(flow_rate_controller.get(),
+                    dealii::ExcMessage("flow_rate_controller is uninitialized."));
+      }
+    }
   }
 
   void
@@ -78,18 +86,25 @@ public:
 
     if(use_precursor)
     {
-      // inflow data
-      inflow_data_calculator.reset(
-        new InflowDataCalculator<dim, Number>(pp_data_fda.inflow_data, mpi_comm));
-      inflow_data_calculator->setup(pde_operator.get_dof_handler_u(), *pde_operator.get_mapping());
+      if(pp_data_fda.inflow_data.write_inflow_data) // to be done for precursor domain
+      {
+        // inflow data for precursor simulations
+        inflow_data_calculator.reset(
+          new InflowDataCalculator<dim, Number>(pp_data_fda.inflow_data, mpi_comm));
+        inflow_data_calculator->setup(pde_operator.get_dof_handler_u(),
+                                      *pde_operator.get_mapping());
+      }
 
-      // calculation of mean velocity
-      mean_velocity_calculator.reset(
-        new MeanVelocityCalculator<dim, Number>(pde_operator.get_matrix_free(),
-                                                pde_operator.get_dof_index_velocity(),
-                                                pde_operator.get_quad_index_velocity_linear(),
-                                                pp_data_fda.mean_velocity_data,
-                                                this->mpi_comm));
+      if(pp_data_fda.mean_velocity_data.calculate) // to be done for precursor domain
+      {
+        // calculation of mean velocity
+        mean_velocity_calculator.reset(
+          new MeanVelocityCalculator<dim, Number>(pde_operator.get_matrix_free(),
+                                                  pde_operator.get_dof_index_velocity(),
+                                                  pde_operator.get_quad_index_velocity_linear(),
+                                                  pp_data_fda.mean_velocity_data,
+                                                  this->mpi_comm));
+      }
     }
 
     // evaluation of results along lines
@@ -115,29 +130,39 @@ public:
 
     if(use_precursor)
     {
-      // inflow data
-      inflow_data_calculator->calculate(velocity);
+      if(pp_data_fda.inflow_data.write_inflow_data) // to be done for precursor domain
+      {
+        // inflow data
+        inflow_data_calculator->calculate(velocity);
+      }
 
-      // random perturbations
-      if(add_random_perturbations)
-        inflow_data_storage.add_random_perturbations();
+      if(pp_data_fda.mean_velocity_data.calculate) // to be done for precursor domain
+      {
+        // calculation of flow rate
+        double const flow_rate =
+          area * mean_velocity_calculator->calculate_mean_velocity_volume(velocity, time);
+
+        // update body force
+        flow_rate_controller->update_body_force(flow_rate, time);
+      }
     }
-    else // laminar inflow profile
-    {
-      // in case of random perturbations, the velocity field at the inflow boundary
-      // has to be recomputed after each time step
-      if(add_random_perturbations)
-        inflow_data_storage.initialize_velocity_values();
-    }
 
-    if(pp_data_fda.mean_velocity_data.calculate == true)
+    if(add_random_perturbations)
     {
-      // calculation of flow rate
-      double const flow_rate =
-        area * mean_velocity_calculator->calculate_mean_velocity_volume(velocity, time);
+      AssertThrow(inflow_data_storage.get(),
+                  dealii::ExcMessage("inflow_data_storage is uninitialized."));
 
-      // update body force
-      flow_rate_controller.update_body_force(flow_rate, time);
+      if(use_precursor)
+      {
+        // add random perturbations
+        inflow_data_storage->add_random_perturbations();
+      }
+      else
+      {
+        // without precursor, the velocity field at the inflow boundary
+        // has to be recomputed after each time step in case of random perturbations
+        inflow_data_storage->initialize_velocity_values();
+      }
     }
 
     // evaluation of results along lines
@@ -160,8 +185,13 @@ public:
 private:
   MPI_Comm const mpi_comm;
 
-  // postprocessor data supplemented with data required for FDA benchmark
   PostProcessorDataFDA<dim> pp_data_fda;
+
+  bool const use_precursor;
+
+  /*
+   * precursor domain
+   */
 
   // calculate flow rate in precursor domain so that the flow rate can be
   // dynamically adjusted by a flow rate controller.
@@ -169,17 +199,18 @@ private:
 
   double const area;
 
-  FlowRateController & flow_rate_controller;
+  std::shared_ptr<FlowRateController> flow_rate_controller;
 
   // interpolate velocity field to a predefined set of interpolation points
   std::shared_ptr<InflowDataCalculator<dim, Number>> inflow_data_calculator;
 
-  InflowDataStorage<dim> & inflow_data_storage;
-
-  bool const use_precursor;
+  /*
+   * main domain
+   */
   bool const add_random_perturbations;
 
-  // evaluation of results along lines
+  std::shared_ptr<InflowDataStorage<dim>> inflow_data_storage;
+
   std::shared_ptr<LinePlotCalculatorStatistics<dim, Number>> line_plot_calculator_statistics;
 };
 
