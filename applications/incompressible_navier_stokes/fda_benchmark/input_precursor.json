@@ -4,15 +4,26 @@
         "Dim": "3",
         "IsTest": "false"
     },
-    "SpatialResolution": {
-        "Degree": "3",
-        "RefineSpace": "0"
+    "Main": {
+        "SpatialResolution": {
+            "Degree": "3",
+            "RefineSpace": "0"
+        },
+        "Output": {
+            "OutputDirectory": "output/fda/",
+            "OutputName": "main",
+            "WriteOutput": "false"
+        }
     },
-    "Application": {
-    },
-    "Output": {
-        "OutputDirectory": "output/fda/",
-        "OutputName": "Re3500",
-        "WriteOutput": "false"
+    "Precursor": {
+        "SpatialResolution": {
+            "Degree": "3",
+            "RefineSpace": "1"
+        },
+        "Output": {
+            "OutputDirectory": "output/fda/",
+            "OutputName": "precursor",
+            "WriteOutput": "false"
+        }
     }
 }
