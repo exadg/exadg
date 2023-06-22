@@ -347,7 +347,10 @@ public:
     pp_data_bfs.turb_ch_data.directory           = this->output_parameters.directory;
     pp_data_bfs.turb_ch_data.filename            = this->output_parameters.filename + "_precursor";
 
-    // use turbulent channel data to prescribe inflow velocity for BFS
+    // use precursor results to prescribe inflow velocity for backward facing step domain
+    AssertThrow(inflow_data_storage.get(),
+                dealii::ExcMessage("inflow_data_storage is not initialized."));
+
     pp_data_bfs.inflow_data.write_inflow_data = true;
     pp_data_bfs.inflow_data.normal_direction  = 0; /* x-direction */
     pp_data_bfs.inflow_data.normal_coordinate = Geometry::X1_COORDINATE_OUTFLOW_CHANNEL;
@@ -422,6 +425,9 @@ public:
 
     // inflow boundary condition at left boundary with ID=2: prescribe velocity profile which
     // is obtained as the results of the precursor simulation
+    AssertThrow(inflow_data_storage.get(),
+                dealii::ExcMessage("inflow_data_storage is not initialized."));
+
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(2, new InflowProfile<dim>(*inflow_data_storage)));
 
@@ -481,17 +487,6 @@ public:
 
     PostProcessorDataBFS<dim> pp_data_bfs;
     pp_data_bfs.pp_data = pp_data;
-
-
-    pp_data_bfs.turb_ch_data.time_control_data_statistics.time_control_data.is_active = true;
-    pp_data_bfs.turb_ch_data.time_control_data_statistics.time_control_data.start_time =
-      sample_start_time;
-    pp_data_bfs.turb_ch_data.time_control_data_statistics.time_control_data.end_time = end_time;
-    pp_data_bfs.turb_ch_data.time_control_data_statistics.time_control_data
-      .trigger_every_time_steps = sample_every_timesteps;
-    pp_data_bfs.turb_ch_data.time_control_data_statistics
-      .write_preliminary_results_every_nth_time_step = sample_every_timesteps * 10;
-
 
     // line plot data: calculate statistics along lines
     pp_data_bfs.line_plot_data.time_control_data_statistics.time_control_data.is_active = true;
