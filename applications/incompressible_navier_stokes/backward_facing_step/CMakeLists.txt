@@ -29,4 +29,4 @@ TARGETNAME(TARGET_NAME ${CMAKE_CURRENT_SOURCE_DIR})
 
 PROJECT(${TARGET_NAME})
 
-#EXADG_PICKUP_EXE(solver_precursor.cpp ${TARGET_NAME} solver_precursor)
+EXADG_PICKUP_EXE(solver_precursor.cpp ${TARGET_NAME} solver_precursor)
