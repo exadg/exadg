@@ -50,6 +50,13 @@ template<int dim, typename Number>
 class Domain
 {
 public:
+  virtual void
+  add_parameters(dealii::ParameterHandler & prm)
+  {
+    resolution_parameters.add_parameters(prm);
+    output_parameters.add_parameters(prm);
+  }
+
   Domain(std::string parameter_file, MPI_Comm const & comm)
     : mpi_comm(comm),
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
@@ -82,13 +89,6 @@ public:
     // field functions
     field_functions = std::make_shared<FieldFunctions<dim>>();
     set_field_functions();
-  }
-
-  void
-  set_resolution_parameters(unsigned int const degree, unsigned int const refine_space)
-  {
-    param.degree_u             = degree;
-    param.grid.n_refine_global = refine_space;
   }
 
   virtual std::shared_ptr<PostProcessorBase<dim, Number>>
@@ -140,6 +140,9 @@ protected:
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
 
+  ResolutionParameters resolution_parameters;
+  OutputParameters     output_parameters;
+
 private:
   virtual void
   set_parameters() = 0;
@@ -158,12 +161,6 @@ template<int dim, typename Number>
 class ApplicationBase
 {
 public:
-  virtual void
-  add_parameters(dealii::ParameterHandler & prm)
-  {
-    output_parameters.add_parameters(prm);
-  }
-
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
     : mpi_comm(comm),
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
@@ -177,10 +174,25 @@ public:
   }
 
   void
-  set_resolution_parameters(unsigned int const degree, unsigned int const refine_space)
+  add_parameters(dealii::ParameterHandler & prm)
   {
-    main->set_resolution_parameters(degree, refine_space);
-    precursor->set_resolution_parameters(degree, refine_space);
+    AssertThrow(main.get(), dealii::ExcMessage("Domain main is uninitialized."));
+    AssertThrow(precursor.get(), dealii::ExcMessage("Domain precursor is uninitialized."));
+
+    prm.enter_subsection("Main");
+    {
+      main->add_parameters(prm);
+    }
+    prm.leave_subsection();
+
+    if(precursor_is_active())
+    {
+      prm.enter_subsection("Precursor");
+      {
+        precursor->add_parameters(prm);
+      }
+      prm.leave_subsection();
+    }
   }
 
   void
@@ -208,24 +220,19 @@ public:
     return not switch_off_precursor;
   }
 
+  /**
+   * Precursor and main domain. Make sure to create these objects in the constructor
+   * of a derived class implementing a concrete precursor application with non-abstract
+   * precursor domain and main domain.
+   */
   std::shared_ptr<Domain<dim, Number>> precursor, main;
 
 protected:
-  virtual void
-  parse_parameters()
-  {
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(parameter_file, "", true, true);
-  }
-
   MPI_Comm const & mpi_comm;
 
   dealii::ConditionalOStream pcout;
 
   std::string parameter_file;
-
-  OutputParameters output_parameters;
 
   // This parameter allows to switch off the precursor (e.g. to test a simplified setup without
   // precursor and prescribed boundary conditions or inflow data). The default value is false, i.e.
@@ -234,6 +241,14 @@ protected:
   bool switch_off_precursor;
 
 private:
+  void
+  parse_parameters()
+  {
+    dealii::ParameterHandler prm;
+    this->add_parameters(prm);
+    prm.parse_input(parameter_file, "", true, true);
+  }
+
   // performs some additional parameter checks
   void
   consistency_checks() const

@@ -33,13 +33,17 @@ class PrecursorDomain : public Domain<dim, Number>
 {
 public:
   PrecursorDomain(std::string parameter_file, MPI_Comm const & comm)
-    : Precursor::Domain<dim, Number>(parameter_file, comm)
+    : Domain<dim, Number>(parameter_file, comm)
   {
   }
 
   void
   set_parameters() final
   {
+    // set parameters here
+
+    this->param.degree_u             = this->resolution_parameters.degree;
+    this->param.grid.n_refine_global = this->resolution_parameters.refine_space;
   }
 
   void
@@ -98,17 +102,21 @@ public:
 };
 
 template<int dim, typename Number>
-class MainDomain : public Precursor::Domain<dim, Number>
+class MainDomain : public Domain<dim, Number>
 {
 public:
   MainDomain(std::string parameter_file, MPI_Comm const & comm)
-    : Precursor::Domain<dim, Number>(parameter_file, comm)
+    : Domain<dim, Number>(parameter_file, comm)
   {
   }
 
   void
   set_parameters() final
   {
+    // set parameters here
+
+    this->param.degree_u             = this->resolution_parameters.degree;
+    this->param.grid.n_refine_global = this->resolution_parameters.refine_space;
   }
 
   void
@@ -171,7 +179,7 @@ class Application : public ApplicationBase<dim, Number>
 {
 public:
   Application(std::string input_file, MPI_Comm const & comm)
-    : Precursor::ApplicationBase<dim, Number>(input_file, comm)
+    : ApplicationBase<dim, Number>(input_file, comm)
   {
     this->precursor = std::make_shared<PrecursorDomain<dim, Number>>(input_file, comm);
     this->main      = std::make_shared<MainDomain<dim, Number>>(input_file, comm);
