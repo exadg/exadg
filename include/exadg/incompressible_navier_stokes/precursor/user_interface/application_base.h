@@ -209,6 +209,9 @@ public:
   void
   setup()
   {
+    AssertThrow(main.get(), dealii::ExcMessage("Domain main is uninitialized."));
+    AssertThrow(precursor.get(), dealii::ExcMessage("Domain precursor is uninitialized."));
+
     // main domain
     main->setup({"Main"});
 
