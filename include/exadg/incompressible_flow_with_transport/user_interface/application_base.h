@@ -48,9 +48,22 @@ class Fluid
 {
 public:
   virtual void
-  add_parameters(dealii::ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm, std::vector<std::string> const & subsection_names)
   {
+    for(auto & name : subsection_names)
+    {
+      prm.enter_subsection(name);
+    }
+
+    resolution.add_parameters(prm);
+
     output_parameters.add_parameters(prm);
+
+    for(auto & name : subsection_names)
+    {
+      (void)name;
+      prm.leave_subsection();
+    }
   }
 
   Fluid(std::string parameter_file, MPI_Comm const & comm)
@@ -66,9 +79,13 @@ public:
   }
 
   virtual void
-  setup()
+  setup(std::vector<std::string> const & subsection_names)
   {
-    parse_parameters();
+    parse_parameters(subsection_names);
+
+    // set resolution parameters
+    param.degree_u             = resolution.degree;
+    param.grid.n_refine_global = resolution.refine_space;
 
     set_parameters();
     param.check(pcout);
@@ -134,10 +151,10 @@ public:
 
 protected:
   virtual void
-  parse_parameters()
+  parse_parameters(std::vector<std::string> const & subsection_names)
   {
     dealii::ParameterHandler prm;
-    this->add_parameters(prm);
+    this->add_parameters(prm, subsection_names);
     prm.parse_input(parameter_file, "", true, true);
   }
 
@@ -170,6 +187,129 @@ private:
 
   virtual void
   set_field_functions() = 0;
+
+  ResolutionParameters resolution;
+};
+
+template<int dim, typename Number>
+class Scalar
+{
+public:
+  virtual void
+  add_parameters(dealii::ParameterHandler & prm, std::vector<std::string> const & subsection_names)
+  {
+    for(auto & name : subsection_names)
+    {
+      prm.enter_subsection(name);
+    }
+
+    prm.enter_subsection("SpatialResolution");
+    {
+      prm.add_parameter("Degree",
+                        degree,
+                        "Polynomial degree of shape functions.",
+                        dealii::Patterns::Integer(1),
+                        true);
+    }
+    prm.leave_subsection();
+
+    output_parameters.add_parameters(prm);
+
+    for(auto & name : subsection_names)
+    {
+      (void)name;
+      prm.leave_subsection();
+    }
+  }
+
+  Scalar(std::string parameter_file, MPI_Comm const & comm, unsigned int const scalar_index)
+    : mpi_comm(comm),
+      pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(comm) == 0),
+      parameter_file(parameter_file),
+      degree(1)
+  {
+  }
+
+  virtual ~Scalar()
+  {
+  }
+
+  void
+  setup(std::vector<std::string> const & subsection_names, Grid<dim> const & grid)
+  {
+    parse_parameters(subsection_names);
+
+    // set degree of shape functions (note that the refinement level is identical to fluid domain)
+    param.degree = degree;
+
+    set_parameters();
+    param.check();
+
+    param.print(this->pcout, "List of parameters for quantity " + subsection_names.back() + ":");
+
+    // boundary conditions
+    boundary_descriptor = std::make_shared<ConvDiff::BoundaryDescriptor<dim>>();
+    set_boundary_descriptor();
+    verify_boundary_conditions(*boundary_descriptor, grid);
+
+    // field functions
+    field_functions = std::make_shared<ConvDiff::FieldFunctions<dim>>();
+    set_field_functions();
+  }
+
+  virtual std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
+  create_postprocessor() = 0;
+
+  ConvDiff::Parameters const &
+  get_parameters() const
+  {
+    return param;
+  }
+
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> const>
+  get_boundary_descriptor() const
+  {
+    return boundary_descriptor;
+  }
+
+  std::shared_ptr<ConvDiff::FieldFunctions<dim> const>
+  get_field_functions() const
+  {
+    return field_functions;
+  }
+
+protected:
+  virtual void
+  parse_parameters(std::vector<std::string> const & subsection_names)
+  {
+    dealii::ParameterHandler prm;
+    this->add_parameters(prm, subsection_names);
+    prm.parse_input(parameter_file, "", true, true);
+  }
+
+  MPI_Comm const & mpi_comm;
+
+  dealii::ConditionalOStream pcout;
+
+  ConvDiff::Parameters                               param;
+  std::shared_ptr<ConvDiff::FieldFunctions<dim>>     field_functions;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor;
+
+  std::string parameter_file;
+
+  OutputParameters output_parameters;
+
+private:
+  virtual void
+  set_parameters() = 0;
+
+  virtual void
+  set_boundary_descriptor() = 0;
+
+  virtual void
+  set_field_functions() = 0;
+
+  unsigned int degree;
 };
 
 template<int dim, typename Number>
@@ -179,17 +319,16 @@ public:
   void
   add_parameters(dealii::ParameterHandler & prm)
   {
-    fluid->add_parameters(prm);
-
-    resolution.add_parameters(prm);
+    fluid->add_parameters(prm, {"Fluid"});
+    for(unsigned int i = 0; i < scalars.size(); ++i)
+      scalars[i]->add_parameters(prm, {"Scalar" + std::to_string(i)});
   }
 
-  ApplicationBase(std::string parameter_file, MPI_Comm const & comm, unsigned int n_scalar_fields)
+  ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
     : mpi_comm(comm),
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(comm) == 0),
       parameter_file(parameter_file)
   {
-    n_scalars = n_scalar_fields;
   }
 
   virtual ~ApplicationBase()
@@ -199,112 +338,36 @@ public:
   void
   setup()
   {
-    // TODO
-    //    set_resolution_parameters();
+    fluid->setup({"Fluid"});
 
-    fluid->setup();
-
-    scalar_param.resize(n_scalars);
-    scalar_boundary_descriptor.resize(n_scalars);
-    scalar_field_functions.resize(n_scalars);
-
-    // parameters scalar
-    for(unsigned int i = 0; i < n_scalars; ++i)
+    for(unsigned int i = 0; i < scalars.size(); ++i)
     {
-      set_parameters_scalar(i);
-      scalar_param[i].check();
+      scalars[i]->setup({"Scalar" + std::to_string(i)}, *fluid->get_grid());
 
-      // some additional parameter checks
-      AssertThrow(scalar_param[i].ale_formulation == fluid->get_parameters().ale_formulation,
+      // do additional parameter checks
+      AssertThrow(scalars[i]->get_parameters().ale_formulation ==
+                    fluid->get_parameters().ale_formulation,
                   dealii::ExcMessage(
                     "Parameter ale_formulation is different for fluid field and scalar field"));
 
       AssertThrow(
-        scalar_param[i].adaptive_time_stepping == fluid->get_parameters().adaptive_time_stepping,
+        scalars[i]->get_parameters().adaptive_time_stepping ==
+          fluid->get_parameters().adaptive_time_stepping,
         dealii::ExcMessage(
           "The option adaptive_time_stepping has to be consistent for fluid and scalar transport solvers."));
-
-      scalar_param[i].print(this->pcout,
-                            "List of parameters for scalar quantity " +
-                              dealii::Utilities::to_string(i) + ":");
-
-      // boundary conditions
-      scalar_boundary_descriptor[i] = std::make_shared<ConvDiff::BoundaryDescriptor<dim>>();
-      set_boundary_descriptor_scalar(i);
-      verify_boundary_conditions(*scalar_boundary_descriptor[i], *fluid->get_grid());
-
-      // field functions
-      scalar_field_functions[i] = std::make_shared<ConvDiff::FieldFunctions<dim>>();
-      set_field_functions_scalar(i);
     }
   }
 
-  unsigned int
-  get_n_scalars()
-  {
-    return this->n_scalars;
-  }
-
-  virtual std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
-  create_postprocessor_scalar(unsigned int const scalar_index = 0) = 0;
-
-  ConvDiff::Parameters const &
-  get_parameters_scalar(unsigned int const scalar_index = 0) const
-  {
-    return scalar_param[scalar_index];
-  }
-
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> const>
-  get_boundary_descriptor_scalar(unsigned int const scalar_index = 0) const
-  {
-    return scalar_boundary_descriptor[scalar_index];
-  }
-
-  std::shared_ptr<ConvDiff::FieldFunctions<dim> const>
-  get_field_functions_scalar(unsigned int const scalar_index = 0) const
-  {
-    return scalar_field_functions[scalar_index];
-  }
-
-  std::shared_ptr<Fluid<dim, Number>> fluid;
+  std::shared_ptr<Fluid<dim, Number>>               fluid;
+  std::vector<std::shared_ptr<Scalar<dim, Number>>> scalars;
 
 protected:
   MPI_Comm const & mpi_comm;
 
   dealii::ConditionalOStream pcout;
 
-  std::vector<ConvDiff::Parameters>                               scalar_param;
-  std::vector<std::shared_ptr<ConvDiff::FieldFunctions<dim>>>     scalar_field_functions;
-  std::vector<std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>>> scalar_boundary_descriptor;
-
-  unsigned int n_scalars = 1;
-
 private:
-  // TODO
-  //  void
-  //  set_resolution_parameters()
-  //  {
-  //    // fluid
-  //    this->param.degree_u             = resolution.degree;
-  //    this->param.grid.n_refine_global = resolution.refine_space;
-  //
-  //    // scalar transport
-  //    for(unsigned int i = 0; i < scalar_param.size(); ++i)
-  //      this->scalar_param[i].degree = resolution.degree;
-  //  }
-
-  virtual void
-  set_parameters_scalar(unsigned int const scalar_index = 0) = 0;
-
-  virtual void
-  set_boundary_descriptor_scalar(unsigned int const scalar_index = 0) = 0;
-
-  virtual void
-  set_field_functions_scalar(unsigned int const scalar_index = 0) = 0;
-
   std::string parameter_file;
-
-  ResolutionParameters resolution;
 };
 
 } // namespace FTI
