@@ -24,6 +24,7 @@
 
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor_base.h>
+#include <exadg/incompressible_navier_stokes/precursor/user_interface/application_base.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
@@ -32,7 +33,6 @@
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
-#include <exadg/incompressible_navier_stokes/user_interface/application_base_precursor.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/utilities/print_general_infos.h>
 
@@ -99,12 +99,6 @@ public:
   }
 
   /*
-   * MatrixFree
-   */
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
-
-  /*
    * Spatial discretization
    */
   std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_operator;
@@ -120,6 +114,13 @@ public:
    * Temporal discretization
    */
   std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator;
+
+private:
+  /*
+   * MatrixFree
+   */
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
 };
 
 template<int dim, typename Number>

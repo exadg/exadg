@@ -155,7 +155,7 @@ SET(TARGET_SRC
      include/exadg/incompressible_navier_stokes/postprocessor/flow_rate_calculator.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/postprocessor.cpp
      include/exadg/incompressible_navier_stokes/driver.cpp
-     include/exadg/incompressible_navier_stokes/driver_precursor.cpp
+     include/exadg/incompressible_navier_stokes/precursor/driver.cpp
      # incompressible flow with transport
      include/exadg/incompressible_flow_with_transport/driver.cpp
      # compressible Navier-Stokes equations

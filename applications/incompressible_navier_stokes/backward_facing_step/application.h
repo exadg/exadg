@@ -744,6 +744,6 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#include <exadg/incompressible_navier_stokes/user_interface/implement_get_application_precursor.h>
+#include <exadg/incompressible_navier_stokes/precursor/user_interface/implement_get_application.h>
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_BFS_H_ */

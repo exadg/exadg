@@ -19,10 +19,9 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_DECLARE_GET_APPLICATION_PRECURSOR_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_DECLARE_GET_APPLICATION_PRECURSOR_H_
+#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_PRECURSOR_H_
+#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_PRECURSOR_H_
 
-#include <exadg/incompressible_navier_stokes/user_interface/application_base.h>
 
 namespace ExaDG
 {
@@ -32,13 +31,15 @@ namespace Precursor
 {
 template<int dim, typename Number>
 std::shared_ptr<ApplicationBase<dim, Number>>
-get_application(std::string input_file, MPI_Comm const & comm);
-
+get_application(std::string input_file, MPI_Comm const & comm)
+{
+  return std::make_shared<Application<dim, Number>>(input_file, comm);
 }
+
+} // namespace Precursor
 } // namespace IncNS
 } // namespace ExaDG
 
 
-
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_DECLARE_GET_APPLICATION_PRECURSOR_H_ \
+#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_PRECURSOR_H_ \
         */

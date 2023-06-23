@@ -19,7 +19,7 @@
  *  ______________________________________________________________________
  */
 
-#include <exadg/incompressible_navier_stokes/driver_precursor.h>
+#include <exadg/incompressible_navier_stokes/precursor/driver.h>
 #include <exadg/time_integration/time_step_calculation.h>
 #include <exadg/utilities/print_solver_results.h>
 

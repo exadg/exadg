@@ -29,14 +29,14 @@
 #include <exadg/utilities/enum_patterns.h>
 
 // driver
-#include <exadg/incompressible_navier_stokes/driver_precursor.h>
+#include <exadg/incompressible_navier_stokes/precursor/driver.h>
 
 // utilities
 #include <exadg/utilities/general_parameters.h>
 #include <exadg/utilities/resolution_parameters.h>
 
 // application
-#include <exadg/incompressible_navier_stokes/user_interface/declare_get_application_precursor.h>
+#include <exadg/incompressible_navier_stokes/precursor/user_interface/declare_get_application.h>
 
 namespace ExaDG
 {
