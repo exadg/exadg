@@ -249,9 +249,6 @@ public:
   void
   set_parameters() final
   {
-    this->param.degree_u             = this->resolution_parameters.degree;
-    this->param.grid.n_refine_global = this->resolution_parameters.refine_space;
-
     do_set_parameters(this->param, true);
   }
 
@@ -383,9 +380,6 @@ public:
   void
   set_parameters() final
   {
-    this->param.degree_u             = this->resolution_parameters.degree;
-    this->param.grid.n_refine_global = this->resolution_parameters.refine_space;
-
     do_set_parameters(this->param, false);
   }
 

@@ -41,9 +41,6 @@ public:
   set_parameters() final
   {
     // set parameters here
-
-    this->param.degree_u             = this->resolution_parameters.degree;
-    this->param.grid.n_refine_global = this->resolution_parameters.refine_space;
   }
 
   void
@@ -114,9 +111,6 @@ public:
   set_parameters() final
   {
     // set parameters here
-
-    this->param.degree_u             = this->resolution_parameters.degree;
-    this->param.grid.n_refine_global = this->resolution_parameters.refine_space;
   }
 
   void

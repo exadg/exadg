@@ -85,6 +85,10 @@ public:
   {
     parse_parameters(subsection_names);
 
+    // set resolution parameters
+    this->param.degree_u             = this->resolution_parameters.degree;
+    this->param.grid.n_refine_global = this->resolution_parameters.refine_space;
+
     set_parameters();
     param.check(pcout);
     param.print(pcout, "List of parameters:");
