@@ -44,7 +44,7 @@ namespace ExaDG
 namespace FTI
 {
 template<int dim, typename Number>
-class Fluid
+class FluidBase
 {
 public:
   virtual void
@@ -66,7 +66,7 @@ public:
     }
   }
 
-  Fluid(std::string parameter_file, MPI_Comm const & comm)
+  FluidBase(std::string parameter_file, MPI_Comm const & comm)
     : mpi_comm(comm),
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       parameter_file(parameter_file)
@@ -74,7 +74,7 @@ public:
     grid = std::make_shared<Grid<dim>>();
   }
 
-  virtual ~Fluid()
+  virtual ~FluidBase()
   {
   }
 
@@ -192,7 +192,7 @@ private:
 };
 
 template<int dim, typename Number>
-class Scalar
+class ScalarBase
 {
 public:
   virtual void
@@ -222,7 +222,7 @@ public:
     }
   }
 
-  Scalar(std::string parameter_file, MPI_Comm const & comm, unsigned int const scalar_index)
+  ScalarBase(std::string parameter_file, MPI_Comm const & comm)
     : mpi_comm(comm),
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(comm) == 0),
       parameter_file(parameter_file),
@@ -230,7 +230,7 @@ public:
   {
   }
 
-  virtual ~Scalar()
+  virtual ~ScalarBase()
   {
   }
 
@@ -319,9 +319,18 @@ public:
   void
   add_parameters(dealii::ParameterHandler & prm)
   {
+    AssertThrow(fluid.get(), dealii::ExcMessage("fluid has not been initialized."));
+
     fluid->add_parameters(prm, {"Fluid"});
+
     for(unsigned int i = 0; i < scalars.size(); ++i)
+    {
+      AssertThrow(scalars[i].get(),
+                  dealii::ExcMessage("scalar[" + std::to_string(i) +
+                                     "] has not been initialized."));
+
       scalars[i]->add_parameters(prm, {"Scalar" + std::to_string(i)});
+    }
   }
 
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
@@ -338,10 +347,16 @@ public:
   void
   setup()
   {
+    AssertThrow(fluid.get(), dealii::ExcMessage("fluid has not been initialized."));
+
     fluid->setup({"Fluid"});
 
     for(unsigned int i = 0; i < scalars.size(); ++i)
     {
+      AssertThrow(scalars[i].get(),
+                  dealii::ExcMessage("scalar[" + std::to_string(i) +
+                                     "] has not been initialized."));
+
       scalars[i]->setup({"Scalar" + std::to_string(i)}, *fluid->get_grid());
 
       // do additional parameter checks
@@ -358,8 +373,8 @@ public:
     }
   }
 
-  std::shared_ptr<Fluid<dim, Number>>               fluid;
-  std::vector<std::shared_ptr<Scalar<dim, Number>>> scalars;
+  std::shared_ptr<FluidBase<dim, Number>>               fluid;
+  std::vector<std::shared_ptr<ScalarBase<dim, Number>>> scalars;
 
 protected:
   MPI_Comm const & mpi_comm;
