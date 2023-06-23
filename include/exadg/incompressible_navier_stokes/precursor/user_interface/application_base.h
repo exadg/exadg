@@ -51,10 +51,21 @@ class Domain
 {
 public:
   virtual void
-  add_parameters(dealii::ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm, std::vector<std::string> const & subsection_names)
   {
+    for(auto & name : subsection_names)
+    {
+      prm.enter_subsection(name);
+    }
+
     resolution_parameters.add_parameters(prm);
     output_parameters.add_parameters(prm);
+
+    for(auto & name : subsection_names)
+    {
+      (void)name;
+      prm.leave_subsection();
+    }
   }
 
   Domain(std::string parameter_file, MPI_Comm const & comm)
@@ -70,8 +81,10 @@ public:
   }
 
   void
-  setup()
+  setup(std::vector<std::string> const & subsection_names)
   {
+    parse_parameters(subsection_names);
+
     set_parameters();
     param.check(pcout);
     param.print(pcout, "List of parameters:");
@@ -125,6 +138,14 @@ public:
   }
 
 protected:
+  virtual void
+  parse_parameters(std::vector<std::string> const & subsection_names)
+  {
+    dealii::ParameterHandler prm;
+    this->add_parameters(prm, subsection_names);
+    prm.parse_input(parameter_file, "", true, true);
+  }
+
   MPI_Comm const & mpi_comm;
 
   dealii::ConditionalOStream pcout;
@@ -179,34 +200,22 @@ public:
     AssertThrow(main.get(), dealii::ExcMessage("Domain main is uninitialized."));
     AssertThrow(precursor.get(), dealii::ExcMessage("Domain precursor is uninitialized."));
 
-    prm.enter_subsection("Main");
-    {
-      main->add_parameters(prm);
-    }
-    prm.leave_subsection();
+    main->add_parameters(prm, {"Main"});
 
     if(precursor_is_active())
-    {
-      prm.enter_subsection("Precursor");
-      {
-        precursor->add_parameters(prm);
-      }
-      prm.leave_subsection();
-    }
+      precursor->add_parameters(prm, {"Precursor"});
   }
 
   void
   setup()
   {
-    parse_parameters();
-
     // main domain
-    main->setup();
+    main->setup({"Main"});
 
     // precursor domain
     if(precursor_is_active())
     {
-      precursor->setup();
+      precursor->setup({"Precursor"});
 
       // make some additional checks (i.e. enforce constraints between main and precursor
       // parameters)
@@ -241,14 +250,6 @@ protected:
   bool switch_off_precursor;
 
 private:
-  void
-  parse_parameters()
-  {
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(parameter_file, "", true, true);
-  }
-
   // performs some additional parameter checks
   void
   consistency_checks() const
