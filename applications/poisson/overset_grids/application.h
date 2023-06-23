@@ -25,6 +25,8 @@ namespace ExaDG
 {
 namespace Poisson
 {
+namespace OversetGrids
+{
 template<int dim, int n_components, typename Number>
 class Domain1 : public Domain<dim, n_components, Number>
 {
@@ -262,19 +264,19 @@ private:
 };
 
 template<int dim, int n_components, typename Number>
-class Application : public ApplicationOversetGridsBase<dim, n_components, Number>
+class Application : public ApplicationBase<dim, n_components, Number>
 {
 public:
   Application(std::string input_file, MPI_Comm const & comm)
-    : ApplicationOversetGridsBase<dim, n_components, Number>(input_file, comm)
+    : ApplicationBase<dim, n_components, Number>(input_file, comm)
   {
     this->domain1 = std::make_shared<Domain1<dim, n_components, Number>>(input_file, comm);
     this->domain2 = std::make_shared<Domain2<dim, n_components, Number>>(input_file, comm);
   }
 };
 
+} // namespace OversetGrids
 } // namespace Poisson
-
 } // namespace ExaDG
 
 #include <exadg/poisson/overset_grids/user_interface/implement_get_application.h>

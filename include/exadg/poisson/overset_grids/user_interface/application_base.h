@@ -32,6 +32,8 @@ namespace ExaDG
 {
 namespace Poisson
 {
+namespace OversetGrids
+{
 /**
  * This function determines which faces of the dst triangulation are inside the src-triangulation.
  * A face is considered inside, if all vertices of the face are inside. Then, the boundary ID is
@@ -256,10 +258,10 @@ private:
 };
 
 template<int dim, int n_components, typename Number>
-class ApplicationOversetGridsBase
+class ApplicationBase
 {
 public:
-  ApplicationOversetGridsBase(std::string parameter_file, MPI_Comm const & comm)
+  ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
     : mpi_comm(comm), parameter_file(parameter_file)
   {
   }
@@ -267,17 +269,23 @@ public:
   void
   add_parameters(dealii::ParameterHandler & prm)
   {
+    AssertThrow(domain1.get(), dealii::ExcMessage("Domain 1 is uninitialized."));
+    AssertThrow(domain2.get(), dealii::ExcMessage("Domain 2 is uninitialized."));
+
     domain1->add_parameters(prm, {"Domain1"});
     domain2->add_parameters(prm, {"Domain1"});
   }
 
-  virtual ~ApplicationOversetGridsBase()
+  virtual ~ApplicationBase()
   {
   }
 
   void
   setup()
   {
+    AssertThrow(domain1.get(), dealii::ExcMessage("Domain 1 is uninitialized."));
+    AssertThrow(domain2.get(), dealii::ExcMessage("Domain 2 is uninitialized."));
+
     domain1->setup_pre({"Domain1"});
     domain2->setup_pre({"Domain2"});
 
@@ -316,8 +324,8 @@ private:
   std::string parameter_file;
 };
 
+} // namespace OversetGrids
 } // namespace Poisson
-
 } // namespace ExaDG
 
 #endif /* INCLUDE_EXADG_POISSON_OVERSET_GRIDS_USER_INTERFACE_APPLICATION_BASE_H_ */

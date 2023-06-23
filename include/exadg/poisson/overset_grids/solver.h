@@ -48,7 +48,7 @@ create_input_file(std::string const & input_file)
   // for the automatic generation of a default input file
   unsigned int const Dim = 2;
   typedef double     Number;
-  Poisson::get_application_overset_grids<Dim, 1, Number>(input_file, MPI_COMM_WORLD)
+  Poisson::OversetGrids::get_application_overset_grids<Dim, 1, Number>(input_file, MPI_COMM_WORLD)
     ->add_parameters(prm);
 
   prm.print_parameters(input_file,
@@ -60,11 +60,13 @@ template<int dim, int n_components, typename Number>
 void
 run(std::string const & input_file, MPI_Comm const & mpi_comm)
 {
-  std::shared_ptr<Poisson::ApplicationOversetGridsBase<dim, n_components, Number>> application =
-    Poisson::get_application_overset_grids<dim, n_components, Number>(input_file, mpi_comm);
+  std::shared_ptr<Poisson::OversetGrids::ApplicationBase<dim, n_components, Number>> application =
+    Poisson::OversetGrids::get_application_overset_grids<dim, n_components, Number>(input_file,
+                                                                                    mpi_comm);
 
-  std::shared_ptr<Poisson::DriverOversetGrids<dim, n_components, Number>> driver =
-    std::make_shared<Poisson::DriverOversetGrids<dim, n_components, Number>>(mpi_comm, application);
+  std::shared_ptr<Poisson::OversetGrids::Driver<dim, n_components, Number>> driver =
+    std::make_shared<Poisson::OversetGrids::Driver<dim, n_components, Number>>(mpi_comm,
+                                                                               application);
 
   driver->setup();
 

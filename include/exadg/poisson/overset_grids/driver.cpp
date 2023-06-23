@@ -29,10 +29,12 @@ namespace ExaDG
 {
 namespace Poisson
 {
+namespace OversetGrids
+{
 template<int dim, int n_components, typename Number>
-DriverOversetGrids<dim, n_components, Number>::DriverOversetGrids(
-  MPI_Comm const &                                                        comm,
-  std::shared_ptr<ApplicationOversetGridsBase<dim, n_components, Number>> app)
+Driver<dim, n_components, Number>::Driver(
+  MPI_Comm const &                                            comm,
+  std::shared_ptr<ApplicationBase<dim, n_components, Number>> app)
   : mpi_comm(comm),
     pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     application(app)
@@ -45,7 +47,7 @@ DriverOversetGrids<dim, n_components, Number>::DriverOversetGrids(
 
 template<int dim, int n_components, typename Number>
 void
-DriverOversetGrids<dim, n_components, Number>::setup()
+Driver<dim, n_components, Number>::setup()
 {
   pcout << std::endl << "Setting up Poisson solver for overset grids:" << std::endl;
 
@@ -88,7 +90,7 @@ DriverOversetGrids<dim, n_components, Number>::setup()
 
 template<int dim, int n_components, typename Number>
 void
-DriverOversetGrids<dim, n_components, Number>::solve()
+Driver<dim, n_components, Number>::solve()
 {
   // initialization of vectors
   dealii::LinearAlgebra::distributed::Vector<Number> rhs_1, rhs_2;
@@ -135,15 +137,16 @@ DriverOversetGrids<dim, n_components, Number>::solve()
   }
 }
 
-template class DriverOversetGrids<2, 1, float>;
-template class DriverOversetGrids<3, 1, float>;
-template class DriverOversetGrids<2, 2, float>;
-template class DriverOversetGrids<3, 3, float>;
+template class Driver<2, 1, float>;
+template class Driver<3, 1, float>;
+template class Driver<2, 2, float>;
+template class Driver<3, 3, float>;
 
-template class DriverOversetGrids<2, 1, double>;
-template class DriverOversetGrids<3, 1, double>;
-template class DriverOversetGrids<2, 2, double>;
-template class DriverOversetGrids<3, 3, double>;
+template class Driver<2, 1, double>;
+template class Driver<3, 1, double>;
+template class Driver<2, 2, double>;
+template class Driver<3, 3, double>;
 
+} // namespace OversetGrids
 } // namespace Poisson
 } // namespace ExaDG
