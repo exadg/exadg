@@ -45,6 +45,10 @@ public:
   {
     Parameters & p = this->param;
 
+    // set resolution parameters
+    p.grid.n_refine_global = this->resolution.refine_space;
+    p.degree               = this->resolution.degree;
+
     // MATHEMATICAL MODEL
     p.right_hand_side = true;
 
@@ -164,6 +168,10 @@ private:
   set_parameters() final
   {
     Parameters & p = this->param;
+
+    // set resolution parameters
+    p.grid.n_refine_global = this->resolution.refine_space;
+    p.degree               = this->resolution.degree;
 
     // MATHEMATICAL MODEL
     p.right_hand_side = true;
