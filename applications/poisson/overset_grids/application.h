@@ -26,7 +26,7 @@ namespace ExaDG
 namespace Poisson
 {
 template<int dim, int n_components, typename Number>
-class Domain1 : public ApplicationBase<dim, n_components, Number>
+class Domain1 : public Domain<dim, n_components, Number>
 {
 private:
   static unsigned int const rank =
@@ -34,7 +34,7 @@ private:
 
 public:
   Domain1(std::string input_file, MPI_Comm const & comm)
-    : ApplicationBase<dim, n_components, Number>(input_file, comm)
+    : Domain<dim, n_components, Number>(input_file, comm)
   {
   }
 
@@ -145,7 +145,7 @@ public:
 
 
 template<int dim, int n_components, typename Number>
-class Domain2 : public ApplicationBase<dim, n_components, Number>
+class Domain2 : public Domain<dim, n_components, Number>
 {
 private:
   static unsigned int const rank =
@@ -153,7 +153,7 @@ private:
 
 public:
   Domain2(std::string input_file, MPI_Comm const & comm)
-    : ApplicationBase<dim, n_components, Number>(input_file, comm)
+    : Domain<dim, n_components, Number>(input_file, comm)
   {
   }
 
