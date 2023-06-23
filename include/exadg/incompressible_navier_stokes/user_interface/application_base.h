@@ -30,7 +30,6 @@
 #include <deal.II/grid/manifold_lib.h>
 
 // ExaDG
-#include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/grid/grid.h>
 #include <exadg/grid/grid_utilities.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
@@ -45,9 +44,6 @@
 
 namespace ExaDG
 {
-template<int>
-class Mesh;
-
 namespace IncNS
 {
 template<int dim, typename Number>
