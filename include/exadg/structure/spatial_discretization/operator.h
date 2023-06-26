@@ -379,6 +379,21 @@ private:
   std::shared_ptr<dealii::FiniteElement<dim>> fe;
   dealii::DoFHandler<dim>                     dof_handler;
   dealii::AffineConstraints<Number>           affine_constraints;
+
+  // For nonlinear problems, we need a separate AffineConstraints object containing only periodicity
+  // and hanging node constraints. The background is the imposition of inhomogeneous Dirichlet
+  // boundary conditions for nonlinear problems with nonlinear residual evaluation using
+  // dealii::MatrixFree/FEEvaluation. When using the standard AffineConstraints object including
+  // Dirichlet boundary conditions, inhomogeneous boundary data would be ignored by
+  // dealii::FEEvaluation::read_dof_values(). While dealii::FEEvaluation::read_dof_values_plain()
+  // would take into account inhomogeneous Dirichlet data using the standard AffineConstraints
+  // object, hanging-node constraints would not be resolved correctly. The solution/workaround is to
+  // use dealii::FEEvaluation::read_dof_values() for a correct handling of hanging nodes, but to
+  // exclude Dirichlet degrees of freedom from the AffineConstraints object so that it is possible
+  // to read inhomogeneous boundary data (to be set correctly in separate routines) when calling
+  // dealii::FEEvaluation::read_dof_values().
+  dealii::AffineConstraints<Number> affine_constraints_periodicity_and_hanging_nodes;
+
   // constraints for mass operator (we use a separate AffineConstraints object, because we do not
   // apply constraints from Dirichlet boundary conditions here)
   dealii::AffineConstraints<Number> constraints_mass;

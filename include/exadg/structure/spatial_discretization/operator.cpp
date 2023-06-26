@@ -134,15 +134,26 @@ Operator<dim, Number>::distribute_dofs()
 
   // affine constraints
   affine_constraints.clear();
+  if(param.large_deformation)
+    affine_constraints_periodicity_and_hanging_nodes.clear();
 
   dealii::IndexSet locally_relevant_dofs;
   dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
   affine_constraints.reinit(locally_relevant_dofs);
+  if(param.large_deformation)
+    affine_constraints_periodicity_and_hanging_nodes.reinit(locally_relevant_dofs);
 
   // hanging nodes (needs to be done before imposing periodicity constraints and boundary
   // conditions)
   if(this->grid->triangulation->has_hanging_nodes())
+  {
     dealii::DoFTools::make_hanging_node_constraints(dof_handler, affine_constraints);
+    if(param.large_deformation)
+    {
+      dealii::DoFTools::make_hanging_node_constraints(
+        dof_handler, affine_constraints_periodicity_and_hanging_nodes);
+    }
+  }
 
   // constraints from periodic boundary conditions
   if(not(this->grid->periodic_face_pairs.empty()))
@@ -152,6 +163,12 @@ Operator<dim, Number>::distribute_dofs()
 
     dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(periodic_faces_dof,
                                                                      affine_constraints);
+
+    if(param.large_deformation)
+    {
+      dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(
+        periodic_faces_dof, affine_constraints_periodicity_and_hanging_nodes);
+    }
   }
 
   // standard Dirichlet boundaries
@@ -176,7 +193,12 @@ Operator<dim, Number>::distribute_dofs()
     dealii::DoFTools::make_zero_boundary_constraints(dof_handler, it, affine_constraints, mask);
   }
 
+  // We explicitly do not include Dirichlet boundary conditions from
+  // affine_constraints_periodicity_and_hanging_nodes.
+
   affine_constraints.close();
+  if(param.large_deformation)
+    affine_constraints_periodicity_and_hanging_nodes.close();
 
   // affine constraints for mass operator
   if(param.problem_type == ProblemType::Unsteady)
