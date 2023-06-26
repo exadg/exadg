@@ -37,7 +37,7 @@ NonLinearOperator<dim, Number>::initialize(
   Base::initialize(matrix_free, affine_constraints, data);
 
   integrator_lin = std::make_shared<IntegratorCell>(*this->matrix_free);
-  this->matrix_free->initialize_dof_vector(displacement_lin, data.dof_index_nonlinear_residual);
+  this->matrix_free->initialize_dof_vector(displacement_lin, data.dof_index_inhomogeneous);
   displacement_lin.update_ghost_values();
 }
 
@@ -69,10 +69,11 @@ NonLinearOperator<dim, Number>::valid_deformation(VectorType const & displacemen
 
   // sum over all MPI processes
   Number valid = 0.0;
-  valid        = dealii::Utilities::MPI::sum(
-    dst,
-    this->matrix_free->get_dof_handler(this->operator_data.dof_index_nonlinear_residual)
-      .get_communicator());
+  valid =
+    dealii::Utilities::MPI::sum(dst,
+                                this->matrix_free
+                                  ->get_dof_handler(this->operator_data.dof_index_inhomogeneous)
+                                  .get_communicator());
 
   return (valid == 0.0);
 }
@@ -125,7 +126,7 @@ NonLinearOperator<dim, Number>::cell_loop_nonlinear(
   Range const &                           range) const
 {
   IntegratorCell integrator(matrix_free,
-                            this->operator_data.dof_index_nonlinear_residual,
+                            this->operator_data.dof_index_inhomogeneous,
                             this->operator_data.quad_index);
 
   auto const unsteady_flag = this->operator_data.unsteady ? dealii::EvaluationFlags::values :
@@ -154,7 +155,7 @@ NonLinearOperator<dim, Number>::cell_loop_valid_deformation(
   Range const &                           range) const
 {
   IntegratorCell integrator(matrix_free,
-                            this->operator_data.dof_index_nonlinear_residual,
+                            this->operator_data.dof_index_inhomogeneous,
                             this->operator_data.quad_index);
 
   for(auto cell = range.first; cell < range.second; ++cell)
@@ -208,7 +209,7 @@ NonLinearOperator<dim, Number>::boundary_face_loop_nonlinear(
 {
   IntegratorFace integrator_m(matrix_free,
                               true,
-                              this->operator_data.dof_index_nonlinear_residual,
+                              this->operator_data.dof_index_inhomogeneous,
                               this->operator_data.quad_index);
 
   // apply Neumann BCs

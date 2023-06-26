@@ -36,18 +36,12 @@ struct OperatorData : public OperatorBaseData
 {
   OperatorData()
     : OperatorBaseData(),
-      dof_index_nonlinear_residual(1),
       pull_back_traction(false),
       unsteady(false),
       density(1.0),
       quad_index_gauss_lobatto(0)
   {
   }
-
-  // In addition to the dof_index in OperatorBaseData, we need a separate dof index to evaluate the
-  // nonlinear residual, in order to be able to treat both inhomogeneous boundary data and hanging
-  // nodes.
-  unsigned int dof_index_nonlinear_residual;
 
   std::shared_ptr<BoundaryDescriptor<dim> const> bc;
   std::shared_ptr<MaterialDescriptor const>      material_descriptor;

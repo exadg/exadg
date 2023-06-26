@@ -394,7 +394,7 @@ Operator<dim, Number>::setup_operators()
   operator_data.quad_index = get_quad_index();
   if(param.large_deformation)
   {
-    operator_data.dof_index_nonlinear_residual =
+    operator_data.dof_index_inhomogeneous =
       get_dof_index_periodicity_and_hanging_node_constraints();
   }
   if(not(boundary_descriptor->dirichlet_cached_bc.empty()))

@@ -58,6 +58,7 @@ struct OperatorBaseData
 {
   OperatorBaseData()
     : dof_index(0),
+      dof_index_inhomogeneous(1),
       quad_index(0),
       operator_is_singular(false),
       use_cell_based_loops(false),
@@ -69,6 +70,12 @@ struct OperatorBaseData
   }
 
   unsigned int dof_index;
+
+  // In addition to the dof_index in OperatorBaseData, we need a separate dof index to evaluate
+  // inhomogeneous boundary data correctly. This dof index corresponds to an AffineConstraints
+  // object that only applies periodicity and hanging node constraints.
+  unsigned int dof_index_inhomogeneous;
+
   unsigned int quad_index;
 
   // Solution of linear systems of equations and preconditioning
