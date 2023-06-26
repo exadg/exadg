@@ -337,14 +337,14 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
     matrix_free->initialize_dof_vector(temp1, data.dof_index);
     set_inhomogeneous_boundary_values(temp1, time);
 
-    // Perform matrix-vector product using read_dof_values_plain() with temp1 as src-vector to
-    // obtain the inhomogeneous action of the operator. Subsequently, we shift the resulting vector
-    // to the right-hand side. Note that constrained degrees of freedom in the dst-vector will not
-    // be touched and remain zero. Hence, the constrained degrees of freedom in the rhs-vector will
-    // not be changed.
+    // Perform matrix-vector product using temp1 (which contains inhomogeneous Dirichlet values) as
+    // src-vector to obtain the inhomogeneous action of the operator. Subsequently, we shift the
+    // resulting vector to the right-hand side. Note that constrained degrees of freedom in the
+    // dst-vector will not be touched and remain zero. Hence, the constrained degrees of freedom
+    // in the rhs-vector will not be changed.
     VectorType temp2;
     matrix_free->initialize_dof_vector(temp2, data.dof_index);
-    matrix_free->cell_loop(&This::cell_loop_dbc, this, temp2, temp1);
+    matrix_free->cell_loop(&This::cell_loop_inhom_operator, this, temp2, temp1);
     rhs -= temp2;
   }
 }
@@ -1026,7 +1026,7 @@ OperatorBase<dim, Number, n_components>::create_standard_basis(unsigned int     
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::cell_loop_dbc(
+OperatorBase<dim, Number, n_components>::cell_loop_inhom_operator(
   dealii::MatrixFree<dim, Number> const & matrix_free,
   VectorType &                            dst,
   VectorType const &                      src,
@@ -1035,11 +1035,10 @@ OperatorBase<dim, Number, n_components>::cell_loop_dbc(
   IntegratorCell integrator =
     IntegratorCell(matrix_free, this->data.dof_index, this->data.quad_index);
 
-
   for(auto cell = range.first; cell < range.second; ++cell)
   {
     this->reinit_cell(integrator, cell);
-
+    // TODO
     integrator.read_dof_values_plain(src);
 
     integrator.evaluate(integrator_flags.cell_evaluate);

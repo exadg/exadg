@@ -420,13 +420,14 @@ private:
                         IntegratorFace & integrator_2) const;
 
   /*
-   * This function applies Dirichlet BCs for continuous Galerkin discretizations.
+   * This function calculates the inhomogeneous part of Dirichlet BCs for continuous Galerkin
+   * discretizations.
    */
   void
-  cell_loop_dbc(dealii::MatrixFree<dim, Number> const & matrix_free,
-                VectorType &                            dst,
-                VectorType const &                      src,
-                Range const &                           range) const;
+  cell_loop_inhom_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                           VectorType &                            dst,
+                           VectorType const &                      src,
+                           Range const &                           range) const;
 
   /*
    * This function loops over all cells and calculates cell integrals.
