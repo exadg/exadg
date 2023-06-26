@@ -115,10 +115,7 @@ LaplaceOperator<dim, Number, n_components>::reinit_face_cell_based(
 {
   Base::reinit_face_cell_based(integrator_m, integrator_p, cell, face, boundary_id);
 
-  kernel.reinit_face_cell_based(boundary_id,
-                                *this->integrator_m,
-                                *this->integrator_p,
-                                operator_data.dof_index);
+  kernel.reinit_face_cell_based(boundary_id, integrator_m, integrator_p, operator_data.dof_index);
 }
 
 template<int dim, typename Number, int n_components>

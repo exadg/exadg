@@ -180,9 +180,7 @@ CombinedOperator<dim, Number>::reinit_face(IntegratorFace &   integrator_m,
   if(operator_data.convective_problem)
     convective_kernel->reinit_face(face);
   if(operator_data.diffusive_problem)
-    diffusive_kernel->reinit_face(*this->integrator_m,
-                                  *this->integrator_p,
-                                  operator_data.dof_index);
+    diffusive_kernel->reinit_face(integrator_m, integrator_p, operator_data.dof_index);
 }
 
 template<int dim, typename Number>
@@ -195,7 +193,7 @@ CombinedOperator<dim, Number>::reinit_boundary_face(IntegratorFace &   integrato
   if(operator_data.convective_problem)
     convective_kernel->reinit_boundary_face(face);
   if(operator_data.diffusive_problem)
-    diffusive_kernel->reinit_boundary_face(*this->integrator_m, operator_data.dof_index);
+    diffusive_kernel->reinit_boundary_face(integrator_m, operator_data.dof_index);
 }
 
 template<int dim, typename Number>
