@@ -22,6 +22,11 @@
 #ifndef INCLUDE_EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_USER_INTERFACE_APPLICATION_BASE_H_
 #define INCLUDE_EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_USER_INTERFACE_APPLICATION_BASE_H_
 
+// deal.II
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/manifold_lib.h>
+#include <deal.II/grid/tria_description.h>
+
 // ExaDG
 #include <exadg/grid/grid.h>
 #include <exadg/grid/grid_utilities.h>
