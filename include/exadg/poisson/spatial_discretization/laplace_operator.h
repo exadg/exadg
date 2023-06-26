@@ -276,13 +276,17 @@ public:
 
 private:
   void
-  reinit_face(unsigned int const face) const final;
+  reinit_face(IntegratorFace &   integrator_m,
+              IntegratorFace &   integrator_p,
+              unsigned int const face) const final;
 
   void
-  reinit_boundary_face(unsigned int const face) const final;
+  reinit_boundary_face(IntegratorFace & integrator_m, unsigned int const face) const final;
 
   void
-  reinit_face_cell_based(unsigned int const               cell,
+  reinit_face_cell_based(IntegratorFace &                 integrator_m,
+                         IntegratorFace &                 integrator_p,
+                         unsigned int const               cell,
                          unsigned int const               face,
                          dealii::types::boundary_id const boundary_id) const final;
 

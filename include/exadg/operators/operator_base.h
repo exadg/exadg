@@ -301,13 +301,15 @@ protected:
    * operator-specific and define how the operator looks like.
    */
   virtual void
-  reinit_cell(unsigned int const cell) const;
+  reinit_cell(IntegratorCell & integrator, unsigned int const cell) const;
 
   virtual void
-  reinit_face(unsigned int const face) const;
+  reinit_face(IntegratorFace &   integrator_m,
+              IntegratorFace &   integrator_p,
+              unsigned int const face) const;
 
   virtual void
-  reinit_boundary_face(unsigned int const face) const;
+  reinit_boundary_face(IntegratorFace & integrator_m, unsigned int const face) const;
 
   // standard integration procedure with separate loops for cell and face integrals
   virtual void
@@ -335,7 +337,9 @@ protected:
 
   // cell-based computation of both cell and face integrals
   virtual void
-  reinit_face_cell_based(unsigned int const               cell,
+  reinit_face_cell_based(IntegratorFace &                 integrator_m,
+                         IntegratorFace &                 integrator_p,
+                         unsigned int const               cell,
                          unsigned int const               face,
                          dealii::types::boundary_id const boundary_id) const;
 

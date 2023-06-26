@@ -448,7 +448,7 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
         [&](auto & integrator) -> void {
           // TODO this line is currently needed as bugfix, but should be
           // removed because reinit is now done twice
-          this->reinit_cell(integrator.get_current_cell_index());
+          this->reinit_cell(integrator, integrator.get_current_cell_index());
 
           integrator.evaluate(integrator_flags.cell_evaluate);
 
@@ -637,7 +637,7 @@ OperatorBase<dim, Number, n_components>::apply_add_block_diagonal_elementwise(
 
   AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
 
-  this->reinit_cell(cell);
+  this->reinit_cell(*integrator, cell);
 
   for(unsigned int i = 0; i < integrator->dofs_per_cell; ++i)
     integrator->begin_dof_values()[i] = src[i];
@@ -660,7 +660,7 @@ OperatorBase<dim, Number, n_components>::apply_add_block_diagonal_elementwise(
       auto bids = (*matrix_free).get_faces_by_cells_boundary_id(cell, face);
       auto bid  = bids[0];
 
-      this->reinit_face_cell_based(cell, face, bid);
+      this->reinit_face_cell_based(*integrator_m, *integrator_p, cell, face, bid);
 
       for(unsigned int i = 0; i < integrator_m->dofs_per_cell; ++i)
         integrator_m->begin_dof_values()[i] = src[i];
@@ -846,24 +846,28 @@ OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix(
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::reinit_cell(unsigned int const cell) const
+OperatorBase<dim, Number, n_components>::reinit_cell(IntegratorCell &   integrator,
+                                                     unsigned int const cell) const
 {
-  integrator->reinit(cell);
+  integrator.reinit(cell);
 }
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::reinit_face(unsigned int const face) const
+OperatorBase<dim, Number, n_components>::reinit_face(IntegratorFace &   integrator_m,
+                                                     IntegratorFace &   integrator_p,
+                                                     unsigned int const face) const
 {
-  integrator_m->reinit(face);
-  integrator_p->reinit(face);
+  integrator_m.reinit(face);
+  integrator_p.reinit(face);
 }
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::reinit_boundary_face(unsigned int const face) const
+OperatorBase<dim, Number, n_components>::reinit_boundary_face(IntegratorFace &   integrator_m,
+                                                              unsigned int const face) const
 {
-  integrator_m->reinit(face);
+  integrator_m.reinit(face);
 }
 
 template<int dim, typename Number, int n_components>
@@ -958,15 +962,17 @@ OperatorBase<dim, Number, n_components>::do_face_ext_integral(IntegratorFace & i
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::reinit_face_cell_based(
+  IntegratorFace &                 integrator_m,
+  IntegratorFace &                 integrator_p,
   unsigned int const               cell,
   unsigned int const               face,
   dealii::types::boundary_id const boundary_id) const
 {
-  integrator_m->reinit(cell, face);
+  integrator_m.reinit(cell, face);
 
   if(boundary_id == dealii::numbers::internal_face_boundary_id) // internal face
   {
-    integrator_p->reinit(cell, face);
+    integrator_p.reinit(cell, face);
   }
 }
 
@@ -1030,7 +1036,7 @@ OperatorBase<dim, Number, n_components>::cell_loop_dbc(
 
   for(auto cell = range.first; cell < range.second; ++cell)
   {
-    this->reinit_cell(cell);
+    this->reinit_cell(*integrator, cell);
 
     integrator->read_dof_values_plain(src);
 
@@ -1054,7 +1060,7 @@ OperatorBase<dim, Number, n_components>::cell_loop(
 
   for(auto cell = range.first; cell < range.second; ++cell)
   {
-    this->reinit_cell(cell);
+    this->reinit_cell(*integrator, cell);
 
     integrator->gather_evaluate(src, integrator_flags.cell_evaluate);
 
@@ -1076,7 +1082,7 @@ OperatorBase<dim, Number, n_components>::face_loop(
 
   for(auto face = range.first; face < range.second; ++face)
   {
-    this->reinit_face(face);
+    this->reinit_face(*integrator_m, *integrator_p, face);
 
     integrator_m->gather_evaluate(src, integrator_flags.face_evaluate);
     integrator_p->gather_evaluate(src, integrator_flags.face_evaluate);
@@ -1098,7 +1104,7 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_hom_operator(
 {
   for(unsigned int face = range.first; face < range.second; face++)
   {
-    this->reinit_boundary_face(face);
+    this->reinit_boundary_face(*integrator_m, face);
 
     integrator_m->gather_evaluate(src, integrator_flags.face_evaluate);
 
@@ -1124,7 +1130,7 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_inhom_operator(
   {
     for(unsigned int face = range.first; face < range.second; face++)
     {
-      this->reinit_boundary_face(face);
+      this->reinit_boundary_face(*integrator_m, face);
 
       // note: no gathering/evaluation is necessary when calculating the
       //       inhomogeneous part of boundary face integrals
@@ -1140,7 +1146,7 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_inhom_operator(
   {
     for(unsigned int face = range.first; face < range.second; face++)
     {
-      this->reinit_boundary_face(face);
+      this->reinit_boundary_face(*integrator_m, face);
 
       // note: no gathering/evaluation is necessary when calculating the
       //       inhomogeneous part of boundary face integrals
@@ -1166,7 +1172,7 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_full_operator(
 
   for(unsigned int face = range.first; face < range.second; face++)
   {
-    this->reinit_boundary_face(face);
+    this->reinit_boundary_face(*integrator_m, face);
 
     integrator_m->gather_evaluate(src, integrator_flags.face_evaluate);
 
@@ -1225,7 +1231,7 @@ OperatorBase<dim, Number, n_components>::cell_loop_diagonal(
 
   for(auto cell = range.first; cell < range.second; ++cell)
   {
-    this->reinit_cell(cell);
+    this->reinit_cell(*integrator, cell);
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
@@ -1267,7 +1273,7 @@ OperatorBase<dim, Number, n_components>::face_loop_diagonal(
 
   for(auto face = range.first; face < range.second; ++face)
   {
-    this->reinit_face(face);
+    this->reinit_face(*integrator_m, *integrator_p, face);
 
     // interior face
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
@@ -1327,7 +1333,7 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_diagonal(
   {
     auto bid = matrix_free.get_boundary_id(face);
 
-    this->reinit_boundary_face(face);
+    this->reinit_boundary_face(*integrator_m, face);
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
@@ -1366,7 +1372,7 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
 
   for(auto cell = range.first; cell < range.second; ++cell)
   {
-    this->reinit_cell(cell);
+    this->reinit_cell(*integrator, cell);
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
@@ -1388,7 +1394,7 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
       auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
       auto bid  = bids[0];
 
-      this->reinit_face_cell_based(cell, face, bid);
+      this->reinit_face_cell_based(*integrator_m, *integrator_p, cell, face, bid);
 
 #ifdef DEBUG
       unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_cell_batch(cell);
@@ -1442,7 +1448,7 @@ OperatorBase<dim, Number, n_components>::cell_loop_apply_inverse_block_diagonal_
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
-    this->reinit_cell(cell);
+    this->reinit_cell(*integrator, cell);
 
     integrator->read_dof_values(src);
 
@@ -1477,7 +1483,7 @@ OperatorBase<dim, Number, n_components>::cell_loop_apply_block_diagonal_matrix_b
 
   for(unsigned int cell = range.first; cell < range.second; ++cell)
   {
-    this->reinit_cell(cell);
+    this->reinit_cell(*integrator, cell);
 
     integrator->read_dof_values(src);
 
@@ -1513,7 +1519,7 @@ OperatorBase<dim, Number, n_components>::cell_loop_block_diagonal(
   {
     unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_cell_batch(cell);
 
-    this->reinit_cell(cell);
+    this->reinit_cell(*integrator, cell);
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
@@ -1546,7 +1552,7 @@ OperatorBase<dim, Number, n_components>::face_loop_block_diagonal(
   {
     unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_face_batch(face);
 
-    this->reinit_face(face);
+    this->reinit_face(*integrator_m, *integrator_p, face);
 
     // interior face
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
@@ -1602,7 +1608,7 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_block_diagonal(
   {
     unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_face_batch(face);
 
-    this->reinit_boundary_face(face);
+    this->reinit_boundary_face(*integrator_m, face);
 
     auto bid = matrix_free.get_boundary_id(face);
 
@@ -1641,7 +1647,7 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_block_diagonal(
   {
     unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_cell_batch(cell);
 
-    this->reinit_cell(cell);
+    this->reinit_cell(*integrator, cell);
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
@@ -1665,7 +1671,7 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_block_diagonal(
       auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
       auto bid  = bids[0];
 
-      this->reinit_face_cell_based(cell, face, bid);
+      this->reinit_face_cell_based(*integrator_m, *integrator_p, cell, face, bid);
 
 #ifdef DEBUG
       for(unsigned int v = 0; v < n_filled_lanes; v++)
@@ -1723,7 +1729,7 @@ OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix(
     // set their size
     std::fill_n(matrices, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
 
-    this->reinit_cell(cell);
+    this->reinit_cell(*integrator, cell);
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
@@ -1805,7 +1811,7 @@ OperatorBase<dim, Number, n_components>::face_loop_calculate_system_matrix(
     // determine number of filled vector lanes
     unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_face_batch(face);
 
-    this->reinit_face(face);
+    this->reinit_face(*integrator_m, *integrator_p, face);
 
     // process minus trial function
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
@@ -1950,7 +1956,7 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_calculate_system_mat
     FullMatrix_ matrices[vectorization_length];
     std::fill_n(matrices, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
 
-    this->reinit_boundary_face(face);
+    this->reinit_boundary_face(*integrator_m, face);
 
     auto bid = matrix_free.get_boundary_id(face);
 

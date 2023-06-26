@@ -162,7 +162,7 @@ NonLinearOperator<dim, Number>::boundary_face_loop_nonlinear(
   // apply Neumann BCs
   for(unsigned int face = range.first; face < range.second; face++)
   {
-    this->reinit_boundary_face(face);
+    this->reinit_boundary_face(*this->integrator_m, face);
 
     // In case of a pull-back of the traction vector, we need to evaluate
     // the displacement gradient to obtain the surface area ratio da/dA.
@@ -244,9 +244,10 @@ NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
 
 template<int dim, typename Number>
 void
-NonLinearOperator<dim, Number>::reinit_cell(unsigned int const cell) const
+NonLinearOperator<dim, Number>::reinit_cell(IntegratorCell &   integrator,
+                                            unsigned int const cell) const
 {
-  Base::reinit_cell(cell);
+  Base::reinit_cell(integrator, cell);
 
   integrator_lin->reinit(cell);
 
