@@ -314,6 +314,9 @@ private:
   get_dof_name() const;
 
   std::string
+  get_dof_name_periodicity_and_hanging_node_constraints() const;
+
+  std::string
   get_dof_name_mass() const;
 
   std::string
@@ -321,6 +324,9 @@ private:
 
   std::string
   get_quad_gauss_lobatto_name() const;
+
+  unsigned int
+  get_dof_index_periodicity_and_hanging_node_constraints() const;
 
   unsigned int
   get_dof_index_mass() const;
@@ -398,8 +404,11 @@ private:
   // apply constraints from Dirichlet boundary conditions here)
   dealii::AffineConstraints<Number> constraints_mass;
 
-  std::string const dof_index                = "dof";
-  std::string const dof_index_mass           = "dof_mass";
+  std::string const dof_index = "dof";
+  std::string const dof_index_periodicity_and_handing_node_constraints =
+    "dof_periodicity_hanging_nodes";
+  std::string const dof_index_mass = "dof_mass";
+
   std::string const quad_index               = "quad";
   std::string const quad_index_gauss_lobatto = "quad_gauss_lobatto";
 

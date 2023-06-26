@@ -193,7 +193,7 @@ Operator<dim, Number>::distribute_dofs()
     dealii::DoFTools::make_zero_boundary_constraints(dof_handler, it, affine_constraints, mask);
   }
 
-  // We explicitly do not include Dirichlet boundary conditions from
+  // We explicitly do not add Dirichlet boundary conditions for
   // affine_constraints_periodicity_and_hanging_nodes.
 
   affine_constraints.close();
@@ -247,6 +247,13 @@ Operator<dim, Number>::get_dof_name() const
 
 template<int dim, typename Number>
 std::string
+Operator<dim, Number>::get_dof_name_periodicity_and_hanging_node_constraints() const
+{
+  return field + "_" + dof_index_periodicity_and_handing_node_constraints;
+}
+
+template<int dim, typename Number>
+std::string
 Operator<dim, Number>::get_dof_name_mass() const
 {
   return field + "_" + dof_index_mass;
@@ -271,6 +278,13 @@ unsigned int
 Operator<dim, Number>::get_dof_index() const
 {
   return matrix_free_data->get_dof_index(get_dof_name());
+}
+
+template<int dim, typename Number>
+unsigned int
+Operator<dim, Number>::get_dof_index_periodicity_and_hanging_node_constraints() const
+{
+  return matrix_free_data->get_dof_index(get_dof_name_periodicity_and_hanging_node_constraints());
 }
 
 template<int dim, typename Number>
@@ -324,6 +338,16 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
   matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
 
+  if(param.large_deformation)
+  {
+    // inhomogeneous Dirichlet boundary conditions: use additional AffineConstraints object, but the
+    // same DoFHandler
+    matrix_free_data.insert_dof_handler(&dof_handler,
+                                        get_dof_name_periodicity_and_hanging_node_constraints());
+    matrix_free_data.insert_constraint(&affine_constraints_periodicity_and_hanging_nodes,
+                                       get_dof_name_periodicity_and_hanging_node_constraints());
+  }
+
   if(param.problem_type == ProblemType::Unsteady)
   {
     matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name_mass());
@@ -332,12 +356,18 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
 
   // dealii::Quadrature
   if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+  {
     matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1), get_quad_name());
+  }
   else if(this->grid->triangulation->all_reference_cells_are_simplex())
+  {
     matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(param.degree + 1),
                                        get_quad_name());
+  }
   else
+  {
     AssertThrow(false, ExcNotImplemented());
+  }
 
   // Create a Gauss-Lobatto quadrature rule for DirichletCached boundary conditions.
   // These quadrature points coincide with the nodes of the discretization, so that
@@ -362,6 +392,11 @@ Operator<dim, Number>::setup_operators()
   // elasticity operator
   operator_data.dof_index  = get_dof_index();
   operator_data.quad_index = get_quad_index();
+  if(param.large_deformation)
+  {
+    operator_data.dof_index_nonlinear_residual =
+      get_dof_index_periodicity_and_hanging_node_constraints();
+  }
   if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
     AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
