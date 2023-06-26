@@ -81,6 +81,9 @@ private:
   reinit_cell_nonlinear(IntegratorCell & integrator, unsigned int const cell) const;
 
   void
+  reinit_boundary_face_nonlinear(IntegratorFace & integrator, unsigned int const face) const;
+
+  void
   cell_loop_nonlinear(dealii::MatrixFree<dim, Number> const & matrix_free,
                       VectorType &                            dst,
                       VectorType const &                      src,
@@ -97,6 +100,15 @@ private:
                                VectorType &                            dst,
                                VectorType const &                      src,
                                Range const &                           range) const;
+
+  /*
+   * A cell loop that checks whether the Jacobian determinant is positive for all q-points.
+   */
+  void
+  cell_loop_valid_deformation(dealii::MatrixFree<dim, Number> const & matrix_free,
+                              Number &                                dst,
+                              VectorType const &                      src,
+                              Range const &                           range) const;
 
   /*
    * Calculates the integral
@@ -176,13 +188,6 @@ private:
    */
   void
   do_cell_integral(IntegratorCell & integrator) const override;
-
-  void
-  cell_loop_valid_deformation(dealii::MatrixFree<dim, Number> const & matrix_free,
-                              Number &                                dst,
-                              VectorType const &                      src,
-                              Range const &                           range) const;
-
 
   mutable std::shared_ptr<IntegratorCell> integrator_lin;
   mutable VectorType                      displacement_lin;

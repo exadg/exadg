@@ -936,8 +936,7 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   residual_operator.update(rhs, factor, time);
   linearized_operator.update(factor, time);
 
-  // set inhomogeneous Dirichlet values (this is necessary since we use
-  // FEEvaluation::read_dof_values_plain() to evaluate the operator) TODO
+  // set inhomogeneous Dirichlet values in order to evaluate the nonlinear residual correctly
   elasticity_operator_nonlinear.set_inhomogeneous_boundary_values(sol, time);
 
   // call Newton solver
