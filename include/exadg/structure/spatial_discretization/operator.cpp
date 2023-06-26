@@ -880,8 +880,8 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   linearized_operator.update(factor, time);
 
   // set inhomogeneous Dirichlet values (this is necessary since we use
-  // FEEvaluation::read_dof_values_plain() to evaluate the operator)
-  elasticity_operator_nonlinear.set_constrained_values(sol, time);
+  // FEEvaluation::read_dof_values_plain() to evaluate the operator) TODO
+  elasticity_operator_nonlinear.set_inhomogeneous_boundary_values(sol, time);
 
   // call Newton solver
   Newton::UpdateData update;
@@ -898,8 +898,8 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   // (because the residual vector forming the rhs of the linearized problem is zero
   // for constrained degrees of freedom, the initial solution of the linearized
   // solver is also zero, and the linearized operator contains values of 1 on the
-  // diagonal for constrained degrees of freedom).
-  elasticity_operator_nonlinear.set_constrained_values(sol, time);
+  // diagonal for constrained degrees of freedom). TODO
+  elasticity_operator_nonlinear.set_inhomogeneous_boundary_values(sol, time);
 
   return iter;
 }
@@ -918,19 +918,18 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
 
   linear_solver->update_preconditioner(update_preconditioner);
 
-  // Set constrained degrees of freedom of rhs vector according to the prescribed
-  // Dirichlet boundary conditions.
-  VectorType & rhs_mutable = const_cast<VectorType &>(rhs);
-  elasticity_operator_linear.set_constrained_values(rhs_mutable, time);
+  // Set constrained degrees of freedom corresponding to Dirichlet boundary conditions.
+  VectorType rhs_modified = rhs;
+  elasticity_operator_linear.set_inhomogeneous_boundary_values(rhs_modified, time);
 
   // solve linear system of equations
-  unsigned int const iterations = linear_solver->solve(sol, rhs_mutable);
+  unsigned int const iterations = linear_solver->solve(sol, rhs_modified);
 
   // This step should actually be optional: The constrained degrees of freedom of the
   // rhs vector contain the Dirichlet boundary values and the linear operator contains
   // values of 1 on the diagonal. Hence, sol should already contain the correct
-  // Dirichlet boundary values for constrained degrees of freedom.
-  elasticity_operator_linear.set_constrained_values(sol, time);
+  // Dirichlet boundary values for constrained degrees of freedom. TODO
+  elasticity_operator_linear.set_inhomogeneous_boundary_values(sol, time);
 
   return iterations;
 }

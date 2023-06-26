@@ -272,7 +272,7 @@ public:
 
   // continuous FE: This function sets the constrained Dirichlet boundary values.
   void
-  set_constrained_values(VectorType & solution, double const time) const final;
+  set_inhomogeneous_boundary_values(VectorType & solution, double const time) const final;
 
 private:
   void

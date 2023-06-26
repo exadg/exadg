@@ -112,8 +112,8 @@ ElasticityOperatorBase<dim, Number>::get_scaling_factor_mass_operator() const
 
 template<int dim, typename Number>
 void
-ElasticityOperatorBase<dim, Number>::set_constrained_values(VectorType & dst,
-                                                            double const time) const
+ElasticityOperatorBase<dim, Number>::set_inhomogeneous_boundary_values(VectorType & dst,
+                                                                       double const time) const
 {
   // standard Dirichlet boundary conditions
   std::map<dealii::types::global_dof_index, double> boundary_values;

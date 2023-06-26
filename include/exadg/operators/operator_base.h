@@ -167,7 +167,7 @@ public:
   initialize_dof_vector(VectorType & vector) const;
 
   virtual void
-  set_constrained_values(VectorType & solution, double const time) const;
+  set_inhomogeneous_boundary_values(VectorType & solution, double const time) const;
 
   void
   set_constrained_values_to_zero(VectorType & vector) const;

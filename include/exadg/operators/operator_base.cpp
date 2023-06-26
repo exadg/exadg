@@ -331,11 +331,11 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
 
   if(not is_dg)
   {
-    // Set constrained degrees of freedom according to Dirichlet boundary conditions. The rest of
-    // the vector contains zeros.
+    // Set constrained degrees of freedom according to inhomogeneous Dirichlet boundary conditions.
+    //  The rest of the vector contains zeros.
     VectorType temp1;
     matrix_free->initialize_dof_vector(temp1, data.dof_index);
-    set_constrained_values(temp1, time);
+    set_inhomogeneous_boundary_values(temp1, time);
 
     // Perform matrix-vector product using read_dof_values_plain() with temp1 as src-vector to
     // obtain the inhomogeneous action of the operator. Subsequently, we shift the resulting vector
@@ -923,15 +923,16 @@ OperatorBase<dim, Number, n_components>::do_boundary_integral_continuous(
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::set_constrained_values(VectorType & solution,
-                                                                double const time) const
+OperatorBase<dim, Number, n_components>::set_inhomogeneous_boundary_values(VectorType & solution,
+                                                                           double const time) const
 {
   (void)solution;
   (void)time;
 
-  AssertThrow(false,
-              dealii::ExcMessage(
-                "OperatorBase::set_constrained_values() has to be overwritten by derived class!"));
+  AssertThrow(
+    false,
+    dealii::ExcMessage(
+      "OperatorBase::set_inhomogeneous_boundary_values() has to be overwritten by derived class!"));
 }
 
 template<int dim, typename Number, int n_components>

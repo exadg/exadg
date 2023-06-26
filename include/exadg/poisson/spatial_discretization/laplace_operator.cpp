@@ -394,8 +394,9 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
 
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::set_constrained_values(VectorType & dst,
-                                                                   double const time) const
+LaplaceOperator<dim, Number, n_components>::set_inhomogeneous_boundary_values(
+  VectorType & dst,
+  double const time) const
 {
   // standard Dirichlet boundary conditions
   std::map<dealii::types::global_dof_index, double> boundary_values;

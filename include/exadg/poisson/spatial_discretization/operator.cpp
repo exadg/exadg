@@ -509,26 +509,28 @@ Operator<dim, n_components, Number>::solve(VectorType &       sol,
     check_multigrid.check();
   }
 
-  // Set constrained degrees of freedom of rhs vector according to the prescribed
-  // Dirichlet boundary conditions.
-  VectorType & rhs_mutable = const_cast<VectorType &>(rhs);
+  unsigned int n_iterations = 0;
+
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
-    laplace_operator.set_constrained_values(rhs_mutable, time);
+    // Set constrained degrees of freedom corresponding to Dirichlet boundary conditions.
+    VectorType rhs_modified = rhs;
+    laplace_operator.set_inhomogeneous_boundary_values(rhs_modified, time);
+
+    n_iterations = iterative_solver->solve(sol, rhs_modified);
+
+    // This step should actually be optional: The constrained degrees of freedom of the
+    // rhs vector contain the Dirichlet boundary values and the linear operator contains
+    // values of 1 on the diagonal. Hence, sol should already contain the correct
+    // inhomogeneous Dirichlet boundary values. TODO
+    laplace_operator.set_inhomogeneous_boundary_values(sol, time);
   }
-
-  unsigned int iterations = iterative_solver->solve(sol, rhs_mutable);
-
-  // This step should actually be optional: The constrained degrees of freedom of the
-  // rhs vector contain the Dirichlet boundary values and the linear operator contains
-  // values of 1 on the diagonal. Hence, sol should already contain the correct
-  // Dirichlet boundary values for constrained degrees of freedom.
-  if(param.spatial_discretization == SpatialDiscretization::CG)
+  else
   {
-    laplace_operator.set_constrained_values(sol, time);
+    n_iterations = iterative_solver->solve(sol, rhs);
   }
 
-  return iterations;
+  return n_iterations;
 }
 
 template<int dim, int n_components, typename Number>
