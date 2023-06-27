@@ -134,25 +134,20 @@ Operator<dim, Number>::distribute_dofs()
 
   // affine constraints
   affine_constraints.clear();
-  if(param.large_deformation)
-    affine_constraints_periodicity_and_hanging_nodes.clear();
+  affine_constraints_periodicity_and_hanging_nodes.clear();
 
   dealii::IndexSet locally_relevant_dofs;
   dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
   affine_constraints.reinit(locally_relevant_dofs);
-  if(param.large_deformation)
-    affine_constraints_periodicity_and_hanging_nodes.reinit(locally_relevant_dofs);
+  affine_constraints_periodicity_and_hanging_nodes.reinit(locally_relevant_dofs);
 
   // hanging nodes (needs to be done before imposing periodicity constraints and boundary
   // conditions)
   if(this->grid->triangulation->has_hanging_nodes())
   {
     dealii::DoFTools::make_hanging_node_constraints(dof_handler, affine_constraints);
-    if(param.large_deformation)
-    {
-      dealii::DoFTools::make_hanging_node_constraints(
-        dof_handler, affine_constraints_periodicity_and_hanging_nodes);
-    }
+    dealii::DoFTools::make_hanging_node_constraints(
+      dof_handler, affine_constraints_periodicity_and_hanging_nodes);
   }
 
   // constraints from periodic boundary conditions
@@ -164,11 +159,8 @@ Operator<dim, Number>::distribute_dofs()
     dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(periodic_faces_dof,
                                                                      affine_constraints);
 
-    if(param.large_deformation)
-    {
-      dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(
-        periodic_faces_dof, affine_constraints_periodicity_and_hanging_nodes);
-    }
+    dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(
+      periodic_faces_dof, affine_constraints_periodicity_and_hanging_nodes);
   }
 
   // standard Dirichlet boundaries
@@ -197,8 +189,7 @@ Operator<dim, Number>::distribute_dofs()
   // affine_constraints_periodicity_and_hanging_nodes.
 
   affine_constraints.close();
-  if(param.large_deformation)
-    affine_constraints_periodicity_and_hanging_nodes.close();
+  affine_constraints_periodicity_and_hanging_nodes.close();
 
   // affine constraints for mass operator
   if(param.problem_type == ProblemType::Unsteady)
@@ -338,15 +329,12 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
   matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
 
-  if(param.large_deformation)
-  {
-    // inhomogeneous Dirichlet boundary conditions: use additional AffineConstraints object, but the
-    // same DoFHandler
-    matrix_free_data.insert_dof_handler(&dof_handler,
-                                        get_dof_name_periodicity_and_hanging_node_constraints());
-    matrix_free_data.insert_constraint(&affine_constraints_periodicity_and_hanging_nodes,
-                                       get_dof_name_periodicity_and_hanging_node_constraints());
-  }
+  // inhomogeneous Dirichlet boundary conditions: use additional AffineConstraints object, but the
+  // same DoFHandler
+  matrix_free_data.insert_dof_handler(&dof_handler,
+                                      get_dof_name_periodicity_and_hanging_node_constraints());
+  matrix_free_data.insert_constraint(&affine_constraints_periodicity_and_hanging_nodes,
+                                     get_dof_name_periodicity_and_hanging_node_constraints());
 
   if(param.problem_type == ProblemType::Unsteady)
   {
@@ -390,13 +378,9 @@ void
 Operator<dim, Number>::setup_operators()
 {
   // elasticity operator
-  operator_data.dof_index  = get_dof_index();
-  operator_data.quad_index = get_quad_index();
-  if(param.large_deformation)
-  {
-    operator_data.dof_index_inhomogeneous =
-      get_dof_index_periodicity_and_hanging_node_constraints();
-  }
+  operator_data.dof_index               = get_dof_index();
+  operator_data.quad_index              = get_quad_index();
+  operator_data.dof_index_inhomogeneous = get_dof_index_periodicity_and_hanging_node_constraints();
   if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
     AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
