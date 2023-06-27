@@ -427,14 +427,19 @@ private:
                         IntegratorFace & integrator_2) const;
 
   /*
-   * This function calculates the inhomogeneous part of Dirichlet BCs for continuous Galerkin
-   * discretizations.
+   * This function calculates cell integrals for the full (= homogeneous + inhomogeneous) part,
+   * where inhomogeneous part may occur for continuous Galerkin discretizations due to inhomogeneous
+   * Dirichlet BCs. A prerequisite to call this function is to set inhomogeneous Dirichlet degrees
+   * of freedom appropriate in the DoF-vector src. In case the DoF-vector src is zero apart from the
+   * inhomogeneous Dirichlet degrees of freedom, this function calculates only the inhomogeneous
+   * part of the operator, because the homogeneous operator is zero in this case. For DG
+   * discretizations, this function is equivalent to cell_loop().
    */
   void
-  cell_loop_inhom_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
-                           VectorType &                            dst,
-                           VectorType const &                      src,
-                           Range const &                           range) const;
+  cell_loop_full_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                          VectorType &                            dst,
+                          VectorType const &                      src,
+                          Range const &                           range) const;
 
   /*
    * This function loops over all cells and calculates cell integrals.

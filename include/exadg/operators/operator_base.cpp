@@ -348,7 +348,7 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
     matrix_free->initialize_dof_vector(temp2, data.dof_index);
     // TODO: temp2 might now contain non-zero values in Dirichlet degrees of freedom, which were
     // previously part of AffineConstraints but no longer if we use dof_index_inhomogeneous here!?
-    matrix_free->cell_loop(&This::cell_loop_inhom_operator, this, temp2, temp1);
+    matrix_free->cell_loop(&This::cell_loop_full_operator, this, temp2, temp1);
     rhs -= temp2;
   }
 }
@@ -366,6 +366,9 @@ void
 OperatorBase<dim, Number, n_components>::evaluate_add(VectorType &       dst,
                                                       VectorType const & src) const
 {
+  // TODO: since we now use dof_index_inhomogeneous in some routines (where Dirichlet degrees of
+  // freedom are no longer part of AffineConstraints, this function might write to degrees of
+  // freedom in the dst vector that have not been touched before.
   if(is_dg)
   {
     if(evaluate_face_integrals())
@@ -386,7 +389,7 @@ OperatorBase<dim, Number, n_components>::evaluate_add(VectorType &       dst,
   {
     if(evaluate_face_integrals())
     {
-      matrix_free->loop(&This::cell_loop,
+      matrix_free->loop(&This::cell_loop_full_operator,
                         &This::face_loop_empty,
                         &This::boundary_face_loop_inhom_operator,
                         this,
@@ -395,7 +398,7 @@ OperatorBase<dim, Number, n_components>::evaluate_add(VectorType &       dst,
     }
     else
     {
-      matrix_free->cell_loop(&This::cell_loop, this, dst, src);
+      matrix_free->cell_loop(&This::cell_loop_full_operator, this, dst, src);
     }
   }
 }
@@ -1030,12 +1033,15 @@ OperatorBase<dim, Number, n_components>::create_standard_basis(unsigned int     
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::cell_loop_inhom_operator(
+OperatorBase<dim, Number, n_components>::cell_loop_full_operator(
   dealii::MatrixFree<dim, Number> const & matrix_free,
   VectorType &                            dst,
   VectorType const &                      src,
   Range const &                           range) const
 {
+  AssertThrow(not is_dg,
+              dealii::ExcMessage("This function should not be called for is_dg = true."));
+
   IntegratorCell integrator =
     IntegratorCell(matrix_free, this->data.dof_index_inhomogeneous, this->data.quad_index);
 
