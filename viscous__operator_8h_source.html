@@ -639,43 +639,47 @@ $(function() {
 <div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span> </div>
 <div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span><span class="keyword">private</span>:</div>
 <div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00574" name="l00574"></a><span class="lineno">  574</span>  reinit_face(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span> </div>
-<div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00577" name="l00577"></a><span class="lineno">  577</span>  reinit_boundary_face(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span> </div>
-<div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span>  reinit_face_cell_based(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>               cell,</div>
-<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span>                         <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>               face,</div>
-<div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span>                         dealii::types::boundary_id <span class="keyword">const</span> boundary_id) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span> </div>
-<div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span>  do_cell_integral(IntegratorCell &amp; integrator) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span> </div>
-<div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00588" name="l00588"></a><span class="lineno">  588</span>  do_face_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span> </div>
-<div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>  do_face_int_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span> </div>
-<div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>  do_face_ext_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span> </div>
-<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>  do_boundary_integral(IntegratorFace &amp;                   integrator,</div>
-<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>                       OperatorType <span class="keyword">const</span> &amp;               operator_type,</div>
-<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>                       dealii::types::boundary_id <span class="keyword">const</span> &amp; boundary_id) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span> </div>
-<div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>  <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1ViscousOperatorData.html">ViscousOperatorData&lt;dim&gt;</a> operator_data;</div>
-<div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span> </div>
-<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>  std::shared_ptr&lt;Operators::ViscousKernel&lt;dim, Number&gt;&gt; kernel;</div>
-<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span>};</div>
-<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span> </div>
-<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>} <span class="comment">// namespace IncNS</span></div>
-<div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span> </div>
-<div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_VISCOUS_OPERATOR_H_ \</span></div>
-<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span><span class="comment">        */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00574" name="l00574"></a><span class="lineno">  574</span>  reinit_face(IntegratorFace &amp;   integrator_m,</div>
+<div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span>              IntegratorFace &amp;   integrator_p,</div>
+<div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span>              <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00577" name="l00577"></a><span class="lineno">  577</span> </div>
+<div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span>  reinit_boundary_face(IntegratorFace &amp; integrator_m, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span> </div>
+<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span>  reinit_face_cell_based(IntegratorFace &amp;                 integrator_m,</div>
+<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span>                         IntegratorFace &amp;                 integrator_p,</div>
+<div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span>                         <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>               cell,</div>
+<div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span>                         <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>               face,</div>
+<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>                         dealii::types::boundary_id <span class="keyword">const</span> boundary_id) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span> </div>
+<div class="line"><a id="l00588" name="l00588"></a><span class="lineno">  588</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span>  do_cell_integral(IntegratorCell &amp; integrator) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span> </div>
+<div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>  do_face_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span> </div>
+<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>  do_face_int_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span> </div>
+<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>  do_face_ext_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span> </div>
+<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>  do_boundary_integral(IntegratorFace &amp;                   integrator,</div>
+<div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>                       OperatorType <span class="keyword">const</span> &amp;               operator_type,</div>
+<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>                       dealii::types::boundary_id <span class="keyword">const</span> &amp; boundary_id) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span> </div>
+<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span>  <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1ViscousOperatorData.html">ViscousOperatorData&lt;dim&gt;</a> operator_data;</div>
+<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span> </div>
+<div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span>  std::shared_ptr&lt;Operators::ViscousKernel&lt;dim, Number&gt;&gt; kernel;</div>
+<div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span>};</div>
+<div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span> </div>
+<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span>} <span class="comment">// namespace IncNS</span></div>
+<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00612" name="l00612"></a><span class="lineno">  612</span> </div>
+<div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_VISCOUS_OPERATOR_H_ \</span></div>
+<div class="line"><a id="l00614" name="l00614"></a><span class="lineno">  614</span><span class="comment">        */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html">ExaDG::IncNS::Operators::ViscousKernel</a></div><div class="ttdef"><b>Definition</b> viscous_operator.h:49</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel_html_a068b47893755fa37fe567bf3c01c021a"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html#a068b47893755fa37fe567bf3c01c021a">ExaDG::IncNS::Operators::ViscousKernel::calculate_value_flux</a></div><div class="ttdeci">DEAL_II_ALWAYS_INLINE vector calculate_value_flux(vector const &amp;normal_gradient_m, vector const &amp;normal_gradient_p, vector const &amp;value_m, vector const &amp;value_p, vector const &amp;normal, scalar const &amp;viscosity) const</div><div class="ttdef"><b>Definition</b> viscous_operator.h:438</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel_html_a231e82673d1fd134748a4605aed289dd"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html#a231e82673d1fd134748a4605aed289dd">ExaDG::IncNS::Operators::ViscousKernel::calculate_gradient_flux</a></div><div class="ttdeci">DEAL_II_ALWAYS_INLINE tensor calculate_gradient_flux(vector const &amp;value_m, vector const &amp;value_p, vector const &amp;normal, scalar const &amp;viscosity) const</div><div class="ttdef"><b>Definition</b> viscous_operator.h:340</div></div>

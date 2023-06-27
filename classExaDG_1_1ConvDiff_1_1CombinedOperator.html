@@ -277,15 +277,15 @@ typedef <a class="el" href="classExaDG_1_1Elementwise_1_1IterativeSolver.html">E
 <tr class="memitem:adbe0f3e4ff841fb9c7c0f131c8bcf366 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;constraints, <a class="el" href="structExaDG_1_1OperatorBaseData.html">OperatorBaseData</a> const &amp;data)</td></tr>
 <tr class="separator:adbe0f3e4ff841fb9c7c0f131c8bcf366 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a867047907149125b4d0db918ebbbeb49 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_cell</b> (unsigned int const cell) const</td></tr>
-<tr class="separator:a867047907149125b4d0db918ebbbeb49 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acae30186c524bf49ad211ec94719d21c inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_face</b> (unsigned int const face) const</td></tr>
-<tr class="separator:acae30186c524bf49ad211ec94719d21c inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5790f7eabf434c0289bab3781da2f4dc inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_boundary_face</b> (unsigned int const face) const</td></tr>
-<tr class="separator:a5790f7eabf434c0289bab3781da2f4dc inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad0a8bcc14242e0c0e9b045dfa73a3bfa inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_cell</b> (IntegratorCell &amp;integrator, unsigned int const cell) const</td></tr>
+<tr class="separator:ad0a8bcc14242e0c0e9b045dfa73a3bfa inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa939228d34033e4d1b5cda3667f47338 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_face</b> (IntegratorFace &amp;integrator_m, IntegratorFace &amp;integrator_p, unsigned int const face) const</td></tr>
+<tr class="separator:aa939228d34033e4d1b5cda3667f47338 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae99306cdbbccbe8725c2772ee924180e inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_boundary_face</b> (IntegratorFace &amp;integrator_m, unsigned int const face) const</td></tr>
+<tr class="separator:ae99306cdbbccbe8725c2772ee924180e inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeb9c7fddbb9559cafd93b14c2246d8c0 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_cell_integral</b> (IntegratorCell &amp;integrator) const</td></tr>
 <tr class="separator:aeb9c7fddbb9559cafd93b14c2246d8c0 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -304,9 +304,9 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_face_int_i
 <tr class="memitem:a92345648c801b61455b3a50a98fb6c2d inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_face_ext_integral</b> (IntegratorFace &amp;integrator_m, IntegratorFace &amp;integrator_p) const</td></tr>
 <tr class="separator:a92345648c801b61455b3a50a98fb6c2d inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad32f8a76edc2c3a60992fd1ec8772616 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_face_cell_based</b> (unsigned int const cell, unsigned int const face, dealii::types::boundary_id const boundary_id) const</td></tr>
-<tr class="separator:ad32f8a76edc2c3a60992fd1ec8772616 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acbb297134ebfc66f1ff80d68a45765d0 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_face_cell_based</b> (IntegratorFace &amp;integrator_m, IntegratorFace &amp;integrator_p, unsigned int const cell, unsigned int const face, dealii::types::boundary_id const boundary_id) const</td></tr>
+<tr class="separator:acbb297134ebfc66f1ff80d68a45765d0 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0aec25f84ba0e1e365fc70b05f194ba2 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_face_int_integral_cell_based</b> (IntegratorFace &amp;integrator_m, IntegratorFace &amp;integrator_p) const</td></tr>
 <tr class="separator:a0aec25f84ba0e1e365fc70b05f194ba2 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>

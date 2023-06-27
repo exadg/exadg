@@ -265,6 +265,9 @@ Protected Types</h2></td></tr>
 <tr class="memitem:a637ed6446ec9e2bb06f910330ee2ea25"><td class="memItemLeft" align="right" valign="top"><a id="a637ed6446ec9e2bb06f910330ee2ea25" name="a637ed6446ec9e2bb06f910330ee2ea25"></a>
 typedef <a class="el" href="classExaDG_1_1OperatorBase.html">OperatorBase</a>&lt; dim, Number, dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Base</b></td></tr>
 <tr class="separator:a637ed6446ec9e2bb06f910330ee2ea25"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab78b05cba72e1a014ca2f4a7991f9c0a"><td class="memItemLeft" align="right" valign="top"><a id="ab78b05cba72e1a014ca2f4a7991f9c0a" name="ab78b05cba72e1a014ca2f4a7991f9c0a"></a>
+typedef Base::IntegratorCell&#160;</td><td class="memItemRight" valign="bottom"><b>IntegratorCell</b></td></tr>
+<tr class="separator:ab78b05cba72e1a014ca2f4a7991f9c0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adb0bda00459544223d6251bfa9e24126"><td class="memItemLeft" align="right" valign="top"><a id="adb0bda00459544223d6251bfa9e24126" name="adb0bda00459544223d6251bfa9e24126"></a>
 typedef Base::VectorType&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
 <tr class="separator:adb0bda00459544223d6251bfa9e24126"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -284,21 +287,22 @@ typedef <a class="el" href="classExaDG_1_1Elementwise_1_1IterativeSolver.html">E
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
-<tr class="memitem:a34e84b3fd0f9f4f5a8eeae7121351e02"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1ElasticityOperatorBase.html#a34e84b3fd0f9f4f5a8eeae7121351e02">reinit_cell</a> (unsigned int const cell) const override</td></tr>
-<tr class="separator:a34e84b3fd0f9f4f5a8eeae7121351e02"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a27a9476f152ec2b4a8e177ac2cd1c9f4"><td class="memItemLeft" align="right" valign="top"><a id="a27a9476f152ec2b4a8e177ac2cd1c9f4" name="a27a9476f152ec2b4a8e177ac2cd1c9f4"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_cell</b> (IntegratorCell &amp;integrator, unsigned int const cell) const override</td></tr>
+<tr class="separator:a27a9476f152ec2b4a8e177ac2cd1c9f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classExaDG_1_1OperatorBase"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classExaDG_1_1OperatorBase')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classExaDG_1_1OperatorBase.html">ExaDG::OperatorBase&lt; dim, Number, dim &gt;</a></td></tr>
 <tr class="memitem:adbe0f3e4ff841fb9c7c0f131c8bcf366 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;constraints, <a class="el" href="structExaDG_1_1OperatorBaseData.html">OperatorBaseData</a> const &amp;data)</td></tr>
 <tr class="separator:adbe0f3e4ff841fb9c7c0f131c8bcf366 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a867047907149125b4d0db918ebbbeb49 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_cell</b> (unsigned int const cell) const</td></tr>
-<tr class="separator:a867047907149125b4d0db918ebbbeb49 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acae30186c524bf49ad211ec94719d21c inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_face</b> (unsigned int const face) const</td></tr>
-<tr class="separator:acae30186c524bf49ad211ec94719d21c inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5790f7eabf434c0289bab3781da2f4dc inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_boundary_face</b> (unsigned int const face) const</td></tr>
-<tr class="separator:a5790f7eabf434c0289bab3781da2f4dc inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad0a8bcc14242e0c0e9b045dfa73a3bfa inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_cell</b> (IntegratorCell &amp;integrator, unsigned int const cell) const</td></tr>
+<tr class="separator:ad0a8bcc14242e0c0e9b045dfa73a3bfa inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa939228d34033e4d1b5cda3667f47338 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_face</b> (IntegratorFace &amp;integrator_m, IntegratorFace &amp;integrator_p, unsigned int const face) const</td></tr>
+<tr class="separator:aa939228d34033e4d1b5cda3667f47338 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae99306cdbbccbe8725c2772ee924180e inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_boundary_face</b> (IntegratorFace &amp;integrator_m, unsigned int const face) const</td></tr>
+<tr class="separator:ae99306cdbbccbe8725c2772ee924180e inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeb9c7fddbb9559cafd93b14c2246d8c0 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_cell_integral</b> (IntegratorCell &amp;integrator) const</td></tr>
 <tr class="separator:aeb9c7fddbb9559cafd93b14c2246d8c0 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -317,9 +321,9 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_face_int_i
 <tr class="memitem:a92345648c801b61455b3a50a98fb6c2d inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_face_ext_integral</b> (IntegratorFace &amp;integrator_m, IntegratorFace &amp;integrator_p) const</td></tr>
 <tr class="separator:a92345648c801b61455b3a50a98fb6c2d inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad32f8a76edc2c3a60992fd1ec8772616 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_face_cell_based</b> (unsigned int const cell, unsigned int const face, dealii::types::boundary_id const boundary_id) const</td></tr>
-<tr class="separator:ad32f8a76edc2c3a60992fd1ec8772616 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acbb297134ebfc66f1ff80d68a45765d0 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_face_cell_based</b> (IntegratorFace &amp;integrator_m, IntegratorFace &amp;integrator_p, unsigned int const cell, unsigned int const face, dealii::types::boundary_id const boundary_id) const</td></tr>
+<tr class="separator:acbb297134ebfc66f1ff80d68a45765d0 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0aec25f84ba0e1e365fc70b05f194ba2 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memItemLeft" align="right" valign="top">
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_face_int_integral_cell_based</b> (IntegratorFace &amp;integrator_m, IntegratorFace &amp;integrator_p) const</td></tr>
 <tr class="separator:a0aec25f84ba0e1e365fc70b05f194ba2 inherit pro_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -383,37 +387,6 @@ Additional Inherited Members</h2></td></tr>
 static unsigned int const&#160;</td><td class="memItemRight" valign="bottom"><b>vectorization_length</b></td></tr>
 <tr class="separator:a1b664752da1840caf220ee294211b9e6 inherit pub_static_attribs_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a34e84b3fd0f9f4f5a8eeae7121351e02" name="a34e84b3fd0f9f4f5a8eeae7121351e02"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a34e84b3fd0f9f4f5a8eeae7121351e02">&#9670;&#160;</a></span>reinit_cell()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Structure_1_1ElasticityOperatorBase.html">ExaDG::Structure::ElasticityOperatorBase</a>&lt; dim, Number &gt;::reinit_cell </td>
-          <td>(</td>
-          <td class="paramtype">unsigned int const&#160;</td>
-          <td class="paramname"><em>cell</em></td><td>)</td>
-          <td> const</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">protected</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Reimplemented from <a class="el" href="classExaDG_1_1OperatorBase.html">ExaDG::OperatorBase&lt; dim, Number, dim &gt;</a>.</p>
-
-</div>
-</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/exadg/structure/spatial_discretization/operators/<a class="el" href="elasticity__operator__base_8h_source.html">elasticity_operator_base.h</a></li>
 <li>include/exadg/structure/spatial_discretization/operators/elasticity_operator_base.cpp</li>
