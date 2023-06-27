@@ -111,14 +111,6 @@ NonLinearOperator<dim, Number>::reinit_cell_nonlinear(IntegratorCell &   integra
 
 template<int dim, typename Number>
 void
-NonLinearOperator<dim, Number>::reinit_boundary_face_nonlinear(IntegratorFace &   integrator,
-                                                               unsigned int const face) const
-{
-  integrator.reinit(face);
-}
-
-template<int dim, typename Number>
-void
 NonLinearOperator<dim, Number>::cell_loop_nonlinear(
   dealii::MatrixFree<dim, Number> const & matrix_free,
   VectorType &                            dst,

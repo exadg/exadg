@@ -1070,8 +1070,6 @@ OperatorBase<dim, Number, n_components>::cell_loop_full_operator(
 
     this->do_cell_integral(integrator);
 
-    // TODO: will this now write into "Dirichlet" degrees of freedom, which are not part of the
-    // constraints with dof_index_inhomogeneous anymore?
     integrator.integrate_scatter(integrator_flags.cell_integrate, dst);
   }
 }
@@ -2084,11 +2082,11 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_calculate_system_mat
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::set_constraint_diagonal(VectorType & diagonal) const
+OperatorBase<dim, Number, n_components>::set_constrained_dofs_to_one(VectorType & vector) const
 {
   // set (diagonal) entries to 1.0 for constrained dofs
   for(auto i : matrix_free->get_constrained_dofs(this->data.dof_index))
-    diagonal.local_element(i) = 1.0;
+    vector.local_element(i) = 1.0;
 }
 
 template<int dim, typename Number, int n_components>

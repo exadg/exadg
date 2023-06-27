@@ -617,10 +617,10 @@ private:
                                              Range const &                           range) const;
 
   /*
-   * This function sets entries in the diagonal corresponding to constraint DoFs to one.
+   * This function sets entries of the DoF-vector corresponding to constraint DoFs to one.
    */
   void
-  set_constraint_diagonal(VectorType & diagonal) const;
+  set_constrained_dofs_to_one(VectorType & vector) const;
 
   /*
    * Do we have to evaluate (boundary) face integrals for this operator? For example, operators

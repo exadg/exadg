@@ -81,9 +81,6 @@ private:
   reinit_cell_nonlinear(IntegratorCell & integrator, unsigned int const cell) const;
 
   void
-  reinit_boundary_face_nonlinear(IntegratorFace & integrator, unsigned int const face) const;
-
-  void
   cell_loop_nonlinear(dealii::MatrixFree<dim, Number> const & matrix_free,
                       VectorType &                            dst,
                       VectorType const &                      src,
