@@ -200,9 +200,10 @@ ElasticityOperatorBase<dim, Number>::set_constrained_values(VectorType & dst,
 
 template<int dim, typename Number>
 void
-ElasticityOperatorBase<dim, Number>::reinit_cell(unsigned int const cell) const
+ElasticityOperatorBase<dim, Number>::reinit_cell(IntegratorCell &   integrator,
+                                                 unsigned int const cell) const
 {
-  Base::reinit_cell(cell);
+  Base::reinit_cell(integrator, cell);
 
   this->material_handler.reinit(*this->matrix_free, cell);
 }

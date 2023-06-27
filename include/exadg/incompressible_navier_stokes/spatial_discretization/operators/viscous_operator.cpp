@@ -38,35 +38,37 @@ ViscousOperator<dim, Number>::update()
 
 template<int dim, typename Number>
 void
-ViscousOperator<dim, Number>::reinit_face(unsigned int const face) const
+ViscousOperator<dim, Number>::reinit_face(IntegratorFace &   integrator_m,
+                                          IntegratorFace &   integrator_p,
+                                          unsigned int const face) const
 {
-  Base::reinit_face(face);
+  Base::reinit_face(integrator_m, integrator_p, face);
 
-  kernel->reinit_face(*this->integrator_m, *this->integrator_p, operator_data.dof_index);
+  kernel->reinit_face(integrator_m, integrator_p, operator_data.dof_index);
 }
 
 template<int dim, typename Number>
 void
-ViscousOperator<dim, Number>::reinit_boundary_face(unsigned int const face) const
+ViscousOperator<dim, Number>::reinit_boundary_face(IntegratorFace &   integrator_m,
+                                                   unsigned int const face) const
 {
-  Base::reinit_boundary_face(face);
+  Base::reinit_boundary_face(integrator_m, face);
 
-  kernel->reinit_boundary_face(*this->integrator_m, operator_data.dof_index);
+  kernel->reinit_boundary_face(integrator_m, operator_data.dof_index);
 }
 
 template<int dim, typename Number>
 void
 ViscousOperator<dim, Number>::reinit_face_cell_based(
+  IntegratorFace &                 integrator_m,
+  IntegratorFace &                 integrator_p,
   unsigned int const               cell,
   unsigned int const               face,
   dealii::types::boundary_id const boundary_id) const
 {
-  Base::reinit_face_cell_based(cell, face, boundary_id);
+  Base::reinit_face_cell_based(integrator_m, integrator_p, cell, face, boundary_id);
 
-  kernel->reinit_face_cell_based(boundary_id,
-                                 *this->integrator_m,
-                                 *this->integrator_p,
-                                 operator_data.dof_index);
+  kernel->reinit_face_cell_based(boundary_id, integrator_m, integrator_p, operator_data.dof_index);
 }
 
 template<int dim, typename Number>

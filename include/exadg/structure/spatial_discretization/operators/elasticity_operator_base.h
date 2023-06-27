@@ -70,6 +70,7 @@ public:
 
 protected:
   typedef OperatorBase<dim, Number, dim> Base;
+  typedef typename Base::IntegratorCell  IntegratorCell;
   typedef typename Base::VectorType      VectorType;
   typedef typename Base::IntegratorFace  IntegratorFace;
 
@@ -105,7 +106,7 @@ public:
 
 protected:
   void
-  reinit_cell(unsigned int const cell) const override;
+  reinit_cell(IntegratorCell & integrator, unsigned int const cell) const override;
 
   OperatorData<dim> operator_data;
 

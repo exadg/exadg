@@ -213,9 +213,10 @@ MomentumOperator<dim, Number>::evaluate_add(VectorType & dst, VectorType const &
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::reinit_cell(unsigned int const cell) const
+MomentumOperator<dim, Number>::reinit_cell(IntegratorCell &   integrator,
+                                           unsigned int const cell) const
 {
-  Base::reinit_cell(cell);
+  Base::reinit_cell(integrator, cell);
 
   if(operator_data.convective_problem)
     convective_kernel->reinit_cell(cell);
@@ -223,46 +224,51 @@ MomentumOperator<dim, Number>::reinit_cell(unsigned int const cell) const
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::reinit_face(unsigned int const face) const
+MomentumOperator<dim, Number>::reinit_face(IntegratorFace &   integrator_m,
+                                           IntegratorFace &   integrator_p,
+                                           unsigned int const face) const
 {
-  Base::reinit_face(face);
+  Base::reinit_face(integrator_m, integrator_p, face);
 
   if(operator_data.convective_problem)
     convective_kernel->reinit_face(face);
 
   if(operator_data.viscous_problem)
-    viscous_kernel->reinit_face(*this->integrator_m, *this->integrator_p, operator_data.dof_index);
+    viscous_kernel->reinit_face(integrator_m, integrator_p, operator_data.dof_index);
 }
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::reinit_boundary_face(unsigned int const face) const
+MomentumOperator<dim, Number>::reinit_boundary_face(IntegratorFace &   integrator_m,
+                                                    unsigned int const face) const
 {
-  Base::reinit_boundary_face(face);
+  Base::reinit_boundary_face(integrator_m, face);
 
   if(operator_data.convective_problem)
     convective_kernel->reinit_boundary_face(face);
 
   if(operator_data.viscous_problem)
-    viscous_kernel->reinit_boundary_face(*this->integrator_m, operator_data.dof_index);
+    viscous_kernel->reinit_boundary_face(integrator_m, operator_data.dof_index);
 }
 
 template<int dim, typename Number>
 void
 MomentumOperator<dim, Number>::reinit_face_cell_based(
+  IntegratorFace &                 integrator_m,
+  IntegratorFace &                 integrator_p,
   unsigned int const               cell,
   unsigned int const               face,
   dealii::types::boundary_id const boundary_id) const
 {
-  Base::reinit_face_cell_based(cell, face, boundary_id);
+  Base::reinit_face_cell_based(integrator_m, integrator_p, cell, face, boundary_id);
 
   if(operator_data.convective_problem)
     convective_kernel->reinit_face_cell_based(cell, face, boundary_id);
 
   if(operator_data.viscous_problem)
     viscous_kernel->reinit_face_cell_based(boundary_id,
-                                           *this->integrator_m,
-                                           *this->integrator_p,
+                                           integrator_m,
+                                           integrator_p,
                                            operator_data.dof_index);
 }
 

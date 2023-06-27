@@ -147,7 +147,7 @@ private:
    * Linearized operator.
    */
   void
-  reinit_cell(unsigned int const cell) const override;
+  reinit_cell(IntegratorCell & integrator, unsigned int const cell) const override;
 
   /*
    * Calculates the integral
