@@ -159,10 +159,15 @@ NonLinearOperator<dim, Number>::boundary_face_loop_nonlinear(
 {
   (void)src;
 
+  IntegratorFace integrator_m = IntegratorFace(*this->matrix_free,
+                                               true,
+                                               this->operator_data.dof_index,
+                                               this->operator_data.quad_index);
+
   // apply Neumann BCs
   for(unsigned int face = range.first; face < range.second; face++)
   {
-    this->reinit_boundary_face(*this->integrator_m, face);
+    this->reinit_boundary_face(integrator_m, face);
 
     // In case of a pull-back of the traction vector, we need to evaluate
     // the displacement gradient to obtain the surface area ratio da/dA.
@@ -170,13 +175,13 @@ NonLinearOperator<dim, Number>::boundary_face_loop_nonlinear(
     // depend on the parameter pull_back_traction.
     if(this->operator_data.pull_back_traction)
     {
-      this->integrator_m->read_dof_values_plain(src);
-      this->integrator_m->evaluate(dealii::EvaluationFlags::gradients);
+      integrator_m.read_dof_values_plain(src);
+      integrator_m.evaluate(dealii::EvaluationFlags::gradients);
     }
 
-    do_boundary_integral_continuous(*this->integrator_m, matrix_free.get_boundary_id(face));
+    do_boundary_integral_continuous(integrator_m, matrix_free.get_boundary_id(face));
 
-    this->integrator_m->integrate_scatter(this->integrator_flags.face_integrate, dst);
+    integrator_m.integrate_scatter(this->integrator_flags.face_integrate, dst);
   }
 }
 

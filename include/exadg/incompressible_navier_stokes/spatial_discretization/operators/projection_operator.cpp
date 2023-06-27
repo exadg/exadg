@@ -151,7 +151,7 @@ ProjectionOperator<dim, Number>::reinit_cell(IntegratorCell &   integrator,
   Base::reinit_cell(integrator, cell);
 
   if(operator_data.use_divergence_penalty)
-    div_kernel->reinit_cell(*this->integrator);
+    div_kernel->reinit_cell(integrator);
 }
 
 template<int dim, typename Number>
@@ -163,7 +163,7 @@ ProjectionOperator<dim, Number>::reinit_face(IntegratorFace &   integrator_m,
   Base::reinit_face(integrator_m, integrator_p, face);
 
   if(operator_data.use_continuity_penalty)
-    conti_kernel->reinit_face(*this->integrator_m, *this->integrator_p);
+    conti_kernel->reinit_face(integrator_m, integrator_p);
 }
 
 template<int dim, typename Number>
@@ -173,7 +173,7 @@ ProjectionOperator<dim, Number>::reinit_boundary_face(IntegratorFace &   integra
 {
   Base::reinit_boundary_face(integrator_m, face);
 
-  conti_kernel->reinit_boundary_face(*this->integrator_m);
+  conti_kernel->reinit_boundary_face(integrator_m);
 }
 
 template<int dim, typename Number>
@@ -188,7 +188,7 @@ ProjectionOperator<dim, Number>::reinit_face_cell_based(
   Base::reinit_face_cell_based(integrator_m, integrator_p, cell, face, boundary_id);
 
   if(operator_data.use_continuity_penalty)
-    conti_kernel->reinit_face_cell_based(boundary_id, *this->integrator_m, *this->integrator_p);
+    conti_kernel->reinit_face_cell_based(boundary_id, integrator_m, integrator_p);
 }
 
 template<int dim, typename Number>

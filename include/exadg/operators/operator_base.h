@@ -386,10 +386,6 @@ protected:
    */
   bool is_dg;
 
-  std::shared_ptr<IntegratorCell> integrator;
-  std::shared_ptr<IntegratorFace> integrator_m;
-  std::shared_ptr<IntegratorFace> integrator_p;
-
   /*
    * Block Jacobi preconditioner/smoother: matrix-free version with elementwise iterative solver
    */
@@ -630,6 +626,13 @@ private:
    * level operator, this variable takes a value of dealii::numbers::invalid_unsigned_int.
    */
   unsigned int level;
+
+  /*
+   * Integration objects of type dealii::FEEvaluation for cell/face integrals.
+   */
+  std::shared_ptr<IntegratorCell> integrator;
+  std::shared_ptr<IntegratorFace> integrator_m;
+  std::shared_ptr<IntegratorFace> integrator_p;
 
   /*
    * Vector of matrices for block-diagonal preconditioners.
