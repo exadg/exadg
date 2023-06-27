@@ -334,6 +334,7 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
     // Set constrained degrees of freedom according to inhomogeneous Dirichlet boundary conditions.
     //  The rest of the vector contains zeros.
     VectorType temp1;
+    // TODO: which dof-index to choose here?
     matrix_free->initialize_dof_vector(temp1, data.dof_index);
     set_inhomogeneous_boundary_values(temp1, time);
 
@@ -343,7 +344,10 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
     // dst-vector will not be touched and remain zero. Hence, the constrained degrees of freedom
     // in the rhs-vector will not be changed.
     VectorType temp2;
+    // TODO: which dof-index to choose here?
     matrix_free->initialize_dof_vector(temp2, data.dof_index);
+    // TODO: temp2 might now contain non-zero values in Dirichlet degrees of freedom, which were
+    // previously part of AffineConstraints but no longer if we use dof_index_inhomogeneous here!?
     matrix_free->cell_loop(&This::cell_loop_inhom_operator, this, temp2, temp1);
     rhs -= temp2;
   }
@@ -1033,18 +1037,18 @@ OperatorBase<dim, Number, n_components>::cell_loop_inhom_operator(
   Range const &                           range) const
 {
   IntegratorCell integrator =
-    IntegratorCell(matrix_free, this->data.dof_index, this->data.quad_index);
+    IntegratorCell(matrix_free, this->data.dof_index_inhomogeneous, this->data.quad_index);
 
   for(auto cell = range.first; cell < range.second; ++cell)
   {
     this->reinit_cell(integrator, cell);
-    // TODO
-    integrator.read_dof_values_plain(src);
 
-    integrator.evaluate(integrator_flags.cell_evaluate);
+    integrator.gather_evaluate(src, integrator_flags.cell_evaluate);
 
     this->do_cell_integral(integrator);
 
+    // TODO: will this now write into "Dirichlet" degrees of freedom, which are not part of the
+    // constraints with dof_index_inhomogeneous anymore?
     integrator.integrate_scatter(integrator_flags.cell_integrate, dst);
   }
 }
