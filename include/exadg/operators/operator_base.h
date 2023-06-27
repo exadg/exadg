@@ -177,7 +177,7 @@ public:
   set_inhomogeneous_boundary_values(VectorType & solution, double const time) const;
 
   void
-  set_constrained_values_to_zero(VectorType & vector) const;
+  set_constrained_dofs_to_zero(VectorType & vector) const;
 
   void
   calculate_inverse_diagonal(VectorType & diagonal) const;

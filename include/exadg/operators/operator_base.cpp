@@ -213,7 +213,7 @@ OperatorBase<dim, Number, n_components>::initialize_dof_vector(VectorType & vect
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::set_constrained_values_to_zero(VectorType & vector) const
+OperatorBase<dim, Number, n_components>::set_constrained_dofs_to_zero(VectorType & vector) const
 {
   for(unsigned int const constrained_index :
       matrix_free->get_constrained_dofs(this->data.dof_index))
@@ -344,7 +344,7 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
     src_tmp.reinit(rhs, false);
     dst_tmp.reinit(rhs, false);
 
-    // Since src_tmp = 0, the function evaluate_add only computes the inhomogeneous part of the
+    // Since src_tmp = 0, the function evaluate_add() only computes the inhomogeneous part of the
     // operator.
     this->evaluate_add(dst_tmp, src_tmp);
     // Minus sign since we compute the contribution to the right-hand side.
@@ -385,6 +385,7 @@ OperatorBase<dim, Number, n_components>::evaluate_add(VectorType &       dst,
   {
     // Set constrained degrees of freedom according to inhomogeneous Dirichlet boundary conditions.
     //  The rest of the vector remains unchanged.
+    // TODO: do this outside OperatorBase::evaluate_add()/rhs_add()
     VectorType src_inhom = src;
     set_inhomogeneous_boundary_values(src_inhom, time);
 
@@ -406,13 +407,6 @@ OperatorBase<dim, Number, n_components>::evaluate_add(VectorType &       dst,
     else
     {
       matrix_free->cell_loop(&This::cell_loop_full_operator, this, tmp, src_inhom);
-    }
-
-    // Make sure that no contributions arise for constrained dofs.
-    for(unsigned int const constrained_index :
-        matrix_free->get_constrained_dofs(this->data.dof_index))
-    {
-      tmp.local_element(constrained_index) = 0.0;
     }
 
     // This is the function of type evaluate_add().
@@ -1059,18 +1053,24 @@ OperatorBase<dim, Number, n_components>::cell_loop_full_operator(
   AssertThrow(not is_dg,
               dealii::ExcMessage("This function should not be called for is_dg = true."));
 
-  IntegratorCell integrator =
+  IntegratorCell integrator_inhom =
     IntegratorCell(matrix_free, this->data.dof_index_inhomogeneous, this->data.quad_index);
+
+  IntegratorCell integrator =
+    IntegratorCell(matrix_free, this->data.dof_index, this->data.quad_index);
 
   for(auto cell = range.first; cell < range.second; ++cell)
   {
-    this->reinit_cell(integrator, cell);
+    this->reinit_cell(integrator_inhom, cell);
+    integrator.reinit(cell);
 
-    integrator.gather_evaluate(src, integrator_flags.cell_evaluate);
+    integrator_inhom.gather_evaluate(src, integrator_flags.cell_evaluate);
 
-    this->do_cell_integral(integrator);
+    this->do_cell_integral(integrator_inhom);
 
-    integrator.integrate_scatter(integrator_flags.cell_integrate, dst);
+    // make sure that we do not write into Dirichlet degrees of freedom
+    integrator_inhom.integrate(integrator_flags.cell_integrate, integrator.begin_dof_values());
+    integrator.distribute_local_to_global(dst);
   }
 }
 
@@ -1159,11 +1159,11 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_inhom_operator(
 {
   (void)src;
 
-  IntegratorFace integrator_m =
-    IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
-
   if(is_dg)
   {
+    IntegratorFace integrator_m =
+      IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
+
     for(unsigned int face = range.first; face < range.second; face++)
     {
       this->reinit_boundary_face(integrator_m, face);
@@ -1180,16 +1180,26 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_inhom_operator(
   }
   else // continuous FE discretization (e.g., apply Neumann BCs)
   {
+    IntegratorFace integrator_m_inhom =
+      IntegratorFace(matrix_free, true, this->data.dof_index_inhomogeneous, this->data.quad_index);
+
+    IntegratorFace integrator_m =
+      IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
+
     for(unsigned int face = range.first; face < range.second; face++)
     {
-      this->reinit_boundary_face(integrator_m, face);
+      this->reinit_boundary_face(integrator_m_inhom, face);
+      integrator_m.reinit(face);
 
       // note: no gathering/evaluation is necessary when calculating the
       //       inhomogeneous part of boundary face integrals
 
-      do_boundary_integral_continuous(integrator_m, matrix_free.get_boundary_id(face));
+      do_boundary_integral_continuous(integrator_m_inhom, matrix_free.get_boundary_id(face));
 
-      integrator_m.integrate_scatter(integrator_flags.face_integrate, dst);
+      // make sure that we do not write into Dirichlet degrees of freedom
+      integrator_m_inhom.integrate(integrator_flags.face_integrate,
+                                   integrator_m.begin_dof_values());
+      integrator_m.distribute_local_to_global(dst);
     }
   }
 }

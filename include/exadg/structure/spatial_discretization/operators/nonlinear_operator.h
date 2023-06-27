@@ -47,29 +47,41 @@ private:
   typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
 
 public:
+  /**
+   * Initialize function.
+   */
   void
   initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
              dealii::AffineConstraints<Number> const & affine_constraints,
              OperatorData<dim> const &                 data) override;
 
-  /*
+  /**
    * Evaluates the non-linear operator.
+   *
+   * This function ensures that constrained degrees of freedom are set to zero
+   * in the dst vector. Note, however, that this function does not ensure
+   * that Dirichlet degrees of freedom are set to the prescribed inhomogeneous
+   * boundary data in the src vector. This needs to be done separately prior to
+   * calling this function.
    */
   void
   evaluate_nonlinear(VectorType & dst, VectorType const & src) const;
 
-  /*
+  /**
    * Returns true if deformation state is valid.
    */
   bool
   valid_deformation(VectorType const & displacement) const;
 
-  /*
-   * Linearized operator:
+  /**
+   * Linearized operator: Sets the linearization vector.
    */
   void
   set_solution_linearization(VectorType const & vector) const;
 
+  /**
+   * Linearized operator: Returns the linearization vector.
+   */
   VectorType const &
   get_solution_linearization() const;
 
@@ -100,6 +112,8 @@ private:
 
   /*
    * A cell loop that checks whether the Jacobian determinant is positive for all q-points.
+   * Prior to calling this function, inhomogeneous Dirichlet degrees of freedom need to be
+   * set correctly.
    */
   void
   cell_loop_valid_deformation(dealii::MatrixFree<dim, Number> const & matrix_free,

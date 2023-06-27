@@ -862,7 +862,7 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
   // for constrained degrees of freedom as well, which might not be the case
   // in general, e.g. due to const_vector. Hence, we set the constrained
   // degrees of freedom explicitly to zero.
-  elasticity_operator_nonlinear.set_constrained_values_to_zero(dst);
+  elasticity_operator_nonlinear.set_constrained_dofs_to_zero(dst);
 }
 
 template<int dim, typename Number>

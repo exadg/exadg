@@ -37,7 +37,7 @@ NonLinearOperator<dim, Number>::initialize(
   Base::initialize(matrix_free, affine_constraints, data);
 
   integrator_lin = std::make_shared<IntegratorCell>(*this->matrix_free);
-  this->matrix_free->initialize_dof_vector(displacement_lin, data.dof_index_inhomogeneous);
+  this->matrix_free->initialize_dof_vector(displacement_lin, data.dof_index);
   displacement_lin.update_ghost_values();
 }
 
@@ -69,11 +69,8 @@ NonLinearOperator<dim, Number>::valid_deformation(VectorType const & displacemen
 
   // sum over all MPI processes
   Number valid = 0.0;
-  valid =
-    dealii::Utilities::MPI::sum(dst,
-                                this->matrix_free
-                                  ->get_dof_handler(this->operator_data.dof_index_inhomogeneous)
-                                  .get_communicator());
+  valid        = dealii::Utilities::MPI::sum(
+    dst, this->matrix_free->get_dof_handler(this->operator_data.dof_index).get_communicator());
 
   return (valid == 0.0);
 }
@@ -117,8 +114,12 @@ NonLinearOperator<dim, Number>::cell_loop_nonlinear(
   VectorType const &                      src,
   Range const &                           range) const
 {
+  IntegratorCell integrator_inhom(matrix_free,
+                                  this->operator_data.dof_index_inhomogeneous,
+                                  this->operator_data.quad_index);
+
   IntegratorCell integrator(matrix_free,
-                            this->operator_data.dof_index_inhomogeneous,
+                            this->operator_data.dof_index,
                             this->operator_data.quad_index);
 
   auto const unsteady_flag = this->operator_data.unsteady ? dealii::EvaluationFlags::values :
@@ -126,14 +127,17 @@ NonLinearOperator<dim, Number>::cell_loop_nonlinear(
 
   for(auto cell = range.first; cell < range.second; ++cell)
   {
-    reinit_cell_nonlinear(integrator, cell);
+    reinit_cell_nonlinear(integrator_inhom, cell);
+    integrator.reinit(cell);
 
-    integrator.gather_evaluate(src, unsteady_flag | dealii::EvaluationFlags::gradients);
+    integrator_inhom.gather_evaluate(src, unsteady_flag | dealii::EvaluationFlags::gradients);
 
-    do_cell_integral_nonlinear(integrator);
+    do_cell_integral_nonlinear(integrator_inhom);
 
-    // TODO: does this touch Dirichlet DoFs?
-    integrator.integrate_scatter(unsteady_flag | dealii::EvaluationFlags::gradients, dst);
+    // make sure that we do not write into Dirichlet degrees of freedom
+    integrator_inhom.integrate(unsteady_flag | dealii::EvaluationFlags::gradients,
+                               integrator.begin_dof_values());
+    integrator.distribute_local_to_global(dst);
   }
 }
 
@@ -196,15 +200,21 @@ NonLinearOperator<dim, Number>::boundary_face_loop_nonlinear(
   VectorType const &                      src,
   Range const &                           range) const
 {
-  IntegratorFace integrator_m(matrix_free,
-                              true,
-                              this->operator_data.dof_index_inhomogeneous,
-                              this->operator_data.quad_index);
+  IntegratorFace integrator_m_inhom(matrix_free,
+                                    true,
+                                    this->operator_data.dof_index_inhomogeneous,
+                                    this->operator_data.quad_index);
+
+  IntegratorFace integrator_m = IntegratorFace(matrix_free,
+                                               true,
+                                               this->operator_data.dof_index,
+                                               this->operator_data.quad_index);
 
   // apply Neumann BCs
   for(unsigned int face = range.first; face < range.second; face++)
   {
-    this->reinit_boundary_face(integrator_m, face);
+    this->reinit_boundary_face(integrator_m_inhom, face);
+    integrator_m.reinit(face);
 
     // In case of a pull-back of the traction vector, we need to evaluate
     // the displacement gradient to obtain the surface area ratio da/dA.
@@ -212,12 +222,15 @@ NonLinearOperator<dim, Number>::boundary_face_loop_nonlinear(
     // depend on the parameter pull_back_traction.
     if(this->operator_data.pull_back_traction)
     {
-      integrator_m.gather_evaluate(src, dealii::EvaluationFlags::gradients);
+      integrator_m_inhom.gather_evaluate(src, dealii::EvaluationFlags::gradients);
     }
 
-    do_boundary_integral_continuous(integrator_m, matrix_free.get_boundary_id(face));
+    do_boundary_integral_continuous(integrator_m_inhom, matrix_free.get_boundary_id(face));
 
-    integrator_m.integrate_scatter(this->integrator_flags.face_integrate, dst);
+    // make sure that we do not write into Dirichlet degrees of freedom
+    integrator_m_inhom.integrate(this->integrator_flags.face_integrate,
+                                 integrator_m.begin_dof_values());
+    integrator_m.distribute_local_to_global(dst);
   }
 }
 
