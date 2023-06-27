@@ -706,29 +706,22 @@ $(function() {
 <div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> level;</div>
 <div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span> </div>
 <div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span><span class="comment">   * Integration objects of type dealii::FEEvaluation for cell/face integrals.</span></div>
+<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span><span class="comment">   * Vector of matrices for block-diagonal preconditioners.</span></div>
 <div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>  std::shared_ptr&lt;IntegratorCell&gt; integrator;</div>
-<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>  std::shared_ptr&lt;IntegratorFace&gt; integrator_m;</div>
-<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>  std::shared_ptr&lt;IntegratorFace&gt; integrator_p;</div>
-<div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span> </div>
-<div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span><span class="comment">   * Vector of matrices for block-diagonal preconditioners.</span></div>
+<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>  <span class="keyword">mutable</span> std::vector&lt;dealii::LAPACKFullMatrix&lt;Number&gt;&gt; matrices;</div>
+<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span> </div>
+<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span><span class="comment">   * We want to initialize the block diagonal preconditioner (block diagonal matrices or elementwise</span></div>
+<div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span><span class="comment">   * iterative solvers in case of matrix-free implementation) only once, so we store the status of</span></div>
+<div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span><span class="comment">   * initialization in a variable.</span></div>
 <div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span>  <span class="keyword">mutable</span> std::vector&lt;dealii::LAPACKFullMatrix&lt;Number&gt;&gt; matrices;</div>
+<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span>  <span class="keyword">mutable</span> <span class="keywordtype">bool</span> block_diagonal_preconditioner_is_initialized;</div>
 <div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span> </div>
-<div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span><span class="comment">   * We want to initialize the block diagonal preconditioner (block diagonal matrices or elementwise</span></div>
-<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span><span class="comment">   * iterative solvers in case of matrix-free implementation) only once, so we store the status of</span></div>
-<div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span><span class="comment">   * initialization in a variable.</span></div>
-<div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>  <span class="keyword">mutable</span> <span class="keywordtype">bool</span> block_diagonal_preconditioner_is_initialized;</div>
-<div class="line"><a id="l00648" name="l00648"></a><span class="lineno">  648</span> </div>
-<div class="line"><a id="l00649" name="l00649"></a><span class="lineno">  649</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n_mpi_processes;</div>
-<div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span>};</div>
-<div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00652" name="l00652"></a><span class="lineno">  652</span> </div>
-<div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n_mpi_processes;</div>
+<div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span>};</div>
+<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span> </div>
+<div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span><span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclassExaDG_1_1Elementwise_1_1IterativeSolver_html"><div class="ttname"><a href="classExaDG_1_1Elementwise_1_1IterativeSolver.html">ExaDG::Elementwise::IterativeSolver</a></div><div class="ttdef"><b>Definition</b> wrapper_elementwise_solvers.h:61</div></div>
 <div class="ttc" id="aclassExaDG_1_1Elementwise_1_1OperatorBase_html"><div class="ttname"><a href="classExaDG_1_1Elementwise_1_1OperatorBase.html">ExaDG::Elementwise::OperatorBase</a></div><div class="ttdef"><b>Definition</b> elementwise_operator.h:33</div></div>
 <div class="ttc" id="aclassExaDG_1_1Elementwise_1_1PreconditionerBase_html"><div class="ttname"><a href="classExaDG_1_1Elementwise_1_1PreconditionerBase.html">ExaDG::Elementwise::PreconditionerBase</a></div><div class="ttdef"><b>Definition</b> elementwise_preconditioners.h:41</div></div>
