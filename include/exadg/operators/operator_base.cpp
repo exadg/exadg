@@ -313,43 +313,36 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
 {
-  if(evaluate_face_integrals())
+  if(is_dg)
   {
-    VectorType tmp;
-    tmp.reinit(rhs, false);
+    if(evaluate_face_integrals())
+    {
+      VectorType tmp;
+      tmp.reinit(rhs, false);
 
-    matrix_free->loop(&This::cell_loop_empty,
-                      &This::face_loop_empty,
-                      &This::boundary_face_loop_inhom_operator,
-                      this,
-                      tmp,
-                      tmp);
+      matrix_free->loop(&This::cell_loop_empty,
+                        &This::face_loop_empty,
+                        &This::boundary_face_loop_inhom_operator,
+                        this,
+                        tmp,
+                        tmp);
 
-    // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
-    rhs.add(-1.0, tmp);
+      // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand
+      // side
+      rhs.add(-1.0, tmp);
+    }
   }
-
-  if(not is_dg)
+  else
   {
-    // Set constrained degrees of freedom according to inhomogeneous Dirichlet boundary conditions.
-    //  The rest of the vector contains zeros.
-    VectorType temp1;
-    // TODO: which dof-index to choose here?
-    matrix_free->initialize_dof_vector(temp1, data.dof_index);
-    set_inhomogeneous_boundary_values(temp1, time);
+    VectorType src_tmp, dst_tmp;
+    src_tmp.reinit(rhs, false);
+    dst_tmp.reinit(rhs, false);
 
-    // Perform matrix-vector product using temp1 (which contains inhomogeneous Dirichlet values) as
-    // src-vector to obtain the inhomogeneous action of the operator. Subsequently, we shift the
-    // resulting vector to the right-hand side. Note that constrained degrees of freedom in the
-    // dst-vector will not be touched and remain zero. Hence, the constrained degrees of freedom
-    // in the rhs-vector will not be changed.
-    VectorType temp2;
-    // TODO: which dof-index to choose here?
-    matrix_free->initialize_dof_vector(temp2, data.dof_index);
-    // TODO: temp2 might now contain non-zero values in Dirichlet degrees of freedom, which were
-    // previously part of AffineConstraints but no longer if we use dof_index_inhomogeneous here!?
-    matrix_free->cell_loop(&This::cell_loop_full_operator, this, temp2, temp1);
-    rhs -= temp2;
+    // Since src_tmp = 0, the function evaluate_add only computes the inhomogeneous part of the
+    // operator.
+    this->evaluate_add(dst_tmp, src_tmp);
+    // Minus sign since we compute the contribution to the right-hand side.
+    rhs -= dst_tmp;
   }
 }
 
@@ -387,6 +380,13 @@ OperatorBase<dim, Number, n_components>::evaluate_add(VectorType &       dst,
   }
   else
   {
+    // Set constrained degrees of freedom according to inhomogeneous Dirichlet boundary conditions.
+    //  The rest of the vector remains unchanged.
+    VectorType src_inhom = src;
+    set_inhomogeneous_boundary_values(src_inhom, time);
+
+    // Perform matrix-vector product using src_inhom (which contains inhomogeneous Dirichlet values)
+    // as src-vector to obtain the hom+inhom action of the operator.
     if(evaluate_face_integrals())
     {
       matrix_free->loop(&This::cell_loop_full_operator,
@@ -394,12 +394,15 @@ OperatorBase<dim, Number, n_components>::evaluate_add(VectorType &       dst,
                         &This::boundary_face_loop_inhom_operator,
                         this,
                         dst,
-                        src);
+                        src_inhom);
     }
     else
     {
-      matrix_free->cell_loop(&This::cell_loop_full_operator, this, dst, src);
+      matrix_free->cell_loop(&This::cell_loop_full_operator, this, dst, src_inhom);
     }
+
+    // TODO: dst might now contain non-zero values in Dirichlet degrees of freedom, which were
+    // previously part of AffineConstraints but no longer if we use dof_index_inhomogeneous here!?
   }
 }
 
