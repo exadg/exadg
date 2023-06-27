@@ -229,8 +229,10 @@ OperatorBase<dim, Number, n_components>::calculate_inverse_diagonal(VectorType &
   this->calculate_diagonal(diagonal);
 
   if(false)
+  {
     verify_calculation_of_diagonal(
       *this, diagonal, matrix_free->get_dof_handler(this->data.dof_index).get_communicator());
+  }
 
   invert_diagonal(diagonal);
 }
@@ -260,7 +262,7 @@ OperatorBase<dim, Number, n_components>::apply(VectorType & dst, VectorType cons
   {
     // Compute matrix-vector product. Constrained degrees of freedom in the src-vector will not be
     // used. The function read_dof_values() (or gather_evaluate()) uses the homogeneous boundary
-    // data passed to MatrixFree via AffineConstraints.
+    // data passed to MatrixFree via AffineConstraints with the standard "dof_index".
     matrix_free->cell_loop(&This::cell_loop, this, dst, src, true);
 
     // Constrained degree of freedom are not removed from the system of equations.
@@ -269,7 +271,9 @@ OperatorBase<dim, Number, n_components>::apply(VectorType & dst, VectorType cons
     // dst vector.
     for(unsigned int const constrained_index :
         matrix_free->get_constrained_dofs(this->data.dof_index))
+    {
       dst.local_element(constrained_index) = src.local_element(constrained_index);
+    }
   }
 }
 
