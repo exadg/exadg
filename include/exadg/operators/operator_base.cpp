@@ -297,7 +297,9 @@ OperatorBase<dim, Number, n_components>::apply_add(VectorType & dst, VectorType 
 
     for(unsigned int const constrained_index :
         matrix_free->get_constrained_dofs(this->data.dof_index))
+    {
       dst.local_element(constrained_index) += src.local_element(constrained_index);
+    }
   }
 }
 
@@ -359,9 +361,6 @@ void
 OperatorBase<dim, Number, n_components>::evaluate_add(VectorType &       dst,
                                                       VectorType const & src) const
 {
-  // TODO: since we now use dof_index_inhomogeneous in some routines (where Dirichlet degrees of
-  // freedom are no longer part of AffineConstraints, this function might write to degrees of
-  // freedom in the dst vector that have not been touched before.
   if(is_dg)
   {
     if(evaluate_face_integrals())
@@ -385,6 +384,10 @@ OperatorBase<dim, Number, n_components>::evaluate_add(VectorType &       dst,
     VectorType src_inhom = src;
     set_inhomogeneous_boundary_values(src_inhom, time);
 
+    // Start with a zero destination vector.
+    VectorType tmp;
+    tmp.reinit(dst, false);
+
     // Perform matrix-vector product using src_inhom (which contains inhomogeneous Dirichlet values)
     // as src-vector to obtain the hom+inhom action of the operator.
     if(evaluate_face_integrals())
@@ -393,16 +396,23 @@ OperatorBase<dim, Number, n_components>::evaluate_add(VectorType &       dst,
                         &This::face_loop_empty,
                         &This::boundary_face_loop_inhom_operator,
                         this,
-                        dst,
+                        tmp,
                         src_inhom);
     }
     else
     {
-      matrix_free->cell_loop(&This::cell_loop_full_operator, this, dst, src_inhom);
+      matrix_free->cell_loop(&This::cell_loop_full_operator, this, tmp, src_inhom);
     }
 
-    // TODO: dst might now contain non-zero values in Dirichlet degrees of freedom, which were
-    // previously part of AffineConstraints but no longer if we use dof_index_inhomogeneous here!?
+    // Make sure that no contributions arise for constrained dofs.
+    for(unsigned int const constrained_index :
+        matrix_free->get_constrained_dofs(this->data.dof_index))
+    {
+      tmp.local_element(constrained_index) = 0.0;
+    }
+
+    // This is the function of type evaluate_add().
+    dst += tmp;
   }
 }
 
