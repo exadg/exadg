@@ -297,19 +297,22 @@ LaplaceOperator<dim, Number, n_components>::
     VectorType const &                      src,
     Range const &                           range) const
 {
+  IntegratorFace integrator_m =
+    IntegratorFace(*this->matrix_free, true, operator_data.dof_index, operator_data.quad_index);
+
   for(unsigned int face = range.first; face < range.second; face++)
   {
-    this->reinit_boundary_face(*this->integrator_m, face);
+    this->reinit_boundary_face(integrator_m, face);
 
     // deviating from the standard function boundary_face_loop_inhom_operator()
     // because the boundary condition comes from the vector src
-    this->integrator_m->gather_evaluate(src, this->integrator_flags.face_evaluate);
+    integrator_m.gather_evaluate(src, this->integrator_flags.face_evaluate);
 
-    do_boundary_integral_dirichlet_bc_from_dof_vector(*this->integrator_m,
+    do_boundary_integral_dirichlet_bc_from_dof_vector(integrator_m,
                                                       OperatorType::inhomogeneous,
                                                       matrix_free.get_boundary_id(face));
 
-    this->integrator_m->integrate_scatter(this->integrator_flags.face_integrate, dst);
+    integrator_m.integrate_scatter(this->integrator_flags.face_integrate, dst);
   }
 }
 
