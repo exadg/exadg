@@ -628,13 +628,6 @@ private:
   unsigned int level;
 
   /*
-   * Integration objects of type dealii::FEEvaluation for cell/face integrals.
-   */
-  std::shared_ptr<IntegratorCell> integrator;
-  std::shared_ptr<IntegratorFace> integrator_m;
-  std::shared_ptr<IntegratorFace> integrator_p;
-
-  /*
    * Vector of matrices for block-diagonal preconditioners.
    */
   mutable std::vector<dealii::LAPACKFullMatrix<Number>> matrices;
