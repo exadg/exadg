@@ -128,12 +128,11 @@ NonLinearOperator<dim, Number>::cell_loop_nonlinear(
   {
     reinit_cell_nonlinear(integrator, cell);
 
-    integrator.read_dof_values(src);
-
-    integrator.evaluate(unsteady_flag | dealii::EvaluationFlags::gradients);
+    integrator.gather_evaluate(src, unsteady_flag | dealii::EvaluationFlags::gradients);
 
     do_cell_integral_nonlinear(integrator);
 
+    // TODO: does this touch Dirichlet DoFs?
     integrator.integrate_scatter(unsteady_flag | dealii::EvaluationFlags::gradients, dst);
   }
 }
@@ -154,9 +153,7 @@ NonLinearOperator<dim, Number>::cell_loop_valid_deformation(
   {
     reinit_cell_nonlinear(integrator, cell);
 
-    integrator.read_dof_values(src);
-
-    integrator.evaluate(dealii::EvaluationFlags::gradients);
+    integrator.gather_evaluate(src, dealii::EvaluationFlags::gradients);
 
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
