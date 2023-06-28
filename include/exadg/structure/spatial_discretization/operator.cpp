@@ -191,35 +191,6 @@ Operator<dim, Number>::distribute_dofs()
   affine_constraints.close();
   affine_constraints_periodicity_and_hanging_nodes.close();
 
-  // affine constraints for mass operator
-  if(param.problem_type == ProblemType::Unsteady)
-  {
-    constraints_mass.clear();
-
-    dealii::IndexSet locally_relevant_dofs;
-    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
-    constraints_mass.reinit(locally_relevant_dofs);
-
-    // hanging nodes (needs to be done before imposing periodicity constraints and boundary
-    // conditions)
-    if(this->grid->triangulation->has_hanging_nodes())
-      dealii::DoFTools::make_hanging_node_constraints(dof_handler, constraints_mass);
-
-    // constraints from periodic boundary conditions
-    if(not(this->grid->periodic_face_pairs.empty()))
-    {
-      auto periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
-        this->grid->periodic_face_pairs, dof_handler);
-
-      dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(periodic_faces_dof,
-                                                                       constraints_mass);
-    }
-
-    // no constraints from Dirichlet boundary conditions for mass operator
-
-    constraints_mass.close();
-  }
-
   pcout << std::endl
         << "Continuous Galerkin finite element discretization:" << std::endl
         << std::endl;
@@ -241,13 +212,6 @@ std::string
 Operator<dim, Number>::get_dof_name_periodicity_and_hanging_node_constraints() const
 {
   return field + "_" + dof_index_periodicity_and_handing_node_constraints;
-}
-
-template<int dim, typename Number>
-std::string
-Operator<dim, Number>::get_dof_name_mass() const
-{
-  return field + "_" + dof_index_mass;
 }
 
 template<int dim, typename Number>
@@ -276,13 +240,6 @@ unsigned int
 Operator<dim, Number>::get_dof_index_periodicity_and_hanging_node_constraints() const
 {
   return matrix_free_data->get_dof_index(get_dof_name_periodicity_and_hanging_node_constraints());
-}
-
-template<int dim, typename Number>
-unsigned int
-Operator<dim, Number>::get_dof_index_mass() const
-{
-  return matrix_free_data->get_dof_index(get_dof_name_mass());
 }
 
 template<int dim, typename Number>
@@ -335,12 +292,6 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
                                       get_dof_name_periodicity_and_hanging_node_constraints());
   matrix_free_data.insert_constraint(&affine_constraints_periodicity_and_hanging_nodes,
                                      get_dof_name_periodicity_and_hanging_node_constraints());
-
-  if(param.problem_type == ProblemType::Unsteady)
-  {
-    matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name_mass());
-    matrix_free_data.insert_constraint(&constraints_mass, get_dof_name_mass());
-  }
 
   // dealii::Quadrature
   if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
@@ -414,9 +365,11 @@ Operator<dim, Number>::setup_operators()
   if(param.problem_type == ProblemType::Unsteady)
   {
     MassOperatorData<dim> mass_data;
-    mass_data.dof_index  = get_dof_index_mass();
+    mass_data.dof_index  = get_dof_index_periodicity_and_hanging_node_constraints();
     mass_data.quad_index = get_quad_index();
-    mass_operator.initialize(*matrix_free, constraints_mass, mass_data);
+    mass_operator.initialize(*matrix_free,
+                             affine_constraints_periodicity_and_hanging_nodes,
+                             mass_data);
 
     mass_operator.set_scaling_factor(param.density);
 
@@ -736,11 +689,11 @@ Operator<dim, Number>::prescribe_initial_velocity(VectorType & velocity, double 
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::compute_initial_acceleration(VectorType &       acceleration,
-                                                    VectorType const & displacement,
+Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_acceleration,
+                                                    VectorType const & initial_displacement,
                                                     double const       time) const
 {
-  VectorType rhs(acceleration);
+  VectorType rhs(initial_acceleration);
   rhs = 0.0;
 
   if(param.large_deformation) // nonlinear case
@@ -754,7 +707,7 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       accelerat
     elasticity_operator_nonlinear.set_scaling_factor_mass_operator(0.0);
 
     // evaluate nonlinear operator including Neumann BCs
-    elasticity_operator_nonlinear.evaluate_nonlinear(rhs, displacement);
+    elasticity_operator_nonlinear.evaluate_nonlinear(rhs, initial_displacement);
     // shift to right-hand side
     rhs *= -1.0;
 
@@ -764,7 +717,7 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       accelerat
     // body forces
     if(param.body_force)
     {
-      body_force_operator.evaluate_add(rhs, displacement, time);
+      body_force_operator.evaluate_add(rhs, initial_displacement, time);
     }
   }
   else // linear case
@@ -778,7 +731,7 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       accelerat
     elasticity_operator_linear.set_scaling_factor_mass_operator(0.0);
 
     // compute action of homogeneous operator
-    elasticity_operator_linear.apply(rhs, displacement);
+    elasticity_operator_linear.apply(rhs, initial_displacement);
     // shift to right-hand side
     rhs *= -1.0;
 
@@ -794,12 +747,12 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       accelerat
     {
       // displacement is irrelevant for linear problem, since
       // pull_back_body_force = false in this case.
-      body_force_operator.evaluate_add(rhs, displacement, time);
+      body_force_operator.evaluate_add(rhs, initial_displacement, time);
     }
   }
 
   // invert mass operator to get acceleration
-  mass_solver->solve(acceleration, rhs);
+  mass_solver->solve(initial_acceleration, rhs);
 }
 
 template<int dim, typename Number>
