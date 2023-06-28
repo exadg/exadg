@@ -222,15 +222,9 @@ public:
   apply_mass_operator(VectorType & dst, VectorType const & src) const final;
 
   /*
-   * This function calculates the right-hand side of the linear system
-   * of equations for linear elasticity problems.
-   */
-  void
-  compute_rhs_linear(VectorType & dst, double const time) const final;
-
-  /*
-   * This function evaluates the nonlinear residual which is required by
-   * the Newton solver.
+   * This function evaluates the nonlinear residual which is required by the Newton solver. In order
+   * to evaluate inhomogeneous Dirichlet boundary conditions correctly, inhomogeneous Dirichlet
+   * degrees of freedom need to be set correctly in the src-vector prior to calling this function.
    */
   void
   evaluate_nonlinear_residual(VectorType &       dst,
@@ -261,19 +255,33 @@ public:
                         double const       time) const;
 
   /*
-   * This function solves the (non-)linear system of equations.
+   * This function solves the system of equations for nonlinear problems. This function needs to
+   * make sure that Dirichlet degrees of freedom are filled correctly with their inhomogeneous
+   * boundary data before calling the nonlinear solver.
    */
   std::tuple<unsigned int, unsigned int>
   solve_nonlinear(VectorType &       sol,
-                  VectorType const & rhs,
-                  double const       factor,
+                  VectorType const & const_vector,
+                  double const       scaling_factor_mass,
                   double const       time,
                   bool const         update_preconditioner) const final;
 
+  /*
+   * This function calculates the right-hand side of the linear system of equations for linear
+   * elasticity problems.
+   */
+  void
+  rhs(VectorType & dst, double const time) const final;
+
+  /*
+   * This function solves the system of equations for linear problems.
+   *
+   * Before calling this function, make sure that the function rhs() has been called.
+   */
   unsigned int
   solve_linear(VectorType &       sol,
                VectorType const & rhs,
-               double const       factor,
+               double const       scaling_factor_mass,
                double const       time,
                bool const         update_preconditioner) const final;
 

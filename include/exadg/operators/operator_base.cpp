@@ -344,8 +344,12 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
     src_tmp.reinit(rhs, false);
     dst_tmp.reinit(rhs, false);
 
-    // Since src_tmp = 0, the function evaluate_add() only computes the inhomogeneous part of the
-    // operator.
+    // Set constrained degrees of freedom according to inhomogeneous Dirichlet boundary conditions.
+    //  The rest of the vector remains unchanged.
+    set_inhomogeneous_boundary_values(src_tmp);
+
+    // Since src_tmp = 0 apart from inhomogeneous boundary data, the function evaluate_add() only
+    // computes the inhomogeneous part of the operator.
     this->evaluate_add(dst_tmp, src_tmp);
     // Minus sign since we compute the contribution to the right-hand side.
     rhs -= dst_tmp;
@@ -386,12 +390,6 @@ OperatorBase<dim, Number, n_components>::evaluate_add(VectorType &       dst,
     AssertThrow(data.dof_index_inhomogeneous != dealii::numbers::invalid_unsigned_int,
                 dealii::ExcMessage("dof_index_inhomogeneous is uninitialized."));
 
-    // Set constrained degrees of freedom according to inhomogeneous Dirichlet boundary conditions.
-    //  The rest of the vector remains unchanged.
-    // TODO: do this outside OperatorBase::evaluate_add()/rhs_add()
-    VectorType src_inhom = src;
-    set_inhomogeneous_boundary_values(src_inhom, time);
-
     // Start with a zero destination vector.
     VectorType tmp;
     tmp.reinit(dst, false);
@@ -405,11 +403,11 @@ OperatorBase<dim, Number, n_components>::evaluate_add(VectorType &       dst,
                         &This::boundary_face_loop_inhom_operator,
                         this,
                         tmp,
-                        src_inhom);
+                        src);
     }
     else
     {
-      matrix_free->cell_loop(&This::cell_loop_full_operator, this, tmp, src_inhom);
+      matrix_free->cell_loop(&This::cell_loop_full_operator, this, tmp, src);
     }
 
     // This is the function of type evaluate_add().
@@ -944,11 +942,10 @@ OperatorBase<dim, Number, n_components>::do_boundary_integral_continuous(
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::set_inhomogeneous_boundary_values(VectorType & solution,
-                                                                           double const time) const
+OperatorBase<dim, Number, n_components>::set_inhomogeneous_boundary_values(
+  VectorType & solution) const
 {
   (void)solution;
-  (void)time;
 
   AssertThrow(
     false,

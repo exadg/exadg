@@ -102,7 +102,7 @@ public:
   get_scaling_factor_mass_operator() const;
 
   void
-  set_inhomogeneous_boundary_values(VectorType & dst, double const time) const override;
+  set_inhomogeneous_boundary_values(VectorType & dst) const final;
 
 protected:
   void

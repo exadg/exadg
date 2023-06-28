@@ -811,26 +811,6 @@ Operator<dim, Number>::apply_mass_operator(VectorType & dst, VectorType const & 
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::compute_rhs_linear(VectorType & dst, double const time) const
-{
-  dst = 0.0;
-
-  // body force
-  if(param.body_force)
-  {
-    // src is irrelevant for linear problem, since
-    // pull_back_body_force = false in this case.
-    VectorType src;
-    body_force_operator.evaluate_add(dst, src, time);
-  }
-
-  // Neumann BCs and inhomogeneous Dirichlet BCs
-  elasticity_operator_linear.set_time(time);
-  elasticity_operator_linear.rhs_add(dst);
-}
-
-template<int dim, typename Number>
-void
 Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
                                                    VectorType const & src,
                                                    VectorType const & const_vector,
@@ -911,17 +891,18 @@ Operator<dim, Number>::apply_linear_operator(VectorType &       dst,
 template<int dim, typename Number>
 std::tuple<unsigned int, unsigned int>
 Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
-                                       VectorType const & rhs,
-                                       double const       factor,
+                                       VectorType const & const_vector,
+                                       double const       scaling_factor_mass,
                                        double const       time,
                                        bool const         update_preconditioner) const
 {
   // update operators
-  residual_operator.update(rhs, factor, time);
-  linearized_operator.update(factor, time);
+  residual_operator.update(const_vector, scaling_factor_mass, time);
+  linearized_operator.update(scaling_factor_mass, time);
 
   // set inhomogeneous Dirichlet values in order to evaluate the nonlinear residual correctly
-  elasticity_operator_nonlinear.set_inhomogeneous_boundary_values(sol, time);
+  elasticity_operator_nonlinear.set_time(time);
+  elasticity_operator_nonlinear.set_inhomogeneous_boundary_values(sol);
 
   // call Newton solver
   Newton::UpdateData update;
@@ -939,28 +920,49 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   // for constrained degrees of freedom, the initial solution of the linearized
   // solver is also zero, and the linearized operator contains values of 1 on the
   // diagonal for constrained degrees of freedom). TODO
-  elasticity_operator_nonlinear.set_inhomogeneous_boundary_values(sol, time);
+  elasticity_operator_nonlinear.set_inhomogeneous_boundary_values(sol);
 
   return iter;
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::rhs(VectorType & dst, double const time) const
+{
+  dst = 0.0;
+
+  // body force
+  if(param.body_force)
+  {
+    // src is irrelevant for linear problem, since
+    // pull_back_body_force = false in this case.
+    VectorType src;
+    body_force_operator.evaluate_add(dst, src, time);
+  }
+
+  // Neumann BCs and inhomogeneous Dirichlet BCs
+  elasticity_operator_linear.set_time(time);
+  elasticity_operator_linear.rhs_add(dst);
 }
 
 template<int dim, typename Number>
 unsigned int
 Operator<dim, Number>::solve_linear(VectorType &       sol,
                                     VectorType const & rhs,
-                                    double const       factor,
+                                    double const       scaling_factor_mass,
                                     double const       time,
                                     bool const         update_preconditioner) const
 {
   // unsteady problems
-  elasticity_operator_linear.set_scaling_factor_mass_operator(factor);
+  elasticity_operator_linear.set_scaling_factor_mass_operator(scaling_factor_mass);
   elasticity_operator_linear.set_time(time);
 
   linear_solver->update_preconditioner(update_preconditioner);
 
   // Set constrained degrees of freedom corresponding to Dirichlet boundary conditions.
   VectorType rhs_modified = rhs;
-  elasticity_operator_linear.set_inhomogeneous_boundary_values(rhs_modified, time);
+  elasticity_operator_linear.set_time(time);
+  elasticity_operator_linear.set_inhomogeneous_boundary_values(rhs_modified);
 
   // solve linear system of equations
   unsigned int const iterations = linear_solver->solve(sol, rhs_modified);
@@ -969,7 +971,7 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
   // rhs vector contain the Dirichlet boundary values and the linear operator contains
   // values of 1 on the diagonal. Hence, sol should already contain the correct
   // Dirichlet boundary values for constrained degrees of freedom. TODO
-  elasticity_operator_linear.set_inhomogeneous_boundary_values(sol, time);
+  elasticity_operator_linear.set_inhomogeneous_boundary_values(sol);
 
   return iterations;
 }

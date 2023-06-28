@@ -173,8 +173,12 @@ public:
   void
   initialize_dof_vector(VectorType & vector) const;
 
+  /*
+   * For time-dependent problems, the function set_time() needs to be called prior to the present
+   * function.
+   */
   virtual void
-  set_inhomogeneous_boundary_values(VectorType & solution, double const time) const;
+  set_inhomogeneous_boundary_values(VectorType & solution) const;
 
   void
   set_constrained_dofs_to_zero(VectorType & vector) const;
@@ -226,6 +230,9 @@ public:
   void
   apply(VectorType & dst, VectorType const & src) const;
 
+  /*
+   * See function apply() for a description.
+   */
   void
   apply_add(VectorType & dst, VectorType const & src) const;
 
@@ -236,10 +243,19 @@ public:
    * rhs only make sense for linear operators (but they have e.g. no meaning for linearized
    * operators of nonlinear problems). For this reason, these functions are currently defined
    * 'virtual' to provide the opportunity to override and assert these functions in derived classes.
+   *
+   * For continuous Galerkin discretizations, this function calls internally the member function
+   * set_inhomogeneous_boundary_values(). Hence, prior to calling this function, one needs to call
+   * set_time() for a correct evaluation in case of time-dependent problems.
+   *
+   * This function sets the dst vector to zero, and afterwards calls rhs_add().
    */
   virtual void
   rhs(VectorType & dst) const;
 
+  /*
+   * See function rhs() for a description.
+   */
   virtual void
   rhs_add(VectorType & dst) const;
 
@@ -250,10 +266,18 @@ public:
    * (but they have e.g. no meaning for linearized operators of nonlinear problems). For this
    * reason, these functions are currently defined 'virtual' to provide the opportunity to override
    * and assert these functions in derived classes.
+   *
+   * Unlike the function rhs(), this function does internally not call the function
+   * set_inhomogeneous_boundary_values() prior to evaluation. Hence, one needs to explicitly call
+   * the function set_inhomogeneous_boundary_values() in case of continuous Galerkin discretizations
+   * with inhomogeneous Dirichlet boundary conditions before calling the present function.
    */
   virtual void
   evaluate(VectorType & dst, VectorType const & src) const;
 
+  /*
+   * See function evaluate() for a description.
+   */
   virtual void
   evaluate_add(VectorType & dst, VectorType const & src) const;
 

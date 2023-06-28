@@ -68,6 +68,8 @@ LaplaceOperator<dim, Number, n_components>::rhs_add_dirichlet_bc_from_dof_vector
   VectorType &       dst,
   VectorType const & src) const
 {
+  AssertThrow(this->is_dg, dealii::ExcMessage("This function is only implemented for DG."));
+
   VectorType tmp;
   tmp.reinit(dst, false /* init with 0 */);
 
@@ -339,6 +341,7 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_dirichlet_bc_fr
     value value_p = value();
     if(boundary_type == BoundaryType::Dirichlet)
     {
+      // The desired boundary value g is obtained as integrator_m.get_value(q).
       value_p = 2.0 * integrator_m.get_value(q);
     }
     else if(boundary_type == BoundaryType::Neumann)
@@ -395,14 +398,13 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
 template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::set_inhomogeneous_boundary_values(
-  VectorType & dst,
-  double const time) const
+  VectorType & dst) const
 {
   // standard Dirichlet boundary conditions
   std::map<dealii::types::global_dof_index, double> boundary_values;
   for(auto dbc : operator_data.bc->dirichlet_bc)
   {
-    dbc.second->set_time(time);
+    dbc.second->set_time(this->get_time());
 
     dealii::ComponentMask mask     = dealii::ComponentMask();
     auto                  dbc_mask = operator_data.bc->dirichlet_bc_component_mask.find(dbc.first);

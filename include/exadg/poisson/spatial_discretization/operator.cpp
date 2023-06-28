@@ -486,10 +486,8 @@ template<int dim, int n_components, typename Number>
 void
 Operator<dim, n_components, Number>::rhs(VectorType & dst, double const time) const
 {
-  dst = 0;
-
   laplace_operator.set_time(time);
-  laplace_operator.rhs_add(dst);
+  laplace_operator.rhs(dst);
 
   if(param.right_hand_side)
     rhs_operator.evaluate_add(dst, time);
@@ -529,7 +527,8 @@ Operator<dim, n_components, Number>::solve(VectorType &       sol,
   {
     // Set constrained degrees of freedom corresponding to Dirichlet boundary conditions.
     VectorType rhs_modified = rhs;
-    laplace_operator.set_inhomogeneous_boundary_values(rhs_modified, time);
+    laplace_operator.set_time(time);
+    laplace_operator.set_inhomogeneous_boundary_values(rhs_modified);
 
     n_iterations = iterative_solver->solve(sol, rhs_modified);
 
@@ -537,7 +536,7 @@ Operator<dim, n_components, Number>::solve(VectorType &       sol,
     // rhs vector contain the Dirichlet boundary values and the linear operator contains
     // values of 1 on the diagonal. Hence, sol should already contain the correct
     // inhomogeneous Dirichlet boundary values. TODO
-    laplace_operator.set_inhomogeneous_boundary_values(sol, time);
+    laplace_operator.set_inhomogeneous_boundary_values(sol);
   }
   else
   {
