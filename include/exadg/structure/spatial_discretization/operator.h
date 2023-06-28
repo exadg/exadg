@@ -386,7 +386,7 @@ private:
   dealii::DoFHandler<dim>                     dof_handler;
   dealii::AffineConstraints<Number>           affine_constraints;
 
-  // To treat inhomogeneous Dirichlet BCsc orrectly in the context of matrix-free oeprator
+  // To treat inhomogeneous Dirichlet BCs correctly in the context of matrix-free operator
   // evaluation using dealii::MatrixFree/FEEvaluation, we need a separate AffineConstraints
   // object containing only periodicity and hanging node constraints.
   // When using the standard AffineConstraints object including Dirichlet boundary conditions,

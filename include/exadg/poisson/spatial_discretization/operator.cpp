@@ -135,25 +135,25 @@ Operator<dim, n_components, Number>::distribute_dofs()
 
   dof_handler.distribute_dofs(*fe);
 
-  // Affine constraints are only relevant for continuous Galerin discretization.
-  // The AffineConstraints object is used to initialize MatrixFree. Here, we apply homogeneous
-  // boundary conditions as needed by vmult() in iterative solvers for linear systems of equations,
-  // implemented via dealii::MatrixFree and FEEvaluation::read_dof_values() (or gather_evaluate()).
-  // The actual inhomogeneous boundary data needs to be imposed separately due to the implementation
-  // in deal.II that can not handle multiple AffineConstraints. Hence, we need to do this explicitly
-  // in ExaDG.
+  // Affine constraints are only relevant for continuous Galerkin discretizations.
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
     affine_constraints.clear();
+    affine_constraints_periodicity_and_hanging_nodes.clear();
 
     dealii::IndexSet locally_relevant_dofs;
     dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
     affine_constraints.reinit(locally_relevant_dofs);
+    affine_constraints_periodicity_and_hanging_nodes.reinit(locally_relevant_dofs);
 
     // hanging nodes (needs to be done before imposing periodicity constraints and boundary
     // conditions)
     if(this->grid->triangulation->has_hanging_nodes())
+    {
       dealii::DoFTools::make_hanging_node_constraints(dof_handler, affine_constraints);
+      dealii::DoFTools::make_hanging_node_constraints(
+        dof_handler, affine_constraints_periodicity_and_hanging_nodes);
+    }
 
     // constraints from periodic boundary conditions
     if(not(this->grid->periodic_face_pairs.empty()))
@@ -163,6 +163,9 @@ Operator<dim, n_components, Number>::distribute_dofs()
 
       dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(periodic_faces_dof,
                                                                        affine_constraints);
+
+      dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(
+        periodic_faces_dof, affine_constraints_periodicity_and_hanging_nodes);
     }
 
     // standard Dirichlet boundaries
@@ -187,7 +190,11 @@ Operator<dim, n_components, Number>::distribute_dofs()
       dealii::DoFTools::make_zero_boundary_constraints(dof_handler, it, affine_constraints, mask);
     }
 
+    // We explicitly do not add Dirichlet boundary conditions for
+    // affine_constraints_periodicity_and_hanging_nodes.
+
     affine_constraints.close();
+    affine_constraints_periodicity_and_hanging_nodes.close();
   }
 
   pcout << std::endl;
@@ -230,6 +237,13 @@ Operator<dim, n_components, Number>::fill_matrix_free_data(
 
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
   matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
+
+  // inhomogeneous Dirichlet boundary conditions: use additional AffineConstraints object, but the
+  // same DoFHandler
+  matrix_free_data.insert_dof_handler(&dof_handler,
+                                      get_dof_name_periodicity_and_hanging_node_constraints());
+  matrix_free_data.insert_constraint(&affine_constraints_periodicity_and_hanging_nodes,
+                                     get_dof_name_periodicity_and_hanging_node_constraints());
 
   if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
     matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1), get_quad_name());
@@ -641,6 +655,13 @@ Operator<dim, n_components, Number>::get_dof_name() const
 
 template<int dim, int n_components, typename Number>
 std::string
+Operator<dim, n_components, Number>::get_dof_name_periodicity_and_hanging_node_constraints() const
+{
+  return field + "_" + dof_index_periodicity_and_handing_node_constraints;
+}
+
+template<int dim, int n_components, typename Number>
+std::string
 Operator<dim, n_components, Number>::get_quad_name() const
 {
   return field + "_" + quad_index;
@@ -658,6 +679,13 @@ unsigned int
 Operator<dim, n_components, Number>::get_dof_index() const
 {
   return matrix_free_data->get_dof_index(get_dof_name());
+}
+
+template<int dim, int n_components, typename Number>
+unsigned int
+Operator<dim, n_components, Number>::get_dof_index_periodicity_and_hanging_node_constraints() const
+{
+  return matrix_free_data->get_dof_index(get_dof_name_periodicity_and_hanging_node_constraints());
 }
 
 template<int dim, int n_components, typename Number>

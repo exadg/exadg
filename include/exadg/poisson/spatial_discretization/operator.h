@@ -154,6 +154,12 @@ private:
   std::string
   get_dof_name() const;
 
+  unsigned int
+  get_dof_index_periodicity_and_hanging_node_constraints() const;
+
+  std::string
+  get_dof_name_periodicity_and_hanging_node_constraints() const;
+
   std::string
   get_quad_name() const;
 
@@ -199,11 +205,26 @@ private:
 
   dealii::DoFHandler<dim> dof_handler;
 
+  // This AffineConstraints object applies homogeneous boundary conditions as needed by vmult()/
+  // apply() functions in iterative solvers for linear systems of equations and preconditioners
+  // such as multigrid, implemented via dealii::MatrixFree and FEEvaluation::read_dof_values()
+  // (or gather_evaluate()).
+  // The actual inhomogeneous boundary data needs to be imposed separately using another object
+  // of type AffineConstraints (see below).
   mutable dealii::AffineConstraints<Number> affine_constraints;
 
-  std::string const dof_index                = "laplace";
-  std::string const quad_index               = "laplace";
-  std::string const quad_index_gauss_lobatto = "laplace_gauss_lobatto";
+  // To treat inhomogeneous Dirichlet BCs correctly in the context of matrix-free operator
+  // evaluation using dealii::MatrixFree/FEEvaluation, we need a separate AffineConstraints
+  // object containing only periodicity and hanging node constraints. This is only relevant
+  // for continuous Galerkin discretizations.
+  dealii::AffineConstraints<Number> affine_constraints_periodicity_and_hanging_nodes;
+
+  std::string const dof_index = "dof";
+  std::string const dof_index_periodicity_and_handing_node_constraints =
+    "dof_periodicity_hanging_nodes";
+
+  std::string const quad_index               = "quad";
+  std::string const quad_index_gauss_lobatto = "quad_gauss_lobatto";
 
   std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free;
   std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data;
