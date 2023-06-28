@@ -278,7 +278,12 @@ Operator<dim, n_components, Number>::setup_operators()
 {
   // Laplace operator
   Poisson::LaplaceOperatorData<rank, dim> laplace_operator_data;
-  laplace_operator_data.dof_index  = get_dof_index();
+  laplace_operator_data.dof_index = get_dof_index();
+  if(param.spatial_discretization == SpatialDiscretization::CG)
+  {
+    laplace_operator_data.dof_index_inhomogeneous =
+      get_dof_index_periodicity_and_hanging_node_constraints();
+  }
   laplace_operator_data.quad_index = get_quad_index();
   if(param.spatial_discretization == SpatialDiscretization::CG and
      not(boundary_descriptor->dirichlet_cached_bc.empty()))
