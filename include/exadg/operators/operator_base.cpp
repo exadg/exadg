@@ -383,6 +383,9 @@ OperatorBase<dim, Number, n_components>::evaluate_add(VectorType &       dst,
   }
   else
   {
+    AssertThrow(data.dof_index_inhomogeneous != dealii::numbers::invalid_unsigned_int,
+                dealii::ExcMessage("dof_index_inhomogeneous is uninitialized."));
+
     // Set constrained degrees of freedom according to inhomogeneous Dirichlet boundary conditions.
     //  The rest of the vector remains unchanged.
     // TODO: do this outside OperatorBase::evaluate_add()/rhs_add()

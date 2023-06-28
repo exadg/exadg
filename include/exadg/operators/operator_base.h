@@ -58,7 +58,7 @@ struct OperatorBaseData
 {
   OperatorBaseData()
     : dof_index(0),
-      dof_index_inhomogeneous(1),
+      dof_index_inhomogeneous(dealii::numbers::invalid_unsigned_int),
       quad_index(0),
       operator_is_singular(false),
       use_cell_based_loops(false),
