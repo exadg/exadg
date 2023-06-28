@@ -224,7 +224,7 @@ public:
                                double const       time) const final;
 
   void
-  apply_mass_operator(VectorType & dst, VectorType const & src) const final;
+  evaluate_mass_operator(VectorType & dst, VectorType const & src) const final;
 
   /*
    * This function evaluates the nonlinear residual which is required by the Newton solver. In order

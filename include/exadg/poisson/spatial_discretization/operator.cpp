@@ -530,17 +530,10 @@ Operator<dim, n_components, Number>::solve(VectorType &       sol,
 
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
-    // Set constrained degrees of freedom corresponding to Dirichlet boundary conditions.
-    VectorType rhs_modified = rhs;
+    n_iterations = iterative_solver->solve(sol, rhs);
+
+    // Set Dirichlet degrees of freedom according to Dirichlet boundary condition.
     laplace_operator.set_time(time);
-    laplace_operator.set_inhomogeneous_boundary_values(rhs_modified);
-
-    n_iterations = iterative_solver->solve(sol, rhs_modified);
-
-    // This step should actually be optional: The constrained degrees of freedom of the
-    // rhs vector contain the Dirichlet boundary values and the linear operator contains
-    // values of 1 on the diagonal. Hence, sol should already contain the correct
-    // inhomogeneous Dirichlet boundary values. TODO
     laplace_operator.set_inhomogeneous_boundary_values(sol);
   }
   else

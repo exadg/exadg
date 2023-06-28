@@ -365,11 +365,10 @@ Operator<dim, Number>::setup_operators()
   if(param.problem_type == ProblemType::Unsteady)
   {
     MassOperatorData<dim> mass_data;
-    mass_data.dof_index  = get_dof_index_periodicity_and_hanging_node_constraints();
-    mass_data.quad_index = get_quad_index();
-    mass_operator.initialize(*matrix_free,
-                             affine_constraints_periodicity_and_hanging_nodes,
-                             mass_data);
+    mass_data.dof_index               = get_dof_index();
+    mass_data.dof_index_inhomogeneous = get_dof_index_periodicity_and_hanging_node_constraints();
+    mass_data.quad_index              = get_quad_index();
+    mass_operator.initialize(*matrix_free, affine_constraints, mass_data);
 
     mass_operator.set_scaling_factor(param.density);
 
@@ -699,14 +698,19 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
   if(param.large_deformation) // nonlinear case
   {
     // elasticity operator
-    elasticity_operator_nonlinear.set_time(time);
 
     // NB: we have to deactivate the mass operator term
     double const scaling_factor_mass =
       elasticity_operator_nonlinear.get_scaling_factor_mass_operator();
     elasticity_operator_nonlinear.set_scaling_factor_mass_operator(0.0);
 
-    // evaluate nonlinear operator including Neumann BCs
+    // evaluate elasticity operator including inhomogeneous Dirichlet/Neumann boundary conditions:
+    // Note that we do not have to set inhomogeneous Dirichlet degrees of freedom explicitly since
+    // the function prescribe_initial_displacement() sets the initial displacement for all dofs
+    // (including Dirichlet dofs) and since the initial condition for the displacements needs to be
+    // consistent with the Dirichlet boundary data g(t=t0) at initial time, i.e. the vector
+    // initial_displacement already contains the correct Dirichlet data.
+    elasticity_operator_nonlinear.set_time(time);
     elasticity_operator_nonlinear.evaluate_nonlinear(rhs, initial_displacement);
     // shift to right-hand side
     rhs *= -1.0;
@@ -723,24 +727,24 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
   else // linear case
   {
     // elasticity operator
-    elasticity_operator_linear.set_time(time);
-
     // NB: we have to deactivate the mass operator
     double const scaling_factor_mass =
       elasticity_operator_linear.get_scaling_factor_mass_operator();
     elasticity_operator_linear.set_scaling_factor_mass_operator(0.0);
 
-    // compute action of homogeneous operator
-    elasticity_operator_linear.apply(rhs, initial_displacement);
+    // evaluate elasticity operator including inhomogeneous Dirichlet/Neumann boundary conditions:
+    // Note that we do not have to set inhomogeneous Dirichlet degrees of freedom explicitly since
+    // the function prescribe_initial_displacement() sets the initial displacement for all dofs
+    // (including Dirichlet dofs) and since the initial condition for the displacements needs to be
+    // consistent with the Dirichlet boundary data g(t=t0) at initial time, i.e. the vector
+    // initial_displacement already contains the correct Dirichlet data.
+    elasticity_operator_linear.set_time(time);
+    elasticity_operator_linear.evaluate(rhs, initial_displacement);
     // shift to right-hand side
     rhs *= -1.0;
 
     // revert scaling factor to initialized value
     elasticity_operator_linear.set_scaling_factor_mass_operator(scaling_factor_mass);
-
-    // Neumann BCs and inhomogeneous Dirichlet BCs
-    // (has already the correct sign, since rhs_add())
-    elasticity_operator_linear.rhs_add(rhs);
 
     // body force
     if(param.body_force)
@@ -751,15 +755,22 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
     }
   }
 
+  // TODO: shift inhomogeneous part of mass matrix operator (i.e. mass matrix applied to a dof
+  // vector with the initial acceleration in Dirichlet degrees of freedom) to the right-hand
+  // side
+
   // invert mass operator to get acceleration
   mass_solver->solve(initial_acceleration, rhs);
+
+  // TODO: set initial acceleration for the Dirichlet degrees of freedom so that the initial
+  // acceleration is also correct on the Dirichlet boundary
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::apply_mass_operator(VectorType & dst, VectorType const & src) const
+Operator<dim, Number>::evaluate_mass_operator(VectorType & dst, VectorType const & src) const
 {
-  mass_operator.apply(dst, src);
+  mass_operator.evaluate(dst, src);
 }
 
 template<int dim, typename Number>
@@ -866,14 +877,16 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   // solve nonlinear problem
   auto const iter = newton_solver->solve(sol, update);
 
-  // This step should actually be optional: The constraints have already been set
+  // TODO
+  // This call should not be necessary: The constraints have already been set
   // before the nonlinear solver is called and no contributions to the constrained
   // degrees of freedom should be added in the Newton solver by the linearized solver
   // (because the residual vector forming the rhs of the linearized problem is zero
   // for constrained degrees of freedom, the initial solution of the linearized
   // solver is also zero, and the linearized operator contains values of 1 on the
-  // diagonal for constrained degrees of freedom). TODO
-  elasticity_operator_nonlinear.set_inhomogeneous_boundary_values(sol);
+  // diagonal for constrained degrees of freedom).
+
+  //  elasticity_operator_nonlinear.set_inhomogeneous_boundary_values(sol);
 
   return iter;
 }
@@ -912,18 +925,11 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
 
   linear_solver->update_preconditioner(update_preconditioner);
 
-  // Set constrained degrees of freedom corresponding to Dirichlet boundary conditions.
-  VectorType rhs_modified = rhs;
-  elasticity_operator_linear.set_time(time);
-  elasticity_operator_linear.set_inhomogeneous_boundary_values(rhs_modified);
-
   // solve linear system of equations
-  unsigned int const iterations = linear_solver->solve(sol, rhs_modified);
+  unsigned int const iterations = linear_solver->solve(sol, rhs);
 
-  // This step should actually be optional: The constrained degrees of freedom of the
-  // rhs vector contain the Dirichlet boundary values and the linear operator contains
-  // values of 1 on the diagonal. Hence, sol should already contain the correct
-  // Dirichlet boundary values for constrained degrees of freedom. TODO
+  // Set Dirichlet degrees of freedom according to Dirichlet boundary condition.
+  elasticity_operator_linear.set_time(time);
   elasticity_operator_linear.set_inhomogeneous_boundary_values(sol);
 
   return iterations;

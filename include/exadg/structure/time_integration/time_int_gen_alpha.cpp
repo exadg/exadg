@@ -125,7 +125,7 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
   const_vector.reinit(displacement_n);
   rhs.reinit(displacement_n);
   this->compute_const_vector(rhs, displacement_n, velocity_n, acceleration_n);
-  pde_operator->apply_mass_operator(const_vector, rhs);
+  pde_operator->evaluate_mass_operator(const_vector, rhs);
 
   if(param.large_deformation == false) // linear case
   {

@@ -59,7 +59,7 @@ public:
                                double const       time) const = 0;
 
   virtual void
-  apply_mass_operator(VectorType & dst, VectorType const & src) const = 0;
+  evaluate_mass_operator(VectorType & dst, VectorType const & src) const = 0;
 
   virtual std::tuple<unsigned int, unsigned int>
   solve_nonlinear(VectorType &       sol,
