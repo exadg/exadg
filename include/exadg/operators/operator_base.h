@@ -331,9 +331,14 @@ protected:
    * These methods have to be overwritten by derived classes because these functions are
    * operator-specific and define how the operator looks like.
    */
-  virtual void
+private:
+  void
   reinit_cell(IntegratorCell & integrator, unsigned int const cell) const;
 
+  virtual void
+  reinit_cell_additional(IntegratorCell & integrator, unsigned int const cell) const;
+
+protected:
   virtual void
   reinit_face(IntegratorFace &   integrator_m,
               IntegratorFace &   integrator_p,

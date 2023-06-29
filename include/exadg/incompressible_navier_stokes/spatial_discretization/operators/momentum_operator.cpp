@@ -213,10 +213,10 @@ MomentumOperator<dim, Number>::evaluate_add(VectorType & dst, VectorType const &
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::reinit_cell(IntegratorCell &   integrator,
-                                           unsigned int const cell) const
+MomentumOperator<dim, Number>::reinit_cell_additional(IntegratorCell &   integrator,
+                                                      unsigned int const cell) const
 {
-  Base::reinit_cell(integrator, cell);
+  (void)integrator;
 
   if(operator_data.convective_problem)
     convective_kernel->reinit_cell(cell);

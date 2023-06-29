@@ -164,13 +164,13 @@ private:
    */
   void
   do_boundary_integral_continuous(IntegratorFace &                   integrator_m,
-                                  dealii::types::boundary_id const & boundary_id) const override;
+                                  dealii::types::boundary_id const & boundary_id) const final;
 
   /*
    * Linearized operator.
    */
   void
-  reinit_cell(IntegratorCell & integrator, unsigned int const cell) const override;
+  reinit_cell_additional(IntegratorCell & integrator, unsigned int const cell) const final;
 
   /*
    * Calculates the integral

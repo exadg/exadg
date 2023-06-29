@@ -451,9 +451,9 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
         *matrix_free,
         diagonal,
         [&](auto & integrator) -> void {
-          // TODO this line is currently needed as bugfix, but should be
-          // removed because reinit is now done twice
-          // this->reinit_cell(integrator, integrator.get_current_cell_index());
+          // TODO: this is currently done for every column, but would only be necessary
+          // once per cell
+          this->reinit_cell_additional(integrator, integrator.get_current_cell_index());
 
           integrator.evaluate(integrator_flags.cell_evaluate);
 
@@ -866,6 +866,19 @@ OperatorBase<dim, Number, n_components>::reinit_cell(IntegratorCell &   integrat
                                                      unsigned int const cell) const
 {
   integrator.reinit(cell);
+
+  reinit_cell_additional(integrator, cell);
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::reinit_cell_additional(IntegratorCell &   integrator,
+                                                                unsigned int const cell) const
+{
+  (void)integrator;
+  (void)cell;
+
+  // overwrite this function in derived classes if additional initialization is necessary
 }
 
 template<int dim, typename Number, int n_components>

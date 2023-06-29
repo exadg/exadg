@@ -160,10 +160,10 @@ CombinedOperator<dim, Number>::set_scaling_factor_mass_operator(Number const & s
 
 template<int dim, typename Number>
 void
-CombinedOperator<dim, Number>::reinit_cell(IntegratorCell &   integrator,
-                                           unsigned int const cell) const
+CombinedOperator<dim, Number>::reinit_cell_additional(IntegratorCell &   integrator,
+                                                      unsigned int const cell) const
 {
-  Base::reinit_cell(integrator, cell);
+  (void)integrator;
 
   if(operator_data.convective_problem)
     convective_kernel->reinit_cell(cell);

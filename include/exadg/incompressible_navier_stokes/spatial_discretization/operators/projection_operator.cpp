@@ -145,10 +145,10 @@ ProjectionOperator<dim, Number>::update(VectorType const & velocity, double cons
 
 template<int dim, typename Number>
 void
-ProjectionOperator<dim, Number>::reinit_cell(IntegratorCell &   integrator,
-                                             unsigned int const cell) const
+ProjectionOperator<dim, Number>::reinit_cell_additional(IntegratorCell &   integrator,
+                                                        unsigned int const cell) const
 {
-  Base::reinit_cell(integrator, cell);
+  (void)cell;
 
   if(operator_data.use_divergence_penalty)
     div_kernel->reinit_cell(integrator);

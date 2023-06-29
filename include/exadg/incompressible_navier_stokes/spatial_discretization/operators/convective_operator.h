@@ -957,7 +957,7 @@ private:
 
   // Note: this function can only be used for the linearized operator.
   void
-  reinit_cell(IntegratorCell & integrator, unsigned int const cell) const final;
+  reinit_cell_additional(IntegratorCell & integrator, unsigned int const cell) const final;
 
   // Note: this function can only be used for the linearized operator.
   void

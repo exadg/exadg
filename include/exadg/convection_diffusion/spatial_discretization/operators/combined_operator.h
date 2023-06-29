@@ -106,7 +106,7 @@ public:
 
 private:
   void
-  reinit_cell(IntegratorCell & integrator, unsigned int const cell) const final;
+  reinit_cell_additional(IntegratorCell & integrator, unsigned int const cell) const final;
 
   void
   reinit_face(IntegratorFace &   integrator_m,

@@ -36,8 +36,10 @@ NonLinearOperator<dim, Number>::initialize(
 {
   Base::initialize(matrix_free, affine_constraints, data);
 
-  integrator_lin = std::make_shared<IntegratorCell>(*this->matrix_free);
-  this->matrix_free->initialize_dof_vector(displacement_lin, data.dof_index);
+  integrator_lin = std::make_shared<IntegratorCell>(*this->matrix_free,
+                                                    this->operator_data.dof_index_inhomogeneous);
+  // it should not make a difference here whether we use dof_index or dof_index_inhomogeneous
+  this->matrix_free->initialize_dof_vector(displacement_lin, this->operator_data.dof_index);
   displacement_lin.update_ghost_values();
 }
 
@@ -300,10 +302,10 @@ NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
 
 template<int dim, typename Number>
 void
-NonLinearOperator<dim, Number>::reinit_cell(IntegratorCell &   integrator,
-                                            unsigned int const cell) const
+NonLinearOperator<dim, Number>::reinit_cell_additional(IntegratorCell &   integrator,
+                                                       unsigned int const cell) const
 {
-  Base::reinit_cell(integrator, cell);
+  Base::reinit_cell_additional(integrator, cell);
 
   integrator_lin->reinit(cell);
 

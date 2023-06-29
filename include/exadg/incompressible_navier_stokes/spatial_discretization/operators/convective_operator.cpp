@@ -358,10 +358,10 @@ ConvectiveOperator<dim, Number>::do_boundary_integral_nonlinear_operator(
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::reinit_cell(IntegratorCell &   integrator,
-                                             unsigned int const cell) const
+ConvectiveOperator<dim, Number>::reinit_cell_additional(IntegratorCell &   integrator,
+                                                        unsigned int const cell) const
 {
-  Base::reinit_cell(integrator, cell);
+  (void)integrator;
 
   kernel->reinit_cell(cell);
 }
