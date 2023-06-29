@@ -368,7 +368,7 @@ Operator<dim, Number>::setup_operators()
     mass_data.dof_index               = get_dof_index();
     mass_data.dof_index_inhomogeneous = get_dof_index_periodicity_and_hanging_node_constraints();
     mass_data.quad_index              = get_quad_index();
-    mass_data.dirichlet_bc            = field_functions->initial_acceleration_dirichlet_boundary;
+    mass_data.bc                      = boundary_descriptor;
 
     mass_operator.initialize(*matrix_free, affine_constraints, mass_data);
 

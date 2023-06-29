@@ -49,6 +49,11 @@ struct BoundaryDescriptor
   // Dirichlet
   std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> dirichlet_bc;
 
+  // Initial acceleration prescribed on Dirichlet boundary:
+  // This data structure will only be used if the initial_acceleration is not set in FieldFunctions
+  std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+    dirichlet_bc_initial_acceleration;
+
   // ComponentMask
   // If a certain boundary ID is not inserted into this map, it is assumed that all components are
   // active, in analogy to the default constructor of dealii::ComponentMask.
@@ -110,6 +115,12 @@ struct BoundaryDescriptor
         dirichlet_bc_component_mask.find(boundary_id) != dirichlet_bc_component_mask.end(),
         dealii::ExcMessage(
           "dirichlet_bc_component_mask must contain the same boundary IDs as dirichlet_bc."));
+
+      AssertThrow(
+        dirichlet_bc_initial_acceleration.find(boundary_id) !=
+          dirichlet_bc_initial_acceleration.end(),
+        dealii::ExcMessage(
+          "dirichlet_bc_initial_acceleration must contain the same boundary IDs as dirichlet_bc."));
     }
 
     if(dirichlet_cached_bc.find(boundary_id) != dirichlet_cached_bc.end())
