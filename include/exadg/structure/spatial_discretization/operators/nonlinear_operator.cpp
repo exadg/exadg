@@ -37,7 +37,8 @@ NonLinearOperator<dim, Number>::initialize(
   Base::initialize(matrix_free, affine_constraints, data);
 
   integrator_lin = std::make_shared<IntegratorCell>(*this->matrix_free,
-                                                    this->operator_data.dof_index_inhomogeneous);
+                                                    this->operator_data.dof_index_inhomogeneous,
+                                                    this->operator_data.quad_index);
   // it should not make a difference here whether we use dof_index or dof_index_inhomogeneous
   this->matrix_free->initialize_dof_vector(displacement_lin, this->operator_data.dof_index);
   displacement_lin.update_ghost_values();
