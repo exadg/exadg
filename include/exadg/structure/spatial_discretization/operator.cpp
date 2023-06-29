@@ -364,10 +364,12 @@ Operator<dim, Number>::setup_operators()
   // mass operator and related solver for inversion
   if(param.problem_type == ProblemType::Unsteady)
   {
-    MassOperatorData<dim> mass_data;
+    Structure::MassOperatorData<dim> mass_data;
     mass_data.dof_index               = get_dof_index();
     mass_data.dof_index_inhomogeneous = get_dof_index_periodicity_and_hanging_node_constraints();
     mass_data.quad_index              = get_quad_index();
+    mass_data.dirichlet_bc            = field_functions->initial_acceleration_dirichlet_boundary;
+
     mass_operator.initialize(*matrix_free, affine_constraints, mass_data);
 
     mass_operator.set_scaling_factor(param.density);
@@ -378,7 +380,7 @@ Operator<dim, Number>::setup_operators()
 
     // preconditioner
     mass_preconditioner =
-      std::make_shared<JacobiPreconditioner<MassOperator<dim, dim, Number>>>(mass_operator);
+      std::make_shared<JacobiPreconditioner<Structure::MassOperator<dim, Number>>>(mass_operator);
 
     // initialize solver
     Krylov::SolverDataCG solver_data;
@@ -397,8 +399,9 @@ Operator<dim, Number>::setup_operators()
       solver_data.max_iter             = param.solver_data.max_iter;
     }
 
-    typedef Krylov::SolverCG<MassOperator<dim, dim, Number>, PreconditionerBase<Number>, VectorType>
-      CG;
+    typedef Krylov::
+      SolverCG<Structure::MassOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
+        CG;
     mass_solver = std::make_shared<CG>(mass_operator, *mass_preconditioner, solver_data);
   }
 
@@ -772,15 +775,16 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
       }
     }
 
-    // TODO: shift inhomogeneous part of mass matrix operator (i.e. mass matrix applied to a dof
-    // vector with the initial acceleration in Dirichlet degrees of freedom) to the right-hand
-    // side
+    // Shift inhomogeneous part of mass matrix operator (i.e. mass matrix applied to a dof vector
+    // with the initial acceleration in Dirichlet degrees of freedom) to the right-hand side
+    mass_operator.rhs_add(rhs);
 
     // invert mass operator to get acceleration
     mass_solver->solve(initial_acceleration, rhs);
 
-    // TODO: set initial acceleration for the Dirichlet degrees of freedom so that the initial
+    // Set initial acceleration for the Dirichlet degrees of freedom so that the initial
     // acceleration is also correct on the Dirichlet boundary
+    mass_operator.set_inhomogeneous_boundary_values(initial_acceleration);
   }
 }
 

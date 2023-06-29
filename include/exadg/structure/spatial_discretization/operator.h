@@ -35,6 +35,7 @@
 #include <exadg/structure/spatial_discretization/interface.h>
 #include <exadg/structure/spatial_discretization/operators/body_force_operator.h>
 #include <exadg/structure/spatial_discretization/operators/linear_operator.h>
+#include <exadg/structure/spatial_discretization/operators/mass_operator.h>
 #include <exadg/structure/spatial_discretization/operators/nonlinear_operator.h>
 #include <exadg/structure/user_interface/boundary_descriptor.h>
 #include <exadg/structure/user_interface/field_functions.h>
@@ -441,7 +442,7 @@ private:
   // the mass operator term applied to a constant vector (independent
   // of new displacements) appearing on the right-hand side for linear
   // problems and in the residual for nonlinear problems.
-  MassOperator<dim, dim, Number> mass_operator;
+  Structure::MassOperator<dim, Number> mass_operator;
 
   /*
    * Solution of nonlinear systems of equations
