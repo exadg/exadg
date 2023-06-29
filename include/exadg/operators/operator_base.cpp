@@ -206,9 +206,7 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::initialize_dof_vector(VectorType & vector) const
 {
-  unsigned int dof_index = get_dof_index();
-
-  this->matrix_free->initialize_dof_vector(vector, dof_index);
+  this->matrix_free->initialize_dof_vector(vector, this->data.dof_index);
 }
 
 template<int dim, typename Number, int n_components>
@@ -420,7 +418,7 @@ void
 OperatorBase<dim, Number, n_components>::calculate_diagonal(VectorType & diagonal) const
 {
   if(diagonal.size() == 0)
-    matrix_free->initialize_dof_vector(diagonal);
+    this->initialize_dof_vector(diagonal);
   diagonal = 0;
   add_diagonal(diagonal);
 }
@@ -455,7 +453,7 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
         [&](auto & integrator) -> void {
           // TODO this line is currently needed as bugfix, but should be
           // removed because reinit is now done twice
-          this->reinit_cell(integrator, integrator.get_current_cell_index());
+          // this->reinit_cell(integrator, integrator.get_current_cell_index());
 
           integrator.evaluate(integrator_flags.cell_evaluate);
 
