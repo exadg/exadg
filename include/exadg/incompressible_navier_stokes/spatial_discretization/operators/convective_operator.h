@@ -961,21 +961,22 @@ private:
 
   // Note: this function can only be used for the linearized operator.
   void
-  reinit_face(IntegratorFace &   integrator_m,
-              IntegratorFace &   integrator_p,
-              unsigned int const face) const final;
+  reinit_face_additional(IntegratorFace &   integrator_m,
+                         IntegratorFace &   integrator_p,
+                         unsigned int const face) const final;
 
   // Note: this function can only be used for the linearized operator.
   void
-  reinit_boundary_face(IntegratorFace & integrator_m, unsigned int const face) const final;
+  reinit_boundary_face_additional(IntegratorFace &   integrator_m,
+                                  unsigned int const face) const final;
 
   // Note: this function can only be used for the linearized operator.
   void
-  reinit_face_cell_based(IntegratorFace &                 integrator_m,
-                         IntegratorFace &                 integrator_p,
-                         unsigned int const               cell,
-                         unsigned int const               face,
-                         dealii::types::boundary_id const boundary_id) const final;
+  reinit_face_cell_based_additional(IntegratorFace &                 integrator_m,
+                                    IntegratorFace &                 integrator_p,
+                                    unsigned int const               cell,
+                                    unsigned int const               face,
+                                    dealii::types::boundary_id const boundary_id) const final;
 
   // linearized operator
   void

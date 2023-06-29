@@ -327,25 +327,28 @@ protected:
          dealii::AffineConstraints<Number> const & constraints,
          OperatorBaseData const &                  data);
 
-  /*
-   * These methods have to be overwritten by derived classes because these functions are
-   * operator-specific and define how the operator looks like.
-   */
-private:
   void
   reinit_cell(IntegratorCell & integrator, unsigned int const cell) const;
 
-  virtual void
-  reinit_cell_additional(IntegratorCell & integrator, unsigned int const cell) const;
-
-protected:
-  virtual void
+  void
   reinit_face(IntegratorFace &   integrator_m,
               IntegratorFace &   integrator_p,
               unsigned int const face) const;
 
-  virtual void
+  void
   reinit_boundary_face(IntegratorFace & integrator_m, unsigned int const face) const;
+
+  void
+  reinit_face_cell_based(IntegratorFace &                 integrator_m,
+                         IntegratorFace &                 integrator_p,
+                         unsigned int const               cell,
+                         unsigned int const               face,
+                         dealii::types::boundary_id const boundary_id) const;
+
+  /*
+   * These methods have to be overwritten by derived classes because these functions are
+   * operator-specific and define how the operator looks like.
+   */
 
   // standard integration procedure with separate loops for cell and face integrals
   virtual void
@@ -370,14 +373,6 @@ protected:
 
   virtual void
   do_face_ext_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
-
-  // cell-based computation of both cell and face integrals
-  virtual void
-  reinit_face_cell_based(IntegratorFace &                 integrator_m,
-                         IntegratorFace &                 integrator_p,
-                         unsigned int const               cell,
-                         unsigned int const               face,
-                         dealii::types::boundary_id const boundary_id) const;
 
   // This function is currently only needed due to limitations of deal.II which do
   // currently not allow to access neighboring data in case of cell-based face loops.
@@ -437,6 +432,24 @@ protected:
   mutable std::shared_ptr<ELEMENTWISE_SOLVER>         elementwise_solver;
 
 private:
+  virtual void
+  reinit_cell_additional(IntegratorCell & integrator, unsigned int const cell) const;
+
+  virtual void
+  reinit_face_additional(IntegratorFace &   integrator_m,
+                         IntegratorFace &   integrator_p,
+                         unsigned int const face) const;
+
+  virtual void
+  reinit_boundary_face_additional(IntegratorFace & integrator_m, unsigned int const face) const;
+
+  virtual void
+  reinit_face_cell_based_additional(IntegratorFace &                 integrator_m,
+                                    IntegratorFace &                 integrator_p,
+                                    unsigned int const               cell,
+                                    unsigned int const               face,
+                                    dealii::types::boundary_id const boundary_id) const;
+
   /*
    * Helper functions:
    *

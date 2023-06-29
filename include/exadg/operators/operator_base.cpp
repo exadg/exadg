@@ -889,6 +889,19 @@ OperatorBase<dim, Number, n_components>::reinit_face(IntegratorFace &   integrat
 {
   integrator_m.reinit(face);
   integrator_p.reinit(face);
+
+  reinit_face_additional(integrator_m, integrator_p, face);
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::reinit_face_additional(IntegratorFace &   integrator_m,
+                                                                IntegratorFace &   integrator_p,
+                                                                unsigned int const face) const
+{
+  (void)integrator_m;
+  (void)integrator_p;
+  (void)face;
 }
 
 template<int dim, typename Number, int n_components>
@@ -897,6 +910,18 @@ OperatorBase<dim, Number, n_components>::reinit_boundary_face(IntegratorFace &  
                                                               unsigned int const face) const
 {
   integrator_m.reinit(face);
+
+  reinit_boundary_face_additional(integrator_m, face);
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::reinit_boundary_face_additional(
+  IntegratorFace &   integrator_m,
+  unsigned int const face) const
+{
+  (void)integrator_m;
+  (void)face;
 }
 
 template<int dim, typename Number, int n_components>
@@ -1003,6 +1028,24 @@ OperatorBase<dim, Number, n_components>::reinit_face_cell_based(
   {
     integrator_p.reinit(cell, face);
   }
+
+  reinit_face_cell_based_additional(integrator_m, integrator_p, cell, face, boundary_id);
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::reinit_face_cell_based_additional(
+  IntegratorFace &                 integrator_m,
+  IntegratorFace &                 integrator_p,
+  unsigned int const               cell,
+  unsigned int const               face,
+  dealii::types::boundary_id const boundary_id) const
+{
+  (void)integrator_m;
+  (void)integrator_p;
+  (void)cell;
+  (void)face;
+  (void)boundary_id;
 }
 
 template<int dim, typename Number, int n_components>

@@ -224,12 +224,10 @@ MomentumOperator<dim, Number>::reinit_cell_additional(IntegratorCell &   integra
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::reinit_face(IntegratorFace &   integrator_m,
-                                           IntegratorFace &   integrator_p,
-                                           unsigned int const face) const
+MomentumOperator<dim, Number>::reinit_face_additional(IntegratorFace &   integrator_m,
+                                                      IntegratorFace &   integrator_p,
+                                                      unsigned int const face) const
 {
-  Base::reinit_face(integrator_m, integrator_p, face);
-
   if(operator_data.convective_problem)
     convective_kernel->reinit_face(face);
 
@@ -239,11 +237,9 @@ MomentumOperator<dim, Number>::reinit_face(IntegratorFace &   integrator_m,
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::reinit_boundary_face(IntegratorFace &   integrator_m,
-                                                    unsigned int const face) const
+MomentumOperator<dim, Number>::reinit_boundary_face_additional(IntegratorFace &   integrator_m,
+                                                               unsigned int const face) const
 {
-  Base::reinit_boundary_face(integrator_m, face);
-
   if(operator_data.convective_problem)
     convective_kernel->reinit_boundary_face(face);
 
@@ -253,15 +249,13 @@ MomentumOperator<dim, Number>::reinit_boundary_face(IntegratorFace &   integrato
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::reinit_face_cell_based(
+MomentumOperator<dim, Number>::reinit_face_cell_based_additional(
   IntegratorFace &                 integrator_m,
   IntegratorFace &                 integrator_p,
   unsigned int const               cell,
   unsigned int const               face,
   dealii::types::boundary_id const boundary_id) const
 {
-  Base::reinit_face_cell_based(integrator_m, integrator_p, cell, face, boundary_id);
-
   if(operator_data.convective_problem)
     convective_kernel->reinit_face_cell_based(cell, face, boundary_id);
 

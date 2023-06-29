@@ -156,11 +156,11 @@ ProjectionOperator<dim, Number>::reinit_cell_additional(IntegratorCell &   integ
 
 template<int dim, typename Number>
 void
-ProjectionOperator<dim, Number>::reinit_face(IntegratorFace &   integrator_m,
-                                             IntegratorFace &   integrator_p,
-                                             unsigned int const face) const
+ProjectionOperator<dim, Number>::reinit_face_additional(IntegratorFace &   integrator_m,
+                                                        IntegratorFace &   integrator_p,
+                                                        unsigned int const face) const
 {
-  Base::reinit_face(integrator_m, integrator_p, face);
+  (void)face;
 
   if(operator_data.use_continuity_penalty)
     conti_kernel->reinit_face(integrator_m, integrator_p);
@@ -168,24 +168,25 @@ ProjectionOperator<dim, Number>::reinit_face(IntegratorFace &   integrator_m,
 
 template<int dim, typename Number>
 void
-ProjectionOperator<dim, Number>::reinit_boundary_face(IntegratorFace &   integrator_m,
-                                                      unsigned int const face) const
+ProjectionOperator<dim, Number>::reinit_boundary_face_additional(IntegratorFace &   integrator_m,
+                                                                 unsigned int const face) const
 {
-  Base::reinit_boundary_face(integrator_m, face);
+  (void)face;
 
   conti_kernel->reinit_boundary_face(integrator_m);
 }
 
 template<int dim, typename Number>
 void
-ProjectionOperator<dim, Number>::reinit_face_cell_based(
+ProjectionOperator<dim, Number>::reinit_face_cell_based_additional(
   IntegratorFace &                 integrator_m,
   IntegratorFace &                 integrator_p,
   unsigned int const               cell,
   unsigned int const               face,
   dealii::types::boundary_id const boundary_id) const
 {
-  Base::reinit_face_cell_based(integrator_m, integrator_p, cell, face, boundary_id);
+  (void)cell;
+  (void)face;
 
   if(operator_data.use_continuity_penalty)
     conti_kernel->reinit_face_cell_based(boundary_id, integrator_m, integrator_p);
