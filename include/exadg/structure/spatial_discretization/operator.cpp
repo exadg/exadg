@@ -692,78 +692,96 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
                                                     VectorType const & initial_displacement,
                                                     double const       time) const
 {
-  VectorType rhs(initial_acceleration);
-  rhs = 0.0;
-
-  if(param.large_deformation) // nonlinear case
+  if(field_functions->initial_acceleration.get())
   {
-    // elasticity operator
+    // This is necessary if Number == float
+    typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 
-    // NB: we have to deactivate the mass operator term
-    double const scaling_factor_mass =
-      elasticity_operator_nonlinear.get_scaling_factor_mass_operator();
-    elasticity_operator_nonlinear.set_scaling_factor_mass_operator(0.0);
+    VectorTypeDouble src_double;
+    src_double = initial_acceleration;
 
-    // evaluate elasticity operator including inhomogeneous Dirichlet/Neumann boundary conditions:
-    // Note that we do not have to set inhomogeneous Dirichlet degrees of freedom explicitly since
-    // the function prescribe_initial_displacement() sets the initial displacement for all dofs
-    // (including Dirichlet dofs) and since the initial condition for the displacements needs to be
-    // consistent with the Dirichlet boundary data g(t=t0) at initial time, i.e. the vector
-    // initial_displacement already contains the correct Dirichlet data.
-    elasticity_operator_nonlinear.set_time(time);
-    elasticity_operator_nonlinear.evaluate_nonlinear(rhs, initial_displacement);
-    // shift to right-hand side
-    rhs *= -1.0;
+    field_functions->initial_acceleration->set_time(time);
+    dealii::VectorTools::interpolate(dof_handler,
+                                     *field_functions->initial_acceleration,
+                                     src_double);
 
-    // revert scaling factor to initialized value
-    elasticity_operator_nonlinear.set_scaling_factor_mass_operator(scaling_factor_mass);
-
-    // body forces
-    if(param.body_force)
-    {
-      body_force_operator.evaluate_add(rhs, initial_displacement, time);
-    }
+    initial_acceleration = src_double;
   }
-  else // linear case
+  else
   {
-    // elasticity operator
-    // NB: we have to deactivate the mass operator
-    double const scaling_factor_mass =
-      elasticity_operator_linear.get_scaling_factor_mass_operator();
-    elasticity_operator_linear.set_scaling_factor_mass_operator(0.0);
+    VectorType rhs(initial_acceleration);
+    rhs = 0.0;
 
-    // evaluate elasticity operator including inhomogeneous Dirichlet/Neumann boundary conditions:
-    // Note that we do not have to set inhomogeneous Dirichlet degrees of freedom explicitly since
-    // the function prescribe_initial_displacement() sets the initial displacement for all dofs
-    // (including Dirichlet dofs) and since the initial condition for the displacements needs to be
-    // consistent with the Dirichlet boundary data g(t=t0) at initial time, i.e. the vector
-    // initial_displacement already contains the correct Dirichlet data.
-    elasticity_operator_linear.set_time(time);
-    elasticity_operator_linear.evaluate(rhs, initial_displacement);
-    // shift to right-hand side
-    rhs *= -1.0;
-
-    // revert scaling factor to initialized value
-    elasticity_operator_linear.set_scaling_factor_mass_operator(scaling_factor_mass);
-
-    // body force
-    if(param.body_force)
+    if(param.large_deformation) // nonlinear case
     {
-      // displacement is irrelevant for linear problem, since
-      // pull_back_body_force = false in this case.
-      body_force_operator.evaluate_add(rhs, initial_displacement, time);
+      // elasticity operator
+
+      // NB: we have to deactivate the mass operator term
+      double const scaling_factor_mass =
+        elasticity_operator_nonlinear.get_scaling_factor_mass_operator();
+      elasticity_operator_nonlinear.set_scaling_factor_mass_operator(0.0);
+
+      // evaluate elasticity operator including inhomogeneous Dirichlet/Neumann boundary conditions:
+      // Note that we do not have to set inhomogeneous Dirichlet degrees of freedom explicitly since
+      // the function prescribe_initial_displacement() sets the initial displacement for all dofs
+      // (including Dirichlet dofs) and since the initial condition for the displacements needs to
+      // be consistent with the Dirichlet boundary data g(t=t0) at initial time, i.e. the vector
+      // initial_displacement already contains the correct Dirichlet data.
+      elasticity_operator_nonlinear.set_time(time);
+      elasticity_operator_nonlinear.evaluate_nonlinear(rhs, initial_displacement);
+      // shift to right-hand side
+      rhs *= -1.0;
+
+      // revert scaling factor to initialized value
+      elasticity_operator_nonlinear.set_scaling_factor_mass_operator(scaling_factor_mass);
+
+      // body forces
+      if(param.body_force)
+      {
+        body_force_operator.evaluate_add(rhs, initial_displacement, time);
+      }
     }
+    else // linear case
+    {
+      // elasticity operator
+      // NB: we have to deactivate the mass operator
+      double const scaling_factor_mass =
+        elasticity_operator_linear.get_scaling_factor_mass_operator();
+      elasticity_operator_linear.set_scaling_factor_mass_operator(0.0);
+
+      // evaluate elasticity operator including inhomogeneous Dirichlet/Neumann boundary conditions:
+      // Note that we do not have to set inhomogeneous Dirichlet degrees of freedom explicitly since
+      // the function prescribe_initial_displacement() sets the initial displacement for all dofs
+      // (including Dirichlet dofs) and since the initial condition for the displacements needs to
+      // be consistent with the Dirichlet boundary data g(t=t0) at initial time, i.e. the vector
+      // initial_displacement already contains the correct Dirichlet data.
+      elasticity_operator_linear.set_time(time);
+      elasticity_operator_linear.evaluate(rhs, initial_displacement);
+      // shift to right-hand side
+      rhs *= -1.0;
+
+      // revert scaling factor to initialized value
+      elasticity_operator_linear.set_scaling_factor_mass_operator(scaling_factor_mass);
+
+      // body force
+      if(param.body_force)
+      {
+        // displacement is irrelevant for linear problem, since
+        // pull_back_body_force = false in this case.
+        body_force_operator.evaluate_add(rhs, initial_displacement, time);
+      }
+    }
+
+    // TODO: shift inhomogeneous part of mass matrix operator (i.e. mass matrix applied to a dof
+    // vector with the initial acceleration in Dirichlet degrees of freedom) to the right-hand
+    // side
+
+    // invert mass operator to get acceleration
+    mass_solver->solve(initial_acceleration, rhs);
+
+    // TODO: set initial acceleration for the Dirichlet degrees of freedom so that the initial
+    // acceleration is also correct on the Dirichlet boundary
   }
-
-  // TODO: shift inhomogeneous part of mass matrix operator (i.e. mass matrix applied to a dof
-  // vector with the initial acceleration in Dirichlet degrees of freedom) to the right-hand
-  // side
-
-  // invert mass operator to get acceleration
-  mass_solver->solve(initial_acceleration, rhs);
-
-  // TODO: set initial acceleration for the Dirichlet degrees of freedom so that the initial
-  // acceleration is also correct on the Dirichlet boundary
 }
 
 template<int dim, typename Number>

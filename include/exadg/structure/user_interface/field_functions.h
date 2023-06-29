@@ -33,6 +33,19 @@ struct FieldFunctions
   std::shared_ptr<dealii::Function<dim>> right_hand_side;
   std::shared_ptr<dealii::Function<dim>> initial_displacement;
   std::shared_ptr<dealii::Function<dim>> initial_velocity;
+
+  // Initial acceleration: Either prescribe the initial acceleration as a volume field or - if this
+  // is unknown - prescribe the initial acceleration on the Dirichlet boundary, while the initial
+  // acceleration in the volume will be derived as a numerical solution of the PDE problem.
+
+  // Initial acceleration as volume field:
+  std::shared_ptr<dealii::Function<dim>> initial_acceleration;
+
+  // Initial acceleration prescribed on Dirichlet boundary:
+  // This data structure will only be used if the above pointer to initial_acceleration is
+  // uninitialized.
+  std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+    initial_acceleration_dirichlet_boundary;
 };
 
 } // namespace Structure
