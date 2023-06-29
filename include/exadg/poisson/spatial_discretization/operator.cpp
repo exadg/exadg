@@ -526,19 +526,13 @@ Operator<dim, n_components, Number>::solve(VectorType &       sol,
     check_multigrid.check();
   }
 
-  unsigned int n_iterations = 0;
+  unsigned int n_iterations = iterative_solver->solve(sol, rhs);
 
+  // Set Dirichlet degrees of freedom according to Dirichlet boundary condition.
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
-    n_iterations = iterative_solver->solve(sol, rhs);
-
-    // Set Dirichlet degrees of freedom according to Dirichlet boundary condition.
     laplace_operator.set_time(time);
     laplace_operator.set_inhomogeneous_boundary_values(sol);
-  }
-  else
-  {
-    n_iterations = iterative_solver->solve(sol, rhs);
   }
 
   return n_iterations;
