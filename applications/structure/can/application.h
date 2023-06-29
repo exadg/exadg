@@ -240,6 +240,9 @@ private:
     std::vector<bool> mask_lower = {true, true, true}; // clamp boundary, i.e., fix all directions
     this->boundary_descriptor->dirichlet_bc.insert(
       pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
+
     this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(0, mask_lower));
 
     // BC at the top (boundary_id = 1)
@@ -251,6 +254,10 @@ private:
       //      directions
       this->boundary_descriptor->dirichlet_bc.insert(
         pair(1, new DisplacementDBC<dim>(displacement, incremental_loading)));
+      // DisplacementDBC is a linearly increasing function, so the acceleration is zero.
+      this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+        pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
+
       this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, mask_upper));
     }
     else if(boundary_type == BoundaryType::Neumann)

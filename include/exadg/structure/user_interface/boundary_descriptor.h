@@ -50,7 +50,8 @@ struct BoundaryDescriptor
   std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> dirichlet_bc;
 
   // Initial acceleration prescribed on Dirichlet boundary:
-  // This data structure will only be used if the initial_acceleration is not set in FieldFunctions
+  // This data structure will only be used if the initial_acceleration is not set in FieldFunctions.
+  // Moreover, this data structure will only be used for unsteady problems.
   std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
     dirichlet_bc_initial_acceleration;
 
