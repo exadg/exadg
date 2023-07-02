@@ -788,10 +788,13 @@ Operator<dim, Number>::apply_mass_operator(VectorType & dst, VectorType const & 
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::apply_add_weak_damping_operator(VectorType & dst, VectorType & src) const
+Operator<dim, Number>::apply_add_weak_damping_operator(VectorType &       dst,
+                                                       VectorType const & src) const
 {
-  src *= param.weak_damping_coefficient;
-  mass_operator.apply_add(dst, src);
+  VectorType tmp;
+  tmp.reinit(src);
+  tmp.equ(param.weak_damping_coefficient, src);
+  mass_operator.apply_add(dst, tmp);
 }
 
 

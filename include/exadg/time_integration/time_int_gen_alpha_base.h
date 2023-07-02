@@ -62,12 +62,25 @@ protected:
   double
   get_mid_time() const;
 
+  /*
+   * computes the finite element vector corresponding to the *remainder* of the acceleration term,
+   * int( phi_u, density * D^2/Dt^2(d) )_Omega, which does *not* depend on the displacement and is
+   * shifted to the right hand side. Applying the mass operator to this vector allows computing the
+   * contribution to the rhs once before up front before solving the linear or nonlinear system.
+   */
   void
   compute_const_vector_acceleration_remainder(VectorType &       const_vector,
                                               VectorType const & displacement_n,
                                               VectorType const & velocity_n,
                                               VectorType const & acceleration_n) const;
 
+  /*
+   * computes the finite element vector corresponding to the *remainder* of the velocity term,
+   * int( phi_u, density * weak_damping_coefficient * D/Dt(d) )_Omega, which does *not* depend on
+   * the displacement and is shifted to the right hand side. Applying the mass operator to this
+   * vector allows computing the contribution to the rhs once before up front before solving the
+   * linear or nonlinear system.
+   */
   void
   compute_const_vector_velocity_remainder(VectorType &       const_vector,
                                           VectorType const & displacement_n,

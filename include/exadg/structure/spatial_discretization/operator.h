@@ -223,7 +223,7 @@ public:
   apply_mass_operator(VectorType & dst, VectorType const & src) const final;
 
   void
-  apply_add_weak_damping_operator(VectorType & dst, VectorType & src) const final;
+  apply_add_weak_damping_operator(VectorType & dst, VectorType const & src) const final;
 
   /*
    * This function calculates the right-hand side of the linear system
