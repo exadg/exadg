@@ -358,8 +358,8 @@ ConvectiveOperator<dim, Number>::do_boundary_integral_nonlinear_operator(
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::reinit_cell_additional(IntegratorCell &   integrator,
-                                                        unsigned int const cell) const
+ConvectiveOperator<dim, Number>::reinit_cell_derived(IntegratorCell &   integrator,
+                                                     unsigned int const cell) const
 {
   (void)integrator;
 
@@ -368,9 +368,9 @@ ConvectiveOperator<dim, Number>::reinit_cell_additional(IntegratorCell &   integ
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::reinit_face_additional(IntegratorFace &   integrator_m,
-                                                        IntegratorFace &   integrator_p,
-                                                        unsigned int const face) const
+ConvectiveOperator<dim, Number>::reinit_face_derived(IntegratorFace &   integrator_m,
+                                                     IntegratorFace &   integrator_p,
+                                                     unsigned int const face) const
 {
   (void)integrator_m;
   (void)integrator_p;
@@ -380,8 +380,8 @@ ConvectiveOperator<dim, Number>::reinit_face_additional(IntegratorFace &   integ
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::reinit_boundary_face_additional(IntegratorFace &   integrator_m,
-                                                                 unsigned int const face) const
+ConvectiveOperator<dim, Number>::reinit_boundary_face_derived(IntegratorFace &   integrator_m,
+                                                              unsigned int const face) const
 {
   (void)integrator_m;
 
@@ -390,7 +390,7 @@ ConvectiveOperator<dim, Number>::reinit_boundary_face_additional(IntegratorFace 
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::reinit_face_cell_based_additional(
+ConvectiveOperator<dim, Number>::reinit_face_cell_based_derived(
   IntegratorFace &                 integrator_m,
   IntegratorFace &                 integrator_p,
   unsigned int const               cell,

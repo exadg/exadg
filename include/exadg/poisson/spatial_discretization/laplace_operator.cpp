@@ -87,9 +87,9 @@ LaplaceOperator<dim, Number, n_components>::rhs_add_dirichlet_bc_from_dof_vector
 
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::reinit_face_additional(IntegratorFace &   integrator_m,
-                                                                   IntegratorFace &   integrator_p,
-                                                                   unsigned int const face) const
+LaplaceOperator<dim, Number, n_components>::reinit_face_derived(IntegratorFace &   integrator_m,
+                                                                IntegratorFace &   integrator_p,
+                                                                unsigned int const face) const
 {
   (void)face;
 
@@ -98,7 +98,7 @@ LaplaceOperator<dim, Number, n_components>::reinit_face_additional(IntegratorFac
 
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::reinit_boundary_face_additional(
+LaplaceOperator<dim, Number, n_components>::reinit_boundary_face_derived(
   IntegratorFace &   integrator_m,
   unsigned int const face) const
 {
@@ -109,7 +109,7 @@ LaplaceOperator<dim, Number, n_components>::reinit_boundary_face_additional(
 
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::reinit_face_cell_based_additional(
+LaplaceOperator<dim, Number, n_components>::reinit_face_cell_based_derived(
   IntegratorFace &                 integrator_m,
   IntegratorFace &                 integrator_p,
   unsigned int const               cell,

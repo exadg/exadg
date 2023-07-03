@@ -38,9 +38,9 @@ ViscousOperator<dim, Number>::update()
 
 template<int dim, typename Number>
 void
-ViscousOperator<dim, Number>::reinit_face_additional(IntegratorFace &   integrator_m,
-                                                     IntegratorFace &   integrator_p,
-                                                     unsigned int const face) const
+ViscousOperator<dim, Number>::reinit_face_derived(IntegratorFace &   integrator_m,
+                                                  IntegratorFace &   integrator_p,
+                                                  unsigned int const face) const
 {
   (void)face;
 
@@ -49,8 +49,8 @@ ViscousOperator<dim, Number>::reinit_face_additional(IntegratorFace &   integrat
 
 template<int dim, typename Number>
 void
-ViscousOperator<dim, Number>::reinit_boundary_face_additional(IntegratorFace &   integrator_m,
-                                                              unsigned int const face) const
+ViscousOperator<dim, Number>::reinit_boundary_face_derived(IntegratorFace &   integrator_m,
+                                                           unsigned int const face) const
 {
   (void)face;
 
@@ -59,7 +59,7 @@ ViscousOperator<dim, Number>::reinit_boundary_face_additional(IntegratorFace &  
 
 template<int dim, typename Number>
 void
-ViscousOperator<dim, Number>::reinit_face_cell_based_additional(
+ViscousOperator<dim, Number>::reinit_face_cell_based_derived(
   IntegratorFace &                 integrator_m,
   IntegratorFace &                 integrator_p,
   unsigned int const               cell,

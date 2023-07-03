@@ -145,8 +145,8 @@ ProjectionOperator<dim, Number>::update(VectorType const & velocity, double cons
 
 template<int dim, typename Number>
 void
-ProjectionOperator<dim, Number>::reinit_cell_additional(IntegratorCell &   integrator,
-                                                        unsigned int const cell) const
+ProjectionOperator<dim, Number>::reinit_cell_derived(IntegratorCell &   integrator,
+                                                     unsigned int const cell) const
 {
   (void)cell;
 
@@ -156,9 +156,9 @@ ProjectionOperator<dim, Number>::reinit_cell_additional(IntegratorCell &   integ
 
 template<int dim, typename Number>
 void
-ProjectionOperator<dim, Number>::reinit_face_additional(IntegratorFace &   integrator_m,
-                                                        IntegratorFace &   integrator_p,
-                                                        unsigned int const face) const
+ProjectionOperator<dim, Number>::reinit_face_derived(IntegratorFace &   integrator_m,
+                                                     IntegratorFace &   integrator_p,
+                                                     unsigned int const face) const
 {
   (void)face;
 
@@ -168,8 +168,8 @@ ProjectionOperator<dim, Number>::reinit_face_additional(IntegratorFace &   integ
 
 template<int dim, typename Number>
 void
-ProjectionOperator<dim, Number>::reinit_boundary_face_additional(IntegratorFace &   integrator_m,
-                                                                 unsigned int const face) const
+ProjectionOperator<dim, Number>::reinit_boundary_face_derived(IntegratorFace &   integrator_m,
+                                                              unsigned int const face) const
 {
   (void)face;
 
@@ -178,7 +178,7 @@ ProjectionOperator<dim, Number>::reinit_boundary_face_additional(IntegratorFace 
 
 template<int dim, typename Number>
 void
-ProjectionOperator<dim, Number>::reinit_face_cell_based_additional(
+ProjectionOperator<dim, Number>::reinit_face_cell_based_derived(
   IntegratorFace &                 integrator_m,
   IntegratorFace &                 integrator_p,
   unsigned int const               cell,

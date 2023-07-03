@@ -199,8 +199,8 @@ ElasticityOperatorBase<dim, Number>::set_inhomogeneous_boundary_values(VectorTyp
 
 template<int dim, typename Number>
 void
-ElasticityOperatorBase<dim, Number>::reinit_cell_additional(IntegratorCell &   integrator,
-                                                            unsigned int const cell) const
+ElasticityOperatorBase<dim, Number>::reinit_cell_derived(IntegratorCell &   integrator,
+                                                         unsigned int const cell) const
 {
   (void)integrator;
 

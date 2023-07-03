@@ -160,8 +160,8 @@ CombinedOperator<dim, Number>::set_scaling_factor_mass_operator(Number const & s
 
 template<int dim, typename Number>
 void
-CombinedOperator<dim, Number>::reinit_cell_additional(IntegratorCell &   integrator,
-                                                      unsigned int const cell) const
+CombinedOperator<dim, Number>::reinit_cell_derived(IntegratorCell &   integrator,
+                                                   unsigned int const cell) const
 {
   (void)integrator;
 
@@ -171,9 +171,9 @@ CombinedOperator<dim, Number>::reinit_cell_additional(IntegratorCell &   integra
 
 template<int dim, typename Number>
 void
-CombinedOperator<dim, Number>::reinit_face_additional(IntegratorFace &   integrator_m,
-                                                      IntegratorFace &   integrator_p,
-                                                      unsigned int const face) const
+CombinedOperator<dim, Number>::reinit_face_derived(IntegratorFace &   integrator_m,
+                                                   IntegratorFace &   integrator_p,
+                                                   unsigned int const face) const
 {
   if(operator_data.convective_problem)
     convective_kernel->reinit_face(face);
@@ -183,8 +183,8 @@ CombinedOperator<dim, Number>::reinit_face_additional(IntegratorFace &   integra
 
 template<int dim, typename Number>
 void
-CombinedOperator<dim, Number>::reinit_boundary_face_additional(IntegratorFace &   integrator_m,
-                                                               unsigned int const face) const
+CombinedOperator<dim, Number>::reinit_boundary_face_derived(IntegratorFace &   integrator_m,
+                                                            unsigned int const face) const
 {
   if(operator_data.convective_problem)
     convective_kernel->reinit_boundary_face(face);
@@ -194,7 +194,7 @@ CombinedOperator<dim, Number>::reinit_boundary_face_additional(IntegratorFace & 
 
 template<int dim, typename Number>
 void
-CombinedOperator<dim, Number>::reinit_face_cell_based_additional(
+CombinedOperator<dim, Number>::reinit_face_cell_based_derived(
   IntegratorFace &                 integrator_m,
   IntegratorFace &                 integrator_p,
   unsigned int const               cell,

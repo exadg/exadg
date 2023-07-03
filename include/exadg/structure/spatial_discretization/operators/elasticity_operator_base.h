@@ -106,7 +106,7 @@ public:
 
 protected:
   void
-  reinit_cell_additional(IntegratorCell & integrator, unsigned int const cell) const override;
+  reinit_cell_derived(IntegratorCell & integrator, unsigned int const cell) const override;
 
   OperatorData<dim> operator_data;
 

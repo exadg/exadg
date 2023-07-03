@@ -52,9 +52,9 @@ DiffusiveOperator<dim, Number>::update()
 
 template<int dim, typename Number>
 void
-DiffusiveOperator<dim, Number>::reinit_face_additional(IntegratorFace &   integrator_m,
-                                                       IntegratorFace &   integrator_p,
-                                                       unsigned int const face) const
+DiffusiveOperator<dim, Number>::reinit_face_derived(IntegratorFace &   integrator_m,
+                                                    IntegratorFace &   integrator_p,
+                                                    unsigned int const face) const
 {
   (void)face;
 
@@ -63,8 +63,8 @@ DiffusiveOperator<dim, Number>::reinit_face_additional(IntegratorFace &   integr
 
 template<int dim, typename Number>
 void
-DiffusiveOperator<dim, Number>::reinit_boundary_face_additional(IntegratorFace &   integrator_m,
-                                                                unsigned int const face) const
+DiffusiveOperator<dim, Number>::reinit_boundary_face_derived(IntegratorFace &   integrator_m,
+                                                             unsigned int const face) const
 {
   (void)face;
 
@@ -73,7 +73,7 @@ DiffusiveOperator<dim, Number>::reinit_boundary_face_additional(IntegratorFace &
 
 template<int dim, typename Number>
 void
-DiffusiveOperator<dim, Number>::reinit_face_cell_based_additional(
+DiffusiveOperator<dim, Number>::reinit_face_cell_based_derived(
   IntegratorFace &                 integrator_m,
   IntegratorFace &                 integrator_p,
   unsigned int const               cell,

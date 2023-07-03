@@ -213,8 +213,8 @@ MomentumOperator<dim, Number>::evaluate_add(VectorType & dst, VectorType const &
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::reinit_cell_additional(IntegratorCell &   integrator,
-                                                      unsigned int const cell) const
+MomentumOperator<dim, Number>::reinit_cell_derived(IntegratorCell &   integrator,
+                                                   unsigned int const cell) const
 {
   (void)integrator;
 
@@ -224,9 +224,9 @@ MomentumOperator<dim, Number>::reinit_cell_additional(IntegratorCell &   integra
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::reinit_face_additional(IntegratorFace &   integrator_m,
-                                                      IntegratorFace &   integrator_p,
-                                                      unsigned int const face) const
+MomentumOperator<dim, Number>::reinit_face_derived(IntegratorFace &   integrator_m,
+                                                   IntegratorFace &   integrator_p,
+                                                   unsigned int const face) const
 {
   if(operator_data.convective_problem)
     convective_kernel->reinit_face(face);
@@ -237,8 +237,8 @@ MomentumOperator<dim, Number>::reinit_face_additional(IntegratorFace &   integra
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::reinit_boundary_face_additional(IntegratorFace &   integrator_m,
-                                                               unsigned int const face) const
+MomentumOperator<dim, Number>::reinit_boundary_face_derived(IntegratorFace &   integrator_m,
+                                                            unsigned int const face) const
 {
   if(operator_data.convective_problem)
     convective_kernel->reinit_boundary_face(face);
@@ -249,7 +249,7 @@ MomentumOperator<dim, Number>::reinit_boundary_face_additional(IntegratorFace & 
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::reinit_face_cell_based_additional(
+MomentumOperator<dim, Number>::reinit_face_cell_based_derived(
   IntegratorFace &                 integrator_m,
   IntegratorFace &                 integrator_p,
   unsigned int const               cell,

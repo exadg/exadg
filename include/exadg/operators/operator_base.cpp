@@ -453,7 +453,7 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
         [&](auto & integrator) -> void {
           // TODO: this is currently done for every column, but would only be necessary
           // once per cell
-          this->reinit_cell_additional(integrator, integrator.get_current_cell_index());
+          this->reinit_cell_derived(integrator, integrator.get_current_cell_index());
 
           integrator.evaluate(integrator_flags.cell_evaluate);
 
@@ -867,13 +867,13 @@ OperatorBase<dim, Number, n_components>::reinit_cell(IntegratorCell &   integrat
 {
   integrator.reinit(cell);
 
-  reinit_cell_additional(integrator, cell);
+  reinit_cell_derived(integrator, cell);
 }
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::reinit_cell_additional(IntegratorCell &   integrator,
-                                                                unsigned int const cell) const
+OperatorBase<dim, Number, n_components>::reinit_cell_derived(IntegratorCell &   integrator,
+                                                             unsigned int const cell) const
 {
   (void)integrator;
   (void)cell;
@@ -890,14 +890,14 @@ OperatorBase<dim, Number, n_components>::reinit_face(IntegratorFace &   integrat
   integrator_m.reinit(face);
   integrator_p.reinit(face);
 
-  reinit_face_additional(integrator_m, integrator_p, face);
+  reinit_face_derived(integrator_m, integrator_p, face);
 }
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::reinit_face_additional(IntegratorFace &   integrator_m,
-                                                                IntegratorFace &   integrator_p,
-                                                                unsigned int const face) const
+OperatorBase<dim, Number, n_components>::reinit_face_derived(IntegratorFace &   integrator_m,
+                                                             IntegratorFace &   integrator_p,
+                                                             unsigned int const face) const
 {
   (void)integrator_m;
   (void)integrator_p;
@@ -911,14 +911,13 @@ OperatorBase<dim, Number, n_components>::reinit_boundary_face(IntegratorFace &  
 {
   integrator_m.reinit(face);
 
-  reinit_boundary_face_additional(integrator_m, face);
+  reinit_boundary_face_derived(integrator_m, face);
 }
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::reinit_boundary_face_additional(
-  IntegratorFace &   integrator_m,
-  unsigned int const face) const
+OperatorBase<dim, Number, n_components>::reinit_boundary_face_derived(IntegratorFace & integrator_m,
+                                                                      unsigned int const face) const
 {
   (void)integrator_m;
   (void)face;
@@ -1029,12 +1028,12 @@ OperatorBase<dim, Number, n_components>::reinit_face_cell_based(
     integrator_p.reinit(cell, face);
   }
 
-  reinit_face_cell_based_additional(integrator_m, integrator_p, cell, face, boundary_id);
+  reinit_face_cell_based_derived(integrator_m, integrator_p, cell, face, boundary_id);
 }
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::reinit_face_cell_based_additional(
+OperatorBase<dim, Number, n_components>::reinit_face_cell_based_derived(
   IntegratorFace &                 integrator_m,
   IntegratorFace &                 integrator_p,
   unsigned int const               cell,

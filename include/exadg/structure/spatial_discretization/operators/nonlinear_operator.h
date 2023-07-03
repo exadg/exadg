@@ -170,7 +170,7 @@ private:
    * Linearized operator.
    */
   void
-  reinit_cell_additional(IntegratorCell & integrator, unsigned int const cell) const final;
+  reinit_cell_derived(IntegratorCell & integrator, unsigned int const cell) const final;
 
   /*
    * Calculates the integral

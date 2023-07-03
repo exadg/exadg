@@ -303,10 +303,10 @@ NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
 
 template<int dim, typename Number>
 void
-NonLinearOperator<dim, Number>::reinit_cell_additional(IntegratorCell &   integrator,
-                                                       unsigned int const cell) const
+NonLinearOperator<dim, Number>::reinit_cell_derived(IntegratorCell &   integrator,
+                                                    unsigned int const cell) const
 {
-  Base::reinit_cell_additional(integrator, cell);
+  Base::reinit_cell_derived(integrator, cell);
 
   integrator_lin->reinit(cell);
 
