@@ -26,6 +26,7 @@
 
 // ExaDG
 #include <exadg/grid/grid_utilities.h>
+#include <exadg/operators/constraints.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_amg.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
@@ -128,27 +129,9 @@ Operator<dim, Number>::distribute_dofs()
   // affine constraints
   affine_constraints_periodicity_and_hanging_nodes.clear();
 
-  dealii::IndexSet locally_relevant_dofs;
-  dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
-  affine_constraints_periodicity_and_hanging_nodes.reinit(locally_relevant_dofs);
-
-  // hanging nodes (needs to be done before imposing periodicity constraints and boundary
-  // conditions)
-  if(this->grid->triangulation->has_hanging_nodes())
-  {
-    dealii::DoFTools::make_hanging_node_constraints(
-      dof_handler, affine_constraints_periodicity_and_hanging_nodes);
-  }
-
-  // constraints from periodic boundary conditions
-  if(not(this->grid->periodic_face_pairs.empty()))
-  {
-    auto periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
-      this->grid->periodic_face_pairs, dof_handler);
-
-    dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(
-      periodic_faces_dof, affine_constraints_periodicity_and_hanging_nodes);
-  }
+  add_hanging_node_and_periodicity_constraints(affine_constraints_periodicity_and_hanging_nodes,
+                                               *this->grid,
+                                               dof_handler);
 
   affine_constraints_periodicity_and_hanging_nodes.close();
 
