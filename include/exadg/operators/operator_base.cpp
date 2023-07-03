@@ -878,7 +878,7 @@ OperatorBase<dim, Number, n_components>::reinit_cell_additional(IntegratorCell &
   (void)integrator;
   (void)cell;
 
-  // overwrite this function in derived classes if additional initialization is necessary
+  // override this function in derived classes if additional initialization is necessary
 }
 
 template<int dim, typename Number, int n_components>
@@ -973,7 +973,7 @@ OperatorBase<dim, Number, n_components>::do_boundary_integral_continuous(
   AssertThrow(
     false,
     dealii::ExcMessage(
-      "OperatorBase::do_boundary_integral_continuous() has to be overwritten by derived class!"));
+      "OperatorBase::do_boundary_integral_continuous() has to be overridden by derived class!"));
 }
 
 template<int dim, typename Number, int n_components>
@@ -986,7 +986,7 @@ OperatorBase<dim, Number, n_components>::set_inhomogeneous_boundary_values(
   AssertThrow(
     false,
     dealii::ExcMessage(
-      "OperatorBase::set_inhomogeneous_boundary_values() has to be overwritten by derived class!"));
+      "OperatorBase::set_inhomogeneous_boundary_values() has to be overridden by derived class!"));
 }
 
 template<int dim, typename Number, int n_components>

@@ -267,7 +267,7 @@ public:
    * reason, these functions are currently defined 'virtual' to provide the opportunity to override
    * and assert these functions in derived classes.
    *
-   * Unlike the function rhs(), this function does internally not call the function
+   * Unlike the function rhs(), this function does not internally call the function
    * set_inhomogeneous_boundary_values() prior to evaluation. Hence, one needs to explicitly call
    * the function set_inhomogeneous_boundary_values() in case of continuous Galerkin discretizations
    * with inhomogeneous Dirichlet boundary conditions before calling the present function.
@@ -472,8 +472,8 @@ private:
    * This function calculates cell integrals for the full (= homogeneous + inhomogeneous) part,
    * where inhomogeneous part may occur for continuous Galerkin discretizations due to inhomogeneous
    * Dirichlet BCs. A prerequisite to call this function is to set inhomogeneous Dirichlet degrees
-   * of freedom appropriate in the DoF-vector src. In case the DoF-vector src is zero apart from the
-   * inhomogeneous Dirichlet degrees of freedom, this function calculates only the inhomogeneous
+   * of freedom appropriately in the DoF-vector src. In case the DoF-vector src is zero apart from
+   * the inhomogeneous Dirichlet degrees of freedom, this function calculates only the inhomogeneous
    * part of the operator, because the homogeneous operator is zero in this case. For DG
    * discretizations, this function is equivalent to cell_loop().
    */
