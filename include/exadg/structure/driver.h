@@ -43,8 +43,10 @@ namespace Structure
 {
 enum class OperatorType
 {
-  Nonlinear,
-  Linearized
+  Evaluate, // includes inhomogeneous boundary conditions, where the nonlinear operator is evaluated
+            // in case of nonlinear problems
+  Apply     // homogeneous action of operator, where the linearized operator is applied in case of
+            // nonlinear problems
 };
 
 inline unsigned int

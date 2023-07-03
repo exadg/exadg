@@ -249,16 +249,17 @@ public:
                             double const       time) const;
 
   void
-  apply_nonlinear_operator(VectorType &       dst,
-                           VectorType const & src,
-                           double const       factor,
-                           double const       time) const;
+  evaluate_elasticity_operator(VectorType &       dst,
+                               VectorType const & src,
+                               double const       factor,
+                               double const       time) const;
 
   void
-  apply_linear_operator(VectorType &       dst,
-                        VectorType const & src,
-                        double const       factor,
-                        double const       time) const;
+  apply_elasticity_operator(VectorType &       dst,
+                            VectorType const & src,
+                            VectorType const & linearization,
+                            double const       factor,
+                            double const       time) const;
 
   /*
    * This function solves the (non-)linear system of equations.
