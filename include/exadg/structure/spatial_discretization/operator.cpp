@@ -138,6 +138,11 @@ Operator<dim, Number>::distribute_dofs()
   // copy periodicity and hanging node constraints, and add further constraints stemming from
   // Dirichlet boundary conditions
   affine_constraints.clear();
+
+  dealii::IndexSet locally_relevant_dofs;
+  dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+  affine_constraints.reinit(locally_relevant_dofs);
+
   affine_constraints.copy_from(affine_constraints_periodicity_and_hanging_nodes);
 
   // standard Dirichlet boundaries
