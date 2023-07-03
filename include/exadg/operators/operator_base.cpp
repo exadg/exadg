@@ -388,28 +388,21 @@ OperatorBase<dim, Number, n_components>::evaluate_add(VectorType &       dst,
     AssertThrow(data.dof_index_inhomogeneous != dealii::numbers::invalid_unsigned_int,
                 dealii::ExcMessage("dof_index_inhomogeneous is uninitialized."));
 
-    // Start with a zero destination vector.
-    VectorType tmp;
-    tmp.reinit(dst, false);
-
-    // Perform matrix-vector product using src_inhom (which contains inhomogeneous Dirichlet values)
-    // as src-vector to obtain the hom+inhom action of the operator.
+    // Perform matrix-vector product using a src-vector which contains inhomogeneous Dirichlet
+    // values to obtain the hom+inhom action of the operator.
     if(evaluate_face_integrals())
     {
       matrix_free->loop(&This::cell_loop_full_operator,
                         &This::face_loop_empty,
                         &This::boundary_face_loop_inhom_operator,
                         this,
-                        tmp,
+                        dst,
                         src);
     }
     else
     {
-      matrix_free->cell_loop(&This::cell_loop_full_operator, this, tmp, src);
+      matrix_free->cell_loop(&This::cell_loop_full_operator, this, dst, src);
     }
-
-    // This is the function of type evaluate_add().
-    dst += tmp;
   }
 }
 
