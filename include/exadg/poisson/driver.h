@@ -40,8 +40,8 @@ namespace Poisson
 {
 enum class OperatorType
 {
-  MatrixFree,
-  MatrixBased
+  Evaluate,
+  Apply
 };
 
 inline unsigned int

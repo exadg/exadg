@@ -179,39 +179,13 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
   poisson->pde_operator->initialize_dof_vector(dst);
   src = 1.0;
 
-#ifdef DEAL_II_WITH_TRILINOS
-  typedef double                                             TrilinosNumber;
-  dealii::LinearAlgebra::distributed::Vector<TrilinosNumber> dst_trilinos, src_trilinos;
-  src_trilinos = src;
-  dst_trilinos = dst;
-
-  dealii::TrilinosWrappers::SparseMatrix system_matrix;
-#endif
-
-  if(operator_type == OperatorType::MatrixBased)
-  {
-#ifdef DEAL_II_WITH_TRILINOS
-    poisson->pde_operator->init_system_matrix(system_matrix, mpi_comm);
-    poisson->pde_operator->calculate_system_matrix(system_matrix);
-#else
-    AssertThrow(
-      false, dealii::ExcMessage("Activate DEAL_II_WITH_TRILINOS for matrix-based computations."));
-#endif
-  }
-
   const std::function<void(void)> operator_evaluation = [&](void) {
-    if(operator_type == OperatorType::MatrixFree)
-    {
+    if(operator_type == OperatorType::Evaluate)
+      poisson->pde_operator->evaluate(dst, src, 0.0);
+    else if(operator_type == OperatorType::Apply)
       poisson->pde_operator->vmult(dst, src);
-    }
-    else if(operator_type == OperatorType::MatrixBased)
-    {
-#ifdef DEAL_II_WITH_TRILINOS
-      poisson->pde_operator->vmult_matrix_based(dst_trilinos, system_matrix, src_trilinos);
-#else
-      AssertThrow(false, dealii::ExcMessage("Activate DEAL_II_WITH_TRILINOS."));
-#endif
-    }
+    else
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
   };
 
   // do the measurements

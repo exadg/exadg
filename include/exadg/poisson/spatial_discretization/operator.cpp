@@ -25,9 +25,6 @@
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_simplex_p.h>
 #include <deal.II/fe/fe_system.h>
-#ifdef DEAL_II_WITH_PETSC
-#  include <deal.II/lac/petsc_vector.h>
-#endif
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
@@ -489,6 +486,16 @@ Operator<dim, n_components, Number>::vmult(VectorType & dst, VectorType const & 
 }
 
 template<int dim, int n_components, typename Number>
+void
+Operator<dim, n_components, Number>::evaluate(VectorType &       dst,
+                                              VectorType const & src,
+                                              double const       time) const
+{
+  laplace_operator.set_time(time);
+  laplace_operator.evaluate(dst, src);
+}
+
+template<int dim, int n_components, typename Number>
 unsigned int
 Operator<dim, n_components, Number>::solve(VectorType &       sol,
                                            VectorType const & rhs,
@@ -565,70 +572,6 @@ Operator<dim, n_components, Number>::get_average_convergence_rate() const
 {
   return iterative_solver->rho;
 }
-
-#ifdef DEAL_II_WITH_TRILINOS
-template<int dim, int n_components, typename Number>
-void
-Operator<dim, n_components, Number>::init_system_matrix(
-  dealii::TrilinosWrappers::SparseMatrix & system_matrix,
-  MPI_Comm const &                         mpi_comm) const
-{
-  laplace_operator.init_system_matrix(system_matrix, mpi_comm);
-}
-
-template<int dim, int n_components, typename Number>
-void
-Operator<dim, n_components, Number>::calculate_system_matrix(
-  dealii::TrilinosWrappers::SparseMatrix & system_matrix) const
-{
-  laplace_operator.calculate_system_matrix(system_matrix);
-}
-
-template<int dim, int n_components, typename Number>
-void
-Operator<dim, n_components, Number>::vmult_matrix_based(
-  VectorTypeDouble &                             dst,
-  dealii::TrilinosWrappers::SparseMatrix const & system_matrix,
-  VectorTypeDouble const &                       src) const
-{
-  system_matrix.vmult(dst, src);
-}
-#endif
-
-#ifdef DEAL_II_WITH_PETSC
-template<int dim, int n_components, typename Number>
-void
-Operator<dim, n_components, Number>::init_system_matrix(
-  dealii::PETScWrappers::MPI::SparseMatrix & system_matrix,
-  MPI_Comm const &                           mpi_comm) const
-{
-  laplace_operator.init_system_matrix(system_matrix, mpi_comm);
-}
-
-template<int dim, int n_components, typename Number>
-void
-Operator<dim, n_components, Number>::calculate_system_matrix(
-  dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const
-{
-  laplace_operator.calculate_system_matrix(system_matrix);
-}
-
-template<int dim, int n_components, typename Number>
-void
-Operator<dim, n_components, Number>::vmult_matrix_based(
-  VectorTypeDouble &                               dst,
-  dealii::PETScWrappers::MPI::SparseMatrix const & system_matrix,
-  VectorTypeDouble const &                         src) const
-{
-  apply_petsc_operation(dst,
-                        src,
-                        system_matrix.get_mpi_communicator(),
-                        [&](dealii::PETScWrappers::VectorBase &       petsc_dst,
-                            dealii::PETScWrappers::VectorBase const & petsc_src) {
-                          system_matrix.vmult(petsc_dst, petsc_src);
-                        });
-}
-#endif
 
 template<int dim, int n_components, typename Number>
 std::string
