@@ -209,8 +209,8 @@ private:
   // apply() functions in iterative solvers for linear systems of equations and preconditioners
   // such as multigrid, implemented via dealii::MatrixFree and FEEvaluation::read_dof_values()
   // (or gather_evaluate()).
-  // The actual inhomogeneous boundary data needs to be imposed separately using another object
-  // of type AffineConstraints (see below).
+  // To deal with inhomogeneous boundary data, a separate object of type AffineConstraints is
+  // needed (see below).
   mutable dealii::AffineConstraints<Number> affine_constraints;
 
   // To treat inhomogeneous Dirichlet BCs correctly in the context of matrix-free operator

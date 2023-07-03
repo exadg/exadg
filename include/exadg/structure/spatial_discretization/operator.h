@@ -215,7 +215,7 @@ public:
   prescribe_initial_velocity(VectorType & velocity, double const time) const final;
 
   /*
-   * This computes computes the intial acceleration field by evaluating all PDE terms for the given
+   * This computes the initial acceleration field by evaluating all PDE terms for the given
    * initial condition, shifting all terms to the right-hand side of the equations, and solving a
    * mass matrix system to obtain the initial acceleration.
    */
@@ -392,7 +392,12 @@ private:
    */
   std::shared_ptr<dealii::FiniteElement<dim>> fe;
   dealii::DoFHandler<dim>                     dof_handler;
-  dealii::AffineConstraints<Number>           affine_constraints;
+
+  // AffineConstraints object as needed by iterative solvers and preconditioners for linear systems
+  // of equations. This constraint object contains additional constraints from Dirichlet boundary
+  // conditions as compared to the constraint object below. Note that the present constraint object
+  // can treat Dirichlet boundaries only in a homogeneous manner.
+  dealii::AffineConstraints<Number> affine_constraints;
 
   // To treat inhomogeneous Dirichlet BCs correctly in the context of matrix-free operator
   // evaluation using dealii::MatrixFree/FEEvaluation, we need a separate AffineConstraints
@@ -404,8 +409,9 @@ private:
   // not be resolved correctly.
   // The solution/workaround is to use dealii::FEEvaluation::read_dof_values() for a correct
   // handling of hanging nodes, but to exclude Dirichlet degrees of freedom from the
-  // AffineConstraints object so that it is possible to read inhomogeneous boundary data (to be
-  // set correctly in separate routines) when calling dealii::FEEvaluation::read_dof_values().
+  // AffineConstraints object so that it is possible to read inhomogeneous boundary data when
+  // calling dealii::FEEvaluation::read_dof_values(). This inhomogeneous boundary data needs to be
+  // set beforehand in separate routines.
   dealii::AffineConstraints<Number> affine_constraints_periodicity_and_hanging_nodes;
 
   std::string const dof_index = "dof";

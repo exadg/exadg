@@ -138,19 +138,16 @@ Operator<dim, n_components, Number>::distribute_dofs()
   // Affine constraints are only relevant for continuous Galerkin discretizations.
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
-    affine_constraints.clear();
     affine_constraints_periodicity_and_hanging_nodes.clear();
 
     dealii::IndexSet locally_relevant_dofs;
     dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
-    affine_constraints.reinit(locally_relevant_dofs);
     affine_constraints_periodicity_and_hanging_nodes.reinit(locally_relevant_dofs);
 
     // hanging nodes (needs to be done before imposing periodicity constraints and boundary
     // conditions)
     if(this->grid->triangulation->has_hanging_nodes())
     {
-      dealii::DoFTools::make_hanging_node_constraints(dof_handler, affine_constraints);
       dealii::DoFTools::make_hanging_node_constraints(
         dof_handler, affine_constraints_periodicity_and_hanging_nodes);
     }
@@ -161,12 +158,16 @@ Operator<dim, n_components, Number>::distribute_dofs()
       auto periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
         this->grid->periodic_face_pairs, dof_handler);
 
-      dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(periodic_faces_dof,
-                                                                       affine_constraints);
-
       dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(
         periodic_faces_dof, affine_constraints_periodicity_and_hanging_nodes);
     }
+
+    affine_constraints_periodicity_and_hanging_nodes.close();
+
+    // copy periodicity and hanging node constraints, and add further constraints stemming from
+    // Dirichlet boundary conditions
+    affine_constraints.clear();
+    affine_constraints.copy_from(affine_constraints_periodicity_and_hanging_nodes);
 
     // standard Dirichlet boundaries
     for(auto it : this->boundary_descriptor->dirichlet_bc)
@@ -190,11 +191,7 @@ Operator<dim, n_components, Number>::distribute_dofs()
       dealii::DoFTools::make_zero_boundary_constraints(dof_handler, it, affine_constraints, mask);
     }
 
-    // We explicitly do not add Dirichlet boundary conditions for
-    // affine_constraints_periodicity_and_hanging_nodes.
-
     affine_constraints.close();
-    affine_constraints_periodicity_and_hanging_nodes.close();
   }
 
   pcout << std::endl;
