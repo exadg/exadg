@@ -21,15 +21,13 @@
 
 // deal.II
 #include <deal.II/dofs/dof_tools.h>
-#include <deal.II/fe/fe_dgq.h>
-#include <deal.II/fe/fe_q.h>
-#include <deal.II/fe/fe_simplex_p.h>
-#include <deal.II/fe/fe_system.h>
+#include <deal.II/lac/petsc_vector.h>
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
 #include <exadg/grid/grid_utilities.h>
 #include <exadg/operators/constraints.h>
+#include <exadg/operators/finite_element.h>
 #include <exadg/poisson/preconditioners/multigrid_preconditioner.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
@@ -76,60 +74,10 @@ template<int dim, int n_components, typename Number>
 void
 Operator<dim, n_components, Number>::distribute_dofs()
 {
-  if(n_components == 1)
-  {
-    if(param.spatial_discretization == SpatialDiscretization::DG)
-    {
-      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
-        fe = std::make_shared<dealii::FE_DGQ<dim>>(param.degree);
-      else if(this->grid->triangulation->all_reference_cells_are_simplex())
-        fe = std::make_shared<dealii::FE_SimplexDGP<dim>>(param.degree);
-      else
-        AssertThrow(false, ExcNotImplemented());
-    }
-    else if(param.spatial_discretization == SpatialDiscretization::CG)
-    {
-      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
-        fe = std::make_shared<dealii::FE_Q<dim>>(param.degree);
-      else if(this->grid->triangulation->all_reference_cells_are_simplex())
-        fe = std::make_shared<dealii::FE_SimplexP<dim>>(param.degree);
-      else
-        AssertThrow(false, ExcNotImplemented());
-    }
-    else
-    {
-      AssertThrow(false, ExcNotImplemented());
-    }
-  }
-  else if(n_components == dim)
-  {
-    if(param.spatial_discretization == SpatialDiscretization::DG)
-    {
-      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
-        fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_DGQ<dim>(param.degree), dim);
-      else if(this->grid->triangulation->all_reference_cells_are_simplex())
-        fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_SimplexDGP<dim>(param.degree), dim);
-      else
-        AssertThrow(false, ExcNotImplemented());
-    }
-    else if(param.spatial_discretization == SpatialDiscretization::CG)
-    {
-      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
-        fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_Q<dim>(param.degree), dim);
-      else if(this->grid->triangulation->all_reference_cells_are_simplex())
-        fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_SimplexP<dim>(param.degree), dim);
-      else
-        AssertThrow(false, ExcNotImplemented());
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("not implemented."));
-    }
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("not implemented."));
-  }
+  fe = create_finite_element<dim>(param.grid.element_type,
+                                  param.spatial_discretization == SpatialDiscretization::DG,
+                                  n_components,
+                                  param.degree);
 
   dof_handler.distribute_dofs(*fe);
 

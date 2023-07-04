@@ -174,17 +174,17 @@ protected:
    * Dof-handlers and constraints.
    */
   virtual void
-  initialize_dof_handler_and_constraints(bool                               is_singular,
-                                         dealii::FiniteElement<dim> const & fe,
-                                         Map_DBC const &                    dirichlet_bc,
+  initialize_dof_handler_and_constraints(bool                          is_singular,
+                                         unsigned int const            n_components,
+                                         Map_DBC const &               dirichlet_bc,
                                          Map_DBC_ComponentMask const & dirichlet_bc_component_mask);
 
   void
   do_initialize_dof_handler_and_constraints(
-    bool                               is_singular,
-    dealii::FiniteElement<dim> const & fe,
-    Map_DBC const &                    dirichlet_bc,
-    Map_DBC_ComponentMask const &      dirichlet_bc_component_mask,
+    bool                          is_singular,
+    unsigned int const            n_components,
+    Map_DBC const &               dirichlet_bc,
+    Map_DBC_ComponentMask const & dirichlet_bc_component_mask,
     dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> & dofhandlers,
     dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> &
       constraints);
