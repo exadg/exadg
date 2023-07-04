@@ -239,6 +239,12 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
                                  *this->constraints[level],
                                  data);
 
+  /*
+   * Set the diffusivity on the operator to the provided constant diffusivity value.
+   * Although the operator can deal with variable coefficients, for now, we use a constant
+   * diffusivity in the multigrid. This can and porobably will be changed in the future to be able
+   * to employ multigrid with variable diffusivity.
+   */
   if(data.diffusive_problem)
   {
     auto & diffusivity = pde_operator_level->get_diffusivity();
