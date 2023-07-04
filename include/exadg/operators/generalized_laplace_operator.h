@@ -80,10 +80,20 @@ private:
   using IntegratorCell = CellIntegrator<dim, n_components, Number>;
   using IntegratorFace = FaceIntegrator<dim, n_components, Number>;
 
-  using This = Kernel<dim, Number, n_components, coefficient_is_scalar>;
-
 public:
+  /*
+   * If there is more than one component to the solution, i.e. vector-valued, then its rank is 1,
+   * if there is only one component to the solution, i.e. scalar-valued, then the rank is 0.
+   */
   static constexpr unsigned int value_rank = (n_components > 1) ? 1 : 0;
+
+  /*
+   * If the solution is scalar-valued, i.e. value_rank is 0, then a non-scalar coefficient means
+   * that the rank of the coefficient tensor is 2.
+   * If the solution is vector-valued, i.e. value_rank is 1, then a non-scalar coefficient means
+   * that the rank of the coefficient tensor is 4.
+   * A scalar coefficient in any case means that the coefficient rank is 0.
+   */
   static constexpr unsigned int coefficient_rank =
     (coefficient_is_scalar) ? 0 : ((n_components > 1) ? 4 : 2);
 
