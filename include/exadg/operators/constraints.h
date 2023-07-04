@@ -62,6 +62,60 @@ add_hanging_node_and_periodicity_constraints(dealii::AffineConstraints<Number> &
   }
 }
 
+/**
+ * This utility function extracts the keys of a map provided as second argument and inserts these
+ * keys into the set provided as first argument.
+ */
+template<typename Key, typename Data>
+inline void
+fill_keys_of_map_into_set(std::set<Key> & set, std::map<Key, Data> const & map)
+{
+  for(auto iter : map)
+  {
+    set.insert(iter.first);
+  }
+}
+
+/**
+ * This function inserts additional boundary IDs together with a default dealii::ComponentMask into
+ * map_bid_to_mask in case that the given boundary ID is not already an element of map_bid_to_mask.
+ */
+inline void
+fill_map_bid_to_mask_with_default_mask(
+  std::map<dealii::types::boundary_id, dealii::ComponentMask> & map_bid_to_mask,
+  std::set<dealii::types::boundary_id> const &                  set_boundary_ids)
+{
+  for(auto const & it : set_boundary_ids)
+  {
+    // use default mask if no maks has been defined
+    if(map_bid_to_mask.find(it) == map_bid_to_mask.end())
+      map_bid_to_mask.insert({it, dealii::ComponentMask()});
+  }
+}
+
+/**
+ * This function calls dealii::DoFTools::make_zero_boundary_constraints() for all boundary IDs with
+ * corresponding dealii::ComponentMask handed over to this function. This is necessary as a utility
+ * function in ExaDG, since deal.II does not allow to provide independent component masks for each
+ * boundary ID in a set of boundary IDs.
+ */
+template<int dim, typename Number>
+void
+add_homogeneous_dirichlet_constraints(
+  dealii::AffineConstraints<Number> & affine_constraints,
+  dealii::DoFHandler<dim> const &     dof_handler,
+  std::map<dealii::types::boundary_id, dealii::ComponentMask> const &
+    map_boundary_id_to_component_mask)
+{
+  for(auto const & it : map_boundary_id_to_component_mask)
+  {
+    dealii::DoFTools::make_zero_boundary_constraints(dof_handler,
+                                                     it.first,
+                                                     affine_constraints,
+                                                     it.second);
+  }
+}
+
 } // namespace ExaDG
 
 #endif /* INCLUDE_EXADG_OPERATORS_CONSTRAINTS_H_ */

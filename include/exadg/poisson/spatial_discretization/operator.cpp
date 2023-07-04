@@ -157,27 +157,23 @@ Operator<dim, n_components, Number>::distribute_dofs()
 
     affine_constraints.copy_from(affine_constraints_periodicity_and_hanging_nodes);
 
-    // standard Dirichlet boundaries
-    for(auto it : this->boundary_descriptor->dirichlet_bc)
-    {
-      dealii::ComponentMask mask = dealii::ComponentMask();
+    // use all the component masks defined by the user
+    std::map<dealii::types::boundary_id, dealii::ComponentMask> map_bid_to_mask =
+      boundary_descriptor->dirichlet_bc_component_mask;
 
-      auto it_mask = boundary_descriptor->dirichlet_bc_component_mask.find(it.first);
-      if(it_mask != boundary_descriptor->dirichlet_bc_component_mask.end())
-        mask = it_mask->second;
+    // collect all Dirichlet boundary IDs in a set:
+    // DirichletCached boundary IDs are already provided as a set
+    std::set<dealii::types::boundary_id> all_dirichlet_bids =
+      boundary_descriptor->dirichlet_cached_bc;
 
-      dealii::DoFTools::make_zero_boundary_constraints(dof_handler,
-                                                       it.first,
-                                                       affine_constraints,
-                                                       mask);
-    }
+    // standard Dirichlet boundaries: extract keys from map
+    fill_keys_of_map_into_set(all_dirichlet_bids, boundary_descriptor->dirichlet_bc);
 
-    // DirichletCached boundaries
-    for(auto it : this->boundary_descriptor->dirichlet_cached_bc)
-    {
-      dealii::ComponentMask mask = dealii::ComponentMask();
-      dealii::DoFTools::make_zero_boundary_constraints(dof_handler, it, affine_constraints, mask);
-    }
+    // fill with default mask if no mask has been defined
+    fill_map_bid_to_mask_with_default_mask(map_bid_to_mask, all_dirichlet_bids);
+
+    // call deal.II utility function to add Dirichlet constraints
+    add_homogeneous_dirichlet_constraints(affine_constraints, dof_handler, map_bid_to_mask);
 
     affine_constraints.close();
   }
