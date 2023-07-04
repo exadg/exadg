@@ -465,14 +465,12 @@ Operator<dim, Number>::distribute_dofs()
   dof_handler_vector.distribute_dofs(*fe_vector);
   dof_handler_scalar.distribute_dofs(*fe_scalar);
 
-  unsigned int ndofs_per_cell = dealii::Utilities::pow(param.degree + 1, dim) * (dim + 2);
-
   pcout << std::endl
         << "Discontinuous Galerkin finite element discretization:" << std::endl
         << std::endl;
 
   print_parameter(pcout, "degree of 1D polynomials", param.degree);
-  print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
+  print_parameter(pcout, "number of dofs per cell", fe->n_dofs_per_cell());
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
   print_parameter(pcout, "number of 1D q-points (std)", param.degree + 1);
   print_parameter(pcout, "number of 1D q-points (over-conv)", n_q_points_conv);
