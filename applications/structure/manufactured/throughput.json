@@ -14,7 +14,7 @@
         "DofsMax": "100000"
     },
     "Throughput": {
-        "OperatorType": "Linearized",
+        "OperatorType": "Apply",
         "RepetitionsInner": "100",
         "RepetitionsOuter": "3"
     },

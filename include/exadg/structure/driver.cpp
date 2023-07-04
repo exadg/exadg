@@ -233,28 +233,20 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
   pde_operator->initialize_dof_vector(dst);
   src = 1.0;
 
-  if(application->get_parameters().large_deformation and operator_type == OperatorType::Linearized)
+  if(application->get_parameters().large_deformation and operator_type == OperatorType::Apply)
   {
     pde_operator->initialize_dof_vector(linearization);
     linearization = 1.0;
   }
 
   const std::function<void(void)> operator_evaluation = [&](void) {
-    if(application->get_parameters().large_deformation)
+    if(operator_type == OperatorType::Evaluate)
     {
-      if(operator_type == OperatorType::Nonlinear)
-      {
-        pde_operator->apply_nonlinear_operator(dst, src, 1.0, 0.0);
-      }
-      else if(operator_type == OperatorType::Linearized)
-      {
-        pde_operator->set_solution_linearization(linearization);
-        pde_operator->apply_linearized_operator(dst, src, 1.0, 0.0);
-      }
+      pde_operator->evaluate_elasticity_operator(dst, src, 1.0, 0.0);
     }
-    else
+    else if(operator_type == OperatorType::Apply)
     {
-      pde_operator->apply_linear_operator(dst, src, 1.0, 0.0);
+      pde_operator->apply_elasticity_operator(dst, src, linearization, 1.0, 0.0);
     }
   };
 
