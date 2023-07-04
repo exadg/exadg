@@ -25,6 +25,7 @@
 
 // ExaDG
 #include <exadg/compressible_navier_stokes/spatial_discretization/operator.h>
+#include <exadg/operators/finite_element.h>
 #include <exadg/time_integration/time_step_calculation.h>
 
 namespace ExaDG
@@ -47,9 +48,6 @@ Operator<dim, Number>::Operator(
     field_functions(field_functions_in),
     param(param_in),
     field(field_in),
-    fe(new dealii::FESystem<dim>(dealii::FE_DGQ<dim>(param_in.degree), dim + 2)),
-    fe_vector(new dealii::FESystem<dim>(dealii::FE_DGQ<dim>(param_in.degree), dim)),
-    fe_scalar(param_in.degree),
     n_q_points_conv(param_in.degree + 1),
     n_q_points_visc(param_in.degree + 1),
     dof_handler(*grid_in->triangulation),
@@ -60,6 +58,10 @@ Operator<dim, Number>::Operator(
     wall_time_operator_evaluation(0.0)
 {
   pcout << std::endl << "Construct compressible Navier-Stokes DG operator ..." << std::endl;
+
+  fe        = create_finite_element<dim>(ElementType::Hypercube, true, dim + 2, param.degree);
+  fe_vector = create_finite_element<dim>(ElementType::Hypercube, true, dim, param.degree);
+  fe_scalar = create_finite_element<dim>(ElementType::Hypercube, true, 1, param.degree);
 
   // Quadrature rule
   if(param.n_q_points_convective == QuadratureRule::Standard)
@@ -287,7 +289,7 @@ Operator<dim, Number>::get_mapping() const
 }
 
 template<int dim, typename Number>
-dealii::FESystem<dim> const &
+dealii::FiniteElement<dim> const &
 Operator<dim, Number>::get_fe() const
 {
   return *fe;
@@ -461,7 +463,7 @@ Operator<dim, Number>::distribute_dofs()
   // enumerate degrees of freedom
   dof_handler.distribute_dofs(*fe);
   dof_handler_vector.distribute_dofs(*fe_vector);
-  dof_handler_scalar.distribute_dofs(fe_scalar);
+  dof_handler_scalar.distribute_dofs(*fe_scalar);
 
   unsigned int ndofs_per_cell = dealii::Utilities::pow(param.degree + 1, dim) * (dim + 2);
 
