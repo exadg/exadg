@@ -59,6 +59,21 @@ OperatorCoupled<dim, Number>::~OperatorCoupled()
 
 template<int dim, typename Number>
 void
+OperatorCoupled<dim, Number>::fill_matrix_free_data(
+  MatrixFreeData<dim, Number> & matrix_free_data) const
+{
+  Base::fill_matrix_free_data(matrix_free_data);
+
+  if(this->param.preconditioner_pressure_block ==
+     SchurComplementPreconditioner::PressureConvectionDiffusion)
+  {
+    matrix_free_data.append_mapping_flags(
+      GeneralizedLaplace::Kernel<dim, Number>::get_mapping_flags(true, true));
+  }
+}
+
+template<int dim, typename Number>
+void
 OperatorCoupled<dim, Number>::setup(
   std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
   std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
@@ -742,13 +757,8 @@ OperatorCoupled<dim, Number>::setup_pressure_convection_diffusion_operator()
   // diffusive operator:
   // take interior penalty factor of diffusivity of viscous operator, but use polynomial degree of
   // pressure shape functions.
-  ConvDiff::Operators::DiffusiveKernelData diffusive_kernel_data;
+  GeneralizedLaplace::KernelData<dim> diffusive_kernel_data;
   diffusive_kernel_data.IP_factor = this->param.IP_factor_viscous;
-  // Note: the diffusive operator is initialized with constant viscosity. In case of spatially (and
-  // temporally) varying viscosities the diffusive operator has to be extended so that it can deal
-  // with variable coefficients (and should be updated in case of time dependent problems before
-  // applying the preconditioner).
-  diffusive_kernel_data.diffusivity = this->param.viscosity;
 
   // combined convection-diffusion operator
   ConvDiff::CombinedOperatorData<dim> operator_data;
@@ -769,6 +779,15 @@ OperatorCoupled<dim, Number>::setup_pressure_convection_diffusion_operator()
   pressure_conv_diff_operator->initialize(this->get_matrix_free(),
                                           this->get_constraint_p(),
                                           operator_data);
+
+  // Set diffusivity
+  auto & diffusivity = pressure_conv_diff_operator->get_diffusivity();
+
+  // If the viscosity is variable copy the reference from the viscous kernel
+  if(this->param.viscosity_is_variable())
+    diffusivity = this->viscous_kernel->get_viscosity_coefficients();
+  else // just set the constant viscosity
+    diffusivity = this->param.viscosity;
 }
 
 // clang-format off

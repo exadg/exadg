@@ -350,9 +350,21 @@ protected:
   // simply redirects to do_face_int_integral() if this function is not overwritten
   // by a derived class (such as convective terms that require an additional
   // evaluation of velocity fields for example).
+  //
+  // Edit 1: Currently, using variable coefficients (e.g. in the generalized Laplace operator also)
+  // requires this separate function for cell-based access to the face coefficients.
   virtual void
   do_face_int_integral_cell_based(IntegratorFace & integrator_m,
                                   IntegratorFace & integrator_p) const;
+
+  /**
+   * Performs boundary integral at the boundary for cell-based face loops. See the comment for the
+   * `do_face_int_integral_cell_based` method.
+   */
+  virtual void
+  do_boundary_integral_cell_based(IntegratorFace &                   integrator,
+                                  OperatorType const &               operator_type,
+                                  dealii::types::boundary_id const & boundary_id) const;
 
   /*
    * Matrix-free object.

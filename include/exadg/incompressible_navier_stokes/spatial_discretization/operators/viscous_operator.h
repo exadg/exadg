@@ -110,6 +110,12 @@ public:
     return this->degree;
   }
 
+  VariableCoefficients<dealii::Tensor<0, dim, dealii::VectorizedArray<Number>>> &
+  get_viscosity_coefficients()
+  {
+    return viscosity_coefficients;
+  }
+
   void
   set_constant_coefficient(Number const & constant_coefficient)
   {
@@ -528,7 +534,8 @@ private:
 
   mutable scalar tau;
 
-  VariableCoefficients<dealii::VectorizedArray<Number>> viscosity_coefficients;
+  VariableCoefficients<dealii::Tensor<0, dim, dealii::VectorizedArray<Number>>>
+    viscosity_coefficients;
 };
 
 } // namespace Operators

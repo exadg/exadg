@@ -84,9 +84,13 @@ enum class FormulationConvectiveTerm
 /*                                                                                    */
 /**************************************************************************************/
 
-// there are currently no enums for this section
-
-
+enum class DiffusivityModel
+{
+  Undefined,
+  Constant,
+  AnalyticalTimeFunction,
+  AnalyticalSpaceAndTimeFunction
+};
 
 /**************************************************************************************/
 /*                                                                                    */

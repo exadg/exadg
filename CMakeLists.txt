@@ -94,6 +94,7 @@ SET(TARGET_SRC
      include/exadg/operators/mass_operator.cpp
      include/exadg/operators/rhs_operator.cpp
      include/exadg/operators/navier_stokes_calculators.cpp
+     include/exadg/operators/generalized_laplace_operator.cpp
      # Poisson equation
      include/exadg/poisson/user_interface/parameters.cpp
      include/exadg/poisson/spatial_discretization/operator.cpp
@@ -105,7 +106,6 @@ SET(TARGET_SRC
      # convection-diffusion equation
      include/exadg/convection_diffusion/user_interface/parameters.cpp
      include/exadg/convection_diffusion/spatial_discretization/operators/convective_operator.cpp
-     include/exadg/convection_diffusion/spatial_discretization/operators/diffusive_operator.cpp
      include/exadg/convection_diffusion/spatial_discretization/operators/combined_operator.cpp
      include/exadg/convection_diffusion/spatial_discretization/operator.cpp
      include/exadg/convection_diffusion/spatial_discretization/interface.cpp

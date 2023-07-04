@@ -40,6 +40,7 @@ Parameters::Parameters()
     start_time(0.),
     end_time(-1.),
     diffusivity(0.),
+    diffusivity_model(DiffusivityModel::Undefined),
 
     // TEMPORAL DISCRETIZATION
     temporal_discretization(TemporalDiscretization::Undefined),
@@ -157,6 +158,11 @@ Parameters::check() const
   {
     AssertThrow(diffusivity > (0.0 - std::numeric_limits<double>::epsilon()),
                 dealii::ExcMessage("parameter must be defined"));
+
+    AssertThrow(diffusivity_model == DiffusivityModel::Constant or
+                  diffusivity_model == DiffusivityModel::AnalyticalSpaceAndTimeFunction or
+                  diffusivity_model == DiffusivityModel::AnalyticalTimeFunction,
+                dealii::ExcMessage("diffusivity model must be set"));
   }
 
   // TEMPORAL DISCRETIZATION

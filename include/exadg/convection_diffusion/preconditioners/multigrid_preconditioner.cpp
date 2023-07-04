@@ -36,7 +36,8 @@ MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & m
   : Base(mpi_comm),
     pde_operator(nullptr),
     mg_operator_type(MultigridOperatorType::Undefined),
-    mesh_is_moving(false)
+    mesh_is_moving(false),
+    mg_diffusivity(0.0)
 {
 }
 
@@ -50,12 +51,14 @@ MultigridPreconditioner<dim, Number>::initialize(
   PDEOperator const &                         pde_operator,
   MultigridOperatorType const &               mg_operator_type,
   bool const                                  mesh_is_moving,
+  Number const                                mg_diffusivity,
   Map_DBC const &                             dirichlet_bc,
   Map_DBC_ComponentMask const &               dirichlet_bc_component_mask)
 {
   this->pde_operator     = &pde_operator;
   this->mg_operator_type = mg_operator_type;
   this->mesh_is_moving   = mesh_is_moving;
+  this->mg_diffusivity   = mg_diffusivity;
 
   data = this->pde_operator->get_data();
 
@@ -181,7 +184,7 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
       Operators::ConvectiveKernel<dim, Number>::get_mapping_flags());
   if(data.diffusive_problem)
     matrix_free_data.append_mapping_flags(
-      Operators::DiffusiveKernel<dim, Number>::get_mapping_flags(this->level_info[level].is_dg(),
+      GeneralizedLaplace::Kernel<dim, Number>::get_mapping_flags(this->level_info[level].is_dg(),
                                                                  this->level_info[level].is_dg()));
 
   if(data.use_cell_based_loops and this->level_info[level].is_dg())
@@ -235,6 +238,18 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
   pde_operator_level->initialize(*this->matrix_free_objects[level],
                                  *this->constraints[level],
                                  data);
+
+  /*
+   * Set the diffusivity on the operator to the provided constant diffusivity value.
+   * Although the operator can deal with variable coefficients, for now, we use a constant
+   * diffusivity in the multigrid. This can and porobably will be changed in the future to be able
+   * to employ multigrid with variable diffusivity.
+   */
+  if(data.diffusive_problem)
+  {
+    auto & diffusivity = pde_operator_level->get_diffusivity();
+    diffusivity        = mg_diffusivity;
+  }
 
   // make sure that scaling factor of time derivative term has been set before the smoothers are
   // initialized

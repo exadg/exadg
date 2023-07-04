@@ -71,6 +71,7 @@ public:
              PDEOperator const &                         pde_operator,
              MultigridOperatorType const &               mg_operator_type,
              bool const                                  mesh_is_moving,
+             Number const                                mg_diffusivity,
              Map_DBC const &                             dirichlet_bc,
              Map_DBC_ComponentMask const &               dirichlet_bc_component_mask);
 
@@ -115,6 +116,8 @@ private:
   MultigridOperatorType mg_operator_type;
 
   bool mesh_is_moving;
+
+  Number mg_diffusivity;
 };
 
 } // namespace ConvDiff
