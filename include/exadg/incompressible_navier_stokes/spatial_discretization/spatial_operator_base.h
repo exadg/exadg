@@ -100,7 +100,7 @@ public:
    */
   virtual ~SpatialOperatorBase(){};
 
-  void
+  virtual void
   fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
 
   /*

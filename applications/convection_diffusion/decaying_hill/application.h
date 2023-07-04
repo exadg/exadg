@@ -139,9 +139,10 @@ private:
     this->param.right_hand_side = RIGHT_HAND_SIDE;
 
     // PHYSICAL QUANTITIES
-    this->param.start_time  = start_time;
-    this->param.end_time    = end_time;
-    this->param.diffusivity = diffusivity;
+    this->param.start_time        = start_time;
+    this->param.end_time          = end_time;
+    this->param.diffusivity_model = DiffusivityModel::Constant;
+    this->param.diffusivity       = diffusivity;
 
     // TEMPORAL DISCRETIZATION
     this->param.temporal_discretization       = TemporalDiscretization::BDF;

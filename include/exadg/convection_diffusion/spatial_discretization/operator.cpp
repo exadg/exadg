@@ -101,7 +101,7 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   if(param.diffusive_problem())
   {
     matrix_free_data.append_mapping_flags(
-      Operators::DiffusiveKernel<dim, Number>::get_mapping_flags(true, true));
+      GeneralizedLaplace::Kernel<dim, Number>::get_mapping_flags(true, true));
   }
 
   // dealii::DoFHandler, dealii::AffineConstraints
@@ -189,20 +189,23 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> con
   }
 
   // diffusive operator
-  Operators::DiffusiveKernelData diffusive_kernel_data;
+
+  GeneralizedLaplace::KernelData<dim> diffusive_kernel_data;
 
   if(param.diffusive_problem())
   {
-    diffusive_kernel_data.IP_factor   = param.IP_factor;
-    diffusive_kernel_data.diffusivity = param.diffusivity;
+    diffusive_kernel_data.IP_factor = param.IP_factor;
 
-    diffusive_kernel = std::make_shared<Operators::DiffusiveKernel<dim, Number>>();
+    diffusive_kernel = std::make_shared<GeneralizedLaplace::Kernel<dim, Number>>();
     diffusive_kernel->reinit(*matrix_free, diffusive_kernel_data, get_dof_index());
+    initialize_diffusivity();
+    calculate_diffusivity(this->param.start_time);
 
-    DiffusiveOperatorData<dim> diffusive_operator_data;
-    diffusive_operator_data.dof_index            = get_dof_index();
-    diffusive_operator_data.quad_index           = get_quad_index();
-    diffusive_operator_data.bc                   = boundary_descriptor;
+    GeneralizedLaplace::OperatorData<dim> diffusive_operator_data;
+    diffusive_operator_data.dof_index  = get_dof_index();
+    diffusive_operator_data.quad_index = get_quad_index();
+    diffusive_operator_data.bc =
+      GeneralizedLaplace::create_boundary_descriptor<dim>(boundary_descriptor);
     diffusive_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
     diffusive_operator_data.implement_block_diagonal_preconditioner_matrix_free =
       param.implement_block_diagonal_preconditioner_matrix_free;
@@ -494,6 +497,7 @@ Operator<dim, Number>::initialize_preconditioner()
                                   combined_operator,
                                   param.mg_operator_type,
                                   param.ale_formulation,
+                                  param.diffusivity,
                                   dirichlet_boundary_conditions,
                                   dirichlet_bc_component_mask);
   }
@@ -826,11 +830,76 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::update_after_grid_motion()
 {
-  // update SIPG penalty parameter of diffusive operator which depends on the deformation
-  // of elements
   if(param.diffusive_problem())
   {
+    // update SIPG penalty parameter of diffusive operator which depends on the deformation
+    // of elements
     diffusive_kernel->calculate_penalty_parameter(*matrix_free, get_dof_index());
+
+    // update the diffusivity coefficients which depend on the quadrature point coordinates
+    // and may depend on the time, e.g. in case of an analytical coefficient function.
+    // However, the ALE interface does not support passing in the time here, so the coefficients
+    // are calculated with the simulation start time.
+    calculate_diffusivity(this->param.start_time);
+  }
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::initialize_diffusivity() const
+{
+  auto & diffusivity = diffusive_kernel->get_coefficients();
+
+  // Initialization necessary for variable diffusivity models (right now only
+  // AnalyticalFieldFunction)
+  if(param.diffusivity_model == DiffusivityModel::AnalyticalSpaceAndTimeFunction)
+  {
+    using VariableDiffusivity =
+      VariableCoefficients<typename GeneralizedLaplace::Kernel<dim, Number>::CoefficientType>;
+
+    diffusivity = VariableDiffusivity{};
+
+    std::get<VariableDiffusivity>(diffusivity)
+      .initialize(*matrix_free, get_quad_index(), true, param.use_cell_based_face_loops);
+  }
+  else
+  {
+    // No initialization necessary for a space-constant diffusivity model
+  }
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::calculate_diffusivity(double const time) const
+{
+  auto & diffusivity = diffusive_kernel->get_coefficients();
+
+  if(param.diffusivity_model == DiffusivityModel::AnalyticalSpaceAndTimeFunction)
+  {
+    using VariableDiffusivity =
+      VariableCoefficients<typename GeneralizedLaplace::Kernel<dim, Number>::CoefficientType>;
+
+    auto & variable_diffusivity = std::get<VariableDiffusivity>(diffusivity);
+
+    auto coefficient_calculator = VarCoeffUtils::AnalyticalTensorCoefficientFunctionEvaluator{
+      *matrix_free, get_quad_index(), *(field_functions->diffusivity), time, variable_diffusivity};
+
+    coefficient_calculator.calculate_coefficients();
+  }
+  else if(param.diffusivity_model == DiffusivityModel::AnalyticalTimeFunction)
+  {
+    using ConstantDiffusivity = typename GeneralizedLaplace::Kernel<dim, Number>::CoefficientType;
+    diffusivity               = FunctionEvaluator<ConstantDiffusivity::rank, dim, Number>::value(
+      *(field_functions->diffusivity), {}, time);
+  }
+  else if(param.diffusivity_model == DiffusivityModel::Constant)
+  {
+    using ConstantDiffusivity = typename GeneralizedLaplace::Kernel<dim, Number>::CoefficientType;
+    diffusivity               = ConstantDiffusivity{param.diffusivity};
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcNotImplemented())
   }
 }
 

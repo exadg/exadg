@@ -84,9 +84,10 @@ private:
     this->param.analytical_velocity_field = true;
 
     // PHYSICAL QUANTITIES
-    this->param.start_time  = 0.0;
-    this->param.end_time    = 1.0;
-    this->param.diffusivity = 1.0;
+    this->param.start_time        = 0.0;
+    this->param.end_time          = 1.0;
+    this->param.diffusivity_model = DiffusivityModel::Constant;
+    this->param.diffusivity       = 1.0;
 
     // TEMPORAL DISCRETIZATION
     this->param.temporal_discretization       = TemporalDiscretization::BDF;

@@ -131,7 +131,8 @@ public:
   // kinematic diffusivity
   double diffusivity;
 
-
+  // diffusivity calculation model
+  DiffusivityModel diffusivity_model;
 
   /**************************************************************************************/
   /*                                                                                    */

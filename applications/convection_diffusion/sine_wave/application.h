@@ -73,9 +73,10 @@ private:
     this->param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
 
     // PHYSICAL QUANTITIES
-    this->param.start_time  = start_time;
-    this->param.end_time    = end_time;
-    this->param.diffusivity = 0.0;
+    this->param.start_time        = start_time;
+    this->param.end_time          = end_time;
+    this->param.diffusivity_model = DiffusivityModel::Constant;
+    this->param.diffusivity       = 0.0;
 
     // TEMPORAL DISCRETIZATION
     this->param.temporal_discretization       = TemporalDiscretization::ExplRK;

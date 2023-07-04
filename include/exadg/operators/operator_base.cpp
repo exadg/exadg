@@ -986,6 +986,16 @@ OperatorBase<dim, Number, n_components>::do_face_int_integral_cell_based(
 
 template<int dim, typename Number, int n_components>
 void
+OperatorBase<dim, Number, n_components>::do_boundary_integral_cell_based(
+  IntegratorFace &                   integrator,
+  ExaDG::OperatorType const &        operator_type,
+  dealii::types::boundary_id const & boundary_id) const
+{
+  this->do_boundary_integral(integrator, operator_type, boundary_id);
+}
+
+template<int dim, typename Number, int n_components>
+void
 OperatorBase<dim, Number, n_components>::create_standard_basis(unsigned int     j,
                                                                IntegratorCell & integrator) const
 {
