@@ -83,6 +83,9 @@ public:
   void
   vmult(VectorType & dst, VectorType const & src) const;
 
+  void
+  evaluate(VectorType & dst, VectorType const & src, double const time = 0.0) const;
+
   unsigned int
   solve(VectorType & sol, VectorType const & rhs, double const time) const;
 
@@ -114,34 +117,6 @@ public:
 
   std::shared_ptr<dealii::Mapping<dim> const>
   get_mapping() const;
-
-#ifdef DEAL_II_WITH_TRILINOS
-  void
-  init_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix,
-                     MPI_Comm const &                         mpi_comm) const;
-
-  void
-  calculate_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix) const;
-
-  void
-  vmult_matrix_based(VectorTypeDouble &                             dst,
-                     dealii::TrilinosWrappers::SparseMatrix const & system_matrix,
-                     VectorTypeDouble const &                       src) const;
-#endif
-
-#ifdef DEAL_II_WITH_PETSC
-  void
-  init_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix,
-                     MPI_Comm const &                           mpi_comm) const;
-
-  void
-  calculate_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const;
-
-  void
-  vmult_matrix_based(VectorTypeDouble &                               dst,
-                     dealii::PETScWrappers::MPI::SparseMatrix const & system_matrix,
-                     VectorTypeDouble const &                         src) const;
-#endif
 
   // TODO: we currently need this function public for precice-based FSI
   unsigned int

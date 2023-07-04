@@ -14,7 +14,7 @@
         "DofsMax": "10000"
     },
     "Throughput": {
-        "OperatorType": "MatrixFree",
+        "OperatorType": "Apply",
         "SpatialDiscretization": "DG",
         "RepetitionsInner": "100",
         "RepetitionsOuter": "1"
