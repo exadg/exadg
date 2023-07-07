@@ -323,7 +323,7 @@ private:
 
   double volume_force = 1.0;
 
-  enum BoundaryType
+  enum class BoundaryType
   {
     Dirichlet,
     Neumann
