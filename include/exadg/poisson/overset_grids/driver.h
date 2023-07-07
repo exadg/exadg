@@ -24,19 +24,67 @@
 
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/interface_coupling.h>
-#include <exadg/poisson/solver_poisson.h>
+#include <exadg/matrix_free/matrix_free_data.h>
+#include <exadg/poisson/overset_grids/user_interface/application_base.h>
+#include <exadg/poisson/spatial_discretization/operator.h>
 
 namespace ExaDG
 {
 namespace Poisson
 {
+namespace OversetGrids
+{
 template<int dim, int n_components, typename Number>
-class DriverOversetGrids
+class Solver
 {
 public:
-  DriverOversetGrids(
-    MPI_Comm const &                                                        mpi_comm,
-    std::shared_ptr<ApplicationOversetGridsBase<dim, n_components, Number>> application);
+  void
+  setup(std::shared_ptr<Domain<dim, n_components, Number>> domain, MPI_Comm const mpi_comm)
+  {
+    pde_operator =
+      std::make_shared<Operator<dim, n_components, Number>>(domain->get_grid(),
+                                                            domain->get_mapping(),
+                                                            domain->get_boundary_descriptor(),
+                                                            domain->get_field_functions(),
+                                                            domain->get_parameters(),
+                                                            "Poisson",
+                                                            mpi_comm);
+
+    matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
+    matrix_free_data->append(pde_operator);
+
+    matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
+    if(domain->get_parameters().enable_cell_based_face_loops)
+      Categorization::do_cell_based_loops(*domain->get_grid()->triangulation,
+                                          matrix_free_data->data);
+    matrix_free->reinit(*domain->get_mapping(),
+                        matrix_free_data->get_dof_handler_vector(),
+                        matrix_free_data->get_constraint_vector(),
+                        matrix_free_data->get_quadrature_vector(),
+                        matrix_free_data->data);
+
+    pde_operator->setup(matrix_free, matrix_free_data);
+
+    pde_operator->setup_solver();
+
+    postprocessor = domain->create_postprocessor();
+    postprocessor->setup(*pde_operator);
+  }
+
+  std::shared_ptr<Operator<dim, n_components, Number>>          pde_operator;
+  std::shared_ptr<PostProcessorBase<dim, n_components, Number>> postprocessor;
+
+private:
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
+};
+
+template<int dim, int n_components, typename Number>
+class Driver
+{
+public:
+  Driver(MPI_Comm const &                                            mpi_comm,
+         std::shared_ptr<ApplicationBase<dim, n_components, Number>> application);
 
   void
   setup();
@@ -54,7 +102,7 @@ private:
   // output to std::cout
   dealii::ConditionalOStream pcout;
 
-  std::shared_ptr<ApplicationOversetGridsBase<dim, n_components, Number>> application;
+  std::shared_ptr<ApplicationBase<dim, n_components, Number>> application;
 
   // Poisson solvers
   std::shared_ptr<Solver<dim, n_components, Number>> poisson1, poisson2;
@@ -62,7 +110,7 @@ private:
   // interface coupling
   std::shared_ptr<InterfaceCoupling<rank, dim, Number>> first_to_second, second_to_first;
 };
-
+} // namespace OversetGrids
 } // namespace Poisson
 } // namespace ExaDG
 

@@ -90,16 +90,6 @@ public:
   void
   setup()
   {
-    setup_pre();
-
-    calculate_aspect_ratio();
-
-    setup_post();
-  }
-
-  void
-  setup_pre()
-  {
     // parameters
     parse_parameters();
     set_parameters();
@@ -110,11 +100,23 @@ public:
     GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
     create_grid();
     print_grid_info(pcout, *grid);
-  }
 
-  void
-  setup_post()
-  {
+    if(compute_aspect_ratio)
+    {
+      // this variant is only for comparison
+      double AR = calculate_aspect_ratio_vertex_distance(*grid->triangulation, mpi_comm);
+      pcout << std::endl << "Maximum aspect ratio (vertex distance) = " << AR << std::endl;
+
+      auto const reference_cells = grid->triangulation->get_reference_cells();
+      AssertThrow(reference_cells.size() == 1, dealii::ExcMessage("No mixed meshes allowed"));
+
+      auto const quad =
+        reference_cells[0].template get_gauss_type_quadrature<dim>(param.degree + 1);
+
+      AR = dealii::GridTools::compute_maximum_aspect_ratio(*mapping, *grid->triangulation, quad);
+      pcout << std::endl << "Maximum aspect ratio (Jacobian) = " << AR << std::endl;
+    }
+
     // boundary conditions
     boundary_descriptor = std::make_shared<BoundaryDescriptor<rank, dim>>();
     set_boundary_descriptor();
@@ -165,26 +167,6 @@ protected:
     dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(parameter_file, "", true, true);
-  }
-
-  void
-  calculate_aspect_ratio()
-  {
-    if(compute_aspect_ratio)
-    {
-      // this variant is only for comparison
-      double AR = calculate_aspect_ratio_vertex_distance(*grid->triangulation, mpi_comm);
-      pcout << std::endl << "Maximum aspect ratio (vertex distance) = " << AR << std::endl;
-
-      auto const reference_cells = grid->triangulation->get_reference_cells();
-      AssertThrow(reference_cells.size() == 1, dealii::ExcMessage("No mixed meshes allowed"));
-
-      auto const quad =
-        reference_cells[0].template get_gauss_type_quadrature<dim>(param.degree + 1);
-
-      AR = dealii::GridTools::compute_maximum_aspect_ratio(*mapping, *grid->triangulation, quad);
-      pcout << std::endl << "Maximum aspect ratio (Jacobian) = " << AR << std::endl;
-    }
   }
 
   MPI_Comm const & mpi_comm;
