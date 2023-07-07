@@ -22,14 +22,14 @@
 #include <iostream>
 #include <numeric>
 
-#include <deal.II/lac/la_vector.h>
+#include <deal.II/lac/vector.h>
 
 #include <exadg/time_integration/bdf_constants.h>
 
 // Check compute_bdf_time_derivative() from quantities and times
 
 using namespace ExaDG;
-using VectorType = dealii::LinearAlgebra::Vector<double>;
+using VectorType = dealii::Vector<double>;
 
 VectorType
 get_vector_with_value(double const value)

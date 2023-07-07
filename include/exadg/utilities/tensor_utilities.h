@@ -27,7 +27,7 @@
 
 // deal.II
 #include <deal.II/base/tensor.h>
-#include <deal.II/lac/la_vector.h>
+#include <deal.II/lac/vector.h>
 
 namespace ExaDG
 {
