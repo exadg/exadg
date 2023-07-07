@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.7"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: include/exadg/incompressible_navier_stokes/user_interface/declare_get_application_precursor.h Source File</title>
+<title>ExaDG: include/exadg/incompressible_navier_stokes/precursor/user_interface/declare_get_application.h Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -69,11 +69,11 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_0b4591dde26de212b152a147f5a814f3.html">exadg</a></li><li class="navelem"><a class="el" href="dir_31645d487cc934c6ab829066c27bcb30.html">incompressible_navier_stokes</a></li><li class="navelem"><a class="el" href="dir_fc4675de706936ee176e4bbb36629601.html">user_interface</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_0b4591dde26de212b152a147f5a814f3.html">exadg</a></li><li class="navelem"><a class="el" href="dir_31645d487cc934c6ab829066c27bcb30.html">incompressible_navier_stokes</a></li><li class="navelem"><a class="el" href="dir_0a0d4b92a76dc42792caaa8aedd6240f.html">precursor</a></li><li class="navelem"><a class="el" href="dir_7261303b43bd60fe8baf3499262f2b94.html">user_interface</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
-  <div class="headertitle"><div class="title">declare_get_application_precursor.h</div></div>
+  <div class="headertitle"><div class="title">declare_get_application.h</div></div>
 </div><!--header-->
 <div class="contents">
 <div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="comment">/*  ______________________________________________________________________</span></div>
@@ -100,23 +100,24 @@ $(function() {
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_DECLARE_GET_APPLICATION_PRECURSOR_H_</span></div>
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_DECLARE_GET_APPLICATION_PRECURSOR_H_</span></div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;exadg/incompressible_navier_stokes/user_interface/application_base.h&gt;</span></div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespaceExaDG.html">ExaDG</a></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespaceExaDG.html">ExaDG</a></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>{</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="keyword">namespace </span>IncNS</div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>{</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="keyword">namespace </span>IncNS</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="keyword">namespace </span>Precursor</div>
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>{</div>
 <div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>std::shared_ptr&lt;ApplicationBasePrecursor&lt;dim, Number&gt;&gt;</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>std::shared_ptr&lt;ApplicationBase&lt;dim, Number&gt;&gt;</div>
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>get_application(std::string input_file, MPI_Comm <span class="keyword">const</span> &amp; comm);</div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span> </div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>} <span class="comment">// namespace IncNS</span></div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>}</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>} <span class="comment">// namespace IncNS</span></div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
 <div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_DECLARE_GET_APPLICATION_PRECURSOR_H_ \</span></div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="comment">        */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_DECLARE_GET_APPLICATION_PRECURSOR_H_ \</span></div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="comment">        */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
