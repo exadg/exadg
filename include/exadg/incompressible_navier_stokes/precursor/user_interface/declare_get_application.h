@@ -22,16 +22,17 @@
 #ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_DECLARE_GET_APPLICATION_PRECURSOR_H_
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_DECLARE_GET_APPLICATION_PRECURSOR_H_
 
-#include <exadg/incompressible_navier_stokes/user_interface/application_base.h>
-
 namespace ExaDG
 {
 namespace IncNS
 {
+namespace Precursor
+{
 template<int dim, typename Number>
-std::shared_ptr<ApplicationBasePrecursor<dim, Number>>
+std::shared_ptr<ApplicationBase<dim, Number>>
 get_application(std::string input_file, MPI_Comm const & comm);
 
+}
 } // namespace IncNS
 } // namespace ExaDG
 

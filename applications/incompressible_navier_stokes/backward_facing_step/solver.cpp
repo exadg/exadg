@@ -20,7 +20,7 @@
  */
 
 // solver
-#include <exadg/incompressible_navier_stokes/solver_precursor.h>
+#include <exadg/incompressible_navier_stokes/precursor/solver.h>
 
 // application
 #include "application.h"
