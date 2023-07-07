@@ -1035,25 +1035,25 @@ $(function() {
 <div class="line"><a id="l00957" name="l00957"></a><span class="lineno">  957</span> </div>
 <div class="line"><a id="l00958" name="l00958"></a><span class="lineno">  958</span>  <span class="comment">// Note: this function can only be used for the linearized operator.</span></div>
 <div class="line"><a id="l00959" name="l00959"></a><span class="lineno">  959</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00960" name="l00960"></a><span class="lineno">  960</span>  reinit_cell(IntegratorCell &amp; integrator, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> cell) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00960" name="l00960"></a><span class="lineno">  960</span>  reinit_cell_derived(IntegratorCell &amp; integrator, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> cell) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00961" name="l00961"></a><span class="lineno">  961</span> </div>
 <div class="line"><a id="l00962" name="l00962"></a><span class="lineno">  962</span>  <span class="comment">// Note: this function can only be used for the linearized operator.</span></div>
 <div class="line"><a id="l00963" name="l00963"></a><span class="lineno">  963</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00964" name="l00964"></a><span class="lineno">  964</span>  reinit_face(IntegratorFace &amp;   integrator_m,</div>
-<div class="line"><a id="l00965" name="l00965"></a><span class="lineno">  965</span>              IntegratorFace &amp;   integrator_p,</div>
-<div class="line"><a id="l00966" name="l00966"></a><span class="lineno">  966</span>              <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00964" name="l00964"></a><span class="lineno">  964</span>  reinit_face_derived(IntegratorFace &amp;   integrator_m,</div>
+<div class="line"><a id="l00965" name="l00965"></a><span class="lineno">  965</span>                      IntegratorFace &amp;   integrator_p,</div>
+<div class="line"><a id="l00966" name="l00966"></a><span class="lineno">  966</span>                      <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00967" name="l00967"></a><span class="lineno">  967</span> </div>
 <div class="line"><a id="l00968" name="l00968"></a><span class="lineno">  968</span>  <span class="comment">// Note: this function can only be used for the linearized operator.</span></div>
 <div class="line"><a id="l00969" name="l00969"></a><span class="lineno">  969</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00970" name="l00970"></a><span class="lineno">  970</span>  reinit_boundary_face(IntegratorFace &amp; integrator_m, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00970" name="l00970"></a><span class="lineno">  970</span>  reinit_boundary_face_derived(IntegratorFace &amp; integrator_m, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00971" name="l00971"></a><span class="lineno">  971</span> </div>
 <div class="line"><a id="l00972" name="l00972"></a><span class="lineno">  972</span>  <span class="comment">// Note: this function can only be used for the linearized operator.</span></div>
 <div class="line"><a id="l00973" name="l00973"></a><span class="lineno">  973</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00974" name="l00974"></a><span class="lineno">  974</span>  reinit_face_cell_based(IntegratorFace &amp;                 integrator_m,</div>
-<div class="line"><a id="l00975" name="l00975"></a><span class="lineno">  975</span>                         IntegratorFace &amp;                 integrator_p,</div>
-<div class="line"><a id="l00976" name="l00976"></a><span class="lineno">  976</span>                         <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>               cell,</div>
-<div class="line"><a id="l00977" name="l00977"></a><span class="lineno">  977</span>                         <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>               face,</div>
-<div class="line"><a id="l00978" name="l00978"></a><span class="lineno">  978</span>                         dealii::types::boundary_id <span class="keyword">const</span> boundary_id) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00974" name="l00974"></a><span class="lineno">  974</span>  reinit_face_cell_based_derived(IntegratorFace &amp;                 integrator_m,</div>
+<div class="line"><a id="l00975" name="l00975"></a><span class="lineno">  975</span>                                 IntegratorFace &amp;                 integrator_p,</div>
+<div class="line"><a id="l00976" name="l00976"></a><span class="lineno">  976</span>                                 <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>               cell,</div>
+<div class="line"><a id="l00977" name="l00977"></a><span class="lineno">  977</span>                                 <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>               face,</div>
+<div class="line"><a id="l00978" name="l00978"></a><span class="lineno">  978</span>                                 dealii::types::boundary_id <span class="keyword">const</span> boundary_id) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00979" name="l00979"></a><span class="lineno">  979</span> </div>
 <div class="line"><a id="l00980" name="l00980"></a><span class="lineno">  980</span>  <span class="comment">// linearized operator</span></div>
 <div class="line"><a id="l00981" name="l00981"></a><span class="lineno">  981</span>  <span class="keywordtype">void</span></div>
@@ -1100,7 +1100,7 @@ $(function() {
 <div class="line"><a id="l01022" name="l01022"></a><span class="lineno"> 1022</span><span class="comment">        */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1ConvectiveOperator_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1ConvectiveOperator.html">ExaDG::IncNS::ConvectiveOperator</a></div><div class="ttdef"><b>Definition</b> convective_operator.h:859</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1Operators_1_1ConvectiveKernel_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1Operators_1_1ConvectiveKernel.html">ExaDG::IncNS::Operators::ConvectiveKernel</a></div><div class="ttdef"><b>Definition</b> convective_operator.h:46</div></div>
-<div class="ttc" id="aclassExaDG_1_1OperatorBase_html"><div class="ttname"><a href="classExaDG_1_1OperatorBase.html">ExaDG::OperatorBase</a></div><div class="ttdef"><b>Definition</b> operator_base.h:90</div></div>
+<div class="ttc" id="aclassExaDG_1_1OperatorBase_html"><div class="ttname"><a href="classExaDG_1_1OperatorBase.html">ExaDG::OperatorBase</a></div><div class="ttdef"><b>Definition</b> operator_base.h:97</div></div>
 <div class="ttc" id="aclassExaDG_1_1lazy__ptr_html"><div class="ttname"><a href="classExaDG_1_1lazy__ptr.html">ExaDG::lazy_ptr</a></div><div class="ttdef"><b>Definition</b> lazy_ptr.h:29</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 <div class="ttc" id="astructExaDG_1_1IncNS_1_1ConvectiveOperatorData_html"><div class="ttname"><a href="structExaDG_1_1IncNS_1_1ConvectiveOperatorData.html">ExaDG::IncNS::ConvectiveOperatorData</a></div><div class="ttdef"><b>Definition</b> convective_operator.h:833</div></div>

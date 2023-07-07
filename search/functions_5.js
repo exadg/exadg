@@ -10,5 +10,6 @@ var searchData=
   ['get_5fmax_5flevel_7',['get_max_level',['../classExaDG_1_1TimerTree.html#a84ea0da9640ad1883cf374123959c285',1,'ExaDG::TimerTree']]],
   ['get_5fnumber_5fof_5flevels_8',['get_number_of_levels',['../classExaDG_1_1MultigridPreconditionerBase.html#a6f9e9e58c3979ba70388c9d4d6198d26',1,'ExaDG::MultigridPreconditionerBase']]],
   ['get_5fresults_9',['get_results',['../classdealspectrum_1_1SpectralAnalysis.html#a83c895003af56a97b5004e8a429527d3',1,'dealspectrum::SpectralAnalysis']]],
-  ['getlocalrange_10',['getLocalRange',['../classdealspectrum_1_1SpectralAnalysis.html#ad521541cf55622d07d58e83ddb360ed7',1,'dealspectrum::SpectralAnalysis']]]
+  ['get_5fsolution_5flinearization_10',['get_solution_linearization',['../classExaDG_1_1Structure_1_1NonLinearOperator.html#a08531b9af318aebc419f0f1dfc7a707a',1,'ExaDG::Structure::NonLinearOperator']]],
+  ['getlocalrange_11',['getLocalRange',['../classdealspectrum_1_1SpectralAnalysis.html#ad521541cf55622d07d58e83ddb360ed7',1,'dealspectrum::SpectralAnalysis']]]
 ];

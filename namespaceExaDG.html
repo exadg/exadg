@@ -589,6 +589,17 @@ template&lt;int dim, typename Number &gt; </td></tr>
 template&lt;int dim, typename Number &gt; </td></tr>
 <tr class="memitem:a16f67bf1176613b0c1dd812affb3a479"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>run</b> (<a class="el" href="structExaDG_1_1ThroughputParameters.html">ThroughputParameters</a>&lt; IncNS::OperatorType &gt; const &amp;throughput, std::string const &amp;input_file, unsigned int const degree, unsigned int const refine_space, unsigned int const n_cells_1d, MPI_Comm const &amp;mpi_comm, bool const is_test)</td></tr>
 <tr class="separator:a16f67bf1176613b0c1dd812affb3a479"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a20cc7b5214f2645a044fb9203aaa3b84"><td class="memTemplParams" colspan="2">template&lt;int dim, typename Number &gt; </td></tr>
+<tr class="memitem:a20cc7b5214f2645a044fb9203aaa3b84"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#a20cc7b5214f2645a044fb9203aaa3b84">add_hanging_node_and_periodicity_constraints</a> (dealii::AffineConstraints&lt; Number &gt; &amp;affine_constraints, <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &amp;grid, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler)</td></tr>
+<tr class="separator:a20cc7b5214f2645a044fb9203aaa3b84"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acc588dc1152065feb06f52956730b664"><td class="memTemplParams" colspan="2">template&lt;typename Key , typename Data &gt; </td></tr>
+<tr class="memitem:acc588dc1152065feb06f52956730b664"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#acc588dc1152065feb06f52956730b664">fill_keys_of_map_into_set</a> (std::set&lt; Key &gt; &amp;set, std::map&lt; Key, Data &gt; const &amp;map)</td></tr>
+<tr class="separator:acc588dc1152065feb06f52956730b664"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a94266daeafbc357a16a664df7f630ec2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#a94266daeafbc357a16a664df7f630ec2">fill_map_bid_to_mask_with_default_mask</a> (std::map&lt; dealii::types::boundary_id, dealii::ComponentMask &gt; &amp;map_bid_to_mask, std::set&lt; dealii::types::boundary_id &gt; const &amp;set_boundary_ids)</td></tr>
+<tr class="separator:a94266daeafbc357a16a664df7f630ec2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a21204007ce6b9f268adb74ff5f508e56"><td class="memTemplParams" colspan="2">template&lt;int dim, typename Number &gt; </td></tr>
+<tr class="memitem:a21204007ce6b9f268adb74ff5f508e56"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#a21204007ce6b9f268adb74ff5f508e56">add_homogeneous_dirichlet_constraints</a> (dealii::AffineConstraints&lt; Number &gt; &amp;affine_constraints, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler, std::map&lt; dealii::types::boundary_id, dealii::ComponentMask &gt; const &amp;map_boundary_id_to_component_mask)</td></tr>
+<tr class="separator:a21204007ce6b9f268adb74ff5f508e56"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a863d41e9259662d708ccd897be8b6db2"><td class="memTemplParams" colspan="2"><a id="a863d41e9259662d708ccd897be8b6db2" name="a863d41e9259662d708ccd897be8b6db2"></a>
 template&lt;int dim, int n_components, typename Number &gt; </td></tr>
 <tr class="memitem:a863d41e9259662d708ccd897be8b6db2"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>run</b> (std::string const &amp;input_file, MPI_Comm const &amp;mpi_comm)</td></tr>
@@ -879,6 +890,80 @@ template&lt;int dim, typename Number &gt; </td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This class provides information at which time steps a certain action should be triggered. It is typically used in postprocessing routines that shall not be invoked after every time step. The user can specify an evaluation interval in terms of number of time steps or an amount of time. </p>
 </div><h2 class="groupheader">Function Documentation</h2>
+<a id="a20cc7b5214f2645a044fb9203aaa3b84" name="a20cc7b5214f2645a044fb9203aaa3b84"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a20cc7b5214f2645a044fb9203aaa3b84">&#9670;&#160;</a></span>add_hanging_node_and_periodicity_constraints()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void ExaDG::add_hanging_node_and_periodicity_constraints </td>
+          <td>(</td>
+          <td class="paramtype">dealii::AffineConstraints&lt; Number &gt; &amp;&#160;</td>
+          <td class="paramname"><em>affine_constraints</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>grid</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>dof_handler</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>This function adds hanging-node and periodicity constraints. This function combines these two types of constraints since deal.II requires to add these constraints in a certain order. </p>
+
+</div>
+</div>
+<a id="a21204007ce6b9f268adb74ff5f508e56" name="a21204007ce6b9f268adb74ff5f508e56"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a21204007ce6b9f268adb74ff5f508e56">&#9670;&#160;</a></span>add_homogeneous_dirichlet_constraints()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void ExaDG::add_homogeneous_dirichlet_constraints </td>
+          <td>(</td>
+          <td class="paramtype">dealii::AffineConstraints&lt; Number &gt; &amp;&#160;</td>
+          <td class="paramname"><em>affine_constraints</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>dof_handler</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::map&lt; dealii::types::boundary_id, dealii::ComponentMask &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>map_boundary_id_to_component_mask</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>This function calls dealii::DoFTools::make_zero_boundary_constraints() for all boundary IDs with corresponding dealii::ComponentMask handed over to this function. This is necessary as a utility function in <a class="el" href="namespaceExaDG.html">ExaDG</a>, since deal.II does not allow to provide independent component masks for each boundary ID in a set of boundary IDs. </p>
+
+</div>
+</div>
 <a id="ae37213007b3d71515b9d35a598e17e22" name="ae37213007b3d71515b9d35a598e17e22"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae37213007b3d71515b9d35a598e17e22">&#9670;&#160;</a></span>create_directories()</h2>
 
@@ -1117,6 +1202,82 @@ template&lt;int n_components1, int n_components2, typename Number &gt; </div>
 </table>
 </div><div class="memdoc">
 <p>Extract a certain component of a list of tensors. </p>
+
+</div>
+</div>
+<a id="acc588dc1152065feb06f52956730b664" name="acc588dc1152065feb06f52956730b664"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acc588dc1152065feb06f52956730b664">&#9670;&#160;</a></span>fill_keys_of_map_into_set()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Key , typename Data &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ExaDG::fill_keys_of_map_into_set </td>
+          <td>(</td>
+          <td class="paramtype">std::set&lt; Key &gt; &amp;&#160;</td>
+          <td class="paramname"><em>set</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::map&lt; Key, Data &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>map</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>This utility function extracts the keys of a map provided as second argument and inserts these keys into the set provided as first argument. </p>
+
+</div>
+</div>
+<a id="a94266daeafbc357a16a664df7f630ec2" name="a94266daeafbc357a16a664df7f630ec2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a94266daeafbc357a16a664df7f630ec2">&#9670;&#160;</a></span>fill_map_bid_to_mask_with_default_mask()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ExaDG::fill_map_bid_to_mask_with_default_mask </td>
+          <td>(</td>
+          <td class="paramtype">std::map&lt; dealii::types::boundary_id, dealii::ComponentMask &gt; &amp;&#160;</td>
+          <td class="paramname"><em>map_bid_to_mask</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::set&lt; dealii::types::boundary_id &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>set_boundary_ids</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>This function inserts additional boundary IDs together with a default dealii::ComponentMask into map_bid_to_mask in case that the given boundary ID is not already an element of map_bid_to_mask. </p>
 
 </div>
 </div>

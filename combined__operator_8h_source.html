@@ -184,22 +184,22 @@ $(function() {
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span><span class="keyword">private</span>:</div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  reinit_cell(IntegratorCell &amp; integrator, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> cell) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  reinit_cell_derived(IntegratorCell &amp; integrator, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> cell) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  reinit_face(IntegratorFace &amp;   integrator_m,</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>              IntegratorFace &amp;   integrator_p,</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>              <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  reinit_face_derived(IntegratorFace &amp;   integrator_m,</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>                      IntegratorFace &amp;   integrator_p,</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>                      <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  reinit_boundary_face(IntegratorFace &amp; integrator_m, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  reinit_boundary_face_derived(IntegratorFace &amp; integrator_m, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  reinit_face_cell_based(IntegratorFace &amp;                 integrator_m,</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>                         IntegratorFace &amp;                 integrator_p,</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>                         <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>               cell,</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>                         <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>               face,</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>                         dealii::types::boundary_id <span class="keyword">const</span> boundary_id) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  reinit_face_cell_based_derived(IntegratorFace &amp;                 integrator_m,</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>                                 IntegratorFace &amp;                 integrator_p,</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>                                 <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>               cell,</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>                                 <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>               face,</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>                                 dealii::types::boundary_id <span class="keyword">const</span> boundary_id) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
 <div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  do_cell_integral(IntegratorCell &amp; integrator) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
@@ -241,7 +241,7 @@ $(function() {
 <div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1CombinedOperator_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1CombinedOperator.html">ExaDG::ConvDiff::CombinedOperator</a></div><div class="ttdef"><b>Definition</b> combined_operator.h:56</div></div>
 <div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1Operators_1_1ConvectiveKernel_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1Operators_1_1ConvectiveKernel.html">ExaDG::ConvDiff::Operators::ConvectiveKernel</a></div><div class="ttdef"><b>Definition</b> convective_operator.h:68</div></div>
 <div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1Operators_1_1DiffusiveKernel_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1Operators_1_1DiffusiveKernel.html">ExaDG::ConvDiff::Operators::DiffusiveKernel</a></div><div class="ttdef"><b>Definition</b> diffusive_operator.h:50</div></div>
-<div class="ttc" id="aclassExaDG_1_1OperatorBase_html"><div class="ttname"><a href="classExaDG_1_1OperatorBase.html">ExaDG::OperatorBase</a></div><div class="ttdef"><b>Definition</b> operator_base.h:90</div></div>
+<div class="ttc" id="aclassExaDG_1_1OperatorBase_html"><div class="ttname"><a href="classExaDG_1_1OperatorBase.html">ExaDG::OperatorBase</a></div><div class="ttdef"><b>Definition</b> operator_base.h:97</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 <div class="ttc" id="astructExaDG_1_1ConvDiff_1_1CombinedOperatorData_html"><div class="ttname"><a href="structExaDG_1_1ConvDiff_1_1CombinedOperatorData.html">ExaDG::ConvDiff::CombinedOperatorData</a></div><div class="ttdef"><b>Definition</b> combined_operator.h:35</div></div>
 <div class="ttc" id="astructExaDG_1_1ConvDiff_1_1Operators_1_1ConvectiveKernelData_html"><div class="ttname"><a href="structExaDG_1_1ConvDiff_1_1Operators_1_1ConvectiveKernelData.html">ExaDG::ConvDiff::Operators::ConvectiveKernelData</a></div><div class="ttdef"><b>Definition</b> convective_operator.h:41</div></div>

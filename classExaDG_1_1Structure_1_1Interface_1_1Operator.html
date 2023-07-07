@@ -110,15 +110,15 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>prescribe_ini
 <tr class="memitem:a51be4e635858df298ac5bb7ca84292e8"><td class="memItemLeft" align="right" valign="top"><a id="a51be4e635858df298ac5bb7ca84292e8" name="a51be4e635858df298ac5bb7ca84292e8"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>compute_initial_acceleration</b> (VectorType &amp;acceleration, VectorType const &amp;displacement, double const time) const =0</td></tr>
 <tr class="separator:a51be4e635858df298ac5bb7ca84292e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a66133e4e298ce4b81403d31f1bb1ac34"><td class="memItemLeft" align="right" valign="top"><a id="a66133e4e298ce4b81403d31f1bb1ac34" name="a66133e4e298ce4b81403d31f1bb1ac34"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_mass_operator</b> (VectorType &amp;dst, VectorType const &amp;src) const =0</td></tr>
-<tr class="separator:a66133e4e298ce4b81403d31f1bb1ac34"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a181f23068426faeb67e7831dc10f0875"><td class="memItemLeft" align="right" valign="top"><a id="a181f23068426faeb67e7831dc10f0875" name="a181f23068426faeb67e7831dc10f0875"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>compute_rhs_linear</b> (VectorType &amp;dst, double const time) const =0</td></tr>
-<tr class="separator:a181f23068426faeb67e7831dc10f0875"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa33d799f4fabe903b32df36eb2a196ef"><td class="memItemLeft" align="right" valign="top"><a id="aa33d799f4fabe903b32df36eb2a196ef" name="aa33d799f4fabe903b32df36eb2a196ef"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_mass_operator</b> (VectorType &amp;dst, VectorType const &amp;src) const =0</td></tr>
+<tr class="separator:aa33d799f4fabe903b32df36eb2a196ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a85e52327fd16ed653656584aa5448270"><td class="memItemLeft" align="right" valign="top"><a id="a85e52327fd16ed653656584aa5448270" name="a85e52327fd16ed653656584aa5448270"></a>
 virtual std::tuple&lt; unsigned int, unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>solve_nonlinear</b> (VectorType &amp;sol, VectorType const &amp;rhs, double const factor, double const time, bool const update_preconditioner) const =0</td></tr>
 <tr class="separator:a85e52327fd16ed653656584aa5448270"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa80e6a670589cfaa5f643d73f3552db2"><td class="memItemLeft" align="right" valign="top"><a id="aa80e6a670589cfaa5f643d73f3552db2" name="aa80e6a670589cfaa5f643d73f3552db2"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>rhs</b> (VectorType &amp;dst, double const time) const =0</td></tr>
+<tr class="separator:aa80e6a670589cfaa5f643d73f3552db2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a623d91e3de48f39ba0d9ac31bbfa1423"><td class="memItemLeft" align="right" valign="top"><a id="a623d91e3de48f39ba0d9ac31bbfa1423" name="a623d91e3de48f39ba0d9ac31bbfa1423"></a>
 virtual unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve_linear</b> (VectorType &amp;sol, VectorType const &amp;rhs, double const factor, double const time, bool const update_preconditioner) const =0</td></tr>
 <tr class="separator:a623d91e3de48f39ba0d9ac31bbfa1423"><td class="memSeparator" colspan="2">&#160;</td></tr>
