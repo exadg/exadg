@@ -29,6 +29,7 @@
 
 // ExaDG
 #include <exadg/grid/grid_utilities.h>
+#include <exadg/operators/constraints.h>
 #include <exadg/poisson/preconditioners/multigrid_preconditioner.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
@@ -132,57 +133,44 @@ Operator<dim, n_components, Number>::distribute_dofs()
 
   dof_handler.distribute_dofs(*fe);
 
-  // Affine constraints are only relevant for continuous Galerin discretization.
-  // The AffineConstraints object is used to initialize MatrixFree. Here, we apply homogeneous
-  // boundary conditions as needed by vmult() in iterative solvers for linear systems of equations,
-  // implemented via dealii::MatrixFree and FEEvaluation::read_dof_values() (or gather_evaluate()).
-  // The actual inhomogeneous boundary data needs to be imposed separately due to the implementation
-  // in deal.II that can not handle multiple AffineConstraints. Hence, we need to do this explicitly
-  // in ExaDG.
+  // Affine constraints are only relevant for continuous Galerkin discretizations.
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
+    affine_constraints_periodicity_and_hanging_nodes.clear();
+
+    add_hanging_node_and_periodicity_constraints(affine_constraints_periodicity_and_hanging_nodes,
+                                                 *this->grid,
+                                                 dof_handler);
+
+    affine_constraints_periodicity_and_hanging_nodes.close();
+
+    // copy periodicity and hanging node constraints, and add further constraints stemming from
+    // Dirichlet boundary conditions
     affine_constraints.clear();
 
     dealii::IndexSet locally_relevant_dofs;
     dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
     affine_constraints.reinit(locally_relevant_dofs);
 
-    // hanging nodes (needs to be done before imposing periodicity constraints and boundary
-    // conditions)
-    if(this->grid->triangulation->has_hanging_nodes())
-      dealii::DoFTools::make_hanging_node_constraints(dof_handler, affine_constraints);
+    affine_constraints.copy_from(affine_constraints_periodicity_and_hanging_nodes);
 
-    // constraints from periodic boundary conditions
-    if(not(this->grid->periodic_face_pairs.empty()))
-    {
-      auto periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
-        this->grid->periodic_face_pairs, dof_handler);
+    // use all the component masks defined by the user
+    std::map<dealii::types::boundary_id, dealii::ComponentMask> map_bid_to_mask =
+      boundary_descriptor->dirichlet_bc_component_mask;
 
-      dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(periodic_faces_dof,
-                                                                       affine_constraints);
-    }
+    // collect all Dirichlet boundary IDs in a set:
+    // DirichletCached boundary IDs are already provided as a set
+    std::set<dealii::types::boundary_id> all_dirichlet_bids =
+      boundary_descriptor->dirichlet_cached_bc;
 
-    // standard Dirichlet boundaries
-    for(auto it : this->boundary_descriptor->dirichlet_bc)
-    {
-      dealii::ComponentMask mask = dealii::ComponentMask();
+    // standard Dirichlet boundaries: extract keys from map
+    fill_keys_of_map_into_set(all_dirichlet_bids, boundary_descriptor->dirichlet_bc);
 
-      auto it_mask = boundary_descriptor->dirichlet_bc_component_mask.find(it.first);
-      if(it_mask != boundary_descriptor->dirichlet_bc_component_mask.end())
-        mask = it_mask->second;
+    // fill with default mask if no mask has been defined
+    fill_map_bid_to_mask_with_default_mask(map_bid_to_mask, all_dirichlet_bids);
 
-      dealii::DoFTools::make_zero_boundary_constraints(dof_handler,
-                                                       it.first,
-                                                       affine_constraints,
-                                                       mask);
-    }
-
-    // DirichletCached boundaries
-    for(auto it : this->boundary_descriptor->dirichlet_cached_bc)
-    {
-      dealii::ComponentMask mask = dealii::ComponentMask();
-      dealii::DoFTools::make_zero_boundary_constraints(dof_handler, it, affine_constraints, mask);
-    }
+    // call deal.II utility function to add Dirichlet constraints
+    add_homogeneous_dirichlet_constraints(affine_constraints, dof_handler, map_bid_to_mask);
 
     affine_constraints.close();
   }
@@ -228,6 +216,13 @@ Operator<dim, n_components, Number>::fill_matrix_free_data(
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
   matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
 
+  // inhomogeneous Dirichlet boundary conditions: use additional AffineConstraints object, but the
+  // same DoFHandler
+  matrix_free_data.insert_dof_handler(&dof_handler,
+                                      get_dof_name_periodicity_and_hanging_node_constraints());
+  matrix_free_data.insert_constraint(&affine_constraints_periodicity_and_hanging_nodes,
+                                     get_dof_name_periodicity_and_hanging_node_constraints());
+
   if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
     matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1), get_quad_name());
   else if(this->grid->triangulation->all_reference_cells_are_simplex())
@@ -261,7 +256,12 @@ Operator<dim, n_components, Number>::setup_operators()
 {
   // Laplace operator
   Poisson::LaplaceOperatorData<rank, dim> laplace_operator_data;
-  laplace_operator_data.dof_index  = get_dof_index();
+  laplace_operator_data.dof_index = get_dof_index();
+  if(param.spatial_discretization == SpatialDiscretization::CG)
+  {
+    laplace_operator_data.dof_index_inhomogeneous =
+      get_dof_index_periodicity_and_hanging_node_constraints();
+  }
   laplace_operator_data.quad_index = get_quad_index();
   if(param.spatial_discretization == SpatialDiscretization::CG and
      not(boundary_descriptor->dirichlet_cached_bc.empty()))
@@ -469,10 +469,8 @@ template<int dim, int n_components, typename Number>
 void
 Operator<dim, n_components, Number>::rhs(VectorType & dst, double const time) const
 {
-  dst = 0;
-
   laplace_operator.set_time(time);
-  laplace_operator.rhs_add(dst);
+  laplace_operator.rhs(dst);
 
   if(param.right_hand_side)
     rhs_operator.evaluate_add(dst, time);
@@ -516,26 +514,16 @@ Operator<dim, n_components, Number>::solve(VectorType &       sol,
     check_multigrid.check();
   }
 
-  // Set constrained degrees of freedom of rhs vector according to the prescribed
-  // Dirichlet boundary conditions.
-  VectorType & rhs_mutable = const_cast<VectorType &>(rhs);
+  unsigned int n_iterations = iterative_solver->solve(sol, rhs);
+
+  // Set Dirichlet degrees of freedom according to Dirichlet boundary condition.
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
-    laplace_operator.set_constrained_values(rhs_mutable, time);
+    laplace_operator.set_time(time);
+    laplace_operator.set_inhomogeneous_boundary_values(sol);
   }
 
-  unsigned int iterations = iterative_solver->solve(sol, rhs_mutable);
-
-  // This step should actually be optional: The constrained degrees of freedom of the
-  // rhs vector contain the Dirichlet boundary values and the linear operator contains
-  // values of 1 on the diagonal. Hence, sol should already contain the correct
-  // Dirichlet boundary values for constrained degrees of freedom.
-  if(param.spatial_discretization == SpatialDiscretization::CG)
-  {
-    laplace_operator.set_constrained_values(sol, time);
-  }
-
-  return iterations;
+  return n_iterations;
 }
 
 template<int dim, int n_components, typename Number>
@@ -582,6 +570,13 @@ Operator<dim, n_components, Number>::get_dof_name() const
 
 template<int dim, int n_components, typename Number>
 std::string
+Operator<dim, n_components, Number>::get_dof_name_periodicity_and_hanging_node_constraints() const
+{
+  return field + "_" + dof_index_periodicity_and_handing_node_constraints;
+}
+
+template<int dim, int n_components, typename Number>
+std::string
 Operator<dim, n_components, Number>::get_quad_name() const
 {
   return field + "_" + quad_index;
@@ -599,6 +594,13 @@ unsigned int
 Operator<dim, n_components, Number>::get_dof_index() const
 {
   return matrix_free_data->get_dof_index(get_dof_name());
+}
+
+template<int dim, int n_components, typename Number>
+unsigned int
+Operator<dim, n_components, Number>::get_dof_index_periodicity_and_hanging_node_constraints() const
+{
+  return matrix_free_data->get_dof_index(get_dof_name_periodicity_and_hanging_node_constraints());
 }
 
 template<int dim, int n_components, typename Number>

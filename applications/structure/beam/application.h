@@ -268,6 +268,9 @@ private:
     // left side
     this->boundary_descriptor->dirichlet_bc.insert(
       pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
+
     this->boundary_descriptor->dirichlet_bc_component_mask.insert(
       pair_mask(1, dealii::ComponentMask()));
 

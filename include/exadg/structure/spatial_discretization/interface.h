@@ -59,10 +59,7 @@ public:
                                double const       time) const = 0;
 
   virtual void
-  apply_mass_operator(VectorType & dst, VectorType const & src) const = 0;
-
-  virtual void
-  compute_rhs_linear(VectorType & dst, double const time) const = 0;
+  evaluate_mass_operator(VectorType & dst, VectorType const & src) const = 0;
 
   virtual std::tuple<unsigned int, unsigned int>
   solve_nonlinear(VectorType &       sol,
@@ -70,6 +67,9 @@ public:
                   double const       factor,
                   double const       time,
                   bool const         update_preconditioner) const = 0;
+
+  virtual void
+  rhs(VectorType & dst, double const time) const = 0;
 
   virtual unsigned int
   solve_linear(VectorType &       sol,

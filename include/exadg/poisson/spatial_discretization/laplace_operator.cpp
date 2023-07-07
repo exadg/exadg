@@ -68,6 +68,8 @@ LaplaceOperator<dim, Number, n_components>::rhs_add_dirichlet_bc_from_dof_vector
   VectorType &       dst,
   VectorType const & src) const
 {
+  AssertThrow(this->is_dg, dealii::ExcMessage("This function is only implemented for DG."));
+
   VectorType tmp;
   tmp.reinit(dst, false /* init with 0 */);
 
@@ -85,35 +87,37 @@ LaplaceOperator<dim, Number, n_components>::rhs_add_dirichlet_bc_from_dof_vector
 
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::reinit_face(IntegratorFace &   integrator_m,
-                                                        IntegratorFace &   integrator_p,
-                                                        unsigned int const face) const
+LaplaceOperator<dim, Number, n_components>::reinit_face_derived(IntegratorFace &   integrator_m,
+                                                                IntegratorFace &   integrator_p,
+                                                                unsigned int const face) const
 {
-  Base::reinit_face(integrator_m, integrator_p, face);
+  (void)face;
 
   kernel.reinit_face(integrator_m, integrator_p, operator_data.dof_index);
 }
 
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::reinit_boundary_face(IntegratorFace &   integrator_m,
-                                                                 unsigned int const face) const
+LaplaceOperator<dim, Number, n_components>::reinit_boundary_face_derived(
+  IntegratorFace &   integrator_m,
+  unsigned int const face) const
 {
-  Base::reinit_boundary_face(integrator_m, face);
+  (void)face;
 
   kernel.reinit_boundary_face(integrator_m, operator_data.dof_index);
 }
 
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::reinit_face_cell_based(
+LaplaceOperator<dim, Number, n_components>::reinit_face_cell_based_derived(
   IntegratorFace &                 integrator_m,
   IntegratorFace &                 integrator_p,
   unsigned int const               cell,
   unsigned int const               face,
   dealii::types::boundary_id const boundary_id) const
 {
-  Base::reinit_face_cell_based(integrator_m, integrator_p, cell, face, boundary_id);
+  (void)cell;
+  (void)face;
 
   kernel.reinit_face_cell_based(boundary_id, integrator_m, integrator_p, operator_data.dof_index);
 }
@@ -339,6 +343,7 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_dirichlet_bc_fr
     value value_p = value();
     if(boundary_type == BoundaryType::Dirichlet)
     {
+      // The desired boundary value g is obtained as integrator_m.get_value(q).
       value_p = 2.0 * integrator_m.get_value(q);
     }
     else if(boundary_type == BoundaryType::Neumann)
@@ -394,14 +399,14 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
 
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::set_constrained_values(VectorType & dst,
-                                                                   double const time) const
+LaplaceOperator<dim, Number, n_components>::set_inhomogeneous_boundary_values(
+  VectorType & dst) const
 {
   // standard Dirichlet boundary conditions
   std::map<dealii::types::global_dof_index, double> boundary_values;
   for(auto dbc : operator_data.bc->dirichlet_bc)
   {
-    dbc.second->set_time(time);
+    dbc.second->set_time(this->get_time());
 
     dealii::ComponentMask mask     = dealii::ComponentMask();
     auto                  dbc_mask = operator_data.bc->dirichlet_bc_component_mask.find(dbc.first);

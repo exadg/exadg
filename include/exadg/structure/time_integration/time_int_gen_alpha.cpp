@@ -125,12 +125,12 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
   const_vector.reinit(displacement_n);
   rhs.reinit(displacement_n);
   this->compute_const_vector(rhs, displacement_n, velocity_n, acceleration_n);
-  pde_operator->apply_mass_operator(const_vector, rhs);
+  pde_operator->evaluate_mass_operator(const_vector, rhs);
 
   if(param.large_deformation == false) // linear case
   {
     // calculate right-hand side vector
-    pde_operator->compute_rhs_linear(rhs, this->get_mid_time());
+    pde_operator->rhs(rhs, this->get_mid_time());
     // shift const_vector to right-hand side
     rhs.add(-1.0, const_vector);
   }

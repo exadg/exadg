@@ -122,7 +122,7 @@ DriverSteady<dim, Number>::do_solve()
   else // linear problem
   {
     // calculate right-hand side vector
-    pde_operator->compute_rhs_linear(rhs_vector, 0.0 /* time */);
+    pde_operator->rhs(rhs_vector, 0.0 /* time */);
 
     unsigned int const N_iter_linear =
       pde_operator->solve_linear(solution,

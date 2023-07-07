@@ -243,6 +243,43 @@ private:
 };
 
 template<int dim>
+class InitialAcceleration : public dealii::Function<dim>
+{
+public:
+  InitialAcceleration(double const max_displacement,
+                      double const length,
+                      bool const   unsteady,
+                      double const frequency)
+    : dealii::Function<dim>(dim),
+      max_displacement(max_displacement),
+      length(length),
+      unsteady(unsteady),
+      frequency(frequency)
+  {
+  }
+
+  double
+  value(dealii::Point<dim> const & p, unsigned int const c) const final
+  {
+    if(c == 0)
+    {
+      double time_factor = 0.0;
+      if(unsteady)
+        time_factor = time_2nd_derivative(this->get_time(), frequency);
+
+      return space_function(p[0], length, max_displacement) * time_factor;
+    }
+    else
+      return 0.0;
+  }
+
+private:
+  double const max_displacement, length;
+  bool const   unsteady;
+  double const frequency;
+};
+
+template<int dim>
 class VolumeForce : public dealii::Function<dim>
 {
 public:
@@ -389,6 +426,9 @@ private:
 
     this->boundary_descriptor->dirichlet_bc.insert(
       pair(0, new Solution<dim>(max_displacement, length, unsteady, frequency)));
+    this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+      pair(0, new InitialAcceleration<dim>(max_displacement, length, unsteady, frequency)));
+
     this->boundary_descriptor->dirichlet_bc_component_mask.insert(
       pair_mask(0, dealii::ComponentMask()));
   }
@@ -414,6 +454,12 @@ private:
       new dealii::Functions::ZeroFunction<dim>(dim));
     this->field_functions->initial_velocity.reset(
       new InitialVelocity<dim>(max_displacement, length, unsteady, frequency));
+
+    if(prescribe_initial_acceleration_as_field_function)
+    {
+      this->field_functions->initial_acceleration.reset(
+        new InitialAcceleration<dim>(max_displacement, length, unsteady, frequency));
+    }
   }
 
   std::shared_ptr<PostProcessor<dim, Number>>
@@ -454,6 +500,8 @@ private:
   double const start_time       = 0.0;
   double const end_time         = 1.0;
   double const frequency        = 3.0 / 2.0 * dealii::numbers::PI / end_time;
+
+  bool const prescribe_initial_acceleration_as_field_function = false;
 };
 
 } // namespace Structure
