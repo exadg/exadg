@@ -29,6 +29,7 @@
 #include <deal.II/lac/solver_control.h>
 #include <deal.II/lac/solver_gmres.h>
 #include <deal.II/multigrid/mg_base.h>
+#include <deal.II/numerics/vector_tools_mean_value.h>
 
 // ExaDG
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/chebyshev_smoother.h>
@@ -188,7 +189,7 @@ public:
   {
     VectorType r(src);
     if(additional_data.operator_is_singular)
-      set_zero_mean_value(r);
+      dealii::VectorTools::subtract_mean_value(r);
 
     if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
     {

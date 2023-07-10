@@ -1146,7 +1146,7 @@ SpatialOperatorBase<dim, Number>::adjust_pressure_level_if_undefined(VectorType 
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
     {
-      dealii::LinearAlgebra::set_zero_mean_value(pressure);
+      dealii::VectorTools::subtract_mean_value(pressure);
     }
     // If an analytical solution is available: shift pressure so that the numerical pressure
     // solution has a mean value identical to the "exact pressure solution" obtained by
