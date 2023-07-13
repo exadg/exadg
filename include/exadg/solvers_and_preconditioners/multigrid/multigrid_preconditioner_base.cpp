@@ -399,22 +399,11 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
     for_all_levels([&](unsigned int const l) {
       auto const & level = level_info[l];
 
-      ElementType element_type;
-      if(grid->triangulation->all_reference_cells_are_hyper_cube())
-      {
-        element_type = ElementType::Hypercube;
-      }
-      else if(grid->triangulation->all_reference_cells_are_simplex())
-      {
-        element_type = ElementType::Simplex;
-      }
-      else
-      {
-        AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
-      }
-
       std::shared_ptr<dealii::FiniteElement<dim>> fe =
-        create_finite_element<dim>(element_type, level.is_dg(), n_components, level.degree());
+        create_finite_element<dim>(GridUtilities::get_element_type(*grid->triangulation),
+                                   level.is_dg(),
+                                   n_components,
+                                   level.degree());
 
       std::shared_ptr<dealii::Triangulation<dim> const> triangulation;
       if(level.h_level() == level_info.back().h_level()) // fine-level triangulation

@@ -25,6 +25,7 @@
 
 // ExaDG
 #include <exadg/convection_diffusion/preconditioners/multigrid_preconditioner.h>
+#include <exadg/operators/finite_element.h>
 #include <exadg/operators/mapping_flags.h>
 
 namespace ExaDG
@@ -266,12 +267,13 @@ MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
   if(data.convective_problem and
      data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
   {
-    dealii::FESystem<dim> fe_velocity(dealii::FE_DGQ<dim>(degree_velocity), dim);
+    std::shared_ptr<dealii::FiniteElement<dim>> fe_velocity = create_finite_element<dim>(
+      GridUtilities::get_element_type(*this->grid->triangulation), true, dim, degree_velocity);
 
     Map_DBC               dirichlet_bc_velocity;
     Map_DBC_ComponentMask dirichlet_bc_velocity_component_mask;
     this->do_initialize_dof_handler_and_constraints(false,
-                                                    fe_velocity.n_components(),
+                                                    fe_velocity->n_components(),
                                                     dirichlet_bc_velocity,
                                                     dirichlet_bc_velocity_component_mask,
                                                     dof_handlers_velocity,
