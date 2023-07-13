@@ -49,72 +49,39 @@ create_finite_element(ElementType const & element_type,
 {
   std::shared_ptr<dealii::FiniteElement<dim>> fe;
 
-  if(n_components == 1)
+  // For n_components = 1, we would not need FESystem around the finite element. We do this
+  // nevertheless in order to use the same code path for all cases, since this is not a
+  // performance-critical part of the code.
+
+  if(is_dg)
   {
-    if(is_dg)
+    if(element_type == ElementType::Hypercube)
     {
-      if(element_type == ElementType::Hypercube)
-      {
-        fe = std::make_shared<dealii::FE_DGQ<dim>>(degree);
-      }
-      else if(element_type == ElementType::Simplex)
-      {
-        fe = std::make_shared<dealii::FE_SimplexDGP<dim>>(degree);
-      }
-      else
-      {
-        AssertThrow(false, ExcNotImplemented());
-      }
+      fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_DGQ<dim>(degree), n_components);
+    }
+    else if(element_type == ElementType::Simplex)
+    {
+      fe =
+        std::make_shared<dealii::FESystem<dim>>(dealii::FE_SimplexDGP<dim>(degree), n_components);
     }
     else
     {
-      if(element_type == ElementType::Hypercube)
-      {
-        fe = std::make_shared<dealii::FE_Q<dim>>(degree);
-      }
-      else if(element_type == ElementType::Simplex)
-      {
-        fe = std::make_shared<dealii::FE_SimplexP<dim>>(degree);
-      }
-      else
-      {
-        AssertThrow(false, ExcNotImplemented());
-      }
+      AssertThrow(false, ExcNotImplemented());
     }
   }
   else
   {
-    if(is_dg)
+    if(element_type == ElementType::Hypercube)
     {
-      if(element_type == ElementType::Hypercube)
-      {
-        fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_DGQ<dim>(degree), n_components);
-      }
-      else if(element_type == ElementType::Simplex)
-      {
-        fe =
-          std::make_shared<dealii::FESystem<dim>>(dealii::FE_SimplexDGP<dim>(degree), n_components);
-      }
-      else
-      {
-        AssertThrow(false, ExcNotImplemented());
-      }
+      fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_Q<dim>(degree), n_components);
+    }
+    else if(element_type == ElementType::Simplex)
+    {
+      fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_SimplexP<dim>(degree), n_components);
     }
     else
     {
-      if(element_type == ElementType::Hypercube)
-      {
-        fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_Q<dim>(degree), n_components);
-      }
-      else if(element_type == ElementType::Simplex)
-      {
-        fe =
-          std::make_shared<dealii::FESystem<dim>>(dealii::FE_SimplexP<dim>(degree), n_components);
-      }
-      else
-      {
-        AssertThrow(false, ExcNotImplemented());
-      }
+      AssertThrow(false, ExcNotImplemented());
     }
   }
 
