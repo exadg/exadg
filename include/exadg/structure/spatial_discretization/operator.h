@@ -220,10 +220,15 @@ public:
                                double const       time) const final;
 
   void
-  apply_mass_operator(VectorType & dst, VectorType const & src) const final;
+  apply_add_weak_damping_operator(VectorType & dst, VectorType const & src) const;
 
+  /*
+   * This function calculates the vector corresponding to acceleration and damping terms.
+   */
   void
-  apply_add_weak_damping_operator(VectorType & dst, VectorType const & src) const final;
+  compute_const_vector(VectorType &       dst,
+                       VectorType const & const_vector_acceleration_remainder,
+                       VectorType const & const_vector_velocity_remainder) const final;
 
   /*
    * This function calculates the right-hand side of the linear system

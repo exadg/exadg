@@ -114,8 +114,8 @@ Driver<dim, Number>::setup()
 
     if(application->get_parameters().problem_type == ProblemType::Unsteady)
     {
-      pde_operator->setup_solver(time_integrator->get_scaling_factor_mass_from_acceleration(),
-                                 time_integrator->get_scaling_factor_mass_from_velocity());
+      pde_operator->setup_solver(time_integrator->get_scaling_factor_acceleration(),
+                                 time_integrator->get_scaling_factor_velocity());
     }
     else
     {

@@ -120,24 +120,31 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
   dealii::Timer timer;
   timer.restart();
 
-  // add acceleration term remainder to rhs
-  VectorType tmp;
-  tmp.reinit(displacement_n);
-  this->compute_const_vector_acceleration_remainder(tmp,
+  // compute DoF vector of acceleration remainder
+  VectorType const_vector_acceleration_remainder;
+  const_vector_acceleration_remainder.reinit(displacement_n);
+  this->compute_const_vector_acceleration_remainder(const_vector_acceleration_remainder,
                                                     displacement_n,
                                                     velocity_n,
                                                     acceleration_n);
 
-  VectorType const_vector;
-  const_vector.reinit(displacement_n);
-  pde_operator->apply_mass_operator(const_vector, tmp);
-
-  // add weak damping term remainder to rhs
+  // compute DoF vector of velocity remainder
+  VectorType const_vector_velocity_remainder;
   if(this->param.weak_damping_active)
   {
-    this->compute_const_vector_velocity_remainder(tmp, displacement_n, velocity_n, acceleration_n);
-    pde_operator->apply_add_weak_damping_operator(const_vector, tmp);
+    const_vector_velocity_remainder.reinit(displacement_n);
+    this->compute_const_vector_velocity_remainder(const_vector_velocity_remainder,
+                                                  displacement_n,
+                                                  velocity_n,
+                                                  acceleration_n);
   }
+
+  // compute const_vector with acceleration and weak damping contributions
+  VectorType const_vector;
+  const_vector.reinit(displacement_n);
+  pde_operator->compute_const_vector(const_vector,
+                                     const_vector_acceleration_remainder,
+                                     const_vector_velocity_remainder);
 
   VectorType rhs;
   rhs.reinit(displacement_n);
@@ -166,13 +173,12 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
 
   if(param.large_deformation) // nonlinear case
   {
-    auto const iter =
-      pde_operator->solve_nonlinear(displacement_np,
-                                    const_vector,
-                                    this->get_scaling_factor_mass_from_acceleration(),
-                                    this->get_scaling_factor_mass_from_velocity(),
-                                    this->get_mid_time(),
-                                    update_preconditioner);
+    auto const iter = pde_operator->solve_nonlinear(displacement_np,
+                                                    const_vector,
+                                                    this->get_scaling_factor_acceleration(),
+                                                    this->get_scaling_factor_velocity(),
+                                                    this->get_mid_time(),
+                                                    update_preconditioner);
 
     iterations.first += 1;
     std::get<0>(iterations.second) += std::get<0>(iter);
@@ -187,13 +193,12 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
   else // linear case
   {
     // solve linear system of equations
-    unsigned int const iter =
-      pde_operator->solve_linear(displacement_np,
-                                 rhs,
-                                 this->get_scaling_factor_mass_from_acceleration(),
-                                 this->get_scaling_factor_mass_from_velocity(),
-                                 this->get_mid_time(),
-                                 update_preconditioner);
+    unsigned int const iter = pde_operator->solve_linear(displacement_np,
+                                                         rhs,
+                                                         this->get_scaling_factor_acceleration(),
+                                                         this->get_scaling_factor_velocity(),
+                                                         this->get_mid_time(),
+                                                         update_preconditioner);
 
     iterations.first += 1;
     std::get<1>(iterations.second) += iter;

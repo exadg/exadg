@@ -94,14 +94,14 @@ TimeIntGenAlphaBase<Number>::set_current_time_step_size(double const & time_step
 
 template<typename Number>
 double
-TimeIntGenAlphaBase<Number>::get_scaling_factor_mass_from_acceleration() const
+TimeIntGenAlphaBase<Number>::get_scaling_factor_acceleration() const
 {
   return ((1.0 - alpha_m) / ((1.0 - alpha_f) * beta * std::pow(time_step, 2.0)));
 }
 
 template<typename Number>
 double
-TimeIntGenAlphaBase<Number>::get_scaling_factor_mass_from_velocity() const
+TimeIntGenAlphaBase<Number>::get_scaling_factor_velocity() const
 {
   return (gamma / (beta * time_step));
 }
@@ -121,7 +121,7 @@ TimeIntGenAlphaBase<Number>::compute_const_vector_acceleration_remainder(
   VectorType const & velocity_n,
   VectorType const & acceleration_n) const
 {
-  double const factor_dis = -get_scaling_factor_mass_from_acceleration();
+  double const factor_dis = -get_scaling_factor_acceleration();
   double const factor_vel = -(1.0 - alpha_m) / (beta * time_step);
   double const factor_acc = -(1.0 - alpha_m - 2.0 * beta) / (2.0 * beta);
 
@@ -138,7 +138,7 @@ TimeIntGenAlphaBase<Number>::compute_const_vector_velocity_remainder(
   VectorType const & velocity_n,
   VectorType const & acceleration_n) const
 {
-  double const factor_dis = -get_scaling_factor_mass_from_velocity();
+  double const factor_dis = -get_scaling_factor_velocity();
   double const factor_vel = alpha_f - (1.0 - alpha_f) * (gamma - beta) / beta;
   double const factor_acc = -(1.0 - alpha_f) * (gamma - 2.0 * beta) / (2.0 * beta) * time_step;
 

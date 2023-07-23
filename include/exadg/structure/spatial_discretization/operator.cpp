@@ -31,6 +31,7 @@
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
 #include <exadg/structure/preconditioners/multigrid_preconditioner.h>
 #include <exadg/structure/spatial_discretization/operator.h>
+#include <exadg/structure/time_integration/time_int_gen_alpha.h>
 #include <exadg/utilities/exceptions.h>
 
 namespace ExaDG
@@ -779,12 +780,12 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       accelerat
   mass_solver->solve(acceleration, rhs);
 }
 
-template<int dim, typename Number>
-void
-Operator<dim, Number>::apply_mass_operator(VectorType & dst, VectorType const & src) const
-{
-  mass_operator.apply(dst, src);
-}
+// template<int dim, typename Number>
+// void
+// Operator<dim, Number>::apply_mass_operator(VectorType & dst, VectorType const & src) const
+//{
+//  mass_operator.apply(dst, src);
+//}
 
 template<int dim, typename Number>
 void
@@ -797,6 +798,22 @@ Operator<dim, Number>::apply_add_weak_damping_operator(VectorType &       dst,
   mass_operator.apply_add(dst, tmp);
 }
 
+template<int dim, typename Number>
+void
+Operator<dim, Number>::compute_const_vector(
+  VectorType &       dst,
+  VectorType const & const_vector_acceleration_remainder,
+  VectorType const & const_vector_velocity_remainder) const
+{
+  // add acceleration term remainder to rhs
+  mass_operator.apply(dst, const_vector_acceleration_remainder);
+
+  // add weak damping term to rhs
+  if(param.weak_damping_active)
+  {
+    this->apply_add_weak_damping_operator(dst, const_vector_velocity_remainder);
+  }
+}
 
 template<int dim, typename Number>
 void
