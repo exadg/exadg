@@ -129,13 +129,13 @@ MultigridPreconditioner<dim, Number>::update()
 template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
-  bool const                         operator_is_singular,
-  dealii::FiniteElement<dim> const & fe,
-  Map_DBC const &                    dirichlet_bc,
-  Map_DBC_ComponentMask const &      dirichlet_bc_component_mask)
+  bool const                    operator_is_singular,
+  unsigned int const            n_components,
+  Map_DBC const &               dirichlet_bc,
+  Map_DBC_ComponentMask const & dirichlet_bc_component_mask)
 {
   Base::initialize_dof_handler_and_constraints(operator_is_singular,
-                                               fe,
+                                               n_components,
                                                dirichlet_bc,
                                                dirichlet_bc_component_mask);
 
@@ -147,7 +147,7 @@ MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
     Map_DBC               dirichlet_bc_empty;
     Map_DBC_ComponentMask dirichlet_bc_empty_component_mask;
     this->do_initialize_dof_handler_and_constraints(false,
-                                                    fe,
+                                                    n_components,
                                                     dirichlet_bc_empty,
                                                     dirichlet_bc_empty_component_mask,
                                                     dof_handlers_inhomogeneous,

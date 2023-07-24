@@ -20,13 +20,12 @@
  */
 
 // deal.II
-#include <deal.II/fe/fe_q.h>
-#include <deal.II/fe/fe_simplex_p.h>
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
 #include <exadg/grid/grid_utilities.h>
 #include <exadg/operators/constraints.h>
+#include <exadg/operators/finite_element.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_amg.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
@@ -115,13 +114,11 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::distribute_dofs()
 {
-  // setup finite element
-  if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
-    fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_Q<dim>(param.degree), dim);
-  else if(this->grid->triangulation->all_reference_cells_are_simplex())
-    fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_SimplexP<dim>(param.degree), dim);
-  else
-    AssertThrow(false, ExcNotImplemented());
+  // create finite element
+  fe = create_finite_element<dim>(param.grid.element_type,
+                                  false /* continuous Galerkin */,
+                                  dim,
+                                  param.degree);
 
   // enumerate degrees of freedom
   dof_handler.distribute_dofs(*fe);

@@ -29,6 +29,7 @@
 #include <exadg/convection_diffusion/spatial_discretization/project_velocity.h>
 #include <exadg/grid/get_dynamic_mapping.h>
 #include <exadg/grid/mapping_dof_vector.h>
+#include <exadg/operators/finite_element.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
@@ -55,16 +56,17 @@ Operator<dim, Number>::Operator(
     field_functions(field_functions_in),
     param(param_in),
     field(field_in),
-    fe(param_in.degree),
     dof_handler(*grid_in->triangulation),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
 {
   pcout << std::endl << "Construct convection-diffusion operator ..." << std::endl;
 
+  fe = create_finite_element<dim>(ElementType::Hypercube, true, 1, param.degree);
+
   if(needs_own_dof_handler_velocity())
   {
-    fe_velocity = std::make_shared<dealii::FESystem<dim>>(dealii::FE_DGQ<dim>(param.degree), dim);
+    fe_velocity = create_finite_element<dim>(ElementType::Hypercube, true, dim, param.degree);
     dof_handler_velocity = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
   }
 
@@ -293,21 +295,19 @@ void
 Operator<dim, Number>::distribute_dofs()
 {
   // enumerate degrees of freedom
-  dof_handler.distribute_dofs(fe);
+  dof_handler.distribute_dofs(*fe);
 
   if(needs_own_dof_handler_velocity())
   {
     dof_handler_velocity->distribute_dofs(*fe_velocity);
   }
 
-  unsigned int const ndofs_per_cell = dealii::Utilities::pow(param.degree + 1, dim);
-
   pcout << std::endl
         << "Discontinuous Galerkin finite element discretization:" << std::endl
         << std::endl;
 
   print_parameter(pcout, "degree of 1D polynomials", param.degree);
-  print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
+  print_parameter(pcout, "number of dofs per cell", fe->n_dofs_per_cell());
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
 }
 

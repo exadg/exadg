@@ -79,10 +79,10 @@ public:
 private:
   void
   initialize_dof_handler_and_constraints(
-    bool const                         operator_is_singular,
-    dealii::FiniteElement<dim> const & fe,
-    Map_DBC const &                    dirichlet_bc,
-    Map_DBC_ComponentMask const &      dirichlet_bc_component_mask) final;
+    bool const                    operator_is_singular,
+    unsigned int const            n_components,
+    Map_DBC const &               dirichlet_bc,
+    Map_DBC_ComponentMask const & dirichlet_bc_component_mask) final;
 
   void
   fill_matrix_free_data(MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
