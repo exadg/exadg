@@ -157,10 +157,10 @@ $(function() {
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span><span class="keyword">private</span>:</div>
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  initialize_dof_handler_and_constraints(</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>    <span class="keywordtype">bool</span> <span class="keyword">const</span>                         operator_is_singular,</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    dealii::FiniteElement&lt;dim&gt; <span class="keyword">const</span> &amp; fe,</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    Map_DBC <span class="keyword">const</span> &amp;                    dirichlet_bc,</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    Map_DBC_ComponentMask <span class="keyword">const</span> &amp;      dirichlet_bc_component_mask) <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>    <span class="keywordtype">bool</span> <span class="keyword">const</span>                    operator_is_singular,</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>            n_components,</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    Map_DBC <span class="keyword">const</span> &amp;               dirichlet_bc,</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    Map_DBC_ComponentMask <span class="keyword">const</span> &amp; dirichlet_bc_component_mask) <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  fill_matrix_free_data(<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, MultigridNumber&gt;</a> &amp; matrix_free_data,</div>

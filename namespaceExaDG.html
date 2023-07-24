@@ -594,6 +594,9 @@ template&lt;int dim, typename Number &gt; </td></tr>
 <tr class="memitem:a21204007ce6b9f268adb74ff5f508e56"><td class="memTemplParams" colspan="2">template&lt;int dim, typename Number &gt; </td></tr>
 <tr class="memitem:a21204007ce6b9f268adb74ff5f508e56"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#a21204007ce6b9f268adb74ff5f508e56">add_homogeneous_dirichlet_constraints</a> (dealii::AffineConstraints&lt; Number &gt; &amp;affine_constraints, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler, std::map&lt; dealii::types::boundary_id, dealii::ComponentMask &gt; const &amp;map_boundary_id_to_component_mask)</td></tr>
 <tr class="separator:a21204007ce6b9f268adb74ff5f508e56"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4ee9607ef908f9a2d5599d52a185abce"><td class="memTemplParams" colspan="2">template&lt;int dim&gt; </td></tr>
+<tr class="memitem:a4ee9607ef908f9a2d5599d52a185abce"><td class="memTemplItemLeft" align="right" valign="top">std::shared_ptr&lt; dealii::FiniteElement&lt; dim &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#a4ee9607ef908f9a2d5599d52a185abce">create_finite_element</a> (ElementType const &amp;element_type, bool const is_dg, unsigned int const n_components, unsigned int const degree)</td></tr>
+<tr class="separator:a4ee9607ef908f9a2d5599d52a185abce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a863d41e9259662d708ccd897be8b6db2"><td class="memTemplParams" colspan="2"><a id="a863d41e9259662d708ccd897be8b6db2" name="a863d41e9259662d708ccd897be8b6db2"></a>
 template&lt;int dim, int n_components, typename Number &gt; </td></tr>
 <tr class="memitem:a863d41e9259662d708ccd897be8b6db2"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>run</b> (std::string const &amp;input_file, MPI_Comm const &amp;mpi_comm)</td></tr>
@@ -992,6 +995,49 @@ template&lt;int dim, typename Number &gt; </div>
 </table>
 </div><div class="memdoc">
 <p>Creates directories if not already existing. An MPI barrier ensures that directories have been created for all processes when completing this function. </p>
+
+</div>
+</div>
+<a id="a4ee9607ef908f9a2d5599d52a185abce" name="a4ee9607ef908f9a2d5599d52a185abce"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4ee9607ef908f9a2d5599d52a185abce">&#9670;&#160;</a></span>create_finite_element()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt; dealii::FiniteElement&lt; dim &gt; &gt; ExaDG::create_finite_element </td>
+          <td>(</td>
+          <td class="paramtype">ElementType const &amp;&#160;</td>
+          <td class="paramname"><em>element_type</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool const&#160;</td>
+          <td class="paramname"><em>is_dg</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>n_components</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>degree</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Creates and returns a shared pointer to dealii::FiniteElement&lt;dim&gt; depending on the element type, the type of function space, the number of components of the solution field, and the polynomial degree of the shape functions. Regarding the function space, the code assumes an H^1 conforming space (Continuous Galerkin) if is_dg (= L^2-conforming space, Discontinuous Galerkin) is false. </p>
 
 </div>
 </div>

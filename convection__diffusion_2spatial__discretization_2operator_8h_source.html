@@ -432,14 +432,14 @@ $(function() {
 <div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00355" name="l00355"></a><span class="lineno">  355</span><span class="comment">   * Basic finite element ingredients.</span></div>
 <div class="line"><a id="l00356" name="l00356"></a><span class="lineno">  356</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00357" name="l00357"></a><span class="lineno">  357</span>  dealii::FE_DGQ&lt;dim&gt;     fe;</div>
-<div class="line"><a id="l00358" name="l00358"></a><span class="lineno">  358</span>  dealii::DoFHandler&lt;dim&gt; dof_handler;</div>
+<div class="line"><a id="l00357" name="l00357"></a><span class="lineno">  357</span>  std::shared_ptr&lt;dealii::FiniteElement&lt;dim&gt;&gt; fe;</div>
+<div class="line"><a id="l00358" name="l00358"></a><span class="lineno">  358</span>  dealii::DoFHandler&lt;dim&gt;                     dof_handler;</div>
 <div class="line"><a id="l00359" name="l00359"></a><span class="lineno">  359</span> </div>
 <div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00361" name="l00361"></a><span class="lineno">  361</span><span class="comment">   * Numerical velocity field.</span></div>
 <div class="line"><a id="l00362" name="l00362"></a><span class="lineno">  362</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00363" name="l00363"></a><span class="lineno">  363</span>  std::shared_ptr&lt;dealii::FESystem&lt;dim&gt;&gt;   fe_velocity;</div>
-<div class="line"><a id="l00364" name="l00364"></a><span class="lineno">  364</span>  std::shared_ptr&lt;dealii::DoFHandler&lt;dim&gt;&gt; dof_handler_velocity;</div>
+<div class="line"><a id="l00363" name="l00363"></a><span class="lineno">  363</span>  std::shared_ptr&lt;dealii::FiniteElement&lt;dim&gt;&gt; fe_velocity;</div>
+<div class="line"><a id="l00364" name="l00364"></a><span class="lineno">  364</span>  std::shared_ptr&lt;dealii::DoFHandler&lt;dim&gt;&gt;    dof_handler_velocity;</div>
 <div class="line"><a id="l00365" name="l00365"></a><span class="lineno">  365</span> </div>
 <div class="line"><a id="l00366" name="l00366"></a><span class="lineno">  366</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00367" name="l00367"></a><span class="lineno">  367</span><span class="comment">   * Constraints.</span></div>

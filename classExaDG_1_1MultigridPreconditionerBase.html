@@ -170,12 +170,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>update_matrix_free_ob
 <tr class="separator:a0ba9a82ba61f882ce17031d0c178f26d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a08945d6d587246217b77ab3d56b31bb2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a08945d6d587246217b77ab3d56b31bb2">update_coarse_solver</a> ()</td></tr>
 <tr class="separator:a08945d6d587246217b77ab3d56b31bb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7bef156bdaf6db98458c9945148e5e87"><td class="memItemLeft" align="right" valign="top"><a id="a7bef156bdaf6db98458c9945148e5e87" name="a7bef156bdaf6db98458c9945148e5e87"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_dof_handler_and_constraints</b> (bool is_singular, dealii::FiniteElement&lt; dim &gt; const &amp;fe, Map_DBC const &amp;dirichlet_bc, Map_DBC_ComponentMask const &amp;dirichlet_bc_component_mask)</td></tr>
-<tr class="separator:a7bef156bdaf6db98458c9945148e5e87"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a34cc9e00935ccaa386173d96cc9490a2"><td class="memItemLeft" align="right" valign="top"><a id="a34cc9e00935ccaa386173d96cc9490a2" name="a34cc9e00935ccaa386173d96cc9490a2"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>do_initialize_dof_handler_and_constraints</b> (bool is_singular, dealii::FiniteElement&lt; dim &gt; const &amp;fe, Map_DBC const &amp;dirichlet_bc, Map_DBC_ComponentMask const &amp;dirichlet_bc_component_mask, dealii::MGLevelObject&lt; std::shared_ptr&lt; dealii::DoFHandler&lt; dim &gt; const &gt; &gt; &amp;dofhandlers, dealii::MGLevelObject&lt; std::shared_ptr&lt; dealii::AffineConstraints&lt; MultigridNumber &gt; &gt; &gt; &amp;constraints)</td></tr>
-<tr class="separator:a34cc9e00935ccaa386173d96cc9490a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a03516da477bb10aed08dccf1291821ee"><td class="memItemLeft" align="right" valign="top"><a id="a03516da477bb10aed08dccf1291821ee" name="a03516da477bb10aed08dccf1291821ee"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_dof_handler_and_constraints</b> (bool is_singular, unsigned int const n_components, Map_DBC const &amp;dirichlet_bc, Map_DBC_ComponentMask const &amp;dirichlet_bc_component_mask)</td></tr>
+<tr class="separator:a03516da477bb10aed08dccf1291821ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae49a462b92cc7827130db453c39e4f8c"><td class="memItemLeft" align="right" valign="top"><a id="ae49a462b92cc7827130db453c39e4f8c" name="ae49a462b92cc7827130db453c39e4f8c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>do_initialize_dof_handler_and_constraints</b> (bool is_singular, unsigned int const n_components, Map_DBC const &amp;dirichlet_bc, Map_DBC_ComponentMask const &amp;dirichlet_bc_component_mask, dealii::MGLevelObject&lt; std::shared_ptr&lt; dealii::DoFHandler&lt; dim &gt; const &gt; &gt; &amp;dofhandlers, dealii::MGLevelObject&lt; std::shared_ptr&lt; dealii::AffineConstraints&lt; MultigridNumber &gt; &gt; &gt; &amp;constraints)</td></tr>
+<tr class="separator:ae49a462b92cc7827130db453c39e4f8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7d88836617de97be3addf665e2fba802"><td class="memItemLeft" align="right" valign="top"><a id="a7d88836617de97be3addf665e2fba802" name="a7d88836617de97be3addf665e2fba802"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_transfer_operators</b> ()</td></tr>
 <tr class="separator:a7d88836617de97be3addf665e2fba802"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -193,6 +193,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>do_initialize_transfe
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
+<tr class="memitem:aba8fe264a0a0bb1afeed4cab4ecd0849"><td class="memItemLeft" align="right" valign="top"><a id="aba8fe264a0a0bb1afeed4cab4ecd0849" name="aba8fe264a0a0bb1afeed4cab4ecd0849"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>grid</b></td></tr>
+<tr class="separator:aba8fe264a0a0bb1afeed4cab4ecd0849"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae08bf0d3866871c90571684f379c79d5"><td class="memItemLeft" align="right" valign="top"><a id="ae08bf0d3866871c90571684f379c79d5" name="ae08bf0d3866871c90571684f379c79d5"></a>
 dealii::MGLevelObject&lt; std::shared_ptr&lt; dealii::DoFHandler&lt; dim &gt; const  &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>dof_handlers</b></td></tr>
 <tr class="separator:ae08bf0d3866871c90571684f379c79d5"><td class="memSeparator" colspan="2">&#160;</td></tr>

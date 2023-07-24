@@ -29,8 +29,9 @@ var searchData=
   ['convert_3c_20t_2c_20typename_20std_3a_3aenable_5fif_3c_20exadg_3a_3autilities_3a_3ais_5fenum_3c_20t_20_3e_28_29_3e_3a_3atype_20_3e_26',['Convert&lt; T, typename std::enable_if&lt; ExaDG::Utilities::is_enum&lt; T &gt;()&gt;::type &gt;',['../structdealii_1_1Patterns_1_1Tools_1_1Convert_3_01T_00_01typename_01std_1_1enable__if_3_01ExaDG_17e2282df0b559ad12488d39de0fb1c19.html',1,'dealii::Patterns::Tools']]],
   ['couplingbase_27',['CouplingBase',['../classExaDG_1_1preCICE_1_1CouplingBase.html',1,'ExaDG::preCICE']]],
   ['create_5fdirectories_28',['create_directories',['../namespaceExaDG.html#ae37213007b3d71515b9d35a598e17e22',1,'ExaDG']]],
-  ['create_5fsubdivided_5fhyper_5frectangle_29',['create_subdivided_hyper_rectangle',['../namespaceExaDG.html#a11fdfa75b66139f3547f5ed4d7c1ef58',1,'ExaDG']]],
-  ['cubemeshmovementfunctions_30',['CubeMeshMovementFunctions',['../classExaDG_1_1CubeMeshMovementFunctions.html',1,'ExaDG']]],
-  ['curlcompute_31',['CurlCompute',['../structExaDG_1_1IncNS_1_1CurlCompute.html',1,'ExaDG::IncNS']]],
-  ['curlcompute_3c_202_2c_20feeval_20_3e_32',['CurlCompute&lt; 2, FEEval &gt;',['../structExaDG_1_1IncNS_1_1CurlCompute_3_012_00_01FEEval_01_4.html',1,'ExaDG::IncNS']]]
+  ['create_5ffinite_5felement_29',['create_finite_element',['../namespaceExaDG.html#a4ee9607ef908f9a2d5599d52a185abce',1,'ExaDG']]],
+  ['create_5fsubdivided_5fhyper_5frectangle_30',['create_subdivided_hyper_rectangle',['../namespaceExaDG.html#a11fdfa75b66139f3547f5ed4d7c1ef58',1,'ExaDG']]],
+  ['cubemeshmovementfunctions_31',['CubeMeshMovementFunctions',['../classExaDG_1_1CubeMeshMovementFunctions.html',1,'ExaDG']]],
+  ['curlcompute_32',['CurlCompute',['../structExaDG_1_1IncNS_1_1CurlCompute.html',1,'ExaDG::IncNS']]],
+  ['curlcompute_3c_202_2c_20feeval_20_3e_33',['CurlCompute&lt; 2, FEEval &gt;',['../structExaDG_1_1IncNS_1_1CurlCompute_3_012_00_01FEEval_01_4.html',1,'ExaDG::IncNS']]]
 ];

@@ -191,7 +191,7 @@ $(function() {
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  dealii::Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;</div>
 <div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  get_mapping() <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  dealii::FESystem&lt;dim&gt; <span class="keyword">const</span> &amp;</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  dealii::FiniteElement&lt;dim&gt; <span class="keyword">const</span> &amp;</div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  get_fe() <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp;</div>
@@ -296,9 +296,9 @@ $(function() {
 <div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span><span class="comment">   * Basic finite element ingredients.</span></div>
 <div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span> </div>
-<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>  std::shared_ptr&lt;dealii::FESystem&lt;dim&gt;&gt; fe;        <span class="comment">// all (dim+2) components: (rho, rho u, rho E)</span></div>
-<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>  std::shared_ptr&lt;dealii::FESystem&lt;dim&gt;&gt; fe_vector; <span class="comment">// e.g. velocity</span></div>
-<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>  dealii::FE_DGQ&lt;dim&gt;                    fe_scalar; <span class="comment">// scalar quantity, e.g, pressure</span></div>
+<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>  std::shared_ptr&lt;dealii::FiniteElement&lt;dim&gt;&gt; fe; <span class="comment">// all (dim+2) components: (rho, rho u, rho E)</span></div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>  std::shared_ptr&lt;dealii::FiniteElement&lt;dim&gt;&gt; fe_vector; <span class="comment">// e.g. velocity</span></div>
+<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>  std::shared_ptr&lt;dealii::FiniteElement&lt;dim&gt;&gt; fe_scalar; <span class="comment">// scalar quantity, e.g, pressure</span></div>
 <div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span> </div>
 <div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>  <span class="comment">// dealii::Quadrature points</span></div>
 <div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n_q_points_conv;</div>
