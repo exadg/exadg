@@ -30,6 +30,7 @@
 #include <exadg/grid/get_dynamic_mapping.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/operators/finite_element.h>
+#include <exadg/operators/quadrature.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
@@ -117,12 +118,15 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   }
 
   // dealii::Quadrature
-  matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1), get_quad_name());
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature =
+    create_quadrature<dim>(param.grid.element_type, param.degree + 1);
+  matrix_free_data.insert_quadrature(*quadrature, get_quad_name());
 
   if(param.use_overintegration)
   {
-    matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + (param.degree + 2) / 2),
-                                       get_quad_name_overintegration());
+    std::shared_ptr<dealii::Quadrature<dim>> quadrature_over =
+      create_quadrature<dim>(param.grid.element_type, param.degree + (param.degree + 2) / 2);
+    matrix_free_data.insert_quadrature(*quadrature_over, get_quad_name_overintegration());
   }
 }
 
