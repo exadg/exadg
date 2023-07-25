@@ -26,6 +26,7 @@
 // ExaDG
 #include <exadg/compressible_navier_stokes/spatial_discretization/operator.h>
 #include <exadg/operators/finite_element.h>
+#include <exadg/operators/quadrature.h>
 #include <exadg/time_integration/time_step_calculation.h>
 
 namespace ExaDG
@@ -48,8 +49,6 @@ Operator<dim, Number>::Operator(
     field_functions(field_functions_in),
     param(param_in),
     field(field_in),
-    n_q_points_conv(param_in.degree + 1),
-    n_q_points_visc(param_in.degree + 1),
     dof_handler(*grid_in->triangulation),
     dof_handler_vector(*grid_in->triangulation),
     dof_handler_scalar(*grid_in->triangulation),
@@ -62,25 +61,6 @@ Operator<dim, Number>::Operator(
   fe        = create_finite_element<dim>(ElementType::Hypercube, true, dim + 2, param.degree);
   fe_vector = create_finite_element<dim>(ElementType::Hypercube, true, dim, param.degree);
   fe_scalar = create_finite_element<dim>(ElementType::Hypercube, true, 1, param.degree);
-
-  // Quadrature rule
-  if(param.n_q_points_convective == QuadratureRule::Standard)
-    n_q_points_conv = param.degree + 1;
-  else if(param.n_q_points_convective == QuadratureRule::Overintegration32k)
-    n_q_points_conv = param.degree + (param.degree + 2) / 2;
-  else if(param.n_q_points_convective == QuadratureRule::Overintegration2k)
-    n_q_points_conv = 2 * param.degree + 1;
-  else
-    AssertThrow(false, dealii::ExcMessage("Specified quadrature rule is not implemented."));
-
-  if(param.n_q_points_viscous == QuadratureRule::Standard)
-    n_q_points_visc = param.degree + 1;
-  else if(param.n_q_points_viscous == QuadratureRule::Overintegration32k)
-    n_q_points_visc = param.degree + (param.degree + 2) / 2;
-  else if(param.n_q_points_viscous == QuadratureRule::Overintegration2k)
-    n_q_points_visc = 2 * param.degree + 1;
-  else
-    AssertThrow(false, dealii::ExcMessage("Specified quadrature rule is not implemented."));
 
   distribute_dofs();
 
@@ -113,13 +93,41 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   matrix_free_data.insert_constraint(&constraint, field + dof_index_vector);
   matrix_free_data.insert_constraint(&constraint, field + dof_index_scalar);
 
-  // quadrature
-  matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1),
-                                     field + quad_index_standard);
-  matrix_free_data.insert_quadrature(dealii::QGauss<1>(n_q_points_conv),
-                                     field + quad_index_overintegration_conv);
-  matrix_free_data.insert_quadrature(dealii::QGauss<1>(n_q_points_visc),
-                                     field + quad_index_overintegration_vis);
+  // Quadrature rule
+  unsigned int n_q_points_conv;
+  if(param.n_q_points_convective == QuadratureRule::Standard)
+    n_q_points_conv = param.degree + 1;
+  else if(param.n_q_points_convective == QuadratureRule::Overintegration32k)
+    n_q_points_conv = param.degree + (param.degree + 2) / 2;
+  else if(param.n_q_points_convective == QuadratureRule::Overintegration2k)
+    n_q_points_conv = 2 * param.degree + 1;
+  else
+    AssertThrow(false, dealii::ExcMessage("Specified quadrature rule is not implemented."));
+
+  unsigned int n_q_points_vis;
+  if(param.n_q_points_viscous == QuadratureRule::Standard)
+    n_q_points_vis = param.degree + 1;
+  else if(param.n_q_points_viscous == QuadratureRule::Overintegration32k)
+    n_q_points_vis = param.degree + (param.degree + 2) / 2;
+  else if(param.n_q_points_viscous == QuadratureRule::Overintegration2k)
+    n_q_points_vis = 2 * param.degree + 1;
+  else
+    AssertThrow(false, dealii::ExcMessage("Specified quadrature rule is not implemented."));
+
+  pcout << std::endl << "Quadrature rules:" << std::endl << std::endl;
+  print_parameter(pcout, "number of 1D q-points (std)", param.degree + 1);
+  print_parameter(pcout, "number of 1D q-points (conv)", n_q_points_conv);
+  print_parameter(pcout, "number of 1D q-points (vis)", n_q_points_vis);
+
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature_standard =
+    create_quadrature<dim>(param.grid.element_type, param.degree + 1);
+  matrix_free_data.insert_quadrature(*quadrature_standard, field + quad_index_standard);
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature_conv =
+    create_quadrature<dim>(param.grid.element_type, n_q_points_conv);
+  matrix_free_data.insert_quadrature(*quadrature_conv, field + quad_index_overintegration_conv);
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature_vis =
+    create_quadrature<dim>(param.grid.element_type, n_q_points_vis);
+  matrix_free_data.insert_quadrature(*quadrature_vis, field + quad_index_overintegration_vis);
 }
 
 template<int dim, typename Number>
@@ -472,9 +480,6 @@ Operator<dim, Number>::distribute_dofs()
   print_parameter(pcout, "degree of 1D polynomials", param.degree);
   print_parameter(pcout, "number of dofs per cell", fe->n_dofs_per_cell());
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
-  print_parameter(pcout, "number of 1D q-points (std)", param.degree + 1);
-  print_parameter(pcout, "number of 1D q-points (over-conv)", n_q_points_conv);
-  print_parameter(pcout, "number of 1D q-points (over-vis)", n_q_points_visc);
 }
 
 template<int dim, typename Number>
