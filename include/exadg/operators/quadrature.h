@@ -22,6 +22,7 @@
 #ifndef INCLUDE_EXADG_OPERATORS_QUADRATURE_H_
 #define INCLUDE_EXADG_OPERATORS_QUADRATURE_H_
 
+#include <exadg/grid/grid_data.h>
 #include <exadg/utilities/exceptions.h>
 
 namespace ExaDG
