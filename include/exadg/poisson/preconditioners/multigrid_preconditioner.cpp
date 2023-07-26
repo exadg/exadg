@@ -109,7 +109,7 @@ MultigridPreconditioner<dim, Number, n_components>::fill_matrix_free_data(
   ElementType const element_type = GridUtilities::get_element_type(*this->grid->triangulation);
   std::shared_ptr<dealii::Quadrature<dim>> quadrature =
     create_quadrature<dim>(element_type, this->level_info[level].degree() + 1);
-  matrix_free_data.insert_quadrature(*quadrature, "std_quadrature");
+  matrix_free_data.insert_quadrature(*quadrature, "laplace_quadrature");
 }
 
 template<int dim, typename Number, int n_components>
