@@ -19,6 +19,8 @@
  *  ______________________________________________________________________
  */
 
+#include <exadg/grid/grid_utilities.h>
+#include <exadg/operators/quadrature.h>
 #include <exadg/structure/preconditioners/multigrid_preconditioner.h>
 
 namespace ExaDG
@@ -181,24 +183,10 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
                                        "elasticity_dof_index_inhomogeneous");
   }
 
-  if(this->dof_handlers[level]->get_triangulation().all_reference_cells_are_hyper_cube())
-  {
-    matrix_free_data.insert_quadrature(dealii::QGauss<1>(this->level_info[level].degree() + 1),
-                                       "elasticity_quadrature");
-  }
-  else if(this->dof_handlers[level]->get_triangulation().all_reference_cells_are_simplex())
-  {
-    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(this->level_info[level].degree() +
-                                                                  1),
-                                       "elasticity_quadrature");
-  }
-  else
-  {
-    AssertThrow(
-      false,
-      dealii::ExcMessage(
-        "Only pure hypercube or pure simplex meshes are implemented for Structure::MultigridPreconditioner."));
-  }
+  ElementType const element_type = GridUtilities::get_element_type(*this->grid->triangulation);
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature =
+    create_quadrature<dim>(element_type, this->level_info[level].degree() + 1);
+  matrix_free_data.insert_quadrature(*quadrature, "std_quadrature");
 }
 
 template<int dim, typename Number>

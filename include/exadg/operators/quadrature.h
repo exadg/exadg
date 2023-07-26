@@ -22,6 +22,8 @@
 #ifndef INCLUDE_EXADG_OPERATORS_QUADRATURE_H_
 #define INCLUDE_EXADG_OPERATORS_QUADRATURE_H_
 
+#include <exadg/utilities/exceptions.h>
+
 namespace ExaDG
 {
 template<int dim>
