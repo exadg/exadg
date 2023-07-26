@@ -22,7 +22,11 @@
 #ifndef INCLUDE_EXADG_GRID_GRID_DATA_H_
 #define INCLUDE_EXADG_GRID_GRID_DATA_H_
 
+// C/C++
 #include <string>
+
+// deal.II
+#include <deal.II/grid/tria.h>
 
 // ExaDG
 #include <exadg/utilities/print_functions.h>
@@ -56,6 +60,33 @@ enum class PartitioningType
   Metis,
   z_order
 };
+
+// TODO: remove this namespace
+namespace GridUtilities
+{
+/**
+ * Returns the type of elements, where we currently only allow triangulations consisting of the same
+ * type of elements.
+ */
+template<int dim>
+ElementType
+get_element_type(dealii::Triangulation<dim> const & tria)
+{
+  if(tria.all_reference_cells_are_simplex())
+  {
+    return ElementType::Simplex;
+  }
+  else if(tria.all_reference_cells_are_hyper_cube())
+  {
+    return ElementType::Hypercube;
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("Invalid parameter element_type."));
+    return ElementType::Hypercube;
+  }
+}
+} // namespace GridUtilities
 
 struct GridData
 {

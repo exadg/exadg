@@ -23,7 +23,6 @@
 #define INCLUDE_EXADG_GRID_GRID_H_
 
 // deal.II
-#include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/tria.h>
 
 // ExaDG
