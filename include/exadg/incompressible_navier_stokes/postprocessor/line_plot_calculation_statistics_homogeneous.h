@@ -43,11 +43,9 @@ namespace IncNS
  * and one spatial, homogeneous direction (averaging_direction = {0,1,2}), e.g.,
  * in the x-direction with a line in the y-z plane.
  *
- * NOTE: This function just works for geometries/meshes for which the cells are aligned with the
- * coordinate axis.
+ * NOTE: This functionality can only be used for hypercube meshes and for geometries/meshes for
+ * which the cells are aligned with the coordinate axis.
  */
-
-// TODO Adapt code to geometries whose elements are not aligned with the coordinate axis.
 
 template<int dim, typename Number>
 class LinePlotCalculatorStatisticsHomogeneous
