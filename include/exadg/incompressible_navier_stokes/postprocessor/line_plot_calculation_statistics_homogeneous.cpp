@@ -23,7 +23,7 @@
 #include <deal.II/fe/fe_values.h>
 
 // ExaDG
-#include <exadg/grid/grid_utilities.h>
+#include <exadg/grid/grid_data.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics_homogeneous.h>
 #include <exadg/utilities/create_directories.h>
 

@@ -31,6 +31,7 @@
 
 // ExaDG
 #include <exadg/grid/grid.h>
+#include <exadg/grid/grid_utilities.h>
 #include <exadg/postprocessor/output_parameters.h>
 #include <exadg/utilities/resolution_parameters.h>
 

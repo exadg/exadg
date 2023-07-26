@@ -26,7 +26,7 @@
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
-#include <exadg/grid/grid_utilities.h>
+#include <exadg/grid/grid_data.h>
 #include <exadg/operators/quadrature.h>
 #include <exadg/postprocessor/error_calculation.h>
 #include <exadg/utilities/create_directories.h>

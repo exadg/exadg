@@ -28,7 +28,7 @@
 #include <deal.II/fe/fe_values.h>
 
 // ExaDG
-#include <exadg/grid/grid_utilities.h>
+#include <exadg/grid/grid_data.h>
 #include <exadg/postprocessor/statistics_manager.h>
 #include <exadg/utilities/create_directories.h>
 

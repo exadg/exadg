@@ -23,7 +23,7 @@
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
-#include <exadg/grid/grid_utilities.h>
+#include <exadg/grid/grid_data.h>
 #include <exadg/operators/constraints.h>
 #include <exadg/operators/finite_element.h>
 #include <exadg/operators/quadrature.h>

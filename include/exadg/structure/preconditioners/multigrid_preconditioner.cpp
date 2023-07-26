@@ -19,7 +19,7 @@
  *  ______________________________________________________________________
  */
 
-#include <exadg/grid/grid_utilities.h>
+#include <exadg/grid/grid_data.h>
 #include <exadg/operators/quadrature.h>
 #include <exadg/structure/preconditioners/multigrid_preconditioner.h>
 

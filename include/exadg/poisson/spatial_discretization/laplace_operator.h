@@ -22,7 +22,7 @@
 #ifndef LAPLACE_OPERATOR_H
 #define LAPLACE_OPERATOR_H
 
-#include <exadg/grid/grid_utilities.h>
+#include <exadg/grid/grid_data.h>
 #include <exadg/operators/interior_penalty_parameter.h>
 #include <exadg/operators/operator_base.h>
 #include <exadg/operators/operator_type.h>

@@ -27,7 +27,7 @@
 #include <deal.II/numerics/data_out.h>
 
 // ExaDG
-#include <exadg/grid/grid_utilities.h>
+#include <exadg/grid/grid_data.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/output_generator.h>
 #include <exadg/operators/quadrature.h>
 #include <exadg/postprocessor/write_output.h>

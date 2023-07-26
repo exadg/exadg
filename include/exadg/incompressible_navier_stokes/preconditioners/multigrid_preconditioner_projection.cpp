@@ -19,7 +19,7 @@
  *  ______________________________________________________________________
  */
 
-#include <exadg/grid/grid_utilities.h>
+#include <exadg/grid/grid_data.h>
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_projection.h>
 #include <exadg/operators/mass_kernel.h>
 #include <exadg/operators/quadrature.h>

@@ -22,6 +22,10 @@
 #ifndef INCLUDE_EXADG_OPERATORS_QUADRATURE_H_
 #define INCLUDE_EXADG_OPERATORS_QUADRATURE_H_
 
+// deal.II
+#include <deal.II/base/quadrature_lib.h>
+
+// ExaDG
 #include <exadg/grid/grid_data.h>
 #include <exadg/utilities/exceptions.h>
 
