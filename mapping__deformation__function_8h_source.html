@@ -100,91 +100,95 @@ $(function() {
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#ifndef INCLUDE_GRID_MAPPING_DEFORMATION_FUNCTION_H_</span></div>
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#define INCLUDE_GRID_MAPPING_DEFORMATION_FUNCTION_H_</span></div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;exadg/grid/mapping_deformation_base.h&gt;</span></div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespaceExaDG.html">ExaDG</a></div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>{</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno"><a class="line" href="classExaDG_1_1DeformedMappingFunction.html">   34</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1DeformedMappingFunction.html">DeformedMappingFunction</a> : <span class="keyword">public</span> <a class="code hl_class" href="classExaDG_1_1DeformedMappingBase.html">DeformedMappingBase</a>&lt;dim, Number&gt;</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>{</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keyword">typedef</span> dealii::LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno"><a class="line" href="classExaDG_1_1DeformedMappingFunction.html#aa8ee6401760c44448ac737642de0d94b">   42</a></span>  <a class="code hl_function" href="classExaDG_1_1DeformedMappingFunction.html#aa8ee6401760c44448ac737642de0d94b">DeformedMappingFunction</a>(std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;  <a class="code hl_variable" href="classExaDG_1_1DeformedMappingBase.html#a5702ec7d01af869c259f36f7031f1535">mapping_undeformed</a>,</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>                          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                           mapping_degree_q_cache,</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>                          dealii::Triangulation&lt;dim&gt; <span class="keyword">const</span> &amp;           triangulation,</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>                          std::shared_ptr&lt;dealii::Function&lt;dim&gt;&gt; <span class="keyword">const</span> mesh_deformation_function,</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>                          <span class="keywordtype">double</span> <span class="keyword">const</span>                                 start_time)</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    : <a class="code hl_class" href="classExaDG_1_1DeformedMappingBase.html">DeformedMappingBase</a>&lt;dim, Number&gt;(<a class="code hl_variable" href="classExaDG_1_1DeformedMappingBase.html#a5702ec7d01af869c259f36f7031f1535">mapping_undeformed</a>, mapping_degree_q_cache, triangulation),</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>      mesh_deformation_function(mesh_deformation_function),</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>      triangulation(triangulation)</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  {</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    <a class="code hl_function" href="classExaDG_1_1DeformedMappingFunction.html#a544907f4f6e7e6a034eefe8bd0c3a7d3">update</a>(start_time, <span class="keyword">false</span>, dealii::numbers::invalid_unsigned_int);</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  }</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno"><a class="line" href="classExaDG_1_1DeformedMappingFunction.html#a544907f4f6e7e6a034eefe8bd0c3a7d3">   58</a></span>  <a class="code hl_function" href="classExaDG_1_1DeformedMappingFunction.html#a544907f4f6e7e6a034eefe8bd0c3a7d3">update</a>(<span class="keywordtype">double</span> <span class="keyword">const</span>     time,</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>         <span class="keywordtype">bool</span> <span class="keyword">const</span>       print_solver_info,</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>         types::time_step time_step_number)<span class="keyword"> override</span></div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    (void)print_solver_info;</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    (void)time_step_number;</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    mesh_deformation_function-&gt;set_time(time);</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    this-&gt;do_initialize(triangulation, mesh_deformation_function);</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  }</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  do_initialize(dealii::Triangulation&lt;dim&gt; <span class="keyword">const</span> &amp;     triangulation,</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>                std::shared_ptr&lt;dealii::Function&lt;dim&gt;&gt; displacement_function)</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  {</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>    AssertThrow(dealii::MultithreadInfo::n_threads() == 1, dealii::ExcNotImplemented());</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span> </div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>    <span class="comment">// dummy FE for compatibility with interface of dealii::FEValues</span></div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    dealii::FE_Nothing&lt;dim&gt; dummy_fe;</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    dealii::FEValues&lt;dim&gt;   fe_values(*this-&gt;<a class="code hl_variable" href="classExaDG_1_1DeformedMappingBase.html#a5702ec7d01af869c259f36f7031f1535">mapping_undeformed</a>,</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>                                    dummy_fe,</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>                                    dealii::QGaussLobatto&lt;dim&gt;(this-&gt;get_degree() + 1),</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>                                    dealii::update_quadrature_points);</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span> </div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    this-&gt;initialize(triangulation,</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>                     [&amp;](<span class="keyword">typename</span> dealii::Triangulation&lt;dim&gt;::cell_iterator <span class="keyword">const</span> &amp; cell)</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>                       -&gt; std::vector&lt;dealii::Point&lt;dim&gt;&gt; {</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>                       fe_values.reinit(cell);</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>                       <span class="comment">// compute displacement and add to original position</span></div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>                       std::vector&lt;dealii::Point&lt;dim&gt;&gt; points_moved(fe_values.n_quadrature_points);</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>                       <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; fe_values.n_quadrature_points; ++i)</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>                       {</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>                         <span class="comment">// need to adjust for hierarchic numbering of dealii::MappingQCache</span></div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>                         dealii::Point&lt;dim&gt; <span class="keyword">const</span> point = fe_values.quadrature_point(</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>                           this-&gt;hierarchic_to_lexicographic_numbering[i]);</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>                         dealii::Point&lt;dim&gt; displacement;</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>                         <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> d = 0; d &lt; dim; ++d)</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>                           displacement[d] = displacement_function-&gt;value(point, d);</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span> </div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>                         points_moved[i] = point + displacement;</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>                       }</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span> </div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>                       <span class="keywordflow">return</span> points_moved;</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>                     });</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  }</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;exadg/grid/grid_data.h&gt;</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;exadg/grid/mapping_deformation_base.h&gt;</span></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespaceExaDG.html">ExaDG</a></div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>{</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno"><a class="line" href="classExaDG_1_1DeformedMappingFunction.html">   35</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1DeformedMappingFunction.html">DeformedMappingFunction</a> : <span class="keyword">public</span> <a class="code hl_class" href="classExaDG_1_1DeformedMappingBase.html">DeformedMappingBase</a>&lt;dim, Number&gt;</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>{</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keyword">typedef</span> dealii::LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno"><a class="line" href="classExaDG_1_1DeformedMappingFunction.html#aa8ee6401760c44448ac737642de0d94b">   43</a></span>  <a class="code hl_function" href="classExaDG_1_1DeformedMappingFunction.html#aa8ee6401760c44448ac737642de0d94b">DeformedMappingFunction</a>(std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;  <a class="code hl_variable" href="classExaDG_1_1DeformedMappingBase.html#a5702ec7d01af869c259f36f7031f1535">mapping_undeformed</a>,</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>                          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                           mapping_degree_q_cache,</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>                          dealii::Triangulation&lt;dim&gt; <span class="keyword">const</span> &amp;           triangulation,</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>                          std::shared_ptr&lt;dealii::Function&lt;dim&gt;&gt; <span class="keyword">const</span> mesh_deformation_function,</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>                          <span class="keywordtype">double</span> <span class="keyword">const</span>                                 start_time)</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    : <a class="code hl_class" href="classExaDG_1_1DeformedMappingBase.html">DeformedMappingBase</a>&lt;dim, Number&gt;(<a class="code hl_variable" href="classExaDG_1_1DeformedMappingBase.html#a5702ec7d01af869c259f36f7031f1535">mapping_undeformed</a>, mapping_degree_q_cache, triangulation),</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>      mesh_deformation_function(mesh_deformation_function),</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>      triangulation(triangulation)</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  {</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    <a class="code hl_function" href="classExaDG_1_1DeformedMappingFunction.html#a544907f4f6e7e6a034eefe8bd0c3a7d3">update</a>(start_time, <span class="keyword">false</span>, dealii::numbers::invalid_unsigned_int);</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  }</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno"><a class="line" href="classExaDG_1_1DeformedMappingFunction.html#a544907f4f6e7e6a034eefe8bd0c3a7d3">   59</a></span>  <a class="code hl_function" href="classExaDG_1_1DeformedMappingFunction.html#a544907f4f6e7e6a034eefe8bd0c3a7d3">update</a>(<span class="keywordtype">double</span> <span class="keyword">const</span>     time,</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>         <span class="keywordtype">bool</span> <span class="keyword">const</span>       print_solver_info,</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>         types::time_step time_step_number)<span class="keyword"> override</span></div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    (void)print_solver_info;</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    (void)time_step_number;</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    mesh_deformation_function-&gt;set_time(time);</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>    this-&gt;do_initialize(triangulation, mesh_deformation_function);</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  }</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  do_initialize(dealii::Triangulation&lt;dim&gt; <span class="keyword">const</span> &amp;     triangulation,</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>                std::shared_ptr&lt;dealii::Function&lt;dim&gt;&gt; displacement_function)</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  {</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>    AssertThrow(dealii::MultithreadInfo::n_threads() == 1, dealii::ExcNotImplemented());</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span> </div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    AssertThrow(GridUtilities::get_element_type(triangulation) == ElementType::Hypercube,</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>                dealii::ExcMessage(<span class="stringliteral">&quot;Only implemented for hypercube elements.&quot;</span>));</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>    <span class="comment">// dummy FE for compatibility with interface of dealii::FEValues</span></div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    dealii::FE_Nothing&lt;dim&gt; dummy_fe;</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    dealii::FEValues&lt;dim&gt;   fe_values(*this-&gt;<a class="code hl_variable" href="classExaDG_1_1DeformedMappingBase.html#a5702ec7d01af869c259f36f7031f1535">mapping_undeformed</a>,</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>                                    dummy_fe,</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>                                    dealii::QGaussLobatto&lt;dim&gt;(this-&gt;get_degree() + 1),</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>                                    dealii::update_quadrature_points);</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    this-&gt;initialize(triangulation,</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>                     [&amp;](<span class="keyword">typename</span> dealii::Triangulation&lt;dim&gt;::cell_iterator <span class="keyword">const</span> &amp; cell)</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>                       -&gt; std::vector&lt;dealii::Point&lt;dim&gt;&gt; {</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>                       fe_values.reinit(cell);</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>                       <span class="comment">// compute displacement and add to original position</span></div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>                       std::vector&lt;dealii::Point&lt;dim&gt;&gt; points_moved(fe_values.n_quadrature_points);</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>                       <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; fe_values.n_quadrature_points; ++i)</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>                       {</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>                         <span class="comment">// need to adjust for hierarchic numbering of dealii::MappingQCache</span></div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>                         dealii::Point&lt;dim&gt; <span class="keyword">const</span> point = fe_values.quadrature_point(</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>                           this-&gt;hierarchic_to_lexicographic_numbering[i]);</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>                         dealii::Point&lt;dim&gt; displacement;</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>                         <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> d = 0; d &lt; dim; ++d)</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>                           displacement[d] = displacement_function-&gt;value(point, d);</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span> </div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>                         points_moved[i] = point + displacement;</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>                       }</div>
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span> </div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  std::shared_ptr&lt;dealii::Function&lt;dim&gt;&gt; mesh_deformation_function;</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span> </div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  dealii::Triangulation&lt;dim&gt; <span class="keyword">const</span> &amp; triangulation;</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>};</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span> </div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span><span class="preprocessor">#endif </span><span class="comment">/*INCLUDE_GRID_MAPPING_DEFORMATION_FUNCTION_H_*/</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>                       <span class="keywordflow">return</span> points_moved;</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>                     });</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  }</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  std::shared_ptr&lt;dealii::Function&lt;dim&gt;&gt; mesh_deformation_function;</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  dealii::Triangulation&lt;dim&gt; <span class="keyword">const</span> &amp; triangulation;</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>};</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span> </div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span><span class="preprocessor">#endif </span><span class="comment">/*INCLUDE_GRID_MAPPING_DEFORMATION_FUNCTION_H_*/</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1DeformedMappingBase_html"><div class="ttname"><a href="classExaDG_1_1DeformedMappingBase.html">ExaDG::DeformedMappingBase</a></div><div class="ttdef"><b>Definition</b> mapping_deformation_base.h:47</div></div>
 <div class="ttc" id="aclassExaDG_1_1DeformedMappingBase_html_a5702ec7d01af869c259f36f7031f1535"><div class="ttname"><a href="classExaDG_1_1DeformedMappingBase.html#a5702ec7d01af869c259f36f7031f1535">ExaDG::DeformedMappingBase::mapping_undeformed</a></div><div class="ttdeci">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const  &gt; mapping_undeformed</div><div class="ttdef"><b>Definition</b> mapping_deformation_base.h:104</div></div>
-<div class="ttc" id="aclassExaDG_1_1DeformedMappingFunction_html"><div class="ttname"><a href="classExaDG_1_1DeformedMappingFunction.html">ExaDG::DeformedMappingFunction</a></div><div class="ttdef"><b>Definition</b> mapping_deformation_function.h:35</div></div>
-<div class="ttc" id="aclassExaDG_1_1DeformedMappingFunction_html_a544907f4f6e7e6a034eefe8bd0c3a7d3"><div class="ttname"><a href="classExaDG_1_1DeformedMappingFunction.html#a544907f4f6e7e6a034eefe8bd0c3a7d3">ExaDG::DeformedMappingFunction::update</a></div><div class="ttdeci">void update(double const time, bool const print_solver_info, types::time_step time_step_number) override</div><div class="ttdef"><b>Definition</b> mapping_deformation_function.h:58</div></div>
-<div class="ttc" id="aclassExaDG_1_1DeformedMappingFunction_html_aa8ee6401760c44448ac737642de0d94b"><div class="ttname"><a href="classExaDG_1_1DeformedMappingFunction.html#aa8ee6401760c44448ac737642de0d94b">ExaDG::DeformedMappingFunction::DeformedMappingFunction</a></div><div class="ttdeci">DeformedMappingFunction(std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping_undeformed, unsigned int const mapping_degree_q_cache, dealii::Triangulation&lt; dim &gt; const &amp;triangulation, std::shared_ptr&lt; dealii::Function&lt; dim &gt; &gt; const mesh_deformation_function, double const start_time)</div><div class="ttdef"><b>Definition</b> mapping_deformation_function.h:42</div></div>
+<div class="ttc" id="aclassExaDG_1_1DeformedMappingFunction_html"><div class="ttname"><a href="classExaDG_1_1DeformedMappingFunction.html">ExaDG::DeformedMappingFunction</a></div><div class="ttdef"><b>Definition</b> mapping_deformation_function.h:36</div></div>
+<div class="ttc" id="aclassExaDG_1_1DeformedMappingFunction_html_a544907f4f6e7e6a034eefe8bd0c3a7d3"><div class="ttname"><a href="classExaDG_1_1DeformedMappingFunction.html#a544907f4f6e7e6a034eefe8bd0c3a7d3">ExaDG::DeformedMappingFunction::update</a></div><div class="ttdeci">void update(double const time, bool const print_solver_info, types::time_step time_step_number) override</div><div class="ttdef"><b>Definition</b> mapping_deformation_function.h:59</div></div>
+<div class="ttc" id="aclassExaDG_1_1DeformedMappingFunction_html_aa8ee6401760c44448ac737642de0d94b"><div class="ttname"><a href="classExaDG_1_1DeformedMappingFunction.html#aa8ee6401760c44448ac737642de0d94b">ExaDG::DeformedMappingFunction::DeformedMappingFunction</a></div><div class="ttdeci">DeformedMappingFunction(std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping_undeformed, unsigned int const mapping_degree_q_cache, dealii::Triangulation&lt; dim &gt; const &amp;triangulation, std::shared_ptr&lt; dealii::Function&lt; dim &gt; &gt; const mesh_deformation_function, double const start_time)</div><div class="ttdef"><b>Definition</b> mapping_deformation_function.h:43</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
