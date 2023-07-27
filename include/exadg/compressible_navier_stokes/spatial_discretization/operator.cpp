@@ -26,8 +26,8 @@
 // ExaDG
 #include <exadg/compressible_navier_stokes/spatial_discretization/operator.h>
 #include <exadg/operators/finite_element.h>
+#include <exadg/operators/grid_related_time_step_restrictions.h>
 #include <exadg/operators/quadrature.h>
-#include <exadg/time_integration/time_step_calculation.h>
 
 namespace ExaDG
 {
