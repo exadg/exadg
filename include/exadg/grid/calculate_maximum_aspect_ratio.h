@@ -22,39 +22,19 @@
 #ifndef INCLUDE_FUNCTIONALITIES_CALCULATE_MAXIMUM_ASPECT_RATIO_H_
 #define INCLUDE_FUNCTIONALITIES_CALCULATE_MAXIMUM_ASPECT_RATIO_H_
 
+// deal.II
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/fe/fe_nothing.h>
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/matrix_free/matrix_free.h>
 #include <deal.II/numerics/vector_tools.h>
 
+// ExaDG
+#include <exadg/grid/calculate_characteristic_element_length.h>
+
 namespace ExaDG
 {
-template<int dim>
-inline double
-calculate_maximum_vertex_distance(
-  typename dealii::Triangulation<dim>::active_cell_iterator const & cell)
-{
-  double maximum_vertex_distance = 0.0;
-
-  for(unsigned int const i : cell->vertex_indices())
-  {
-    dealii::Point<dim> & ref_vertex = cell->vertex(i);
-    // start the loop with the second vertex!
-    for(unsigned int const j : cell->vertex_indices())
-    {
-      if(j != i)
-      {
-        dealii::Point<dim> & vertex = cell->vertex(j);
-        maximum_vertex_distance = std::max(maximum_vertex_distance, vertex.distance(ref_vertex));
-      }
-    }
-  }
-
-  return maximum_vertex_distance;
-}
-
-/*
+/**
  * This is a rather naive version of computing the aspect ratio as this version does not
  * detect all modes of deformation (e.g., parallelogram with small angle, assuming that both
  * sides of the parallelogram have the same length, the aspect ratio would tend to a value of
@@ -67,6 +47,9 @@ inline double
 calculate_aspect_ratio_vertex_distance(dealii::Triangulation<dim> const & triangulation,
                                        MPI_Comm const &                   mpi_comm)
 {
+  AssertThrow(triangulation.all_reference_cells_are_hyper_cube(),
+              dealii::ExcMessage("This function is only implemented for hypercube elements."));
+
   double max_aspect_ratio = 0.0;
 
   for(auto const & cell : triangulation.active_cell_iterators())
