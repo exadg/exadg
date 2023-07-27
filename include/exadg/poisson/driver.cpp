@@ -25,11 +25,11 @@
 #endif
 
 // ExaDG
+#include <exadg/operators/throughput_parameters.h>
 #include <exadg/poisson/driver.h>
 #include <exadg/utilities/print_functions.h>
 #include <exadg/utilities/print_general_infos.h>
 #include <exadg/utilities/print_solver_results.h>
-#include <exadg/utilities/throughput_parameters.h>
 
 namespace ExaDG
 {

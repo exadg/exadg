@@ -26,8 +26,8 @@
 
 // ExaDG
 #include <exadg/compressible_navier_stokes/driver.h>
+#include <exadg/operators/throughput_parameters.h>
 #include <exadg/utilities/print_solver_results.h>
-#include <exadg/utilities/throughput_parameters.h>
 
 namespace ExaDG
 {

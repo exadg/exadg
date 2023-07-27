@@ -33,7 +33,6 @@
 
 // utilities
 #include <exadg/utilities/general_parameters.h>
-#include <exadg/utilities/resolution_parameters.h>
 
 // application
 #include <exadg/incompressible_navier_stokes/precursor/user_interface/declare_get_application.h>

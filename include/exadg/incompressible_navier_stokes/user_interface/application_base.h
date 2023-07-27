@@ -36,11 +36,11 @@
 #include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
+#include <exadg/operators/resolution_parameters.h>
 #include <exadg/poisson/user_interface/analytical_solution.h>
 #include <exadg/poisson/user_interface/field_functions.h>
 #include <exadg/poisson/user_interface/parameters.h>
 #include <exadg/postprocessor/output_parameters.h>
-#include <exadg/utilities/resolution_parameters.h>
 
 namespace ExaDG
 {

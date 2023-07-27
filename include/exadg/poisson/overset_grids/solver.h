@@ -29,7 +29,6 @@
 
 // utilities
 #include <exadg/utilities/general_parameters.h>
-#include <exadg/utilities/resolution_parameters.h>
 
 // application
 #include <exadg/poisson/overset_grids/user_interface/declare_get_application.h>

@@ -26,9 +26,9 @@
 
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
+#include <exadg/operators/throughput_parameters.h>
 #include <exadg/structure/driver.h>
 #include <exadg/utilities/print_solver_results.h>
-#include <exadg/utilities/throughput_parameters.h>
 
 namespace ExaDG
 {
