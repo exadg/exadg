@@ -27,11 +27,13 @@
 #include <deal.II/fe/mapping_fe.h>
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/grid/grid_in.h>
+#include <deal.II/grid/grid_tools.h>
 #include <deal.II/multigrid/mg_transfer_global_coarsening.h>
 
 // ExaDG
 #include <exadg/grid/balanced_granularity_partition_policy.h>
 #include <exadg/grid/grid.h>
+#include <exadg/grid/grid_data.h>
 #include <exadg/grid/perform_local_refinements.h>
 
 namespace ExaDG
@@ -41,29 +43,6 @@ namespace GridUtilities
 template<int dim>
 using PeriodicFacePairs = std::vector<
   dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>>;
-
-/**
- * Returns the type of elements, where we currently only allow triangulations consisting of the same
- * type of elements.
- */
-template<int dim>
-ElementType
-get_element_type(dealii::Triangulation<dim> const & tria)
-{
-  if(tria.all_reference_cells_are_simplex())
-  {
-    return ElementType::Simplex;
-  }
-  else if(tria.all_reference_cells_are_hyper_cube())
-  {
-    return ElementType::Hypercube;
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("Invalid parameter element_type."));
-    return ElementType::Hypercube;
-  }
-}
 
 /**
  * Initializes the dealii::Mapping depending on the element type

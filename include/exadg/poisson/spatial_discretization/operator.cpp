@@ -25,9 +25,10 @@
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
-#include <exadg/grid/grid_utilities.h>
+#include <exadg/grid/grid_data.h>
 #include <exadg/operators/constraints.h>
 #include <exadg/operators/finite_element.h>
+#include <exadg/operators/quadrature.h>
 #include <exadg/poisson/preconditioners/multigrid_preconditioner.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
@@ -171,13 +172,9 @@ Operator<dim, n_components, Number>::fill_matrix_free_data(
   matrix_free_data.insert_constraint(&affine_constraints_periodicity_and_hanging_nodes,
                                      get_dof_name_periodicity_and_hanging_node_constraints());
 
-  if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
-    matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1), get_quad_name());
-  else if(this->grid->triangulation->all_reference_cells_are_simplex())
-    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(param.degree + 1),
-                                       get_quad_name());
-  else
-    AssertThrow(false, ExcNotImplemented());
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature =
+    create_quadrature<dim>(param.grid.element_type, param.degree + 1);
+  matrix_free_data.insert_quadrature(*quadrature, get_quad_name());
 
   // Create a Gauss-Lobatto quadrature rule for DirichletCached boundary conditions.
   // These quadrature points coincide with the nodes of the discretization, so that

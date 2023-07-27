@@ -26,6 +26,8 @@
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
+#include <exadg/grid/grid_data.h>
+#include <exadg/operators/quadrature.h>
 #include <exadg/postprocessor/error_calculation.h>
 #include <exadg/utilities/create_directories.h>
 
@@ -50,6 +52,12 @@ calculate_error(MPI_Comm const &                             mpi_comm,
   numerical_solution_double = numerical_solution;
   numerical_solution_double.update_ghost_values();
 
+  // quadrature rule
+  ElementType const element_type = GridUtilities::get_element_type(dof_handler.get_triangulation());
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature =
+    create_quadrature<dim>(element_type,
+                           dof_handler.get_fe().degree + additional_quadrature_points);
+
   // calculate error norm
   dealii::Vector<double> error_norm_per_cell(dof_handler.get_triangulation().n_active_cells());
   dealii::VectorTools::integrate_difference(mapping,
@@ -57,8 +65,7 @@ calculate_error(MPI_Comm const &                             mpi_comm,
                                             numerical_solution_double,
                                             *analytical_solution,
                                             error_norm_per_cell,
-                                            dealii::QGauss<dim>(dof_handler.get_fe().degree +
-                                                                additional_quadrature_points),
+                                            *quadrature,
                                             norm_type);
 
   double error_norm =
@@ -77,8 +84,7 @@ calculate_error(MPI_Comm const &                             mpi_comm,
                                               zero_solution,
                                               *analytical_solution,
                                               solution_norm_per_cell,
-                                              dealii::QGauss<dim>(dof_handler.get_fe().degree +
-                                                                  additional_quadrature_points),
+                                              *quadrature,
                                               norm_type);
 
     double solution_norm =

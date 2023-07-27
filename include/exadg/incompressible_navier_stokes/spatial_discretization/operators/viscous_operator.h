@@ -8,7 +8,7 @@
 #ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_VISCOUS_OPERATOR_H_
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_VISCOUS_OPERATOR_H_
 
-#include <exadg/grid/grid_utilities.h>
+#include <exadg/grid/grid_data.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/weak_boundary_conditions.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/matrix_free/integrators.h>

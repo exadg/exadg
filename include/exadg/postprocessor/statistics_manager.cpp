@@ -28,6 +28,7 @@
 #include <deal.II/fe/fe_values.h>
 
 // ExaDG
+#include <exadg/grid/grid_data.h>
 #include <exadg/postprocessor/statistics_manager.h>
 #include <exadg/utilities/create_directories.h>
 
@@ -46,6 +47,9 @@ StatisticsManager<dim, Number>::StatisticsManager(
     number_of_samples(0),
     data(TurbulentChannelData())
 {
+  AssertThrow(GridUtilities::get_element_type(dof_handler_velocity.get_triangulation()) ==
+                ElementType::Hypercube,
+              dealii::ExcMessage("Only implemented for hypercube elements."));
 }
 
 template<int dim, typename Number>

@@ -27,6 +27,7 @@
 #include <exadg/convection_diffusion/preconditioners/multigrid_preconditioner.h>
 #include <exadg/operators/finite_element.h>
 #include <exadg/operators/mapping_flags.h>
+#include <exadg/operators/quadrature.h>
 
 namespace ExaDG
 {
@@ -197,8 +198,11 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
 
   matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "std_dof_handler");
   matrix_free_data.insert_constraint(&(*this->constraints[level]), "std_dof_handler");
-  matrix_free_data.insert_quadrature(dealii::QGauss<1>(this->level_info[level].degree() + 1),
-                                     "std_quadrature");
+
+  ElementType const element_type = GridUtilities::get_element_type(*this->grid->triangulation);
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature =
+    create_quadrature<dim>(element_type, this->level_info[level].degree() + 1);
+  matrix_free_data.insert_quadrature(*quadrature, "std_quadrature");
 
   if(data.convective_problem)
   {

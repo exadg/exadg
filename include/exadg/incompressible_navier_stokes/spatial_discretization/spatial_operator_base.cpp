@@ -27,6 +27,7 @@
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_projection.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 #include <exadg/operators/finite_element.h>
+#include <exadg/operators/quadrature.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
@@ -147,30 +148,17 @@ SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
   matrix_free_data.insert_constraint(&constraint_u_scalar, field + dof_index_u_scalar);
 
   // quadrature
-  if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
-  {
-    matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree_u + 1), field + quad_index_u);
-    matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.get_degree_p(param.degree_u) + 1),
-                                       field + quad_index_p);
-    matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree_u + (param.degree_u + 2) / 2),
-                                       field + quad_index_u_nonlinear);
-  }
-  else if(this->grid->triangulation->all_reference_cells_are_simplex())
-  {
-    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(param.degree_u + 1),
-                                       field + quad_index_u);
-    matrix_free_data.insert_quadrature(
-      dealii::QGaussSimplex<dim>(param.get_degree_p(param.degree_u) + 1), field + quad_index_p);
-    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(param.degree_u +
-                                                                  (param.degree_u + 2) / 2),
-                                       field + quad_index_u_nonlinear);
-  }
-  else
-  {
-    AssertThrow(false, ExcNotImplemented());
-  }
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature_u =
+    create_quadrature<dim>(param.grid.element_type, param.degree_u + 1);
+  matrix_free_data.insert_quadrature(*quadrature_u, field + quad_index_u);
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature_p =
+    create_quadrature<dim>(param.grid.element_type, param.get_degree_p(param.degree_u) + 1);
+  matrix_free_data.insert_quadrature(*quadrature_p, field + quad_index_p);
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature_u_overintegration =
+    create_quadrature<dim>(param.grid.element_type, param.degree_u + (param.degree_u + 2) / 2);
+  matrix_free_data.insert_quadrature(*quadrature_u_overintegration, field + quad_index_u_nonlinear);
 
-  // TODO create those quadrature rules only when needed
+  // TODO create these quadrature rules only when needed
   matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree_u + 1),
                                      field + quad_index_u_gauss_lobatto);
   matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.get_degree_p(param.degree_u) +

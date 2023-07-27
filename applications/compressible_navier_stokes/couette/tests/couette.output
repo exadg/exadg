@@ -75,11 +75,14 @@ Discontinuous Galerkin finite element discretization:
   degree of 1D polynomials:                  3
   number of dofs per cell:                   64
   number of dofs (total):                    128
-  number of 1D q-points (std):               4
-  number of 1D q-points (over-conv):         4
-  number of 1D q-points (over-vis):          4
 
 ... done!
+
+Quadrature rules:
+
+  number of 1D q-points (std):               4
+  number of 1D q-points (conv):              4
+  number of 1D q-points (vis):               4
 
 Setup compressible Navier-Stokes DG operator ...
 

@@ -27,7 +27,9 @@
 #include <deal.II/numerics/data_out.h>
 
 // ExaDG
+#include <exadg/grid/grid_data.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/output_generator.h>
+#include <exadg/operators/quadrature.h>
 #include <exadg/postprocessor/write_output.h>
 #include <exadg/utilities/create_directories.h>
 
@@ -72,10 +74,13 @@ write_output(
   dealii::Vector<double> aspect_ratios;
   if(output_data.write_aspect_ratio)
   {
-    aspect_ratios =
-      dealii::GridTools::compute_aspect_ratio_of_cells(mapping,
-                                                       dof_handler_velocity.get_triangulation(),
-                                                       dealii::QGauss<dim>(4));
+    dealii::Triangulation<dim> const & tria = dof_handler_velocity.get_triangulation();
+
+    ElementType const element_type = GridUtilities::get_element_type(tria);
+
+    std::shared_ptr<dealii::Quadrature<dim>> quadrature = create_quadrature<dim>(element_type, 4);
+
+    aspect_ratios = dealii::GridTools::compute_aspect_ratio_of_cells(mapping, tria, *quadrature);
     data_out.add_data_vector(aspect_ratios, "aspect_ratio");
   }
 

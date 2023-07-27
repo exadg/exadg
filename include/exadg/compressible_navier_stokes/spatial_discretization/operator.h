@@ -222,10 +222,6 @@ private:
   std::shared_ptr<dealii::FiniteElement<dim>> fe_vector; // e.g. velocity
   std::shared_ptr<dealii::FiniteElement<dim>> fe_scalar; // scalar quantity, e.g, pressure
 
-  // dealii::Quadrature points
-  unsigned int n_q_points_conv;
-  unsigned int n_q_points_visc;
-
   // dealii::DoFHandler
   dealii::DoFHandler<dim> dof_handler;        // all (dim+2) components: (rho, rho u, rho E)
   dealii::DoFHandler<dim> dof_handler_vector; // e.g. velocity
