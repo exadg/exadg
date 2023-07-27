@@ -109,8 +109,7 @@ public:
       grid_coordinates = 0;
     }
 
-    AssertThrow(GridUtilities::get_element_type(dof_handler.get_triangulation()) ==
-                  ElementType::Hypercube,
+    AssertThrow(get_element_type(dof_handler.get_triangulation()) == ElementType::Hypercube,
                 dealii::ExcMessage("Only implemented for hypercube elements."));
 
     dealii::FiniteElement<dim> const & fe = dof_handler.get_fe();
@@ -203,8 +202,7 @@ public:
       displacement_vector_ghosted.update_ghost_values();
     }
 
-    AssertThrow(GridUtilities::get_element_type(dof_handler.get_triangulation()) ==
-                  ElementType::Hypercube,
+    AssertThrow(get_element_type(dof_handler.get_triangulation()) == ElementType::Hypercube,
                 dealii::ExcMessage("Only implemented for hypercube elements."));
 
     std::shared_ptr<dealii::FEValues<dim>> fe_values;

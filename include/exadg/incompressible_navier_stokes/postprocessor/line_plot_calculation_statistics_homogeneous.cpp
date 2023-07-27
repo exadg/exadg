@@ -46,8 +46,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::LinePlotCalculatorStatisti
     averaging_direction(2),
     write_final_output(false)
 {
-  AssertThrow(GridUtilities::get_element_type(dof_handler_velocity.get_triangulation()) ==
-                ElementType::Hypercube,
+  AssertThrow(get_element_type(dof_handler_velocity.get_triangulation()) == ElementType::Hypercube,
               dealii::ExcMessage("Only implemented for hypercube elements."));
 }
 

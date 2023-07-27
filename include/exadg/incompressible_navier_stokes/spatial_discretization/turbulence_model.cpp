@@ -239,7 +239,7 @@ TurbulenceModel<dim, Number>::calculate_filter_width(dealii::Mapping<dim> const 
 
   dealii::DoFHandler<dim> const & dof_handler =
     this->matrix_free->get_dof_handler(this->dof_index_velocity);
-  ElementType const element_type = GridUtilities::get_element_type(dof_handler.get_triangulation());
+  ElementType const element_type = get_element_type(dof_handler.get_triangulation());
   std::shared_ptr<dealii::Quadrature<dim>> quadrature =
     create_quadrature<dim>(element_type, this->viscous_kernel->get_degree() + 1);
 

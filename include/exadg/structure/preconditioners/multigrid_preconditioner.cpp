@@ -183,7 +183,7 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
                                        "elasticity_dof_index_inhomogeneous");
   }
 
-  ElementType const element_type = GridUtilities::get_element_type(*this->grid->triangulation);
+  ElementType const element_type = get_element_type(*this->grid->triangulation);
   std::shared_ptr<dealii::Quadrature<dim>> quadrature =
     create_quadrature<dim>(element_type, this->level_info[level].degree() + 1);
   matrix_free_data.insert_quadrature(*quadrature, "elasticity_quadrature");
