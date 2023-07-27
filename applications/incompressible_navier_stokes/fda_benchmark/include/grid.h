@@ -387,7 +387,7 @@ create_grid_and_set_boundary_ids_nozzle(
         dealii::Point<dim> center = dealii::Point<dim>();
         manifold_vec[i] =
           std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
-            new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
+            new OneSidedCylindricalManifold<dim>(*current_tria, cell, face_ids[i], center)));
         current_tria->set_manifold(manifold_ids[i], *(manifold_vec[i]));
       }
     }
@@ -406,7 +406,7 @@ create_grid_and_set_boundary_ids_nozzle(
         dealii::Point<dim> center = dealii::Point<dim>();
         manifold_vec_cone[i]      = std::shared_ptr<dealii::Manifold<dim>>(
           static_cast<dealii::Manifold<dim> *>(new OneSidedConicalManifold<dim>(
-            cell, face_ids_cone[i], center, radius_0_cone[i], radius_1_cone[i])));
+            *current_tria, cell, face_ids_cone[i], center, radius_0_cone[i], radius_1_cone[i])));
         current_tria->set_manifold(manifold_ids_cone[i], *(manifold_vec_cone[i]));
       }
     }
@@ -505,7 +505,7 @@ create_grid_and_set_boundary_ids_precursor(
       {
         manifold_vec[i] =
           std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
-            new OneSidedCylindricalManifold<dim>(cell, face_ids[i], dealii::Point<dim>())));
+            new OneSidedCylindricalManifold<dim>(tria, cell, face_ids[i], dealii::Point<dim>())));
         tria.set_manifold(manifold_ids[i], *(manifold_vec[i]));
       }
     }

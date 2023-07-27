@@ -506,7 +506,7 @@ private:
             {
               manifold_vec[i] =
                 std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
-                  new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
+                  new OneSidedCylindricalManifold<dim>(tria, cell, face_ids[i], center)));
               tria.set_manifold(manifold_ids[i], *(manifold_vec[i]));
             }
           }
@@ -1030,7 +1030,7 @@ private:
             {
               manifold_vec[i] =
                 std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
-                  new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
+                  new OneSidedCylindricalManifold<dim>(tria, cell, face_ids[i], center)));
               tria.set_manifold(manifold_ids[i], *(manifold_vec[i]));
             }
           }
