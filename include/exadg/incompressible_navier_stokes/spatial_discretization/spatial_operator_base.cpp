@@ -1004,7 +1004,9 @@ template<int dim, typename Number>
 double
 SpatialOperatorBase<dim, Number>::calculate_minimum_element_length() const
 {
-  return calculate_minimum_vertex_distance(dof_handler_u.get_triangulation(), mpi_comm);
+  return calculate_minimum_vertex_distance(dof_handler_u.get_triangulation(),
+                                           *get_mapping(),
+                                           mpi_comm);
 }
 
 template<int dim, typename Number>

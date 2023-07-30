@@ -432,7 +432,7 @@ template<int dim, typename Number>
 double
 Operator<dim, Number>::calculate_minimum_element_length() const
 {
-  return calculate_minimum_vertex_distance(dof_handler.get_triangulation(), mpi_comm);
+  return calculate_minimum_vertex_distance(dof_handler.get_triangulation(), *mapping, mpi_comm);
 }
 
 template<int dim, typename Number>

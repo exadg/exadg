@@ -36,24 +36,23 @@ namespace ExaDG
 template<int dim>
 inline double
 calculate_minimum_vertex_distance(dealii::Triangulation<dim> const & triangulation,
+                                  dealii::Mapping<dim> const &       mapping,
                                   MPI_Comm const &                   mpi_comm)
 {
-  double diameter = 0.0, min_cell_diameter = std::numeric_limits<double>::max();
+  double min_cell_diameter = std::numeric_limits<double>::max();
 
   for(auto const & cell : triangulation.active_cell_iterators())
   {
     if(cell->is_locally_owned())
     {
-      diameter = cell->minimum_vertex_distance();
-      if(diameter < min_cell_diameter)
-        min_cell_diameter = diameter;
+      auto const vertices = mapping.get_vertices(cell);
+      for(unsigned int i = 0; i < vertices.size(); ++i)
+        for(unsigned int j = i + 1; j < vertices.size(); ++j)
+          min_cell_diameter = std::min(min_cell_diameter, vertices[i].distance_square(vertices[j]));
     }
   }
 
-  double const global_min_cell_diameter =
-    -dealii::Utilities::MPI::max(-min_cell_diameter, mpi_comm);
-
-  return global_min_cell_diameter;
+  return dealii::Utilities::MPI::min(min_cell_diameter, mpi_comm);
 }
 
 inline double

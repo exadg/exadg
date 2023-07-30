@@ -104,7 +104,7 @@ public:
     if(compute_aspect_ratio)
     {
       // this variant is only for comparison
-      double AR = calculate_aspect_ratio_vertex_distance(*grid->triangulation, mpi_comm);
+      double AR = calculate_aspect_ratio_vertex_distance(*grid->triangulation, *mapping, mpi_comm);
       pcout << std::endl << "Maximum aspect ratio (vertex distance) = " << AR << std::endl;
 
       auto const reference_cells = grid->triangulation->get_reference_cells();

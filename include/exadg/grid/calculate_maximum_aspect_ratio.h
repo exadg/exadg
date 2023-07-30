@@ -30,30 +30,6 @@
 
 namespace ExaDG
 {
-template<int dim>
-inline double
-calculate_maximum_vertex_distance(
-  typename dealii::Triangulation<dim>::active_cell_iterator const & cell)
-{
-  double maximum_vertex_distance = 0.0;
-
-  for(unsigned int const i : cell->vertex_indices())
-  {
-    dealii::Point<dim> & ref_vertex = cell->vertex(i);
-    // start the loop with the second vertex!
-    for(unsigned int const j : cell->vertex_indices())
-    {
-      if(j != i)
-      {
-        dealii::Point<dim> & vertex = cell->vertex(j);
-        maximum_vertex_distance = std::max(maximum_vertex_distance, vertex.distance(ref_vertex));
-      }
-    }
-  }
-
-  return maximum_vertex_distance;
-}
-
 /*
  * This is a rather naive version of computing the aspect ratio as this version does not
  * detect all modes of deformation (e.g., parallelogram with small angle, assuming that both
@@ -65,6 +41,7 @@ calculate_maximum_vertex_distance(
 template<int dim>
 inline double
 calculate_aspect_ratio_vertex_distance(dealii::Triangulation<dim> const & triangulation,
+                                       dealii::Mapping<dim> const &       mapping,
                                        MPI_Comm const &                   mpi_comm)
 {
   double max_aspect_ratio = 0.0;
@@ -73,19 +50,27 @@ calculate_aspect_ratio_vertex_distance(dealii::Triangulation<dim> const & triang
   {
     if(cell->is_locally_owned())
     {
-      double minimum_vertex_distance = cell->minimum_vertex_distance();
-      double maximum_vertex_distance = calculate_maximum_vertex_distance<dim>(cell);
-      // normalize so that a uniform Cartesian mesh has aspect ratio = 1
+      auto const vertices                = mapping.get_vertices(cell);
+      double     minimum_vertex_distance = std::numeric_limits<double>::max();
+      double     maximum_vertex_distance = 0;
+      for(unsigned int i = 0; i < vertices.size(); ++i)
+        for(unsigned int j = i + 1; j < vertices.size(); ++j)
+        {
+          double const distance   = vertices[i].distance_square(vertices[j]);
+          minimum_vertex_distance = std::min(minimum_vertex_distance, distance);
+          maximum_vertex_distance = std::max(maximum_vertex_distance, distance);
+        }
+
+      // normalize so that a uniform Cartesian mesh has aspect ratio = 1 and take
+      // square root to get the actual distances
       double const aspect_ratio =
-        (maximum_vertex_distance / minimum_vertex_distance) / std::sqrt(dim);
+        std::sqrt(maximum_vertex_distance / (minimum_vertex_distance * dim));
 
       max_aspect_ratio = std::max(aspect_ratio, max_aspect_ratio);
     }
   }
 
-  double const global_max_aspect_ratio = dealii::Utilities::MPI::max(max_aspect_ratio, mpi_comm);
-
-  return global_max_aspect_ratio;
+  return dealii::Utilities::MPI::max(max_aspect_ratio, mpi_comm);
 }
 
 } // namespace ExaDG
