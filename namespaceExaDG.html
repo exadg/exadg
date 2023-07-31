@@ -569,6 +569,9 @@ template&lt;int dim&gt; </td></tr>
 <tr class="memitem:ab4898d48bd5a12243fb8ad2c7ccce491"><td class="memTemplParams" colspan="2">template&lt;int dim, typename Number &gt; </td></tr>
 <tr class="memitem:ab4898d48bd5a12243fb8ad2c7ccce491"><td class="memTemplItemLeft" align="right" valign="top">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#ab4898d48bd5a12243fb8ad2c7ccce491">get_dynamic_mapping</a> (std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; static_mapping, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1DeformedMappingBase.html">DeformedMappingBase</a>&lt; dim, Number &gt; const &gt; dynamic_mapping)</td></tr>
 <tr class="separator:ab4898d48bd5a12243fb8ad2c7ccce491"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa9171da72c58101e3d2929f4146ac00b"><td class="memTemplParams" colspan="2">template&lt;int dim&gt; </td></tr>
+<tr class="memitem:aa9171da72c58101e3d2929f4146ac00b"><td class="memTemplItemLeft" align="right" valign="top">ElementType&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#aa9171da72c58101e3d2929f4146ac00b">get_element_type</a> (dealii::Triangulation&lt; dim &gt; const &amp;tria)</td></tr>
+<tr class="separator:aa9171da72c58101e3d2929f4146ac00b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a11fdfa75b66139f3547f5ed4d7c1ef58"><td class="memTemplParams" colspan="2">template&lt;int dim&gt; </td></tr>
 <tr class="memitem:a11fdfa75b66139f3547f5ed4d7c1ef58"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#a11fdfa75b66139f3547f5ed4d7c1ef58">create_subdivided_hyper_rectangle</a> (dealii::Triangulation&lt; dim &gt; &amp;tria, std::vector&lt; unsigned int &gt; const &amp;repetitions, dealii::Point&lt; dim &gt; const &amp;p1, dealii::Point&lt; dim &gt; const &amp;p2, ElementType const &amp;element_type, bool const colorize=false)</td></tr>
 <tr class="separator:a11fdfa75b66139f3547f5ed4d7c1ef58"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1353,6 +1356,27 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
 </div><div class="memdoc">
 <p>Return pointer to dynamic mapping (and redirect to static mapping if dynamic mapping is not initialized). </p>
+
+</div>
+</div>
+<a id="aa9171da72c58101e3d2929f4146ac00b" name="aa9171da72c58101e3d2929f4146ac00b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa9171da72c58101e3d2929f4146ac00b">&#9670;&#160;</a></span>get_element_type()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">ElementType ExaDG::get_element_type </td>
+          <td>(</td>
+          <td class="paramtype">dealii::Triangulation&lt; dim &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>tria</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Returns the type of elements, where we currently only allow triangulations consisting of the same type of elements. </p>
 
 </div>
 </div>

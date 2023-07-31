@@ -264,7 +264,7 @@ $(function() {
 <div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>                   integrator_p.read_cell_data(array_penalty_parameter)) *</div>
 <div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>          IP::get_penalty_factor&lt;dim, Number&gt;(</div>
 <div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>            degree,</div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>            GridUtilities::get_element_type(</div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>            <a class="code hl_function" href="namespaceExaDG.html#aa9171da72c58101e3d2929f4146ac00b">get_element_type</a>(</div>
 <div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>              integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),</div>
 <div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>            data.IP_factor);</div>
 <div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>  }</div>
@@ -275,7 +275,7 @@ $(function() {
 <div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>    tau = integrator_m.read_cell_data(array_penalty_parameter) *</div>
 <div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>          IP::get_penalty_factor&lt;dim, Number&gt;(</div>
 <div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>            degree,</div>
-<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>            GridUtilities::get_element_type(</div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>            <a class="code hl_function" href="namespaceExaDG.html#aa9171da72c58101e3d2929f4146ac00b">get_element_type</a>(</div>
 <div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>              integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),</div>
 <div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>            data.IP_factor);</div>
 <div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>  }</div>
@@ -292,7 +292,7 @@ $(function() {
 <div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>                     integrator_p.read_cell_data(array_penalty_parameter)) *</div>
 <div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>            IP::get_penalty_factor&lt;dim, Number&gt;(</div>
 <div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>              degree,</div>
-<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>              GridUtilities::get_element_type(</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>              <a class="code hl_function" href="namespaceExaDG.html#aa9171da72c58101e3d2929f4146ac00b">get_element_type</a>(</div>
 <div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>                integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),</div>
 <div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>              data.IP_factor);</div>
 <div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>    }</div>
@@ -301,7 +301,7 @@ $(function() {
 <div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>      tau = integrator_m.read_cell_data(array_penalty_parameter) *</div>
 <div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>            IP::get_penalty_factor&lt;dim, Number&gt;(</div>
 <div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>              degree,</div>
-<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>              GridUtilities::get_element_type(</div>
+<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>              <a class="code hl_function" href="namespaceExaDG.html#aa9171da72c58101e3d2929f4146ac00b">get_element_type</a>(</div>
 <div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>                integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),</div>
 <div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>              data.IP_factor);</div>
 <div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>    }</div>
@@ -694,6 +694,7 @@ $(function() {
 <div class="ttc" id="aclassExaDG_1_1VariableCoefficients_html_aef6d49252b3b89cc167f576cd2171019"><div class="ttname"><a href="classExaDG_1_1VariableCoefficients.html#aef6d49252b3b89cc167f576cd2171019">ExaDG::VariableCoefficients::set_coefficient_face_neighbor</a></div><div class="ttdeci">void set_coefficient_face_neighbor(unsigned int const face, unsigned int const q, coefficient_type const &amp;coefficient)</div><div class="ttdef"><b>Definition</b> variable_coefficients.h:137</div></div>
 <div class="ttc" id="aclassExaDG_1_1VariableCoefficients_html_af9011c9ad2a8f8548abc3145c87adf16"><div class="ttname"><a href="classExaDG_1_1VariableCoefficients.html#af9011c9ad2a8f8548abc3145c87adf16">ExaDG::VariableCoefficients::get_coefficient_face</a></div><div class="ttdeci">coefficient_type get_coefficient_face(unsigned int const face, unsigned int const q) const</div><div class="ttdef"><b>Definition</b> variable_coefficients.h:107</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
+<div class="ttc" id="anamespaceExaDG_html_aa9171da72c58101e3d2929f4146ac00b"><div class="ttname"><a href="namespaceExaDG.html#aa9171da72c58101e3d2929f4146ac00b">ExaDG::get_element_type</a></div><div class="ttdeci">ElementType get_element_type(dealii::Triangulation&lt; dim &gt; const &amp;tria)</div><div class="ttdef"><b>Definition</b> grid_data.h:70</div></div>
 <div class="ttc" id="astructExaDG_1_1IncNS_1_1Operators_1_1ViscousKernelData_html"><div class="ttname"><a href="structExaDG_1_1IncNS_1_1Operators_1_1ViscousKernelData.html">ExaDG::IncNS::Operators::ViscousKernelData</a></div><div class="ttdef"><b>Definition</b> viscous_operator.h:26</div></div>
 <div class="ttc" id="astructExaDG_1_1IncNS_1_1ViscousOperatorData_html"><div class="ttname"><a href="structExaDG_1_1IncNS_1_1ViscousOperatorData.html">ExaDG::IncNS::ViscousOperatorData</a></div><div class="ttdef"><b>Definition</b> viscous_operator.h:538</div></div>
 <div class="ttc" id="astructExaDG_1_1IntegratorFlags_html"><div class="ttname"><a href="structExaDG_1_1IntegratorFlags.html">ExaDG::IntegratorFlags</a></div><div class="ttdef"><b>Definition</b> integrator_flags.h:30</div></div>

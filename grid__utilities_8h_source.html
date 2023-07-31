@@ -530,7 +530,7 @@ $(function() {
 <div class="line"><a id="l00490" name="l00490"></a><span class="lineno">  490</span> </div>
 <div class="line"><a id="l00491" name="l00491"></a><span class="lineno">  491</span>  grid_in.read(data.file_name, format);</div>
 <div class="line"><a id="l00492" name="l00492"></a><span class="lineno">  492</span> </div>
-<div class="line"><a id="l00493" name="l00493"></a><span class="lineno">  493</span>  AssertThrow(get_element_type(tria) == data.element_type,</div>
+<div class="line"><a id="l00493" name="l00493"></a><span class="lineno">  493</span>  AssertThrow(<a class="code hl_function" href="namespaceExaDG.html#aa9171da72c58101e3d2929f4146ac00b">get_element_type</a>(tria) == data.element_type,</div>
 <div class="line"><a id="l00494" name="l00494"></a><span class="lineno">  494</span>              dealii::ExcMessage(<span class="stringliteral">&quot;You are trying to read a grid file, but the element type of the&quot;</span></div>
 <div class="line"><a id="l00495" name="l00495"></a><span class="lineno">  495</span>                                 <span class="stringliteral">&quot; external grid file and the element type specified in GridData&quot;</span></div>
 <div class="line"><a id="l00496" name="l00496"></a><span class="lineno">  496</span>                                 <span class="stringliteral">&quot; don&#39;t match. Most likely, you forgot to change the element_type&quot;</span></div>
@@ -543,6 +543,7 @@ $(function() {
 <div class="line"><a id="l00503" name="l00503"></a><span class="lineno">  503</span> </div>
 <div class="line"><a id="l00504" name="l00504"></a><span class="lineno">  504</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_GRID_GRID_UTILITIES_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
+<div class="ttc" id="anamespaceExaDG_html_aa9171da72c58101e3d2929f4146ac00b"><div class="ttname"><a href="namespaceExaDG.html#aa9171da72c58101e3d2929f4146ac00b">ExaDG::get_element_type</a></div><div class="ttdeci">ElementType get_element_type(dealii::Triangulation&lt; dim &gt; const &amp;tria)</div><div class="ttdef"><b>Definition</b> grid_data.h:70</div></div>
 <div class="ttc" id="anamespaceExaDG_html_ac26ac75e95c9fbc45eaa00fa0c05a2b7"><div class="ttname"><a href="namespaceExaDG.html#ac26ac75e95c9fbc45eaa00fa0c05a2b7">ExaDG::refine_local</a></div><div class="ttdeci">void refine_local(dealii::Triangulation&lt; dim &gt; &amp;tria, std::vector&lt; unsigned int &gt; const &amp;vector_local_refinements)</div><div class="ttdef"><b>Definition</b> perform_local_refinements.h:43</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
