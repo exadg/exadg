@@ -53,7 +53,7 @@ calculate_error(MPI_Comm const &                             mpi_comm,
   numerical_solution_double.update_ghost_values();
 
   // quadrature rule
-  ElementType const element_type = GridUtilities::get_element_type(dof_handler.get_triangulation());
+  ElementType const element_type = get_element_type(dof_handler.get_triangulation());
   std::shared_ptr<dealii::Quadrature<dim>> quadrature =
     create_quadrature<dim>(element_type,
                            dof_handler.get_fe().degree + additional_quadrature_points);

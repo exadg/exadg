@@ -61,9 +61,6 @@ enum class PartitioningType
   z_order
 };
 
-// TODO: remove this namespace
-namespace GridUtilities
-{
 /**
  * Returns the type of elements, where we currently only allow triangulations consisting of the same
  * type of elements.
@@ -86,7 +83,6 @@ get_element_type(dealii::Triangulation<dim> const & tria)
     return ElementType::Hypercube;
   }
 }
-} // namespace GridUtilities
 
 struct GridData
 {

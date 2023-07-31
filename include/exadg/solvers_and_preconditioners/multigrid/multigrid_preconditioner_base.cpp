@@ -399,11 +399,8 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
     for_all_levels([&](unsigned int const l) {
       auto const & level = level_info[l];
 
-      std::shared_ptr<dealii::FiniteElement<dim>> fe =
-        create_finite_element<dim>(GridUtilities::get_element_type(*grid->triangulation),
-                                   level.is_dg(),
-                                   n_components,
-                                   level.degree());
+      std::shared_ptr<dealii::FiniteElement<dim>> fe = create_finite_element<dim>(
+        get_element_type(*grid->triangulation), level.is_dg(), n_components, level.degree());
 
       std::shared_ptr<dealii::Triangulation<dim> const> triangulation;
       if(level.h_level() == level_info.back().h_level()) // fine-level triangulation

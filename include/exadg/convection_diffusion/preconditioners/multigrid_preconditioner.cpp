@@ -199,7 +199,7 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
   matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "std_dof_handler");
   matrix_free_data.insert_constraint(&(*this->constraints[level]), "std_dof_handler");
 
-  ElementType const element_type = GridUtilities::get_element_type(*this->grid->triangulation);
+  ElementType const element_type = get_element_type(*this->grid->triangulation);
   std::shared_ptr<dealii::Quadrature<dim>> quadrature =
     create_quadrature<dim>(element_type, this->level_info[level].degree() + 1);
   matrix_free_data.insert_quadrature(*quadrature, "std_quadrature");
@@ -272,7 +272,7 @@ MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
      data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
   {
     std::shared_ptr<dealii::FiniteElement<dim>> fe_velocity = create_finite_element<dim>(
-      GridUtilities::get_element_type(*this->grid->triangulation), true, dim, degree_velocity);
+      get_element_type(*this->grid->triangulation), true, dim, degree_velocity);
 
     Map_DBC               dirichlet_bc_velocity;
     Map_DBC_ComponentMask dirichlet_bc_velocity_component_mask;

@@ -47,8 +47,7 @@ StatisticsManager<dim, Number>::StatisticsManager(
     number_of_samples(0),
     data(TurbulentChannelData())
 {
-  AssertThrow(GridUtilities::get_element_type(dof_handler_velocity.get_triangulation()) ==
-                ElementType::Hypercube,
+  AssertThrow(get_element_type(dof_handler_velocity.get_triangulation()) == ElementType::Hypercube,
               dealii::ExcMessage("Only implemented for hypercube elements."));
 }
 

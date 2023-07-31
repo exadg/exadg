@@ -80,7 +80,7 @@ private:
   {
     AssertThrow(dealii::MultithreadInfo::n_threads() == 1, dealii::ExcNotImplemented());
 
-    AssertThrow(GridUtilities::get_element_type(triangulation) == ElementType::Hypercube,
+    AssertThrow(get_element_type(triangulation) == ElementType::Hypercube,
                 dealii::ExcMessage("Only implemented for hypercube elements."));
 
     // dummy FE for compatibility with interface of dealii::FEValues

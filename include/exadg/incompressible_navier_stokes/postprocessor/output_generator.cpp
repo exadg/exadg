@@ -76,7 +76,7 @@ write_output(
   {
     dealii::Triangulation<dim> const & tria = dof_handler_velocity.get_triangulation();
 
-    ElementType const element_type = GridUtilities::get_element_type(tria);
+    ElementType const element_type = get_element_type(tria);
 
     std::shared_ptr<dealii::Quadrature<dim>> quadrature = create_quadrature<dim>(element_type, 4);
 
