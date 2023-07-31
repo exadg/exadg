@@ -30,9 +30,9 @@
 #include <exadg/compressible_navier_stokes/driver.h>
 
 // utilities
+#include <exadg/operators/hypercube_resolution_parameters.h>
+#include <exadg/operators/throughput_parameters.h>
 #include <exadg/utilities/general_parameters.h>
-#include <exadg/utilities/hypercube_resolution_parameters.h>
-#include <exadg/utilities/throughput_parameters.h>
 
 // application
 #include <exadg/compressible_navier_stokes/user_interface/declare_get_application.h>

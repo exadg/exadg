@@ -243,7 +243,7 @@ protected:
 
   std::string parameter_file;
 
-  ResolutionParameters resolution;
+  SpatialResolutionParameters resolution;
 
   OutputParameters output_parameters;
 

@@ -723,7 +723,7 @@ public:
     this->switch_off_precursor = switch_off_precursor;
 
     // compute number of points for inflow data array depending on spatial resolution of problem
-    ResolutionParameters resolution_main;
+    SpatialResolutionParameters resolution_main;
 
     dealii::ParameterHandler prm;
     prm.enter_subsection("Main");

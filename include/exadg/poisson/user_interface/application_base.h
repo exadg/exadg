@@ -33,13 +33,13 @@
 #include <exadg/grid/grid.h>
 #include <exadg/grid/grid_parameters.h>
 #include <exadg/grid/grid_utilities.h>
+#include <exadg/operators/resolution_parameters.h>
 #include <exadg/poisson/postprocessor/postprocessor.h>
 #include <exadg/poisson/user_interface/boundary_descriptor.h>
 #include <exadg/poisson/user_interface/field_functions.h>
 #include <exadg/poisson/user_interface/parameters.h>
 #include <exadg/postprocessor/output_parameters.h>
 #include <exadg/utilities/exceptions.h>
-#include <exadg/utilities/resolution_parameters.h>
 
 namespace ExaDG
 {

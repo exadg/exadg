@@ -35,10 +35,10 @@
 #include <exadg/poisson/driver.h>
 
 // utilities
+#include <exadg/operators/hypercube_resolution_parameters.h>
+#include <exadg/operators/throughput_parameters.h>
 #include <exadg/utilities/enum_patterns.h>
 #include <exadg/utilities/general_parameters.h>
-#include <exadg/utilities/hypercube_resolution_parameters.h>
-#include <exadg/utilities/throughput_parameters.h>
 
 // application
 #include <exadg/poisson/user_interface/declare_get_application.h>

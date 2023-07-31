@@ -32,8 +32,8 @@
 // ExaDG
 #include <exadg/grid/grid.h>
 #include <exadg/grid/grid_utilities.h>
+#include <exadg/operators/resolution_parameters.h>
 #include <exadg/postprocessor/output_parameters.h>
-#include <exadg/utilities/resolution_parameters.h>
 
 // Fluid
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
@@ -202,7 +202,7 @@ private:
   virtual void
   set_field_functions() = 0;
 
-  ResolutionParameters resolution;
+  SpatialResolutionParameters resolution;
 };
 
 } // namespace StructureFSI
@@ -483,7 +483,7 @@ private:
   virtual void
   set_field_functions_ale_elasticity() = 0;
 
-  ResolutionParameters resolution;
+  SpatialResolutionParameters resolution;
 };
 } // namespace FluidFSI
 

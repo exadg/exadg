@@ -37,8 +37,8 @@
 #include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
+#include <exadg/operators/resolution_parameters.h>
 #include <exadg/postprocessor/output_parameters.h>
-#include <exadg/utilities/resolution_parameters.h>
 
 namespace ExaDG
 {
@@ -165,8 +165,8 @@ protected:
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
 
-  ResolutionParameters resolution_parameters;
-  OutputParameters     output_parameters;
+  SpatialResolutionParameters resolution_parameters;
+  OutputParameters            output_parameters;
 
 private:
   virtual void

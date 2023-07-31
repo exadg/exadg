@@ -29,9 +29,10 @@
 #include <exadg/structure/driver.h>
 
 // utilities
+#include <exadg/operators/resolution_parameters.h>
+#include <exadg/time_integration/resolution_parameters.h>
 #include <exadg/utilities/enum_patterns.h>
 #include <exadg/utilities/general_parameters.h>
-#include <exadg/utilities/resolution_parameters.h>
 
 // application
 #include <exadg/structure/user_interface/declare_get_application.h>
@@ -46,7 +47,7 @@ create_input_file(std::string const & input_file)
   GeneralParameters general;
   general.add_parameters(prm);
 
-  SpatialResolutionParameters spatial;
+  SpatialResolutionParametersMinMax spatial;
   spatial.add_parameters(prm);
 
   TemporalResolutionParameters temporal;
@@ -126,9 +127,9 @@ main(int argc, char ** argv)
     }
   }
 
-  ExaDG::GeneralParameters            general(input_file);
-  ExaDG::SpatialResolutionParameters  spatial(input_file);
-  ExaDG::TemporalResolutionParameters temporal(input_file);
+  ExaDG::GeneralParameters                 general(input_file);
+  ExaDG::SpatialResolutionParametersMinMax spatial(input_file);
+  ExaDG::TemporalResolutionParameters      temporal(input_file);
 
   // k-refinement
   for(unsigned int degree = spatial.degree_min; degree <= spatial.degree_max; ++degree)

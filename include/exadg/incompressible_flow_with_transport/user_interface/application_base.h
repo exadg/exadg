@@ -41,8 +41,8 @@
 #include <exadg/convection_diffusion/user_interface/field_functions.h>
 #include <exadg/convection_diffusion/user_interface/parameters.h>
 
+#include <exadg/operators/resolution_parameters.h>
 #include <exadg/postprocessor/output_parameters.h>
-#include <exadg/utilities/resolution_parameters.h>
 
 namespace ExaDG
 {
@@ -193,7 +193,7 @@ private:
   virtual void
   set_field_functions() = 0;
 
-  ResolutionParameters resolution;
+  SpatialResolutionParameters resolution;
 };
 
 template<int dim, typename Number>

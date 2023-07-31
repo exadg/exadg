@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_RESOLUTION_PARAMETERS_H_
-#define INCLUDE_EXADG_UTILITIES_RESOLUTION_PARAMETERS_H_
+#ifndef INCLUDE_EXADG_OPERATORS_RESOLUTION_PARAMETERS_H_
+#define INCLUDE_EXADG_OPERATORS_RESOLUTION_PARAMETERS_H_
 
 #include <deal.II/base/parameter_handler.h>
 
@@ -28,13 +28,13 @@
 
 namespace ExaDG
 {
-struct SpatialResolutionParameters
+struct SpatialResolutionParametersMinMax
 {
-  SpatialResolutionParameters()
+  SpatialResolutionParametersMinMax()
   {
   }
 
-  SpatialResolutionParameters(std::string const & input_file)
+  SpatialResolutionParametersMinMax(std::string const & input_file)
   {
     dealii::ParameterHandler prm;
     add_parameters(prm);
@@ -77,49 +77,13 @@ struct SpatialResolutionParameters
   unsigned int refine_space_max = 0;
 };
 
-struct TemporalResolutionParameters
+struct SpatialResolutionParameters
 {
-  TemporalResolutionParameters()
+  SpatialResolutionParameters()
   {
   }
 
-  TemporalResolutionParameters(std::string const & input_file)
-  {
-    dealii::ParameterHandler prm;
-    add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
-  }
-
-  void
-  add_parameters(dealii::ParameterHandler & prm)
-  {
-    prm.enter_subsection("TemporalResolution");
-    {
-      prm.add_parameter("RefineTimeMin",
-                        refine_time_min,
-                        "Minimal number of time refinements.",
-                        dealii::Patterns::Integer(0, 20),
-                        true);
-      prm.add_parameter("RefineTimeMax",
-                        refine_time_max,
-                        "Maximal number of time refinements.",
-                        dealii::Patterns::Integer(0, 20),
-                        true);
-    }
-    prm.leave_subsection();
-  }
-
-  unsigned int refine_time_min = 0;
-  unsigned int refine_time_max = 0;
-};
-
-struct ResolutionParameters
-{
-  ResolutionParameters()
-  {
-  }
-
-  ResolutionParameters(std::string const & input_file)
+  SpatialResolutionParameters(std::string const & input_file)
   {
     dealii::ParameterHandler prm;
     add_parameters(prm);
@@ -153,4 +117,4 @@ struct ResolutionParameters
 } // namespace ExaDG
 
 
-#endif /* INCLUDE_EXADG_UTILITIES_RESOLUTION_PARAMETERS_H_ */
+#endif /* INCLUDE_EXADG_OPERATORS_RESOLUTION_PARAMETERS_H_ */

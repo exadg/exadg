@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_THROUGHPUT_PARAMETERS_H_
-#define INCLUDE_EXADG_UTILITIES_THROUGHPUT_PARAMETERS_H_
+#ifndef INCLUDE_EXADG_OPERATORS_THROUGHPUT_PARAMETERS_H_
+#define INCLUDE_EXADG_OPERATORS_THROUGHPUT_PARAMETERS_H_
 
 // likwid
 #ifdef EXADG_WITH_LIKWID
@@ -29,6 +29,7 @@
 
 // deal.II
 #include <deal.II/base/parameter_handler.h>
+#include <deal.II/base/timer.h>
 
 // ExaDG
 #include <exadg/utilities/enum_patterns.h>
@@ -141,4 +142,4 @@ struct ThroughputParameters
 } // namespace ExaDG
 
 
-#endif /* INCLUDE_EXADG_UTILITIES_THROUGHPUT_PARAMETERS_H_ */
+#endif /* INCLUDE_EXADG_OPERATORS_THROUGHPUT_PARAMETERS_H_ */

@@ -31,7 +31,6 @@
 // utilities
 #include <exadg/utilities/enum_patterns.h>
 #include <exadg/utilities/general_parameters.h>
-#include <exadg/utilities/resolution_parameters.h>
 
 // application
 #include <exadg/incompressible_flow_with_transport/user_interface/declare_get_application.h>
