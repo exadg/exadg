@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.7"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::ResolutionParameters Struct Reference</title>
+<title>ExaDG: ExaDG::SpatialResolutionParametersMinMax Struct Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -69,38 +69,44 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><a class="el" href="structExaDG_1_1ResolutionParameters.html">ResolutionParameters</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><a class="el" href="structExaDG_1_1SpatialResolutionParametersMinMax.html">SpatialResolutionParametersMinMax</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
-<a href="structExaDG_1_1ResolutionParameters-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::ResolutionParameters Struct Reference</div></div>
+<a href="structExaDG_1_1SpatialResolutionParametersMinMax-members.html">List of all members</a>  </div>
+  <div class="headertitle"><div class="title">ExaDG::SpatialResolutionParametersMinMax Struct Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ace7b289d049ea94421febf4ea907432e"><td class="memItemLeft" align="right" valign="top"><a id="ace7b289d049ea94421febf4ea907432e" name="ace7b289d049ea94421febf4ea907432e"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>ResolutionParameters</b> (std::string const &amp;input_file)</td></tr>
-<tr class="separator:ace7b289d049ea94421febf4ea907432e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adf67b36328e49f3ba97814eada92a368"><td class="memItemLeft" align="right" valign="top"><a id="adf67b36328e49f3ba97814eada92a368" name="adf67b36328e49f3ba97814eada92a368"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameters</b> (dealii::ParameterHandler &amp;prm, std::string const &amp;subsection_name=&quot;SpatialResolution&quot;)</td></tr>
-<tr class="separator:adf67b36328e49f3ba97814eada92a368"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac41d907fbfd44b058779e29657fa36fb"><td class="memItemLeft" align="right" valign="top"><a id="ac41d907fbfd44b058779e29657fa36fb" name="ac41d907fbfd44b058779e29657fa36fb"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>SpatialResolutionParametersMinMax</b> (std::string const &amp;input_file)</td></tr>
+<tr class="separator:ac41d907fbfd44b058779e29657fa36fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3598b6fc4bd1a6356bd6dda3ad685662"><td class="memItemLeft" align="right" valign="top"><a id="a3598b6fc4bd1a6356bd6dda3ad685662" name="a3598b6fc4bd1a6356bd6dda3ad685662"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameters</b> (dealii::ParameterHandler &amp;prm)</td></tr>
+<tr class="separator:a3598b6fc4bd1a6356bd6dda3ad685662"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:ad04625f3d12689af9cf0ae7f87311b1b"><td class="memItemLeft" align="right" valign="top"><a id="ad04625f3d12689af9cf0ae7f87311b1b" name="ad04625f3d12689af9cf0ae7f87311b1b"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>degree</b> = 3</td></tr>
-<tr class="separator:ad04625f3d12689af9cf0ae7f87311b1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a34b65c7da1429d59ef33d92abfde333d"><td class="memItemLeft" align="right" valign="top"><a id="a34b65c7da1429d59ef33d92abfde333d" name="a34b65c7da1429d59ef33d92abfde333d"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>refine_space</b> = 0</td></tr>
-<tr class="separator:a34b65c7da1429d59ef33d92abfde333d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abc915ada926cc9adf247562507a6ba16"><td class="memItemLeft" align="right" valign="top"><a id="abc915ada926cc9adf247562507a6ba16" name="abc915ada926cc9adf247562507a6ba16"></a>
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>degree_min</b> = 3</td></tr>
+<tr class="separator:abc915ada926cc9adf247562507a6ba16"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa9ed23887e6908b8f3b4ef45e58f25dc"><td class="memItemLeft" align="right" valign="top"><a id="aa9ed23887e6908b8f3b4ef45e58f25dc" name="aa9ed23887e6908b8f3b4ef45e58f25dc"></a>
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>degree_max</b> = 3</td></tr>
+<tr class="separator:aa9ed23887e6908b8f3b4ef45e58f25dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad609f1e1dce11d102fee60c7169c47ec"><td class="memItemLeft" align="right" valign="top"><a id="ad609f1e1dce11d102fee60c7169c47ec" name="ad609f1e1dce11d102fee60c7169c47ec"></a>
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>refine_space_min</b> = 0</td></tr>
+<tr class="separator:ad609f1e1dce11d102fee60c7169c47ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa9d0ef662297e4108079db5900ed55a9"><td class="memItemLeft" align="right" valign="top"><a id="aa9d0ef662297e4108079db5900ed55a9" name="aa9d0ef662297e4108079db5900ed55a9"></a>
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>refine_space_max</b> = 0</td></tr>
+<tr class="separator:aa9d0ef662297e4108079db5900ed55a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>include/exadg/utilities/<a class="el" href="resolution__parameters_8h_source.html">resolution_parameters.h</a></li>
+<li>include/exadg/operators/<a class="el" href="operators_2resolution__parameters_8h_source.html">resolution_parameters.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

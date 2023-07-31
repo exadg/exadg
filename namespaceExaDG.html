@@ -282,8 +282,6 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1RectangleMeshMovementFunctions.html">RectangleMeshMovementFunctions</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structExaDG_1_1ResolutionParameters.html">ResolutionParameters</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structExaDG_1_1RestartData.html">RestartData</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1RHSOperator.html">RHSOperator</a></td></tr>
@@ -307,6 +305,8 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structExaDG_1_1SolverResult.html">SolverResult</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structExaDG_1_1SpatialResolutionParameters.html">SpatialResolutionParameters</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structExaDG_1_1SpatialResolutionParametersMinMax.html">SpatialResolutionParametersMinMax</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1SSPRK.html">SSPRK</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -388,6 +388,11 @@ Enumerations</h2></td></tr>
 , <b>SineAligned</b>
  }</td></tr>
 <tr class="separator:a5451e905b8e2603a2ba6abd82eb370f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0220f7503db0dc1ae16412d4f21df730"><td class="memItemLeft" align="right" valign="top"><a id="a0220f7503db0dc1ae16412d4f21df730" name="a0220f7503db0dc1ae16412d4f21df730"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>RunType</b> { <b>RefineHAndP</b>
+, <b>FixedProblemSize</b>
+, <b>IncreasingProblemSize</b>
+ }</td></tr>
+<tr class="separator:a0220f7503db0dc1ae16412d4f21df730"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6fab1270520863c33fa1d350a87b88bd"><td class="memItemLeft" align="right" valign="top"><a id="a6fab1270520863c33fa1d350a87b88bd" name="a6fab1270520863c33fa1d350a87b88bd"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>OperatorType</b> { <b>full</b>
 , <b>homogeneous</b>
 , <b>inhomogeneous</b>
@@ -468,11 +473,6 @@ Enumerations</h2></td></tr>
 , <b>BossakAlpha</b>
  }</td></tr>
 <tr class="separator:ad946c8c4a804195917a455aa4aaf3f15"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0220f7503db0dc1ae16412d4f21df730"><td class="memItemLeft" align="right" valign="top"><a id="a0220f7503db0dc1ae16412d4f21df730" name="a0220f7503db0dc1ae16412d4f21df730"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>RunType</b> { <b>RefineHAndP</b>
-, <b>FixedProblemSize</b>
-, <b>IncreasingProblemSize</b>
- }</td></tr>
-<tr class="separator:a0220f7503db0dc1ae16412d4f21df730"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
@@ -597,10 +597,16 @@ template&lt;int dim, typename Number &gt; </td></tr>
 <tr class="memitem:a4ee9607ef908f9a2d5599d52a185abce"><td class="memTemplParams" colspan="2">template&lt;int dim&gt; </td></tr>
 <tr class="memitem:a4ee9607ef908f9a2d5599d52a185abce"><td class="memTemplItemLeft" align="right" valign="top">std::shared_ptr&lt; dealii::FiniteElement&lt; dim &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#a4ee9607ef908f9a2d5599d52a185abce">create_finite_element</a> (ElementType const &amp;element_type, bool const is_dg, unsigned int const n_components, unsigned int const degree)</td></tr>
 <tr class="separator:a4ee9607ef908f9a2d5599d52a185abce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac83db4cf7c0e8b1edc58eaf5e76b00c4"><td class="memItemLeft" align="right" valign="top"><a id="ac83db4cf7c0e8b1edc58eaf5e76b00c4" name="ac83db4cf7c0e8b1edc58eaf5e76b00c4"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_resolutions_vector</b> (std::vector&lt; std::tuple&lt; unsigned int, unsigned int, unsigned int &gt; &gt; &amp;resolutions, unsigned int const dim, unsigned int const degree, unsigned int const dofs_per_element, dealii::types::global_dof_index const n_dofs_min, dealii::types::global_dof_index const n_dofs_max, RunType const &amp;run_type)</td></tr>
+<tr class="separator:ac83db4cf7c0e8b1edc58eaf5e76b00c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a32fb3bfa0090de5af5646a74c84160ba"><td class="memTemplParams" colspan="2"><a id="a32fb3bfa0090de5af5646a74c84160ba" name="a32fb3bfa0090de5af5646a74c84160ba"></a>
 template&lt;int dim&gt; </td></tr>
 <tr class="memitem:a32fb3bfa0090de5af5646a74c84160ba"><td class="memTemplItemLeft" align="right" valign="top">std::shared_ptr&lt; dealii::Quadrature&lt; dim &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><b>create_quadrature</b> (ElementType const &amp;element_type, unsigned int const n_q_points_1d)</td></tr>
 <tr class="separator:a32fb3bfa0090de5af5646a74c84160ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3b6dd4aa4eacba790a611fde80b852b2"><td class="memItemLeft" align="right" valign="top"><a id="a3b6dd4aa4eacba790a611fde80b852b2" name="a3b6dd4aa4eacba790a611fde80b852b2"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>measure_operator_evaluation_time</b> (std::function&lt; void(void)&gt; const &amp;evaluate_operator, unsigned int const degree, unsigned int const n_repetitions_inner, unsigned int const n_repetitions_outer, MPI_Comm const &amp;mpi_comm)</td></tr>
+<tr class="separator:a3b6dd4aa4eacba790a611fde80b852b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a863d41e9259662d708ccd897be8b6db2"><td class="memTemplParams" colspan="2"><a id="a863d41e9259662d708ccd897be8b6db2" name="a863d41e9259662d708ccd897be8b6db2"></a>
 template&lt;int dim, int n_components, typename Number &gt; </td></tr>
 <tr class="memitem:a863d41e9259662d708ccd897be8b6db2"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>run</b> (std::string const &amp;input_file, MPI_Comm const &amp;mpi_comm)</td></tr>
@@ -751,9 +757,6 @@ template&lt;int dim, typename value_type &gt; </td></tr>
 <tr class="separator:ae37213007b3d71515b9d35a598e17e22"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2fcc0555e145ada7ade65b6ea59edcf7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#a2fcc0555e145ada7ade65b6ea59edcf7">DeclExceptionMsg</a> (ExcNotImplemented, &quot;You are trying to use functionality in ExaDG that is &quot; &quot;currently not implemented. In many cases, this indicates &quot; &quot;that there simply didn't appear much of a need for it, or &quot; &quot;that the author of the original code did not have the &quot; &quot;time to implement a particular case. If you hit this &quot; &quot;exception, it is therefore worth the time to look into &quot; &quot;the code to find out whether you may be able to &quot; &quot;implement the missing functionality. If you do, please &quot; &quot;consider providing a patch to the ExaDG development &quot; &quot;sources (see the ExaDG Wiki page on how to contribute).&quot;)</td></tr>
 <tr class="separator:a2fcc0555e145ada7ade65b6ea59edcf7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac83db4cf7c0e8b1edc58eaf5e76b00c4"><td class="memItemLeft" align="right" valign="top"><a id="ac83db4cf7c0e8b1edc58eaf5e76b00c4" name="ac83db4cf7c0e8b1edc58eaf5e76b00c4"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_resolutions_vector</b> (std::vector&lt; std::tuple&lt; unsigned int, unsigned int, unsigned int &gt; &gt; &amp;resolutions, unsigned int const dim, unsigned int const degree, unsigned int const dofs_per_element, dealii::types::global_dof_index const n_dofs_min, dealii::types::global_dof_index const n_dofs_max, RunType const &amp;run_type)</td></tr>
-<tr class="separator:ac83db4cf7c0e8b1edc58eaf5e76b00c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a73c483ba4be3aa1154ad102a8cec57c8"><td class="memItemLeft" align="right" valign="top"><a id="a73c483ba4be3aa1154ad102a8cec57c8" name="a73c483ba4be3aa1154ad102a8cec57c8"></a>
 std::tuple&lt; bool, unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>identify_first_process_on_node</b> (MPI_Comm const &amp;mpi_comm)</td></tr>
 <tr class="separator:a73c483ba4be3aa1154ad102a8cec57c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -868,9 +871,6 @@ template&lt;int rank, int dim&gt; </td></tr>
 template&lt;int n_components, int dim&gt; </td></tr>
 <tr class="memitem:a3e39fa37be04bf37faa7b4f82d1c60bb"><td class="memTemplItemLeft" align="right" valign="top">constexpr unsigned int&#160;</td><td class="memTemplItemRight" valign="bottom"><b>n_components_to_rank</b> ()</td></tr>
 <tr class="separator:a3e39fa37be04bf37faa7b4f82d1c60bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3b6dd4aa4eacba790a611fde80b852b2"><td class="memItemLeft" align="right" valign="top"><a id="a3b6dd4aa4eacba790a611fde80b852b2" name="a3b6dd4aa4eacba790a611fde80b852b2"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>measure_operator_evaluation_time</b> (std::function&lt; void(void)&gt; const &amp;evaluate_operator, unsigned int const degree, unsigned int const n_repetitions_inner, unsigned int const n_repetitions_outer, MPI_Comm const &amp;mpi_comm)</td></tr>
-<tr class="separator:a3b6dd4aa4eacba790a611fde80b852b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af1f1888f9192b9bc73c277c78a96e8c3"><td class="memTemplParams" colspan="2"><a id="af1f1888f9192b9bc73c277c78a96e8c3" name="af1f1888f9192b9bc73c277c78a96e8c3"></a>
 template&lt;int dim, typename Number &gt; </td></tr>
 <tr class="memitem:af1f1888f9192b9bc73c277c78a96e8c3"><td class="memTemplItemLeft" align="right" valign="top">std::vector&lt; std::pair&lt; std::vector&lt; dealii::types::global_dof_index &gt;, std::vector&lt; Number &gt; &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get_dof_indices_and_shape_values</b> (std::vector&lt; std::pair&lt; typename dealii::Triangulation&lt; dim &gt;::active_cell_iterator, dealii::Point&lt; dim &gt; &gt; &gt; const &amp;adjacent_cells, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler, dealii::Mapping&lt; dim &gt; const &amp;mapping, dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; const &amp;solution)</td></tr>

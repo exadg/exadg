@@ -115,8 +115,8 @@ $(function() {
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="preprocessor">#include &lt;exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h&gt;</span></div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="preprocessor">#include &lt;exadg/incompressible_navier_stokes/user_interface/field_functions.h&gt;</span></div>
 <div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="preprocessor">#include &lt;exadg/incompressible_navier_stokes/user_interface/parameters.h&gt;</span></div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="preprocessor">#include &lt;exadg/postprocessor/output_parameters.h&gt;</span></div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="preprocessor">#include &lt;exadg/utilities/resolution_parameters.h&gt;</span></div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="preprocessor">#include &lt;exadg/operators/resolution_parameters.h&gt;</span></div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="preprocessor">#include &lt;exadg/postprocessor/output_parameters.h&gt;</span></div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespaceExaDG.html">ExaDG</a></div>
 <div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>{</div>
@@ -243,8 +243,8 @@ $(function() {
 <div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>  std::shared_ptr&lt;FieldFunctions&lt;dim&gt;&gt;     field_functions;</div>
 <div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>  std::shared_ptr&lt;BoundaryDescriptor&lt;dim&gt;&gt; boundary_descriptor;</div>
 <div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span> </div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  <a class="code hl_struct" href="structExaDG_1_1ResolutionParameters.html">ResolutionParameters</a> resolution_parameters;</div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  <a class="code hl_struct" href="structExaDG_1_1OutputParameters.html">OutputParameters</a>     output_parameters;</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  <a class="code hl_struct" href="structExaDG_1_1SpatialResolutionParameters.html">SpatialResolutionParameters</a> resolution_parameters;</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  <a class="code hl_struct" href="structExaDG_1_1OutputParameters.html">OutputParameters</a>            output_parameters;</div>
 <div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span> </div>
 <div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span><span class="keyword">private</span>:</div>
 <div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
@@ -380,7 +380,7 @@ $(function() {
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1Precursor_1_1Domain_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1Precursor_1_1Domain.html">ExaDG::IncNS::Precursor::Domain</a></div><div class="ttdef"><b>Definition</b> application_base.h:51</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 <div class="ttc" id="astructExaDG_1_1OutputParameters_html"><div class="ttname"><a href="structExaDG_1_1OutputParameters.html">ExaDG::OutputParameters</a></div><div class="ttdef"><b>Definition</b> output_parameters.h:32</div></div>
-<div class="ttc" id="astructExaDG_1_1ResolutionParameters_html"><div class="ttname"><a href="structExaDG_1_1ResolutionParameters.html">ExaDG::ResolutionParameters</a></div><div class="ttdef"><b>Definition</b> resolution_parameters.h:117</div></div>
+<div class="ttc" id="astructExaDG_1_1SpatialResolutionParameters_html"><div class="ttname"><a href="structExaDG_1_1SpatialResolutionParameters.html">ExaDG::SpatialResolutionParameters</a></div><div class="ttdef"><b>Definition</b> resolution_parameters.h:81</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

@@ -25,10 +25,11 @@ var searchData=
   ['spatialoperatorbase_22',['SpatialOperatorBase',['../classExaDG_1_1IncNS_1_1SpatialOperatorBase.html',1,'ExaDG::IncNS']]],
   ['spatialoperatorbase_3c_20dim_2c_20double_20_3e_23',['SpatialOperatorBase&lt; dim, double &gt;',['../classExaDG_1_1IncNS_1_1SpatialOperatorBase.html',1,'ExaDG::IncNS']]],
   ['spatialresolutionparameters_24',['SpatialResolutionParameters',['../structExaDG_1_1SpatialResolutionParameters.html',1,'ExaDG']]],
-  ['spectralanalysis_25',['SpectralAnalysis',['../classdealspectrum_1_1SpectralAnalysis.html',1,'dealspectrum']]],
-  ['ssprk_26',['SSPRK',['../classExaDG_1_1SSPRK.html',1,'ExaDG']]],
-  ['statisticsmanager_27',['StatisticsManager',['../classExaDG_1_1StatisticsManager.html',1,'ExaDG']]],
-  ['streamfunctioncalculatorrhsoperator_28',['StreamfunctionCalculatorRHSOperator',['../classExaDG_1_1IncNS_1_1StreamfunctionCalculatorRHSOperator.html',1,'ExaDG::IncNS']]],
-  ['stvenantkirchhoff_29',['StVenantKirchhoff',['../classExaDG_1_1Structure_1_1StVenantKirchhoff.html',1,'ExaDG::Structure']]],
-  ['stvenantkirchhoffdata_30',['StVenantKirchhoffData',['../structExaDG_1_1Structure_1_1StVenantKirchhoffData.html',1,'ExaDG::Structure']]]
+  ['spatialresolutionparametersminmax_25',['SpatialResolutionParametersMinMax',['../structExaDG_1_1SpatialResolutionParametersMinMax.html',1,'ExaDG']]],
+  ['spectralanalysis_26',['SpectralAnalysis',['../classdealspectrum_1_1SpectralAnalysis.html',1,'dealspectrum']]],
+  ['ssprk_27',['SSPRK',['../classExaDG_1_1SSPRK.html',1,'ExaDG']]],
+  ['statisticsmanager_28',['StatisticsManager',['../classExaDG_1_1StatisticsManager.html',1,'ExaDG']]],
+  ['streamfunctioncalculatorrhsoperator_29',['StreamfunctionCalculatorRHSOperator',['../classExaDG_1_1IncNS_1_1StreamfunctionCalculatorRHSOperator.html',1,'ExaDG::IncNS']]],
+  ['stvenantkirchhoff_30',['StVenantKirchhoff',['../classExaDG_1_1Structure_1_1StVenantKirchhoff.html',1,'ExaDG::Structure']]],
+  ['stvenantkirchhoffdata_31',['StVenantKirchhoffData',['../structExaDG_1_1Structure_1_1StVenantKirchhoffData.html',1,'ExaDG::Structure']]]
 ];
