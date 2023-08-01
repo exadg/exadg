@@ -22,8 +22,12 @@
 #ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_LINE_PLOT_CALCULATION_H_
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_LINE_PLOT_CALCULATION_H_
 
+// deal.II
+#include <deal.II/dofs/dof_handler.h>
+#include <deal.II/lac/la_parallel_vector.h>
+
+// ExaDG
 #include <exadg/incompressible_navier_stokes/postprocessor/line_plot_data.h>
-#include <exadg/vector_tools/point_value.h>
 
 namespace ExaDG
 {
