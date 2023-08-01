@@ -22,8 +22,7 @@
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/linear_interpolation.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/inflow_data_calculator.h>
-#include <exadg/vector_tools/interpolate_solution.h>
-#include <exadg/vector_tools/point_value.h>
+#include <exadg/postprocessor/solution_interpolation.h>
 
 namespace ExaDG
 {
