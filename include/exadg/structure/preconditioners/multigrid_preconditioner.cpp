@@ -19,6 +19,8 @@
  *  ______________________________________________________________________
  */
 
+#include <exadg/grid/grid_data.h>
+#include <exadg/operators/quadrature.h>
 #include <exadg/structure/preconditioners/multigrid_preconditioner.h>
 
 namespace ExaDG
@@ -128,6 +130,35 @@ MultigridPreconditioner<dim, Number>::update()
 
 template<int dim, typename Number>
 void
+MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
+  bool const                    operator_is_singular,
+  unsigned int const            n_components,
+  Map_DBC const &               dirichlet_bc,
+  Map_DBC_ComponentMask const & dirichlet_bc_component_mask)
+{
+  Base::initialize_dof_handler_and_constraints(operator_is_singular,
+                                               n_components,
+                                               dirichlet_bc,
+                                               dirichlet_bc_component_mask);
+
+  // additional constraints without Dirichlet degrees of freedom:
+  // Due to the interface of the base class MultigridPreconditionerBase, we also need to set up
+  // additional DoFHandler objects.
+  if(nonlinear)
+  {
+    Map_DBC               dirichlet_bc_empty;
+    Map_DBC_ComponentMask dirichlet_bc_empty_component_mask;
+    this->do_initialize_dof_handler_and_constraints(false,
+                                                    n_components,
+                                                    dirichlet_bc_empty,
+                                                    dirichlet_bc_empty_component_mask,
+                                                    dof_handlers_inhomogeneous,
+                                                    constraints_inhomogeneous);
+  }
+}
+
+template<int dim, typename Number>
+void
 MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
   MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
   unsigned int const                     level,
@@ -140,27 +171,22 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
   else // linear
     matrix_free_data.append_mapping_flags(PDEOperatorLinear::get_mapping_flags());
 
-  matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "elasticity_dof_handler");
-  matrix_free_data.insert_constraint(&(*this->constraints[level]), "elasticity_dof_handler");
+  matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "elasticity_dof_index");
+  matrix_free_data.insert_constraint(&(*this->constraints[level]), "elasticity_dof_index");
 
-  if(this->dof_handlers[level]->get_triangulation().all_reference_cells_are_hyper_cube())
+  // additional constraints without Dirichlet degrees of freedom
+  if(nonlinear)
   {
-    matrix_free_data.insert_quadrature(dealii::QGauss<1>(this->level_info[level].degree() + 1),
-                                       "elasticity_quadrature");
+    matrix_free_data.insert_dof_handler(&(*dof_handlers_inhomogeneous[level]),
+                                        "elasticity_dof_index_inhomogeneous");
+    matrix_free_data.insert_constraint(&(*constraints_inhomogeneous[level]),
+                                       "elasticity_dof_index_inhomogeneous");
   }
-  else if(this->dof_handlers[level]->get_triangulation().all_reference_cells_are_simplex())
-  {
-    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(this->level_info[level].degree() +
-                                                                  1),
-                                       "elasticity_quadrature");
-  }
-  else
-  {
-    AssertThrow(
-      false,
-      dealii::ExcMessage(
-        "Only pure hypercube or pure simplex meshes are implemented for Structure::MultigridPreconditioner."));
-  }
+
+  ElementType const element_type = get_element_type(*this->grid->triangulation);
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature =
+    create_quadrature<dim>(element_type, this->level_info[level].degree() + 1);
+  matrix_free_data.insert_quadrature(*quadrature, "elasticity_quadrature");
 }
 
 template<int dim, typename Number>
@@ -192,7 +218,12 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
 {
   std::shared_ptr<MGOperatorBase> mg_operator_level;
 
-  data.dof_index  = this->matrix_free_data_objects[level]->get_dof_index("elasticity_dof_handler");
+  data.dof_index = this->matrix_free_data_objects[level]->get_dof_index("elasticity_dof_index");
+  if(nonlinear)
+  {
+    data.dof_index_inhomogeneous =
+      this->matrix_free_data_objects[level]->get_dof_index("elasticity_dof_index_inhomogeneous");
+  }
   data.quad_index = this->matrix_free_data_objects[level]->get_quad_index("elasticity_quadrature");
 
   if(nonlinear)

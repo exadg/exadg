@@ -60,12 +60,10 @@ public:
                                double const       time) const = 0;
 
   virtual void
-  compute_rhs_linear(VectorType & dst, double const time) const = 0;
+  evaluate_mass_operator(VectorType & dst, VectorType const & src) const = 0;
 
   virtual void
-  compute_const_vector(VectorType &       dst,
-                       VectorType const & const_vector_acceleration_remainder,
-                       VectorType const & const_vector_velocity_remainder) const = 0;
+  apply_add_damping_operator(VectorType & dst, VectorType const & src) const = 0;
 
   virtual std::tuple<unsigned int, unsigned int>
   solve_nonlinear(VectorType &       sol,
@@ -74,6 +72,9 @@ public:
                   double const       scaling_factor_mass_from_velocity,
                   double const       time,
                   bool const         update_preconditioner) const = 0;
+
+  virtual void
+  rhs(VectorType & dst, double const time) const = 0;
 
   virtual unsigned int
   solve_linear(VectorType &       sol,

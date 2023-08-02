@@ -25,7 +25,9 @@
 
 // ExaDG
 #include <exadg/convection_diffusion/preconditioners/multigrid_preconditioner.h>
+#include <exadg/operators/finite_element.h>
 #include <exadg/operators/mapping_flags.h>
+#include <exadg/operators/quadrature.h>
 
 namespace ExaDG
 {
@@ -34,6 +36,7 @@ namespace ConvDiff
 template<int dim, typename Number>
 MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & mpi_comm)
   : Base(mpi_comm),
+    degree_velocity(1),
     pde_operator(nullptr),
     mg_operator_type(MultigridOperatorType::Undefined),
     mesh_is_moving(false)
@@ -53,6 +56,8 @@ MultigridPreconditioner<dim, Number>::initialize(
   Map_DBC const &                             dirichlet_bc,
   Map_DBC_ComponentMask const &               dirichlet_bc_component_mask)
 {
+  this->degree_velocity = fe.degree;
+
   this->pde_operator     = &pde_operator;
   this->mg_operator_type = mg_operator_type;
   this->mesh_is_moving   = mesh_is_moving;
@@ -193,8 +198,11 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
 
   matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "std_dof_handler");
   matrix_free_data.insert_constraint(&(*this->constraints[level]), "std_dof_handler");
-  matrix_free_data.insert_quadrature(dealii::QGauss<1>(this->level_info[level].degree() + 1),
-                                     "std_quadrature");
+
+  ElementType const element_type = get_element_type(*this->grid->triangulation);
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature =
+    create_quadrature<dim>(element_type, this->level_info[level].degree() + 1);
+  matrix_free_data.insert_quadrature(*quadrature, "std_quadrature");
 
   if(data.convective_problem)
   {
@@ -250,25 +258,26 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
 template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
-  bool const                         operator_is_singular,
-  dealii::FiniteElement<dim> const & fe,
-  Map_DBC const &                    dirichlet_bc,
-  Map_DBC_ComponentMask const &      dirichlet_bc_component_mask)
+  bool const                    operator_is_singular,
+  unsigned int const            n_components,
+  Map_DBC const &               dirichlet_bc,
+  Map_DBC_ComponentMask const & dirichlet_bc_component_mask)
 {
   Base::initialize_dof_handler_and_constraints(operator_is_singular,
-                                               fe,
+                                               n_components,
                                                dirichlet_bc,
                                                dirichlet_bc_component_mask);
 
   if(data.convective_problem and
      data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
   {
-    dealii::FESystem<dim> fe_velocity(dealii::FE_DGQ<dim>(fe.degree), dim);
+    std::shared_ptr<dealii::FiniteElement<dim>> fe_velocity = create_finite_element<dim>(
+      get_element_type(*this->grid->triangulation), true, dim, degree_velocity);
 
     Map_DBC               dirichlet_bc_velocity;
     Map_DBC_ComponentMask dirichlet_bc_velocity_component_mask;
     this->do_initialize_dof_handler_and_constraints(false,
-                                                    fe_velocity,
+                                                    fe_velocity->n_components(),
                                                     dirichlet_bc_velocity,
                                                     dirichlet_bc_velocity_component_mask,
                                                     dof_handlers_velocity,

@@ -22,7 +22,7 @@
 #ifndef LAPLACE_OPERATOR_H
 #define LAPLACE_OPERATOR_H
 
-#include <exadg/grid/grid_utilities.h>
+#include <exadg/grid/grid_data.h>
 #include <exadg/operators/interior_penalty_parameter.h>
 #include <exadg/operators/operator_base.h>
 #include <exadg/operators/operator_type.h>
@@ -133,7 +133,7 @@ public:
                    integrator_p.read_cell_data(array_penalty_parameter)) *
           IP::get_penalty_factor<dim, Number>(
             degree,
-            GridUtilities::get_element_type(
+            get_element_type(
               integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
             data.IP_factor);
   }
@@ -144,7 +144,7 @@ public:
     tau = integrator_m.read_cell_data(array_penalty_parameter) *
           IP::get_penalty_factor<dim, Number>(
             degree,
-            GridUtilities::get_element_type(
+            get_element_type(
               integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
             data.IP_factor);
   }
@@ -161,7 +161,7 @@ public:
                      integrator_p.read_cell_data(array_penalty_parameter)) *
             IP::get_penalty_factor<dim, Number>(
               degree,
-              GridUtilities::get_element_type(
+              get_element_type(
                 integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
               data.IP_factor);
     }
@@ -170,7 +170,7 @@ public:
       tau = integrator_m.read_cell_data(array_penalty_parameter) *
             IP::get_penalty_factor<dim, Number>(
               degree,
-              GridUtilities::get_element_type(
+              get_element_type(
                 integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
               data.IP_factor);
     }
@@ -264,27 +264,33 @@ public:
   void
   update_penalty_parameter();
 
+  // continuous FE: This function sets the inhomogeneous Dirichlet boundary values for Dirichlet
+  // degrees of freedom.
+  void
+  set_inhomogeneous_boundary_values(VectorType & solution) const final;
+
+  // only relevant for discontinuous Galerkin discretization (DG):
   // Some more functionality on top of what is provided by the base class.
   // This function evaluates the inhomogeneous boundary face integrals in DG where the
   // Dirichlet boundary condition is extracted from a dof vector instead of a dealii::Function<dim>.
   void
   rhs_add_dirichlet_bc_from_dof_vector(VectorType & dst, VectorType const & src) const;
 
-  // continuous FE: This function sets the constrained Dirichlet boundary values.
-  void
-  set_constrained_values(VectorType & solution, double const time) const final;
-
 private:
   void
-  reinit_face(unsigned int const face) const final;
+  reinit_face_derived(IntegratorFace &   integrator_m,
+                      IntegratorFace &   integrator_p,
+                      unsigned int const face) const final;
 
   void
-  reinit_boundary_face(unsigned int const face) const final;
+  reinit_boundary_face_derived(IntegratorFace & integrator_m, unsigned int const face) const final;
 
   void
-  reinit_face_cell_based(unsigned int const               cell,
-                         unsigned int const               face,
-                         dealii::types::boundary_id const boundary_id) const final;
+  reinit_face_cell_based_derived(IntegratorFace &                 integrator_m,
+                                 IntegratorFace &                 integrator_p,
+                                 unsigned int const               cell,
+                                 unsigned int const               face,
+                                 dealii::types::boundary_id const boundary_id) const final;
 
   void
   do_cell_integral(IntegratorCell & integrator) const final;
@@ -315,7 +321,7 @@ private:
                   VectorType const &                      src,
                   Range const &                           range) const;
 
-  // DG
+  // only relevant for discontinuous Galerkin discretization (DG)
   void
   boundary_face_loop_inhom_operator_dirichlet_bc_from_dof_vector(
     dealii::MatrixFree<dim, Number> const & matrix_free,
@@ -323,7 +329,7 @@ private:
     VectorType const &                      src,
     Range const &                           range) const;
 
-  // DG
+  // only relevant for discontinuous Galerkin discretization (DG)
   void
   do_boundary_integral_dirichlet_bc_from_dof_vector(
     IntegratorFace &                   integrator_m,

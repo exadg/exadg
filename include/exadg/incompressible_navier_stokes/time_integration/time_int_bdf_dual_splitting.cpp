@@ -19,6 +19,8 @@
  *  ______________________________________________________________________
  */
 
+#include <deal.II/numerics/vector_tools_mean_value.h>
+
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
@@ -583,7 +585,7 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
   // scheme and coupled solution approach due to the Dirichlet BC prescribed for the intermediate
   // velocity field and the pressure Neumann BC in case of the dual-splitting scheme.
   if(pde_operator->is_pressure_level_undefined())
-    set_zero_mean_value(rhs);
+    dealii::VectorTools::subtract_mean_value(rhs);
 }
 
 template<int dim, typename Number>

@@ -335,9 +335,8 @@ private:
             typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
           unsigned int const                                       global_refinements,
           std::vector<unsigned int> const &                        vector_local_refinements) {
-        (void)periodic_face_pairs;
         create_coarse_grid<dim>(tria,
-                                this->grid->periodic_face_pairs,
+                                periodic_face_pairs,
                                 cylinder_type,
                                 this->param.grid.element_type);
 
@@ -349,6 +348,7 @@ private:
       };
 
     GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->mpi_comm,
                                                               this->param.grid,
                                                               this->param.involves_h_multigrid(),
                                                               lambda_create_triangulation,

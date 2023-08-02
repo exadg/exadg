@@ -4,15 +4,26 @@
         "Dim": "3",
         "IsTest": "false"
     },
-    "SpatialResolution": {
-        "Degree": "2",
-        "RefineSpace": "0"
+    "Main": {
+        "SpatialResolution": {
+            "Degree": "2",
+            "RefineSpace": "0"
+        },
+        "Output": {
+            "OutputDirectory": "output/bfs/",
+            "OutputName": "main",
+            "WriteOutput": "false"
+        }
     },
-    "Application": {
-    },
-    "Output": {
-        "OutputDirectory": "output/",
-        "OutputName": "bfs",
-        "WriteOutput": "false"
+    "Precursor": {
+        "SpatialResolution": {
+            "Degree": "2",
+            "RefineSpace": "0"
+        },
+        "Output": {
+            "OutputDirectory": "output/bfs/",
+            "OutputName": "precursor",
+            "WriteOutput": "false"
+        }
     }
 }

@@ -145,44 +145,51 @@ ProjectionOperator<dim, Number>::update(VectorType const & velocity, double cons
 
 template<int dim, typename Number>
 void
-ProjectionOperator<dim, Number>::reinit_cell(unsigned int const cell) const
+ProjectionOperator<dim, Number>::reinit_cell_derived(IntegratorCell &   integrator,
+                                                     unsigned int const cell) const
 {
-  Base::reinit_cell(cell);
+  (void)cell;
 
   if(operator_data.use_divergence_penalty)
-    div_kernel->reinit_cell(*this->integrator);
+    div_kernel->reinit_cell(integrator);
 }
 
 template<int dim, typename Number>
 void
-ProjectionOperator<dim, Number>::reinit_face(unsigned int const face) const
+ProjectionOperator<dim, Number>::reinit_face_derived(IntegratorFace &   integrator_m,
+                                                     IntegratorFace &   integrator_p,
+                                                     unsigned int const face) const
 {
-  Base::reinit_face(face);
+  (void)face;
 
   if(operator_data.use_continuity_penalty)
-    conti_kernel->reinit_face(*this->integrator_m, *this->integrator_p);
+    conti_kernel->reinit_face(integrator_m, integrator_p);
 }
 
 template<int dim, typename Number>
 void
-ProjectionOperator<dim, Number>::reinit_boundary_face(unsigned int const face) const
+ProjectionOperator<dim, Number>::reinit_boundary_face_derived(IntegratorFace &   integrator_m,
+                                                              unsigned int const face) const
 {
-  Base::reinit_boundary_face(face);
+  (void)face;
 
-  conti_kernel->reinit_boundary_face(*this->integrator_m);
+  conti_kernel->reinit_boundary_face(integrator_m);
 }
 
 template<int dim, typename Number>
 void
-ProjectionOperator<dim, Number>::reinit_face_cell_based(
+ProjectionOperator<dim, Number>::reinit_face_cell_based_derived(
+  IntegratorFace &                 integrator_m,
+  IntegratorFace &                 integrator_p,
   unsigned int const               cell,
   unsigned int const               face,
   dealii::types::boundary_id const boundary_id) const
 {
-  Base::reinit_face_cell_based(cell, face, boundary_id);
+  (void)cell;
+  (void)face;
 
   if(operator_data.use_continuity_penalty)
-    conti_kernel->reinit_face_cell_based(boundary_id, *this->integrator_m, *this->integrator_p);
+    conti_kernel->reinit_face_cell_based(boundary_id, integrator_m, integrator_p);
 }
 
 template<int dim, typename Number>

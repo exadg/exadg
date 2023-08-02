@@ -28,10 +28,9 @@
 
 // ExaDG
 #include <exadg/matrix_free/matrix_free_data.h>
-#include <exadg/poisson/solver_poisson.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 #include <exadg/poisson/user_interface/application_base.h>
-#include <exadg/utilities/solver_result.h>
+#include <exadg/utilities/print_solver_results.h>
 #include <exadg/utilities/timer_tree.h>
 
 namespace ExaDG
@@ -40,30 +39,15 @@ namespace Poisson
 {
 enum class OperatorType
 {
-  MatrixFree,
-  MatrixBased
+  Evaluate,
+  Apply
 };
 
 inline unsigned int
-get_dofs_per_element(std::string const & input_file,
-                     unsigned int const  dim,
-                     unsigned int const  degree)
+get_dofs_per_element(SpatialDiscretization const & spatial_discretization,
+                     unsigned int const            dim,
+                     unsigned int const            degree)
 {
-  SpatialDiscretization spatial_discretization = SpatialDiscretization::Undefined;
-
-  dealii::ParameterHandler prm;
-  prm.enter_subsection("Discretization");
-  {
-    prm.add_parameter("SpatialDiscretization",
-                      spatial_discretization,
-                      "Spatial discretization (CG vs. DG).",
-                      Patterns::Enum<SpatialDiscretization>(),
-                      true);
-  }
-  prm.leave_subsection();
-
-  prm.parse_input(input_file, "", true, true);
-
   unsigned int dofs_per_element = 1;
 
   if(spatial_discretization == SpatialDiscretization::CG)
@@ -75,6 +59,56 @@ get_dofs_per_element(std::string const & input_file,
 
   return dofs_per_element;
 }
+
+template<int dim, int n_components, typename Number>
+class Solver
+{
+public:
+  void
+  setup(std::shared_ptr<ApplicationBase<dim, n_components, Number>> application,
+        MPI_Comm const                                              mpi_comm,
+        bool const                                                  is_throughput_study)
+  {
+    pde_operator =
+      std::make_shared<Operator<dim, n_components, Number>>(application->get_grid(),
+                                                            application->get_mapping(),
+                                                            application->get_boundary_descriptor(),
+                                                            application->get_field_functions(),
+                                                            application->get_parameters(),
+                                                            "Poisson",
+                                                            mpi_comm);
+
+    matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
+    matrix_free_data->append(pde_operator);
+
+    matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
+    if(application->get_parameters().enable_cell_based_face_loops)
+      Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
+                                          matrix_free_data->data);
+    matrix_free->reinit(*application->get_mapping(),
+                        matrix_free_data->get_dof_handler_vector(),
+                        matrix_free_data->get_constraint_vector(),
+                        matrix_free_data->get_quadrature_vector(),
+                        matrix_free_data->data);
+
+    pde_operator->setup(matrix_free, matrix_free_data);
+
+    if(not(is_throughput_study))
+    {
+      pde_operator->setup_solver();
+
+      postprocessor = application->create_postprocessor();
+      postprocessor->setup(*pde_operator);
+    }
+  }
+
+  std::shared_ptr<Operator<dim, n_components, Number>>          pde_operator;
+  std::shared_ptr<PostProcessorBase<dim, n_components, Number>> postprocessor;
+
+private:
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
+};
 
 template<int dim, typename Number>
 class Driver
@@ -98,9 +132,9 @@ public:
    * Throughput study
    */
   std::tuple<unsigned int, dealii::types::global_dof_index, double>
-  apply_operator(std::string const & operator_type_string,
-                 unsigned int const  n_repetitions_inner,
-                 unsigned int const  n_repetitions_outer) const;
+  apply_operator(OperatorType const & operator_type,
+                 unsigned int const   n_repetitions_inner,
+                 unsigned int const   n_repetitions_outer) const;
 
 private:
   // MPI communicator
@@ -118,7 +152,7 @@ private:
   // application
   std::shared_ptr<ApplicationBase<dim, 1, Number>> application;
 
-  std::shared_ptr<SolverPoisson<dim, 1, Number>> poisson;
+  std::shared_ptr<Solver<dim, 1, Number>> poisson;
 
   // number of iterations
   mutable unsigned int iterations;

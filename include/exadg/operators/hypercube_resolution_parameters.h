@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_HYPERCUBE_RESOLUTION_PARAMETERS_H_
-#define INCLUDE_EXADG_UTILITIES_HYPERCUBE_RESOLUTION_PARAMETERS_H_
+#ifndef INCLUDE_EXADG_OPERATORS_HYPERCUBE_RESOLUTION_PARAMETERS_H_
+#define INCLUDE_EXADG_OPERATORS_HYPERCUBE_RESOLUTION_PARAMETERS_H_
 
 #include <deal.II/base/parameter_handler.h>
 
@@ -241,9 +241,7 @@ struct HypercubeResolutionParameters
 
   void
   fill_resolution_vector(
-    std::function<unsigned int(std::string, unsigned int, unsigned int)> const &
-                get_dofs_per_element,
-    std::string input_file)
+    std::function<unsigned int(unsigned int, unsigned int)> const & get_dofs_per_element)
   {
     if(run_type == RunType::RefineHAndP)
     {
@@ -265,7 +263,7 @@ struct HypercubeResolutionParameters
     {
       for(unsigned int degree = degree_min; degree <= degree_max; ++degree)
       {
-        unsigned int dofs_per_element = get_dofs_per_element(input_file, dim, degree);
+        unsigned int dofs_per_element = get_dofs_per_element(dim, degree);
         fill_resolutions_vector(
           resolutions, dim, degree, dofs_per_element, n_dofs_min, n_dofs_max, run_type);
       }
@@ -295,4 +293,4 @@ struct HypercubeResolutionParameters
 } // namespace ExaDG
 
 
-#endif /* INCLUDE_EXADG_UTILITIES_HYPERCUBE_RESOLUTION_PARAMETERS_H_ */
+#endif /* INCLUDE_EXADG_OPERATORS_HYPERCUBE_RESOLUTION_PARAMETERS_H_ */

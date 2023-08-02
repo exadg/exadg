@@ -408,102 +408,119 @@ private:
   void
   create_grid() final
   {
-    create_triangulation(*this->grid->triangulation);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    this->grid->triangulation->set_all_manifold_ids(0);
+        create_triangulation(tria);
 
-    // vectors of manifold_ids and face_ids
-    unsigned int const        manifold_id_start = 10;
-    std::vector<unsigned int> manifold_ids;
-    std::vector<unsigned int> face_ids;
+        tria.set_all_manifold_ids(0);
 
-    dealii::Point<dim> center;
-    center[0] = X_C;
-    center[1] = Y_C;
+        // vectors of manifold_ids and face_ids
+        unsigned int const        manifold_id_start = 10;
+        std::vector<unsigned int> manifold_ids;
+        std::vector<unsigned int> face_ids;
 
-    for(auto cell : this->grid->triangulation->cell_iterators())
-    {
-      double const TOL = 1.e-12;
+        dealii::Point<dim> center;
+        center[0] = X_C;
+        center[1] = Y_C;
 
-      // boundary IDs
-      for(auto const & f : cell->face_indices())
-      {
-        double const x = cell->face(f)->center()(0);
-        double const y = cell->face(f)->center()(1);
-
-        if(std::fabs(y - Y_0) < TOL or std::fabs(y - H) < TOL)
+        for(auto cell : tria.cell_iterators())
         {
-          cell->face(f)->set_boundary_id(BOUNDARY_ID_WALLS);
-        }
+          double const TOL = 1.e-12;
 
-        if(std::fabs(x - X_0) < TOL)
-        {
-          cell->face(f)->set_boundary_id(BOUNDARY_ID_INFLOW);
-        }
-
-        if(std::fabs(x - L) < TOL)
-        {
-          cell->face(f)->set_boundary_id(BOUNDARY_ID_OUTFLOW);
-        }
-
-        if(std::fabs(cell->face(f)->center().distance(center)) < R + TOL)
-        {
-          cell->face(f)->set_boundary_id(BOUNDARY_ID_CYLINDER);
-        }
-
-        if(std::fabs(y - (Y_C - T / 2.0)) < TOL or std::fabs(y - (Y_C + T / 2.0)) < TOL or
-           (std::fabs(y - Y_C) < T / 2.0 + TOL and std::fabs(x - (X_C + R + L_FLAG)) < TOL))
-        {
-          cell->face(f)->set_boundary_id(BOUNDARY_ID_FLAG);
-        }
-      }
-
-      // manifold IDs
-      for(auto const & f : cell->face_indices())
-      {
-        if(cell->face(f)->at_boundary())
-        {
-          bool face_at_sphere_boundary = true;
-          for(auto const & v : cell->face(f)->vertex_indices())
+          // boundary IDs
+          for(auto const & f : cell->face_indices())
           {
-            if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > TOL)
+            double const x = cell->face(f)->center()(0);
+            double const y = cell->face(f)->center()(1);
+
+            if(std::fabs(y - Y_0) < TOL or std::fabs(y - H) < TOL)
             {
-              face_at_sphere_boundary = false;
-              break;
+              cell->face(f)->set_boundary_id(BOUNDARY_ID_WALLS);
+            }
+
+            if(std::fabs(x - X_0) < TOL)
+            {
+              cell->face(f)->set_boundary_id(BOUNDARY_ID_INFLOW);
+            }
+
+            if(std::fabs(x - L) < TOL)
+            {
+              cell->face(f)->set_boundary_id(BOUNDARY_ID_OUTFLOW);
+            }
+
+            if(std::fabs(cell->face(f)->center().distance(center)) < R + TOL)
+            {
+              cell->face(f)->set_boundary_id(BOUNDARY_ID_CYLINDER);
+            }
+
+            if(std::fabs(y - (Y_C - T / 2.0)) < TOL or std::fabs(y - (Y_C + T / 2.0)) < TOL or
+               (std::fabs(y - Y_C) < T / 2.0 + TOL and std::fabs(x - (X_C + R + L_FLAG)) < TOL))
+            {
+              cell->face(f)->set_boundary_id(BOUNDARY_ID_FLAG);
             }
           }
 
-          if(face_at_sphere_boundary)
+          // manifold IDs
+          for(auto const & f : cell->face_indices())
           {
-            face_ids.push_back(f);
-            unsigned int manifold_id = manifold_id_start + manifold_ids.size() + 1;
-            cell->set_all_manifold_ids(manifold_id);
-            manifold_ids.push_back(manifold_id);
-            break;
+            if(cell->face(f)->at_boundary())
+            {
+              bool face_at_sphere_boundary = true;
+              for(auto const & v : cell->face(f)->vertex_indices())
+              {
+                if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > TOL)
+                {
+                  face_at_sphere_boundary = false;
+                  break;
+                }
+              }
+
+              if(face_at_sphere_boundary)
+              {
+                face_ids.push_back(f);
+                unsigned int manifold_id = manifold_id_start + manifold_ids.size() + 1;
+                cell->set_all_manifold_ids(manifold_id);
+                manifold_ids.push_back(manifold_id);
+                break;
+              }
+            }
           }
         }
-      }
-    }
 
-    // generate vector of manifolds and apply manifold to all cells that have been marked
-    static std::vector<std::shared_ptr<dealii::Manifold<dim>>> manifold_vec;
-    manifold_vec.resize(manifold_ids.size());
+        // generate vector of manifolds and apply manifold to all cells that have been marked
+        static std::vector<std::shared_ptr<dealii::Manifold<dim>>> manifold_vec;
+        manifold_vec.resize(manifold_ids.size());
 
-    for(unsigned int i = 0; i < manifold_ids.size(); ++i)
-    {
-      for(auto cell : this->grid->triangulation->cell_iterators())
-      {
-        if(cell->manifold_id() == manifold_ids[i])
+        for(unsigned int i = 0; i < manifold_ids.size(); ++i)
         {
-          manifold_vec[i] =
-            std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
-              new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
-          this->grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
+          for(auto cell : tria.cell_iterators())
+          {
+            if(cell->manifold_id() == manifold_ids[i])
+            {
+              manifold_vec[i] =
+                std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
+                  new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
+              tria.set_manifold(manifold_ids[i], *(manifold_vec[i]));
+            }
+          }
         }
-      }
-    }
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->mpi_comm,
+                                                              this->param.grid,
+                                                              this->param.involves_h_multigrid(),
+                                                              lambda_create_triangulation,
+                                                              {} /* no local refinements */);
   }
 
   void
@@ -584,7 +601,7 @@ private:
     param.degree                 = this->param.mapping_degree;
 
     // SOLVER
-    param.solver         = Poisson::Solver::FGMRES;
+    param.solver         = Poisson::LinearSolver::FGMRES;
     param.solver_data    = SolverData(1e4, ABS_TOL, REL_TOL, 100);
     param.preconditioner = Preconditioner::Multigrid;
 
@@ -919,98 +936,115 @@ private:
   void
   create_grid() final
   {
-    create_triangulation_structure(*this->grid->triangulation);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    this->grid->triangulation->set_all_manifold_ids(0);
+        create_triangulation_structure(tria);
 
-    // vectors of manifold_ids and face_ids
-    unsigned int const        manifold_id_start = 10;
-    std::vector<unsigned int> manifold_ids;
-    std::vector<unsigned int> face_ids;
+        tria.set_all_manifold_ids(0);
 
-    dealii::Point<dim> center;
-    center[0] = X_C;
-    center[1] = Y_C;
+        // vectors of manifold_ids and face_ids
+        unsigned int const        manifold_id_start = 10;
+        std::vector<unsigned int> manifold_ids;
+        std::vector<unsigned int> face_ids;
 
-    for(auto cell : this->grid->triangulation->cell_iterators())
-    {
-      double const TOL = 1.e-12;
+        dealii::Point<dim> center;
+        center[0] = X_C;
+        center[1] = Y_C;
 
-      // boundary IDs
-      for(auto const & f : cell->face_indices())
-      {
-        double const x = cell->face(f)->center()(0);
-
-        if(cell->face(f)->at_boundary())
+        for(auto cell : tria.cell_iterators())
         {
-          if(STRUCTURE_COVERS_FLAG_ONLY)
-          {
-            if(x < X_C + R * std::cos(std::asin(T / (2.0 * R))) + TOL)
-            {
-              cell->face(f)->set_boundary_id(BOUNDARY_ID_CYLINDER);
-            }
-          }
-          else
-          {
-            if(x < X_C + R * std::cos(std::asin(T / (2.0 * R))))
-            {
-              cell->face(f)->set_boundary_id(BOUNDARY_ID_CYLINDER);
-            }
-          }
+          double const TOL = 1.e-12;
 
-          if(x > X_C + R * std::cos(std::asin(T / (2.0 * R))))
+          // boundary IDs
+          for(auto const & f : cell->face_indices())
           {
-            cell->face(f)->set_boundary_id(BOUNDARY_ID_FLAG);
-          }
-        }
-      }
+            double const x = cell->face(f)->center()(0);
 
-      // manifold IDs
-      for(auto const & f : cell->face_indices())
-      {
-        if(cell->face(f)->at_boundary())
-        {
-          bool face_at_sphere_boundary = true;
-          for(auto const & v : cell->face(f)->vertex_indices())
-          {
-            if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > TOL)
+            if(cell->face(f)->at_boundary())
             {
-              face_at_sphere_boundary = false;
-              break;
+              if(STRUCTURE_COVERS_FLAG_ONLY)
+              {
+                if(x < X_C + R * std::cos(std::asin(T / (2.0 * R))) + TOL)
+                {
+                  cell->face(f)->set_boundary_id(BOUNDARY_ID_CYLINDER);
+                }
+              }
+              else
+              {
+                if(x < X_C + R * std::cos(std::asin(T / (2.0 * R))))
+                {
+                  cell->face(f)->set_boundary_id(BOUNDARY_ID_CYLINDER);
+                }
+              }
+
+              if(x > X_C + R * std::cos(std::asin(T / (2.0 * R))))
+              {
+                cell->face(f)->set_boundary_id(BOUNDARY_ID_FLAG);
+              }
             }
           }
 
-          if(face_at_sphere_boundary)
+          // manifold IDs
+          for(auto const & f : cell->face_indices())
           {
-            face_ids.push_back(f);
-            unsigned int manifold_id = manifold_id_start + manifold_ids.size() + 1;
-            cell->set_all_manifold_ids(manifold_id);
-            manifold_ids.push_back(manifold_id);
-            break;
+            if(cell->face(f)->at_boundary())
+            {
+              bool face_at_sphere_boundary = true;
+              for(auto const & v : cell->face(f)->vertex_indices())
+              {
+                if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > TOL)
+                {
+                  face_at_sphere_boundary = false;
+                  break;
+                }
+              }
+
+              if(face_at_sphere_boundary)
+              {
+                face_ids.push_back(f);
+                unsigned int manifold_id = manifold_id_start + manifold_ids.size() + 1;
+                cell->set_all_manifold_ids(manifold_id);
+                manifold_ids.push_back(manifold_id);
+                break;
+              }
+            }
           }
         }
-      }
-    }
 
-    // generate vector of manifolds and apply manifold to all cells that have been marked
-    static std::vector<std::shared_ptr<dealii::Manifold<dim>>> manifold_vec;
-    manifold_vec.resize(manifold_ids.size());
+        // generate vector of manifolds and apply manifold to all cells that have been marked
+        static std::vector<std::shared_ptr<dealii::Manifold<dim>>> manifold_vec;
+        manifold_vec.resize(manifold_ids.size());
 
-    for(unsigned int i = 0; i < manifold_ids.size(); ++i)
-    {
-      for(auto cell : this->grid->triangulation->cell_iterators())
-      {
-        if(cell->manifold_id() == manifold_ids[i])
+        for(unsigned int i = 0; i < manifold_ids.size(); ++i)
         {
-          manifold_vec[i] =
-            std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
-              new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
-          this->grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
+          for(auto cell : tria.cell_iterators())
+          {
+            if(cell->manifold_id() == manifold_ids[i])
+            {
+              manifold_vec[i] =
+                std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
+                  new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
+              tria.set_manifold(manifold_ids[i], *(manifold_vec[i]));
+            }
+          }
         }
-      }
-    }
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->mpi_comm,
+                                                              this->param.grid,
+                                                              this->param.involves_h_multigrid(),
+                                                              lambda_create_triangulation,
+                                                              {} /* no local refinements */);
   }
 
   void

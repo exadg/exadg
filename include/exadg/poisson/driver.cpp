@@ -25,11 +25,11 @@
 #endif
 
 // ExaDG
+#include <exadg/operators/throughput_parameters.h>
 #include <exadg/poisson/driver.h>
 #include <exadg/utilities/print_functions.h>
 #include <exadg/utilities/print_general_infos.h>
 #include <exadg/utilities/print_solver_results.h>
-#include <exadg/utilities/throughput_parameters.h>
 
 namespace ExaDG
 {
@@ -50,7 +50,7 @@ Driver<dim, Number>::Driver(MPI_Comm const &                                 com
 {
   print_general_info<Number>(pcout, mpi_comm, is_test);
 
-  poisson = std::make_shared<SolverPoisson<dim, 1, Number>>();
+  poisson = std::make_shared<Solver<dim, 1, Number>>();
 }
 
 template<int dim, typename Number>
@@ -168,53 +168,24 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 
 template<int dim, typename Number>
 std::tuple<unsigned int, dealii::types::global_dof_index, double>
-Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
-                                    unsigned int const  n_repetitions_inner,
-                                    unsigned int const  n_repetitions_outer) const
+Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
+                                    unsigned int const   n_repetitions_inner,
+                                    unsigned int const   n_repetitions_outer) const
 {
   pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
-
-  OperatorType operator_type;
-  Utilities::string_to_enum(operator_type, operator_type_string);
 
   dealii::LinearAlgebra::distributed::Vector<Number> dst, src;
   poisson->pde_operator->initialize_dof_vector(src);
   poisson->pde_operator->initialize_dof_vector(dst);
   src = 1.0;
 
-#ifdef DEAL_II_WITH_TRILINOS
-  typedef double                                             TrilinosNumber;
-  dealii::LinearAlgebra::distributed::Vector<TrilinosNumber> dst_trilinos, src_trilinos;
-  src_trilinos = src;
-  dst_trilinos = dst;
-
-  dealii::TrilinosWrappers::SparseMatrix system_matrix;
-#endif
-
-  if(operator_type == OperatorType::MatrixBased)
-  {
-#ifdef DEAL_II_WITH_TRILINOS
-    poisson->pde_operator->init_system_matrix(system_matrix, mpi_comm);
-    poisson->pde_operator->calculate_system_matrix(system_matrix);
-#else
-    AssertThrow(
-      false, dealii::ExcMessage("Activate DEAL_II_WITH_TRILINOS for matrix-based computations."));
-#endif
-  }
-
   const std::function<void(void)> operator_evaluation = [&](void) {
-    if(operator_type == OperatorType::MatrixFree)
-    {
+    if(operator_type == OperatorType::Evaluate)
+      poisson->pde_operator->evaluate(dst, src, 0.0);
+    else if(operator_type == OperatorType::Apply)
       poisson->pde_operator->vmult(dst, src);
-    }
-    else if(operator_type == OperatorType::MatrixBased)
-    {
-#ifdef DEAL_II_WITH_TRILINOS
-      poisson->pde_operator->vmult_matrix_based(dst_trilinos, system_matrix, src_trilinos);
-#else
-      AssertThrow(false, dealii::ExcMessage("Activate DEAL_II_WITH_TRILINOS."));
-#endif
-    }
+    else
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
   };
 
   // do the measurements

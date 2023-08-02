@@ -29,14 +29,13 @@
 #include <exadg/utilities/enum_patterns.h>
 
 // driver
-#include <exadg/incompressible_navier_stokes/driver_precursor.h>
+#include <exadg/incompressible_navier_stokes/precursor/driver.h>
 
 // utilities
 #include <exadg/utilities/general_parameters.h>
-#include <exadg/utilities/resolution_parameters.h>
 
 // application
-#include <exadg/incompressible_navier_stokes/user_interface/declare_get_application_precursor.h>
+#include <exadg/incompressible_navier_stokes/precursor/user_interface/declare_get_application.h>
 
 namespace ExaDG
 {
@@ -52,7 +51,7 @@ create_input_file(std::string const & input_file)
   // for the automatic generation of a default input file
   unsigned int const Dim = 2;
   typedef double     Number;
-  IncNS::get_application<Dim, Number>(input_file, MPI_COMM_WORLD)->add_parameters(prm);
+  IncNS::Precursor::get_application<Dim, Number>(input_file, MPI_COMM_WORLD)->add_parameters(prm);
 
   prm.print_parameters(input_file,
                        dealii::ParameterHandler::Short |
@@ -66,11 +65,11 @@ run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_tes
   dealii::Timer timer;
   timer.restart();
 
-  std::shared_ptr<IncNS::ApplicationBasePrecursor<dim, Number>> application =
-    IncNS::get_application<dim, Number>(input_file, mpi_comm);
+  std::shared_ptr<IncNS::Precursor::ApplicationBase<dim, Number>> application =
+    IncNS::Precursor::get_application<dim, Number>(input_file, mpi_comm);
 
-  std::shared_ptr<IncNS::DriverPrecursor<dim, Number>> driver =
-    std::make_shared<IncNS::DriverPrecursor<dim, Number>>(mpi_comm, application, is_test);
+  std::shared_ptr<IncNS::Precursor::Driver<dim, Number>> driver =
+    std::make_shared<IncNS::Precursor::Driver<dim, Number>>(mpi_comm, application, is_test);
 
   driver->setup();
 
@@ -119,16 +118,26 @@ main(int argc, char ** argv)
 
   // run the simulation
   if(general.dim == 2 and general.precision == "float")
+  {
     ExaDG::run<2, float>(input_file, mpi_comm, general.is_test);
+  }
   else if(general.dim == 2 and general.precision == "double")
+  {
     ExaDG::run<2, double>(input_file, mpi_comm, general.is_test);
+  }
   else if(general.dim == 3 and general.precision == "float")
+  {
     ExaDG::run<3, float>(input_file, mpi_comm, general.is_test);
+  }
   else if(general.dim == 3 and general.precision == "double")
+  {
     ExaDG::run<3, double>(input_file, mpi_comm, general.is_test);
+  }
   else
+  {
     AssertThrow(false,
                 dealii::ExcMessage("Only dim = 2|3 and precision = float|double implemented."));
+  }
 
   return 0;
 }

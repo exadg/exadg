@@ -174,17 +174,17 @@ protected:
    * Dof-handlers and constraints.
    */
   virtual void
-  initialize_dof_handler_and_constraints(bool                               is_singular,
-                                         dealii::FiniteElement<dim> const & fe,
-                                         Map_DBC const &                    dirichlet_bc,
+  initialize_dof_handler_and_constraints(bool                          is_singular,
+                                         unsigned int const            n_components,
+                                         Map_DBC const &               dirichlet_bc,
                                          Map_DBC_ComponentMask const & dirichlet_bc_component_mask);
 
   void
   do_initialize_dof_handler_and_constraints(
-    bool                               is_singular,
-    dealii::FiniteElement<dim> const & fe,
-    Map_DBC const &                    dirichlet_bc,
-    Map_DBC_ComponentMask const &      dirichlet_bc_component_mask,
+    bool                          is_singular,
+    unsigned int const            n_components,
+    Map_DBC const &               dirichlet_bc,
+    Map_DBC_ComponentMask const & dirichlet_bc_component_mask,
     dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> & dofhandlers,
     dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> &
       constraints);
@@ -246,6 +246,9 @@ protected:
     for(unsigned int fine_level = this->get_number_of_levels() - 1; fine_level > 0; --fine_level)
       levelwise_transfer(fine_level, fine_level - 1);
   }
+
+  // Pointer to grid class.
+  std::shared_ptr<Grid<dim> const> grid;
 
   dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>>              dof_handlers;
   dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> constraints;
@@ -323,9 +326,6 @@ private:
   // TODO try to avoid this private member variable by extracting this information from level_info
   // when needed.
   std::vector<MGDoFHandlerIdentifier> p_levels;
-
-  // Pointer to grid class.
-  std::shared_ptr<Grid<dim> const> grid;
 
   // The mapping associated to the fine triangulation.
   std::shared_ptr<dealii::Mapping<dim> const> mapping;

@@ -358,39 +358,47 @@ ConvectiveOperator<dim, Number>::do_boundary_integral_nonlinear_operator(
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::reinit_cell(unsigned int const cell) const
+ConvectiveOperator<dim, Number>::reinit_cell_derived(IntegratorCell &   integrator,
+                                                     unsigned int const cell) const
 {
-  Base::reinit_cell(cell);
+  (void)integrator;
 
   kernel->reinit_cell(cell);
 }
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::reinit_face(unsigned int const face) const
+ConvectiveOperator<dim, Number>::reinit_face_derived(IntegratorFace &   integrator_m,
+                                                     IntegratorFace &   integrator_p,
+                                                     unsigned int const face) const
 {
-  Base::reinit_face(face);
+  (void)integrator_m;
+  (void)integrator_p;
 
   kernel->reinit_face(face);
 }
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::reinit_boundary_face(unsigned int const face) const
+ConvectiveOperator<dim, Number>::reinit_boundary_face_derived(IntegratorFace &   integrator_m,
+                                                              unsigned int const face) const
 {
-  Base::reinit_boundary_face(face);
+  (void)integrator_m;
 
   kernel->reinit_boundary_face(face);
 }
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::reinit_face_cell_based(
+ConvectiveOperator<dim, Number>::reinit_face_cell_based_derived(
+  IntegratorFace &                 integrator_m,
+  IntegratorFace &                 integrator_p,
   unsigned int const               cell,
   unsigned int const               face,
   dealii::types::boundary_id const boundary_id) const
 {
-  Base::reinit_face_cell_based(cell, face, boundary_id);
+  (void)integrator_m;
+  (void)integrator_p;
 
   kernel->reinit_face_cell_based(cell, face, boundary_id);
 }

@@ -31,7 +31,6 @@
 // utilities
 #include <exadg/utilities/enum_patterns.h>
 #include <exadg/utilities/general_parameters.h>
-#include <exadg/utilities/resolution_parameters.h>
 
 // application
 #include <exadg/incompressible_flow_with_transport/user_interface/declare_get_application.h>
@@ -117,16 +116,26 @@ main(int argc, char ** argv)
 
   // run the simulation
   if(general.dim == 2 and general.precision == "float")
+  {
     ExaDG::run<2, float>(input_file, mpi_comm, general.is_test);
+  }
   else if(general.dim == 2 and general.precision == "double")
+  {
     ExaDG::run<2, double>(input_file, mpi_comm, general.is_test);
+  }
   else if(general.dim == 3 and general.precision == "float")
+  {
     ExaDG::run<3, float>(input_file, mpi_comm, general.is_test);
+  }
   else if(general.dim == 3 and general.precision == "double")
+  {
     ExaDG::run<3, double>(input_file, mpi_comm, general.is_test);
+  }
   else
+  {
     AssertThrow(false,
                 dealii::ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
+  }
 
   return 0;
 }

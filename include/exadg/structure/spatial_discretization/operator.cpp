@@ -20,12 +20,13 @@
  */
 
 // deal.II
-#include <deal.II/fe/fe_q.h>
-#include <deal.II/fe/fe_simplex_p.h>
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
-#include <exadg/grid/grid_utilities.h>
+#include <exadg/grid/grid_data.h>
+#include <exadg/operators/constraints.h>
+#include <exadg/operators/finite_element.h>
+#include <exadg/operators/quadrature.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_amg.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
@@ -115,98 +116,56 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::distribute_dofs()
 {
-  // setup finite element
-  if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
-    fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_Q<dim>(param.degree), dim);
-  else if(this->grid->triangulation->all_reference_cells_are_simplex())
-    fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_SimplexP<dim>(param.degree), dim);
-  else
-    AssertThrow(false, ExcNotImplemented());
+  // create finite element
+  fe = create_finite_element<dim>(param.grid.element_type,
+                                  false /* continuous Galerkin */,
+                                  dim,
+                                  param.degree);
 
   // enumerate degrees of freedom
   dof_handler.distribute_dofs(*fe);
 
-  // The AffineConstraints object is used to initialize MatrixFree. Here, we apply homogeneous
-  // boundary conditions as needed by vmult() in iterative solvers for linear(ized) systems of
-  // equations, implemented via dealii::MatrixFree and FEEvaluation::read_dof_values() (or
-  // gather_evaluate()). The actual inhomogeneous boundary data needs to be imposed separately due
-  // to the implementation in deal.II that can not handle multiple AffineConstraints. Hence, we need
-  // to do this explicitly in ExaDG.
-
   // affine constraints
+  affine_constraints_periodicity_and_hanging_nodes.clear();
+
+  add_hanging_node_and_periodicity_constraints(affine_constraints_periodicity_and_hanging_nodes,
+                                               *this->grid,
+                                               dof_handler);
+
+  affine_constraints_periodicity_and_hanging_nodes.close();
+
+  // copy periodicity and hanging node constraints, and add further constraints stemming from
+  // Dirichlet boundary conditions
   affine_constraints.clear();
 
   dealii::IndexSet locally_relevant_dofs;
   dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
   affine_constraints.reinit(locally_relevant_dofs);
 
-  // hanging nodes (needs to be done before imposing periodicity constraints and boundary
-  // conditions)
-  if(this->grid->triangulation->has_hanging_nodes())
-    dealii::DoFTools::make_hanging_node_constraints(dof_handler, affine_constraints);
+  affine_constraints.copy_from(affine_constraints_periodicity_and_hanging_nodes);
 
-  // constraints from periodic boundary conditions
-  if(not(this->grid->periodic_face_pairs.empty()))
-  {
-    auto periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
-      this->grid->periodic_face_pairs, dof_handler);
+  // use all the component masks defined by the user
+  std::map<dealii::types::boundary_id, dealii::ComponentMask> map_bid_to_mask =
+    boundary_descriptor->dirichlet_bc_component_mask;
 
-    dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(periodic_faces_dof,
-                                                                     affine_constraints);
-  }
+  // Dirichlet constraints
+  std::map<dealii::types::boundary_id, dealii::ComponentMask> map_boundary_id_to_component_mask;
 
-  // standard Dirichlet boundaries
-  for(auto it : this->boundary_descriptor->dirichlet_bc)
-  {
-    dealii::ComponentMask mask = dealii::ComponentMask();
+  // collect all Dirichlet boundary IDs in a set:
+  // DirichletCached boundary IDs are already provided as a set
+  std::set<dealii::types::boundary_id> all_dirichlet_bids =
+    boundary_descriptor->dirichlet_cached_bc;
 
-    auto it_mask = this->boundary_descriptor->dirichlet_bc_component_mask.find(it.first);
-    if(it_mask != this->boundary_descriptor->dirichlet_bc_component_mask.end())
-      mask = it_mask->second;
+  // standard Dirichlet boundaries: extract keys from map
+  fill_keys_of_map_into_set(all_dirichlet_bids, boundary_descriptor->dirichlet_bc);
 
-    dealii::DoFTools::make_zero_boundary_constraints(this->dof_handler,
-                                                     it.first,
-                                                     affine_constraints,
-                                                     mask);
-  }
+  // fill with default mask if no mask has been defined
+  fill_map_bid_to_mask_with_default_mask(map_bid_to_mask, all_dirichlet_bids);
 
-  // DirichletCached boundaries
-  for(auto it : this->boundary_descriptor->dirichlet_cached_bc)
-  {
-    dealii::ComponentMask mask = dealii::ComponentMask();
-    dealii::DoFTools::make_zero_boundary_constraints(dof_handler, it, affine_constraints, mask);
-  }
+  // call deal.II utility function to add Dirichlet constraints
+  add_homogeneous_dirichlet_constraints(affine_constraints, dof_handler, map_bid_to_mask);
 
   affine_constraints.close();
-
-  // affine constraints for mass operator
-  if(param.problem_type == ProblemType::Unsteady)
-  {
-    constraints_mass.clear();
-
-    dealii::IndexSet locally_relevant_dofs;
-    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
-    constraints_mass.reinit(locally_relevant_dofs);
-
-    // hanging nodes (needs to be done before imposing periodicity constraints and boundary
-    // conditions)
-    if(this->grid->triangulation->has_hanging_nodes())
-      dealii::DoFTools::make_hanging_node_constraints(dof_handler, constraints_mass);
-
-    // constraints from periodic boundary conditions
-    if(not(this->grid->periodic_face_pairs.empty()))
-    {
-      auto periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
-        this->grid->periodic_face_pairs, dof_handler);
-
-      dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(periodic_faces_dof,
-                                                                       constraints_mass);
-    }
-
-    // no constraints from Dirichlet boundary conditions for mass operator
-
-    constraints_mass.close();
-  }
 
   pcout << std::endl
         << "Continuous Galerkin finite element discretization:" << std::endl
@@ -226,9 +185,9 @@ Operator<dim, Number>::get_dof_name() const
 
 template<int dim, typename Number>
 std::string
-Operator<dim, Number>::get_dof_name_mass() const
+Operator<dim, Number>::get_dof_name_periodicity_and_hanging_node_constraints() const
 {
-  return field + "_" + dof_index_mass;
+  return field + "_" + dof_index_periodicity_and_handing_node_constraints;
 }
 
 template<int dim, typename Number>
@@ -254,9 +213,9 @@ Operator<dim, Number>::get_dof_index() const
 
 template<int dim, typename Number>
 unsigned int
-Operator<dim, Number>::get_dof_index_mass() const
+Operator<dim, Number>::get_dof_index_periodicity_and_hanging_node_constraints() const
 {
-  return matrix_free_data->get_dof_index(get_dof_name_mass());
+  return matrix_free_data->get_dof_index(get_dof_name_periodicity_and_hanging_node_constraints());
 }
 
 template<int dim, typename Number>
@@ -317,20 +276,17 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
   matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
 
-  if(param.problem_type == ProblemType::Unsteady)
-  {
-    matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name_mass());
-    matrix_free_data.insert_constraint(&constraints_mass, get_dof_name_mass());
-  }
+  // inhomogeneous Dirichlet boundary conditions: use additional AffineConstraints object, but the
+  // same DoFHandler
+  matrix_free_data.insert_dof_handler(&dof_handler,
+                                      get_dof_name_periodicity_and_hanging_node_constraints());
+  matrix_free_data.insert_constraint(&affine_constraints_periodicity_and_hanging_nodes,
+                                     get_dof_name_periodicity_and_hanging_node_constraints());
 
   // dealii::Quadrature
-  if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
-    matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1), get_quad_name());
-  else if(this->grid->triangulation->all_reference_cells_are_simplex())
-    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(param.degree + 1),
-                                       get_quad_name());
-  else
-    AssertThrow(false, ExcNotImplemented());
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature =
+    create_quadrature<dim>(param.grid.element_type, param.degree + 1);
+  matrix_free_data.insert_quadrature(*quadrature, get_quad_name());
 
   // Create a Gauss-Lobatto quadrature rule for DirichletCached boundary conditions.
   // These quadrature points coincide with the nodes of the discretization, so that
@@ -353,8 +309,9 @@ void
 Operator<dim, Number>::setup_operators()
 {
   // elasticity operator
-  operator_data.dof_index  = get_dof_index();
-  operator_data.quad_index = get_quad_index();
+  operator_data.dof_index               = get_dof_index();
+  operator_data.quad_index              = get_quad_index();
+  operator_data.dof_index_inhomogeneous = get_dof_index_periodicity_and_hanging_node_constraints();
   if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
     AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
@@ -387,10 +344,13 @@ Operator<dim, Number>::setup_operators()
   // mass operator and related solver for inversion
   if(param.problem_type == ProblemType::Unsteady)
   {
-    MassOperatorData<dim> mass_data;
-    mass_data.dof_index  = get_dof_index_mass();
-    mass_data.quad_index = get_quad_index();
-    mass_operator.initialize(*matrix_free, constraints_mass, mass_data);
+    Structure::MassOperatorData<dim> mass_data;
+    mass_data.dof_index               = get_dof_index();
+    mass_data.dof_index_inhomogeneous = get_dof_index_periodicity_and_hanging_node_constraints();
+    mass_data.quad_index              = get_quad_index();
+    mass_data.bc                      = boundary_descriptor;
+
+    mass_operator.initialize(*matrix_free, affine_constraints, mass_data);
 
     mass_operator.set_scaling_factor(param.density);
 
@@ -400,7 +360,7 @@ Operator<dim, Number>::setup_operators()
 
     // preconditioner
     mass_preconditioner =
-      std::make_shared<JacobiPreconditioner<MassOperator<dim, dim, Number>>>(mass_operator);
+      std::make_shared<JacobiPreconditioner<Structure::MassOperator<dim, Number>>>(mass_operator);
 
     // initialize solver
     Krylov::SolverDataCG solver_data;
@@ -419,8 +379,9 @@ Operator<dim, Number>::setup_operators()
       solver_data.max_iter             = param.solver_data.max_iter;
     }
 
-    typedef Krylov::SolverCG<MassOperator<dim, dim, Number>, PreconditionerBase<Number>, VectorType>
-      CG;
+    typedef Krylov::
+      SolverCG<Structure::MassOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
+        CG;
     mass_solver = std::make_shared<CG>(mass_operator, *mass_preconditioner, solver_data);
   }
 
@@ -714,125 +675,120 @@ Operator<dim, Number>::prescribe_initial_velocity(VectorType & velocity, double 
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::compute_initial_acceleration(VectorType &       acceleration,
-                                                    VectorType const & displacement,
+Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_acceleration,
+                                                    VectorType const & initial_displacement,
                                                     double const       time) const
 {
-  VectorType rhs(acceleration);
-  rhs = 0.0;
-
-  if(param.large_deformation) // nonlinear case
+  if(field_functions->initial_acceleration.get())
   {
-    // elasticity operator
-    elasticity_operator_nonlinear.set_time(time);
+    // This is necessary if Number == float
+    typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 
-    // NB: we have to deactivate the mass operator term
-    double const scaling_factor_mass =
-      elasticity_operator_nonlinear.get_scaling_factor_mass_operator();
-    elasticity_operator_nonlinear.set_scaling_factor_mass_operator(0.0);
+    VectorTypeDouble src_double;
+    src_double = initial_acceleration;
 
-    // evaluate nonlinear operator including Neumann BCs
-    elasticity_operator_nonlinear.evaluate_nonlinear(rhs, displacement);
-    // shift to right-hand side
-    rhs *= -1.0;
+    field_functions->initial_acceleration->set_time(time);
+    dealii::VectorTools::interpolate(dof_handler,
+                                     *field_functions->initial_acceleration,
+                                     src_double);
 
-    // revert scaling factor to initialized value
-    elasticity_operator_nonlinear.set_scaling_factor_mass_operator(scaling_factor_mass);
-
-    // body forces
-    if(param.body_force)
-    {
-      body_force_operator.evaluate_add(rhs, displacement, time);
-    }
+    initial_acceleration = src_double;
   }
-  else // linear case
+  else
   {
-    // elasticity operator
-    elasticity_operator_linear.set_time(time);
+    VectorType rhs(initial_acceleration);
+    rhs = 0.0;
 
-    // NB: we have to deactivate the mass operator
-    double const scaling_factor_mass =
-      elasticity_operator_linear.get_scaling_factor_mass_operator();
-    elasticity_operator_linear.set_scaling_factor_mass_operator(0.0);
-
-    // compute action of homogeneous operator
-    elasticity_operator_linear.apply(rhs, displacement);
-    // shift to right-hand side
-    rhs *= -1.0;
-
-    // revert scaling factor to initialized value
-    elasticity_operator_linear.set_scaling_factor_mass_operator(scaling_factor_mass);
-
-    // Neumann BCs and inhomogeneous Dirichlet BCs
-    // (has already the correct sign, since rhs_add())
-    elasticity_operator_linear.rhs_add(rhs);
-
-    // body force
-    if(param.body_force)
+    if(param.large_deformation) // nonlinear case
     {
-      // displacement is irrelevant for linear problem, since
-      // pull_back_body_force = false in this case.
-      body_force_operator.evaluate_add(rhs, displacement, time);
-    }
-  }
+      // elasticity operator
 
-  // invert mass operator to get acceleration
-  mass_solver->solve(acceleration, rhs);
+      // NB: we have to deactivate the mass operator term
+      double const scaling_factor_mass =
+        elasticity_operator_nonlinear.get_scaling_factor_mass_operator();
+      elasticity_operator_nonlinear.set_scaling_factor_mass_operator(0.0);
+
+      // evaluate elasticity operator including inhomogeneous Dirichlet/Neumann boundary conditions:
+      // Note that we do not have to set inhomogeneous Dirichlet degrees of freedom explicitly since
+      // the function prescribe_initial_displacement() sets the initial displacement for all dofs
+      // (including Dirichlet dofs) and since the initial condition for the displacements needs to
+      // be consistent with the Dirichlet boundary data g(t=t0) at initial time, i.e. the vector
+      // initial_displacement already contains the correct Dirichlet data.
+      elasticity_operator_nonlinear.set_time(time);
+      elasticity_operator_nonlinear.evaluate_nonlinear(rhs, initial_displacement);
+      // shift to right-hand side
+      rhs *= -1.0;
+
+      // revert scaling factor to initialized value
+      elasticity_operator_nonlinear.set_scaling_factor_mass_operator(scaling_factor_mass);
+
+      // body forces
+      if(param.body_force)
+      {
+        body_force_operator.evaluate_add(rhs, initial_displacement, time);
+      }
+    }
+    else // linear case
+    {
+      // elasticity operator
+      // NB: we have to deactivate the mass operator
+      double const scaling_factor_mass =
+        elasticity_operator_linear.get_scaling_factor_mass_operator();
+      elasticity_operator_linear.set_scaling_factor_mass_operator(0.0);
+
+      // evaluate elasticity operator including inhomogeneous Dirichlet/Neumann boundary conditions:
+      // Note that we do not have to set inhomogeneous Dirichlet degrees of freedom explicitly since
+      // the function prescribe_initial_displacement() sets the initial displacement for all dofs
+      // (including Dirichlet dofs) and since the initial condition for the displacements needs to
+      // be consistent with the Dirichlet boundary data g(t=t0) at initial time, i.e. the vector
+      // initial_displacement already contains the correct Dirichlet data.
+      elasticity_operator_linear.set_time(time);
+      elasticity_operator_linear.evaluate(rhs, initial_displacement);
+      // shift to right-hand side
+      rhs *= -1.0;
+
+      // revert scaling factor to initialized value
+      elasticity_operator_linear.set_scaling_factor_mass_operator(scaling_factor_mass);
+
+      // body force
+      if(param.body_force)
+      {
+        // displacement is irrelevant for linear problem, since
+        // pull_back_body_force = false in this case.
+        body_force_operator.evaluate_add(rhs, initial_displacement, time);
+      }
+    }
+
+    // Shift inhomogeneous part of mass matrix operator (i.e. mass matrix applied to a dof vector
+    // with the initial acceleration in Dirichlet degrees of freedom) to the right-hand side
+    mass_operator.rhs_add(rhs);
+
+    // invert mass operator to get acceleration
+    mass_solver->solve(initial_acceleration, rhs);
+
+    // Set initial acceleration for the Dirichlet degrees of freedom so that the initial
+    // acceleration is also correct on the Dirichlet boundary
+    mass_operator.set_inhomogeneous_boundary_values(initial_acceleration);
+  }
 }
-
-// template<int dim, typename Number>
-// void
-// Operator<dim, Number>::apply_mass_operator(VectorType & dst, VectorType const & src) const
-//{
-//  mass_operator.apply(dst, src);
-//}
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::apply_add_weak_damping_operator(VectorType &       dst,
-                                                       VectorType const & src) const
+Operator<dim, Number>::evaluate_mass_operator(VectorType & dst, VectorType const & src) const
 {
-  VectorType tmp;
-  tmp.reinit(src);
-  tmp.equ(param.weak_damping_coefficient, src);
-  mass_operator.apply_add(dst, tmp);
+  mass_operator.evaluate(dst, src);
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::compute_const_vector(
-  VectorType &       dst,
-  VectorType const & const_vector_acceleration_remainder,
-  VectorType const & const_vector_velocity_remainder) const
+Operator<dim, Number>::apply_add_damping_operator(VectorType &       dst,
+                                                  VectorType const & src) const
 {
-  // add acceleration term remainder to rhs
-  mass_operator.apply(dst, const_vector_acceleration_remainder);
-
-  // add weak damping term to rhs
   if(param.weak_damping_active)
   {
-    this->apply_add_weak_damping_operator(dst, const_vector_velocity_remainder);
+    mass_operator.apply_add(dst, src);
+    dst *= param.weak_damping_coefficient;
   }
-}
-
-template<int dim, typename Number>
-void
-Operator<dim, Number>::compute_rhs_linear(VectorType & dst, double const time) const
-{
-  dst = 0.0;
-
-  // body force
-  if(param.body_force)
-  {
-    // src is irrelevant for linear problem, since
-    // pull_back_body_force = false in this case.
-    VectorType src;
-    body_force_operator.evaluate_add(dst, src, time);
-  }
-
-  // Neumann BCs and inhomogeneous Dirichlet BCs
-  elasticity_operator_linear.set_time(time);
-  elasticity_operator_linear.rhs_add(dst);
 }
 
 template<int dim, typename Number>
@@ -868,7 +824,7 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
   // for constrained degrees of freedom as well, which might not be the case
   // in general, e.g. due to const_vector. Hence, we set the constrained
   // degrees of freedom explicitly to zero.
-  elasticity_operator_nonlinear.set_constrained_values_to_zero(dst);
+  elasticity_operator_nonlinear.set_constrained_dofs_to_zero(dst);
 }
 
 template<int dim, typename Number>
@@ -892,32 +848,50 @@ Operator<dim, Number>::apply_linearized_operator(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::apply_nonlinear_operator(VectorType &       dst,
-                                                VectorType const & src,
-                                                double const       factor,
-                                                double const       time) const
+Operator<dim, Number>::evaluate_elasticity_operator(VectorType &       dst,
+                                                    VectorType const & src,
+                                                    double const       factor,
+                                                    double const       time) const
 {
-  elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
-  elasticity_operator_nonlinear.set_time(time);
-  elasticity_operator_nonlinear.evaluate_nonlinear(dst, src);
+  if(param.large_deformation)
+  {
+    elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
+    elasticity_operator_nonlinear.set_time(time);
+    elasticity_operator_nonlinear.evaluate_nonlinear(dst, src);
+  }
+  else
+  {
+    elasticity_operator_linear.set_scaling_factor_mass_operator(factor);
+    elasticity_operator_linear.set_time(time);
+    elasticity_operator_linear.evaluate(dst, src);
+  }
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::apply_linear_operator(VectorType &       dst,
-                                             VectorType const & src,
-                                             double const       factor,
-                                             double const       time) const
+Operator<dim, Number>::apply_elasticity_operator(VectorType &       dst,
+                                                 VectorType const & src,
+                                                 VectorType const & linearization,
+                                                 double const       factor,
+                                                 double const       time) const
 {
-  elasticity_operator_linear.set_scaling_factor_mass_operator(factor);
-  elasticity_operator_linear.set_time(time);
-  elasticity_operator_linear.vmult(dst, src);
+  if(param.large_deformation)
+  {
+    set_solution_linearization(linearization);
+    apply_linearized_operator(dst, src, factor, time);
+  }
+  else
+  {
+    elasticity_operator_linear.set_scaling_factor_mass_operator(factor);
+    elasticity_operator_linear.set_time(time);
+    elasticity_operator_linear.vmult(dst, src);
+  }
 }
 
 template<int dim, typename Number>
 std::tuple<unsigned int, unsigned int>
 Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
-                                       VectorType const & rhs,
+                                       VectorType const & const_vector,
                                        double const       scaling_factor_mass_from_acceleration,
                                        double const       scaling_factor_mass_from_velocity,
                                        double const       time,
@@ -927,12 +901,13 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   double const scaling_factor_mass =
     compute_scaling_factor_mass(scaling_factor_mass_from_acceleration,
                                 scaling_factor_mass_from_velocity);
-  residual_operator.update(rhs, scaling_factor_mass, time);
+  residual_operator.update(const_vector, scaling_factor_mass, time);
+
   linearized_operator.update(scaling_factor_mass, time);
 
-  // set inhomogeneous Dirichlet values (this is necessary since we use
-  // FEEvaluation::read_dof_values_plain() to evaluate the operator)
-  elasticity_operator_nonlinear.set_constrained_values(sol, time);
+  // set inhomogeneous Dirichlet values in order to evaluate the nonlinear residual correctly
+  elasticity_operator_nonlinear.set_time(time);
+  elasticity_operator_nonlinear.set_inhomogeneous_boundary_values(sol);
 
   // call Newton solver
   Newton::UpdateData update;
@@ -943,16 +918,38 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   // solve nonlinear problem
   auto const iter = newton_solver->solve(sol, update);
 
-  // This step should actually be optional: The constraints have already been set
+  // TODO
+  // This call should not be necessary: The constraints have already been set
   // before the nonlinear solver is called and no contributions to the constrained
   // degrees of freedom should be added in the Newton solver by the linearized solver
   // (because the residual vector forming the rhs of the linearized problem is zero
   // for constrained degrees of freedom, the initial solution of the linearized
   // solver is also zero, and the linearized operator contains values of 1 on the
   // diagonal for constrained degrees of freedom).
-  elasticity_operator_nonlinear.set_constrained_values(sol, time);
+
+  //  elasticity_operator_nonlinear.set_inhomogeneous_boundary_values(sol);
 
   return iter;
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::rhs(VectorType & dst, double const time) const
+{
+  dst = 0.0;
+
+  // body force
+  if(param.body_force)
+  {
+    // src is irrelevant for linear problem, since
+    // pull_back_body_force = false in this case.
+    VectorType src;
+    body_force_operator.evaluate_add(dst, src, time);
+  }
+
+  // Neumann BCs and inhomogeneous Dirichlet BCs
+  elasticity_operator_linear.set_time(time);
+  elasticity_operator_linear.rhs_add(dst);
 }
 
 template<int dim, typename Number>
@@ -973,19 +970,12 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
 
   linear_solver->update_preconditioner(update_preconditioner);
 
-  // Set constrained degrees of freedom of rhs vector according to the prescribed
-  // Dirichlet boundary conditions.
-  VectorType & rhs_mutable = const_cast<VectorType &>(rhs);
-  elasticity_operator_linear.set_constrained_values(rhs_mutable, time);
-
   // solve linear system of equations
-  unsigned int const iterations = linear_solver->solve(sol, rhs_mutable);
+  unsigned int const iterations = linear_solver->solve(sol, rhs);
 
-  // This step should actually be optional: The constrained degrees of freedom of the
-  // rhs vector contain the Dirichlet boundary values and the linear operator contains
-  // values of 1 on the diagonal. Hence, sol should already contain the correct
-  // Dirichlet boundary values for constrained degrees of freedom.
-  elasticity_operator_linear.set_constrained_values(sol, time);
+  // Set Dirichlet degrees of freedom according to Dirichlet boundary condition.
+  elasticity_operator_linear.set_time(time);
+  elasticity_operator_linear.set_inhomogeneous_boundary_values(sol);
 
   return iterations;
 }

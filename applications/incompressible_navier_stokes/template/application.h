@@ -65,9 +65,25 @@ private:
   void
   create_grid() final
   {
-    // create triangulation
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        // create triangulation and perform local/global refinements
+        (void)tria;
+        (void)periodic_face_pairs;
+        (void)global_refinements;
+        (void)vector_local_refinements;
+      };
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->mpi_comm,
+                                                              this->param.grid,
+                                                              this->param.involves_h_multigrid(),
+                                                              lambda_create_triangulation,
+                                                              {} /* no local refinements */);
   }
 
   void

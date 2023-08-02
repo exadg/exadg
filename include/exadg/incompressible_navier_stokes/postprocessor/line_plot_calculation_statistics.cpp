@@ -24,8 +24,8 @@
 
 // ExaDG
 #include <exadg/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.h>
+#include <exadg/postprocessor/solution_interpolation.h>
 #include <exadg/utilities/create_directories.h>
-#include <exadg/vector_tools/interpolate_solution.h>
 
 namespace ExaDG
 {

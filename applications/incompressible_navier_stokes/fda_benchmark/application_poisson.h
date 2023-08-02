@@ -51,7 +51,7 @@ private:
     this->param.IP_factor               = 1.0e0;
 
     // SOLVER
-    this->param.solver                      = Poisson::Solver::CG;
+    this->param.solver                      = Poisson::LinearSolver::CG;
     this->param.solver_data.abs_tol         = 1.e-20;
     this->param.solver_data.rel_tol         = 1.e-10;
     this->param.solver_data.max_iter        = 1e4;
@@ -72,9 +72,25 @@ private:
   void
   create_grid() final
   {
-    FDANozzle::create_grid_and_set_boundary_ids_nozzle(this->grid->triangulation,
-                                                       this->param.grid.n_refine_global,
-                                                       this->grid->periodic_face_pairs);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)vector_local_refinements;
+
+        FDANozzle::create_grid_and_set_boundary_ids_nozzle(tria,
+                                                           global_refinements,
+                                                           periodic_face_pairs);
+      };
+
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->mpi_comm,
+                                                              this->param.grid,
+                                                              this->param.involves_h_multigrid(),
+                                                              lambda_create_triangulation,
+                                                              {} /* no local refinements */);
   }
 
   void

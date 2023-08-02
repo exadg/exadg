@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_
+#ifndef INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_MULTISTEP_BASE_H_
+#define INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_MULTISTEP_BASE_H_
 
 // ExaDG
 #include <exadg/time_integration/bdf_constants.h>
@@ -256,4 +256,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_ */
+#endif /* INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_MULTISTEP_BASE_H_ */

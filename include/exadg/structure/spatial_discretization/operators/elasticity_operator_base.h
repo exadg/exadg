@@ -70,6 +70,7 @@ public:
 
 protected:
   typedef OperatorBase<dim, Number, dim> Base;
+  typedef typename Base::IntegratorCell  IntegratorCell;
   typedef typename Base::VectorType      VectorType;
   typedef typename Base::IntegratorFace  IntegratorFace;
 
@@ -101,11 +102,11 @@ public:
   get_scaling_factor_mass_operator() const;
 
   void
-  set_constrained_values(VectorType & dst, double const time) const override;
+  set_inhomogeneous_boundary_values(VectorType & dst) const final;
 
 protected:
   void
-  reinit_cell(unsigned int const cell) const override;
+  reinit_cell_derived(IntegratorCell & integrator, unsigned int const cell) const override;
 
   OperatorData<dim> operator_data;
 

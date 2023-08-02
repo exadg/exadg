@@ -40,7 +40,7 @@
 
 // ExaDG
 #include <exadg/postprocessor/time_control.h>
-#include <exadg/utilities/extract_component_from_tensors.h>
+#include <exadg/utilities/tensor_utilities.h>
 
 
 namespace ExaDG

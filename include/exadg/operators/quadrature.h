@@ -2,7 +2,7 @@
  *
  *  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
  *
- *  Copyright (C) 2021 by the ExaDG authors
+ *  Copyright (C) 2023 by the ExaDG authors
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,23 +19,39 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_DECLARE_GET_APPLICATION_PRECURSOR_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_DECLARE_GET_APPLICATION_PRECURSOR_H_
+#ifndef INCLUDE_EXADG_OPERATORS_QUADRATURE_H_
+#define INCLUDE_EXADG_OPERATORS_QUADRATURE_H_
 
-#include <exadg/incompressible_navier_stokes/user_interface/application_base.h>
+// deal.II
+#include <deal.II/base/quadrature_lib.h>
+
+// ExaDG
+#include <exadg/grid/grid_data.h>
+#include <exadg/utilities/exceptions.h>
 
 namespace ExaDG
 {
-namespace IncNS
+template<int dim>
+std::shared_ptr<dealii::Quadrature<dim>>
+create_quadrature(ElementType const & element_type, unsigned int const n_q_points_1d)
 {
-template<int dim, typename Number>
-std::shared_ptr<ApplicationBasePrecursor<dim, Number>>
-get_application(std::string input_file, MPI_Comm const & comm);
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature;
+  if(element_type == ElementType::Hypercube)
+  {
+    quadrature = std::make_shared<dealii::QGauss<dim>>(n_q_points_1d);
+  }
+  else if(element_type == ElementType::Simplex)
+  {
+    quadrature = std::make_shared<dealii::QGaussSimplex<dim>>(n_q_points_1d);
+  }
+  else
+  {
+    AssertThrow(false, ExcNotImplemented());
+  }
 
-} // namespace IncNS
+  return quadrature;
+}
+
 } // namespace ExaDG
 
-
-
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_DECLARE_GET_APPLICATION_PRECURSOR_H_ \
-        */
+#endif /* INCLUDE_EXADG_OPERATORS_QUADRATURE_H_ */

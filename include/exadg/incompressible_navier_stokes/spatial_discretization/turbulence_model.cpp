@@ -20,6 +20,7 @@
  */
 
 #include <exadg/incompressible_navier_stokes/spatial_discretization/turbulence_model.h>
+#include <exadg/operators/quadrature.h>
 
 namespace ExaDG
 {
@@ -236,13 +237,16 @@ TurbulenceModel<dim, Number>::calculate_filter_width(dealii::Mapping<dim> const 
 
   filter_width_vector.resize(n_cells);
 
-  dealii::QGauss<dim> quadrature(this->viscous_kernel->get_degree() + 1);
+  dealii::DoFHandler<dim> const & dof_handler =
+    this->matrix_free->get_dof_handler(this->dof_index_velocity);
+  ElementType const element_type = get_element_type(dof_handler.get_triangulation());
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature =
+    create_quadrature<dim>(element_type, this->viscous_kernel->get_degree() + 1);
 
-  dealii::FEValues<dim> fe_values(
-    mapping,
-    this->matrix_free->get_dof_handler(this->dof_index_velocity).get_fe(),
-    quadrature,
-    dealii::update_JxW_values);
+  dealii::FEValues<dim> fe_values(mapping,
+                                  dof_handler.get_fe(),
+                                  *quadrature,
+                                  dealii::update_JxW_values);
 
   // loop over all cells
   for(unsigned int i = 0; i < n_cells; ++i)
@@ -255,7 +259,7 @@ TurbulenceModel<dim, Number>::calculate_filter_width(dealii::Mapping<dim> const 
 
       // calculate cell volume
       double volume = 0.0;
-      for(unsigned int q = 0; q < quadrature.size(); ++q)
+      for(unsigned int q = 0; q < quadrature->size(); ++q)
       {
         volume += fe_values.JxW(q);
       }

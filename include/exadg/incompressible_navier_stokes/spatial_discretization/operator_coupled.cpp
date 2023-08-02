@@ -19,6 +19,8 @@
  *  ______________________________________________________________________
  */
 
+#include <deal.II/numerics/vector_tools_mean_value.h>
+
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_momentum.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
 #include <exadg/poisson/preconditioners/multigrid_preconditioner.h>
@@ -1219,7 +1221,7 @@ OperatorCoupled<dim, Number>::apply_inverse_negative_laplace_operator(VectorType
 
       if(laplace_operator->operator_is_singular())
       {
-        set_zero_mean_value(vector_zero_mean);
+        dealii::VectorTools::subtract_mean_value(vector_zero_mean);
       }
 
       pointer_to_src = &vector_zero_mean;

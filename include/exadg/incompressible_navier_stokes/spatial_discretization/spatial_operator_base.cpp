@@ -26,10 +26,12 @@
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_projection.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
+#include <exadg/operators/finite_element.h>
+#include <exadg/operators/grid_related_time_step_restrictions.h>
+#include <exadg/operators/quadrature.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
-#include <exadg/time_integration/time_step_calculation.h>
 #include <exadg/utilities/exceptions.h>
 
 namespace ExaDG
@@ -146,30 +148,17 @@ SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
   matrix_free_data.insert_constraint(&constraint_u_scalar, field + dof_index_u_scalar);
 
   // quadrature
-  if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
-  {
-    matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree_u + 1), field + quad_index_u);
-    matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.get_degree_p(param.degree_u) + 1),
-                                       field + quad_index_p);
-    matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree_u + (param.degree_u + 2) / 2),
-                                       field + quad_index_u_nonlinear);
-  }
-  else if(this->grid->triangulation->all_reference_cells_are_simplex())
-  {
-    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(param.degree_u + 1),
-                                       field + quad_index_u);
-    matrix_free_data.insert_quadrature(
-      dealii::QGaussSimplex<dim>(param.get_degree_p(param.degree_u) + 1), field + quad_index_p);
-    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(param.degree_u +
-                                                                  (param.degree_u + 2) / 2),
-                                       field + quad_index_u_nonlinear);
-  }
-  else
-  {
-    AssertThrow(false, ExcNotImplemented());
-  }
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature_u =
+    create_quadrature<dim>(param.grid.element_type, param.degree_u + 1);
+  matrix_free_data.insert_quadrature(*quadrature_u, field + quad_index_u);
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature_p =
+    create_quadrature<dim>(param.grid.element_type, param.get_degree_p(param.degree_u) + 1);
+  matrix_free_data.insert_quadrature(*quadrature_p, field + quad_index_p);
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature_u_overintegration =
+    create_quadrature<dim>(param.grid.element_type, param.degree_u + (param.degree_u + 2) / 2);
+  matrix_free_data.insert_quadrature(*quadrature_u_overintegration, field + quad_index_u_nonlinear);
 
-  // TODO create those quadrature rules only when needed
+  // TODO create these quadrature rules only when needed
   matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree_u + 1),
                                      field + quad_index_u_gauss_lobatto);
   matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.get_degree_p(param.degree_u) +
@@ -267,41 +256,34 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::distribute_dofs()
 {
-  if(param.grid.element_type == ElementType::Hypercube)
+  fe_p = create_finite_element<dim>(param.grid.element_type,
+                                    true,
+                                    1,
+                                    param.get_degree_p(param.degree_u));
+
+  fe_u_scalar = create_finite_element<dim>(param.grid.element_type, true, 1, param.degree_u);
+
+  if(param.spatial_discretization == SpatialDiscretization::L2)
   {
-    fe_p        = std::make_shared<dealii::FE_DGQ<dim>>(param.get_degree_p(param.degree_u));
-    fe_u_scalar = std::make_shared<dealii::FE_DGQ<dim>>(param.degree_u);
-    if(param.spatial_discretization == SpatialDiscretization::L2)
-    {
-      fe_u = std::make_shared<dealii::FESystem<dim>>(dealii::FE_DGQ<dim>(param.degree_u), dim);
-    }
-    else if(param.spatial_discretization == SpatialDiscretization::HDIV)
-    {
-      // The constructor of FE_RaviartThomas takes the degree in tangential direction as an
-      // argument.
-      fe_u = std::make_shared<dealii::FE_RaviartThomasNodal<dim>>(param.degree_u - 1);
-    }
-    else
-      AssertThrow(false, dealii::ExcMessage("FE not implemented."));
+    fe_u = create_finite_element<dim>(param.grid.element_type, true, dim, param.degree_u);
   }
-  else if(param.grid.element_type == ElementType::Simplex)
+  else if(param.spatial_discretization == SpatialDiscretization::HDIV)
   {
-    if(param.spatial_discretization == SpatialDiscretization::L2)
-    {
-      fe_u =
-        std::make_shared<dealii::FESystem<dim>>(dealii::FE_SimplexDGP<dim>(param.degree_u), dim);
-      fe_p = std::make_shared<dealii::FE_SimplexDGP<dim>>(param.get_degree_p(param.degree_u));
-      fe_u_scalar = std::make_shared<dealii::FE_SimplexDGP<dim>>(param.degree_u);
-    }
-    else
-      AssertThrow(
-        false,
-        dealii::ExcMessage(
-          "The specified finite element type is currently not implemented for ElementType::Simplex."));
+    AssertThrow(
+      param.grid.element_type == ElementType::Hypercube,
+      dealii::ExcMessage(
+        "SpatialDiscretization::HDIV is currently only implemented for hypercube elements. "
+        "You might want to change the element type of the grid, or the function space, "
+        "or implement HDIV for element types other than hypercube."));
+
+    // The constructor of FE_RaviartThomas takes the degree in tangential direction as an
+    // argument.
+    fe_u = std::make_shared<dealii::FE_RaviartThomasNodal<dim>>(param.degree_u - 1);
   }
   else
-    AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
-
+  {
+    AssertThrow(false, dealii::ExcMessage("FE not implemented."));
+  }
 
   // enumerate degrees of freedom
   dof_handler_u.distribute_dofs(*fe_u);
@@ -351,10 +333,6 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
     }
   }
 
-  unsigned int ndofs_per_cell_velocity = fe_u->n_dofs_per_cell();
-
-  unsigned int const ndofs_per_cell_pressure = fe_p->n_dofs_per_cell();
-
   pcout << "Velocity:" << std::endl;
   if(param.spatial_discretization == SpatialDiscretization::L2)
   {
@@ -369,7 +347,7 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
   {
     AssertThrow(false, dealii::ExcMessage("FE not implemented."));
   }
-  print_parameter(pcout, "number of dofs per cell", ndofs_per_cell_velocity);
+  print_parameter(pcout, "number of dofs per cell", fe_u->n_dofs_per_cell());
   print_parameter(pcout, "number of dofs (total)", dof_handler_u.n_dofs());
   if(param.spatial_discretization == SpatialDiscretization::HDIV)
   {
@@ -379,13 +357,13 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
 
   pcout << "Pressure:" << std::endl;
   print_parameter(pcout, "degree of 1D polynomials", param.get_degree_p(param.degree_u));
-  print_parameter(pcout, "number of dofs per cell", ndofs_per_cell_pressure);
+  print_parameter(pcout, "number of dofs per cell", fe_p->n_dofs_per_cell());
   print_parameter(pcout, "number of dofs (total)", dof_handler_p.n_dofs());
 
   pcout << "Velocity and pressure:" << std::endl;
   print_parameter(pcout,
                   "number of dofs per cell",
-                  ndofs_per_cell_velocity + ndofs_per_cell_pressure);
+                  fe_u->n_dofs_per_cell() + fe_p->n_dofs_per_cell());
   print_parameter(pcout, "number of dofs (total)", get_number_of_dofs());
 
   pcout << std::flush;
@@ -1146,7 +1124,7 @@ SpatialOperatorBase<dim, Number>::adjust_pressure_level_if_undefined(VectorType 
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
     {
-      dealii::LinearAlgebra::set_zero_mean_value(pressure);
+      dealii::VectorTools::subtract_mean_value(pressure);
     }
     // If an analytical solution is available: shift pressure so that the numerical pressure
     // solution has a mean value identical to the "exact pressure solution" obtained by

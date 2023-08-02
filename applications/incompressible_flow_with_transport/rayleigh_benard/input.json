@@ -4,15 +4,25 @@
         "Dim": "2",
         "IsTest": "false"
     },
-    "SpatialResolution": {
-        "Degree": "3",
-        "RefineSpace": "4"
+    "Fluid": {
+        "SpatialResolution": {
+            "Degree": "3",
+            "RefineSpace": "4"
+        },
+        "Output": {
+            "OutputDirectory": "output/rayleigh_benard/",
+            "OutputName": "fluid",
+            "WriteOutput": "false"
+        }
     },
-    "Application": {
-    },
-    "Output": {
-        "OutputDirectory": "output/rayleigh_benard/",
-        "OutputName": "test",
-        "WriteOutput": "false"
+    "Scalar0": {
+        "SpatialResolution": {
+            "Degree": "3"
+        },
+        "Output": {
+            "OutputDirectory": "output/rayleigh_benard/",
+            "OutputName": "scalar0",
+            "WriteOutput": "false"
+        }
     }
 }

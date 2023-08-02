@@ -143,7 +143,7 @@ public:
       // calculate right-hand side vector
       VectorType rhs;
       pde_operator->initialize_dof_vector(rhs);
-      pde_operator->compute_rhs_linear(rhs, time);
+      pde_operator->rhs(rhs, time);
 
       auto const iter = pde_operator->solve_linear(displacement,
                                                    rhs,

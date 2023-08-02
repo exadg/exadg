@@ -71,10 +71,9 @@ SET(TARGET_SRC
      include/exadg/time_integration/am_constants.cpp
      include/exadg/time_integration/extrapolation_constants.cpp
      include/exadg/time_integration/time_int_base.cpp
-     include/exadg/time_integration/time_int_bdf_base.cpp
+     include/exadg/time_integration/time_int_multistep_base.cpp
      include/exadg/time_integration/time_int_explicit_runge_kutta_base.cpp
      include/exadg/time_integration/time_int_gen_alpha_base.cpp
-     include/exadg/grid/grid.cpp
      include/exadg/functions_and_boundary_conditions/container_interface_data.cpp
      include/exadg/functions_and_boundary_conditions/linear_interpolation.cpp
      include/exadg/functions_and_boundary_conditions/interface_coupling.cpp
@@ -156,7 +155,7 @@ SET(TARGET_SRC
      include/exadg/incompressible_navier_stokes/postprocessor/flow_rate_calculator.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/postprocessor.cpp
      include/exadg/incompressible_navier_stokes/driver.cpp
-     include/exadg/incompressible_navier_stokes/driver_precursor.cpp
+     include/exadg/incompressible_navier_stokes/precursor/driver.cpp
      # incompressible flow with transport
      include/exadg/incompressible_flow_with_transport/driver.cpp
      # compressible Navier-Stokes equations

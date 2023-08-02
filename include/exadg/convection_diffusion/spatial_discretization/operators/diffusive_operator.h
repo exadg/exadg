@@ -24,7 +24,6 @@
 
 #include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/convection_diffusion/user_interface/parameters.h>
-#include <exadg/grid/grid_utilities.h>
 #include <exadg/operators/interior_penalty_parameter.h>
 #include <exadg/operators/operator_base.h>
 
@@ -125,7 +124,7 @@ public:
                    integrator_p.read_cell_data(array_penalty_parameter)) *
           IP::get_penalty_factor<dim, Number>(
             degree,
-            GridUtilities::get_element_type(
+            get_element_type(
               integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
             data.IP_factor);
   }
@@ -136,7 +135,7 @@ public:
     tau = integrator_m.read_cell_data(array_penalty_parameter) *
           IP::get_penalty_factor<dim, Number>(
             degree,
-            GridUtilities::get_element_type(
+            get_element_type(
               integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
             data.IP_factor);
   }
@@ -153,7 +152,7 @@ public:
                      integrator_p.read_cell_data(array_penalty_parameter)) *
             IP::get_penalty_factor<dim, Number>(
               degree,
-              GridUtilities::get_element_type(
+              get_element_type(
                 integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
               data.IP_factor);
     }
@@ -162,7 +161,7 @@ public:
       tau = integrator_m.read_cell_data(array_penalty_parameter) *
             IP::get_penalty_factor<dim, Number>(
               degree,
-              GridUtilities::get_element_type(
+              get_element_type(
                 integrator_m.get_matrix_free().get_dof_handler(dof_index).get_triangulation()),
               data.IP_factor);
     }
@@ -252,15 +251,19 @@ public:
 
 private:
   void
-  reinit_face(unsigned int const face) const final;
+  reinit_face_derived(IntegratorFace &   integrator_m,
+                      IntegratorFace &   integrator_p,
+                      unsigned int const face) const final;
 
   void
-  reinit_boundary_face(unsigned int const face) const final;
+  reinit_boundary_face_derived(IntegratorFace & integrator_m, unsigned int const face) const final;
 
   void
-  reinit_face_cell_based(unsigned int const               cell,
-                         unsigned int const               face,
-                         dealii::types::boundary_id const boundary_id) const final;
+  reinit_face_cell_based_derived(IntegratorFace &                 integrator_m,
+                                 IntegratorFace &                 integrator_p,
+                                 unsigned int const               cell,
+                                 unsigned int const               face,
+                                 dealii::types::boundary_id const boundary_id) const final;
 
   void
   do_cell_integral(IntegratorCell & integrator) const final;

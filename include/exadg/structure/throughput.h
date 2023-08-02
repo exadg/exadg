@@ -35,10 +35,10 @@
 #include <exadg/structure/driver.h>
 
 // utilities
+#include <exadg/operators/hypercube_resolution_parameters.h>
+#include <exadg/operators/throughput_parameters.h>
 #include <exadg/utilities/enum_patterns.h>
 #include <exadg/utilities/general_parameters.h>
-#include <exadg/utilities/hypercube_resolution_parameters.h>
-#include <exadg/utilities/throughput_parameters.h>
 
 // application
 #include <exadg/structure/user_interface/declare_get_application.h>
@@ -56,7 +56,7 @@ create_input_file(std::string const & input_file)
   HypercubeResolutionParameters resolution;
   resolution.add_parameters(prm);
 
-  ThroughputParameters throughput;
+  ThroughputParameters<ExaDG::Structure::OperatorType> throughput;
   throughput.add_parameters(prm);
 
   try
@@ -78,13 +78,13 @@ create_input_file(std::string const & input_file)
 
 template<int dim, typename Number>
 void
-run(ThroughputParameters const & throughput,
-    std::string const &          input_file,
-    unsigned int const           degree,
-    unsigned int const           refine_space,
-    unsigned int const           n_cells_1d,
-    MPI_Comm const &             mpi_comm,
-    bool const                   is_test)
+run(ThroughputParameters<ExaDG::Structure::OperatorType> const & throughput,
+    std::string const &                                          input_file,
+    unsigned int const                                           degree,
+    unsigned int const                                           refine_space,
+    unsigned int const                                           n_cells_1d,
+    MPI_Comm const &                                             mpi_comm,
+    bool const                                                   is_test)
 {
   std::shared_ptr<Structure::ApplicationBase<dim, Number>> application =
     Structure::get_application<dim, Number>(input_file, mpi_comm);
@@ -143,12 +143,12 @@ main(int argc, char ** argv)
     }
   }
 
-  ExaDG::GeneralParameters             general(input_file);
-  ExaDG::HypercubeResolutionParameters resolution(input_file, general.dim);
-  ExaDG::ThroughputParameters          throughput(input_file);
+  ExaDG::GeneralParameters                                    general(input_file);
+  ExaDG::HypercubeResolutionParameters                        resolution(input_file, general.dim);
+  ExaDG::ThroughputParameters<ExaDG::Structure::OperatorType> throughput(input_file);
 
   // fill resolution vector depending on the operator_type
-  resolution.fill_resolution_vector(&ExaDG::Structure::get_dofs_per_element, input_file);
+  resolution.fill_resolution_vector(&ExaDG::Structure::get_dofs_per_element);
 
   // loop over resolutions vector and run simulations
   for(auto iter = resolution.resolutions.begin(); iter != resolution.resolutions.end(); ++iter)
@@ -158,20 +158,30 @@ main(int argc, char ** argv)
     unsigned int const n_cells_1d   = std::get<2>(*iter);
 
     if(general.dim == 2 and general.precision == "float")
+    {
       ExaDG::run<2, float>(
         throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
+    }
     else if(general.dim == 2 and general.precision == "double")
+    {
       ExaDG::run<2, double>(
         throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
+    }
     else if(general.dim == 3 and general.precision == "float")
+    {
       ExaDG::run<3, float>(
         throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
+    }
     else if(general.dim == 3 and general.precision == "double")
+    {
       ExaDG::run<3, double>(
         throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
+    }
     else
+    {
       AssertThrow(false,
                   dealii::ExcMessage("Only dim = 2|3 and precision = float|double implemented."));
+    }
   }
 
   if(not(general.is_test))

@@ -31,6 +31,7 @@
 #include <exadg/grid/grid_utilities.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/matrix_free/categorization.h>
+#include <exadg/operators/finite_element.h>
 #include <exadg/solvers_and_preconditioners/multigrid/constraints.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_algorithm.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h>
@@ -74,7 +75,7 @@ MultigridPreconditionerBase<dim, Number>::initialize(
   this->initialize_mapping();
 
   this->initialize_dof_handler_and_constraints(operator_is_singular,
-                                               fe,
+                                               fe.n_components(),
                                                dirichlet_bc,
                                                dirichlet_bc_component_mask);
 
@@ -360,13 +361,13 @@ MultigridPreconditionerBase<dim, Number>::get_number_of_levels() const
 template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_dof_handler_and_constraints(
-  bool const                         operator_is_singular,
-  dealii::FiniteElement<dim> const & fe,
-  Map_DBC const &                    dirichlet_bc,
-  Map_DBC_ComponentMask const &      dirichlet_bc_component_mask)
+  bool const                    operator_is_singular,
+  unsigned int const            n_components,
+  Map_DBC const &               dirichlet_bc,
+  Map_DBC_ComponentMask const & dirichlet_bc_component_mask)
 {
   this->do_initialize_dof_handler_and_constraints(operator_is_singular,
-                                                  fe,
+                                                  n_components,
                                                   dirichlet_bc,
                                                   dirichlet_bc_component_mask,
                                                   this->dof_handlers,
@@ -376,10 +377,10 @@ MultigridPreconditionerBase<dim, Number>::initialize_dof_handler_and_constraints
 template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constraints(
-  bool                               is_singular,
-  dealii::FiniteElement<dim> const & fe,
-  Map_DBC const &                    dirichlet_bc,
-  Map_DBC_ComponentMask const &      dirichlet_bc_component_mask,
+  bool                          is_singular,
+  unsigned int const            n_components,
+  Map_DBC const &               dirichlet_bc,
+  Map_DBC_ComponentMask const & dirichlet_bc_component_mask,
   dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> &              dof_handlers,
   dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> & constraints)
 {
@@ -398,10 +399,13 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
     for_all_levels([&](unsigned int const l) {
       auto const & level = level_info[l];
 
-      std::shared_ptr<dealii::DoFHandler<dim>> dof_handler;
+      std::shared_ptr<dealii::FiniteElement<dim>> fe = create_finite_element<dim>(
+        get_element_type(*grid->triangulation), level.is_dg(), n_components, level.degree());
+
+      std::shared_ptr<dealii::Triangulation<dim> const> triangulation;
       if(level.h_level() == level_info.back().h_level()) // fine-level triangulation
       {
-        dof_handler = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
+        triangulation = grid->triangulation;
       }
       else
       {
@@ -409,40 +413,13 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
                     dealii::ExcMessage(
                       "The vector of coarse_triangulations does not have correct size."));
 
-        dof_handler = std::make_shared<dealii::DoFHandler<dim>>(
-          *(grid->coarse_triangulations[level.h_level()]));
+        triangulation = grid->coarse_triangulations[level.h_level()];
       }
 
-      if(grid->triangulation->all_reference_cells_are_hyper_cube())
-      {
-        if(level.is_dg())
-        {
-          dof_handler->distribute_dofs(
-            dealii::FESystem<dim>(dealii::FE_DGQ<dim>(level.degree()), fe.n_components()));
-        }
-        else
-        {
-          dof_handler->distribute_dofs(
-            dealii::FESystem<dim>(dealii::FE_Q<dim>(level.degree()), fe.n_components()));
-        }
-      }
-      else if(grid->triangulation->all_reference_cells_are_simplex())
-      {
-        if(level.is_dg())
-        {
-          dof_handler->distribute_dofs(
-            dealii::FESystem<dim>(dealii::FE_SimplexDGP<dim>(level.degree()), fe.n_components()));
-        }
-        else
-        {
-          dof_handler->distribute_dofs(
-            dealii::FESystem<dim>(dealii::FE_SimplexP<dim>(level.degree()), fe.n_components()));
-        }
-      }
-      else
-      {
-        AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
-      }
+      std::shared_ptr<dealii::DoFHandler<dim>> dof_handler =
+        std::make_shared<dealii::DoFHandler<dim>>(*triangulation);
+
+      dof_handler->distribute_dofs(*fe);
 
       dof_handlers[l] = dof_handler;
 
@@ -466,19 +443,23 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
                       "The vector of coarse_triangulations does not have correct size."));
 
         std::vector<
-          dealii::GridTools::PeriodicFacePair<typename dealii::DoFHandler<dim>::cell_iterator>>
-          periodic_faces_dof;
-
+          dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>>
+          periodic_faces;
         if(level.h_level() == level_info.back().h_level()) // fine-level triangulation
         {
-          periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
-            grid->periodic_face_pairs, *dof_handler);
+          periodic_faces = grid->periodic_face_pairs;
         }
         else
         {
-          periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
-            grid->coarse_periodic_face_pairs[level.h_level()], *dof_handler);
+          periodic_faces = grid->coarse_periodic_face_pairs[level.h_level()];
         }
+
+        // change type of dealii cell iterator
+        std::vector<
+          dealii::GridTools::PeriodicFacePair<typename dealii::DoFHandler<dim>::cell_iterator>>
+          periodic_faces_dof =
+            GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(periodic_faces,
+                                                                              *dof_handler);
 
         dealii::DoFTools::make_periodicity_constraints<dim, dim, MultigridNumber>(
           periodic_faces_dof, *affine_constraints_own);
@@ -515,8 +496,6 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
                 dealii::ExcMessage(
                   "This implementation only allows globally refined hypercube meshes."));
 
-    unsigned int const n_components = fe.n_components();
-
     // temporal storage for new DoFHandlers and constraints on each p-level
     std::map<MGDoFHandlerIdentifier, std::shared_ptr<dealii::DoFHandler<dim> const>>
       map_dofhandlers;
@@ -526,20 +505,15 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
     // setup dof-handler and constrained dofs for each p-level
     for(auto level : p_levels)
     {
-      // setup dof_handler
+      // create finite element
+      std::shared_ptr<dealii::FiniteElement<dim>> fe =
+        create_finite_element<dim>(ElementType::Hypercube, level.is_dg, n_components, level.degree);
+
+      // create dof handler
       auto dof_handler = new dealii::DoFHandler<dim>(*grid->triangulation);
 
       // distribute dofs
-      if(level.is_dg)
-      {
-        dof_handler->distribute_dofs(
-          dealii::FESystem<dim>(dealii::FE_DGQ<dim>(level.degree), n_components));
-      }
-      else
-      {
-        dof_handler->distribute_dofs(
-          dealii::FESystem<dim>(dealii::FE_Q<dim>(level.degree), n_components));
-      }
+      dof_handler->distribute_dofs(*fe);
 
       // distribute MG dofs
       dof_handler->distribute_mg_dofs();

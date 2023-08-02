@@ -26,9 +26,9 @@
 
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
+#include <exadg/operators/throughput_parameters.h>
 #include <exadg/structure/driver.h>
 #include <exadg/utilities/print_solver_results.h>
-#include <exadg/utilities/throughput_parameters.h>
 
 namespace ExaDG
 {
@@ -227,42 +227,31 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 
 template<int dim, typename Number>
 std::tuple<unsigned int, dealii::types::global_dof_index, double>
-Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
-                                    unsigned int const  n_repetitions_inner,
-                                    unsigned int const  n_repetitions_outer) const
+Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
+                                    unsigned int const   n_repetitions_inner,
+                                    unsigned int const   n_repetitions_outer) const
 {
   pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
-
-  OperatorType operator_type;
-  Utilities::string_to_enum(operator_type, operator_type_string);
 
   dealii::LinearAlgebra::distributed::Vector<Number> dst, src, linearization;
   pde_operator->initialize_dof_vector(src);
   pde_operator->initialize_dof_vector(dst);
   src = 1.0;
 
-  if(application->get_parameters().large_deformation and operator_type == OperatorType::Linearized)
+  if(application->get_parameters().large_deformation and operator_type == OperatorType::Apply)
   {
     pde_operator->initialize_dof_vector(linearization);
     linearization = 1.0;
   }
 
   const std::function<void(void)> operator_evaluation = [&](void) {
-    if(application->get_parameters().large_deformation)
+    if(operator_type == OperatorType::Evaluate)
     {
-      if(operator_type == OperatorType::Nonlinear)
-      {
-        pde_operator->apply_nonlinear_operator(dst, src, 1.0, 0.0);
-      }
-      else if(operator_type == OperatorType::Linearized)
-      {
-        pde_operator->set_solution_linearization(linearization);
-        pde_operator->apply_linearized_operator(dst, src, 1.0, 0.0);
-      }
+      pde_operator->evaluate_elasticity_operator(dst, src, 1.0, 0.0);
     }
-    else
+    else if(operator_type == OperatorType::Apply)
     {
-      pde_operator->apply_linear_operator(dst, src, 1.0, 0.0);
+      pde_operator->apply_elasticity_operator(dst, src, linearization, 1.0, 0.0);
     }
   };
 

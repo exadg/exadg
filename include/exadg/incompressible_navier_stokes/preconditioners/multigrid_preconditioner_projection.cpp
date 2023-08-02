@@ -19,8 +19,10 @@
  *  ______________________________________________________________________
  */
 
+#include <exadg/grid/grid_data.h>
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_projection.h>
 #include <exadg/operators/mass_kernel.h>
+#include <exadg/operators/quadrature.h>
 
 namespace ExaDG
 {
@@ -144,23 +146,11 @@ MultigridPreconditionerProjection<dim, Number>::fill_matrix_free_data(
 
   matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "std_dof_handler");
   matrix_free_data.insert_constraint(&(*this->constraints[level]), "std_dof_handler");
-  if(this->dof_handlers[level]->get_triangulation().all_reference_cells_are_hyper_cube())
-  {
-    matrix_free_data.insert_quadrature(dealii::QGauss<1>(this->level_info[level].degree() + 1),
-                                       "std_quadrature");
-  }
-  else if(this->dof_handlers[level]->get_triangulation().all_reference_cells_are_simplex())
-  {
-    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(this->level_info[level].degree() +
-                                                                  1),
-                                       "std_quadrature");
-  }
-  else
-  {
-    AssertThrow(false,
-                dealii::ExcMessage("Only pure hypercube or pure simplex meshes are implemented for "
-                                   "IncNS::MultigridPreconditionerProjection."));
-  }
+
+  ElementType const element_type = get_element_type(*this->grid->triangulation);
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature =
+    create_quadrature<dim>(element_type, this->level_info[level].degree() + 1);
+  matrix_free_data.insert_quadrature(*quadrature, "std_quadrature");
 }
 
 template<int dim, typename Number>

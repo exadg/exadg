@@ -67,6 +67,54 @@ private:
   double const end_time;
 };
 
+// TODO: only the time factor is different compared to the above function -> refactor and unify the
+// code
+template<int dim>
+class AccelerationDBC : public dealii::Function<dim>
+{
+public:
+  AccelerationDBC(double const displacement,
+                  bool const   quasistatic_solver,
+                  bool const   unsteady,
+                  double const end_time)
+    : dealii::Function<dim>(dim),
+      displacement(displacement),
+      quasistatic(quasistatic_solver),
+      unsteady(unsteady),
+      end_time(end_time)
+  {
+  }
+
+  double
+  value(dealii::Point<dim> const & p, unsigned int const c) const final
+  {
+    (void)p;
+
+    double factor = 1.0;
+    if(quasistatic)
+      factor *= this->get_time();
+
+    if(unsteady)
+    {
+      factor =
+        2 * std::pow(2.0 * dealii::numbers::PI / end_time, 2.0) *
+        (1.0 -
+         2.0 * std::pow(std::sin(this->get_time() * 2.0 * dealii::numbers::PI / end_time), 2.0));
+    }
+
+    if(c == 0)
+      return displacement * factor;
+    else
+      return 0.0;
+  }
+
+private:
+  double const displacement;
+  bool const   quasistatic;
+  bool const   unsteady;
+  double const end_time;
+};
+
 template<int dim>
 class VolumeForce : public dealii::Function<dim>
 {
@@ -373,6 +421,7 @@ private:
       };
 
     GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->mpi_comm,
                                                               this->param.grid,
                                                               this->param.involves_h_multigrid(),
                                                               lambda_create_triangulation,
@@ -398,6 +447,9 @@ private:
     }
     this->boundary_descriptor->dirichlet_bc.insert(
       pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
+
     this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, mask_left));
 
     // right face: Dirichlet or Neumann BC
@@ -418,6 +470,9 @@ private:
       bool const unsteady = (this->param.problem_type == ProblemType::Unsteady);
       this->boundary_descriptor->dirichlet_bc.insert(
         pair(2, new DisplacementDBC<dim>(displacement, quasistatic_solver, unsteady, end_time)));
+      this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+        pair(2, new AccelerationDBC<dim>(displacement, quasistatic_solver, unsteady, end_time)));
+
       this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(2, mask_right));
     }
     else if(boundary_type == BoundaryType::Neumann)
@@ -448,6 +503,9 @@ private:
       {
         this->boundary_descriptor->dirichlet_bc.insert(
           pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
+        this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+          pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
+
         std::vector<bool> mask_y = {false, true};
         this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(3, mask_y));
       }
@@ -455,11 +513,17 @@ private:
       {
         this->boundary_descriptor->dirichlet_bc.insert(
           pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
+        this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+          pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
+
         std::vector<bool> mask_y = {false, true, false};
         this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(3, mask_y));
 
         this->boundary_descriptor->dirichlet_bc.insert(
           pair(4, new dealii::Functions::ZeroFunction<dim>(dim)));
+        this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+          pair(4, new dealii::Functions::ZeroFunction<dim>(dim)));
+
         std::vector<bool> mask_z = {false, false, true};
         this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(4, mask_z));
       }

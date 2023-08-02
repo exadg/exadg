@@ -32,6 +32,8 @@ namespace ExaDG
 {
 namespace Poisson
 {
+namespace OversetGrids
+{
 /**
  * This function determines which faces of the dst triangulation are inside the src-triangulation.
  * A face is considered inside, if all vertices of the face are inside. Then, the boundary ID is
@@ -111,10 +113,159 @@ set_boundary_ids_overlap_region(dealii::Triangulation<dim> const & tria_dst,
 }
 
 template<int dim, int n_components, typename Number>
-class ApplicationOversetGridsBase
+class Domain
 {
 public:
-  ApplicationOversetGridsBase(std::string parameter_file, MPI_Comm const & comm)
+  static unsigned int const rank =
+    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : dealii::numbers::invalid_unsigned_int);
+
+  typedef typename std::vector<
+    dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>>
+    PeriodicFaces;
+
+  virtual void
+  add_parameters(dealii::ParameterHandler & prm, std::vector<std::string> const & subsection_names)
+  {
+    for(auto & name : subsection_names)
+    {
+      prm.enter_subsection(name);
+    }
+
+    resolution.add_parameters(prm);
+    output_parameters.add_parameters(prm);
+
+    for(auto & name : subsection_names)
+    {
+      (void)name;
+      prm.leave_subsection();
+    }
+  }
+
+  Domain(std::string parameter_file, MPI_Comm const & comm)
+    : mpi_comm(comm),
+      pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
+      parameter_file(parameter_file)
+  {
+    grid = std::make_shared<Grid<dim>>();
+  }
+
+  virtual ~Domain()
+  {
+  }
+
+  void
+  setup_pre(std::vector<std::string> const & subsection_names)
+  {
+    // parameters
+    parse_parameters(subsection_names);
+
+    // set resolution parameters
+    param.grid.n_refine_global = this->resolution.refine_space;
+    param.degree               = this->resolution.degree;
+
+    set_parameters();
+    param.check();
+    param.print(pcout, "List of parameters:");
+
+    // grid
+    GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
+    create_grid();
+    print_grid_info(pcout, *grid);
+  }
+
+  void
+  setup_post()
+  {
+    // boundary conditions
+    boundary_descriptor = std::make_shared<BoundaryDescriptor<rank, dim>>();
+    set_boundary_descriptor();
+    verify_boundary_conditions(*boundary_descriptor, *grid);
+
+    // field functions
+    field_functions = std::make_shared<FieldFunctions<dim>>();
+    set_field_functions();
+  }
+
+  virtual std::shared_ptr<Poisson::PostProcessorBase<dim, n_components, Number>>
+  create_postprocessor() = 0;
+
+  Parameters const &
+  get_parameters() const
+  {
+    return param;
+  }
+
+  std::shared_ptr<Grid<dim> const>
+  get_grid() const
+  {
+    return grid;
+  }
+
+  std::shared_ptr<dealii::Mapping<dim> const>
+  get_mapping() const
+  {
+    return mapping;
+  }
+
+  std::shared_ptr<BoundaryDescriptor<rank, dim> const>
+  get_boundary_descriptor() const
+  {
+    return boundary_descriptor;
+  }
+
+  std::shared_ptr<FieldFunctions<dim> const>
+  get_field_functions() const
+  {
+    return field_functions;
+  }
+
+protected:
+  virtual void
+  parse_parameters(std::vector<std::string> const & subsection_names)
+  {
+    dealii::ParameterHandler prm;
+    this->add_parameters(prm, subsection_names);
+    prm.parse_input(parameter_file, "", true, true);
+  }
+
+  MPI_Comm const & mpi_comm;
+
+  dealii::ConditionalOStream pcout;
+
+  Parameters param;
+
+  std::shared_ptr<Grid<dim>> grid;
+
+  std::shared_ptr<dealii::Mapping<dim>> mapping;
+
+  std::shared_ptr<BoundaryDescriptor<rank, dim>> boundary_descriptor;
+  std::shared_ptr<FieldFunctions<dim>>           field_functions;
+
+  std::string parameter_file;
+
+  SpatialResolutionParameters resolution;
+
+  OutputParameters output_parameters;
+
+private:
+  virtual void
+  set_parameters() = 0;
+
+  virtual void
+  create_grid() = 0;
+
+  virtual void
+  set_boundary_descriptor() = 0;
+
+  virtual void
+  set_field_functions() = 0;
+};
+
+template<int dim, int n_components, typename Number>
+class ApplicationBase
+{
+public:
+  ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
     : mpi_comm(comm), parameter_file(parameter_file)
   {
   }
@@ -122,31 +273,25 @@ public:
   void
   add_parameters(dealii::ParameterHandler & prm)
   {
-    resolution1.add_parameters(prm, "ResolutionDomain1");
-    resolution2.add_parameters(prm, "ResolutionDomain2");
+    AssertThrow(domain1.get(), dealii::ExcMessage("Domain 1 is uninitialized."));
+    AssertThrow(domain2.get(), dealii::ExcMessage("Domain 2 is uninitialized."));
 
-    domain1->add_parameters(prm);
-    domain2->add_parameters(prm);
+    domain1->add_parameters(prm, {"Domain1"});
+    domain2->add_parameters(prm, {"Domain1"});
   }
 
-  virtual ~ApplicationOversetGridsBase()
+  virtual ~ApplicationBase()
   {
   }
 
   void
   setup()
   {
-    // parse and set resolution parameters for both domains
-    parse_resolution_parameters();
-    domain1->set_parameters_refinement_study(resolution1.degree,
-                                             resolution1.refine_space,
-                                             0 /* not used */);
-    domain2->set_parameters_refinement_study(resolution2.degree,
-                                             resolution2.refine_space,
-                                             0 /* not used */);
+    AssertThrow(domain1.get(), dealii::ExcMessage("Domain 1 is uninitialized."));
+    AssertThrow(domain2.get(), dealii::ExcMessage("Domain 2 is uninitialized."));
 
-    domain1->setup_pre();
-    domain2->setup_pre();
+    domain1->setup_pre({"Domain1"});
+    domain2->setup_pre({"Domain2"});
 
     set_boundary_ids();
 
@@ -154,7 +299,7 @@ public:
     domain2->setup_post();
   }
 
-  std::shared_ptr<ApplicationBase<dim, n_components, Number>> domain1, domain2;
+  std::shared_ptr<Domain<dim, n_components, Number>> domain1, domain2;
 
 protected:
   MPI_Comm const & mpi_comm;
@@ -164,21 +309,6 @@ protected:
     std::numeric_limits<dealii::types::boundary_id>::max() - 1;
 
 private:
-  /**
-   * Here, parse only those parameters not covered by ApplicationBase implementations
-   * (domain1 and domain2).
-   */
-  void
-  parse_resolution_parameters()
-  {
-    dealii::ParameterHandler prm;
-
-    resolution1.add_parameters(prm, "ResolutionDomain1");
-    resolution2.add_parameters(prm, "ResolutionDomain2");
-
-    prm.parse_input(parameter_file, "", true, true);
-  }
-
   void
   set_boundary_ids()
   {
@@ -196,12 +326,10 @@ private:
   }
 
   std::string parameter_file;
-
-  ResolutionParameters resolution1, resolution2;
 };
 
+} // namespace OversetGrids
 } // namespace Poisson
-
 } // namespace ExaDG
 
 #endif /* INCLUDE_EXADG_POISSON_OVERSET_GRIDS_USER_INTERFACE_APPLICATION_BASE_H_ */

@@ -4,15 +4,26 @@
         "Dim": "3",
         "IsTest": "false"
     },
-    "SpatialResolution": {
-        "Degree": "2",
-        "RefineSpace": "0"
+    "Main": {
+        "SpatialResolution": {
+            "Degree": "2",
+            "RefineSpace": "0"
+        },
+        "Output": {
+            "OutputDirectory": "output/template_precursor/",
+            "OutputName": "main",
+            "WriteOutput": "false"
+        }
     },
-    "Application": {
-    },
-    "Output": {
-        "OutputDirectory": "output/template_precursor/",
-        "OutputName": "template",
-        "WriteOutput": "false"
+    "Precursor": {
+        "SpatialResolution": {
+            "Degree": "2",
+            "RefineSpace": "0"
+        },
+        "Output": {
+            "OutputDirectory": "output/template_precursor/",
+            "OutputName": "precursor",
+            "WriteOutput": "false"
+        }
     }
 }

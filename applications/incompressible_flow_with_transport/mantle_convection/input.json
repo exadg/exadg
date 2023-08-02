@@ -4,15 +4,25 @@
         "Dim": "2",
         "IsTest": "false"
     },
-    "SpatialResolution": {
-        "Degree": "3",
-        "RefineSpace": "4"
+    "Fluid": {
+        "SpatialResolution": {
+            "Degree": "3",
+            "RefineSpace": "4"
+        },
+        "Output": {
+            "OutputDirectory": "output/mantle_convection/",
+            "OutputName": "fluid",
+            "WriteOutput": "false"
+        }
     },
-    "Application": {
-    },
-    "Output": {
-        "OutputDirectory": "output/mantle_convection/",
-        "OutputName": "test",
-        "WriteOutput": "false"
+    "Scalar0": {
+        "SpatialResolution": {
+            "Degree": "3"
+        },
+        "Output": {
+            "OutputDirectory": "output/mantle_convection/",
+            "OutputName": "scalar0",
+            "WriteOutput": "false"
+        }
     }
 }

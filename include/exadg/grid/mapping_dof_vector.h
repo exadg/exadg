@@ -109,6 +109,9 @@ public:
       grid_coordinates = 0;
     }
 
+    AssertThrow(get_element_type(dof_handler.get_triangulation()) == ElementType::Hypercube,
+                dealii::ExcMessage("Only implemented for hypercube elements."));
+
     dealii::FiniteElement<dim> const & fe = dof_handler.get_fe();
 
     // Set up dealii::FEValues with base element and the Gauss-Lobatto quadrature to
@@ -198,6 +201,9 @@ public:
       displacement_vector_ghosted.copy_locally_owned_data_from(displacement_vector);
       displacement_vector_ghosted.update_ghost_values();
     }
+
+    AssertThrow(get_element_type(dof_handler.get_triangulation()) == ElementType::Hypercube,
+                dealii::ExcMessage("Only implemented for hypercube elements."));
 
     std::shared_ptr<dealii::FEValues<dim>> fe_values;
 

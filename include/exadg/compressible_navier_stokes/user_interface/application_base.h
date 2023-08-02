@@ -36,6 +36,7 @@
 #include <exadg/compressible_navier_stokes/user_interface/field_functions.h>
 #include <exadg/compressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/grid/grid.h>
+#include <exadg/grid/grid_utilities.h>
 #include <exadg/postprocessor/output_parameters.h>
 
 namespace ExaDG
@@ -96,7 +97,6 @@ public:
     param.print(pcout, "List of parameters:");
 
     // grid
-    grid->initialize(param.grid, mpi_comm);
     GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
     create_grid();
     print_grid_info(pcout, *grid);

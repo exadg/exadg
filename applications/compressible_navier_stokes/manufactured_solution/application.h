@@ -417,30 +417,44 @@ private:
   void
   create_grid() final
   {
-    // hypercube volume is [left,right]^dim
-    double const left = -1.0, right = 0.5;
-    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)vector_local_refinements;
 
-    for(auto cell : *this->grid->triangulation)
-    {
-      for(auto const & face : cell.face_indices())
-      {
-        if(std::fabs(cell.face(face)->center()(1) - left) < 1e-12)
+        // hypercube volume is [left,right]^dim
+        double const left = -1.0, right = 0.5;
+        dealii::GridGenerator::hyper_cube(tria, left, right);
+
+        for(auto cell : tria)
         {
-          cell.face(face)->set_boundary_id(0 + 10);
+          for(auto const & face : cell.face_indices())
+          {
+            if(std::fabs(cell.face(face)->center()(1) - left) < 1e-12)
+            {
+              cell.face(face)->set_boundary_id(0 + 10);
+            }
+            else if(std::fabs(cell.face(face)->center()(1) - right) < 1e-12)
+            {
+              cell.face(face)->set_boundary_id(1 + 10);
+            }
+          }
         }
-        else if(std::fabs(cell.face(face)->center()(1) - right) < 1e-12)
-        {
-          cell.face(face)->set_boundary_id(1 + 10);
-        }
-      }
-    }
 
-    dealii::GridTools::collect_periodic_faces(
-      *this->grid->triangulation, 0 + 10, 1 + 10, 1, this->grid->periodic_face_pairs);
-    this->grid->triangulation->add_periodicity(this->grid->periodic_face_pairs);
+        dealii::GridTools::collect_periodic_faces(tria, 0 + 10, 1 + 10, 1, periodic_face_pairs);
+        tria.add_periodicity(periodic_face_pairs);
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_triangulation<dim>(*this->grid,
+                                             this->mpi_comm,
+                                             this->param.grid,
+                                             lambda_create_triangulation,
+                                             {} /* no local refinements */);
   }
 
   void

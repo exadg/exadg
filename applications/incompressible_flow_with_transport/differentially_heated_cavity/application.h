@@ -28,12 +28,55 @@ namespace ExaDG
 {
 namespace FTI
 {
+// Problem specific parameters
+double const L        = 1.0;
+double const T_ref    = 300.0;
+double const delta_T  = 1.0;
+double const g        = 10.0;
+double const beta     = 1.0 / 300.0;
+double const Prandtl  = 1.0;
+double const Rayleigh = 1.0e8;
+
+// dependent parameters
+double const kinematic_viscosity =
+  std::sqrt(g * beta * delta_T * std::pow(L, 3.0) * Prandtl / Rayleigh);
+double const thermal_diffusivity = kinematic_viscosity / Prandtl;
+
+double const left  = -L / 2.0;
+double const right = L / 2.0;
+
+double const U                   = std::sqrt(g * beta * delta_T * L);
+double const characteristic_time = L / U;
+double const start_time          = 0.0;
+double const end_time            = 10.0 * characteristic_time;
+
+double const CFL                    = 0.3;
+double const max_velocity           = 1.0;
+bool const   adaptive_time_stepping = true;
+
+// vtu output
+double const output_interval_time = (end_time - start_time) / 100.0;
+
+// restart
+bool const   write_restart         = false;
+double const restart_interval_time = 10.0;
+
+// moving mesh (ALE)
+bool const ALE = false;
+
+// solver tolerances
+double const ABS_TOL = 1.e-12;
+double const REL_TOL = 1.e-6;
+
+double const ABS_TOL_LINEAR = 1.e-12;
+double const REL_TOL_LINEAR = 1.e-2;
+
 template<int dim, typename Number>
-class Application : public FTI::ApplicationBase<dim, Number>
+class Fluid : public FluidBase<dim, Number>
 {
 public:
-  Application(std::string input_file, MPI_Comm const & comm)
-    : FTI::ApplicationBase<dim, Number>(input_file, comm, 1)
+  Fluid(std::string parameter_file, MPI_Comm const & comm)
+    : FluidBase<dim, Number>(parameter_file, comm)
   {
   }
 
@@ -191,107 +234,47 @@ private:
   }
 
   void
-  set_parameters_scalar(unsigned int const scalar_index) final
-  {
-    using namespace ConvDiff;
-
-    Parameters param;
-
-    // MATHEMATICAL MODEL
-    param.problem_type                = ProblemType::Unsteady;
-    param.equation_type               = EquationType::ConvectionDiffusion;
-    param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
-    param.analytical_velocity_field   = false;
-    param.right_hand_side             = false;
-    param.ale_formulation             = ALE;
-
-    // PHYSICAL QUANTITIES
-    param.start_time  = start_time;
-    param.end_time    = end_time;
-    param.diffusivity = thermal_diffusivity;
-
-    // TEMPORAL DISCRETIZATION
-    param.temporal_discretization       = TemporalDiscretization::BDF;
-    param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
-    param.adaptive_time_stepping        = adaptive_time_stepping;
-    param.order_time_integrator         = 2;
-    param.start_with_low_order          = true;
-    param.calculation_of_time_step_size = TimeStepCalculation::CFL;
-    param.time_step_size                = 1.0e-2;
-    param.cfl                           = CFL;
-    param.max_velocity                  = max_velocity;
-    param.exponent_fe_degree_convection = 1.5;
-    param.exponent_fe_degree_diffusion  = 3.0;
-    param.diffusion_number              = 0.01;
-
-    // restart
-    param.restart_data.write_restart = write_restart;
-    param.restart_data.interval_time = restart_interval_time;
-    param.restart_data.filename      = this->output_parameters.directory +
-                                  this->output_parameters.filename + "_scalar_" +
-                                  std::to_string(scalar_index);
-
-    // output of solver information
-    param.solver_info_data.interval_time = (end_time - start_time) / 10.;
-
-    // SPATIAL DISCRETIZATION
-    param.grid.triangulation_type = TriangulationType::Distributed;
-    param.mapping_degree          = 1;
-
-    // convective term
-    param.numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
-
-    // viscous term
-    param.IP_factor = 1.0;
-
-    // NUMERICAL PARAMETERS
-    param.implement_block_diagonal_preconditioner_matrix_free = false;
-    param.use_cell_based_face_loops                           = false;
-
-    // SOLVER
-    param.solver                    = ConvDiff::Solver::CG;
-    param.solver_data               = SolverData(1e3, ABS_TOL, REL_TOL, 100);
-    param.preconditioner            = Preconditioner::InverseMassMatrix;
-    param.multigrid_data.type       = MultigridType::phMG;
-    param.multigrid_data.p_sequence = PSequenceType::Bisect;
-    param.mg_operator_type          = MultigridOperatorType::ReactionDiffusion;
-    param.update_preconditioner     = false;
-
-    // output of solver information
-    param.solver_info_data.interval_time = (end_time - start_time) / 10.;
-
-    // NUMERICAL PARAMETERS
-    param.use_combined_operator = true;
-    param.use_overintegration   = true;
-
-    this->scalar_param[scalar_index] = param;
-  }
-
-  void
   create_grid() final
   {
-    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    // set boundary IDs: 0 by default, set left boundary to 1
-    for(auto cell : this->grid->triangulation->cell_iterators())
-    {
-      for(auto const & f : cell->face_indices())
-      {
-        if((std::fabs(cell->face(f)->center()(0) - left) < 1e-12))
+        dealii::GridGenerator::hyper_cube(tria, left, right);
+
+        // set boundary IDs: 0 by default, set left boundary to 1
+        for(auto cell : tria.cell_iterators())
         {
-          cell->face(f)->set_boundary_id(1);
+          for(auto const & f : cell->face_indices())
+          {
+            if((std::fabs(cell->face(f)->center()(0) - left) < 1e-12))
+            {
+              cell->face(f)->set_boundary_id(1);
+            }
+
+            // lower and upper boundary
+            if((std::fabs(cell->face(f)->center()(1) - left) < 1e-12) or
+               (std::fabs(cell->face(f)->center()(1) - right) < 1e-12))
+            {
+              cell->face(f)->set_boundary_id(2);
+            }
+          }
         }
 
-        // lower and upper boundary
-        if((std::fabs(cell->face(f)->center()(1) - left) < 1e-12) or
-           (std::fabs(cell->face(f)->center()(1) - right) < 1e-12))
-        {
-          cell->face(f)->set_boundary_id(2);
-        }
-      }
-    }
+        tria.refine_global(global_refinements);
+      };
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
+                                                              this->mpi_comm,
+                                                              this->param.grid,
+                                                              this->param.involves_h_multigrid(),
+                                                              lambda_create_triangulation,
+                                                              {} /* no local refinements */);
   }
 
   std::shared_ptr<dealii::Function<dim>>
@@ -360,7 +343,7 @@ private:
     pp_data.output_data.time_control_data.start_time       = start_time;
     pp_data.output_data.time_control_data.trigger_interval = output_interval_time;
     pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
-    pp_data.output_data.filename           = this->output_parameters.filename + "_fluid";
+    pp_data.output_data.filename           = this->output_parameters.filename;
     pp_data.output_data.write_processor_id = true;
     pp_data.output_data.degree             = this->param.degree_u;
     pp_data.output_data.write_higher_order = true;
@@ -370,43 +353,125 @@ private:
 
     return pp;
   }
+};
+
+template<int dim, typename Number>
+class Scalar : public ScalarBase<dim, Number>
+{
+public:
+  Scalar(std::string parameter_file, MPI_Comm const & comm)
+    : ScalarBase<dim, Number>(parameter_file, comm)
+  {
+  }
+
+private:
+  void
+  set_parameters() final
+  {
+    using namespace ConvDiff;
+
+    // MATHEMATICAL MODEL
+    this->param.problem_type                = ProblemType::Unsteady;
+    this->param.equation_type               = EquationType::ConvectionDiffusion;
+    this->param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
+    this->param.analytical_velocity_field   = false;
+    this->param.right_hand_side             = false;
+    this->param.ale_formulation             = ALE;
+
+    // PHYSICAL QUANTITIES
+    this->param.start_time  = start_time;
+    this->param.end_time    = end_time;
+    this->param.diffusivity = thermal_diffusivity;
+
+    // TEMPORAL DISCRETIZATION
+    this->param.temporal_discretization       = TemporalDiscretization::BDF;
+    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
+    this->param.adaptive_time_stepping        = adaptive_time_stepping;
+    this->param.order_time_integrator         = 2;
+    this->param.start_with_low_order          = true;
+    this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+    this->param.time_step_size                = 1.0e-2;
+    this->param.cfl                           = CFL;
+    this->param.max_velocity                  = max_velocity;
+    this->param.exponent_fe_degree_convection = 1.5;
+    this->param.exponent_fe_degree_diffusion  = 3.0;
+    this->param.diffusion_number              = 0.01;
+
+    // restart
+    this->param.restart_data.write_restart = write_restart;
+    this->param.restart_data.interval_time = restart_interval_time;
+    this->param.restart_data.filename =
+      this->output_parameters.directory + this->output_parameters.filename;
+
+    // output of solver information
+    this->param.solver_info_data.interval_time = (end_time - start_time) / 10.;
+
+    // SPATIAL DISCRETIZATION
+    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.mapping_degree          = 1;
+
+    // convective term
+    this->param.numerical_flux_convective_operator =
+      NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
+
+    // viscous term
+    this->param.IP_factor = 1.0;
+
+    // NUMERICAL PARAMETERS
+    this->param.implement_block_diagonal_preconditioner_matrix_free = false;
+    this->param.use_cell_based_face_loops                           = false;
+
+    // SOLVER
+    this->param.solver                    = ConvDiff::Solver::CG;
+    this->param.solver_data               = SolverData(1e3, ABS_TOL, REL_TOL, 100);
+    this->param.preconditioner            = Preconditioner::InverseMassMatrix;
+    this->param.multigrid_data.type       = MultigridType::phMG;
+    this->param.multigrid_data.p_sequence = PSequenceType::Bisect;
+    this->param.mg_operator_type          = MultigridOperatorType::ReactionDiffusion;
+    this->param.update_preconditioner     = false;
+
+    // output of solver information
+    this->param.solver_info_data.interval_time = (end_time - start_time) / 10.;
+
+    // NUMERICAL PARAMETERS
+    this->param.use_combined_operator = true;
+    this->param.use_overintegration   = true;
+  }
 
   void
-  set_boundary_descriptor_scalar(unsigned int scalar_index = 0) final
+  set_boundary_descriptor() final
   {
     typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
       pair;
 
-    this->scalar_boundary_descriptor[scalar_index]->dirichlet_bc.insert(
+    this->boundary_descriptor->dirichlet_bc.insert(
       pair(0, new dealii::Functions::ConstantFunction<dim>(T_ref)));
-    this->scalar_boundary_descriptor[scalar_index]->dirichlet_bc.insert(
+    this->boundary_descriptor->dirichlet_bc.insert(
       pair(1, new dealii::Functions::ConstantFunction<dim>(T_ref + delta_T)));
-    this->scalar_boundary_descriptor[scalar_index]->neumann_bc.insert(
+    this->boundary_descriptor->neumann_bc.insert(
       pair(2, new dealii::Functions::ZeroFunction<dim>(1)));
   }
 
+
   void
-  set_field_functions_scalar(unsigned int scalar_index = 0) final
+  set_field_functions() final
   {
-    this->scalar_field_functions[scalar_index]->initial_solution.reset(
+    this->field_functions->initial_solution.reset(
       new dealii::Functions::ConstantFunction<dim>(T_ref));
-    this->scalar_field_functions[scalar_index]->right_hand_side.reset(
-      new dealii::Functions::ZeroFunction<dim>(1));
-    this->scalar_field_functions[scalar_index]->velocity.reset(
-      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->velocity.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
-  create_postprocessor_scalar(unsigned int const scalar_index) final
+  create_postprocessor() final
   {
     ConvDiff::PostProcessorData<dim> pp_data;
     pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
     pp_data.output_data.time_control_data.start_time       = start_time;
     pp_data.output_data.time_control_data.trigger_interval = output_interval_time;
-    pp_data.output_data.directory = this->output_parameters.directory + "vtu/";
-    pp_data.output_data.filename =
-      this->output_parameters.filename + "_scalar_" + std::to_string(scalar_index);
-    pp_data.output_data.degree             = this->scalar_param[scalar_index].degree;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename;
+    pp_data.output_data.degree             = this->param.degree;
     pp_data.output_data.write_higher_order = true;
 
     std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> pp;
@@ -414,49 +479,21 @@ private:
 
     return pp;
   }
+};
 
-  // Problem specific parameters
-  double const L        = 1.0;
-  double const T_ref    = 300.0;
-  double const delta_T  = 1.0;
-  double const g        = 10.0;
-  double const beta     = 1.0 / 300.0;
-  double const Prandtl  = 1.0;
-  double const Rayleigh = 1.0e8;
+template<int dim, typename Number>
+class Application : public ApplicationBase<dim, Number>
+{
+public:
+  Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, Number>(input_file, comm)
+  {
+    this->fluid = std::make_shared<Fluid<dim, Number>>(input_file, comm);
 
-  // dependent parameters
-  double const kinematic_viscosity =
-    std::sqrt(g * beta * delta_T * std::pow(L, 3.0) * Prandtl / Rayleigh);
-  double const thermal_diffusivity = kinematic_viscosity / Prandtl;
-
-  double const left  = -L / 2.0;
-  double const right = L / 2.0;
-
-  double const U                   = std::sqrt(g * beta * delta_T * L);
-  double const characteristic_time = L / U;
-  double const start_time          = 0.0;
-  double const end_time            = 10.0 * characteristic_time;
-
-  double const CFL                    = 0.3;
-  double const max_velocity           = 1.0;
-  bool const   adaptive_time_stepping = true;
-
-  // vtu output
-  double const output_interval_time = (end_time - start_time) / 100.0;
-
-  // restart
-  bool const   write_restart         = false;
-  double const restart_interval_time = 10.0;
-
-  // moving mesh (ALE)
-  bool const ALE = false;
-
-  // solver tolerances
-  double const ABS_TOL = 1.e-12;
-  double const REL_TOL = 1.e-6;
-
-  double const ABS_TOL_LINEAR = 1.e-12;
-  double const REL_TOL_LINEAR = 1.e-2;
+    // create one (or even more) scalar fields
+    this->scalars.resize(1);
+    this->scalars[0] = std::make_shared<Scalar<dim, Number>>(input_file, comm);
+  }
 };
 
 } // namespace FTI
