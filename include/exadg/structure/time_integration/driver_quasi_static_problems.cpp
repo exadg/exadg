@@ -262,8 +262,8 @@ DriverQuasiStatic<dim, Number>::solve_step(double const load_factor,
 
   auto const iter = pde_operator->solve_nonlinear(solution,
                                                   const_vector,
-                                                  0.0 /*no mass terms*/,
-                                                  0.0 /*no mass terms*/,
+                                                  0.0 /* no acceleration term */,
+                                                  0.0 /* no damping term */,
                                                   load_factor /* = time */,
                                                   update_preconditioner);
 

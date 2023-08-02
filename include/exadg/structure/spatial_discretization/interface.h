@@ -68,8 +68,8 @@ public:
   virtual std::tuple<unsigned int, unsigned int>
   solve_nonlinear(VectorType &       sol,
                   VectorType const & rhs,
-                  double const       scaling_factor_mass_from_acceleration,
-                  double const       scaling_factor_mass_from_velocity,
+                  double const       scaling_factor_acceleration,
+                  double const       scaling_factor_velocity,
                   double const       time,
                   bool const         update_preconditioner) const = 0;
 
@@ -79,8 +79,8 @@ public:
   virtual unsigned int
   solve_linear(VectorType &       sol,
                VectorType const & rhs,
-               double const       scaling_factor_mass_from_acceleration,
-               double const       scaling_factor_mass_from_velocity,
+               double const       scaling_factor_acceleration,
+               double const       scaling_factor_velocity,
                double const       time,
                bool const         update_preconditioner) const = 0;
 };

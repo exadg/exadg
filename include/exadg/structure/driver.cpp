@@ -119,7 +119,7 @@ Driver<dim, Number>::setup()
     }
     else
     {
-      pde_operator->setup_solver(0.0 /* no mass terms */, 0.0 /* no mass terms */);
+      pde_operator->setup_solver(0.0 /* no acceleration term */, 0.0 /* no damping term */);
     }
   }
 

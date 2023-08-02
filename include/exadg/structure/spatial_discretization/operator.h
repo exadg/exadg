@@ -197,8 +197,7 @@ public:
    * linear systems of equation required for implicit formulations.
    */
   void
-  setup_solver(double const & scaling_factor_mass_from_acceleration,
-               double const & scaling_factor_mass_from_velocity);
+  setup_solver(double const & scaling_factor_acceleration, double const & scaling_factor_velocity);
 
   /*
    * Initialization of dof-vector.
@@ -273,8 +272,8 @@ public:
   std::tuple<unsigned int, unsigned int>
   solve_nonlinear(VectorType &       sol,
                   VectorType const & const_vector,
-                  double const       scaling_factor_mass_from_acceleration,
-                  double const       scaling_factor_mass_from_velocity,
+                  double const       scaling_factor_acceleration,
+                  double const       scaling_factor_velocity,
                   double const       time,
                   bool const         update_preconditioner) const final;
 
@@ -293,8 +292,8 @@ public:
   unsigned int
   solve_linear(VectorType &       sol,
                VectorType const & rhs,
-               double const       scaling_factor_mass_from_acceleration,
-               double const       scaling_factor_mass_from_velocity,
+               double const       scaling_factor_acceleration,
+               double const       scaling_factor_velocity,
                double const       time,
                bool const         update_preconditioner) const final;
 
@@ -352,9 +351,13 @@ private:
   unsigned int
   get_quad_index_gauss_lobatto() const;
 
+  /*
+   * Scaling factor for mass matrix assuming a weak damping operator leading to a scaled mass
+   * matrix.
+   */
   double
-  compute_scaling_factor_mass(double const scaling_factor_mass_from_acceleration,
-                              double const scaling_factor_mass_from_velocity) const;
+  compute_scaling_factor_mass(double const scaling_factor_acceleration,
+                              double const scaling_factor_velocity) const;
 
   /*
    * Initializes operators.

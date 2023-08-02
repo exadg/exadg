@@ -66,7 +66,7 @@ protected:
    * Computes the finite element vector corresponding to the *remainder* of the acceleration term,
    * which depends on past time step data only. Denoting the acceleration by a, the velocity by v
    * and the displacement by d, this function returns f1(a^n, v^n, d^n) in
-   * D^2/Dt^2(d) = scaling_factor_mass_from_acceleration * d^(n+1) + f1(a^n, v^n, d^n)
+   * D^2/Dt^2(d) = scaling_factor_acceleration * d^(n+1) + f1(a^n, v^n, d^n)
    */
   void
   compute_const_vector_acceleration_remainder(VectorType &       const_vector,
@@ -78,7 +78,7 @@ protected:
    * Computes the finite element vector corresponding to the *remainder* of the velocity term, which
    * depends on past time step data only. Denoting the acceleration by a, the velocity by v and the
    * displacement by d, this function returns f2(a^n, v^n, d^n) in
-   * D/Dt(d) = scaling_factor_mass_from_velocity * d^(n+1) + f2(a^n, v^n, d^n).
+   * D/Dt(d) = scaling_factor_velocity * d^(n+1) + f2(a^n, v^n, d^n).
    */
   void
   compute_const_vector_velocity_remainder(VectorType &       const_vector,

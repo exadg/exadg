@@ -84,7 +84,7 @@ public:
 
     // setup PDE operator and solver
     pde_operator->setup(matrix_free, matrix_free_data);
-    pde_operator->setup_solver(0.0 /* no mass terms */, 0.0 /* no mass terms */);
+    pde_operator->setup_solver(0.0 /* no acceleration term */, 0.0 /* no damping term */);
 
     // finally, initialize dof vector
     pde_operator->initialize_dof_vector(displacement);
@@ -123,8 +123,8 @@ public:
 
       auto const iter = pde_operator->solve_nonlinear(displacement,
                                                       const_vector,
-                                                      0.0 /* no mass terms */,
-                                                      0.0 /* no mass terms */,
+                                                      0.0 /* no acceleration term */,
+                                                      0.0 /* no damping term */,
                                                       time,
                                                       update_preconditioner);
 
@@ -147,8 +147,8 @@ public:
 
       auto const iter = pde_operator->solve_linear(displacement,
                                                    rhs,
-                                                   0.0 /* no mass terms */,
-                                                   0.0 /* no mass terms */,
+                                                   0.0 /* no acceleration term */,
+                                                   0.0 /* no damping term */,
                                                    time,
                                                    false /* do not update preconditioner */);
 
