@@ -102,17 +102,17 @@ private:
 
     for(auto const & cell : dof_handler.active_cell_iterators())
     {
-      if(cell->is_locally_owned() == false)
-        continue;
+      if(cell->is_locally_owned())
+      {
+        auto cellwise_support_points = cell->get_fe().get_generalized_support_points();
 
-      auto cellwise_support_points = cell->get_fe().get_generalized_support_points();
+        for(auto & csp : cellwise_support_points)
+          csp = mapping.transform_unit_to_real_cell(cell, csp);
 
-      for(auto & csp : cellwise_support_points)
-        csp = mapping.transform_unit_to_real_cell(cell, csp);
-
-      support_points.insert(support_points.end(),
-                            cellwise_support_points.begin(),
-                            cellwise_support_points.end());
+        support_points.insert(support_points.end(),
+                              cellwise_support_points.begin(),
+                              cellwise_support_points.end());
+      }
     }
 
     return support_points;
@@ -127,32 +127,36 @@ private:
     auto ptr = values.begin();
     for(auto const & cell : dof_handler.active_cell_iterators())
     {
-      if(cell->is_locally_owned() == false)
-        continue;
-
-      auto const & fe = cell->get_fe();
-
-      std::vector<double> dof_values(fe.n_dofs_per_cell());
-      unsigned int const  n_support_points = fe.get_generalized_support_points().size();
-      std::vector<dealii::Vector<double>> component_dof_values(
-        n_support_points, dealii::Vector<double>(n_components));
-
-      for(unsigned int i = 0; i < n_support_points; ++i)
+      if(cell->is_locally_owned())
       {
-        if constexpr(n_components == 1)
-          component_dof_values[i] = *ptr;
-        else
-          component_dof_values[i] =
-            std::move(dealii::Vector<double>(ptr->begin_raw(), ptr->end_raw()));
+        auto const & fe = cell->get_fe();
 
-        ++ptr;
+        std::vector<double> dof_values(fe.n_dofs_per_cell());
+        unsigned int const  n_support_points = fe.get_generalized_support_points().size();
+        std::vector<dealii::Vector<double>> component_dof_values(
+          n_support_points, dealii::Vector<double>(n_components));
+
+        for(unsigned int i = 0; i < n_support_points; ++i)
+        {
+          if constexpr(n_components == 1)
+          {
+            component_dof_values[i] = *ptr;
+          }
+          else
+          {
+            component_dof_values[i] =
+              std::move(dealii::Vector<double>(ptr->begin_raw(), ptr->end_raw()));
+          }
+
+          ++ptr;
+        }
+
+        fe.convert_generalized_support_point_values_to_dof_values(component_dof_values, dof_values);
+
+        cell->set_dof_values(dealii::Vector<typename VectorType::value_type>(dof_values.begin(),
+                                                                             dof_values.end()),
+                             dst);
       }
-
-      fe.convert_generalized_support_point_values_to_dof_values(component_dof_values, dof_values);
-
-      cell->set_dof_values(dealii::Vector<typename VectorType::value_type>(dof_values.begin(),
-                                                                           dof_values.end()),
-                           dst);
     }
   }
 
