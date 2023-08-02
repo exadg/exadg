@@ -781,8 +781,7 @@ Operator<dim, Number>::evaluate_mass_operator(VectorType & dst, VectorType const
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::apply_add_damping_operator(VectorType &       dst,
-                                                  VectorType const & src) const
+Operator<dim, Number>::apply_add_damping_operator(VectorType & dst, VectorType const & src) const
 {
   if(param.weak_damping_active)
   {

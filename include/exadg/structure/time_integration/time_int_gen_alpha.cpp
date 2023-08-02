@@ -124,14 +124,14 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
   VectorType const_vector, rhs;
   const_vector.reinit(displacement_n);
   rhs.reinit(displacement_n);
-  this->compute_const_vector_acceleration_remainder(rhs, displacement_n, velocity_n, acceleration_n);
+  this->compute_const_vector_acceleration_remainder(rhs,
+                                                    displacement_n,
+                                                    velocity_n,
+                                                    acceleration_n);
   pde_operator->evaluate_mass_operator(const_vector, rhs);
 
   // add contribution from damping operator
-  this->compute_const_vector_velocity_remainder(rhs,
-                                                displacement_n,
-                                                velocity_n,
-                                                acceleration_n);
+  this->compute_const_vector_velocity_remainder(rhs, displacement_n, velocity_n, acceleration_n);
   pde_operator->apply_add_damping_operator(const_vector, rhs);
 
   if(param.large_deformation == false) // linear case
