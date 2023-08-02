@@ -83,7 +83,7 @@ MassOperator<dim, n_components, Number>::do_cell_integral(IntegratorCell & integ
   }
 }
 
-// scalar
+// 1 component
 template class MassOperator<2, 1, float>;
 template class MassOperator<2, 1, double>;
 
@@ -104,7 +104,7 @@ template class MassOperator<2, 3, double>;
 template class MassOperator<3, 4, float>;
 template class MassOperator<3, 4, double>;
 
-// compressible Navier-Stokes merged operators
+// dim + 2 components
 template class MassOperator<2, 4, float>;
 template class MassOperator<2, 4, double>;
 
