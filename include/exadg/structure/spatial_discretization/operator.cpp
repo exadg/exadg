@@ -783,8 +783,10 @@ Operator<dim, Number>::apply_add_damping_operator(VectorType & dst, VectorType c
 {
   if(param.weak_damping_active)
   {
-    mass_operator.apply_add(dst, src);
-    dst *= param.weak_damping_coefficient;
+    VectorType tmp;
+    tmp.reinit(src);
+    tmp.equ(param.weak_damping_coefficient, src);
+    mass_operator.apply_add(dst, tmp);
   }
 }
 
