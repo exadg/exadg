@@ -162,8 +162,10 @@ main(int argc, char ** argv)
 
   prm.parse_input(input_file, "", true, true);
 
-  auto const lambda_get_dofs_per_element = [&](unsigned int const dim, unsigned int const degree) {
-    return ExaDG::Poisson::get_dofs_per_element(spatial_discretization, dim, degree);
+  auto const lambda_get_dofs_per_element = [&](unsigned int const       dim,
+                                               unsigned int const       degree,
+                                               ExaDG::ElementType const element_type) {
+    return ExaDG::Poisson::get_dofs_per_element(spatial_discretization, dim, degree, element_type);
   };
 
   // fill resolution vector depending on the operator_type

@@ -46,8 +46,12 @@ enum class OperatorType
 inline unsigned int
 get_dofs_per_element(SpatialDiscretization const & spatial_discretization,
                      unsigned int const            dim,
-                     unsigned int const            degree)
+                     unsigned int const            degree,
+                     ElementType const             element_type)
 {
+  // TODO
+  (void)element_type;
+
   unsigned int dofs_per_element = 1;
 
   if(spatial_discretization == SpatialDiscretization::CG)

@@ -67,11 +67,15 @@ enum class PressureDegree
 };
 
 inline unsigned int
-get_dofs_per_element(OperatorType const &   operator_type,
-                     PressureDegree const & pressure_degree,
-                     unsigned int const     dim,
-                     unsigned int const     degree)
+get_dofs_per_element(OperatorType const &     operator_type,
+                     PressureDegree const &   pressure_degree,
+                     unsigned int const       dim,
+                     unsigned int const       degree,
+                     ExaDG::ElementType const element_type)
 {
+  // TODO
+  (void)element_type;
+
   unsigned int const velocity_dofs_per_element = dim * dealii::Utilities::pow(degree + 1, dim);
   unsigned int       pressure_dofs_per_element = 1;
   if(pressure_degree == PressureDegree::MixedOrder)

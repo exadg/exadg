@@ -22,8 +22,11 @@
 #ifndef INCLUDE_EXADG_OPERATORS_HYPERCUBE_RESOLUTION_PARAMETERS_H_
 #define INCLUDE_EXADG_OPERATORS_HYPERCUBE_RESOLUTION_PARAMETERS_H_
 
+// deal.II
 #include <deal.II/base/parameter_handler.h>
 
+// ExaDG
+#include <exadg/grid/grid_data.h>
 #include <exadg/utilities/enum_patterns.h>
 
 namespace ExaDG
@@ -52,7 +55,8 @@ fill_resolutions_vector(
   unsigned int const                    dofs_per_element,
   dealii::types::global_dof_index const n_dofs_min,
   dealii::types::global_dof_index const n_dofs_max,
-  RunType const &                       run_type)
+  RunType const &                       run_type,
+  ElementType const &                   element_type)
 {
   unsigned int const resolutions_initial_size = resolutions.size();
 
@@ -60,8 +64,21 @@ fill_resolutions_vector(
     (n_dofs_min + dofs_per_element - 1) / dofs_per_element;
   dealii::types::global_dof_index const n_cells_max = n_dofs_max / dofs_per_element;
 
-  // TODO: extend this to simplicial elements
-  unsigned int const n_cells_per_cube = 1;
+  // Determine the number of cells per cube
+
+  // refers to dealii::GridTools::subdivided_hyper_cube() for Hypercube elements
+  unsigned int n_cells_per_cube = 1;
+
+  // refers to dealii::GridTools::subdivided_hyper_cube_with_simplices()
+  if(element_type == ElementType::Simplex)
+  {
+    if(dim == 2)
+      n_cells_per_cube = 2;
+    else if(dim == 3)
+      n_cells_per_cube = 5;
+    else
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
+  }
 
   // From the maximum number of cells, we derive a maximum refinement level for a uniformly refined
   // mesh with n_cells_per_cube coarse-grid cells.
@@ -183,6 +200,8 @@ struct HypercubeResolutionParameters
     {
       prm.add_parameter(
         "RunType", run_type, "Type of throughput study.", Patterns::Enum<RunType>(), true);
+      prm.add_parameter(
+        "ElementType", element_type, "Type of elements.", Patterns::Enum<ElementType>(), true);
       prm.add_parameter("DegreeMin",
                         degree_min,
                         "Minimal polynomial degree of shape functions.",
@@ -247,7 +266,8 @@ struct HypercubeResolutionParameters
 
   void
   fill_resolution_vector(
-    std::function<unsigned int(unsigned int, unsigned int)> const & get_dofs_per_element)
+    std::function<unsigned int(unsigned int, unsigned int, ElementType)> const &
+      get_dofs_per_element)
   {
     if(run_type == RunType::RefineHAndP)
     {
@@ -269,9 +289,15 @@ struct HypercubeResolutionParameters
     {
       for(unsigned int degree = degree_min; degree <= degree_max; ++degree)
       {
-        unsigned int dofs_per_element = get_dofs_per_element(dim, degree);
-        fill_resolutions_vector(
-          resolutions, dim, degree, dofs_per_element, n_dofs_min, n_dofs_max, run_type);
+        unsigned int dofs_per_element = get_dofs_per_element(dim, degree, element_type);
+        fill_resolutions_vector(resolutions,
+                                dim,
+                                degree,
+                                dofs_per_element,
+                                n_dofs_min,
+                                n_dofs_max,
+                                run_type,
+                                element_type);
       }
     }
     else
@@ -283,6 +309,8 @@ struct HypercubeResolutionParameters
   unsigned int dim = 2; // number of space dimensions
 
   RunType run_type = RunType::RefineHAndP;
+
+  ElementType element_type = ElementType::Hypercube;
 
   unsigned int degree_min = 3; // minimal polynomial degree
   unsigned int degree_max = 3; // maximal polynomial degree
