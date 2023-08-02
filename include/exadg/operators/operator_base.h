@@ -46,9 +46,10 @@
 #include <exadg/solvers_and_preconditioners/solvers/wrapper_elementwise_solvers.h>
 #include <exadg/solvers_and_preconditioners/utilities/invert_diagonal.h>
 
+#include <exadg/utilities/lazy_ptr.h>
+
 #include <exadg/operators/elementwise_operator.h>
 #include <exadg/operators/integrator_flags.h>
-#include <exadg/operators/lazy_ptr.h>
 #include <exadg/operators/mapping_flags.h>
 #include <exadg/operators/operator_type.h>
 
