@@ -40,7 +40,7 @@ enum class RunType
 
 /*
  * Determines mesh refinement level l and number of subdivisions in 1d of hyper_cube mesh for a
- * given number of minimum and maximum number of unknowns and a given RunType.
+ * given number of minimal and maximal number of unknowns and a given RunType.
  */
 inline void
 fill_resolutions_vector(
@@ -54,104 +54,110 @@ fill_resolutions_vector(
   dealii::types::global_dof_index const n_dofs_max,
   RunType const &                       run_type)
 {
-  unsigned int l = 0, n_subdivisions_1d = 1;
+  unsigned int const resolutions_initial_size = resolutions.size();
 
-  dealii::types::global_dof_index n_cells_min =
+  dealii::types::global_dof_index const n_cells_min =
     (n_dofs_min + dofs_per_element - 1) / dofs_per_element;
-  dealii::types::global_dof_index n_cells_max = n_dofs_max / dofs_per_element;
+  dealii::types::global_dof_index const n_cells_max = n_dofs_max / dofs_per_element;
 
-  int                             refine_level = 0;
-  dealii::types::global_dof_index n_cells      = 1;
+  // TODO: extend this to simplicial elements
+  unsigned int const n_cells_per_cube = 1;
 
-  while(n_cells <= dealii::Utilities::pow(2ULL, dim) * n_cells_max)
+  // From the maximum number of cells, we derive a maximum refinement level for a uniformly refined
+  // mesh with n_cells_per_cube coarse-grid cells.
+  unsigned int const refine_level_max =
+    int(std::log((double)n_cells_max / (double)n_cells_per_cube) /
+        std::log((double)dealii::Utilities::pow(2ULL, dim))) +
+    1;
+
+  // we start with the coarsest possible mesh and then increase the refine level by 1
+  // until we hit the maximum refinement level
+  unsigned int refine_level = 0;
+
+  // This loop is for a uniformly refined mesh with n_cells_per_cube coarse-grid cells. Inside the
+  // loop, we test whether additional combinations of coarse-grid cells and mesh refinement levels
+  // are suitable in terms of n_cells_min/n_cells_max. The reason behind is that we want to have
+  // more data points than just data points differing by a factor of 2^dim in the number of cells.
+  while(refine_level <= refine_level_max)
   {
-    // We want to increase the problem size approximately by a factor of two, which is
-    // realized by using a coarse grid with {3,4}^dim elements in 2D and {3,4,5}^dim elements
-    // in 3D.
+    // To obtain additional data points, we test coarse grids with {3,4}^dim elements in 2D and
+    // {3,4,5}^dim elements in 3D. The cases with 3 and 5 subdivisions per coordinate direction are
+    // only relevant for refine_level >= 2.
 
     // coarse grid with 3^dim cells, and refine_level-2 uniform refinements
     if(refine_level >= 2)
     {
-      n_subdivisions_1d = 3;
-      n_cells           = dealii::Utilities::pow(n_subdivisions_1d, dim) *
-                dealii::Utilities::pow(2ULL, (refine_level - 2) * dim);
+      unsigned int const n_subdivisions_1d = 3;
+      unsigned int const l                 = refine_level - 2;
+
+      unsigned int const n_cells = n_cells_per_cube *
+                                   dealii::Utilities::pow(n_subdivisions_1d, dim) *
+                                   dealii::Utilities::pow(2ULL, l * dim);
 
       if(n_cells >= n_cells_min and n_cells <= n_cells_max)
       {
-        // set mesh refinement
-        l = refine_level - 2;
+        resolutions.push_back(
+          std::tuple<unsigned int, unsigned int, unsigned int>(degree, l, n_subdivisions_1d));
 
         if(run_type == RunType::FixedProblemSize)
+        {
           break;
-        else if(run_type == RunType::IncreasingProblemSize)
-          resolutions.push_back(
-            std::tuple<unsigned int, unsigned int, unsigned int>(degree, l, n_subdivisions_1d));
-        else
-          AssertThrow(false, dealii::ExcMessage("Not implemented:"));
+        }
       }
     }
 
-    // coarse grid with only a single cell, and refine_level uniform refinements
+    // coarse grid with n_cells_per_cube cells, and refine_level uniform refinements
     {
-      n_subdivisions_1d = 1;
-      n_cells           = dealii::Utilities::pow(2ULL, refine_level * dim);
+      unsigned int const n_subdivisions_1d = 1;
+      unsigned int const l                 = refine_level;
+
+      unsigned int const n_cells = n_cells_per_cube * dealii::Utilities::pow(2ULL, l * dim);
 
       if(n_cells >= n_cells_min and n_cells <= n_cells_max)
       {
-        // set mesh refinement
-        l = refine_level;
+        resolutions.push_back(
+          std::tuple<unsigned int, unsigned int, unsigned int>(degree, l, n_subdivisions_1d));
 
         if(run_type == RunType::FixedProblemSize)
+        {
           break;
-        else if(run_type == RunType::IncreasingProblemSize)
-          resolutions.push_back(
-            std::tuple<unsigned int, unsigned int, unsigned int>(degree, l, n_subdivisions_1d));
-        else
-          AssertThrow(false, dealii::ExcMessage("Not implemented:"));
+        }
       }
     }
 
     // coarse grid with 5^dim cells, and refine_level-2 uniform refinements
     if(dim == 3 and refine_level >= 2)
     {
-      n_subdivisions_1d = 5;
-      n_cells           = dealii::Utilities::pow(n_subdivisions_1d, dim) *
-                dealii::Utilities::pow(2ULL, (refine_level - 2) * dim);
+      unsigned int const n_subdivisions_1d = 5;
+      unsigned int const l                 = refine_level - 2;
+
+      unsigned int const n_cells = n_cells_per_cube *
+                                   dealii::Utilities::pow(n_subdivisions_1d, dim) *
+                                   dealii::Utilities::pow(2ULL, l * dim);
 
       if(n_cells >= n_cells_min and n_cells <= n_cells_max)
       {
-        // set mesh refinement
-        l = refine_level - 2;
+        resolutions.push_back(
+          std::tuple<unsigned int, unsigned int, unsigned int>(degree, l, n_subdivisions_1d));
 
         if(run_type == RunType::FixedProblemSize)
+        {
           break;
-        else if(run_type == RunType::IncreasingProblemSize)
-          resolutions.push_back(
-            std::tuple<unsigned int, unsigned int, unsigned int>(degree, l, n_subdivisions_1d));
-        else
-          AssertThrow(false, dealii::ExcMessage("Not implemented:"));
+        }
       }
     }
 
     // perform one global refinement
     ++refine_level;
-    n_cells = dealii::Utilities::pow(2ULL, refine_level * dim);
   }
 
   if(run_type == RunType::FixedProblemSize)
   {
-    AssertThrow((n_cells >= n_cells_min and n_cells <= n_cells_max),
+    AssertThrow(resolutions.size() > resolutions_initial_size,
                 dealii::ExcMessage(
                   "No mesh found that meets the requirements regarding problem size. "
                   "Make sure that maximum number of dofs is sufficiently larger than "
                   "minimum number of dofs."));
-
-    resolutions.push_back(
-      std::tuple<unsigned int, unsigned int, unsigned int>(degree, l, n_subdivisions_1d));
-  }
-  else
-  {
-    AssertThrow(run_type == RunType::IncreasingProblemSize, dealii::ExcMessage("Not implemented."));
   }
 }
 
