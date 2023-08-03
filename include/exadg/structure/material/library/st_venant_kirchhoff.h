@@ -88,7 +88,8 @@ private:
    * Factor out coefficients for faster computation
    * Sii = f0 * Eii + f1 * Eij, for i, j = 1, ..., dim and i != j, and
    * Sij = f2 * (Eij + Eji),    for i, j = 1, ..., dim and i != j.
-   * Note that these factors do not contain the (potentially variable) Young's modulus.
+   * Note that the factors computed via the functions below do not contain the (potentially
+   * variable) Young's modulus.
    */
   Number
   get_f0_factor() const;
