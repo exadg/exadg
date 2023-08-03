@@ -149,8 +149,13 @@ main(int argc, char ** argv)
   ExaDG::HypercubeResolutionParameters                       resolution(input_file, general.dim);
   ExaDG::ThroughputParameters<ExaDG::ConvDiff::OperatorType> throughput(input_file);
 
+  auto const lambda_get_dofs_per_element =
+    [&](unsigned int const dim, unsigned int const degree, ExaDG::ElementType const element_type) {
+      return ExaDG::ConvDiff::get_dofs_per_element(dim, degree, element_type);
+    };
+
   // fill resolution vector
-  resolution.fill_resolution_vector(&ExaDG::ConvDiff::get_dofs_per_element);
+  resolution.fill_resolution_vector(lambda_get_dofs_per_element);
 
   // loop over resolutions vector and run simulations
   for(auto iter = resolution.resolutions.begin(); iter != resolution.resolutions.end(); ++iter)
