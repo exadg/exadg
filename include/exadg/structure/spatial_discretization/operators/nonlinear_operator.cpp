@@ -252,7 +252,7 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
     // material deformation gradient
     tensor const F = get_F<dim, Number>(Grad_d);
 
-    // Green-Lagrange strain tensor
+    // Green-Lagrange strains
     tensor const E = get_E<dim, Number>(F);
 
     // 2nd Piola-Kirchhoff stresses
