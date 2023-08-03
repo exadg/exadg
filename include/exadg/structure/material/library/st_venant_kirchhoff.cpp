@@ -21,6 +21,7 @@
 
 #include <exadg/functions_and_boundary_conditions/evaluate_functions.h>
 #include <exadg/structure/material/library/st_venant_kirchhoff.h>
+#include <exadg/structure/spatial_discretization/operators/continuum_mechanics.h>
 
 namespace ExaDG
 {
@@ -37,6 +38,7 @@ StVenantKirchhoff<dim, Number>::StVenantKirchhoff(
     data(data),
     E_is_variable(data.E_function != nullptr)
 {
+  // initialize (potentially variable) factors
   Number const E = data.E;
   f0             = dealii::make_vectorized_array<Number>(get_f0_factor() * E);
   f1             = dealii::make_vectorized_array<Number>(get_f1_factor() * E);
@@ -70,9 +72,9 @@ StVenantKirchhoff<dim, Number>::get_f0_factor() const
   Type2D const type_two_dim = data.type_two_dim;
 
   return (dim == 3) ?
-           (1. - nu) / (1. + nu) / (1. - 2. * nu) :
+           (1. - nu) / ((1. + nu) * (1. - 2. * nu)) :
            (type_two_dim == Type2D::PlaneStress ? (1. / (1. - nu * nu)) :
-                                                  ((1. - nu) / (1. + nu) / (1. - 2. * nu)));
+                                                  ((1. - nu) / ((1. + nu) * (1. - 2. * nu))));
 }
 
 template<int dim, typename Number>
@@ -82,9 +84,9 @@ StVenantKirchhoff<dim, Number>::get_f1_factor() const
   Number const nu           = data.nu;
   Type2D const type_two_dim = data.type_two_dim;
 
-  return (dim == 3) ? (nu) / (1. + nu) / (1. - 2. * nu) :
+  return (dim == 3) ? (nu) / ((1. + nu) * (1. - 2. * nu)) :
                       (type_two_dim == Type2D::PlaneStress ? (nu / (1. - nu * nu)) :
-                                                             (nu / (1. + nu) / (1. - 2. * nu)));
+                                                             (nu / ((1. + nu) * (1. - 2. * nu))));
 }
 
 template<int dim, typename Number>
@@ -94,10 +96,10 @@ StVenantKirchhoff<dim, Number>::get_f2_factor() const
   Number const nu           = data.nu;
   Type2D const type_two_dim = data.type_two_dim;
 
-  return (dim == 3) ? (1. - 2. * nu) / 2. / (1. + nu) / (1. - 2. * nu) :
+  return (dim == 3) ? (1. - 2. * nu) * 0.5 / ((1. + nu) * (1. - 2. * nu)) :
                       (type_two_dim == Type2D::PlaneStress ?
-                         ((1. - nu) / 2. / (1. - nu * nu)) :
-                         ((1. - 2. * nu) / 2. / (1. + nu) / (1. - 2. * nu)));
+                         ((1. - nu) * 0.5 / (1. - nu * nu)) :
+                         ((1. - 2. * nu) * 0.5 / ((1. + nu) * (1. - 2. * nu))));
 }
 
 template<int dim, typename Number>
@@ -109,6 +111,10 @@ StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients(
   Range const & cell_range) const
 {
   IntegratorCell integrator(matrix_free, dof_index, quad_index);
+
+  auto const f0_factor = get_f0_factor();
+  auto const f1_factor = get_f1_factor();
+  auto const f2_factor = get_f2_factor();
 
   // loop over all cells
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
@@ -124,17 +130,17 @@ StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients(
                                                  0.0 /*time*/);
 
       // set the coefficients
-      f0_coefficients.set_coefficient_cell(cell, q, get_f0_factor() * E_vec);
-      f1_coefficients.set_coefficient_cell(cell, q, get_f1_factor() * E_vec);
-      f2_coefficients.set_coefficient_cell(cell, q, get_f2_factor() * E_vec);
+      f0_coefficients.set_coefficient_cell(cell, q, f0_factor * E_vec);
+      f1_coefficients.set_coefficient_cell(cell, q, f1_factor * E_vec);
+      f2_coefficients.set_coefficient_cell(cell, q, f2_factor * E_vec);
     }
   }
 }
 
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-StVenantKirchhoff<dim, Number>::evaluate_stress(
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
+StVenantKirchhoff<dim, Number>::PK2_stress(
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & strain_measure,
   unsigned int const                                              cell,
   unsigned int const                                              q) const
 {
@@ -149,22 +155,22 @@ StVenantKirchhoff<dim, Number>::evaluate_stress(
 
   if(dim == 3)
   {
-    S[0][0] = f0 * E[0][0] + f1 * E[1][1] + f1 * E[2][2];
-    S[1][1] = f1 * E[0][0] + f0 * E[1][1] + f1 * E[2][2];
-    S[2][2] = f1 * E[0][0] + f1 * E[1][1] + f0 * E[2][2];
-    S[0][1] = f2 * (E[0][1] + E[1][0]);
-    S[1][2] = f2 * (E[1][2] + E[2][1]);
-    S[0][2] = f2 * (E[0][2] + E[2][0]);
-    S[1][0] = f2 * (E[0][1] + E[1][0]);
-    S[2][1] = f2 * (E[1][2] + E[2][1]);
-    S[2][0] = f2 * (E[0][2] + E[2][0]);
+    S[0][0] = f0 * strain_measure[0][0] + f1 * (strain_measure[1][1] + strain_measure[2][2]);
+    S[1][1] = f0 * strain_measure[1][1] + f1 * (strain_measure[0][0] + strain_measure[2][2]);
+    S[2][2] = f0 * strain_measure[2][2] + f1 * (strain_measure[0][0] + strain_measure[1][1]);
+    S[0][1] = f2 * (strain_measure[0][1] + strain_measure[1][0]);
+    S[1][2] = f2 * (strain_measure[1][2] + strain_measure[2][1]);
+    S[0][2] = f2 * (strain_measure[0][2] + strain_measure[2][0]);
+    S[1][0] = S[0][1];
+    S[2][1] = S[1][2];
+    S[2][0] = S[0][2];
   }
   else
   {
-    S[0][0] = f0 * E[0][0] + f1 * E[1][1];
-    S[1][1] = f1 * E[0][0] + f0 * E[1][1];
-    S[0][1] = f2 * (E[0][1] + E[1][0]);
-    S[1][0] = f2 * (E[0][1] + E[1][0]);
+    S[0][0] = f0 * strain_measure[0][0] + f1 * strain_measure[1][1];
+    S[1][1] = f1 * strain_measure[0][0] + f0 * strain_measure[1][1];
+    S[0][1] = f2 * (strain_measure[0][1] + strain_measure[1][0]);
+    S[1][0] = S[0][1];
   }
 
   return S;
@@ -172,12 +178,17 @@ StVenantKirchhoff<dim, Number>::evaluate_stress(
 
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-StVenantKirchhoff<dim, Number>::apply_C(
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
+StVenantKirchhoff<dim, Number>::PK2_stress_derivative(
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & Grad_delta,
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & F_lin,
   unsigned int const                                              cell,
   unsigned int const                                              q) const
 {
-  return evaluate_stress(E, cell, q);
+  // Exploit linear stress-strain relationship and minor symmetries in C
+  // when forming directional derivative Du(PK2) = Du(C : E) = C : Du(E)
+  // = C : (0.5 * ( transpose(F_lin) * Grad_delta + transpose(Grad_delta) * F_lin ))
+  // = C : (transpose(F_lin) * Grad_delta )
+  return (this->PK2_stress(transpose(F_lin) * Grad_delta, cell, q));
 }
 
 template class StVenantKirchhoff<2, float>;

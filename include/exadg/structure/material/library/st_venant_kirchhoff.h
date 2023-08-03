@@ -69,16 +69,25 @@ public:
                     StVenantKirchhoffData<dim> const &      data);
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  evaluate_stress(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
-                  unsigned int const                                              cell,
-                  unsigned int const                                              q) const final;
+  PK2_stress(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & strain_measure,
+             unsigned int const                                              cell,
+             unsigned int const                                              q) const final;
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  apply_C(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
-          unsigned int const                                              cell,
-          unsigned int const                                              q) const final;
+  PK2_stress_derivative(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & Grad_delta,
+                        dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & F_lin,
+                        unsigned int const                                              cell,
+                        unsigned int const q) const final;
 
 private:
+  /*
+   * The second Piola-Kirchhoff stress tensor S is given as S = lambda * I * tr(E) + 2 mu E,
+   * with E being the Green-Lagrange strain tensor and Lamee parameters lambda and mu.
+   * Factor out coefficients for faster computation
+   * Sii = f0 * Eii + f1 * Eij, for i, j = 1, ..., dim and i != j, and
+   * Sij = f2 * (Eij + Eji),    for i, j = 1, ..., dim and i != j.
+   * Note that these factors do not contain the (potentially variable) Young's modulus.
+   */
   Number
   get_f0_factor() const;
 
@@ -88,6 +97,9 @@ private:
   Number
   get_f2_factor() const;
 
+  /*
+   * Store factors involving (potentially variable) Young's modulus.
+   */
   void
   cell_loop_set_coefficients(dealii::MatrixFree<dim, Number> const & matrix_free,
                              VectorType &,
