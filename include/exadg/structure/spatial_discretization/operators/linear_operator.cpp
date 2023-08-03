@@ -40,7 +40,9 @@ LinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
 
     // Cauchy stresses, only valid for linear elasticity
     tensor const sigma =
-      material->PK2_stress(symmetric_gradient, integrator.get_current_cell_index(), q);
+      material->second_piola_kirchhoff_stress(symmetric_gradient,
+                                              integrator.get_current_cell_index(),
+                                              q);
 
     // test with gradients
     integrator.submit_gradient(sigma, q);

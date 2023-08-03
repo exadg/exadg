@@ -46,9 +46,10 @@ public:
    * strain, Green-Lagrange strain tensor or Cauchy-Green strain tensor
    */
   virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  PK2_stress(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & strain_measure,
-             unsigned int const                                              cell,
-             unsigned int const                                              q) const = 0;
+  second_piola_kirchhoff_stress(
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & strain_measure,
+    unsigned int const                                              cell,
+    unsigned int const                                              q) const = 0;
 
   /*
    * Evaluate directional derivative of the 2nd Piola-Kirchhoff stress tensor given the displacement
@@ -56,10 +57,11 @@ public:
    * F_lin
    */
   virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  PK2_stress_derivative(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & Grad_delta,
-                        dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & F_lin,
-                        unsigned int const                                              cell,
-                        unsigned int const q) const = 0;
+  second_piola_kirchhoff_stress_derivative(
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & Grad_delta,
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & F_lin,
+    unsigned int const                                              cell,
+    unsigned int const                                              q) const = 0;
 };
 
 } // namespace Structure

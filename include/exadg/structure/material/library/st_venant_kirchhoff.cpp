@@ -139,7 +139,7 @@ StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients(
 
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-StVenantKirchhoff<dim, Number>::PK2_stress(
+StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & strain_measure,
   unsigned int const                                              cell,
   unsigned int const                                              q) const
@@ -178,7 +178,7 @@ StVenantKirchhoff<dim, Number>::PK2_stress(
 
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-StVenantKirchhoff<dim, Number>::PK2_stress_derivative(
+StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_derivative(
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & Grad_delta,
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & F_lin,
   unsigned int const                                              cell,

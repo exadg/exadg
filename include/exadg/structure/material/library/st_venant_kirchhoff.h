@@ -69,15 +69,17 @@ public:
                     StVenantKirchhoffData<dim> const &      data);
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  PK2_stress(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & strain_measure,
-             unsigned int const                                              cell,
-             unsigned int const                                              q) const final;
+  second_piola_kirchhoff_stress(
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & strain_measure,
+    unsigned int const                                              cell,
+    unsigned int const                                              q) const final;
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  PK2_stress_derivative(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & Grad_delta,
-                        dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & F_lin,
-                        unsigned int const                                              cell,
-                        unsigned int const q) const final;
+  second_piola_kirchhoff_stress_derivative(
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & Grad_delta,
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & F_lin,
+    unsigned int const                                              cell,
+    unsigned int const                                              q) const final;
 
 private:
   /*

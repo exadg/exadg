@@ -256,7 +256,8 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
     tensor const E = get_E<dim, Number>(F);
 
     // 2nd Piola-Kirchhoff stresses
-    tensor const S = material->PK2_stress(E, integrator.get_current_cell_index(), q);
+    tensor const S =
+      material->second_piola_kirchhoff_stress(E, integrator.get_current_cell_index(), q);
 
     // 1st Piola-Kirchhoff stresses P = F * S
     tensor const P = F * S;
@@ -331,14 +332,14 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
     tensor const E_lin = get_E<dim, Number>(F_lin);
 
     // 2nd Piola-Kirchhoff stresses
-    tensor const S_lin = material->PK2_stress(E_lin, integrator.get_current_cell_index(), q);
+    tensor const S_lin =
+      material->second_piola_kirchhoff_stress(E_lin, integrator.get_current_cell_index(), q);
 
     // directional derivative of 1st Piola-Kirchhoff stresses P
 
     // 1. elastic and initial displacement stiffness contributions
-    tensor delta_P =
-      F_lin *
-      material->PK2_stress_derivative(Grad_delta, F_lin, integrator.get_current_cell_index(), q);
+    tensor delta_P = F_lin * material->second_piola_kirchhoff_stress_derivative(
+                               Grad_delta, F_lin, integrator.get_current_cell_index(), q);
 
     // 2. geometric (or initial stress) stiffness contribution
     delta_P += Grad_delta * S_lin;
