@@ -89,7 +89,7 @@ run(ThroughputParameters<Poisson::OperatorType> const & throughput,
   std::shared_ptr<Poisson::ApplicationBase<dim, 1, Number>> application =
     Poisson::get_application<dim, 1, Number>(input_file, mpi_comm);
 
-  application->set_parameters_refinement_study(degree, refine_space, n_cells_1d);
+  application->set_parameters_throughput_study(degree, refine_space, n_cells_1d);
 
   std::shared_ptr<Poisson::Driver<dim, Number>> driver =
     std::make_shared<Poisson::Driver<dim, Number>>(mpi_comm, application, is_test, true);
