@@ -131,8 +131,6 @@ Operator<dim, Number>::distribute_dofs()
                                                *this->grid,
                                                dof_handler);
 
-  affine_constraints_periodicity_and_hanging_nodes.close();
-
   // copy periodicity and hanging node constraints, and add further constraints stemming from
   // Dirichlet boundary conditions
   affine_constraints.clear();
@@ -164,6 +162,8 @@ Operator<dim, Number>::distribute_dofs()
   // call deal.II utility function to add Dirichlet constraints
   add_homogeneous_dirichlet_constraints(affine_constraints, dof_handler, map_bid_to_mask);
 
+  // compress constraints *once after* complete setup
+  affine_constraints_periodicity_and_hanging_nodes.close();
   affine_constraints.close();
 
   pcout << std::endl
