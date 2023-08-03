@@ -99,6 +99,7 @@ Operator<dim, n_components, Number>::distribute_dofs()
     dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
     affine_constraints.reinit(locally_relevant_dofs);
 
+    // affine constraints to copy from need to be non-closed to add further constraints
     affine_constraints.copy_from(affine_constraints_periodicity_and_hanging_nodes);
 
     // use all the component masks defined by the user
