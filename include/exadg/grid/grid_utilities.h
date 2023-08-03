@@ -215,15 +215,12 @@ create_triangulation(
     // it seems as if construct_multigrid_hierarchy is set unnecessarily.
     if(not data.create_coarse_triangulations)
     {
-      AssertThrow(data.element_type == ElementType::Hypercube,
-                  dealii::ExcMessage(
-                    "The following settings do currently not work for ElementType::Simplex. "
-                    "You might need to extend the implementation in ExaDG or deal.II, "
-                    "or verify/correct the parameters set in ExaDG."));
-
-      mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
-      triangulation_description_setting =
-        dealii::TriangulationDescription::construct_multigrid_hierarchy;
+      if(data.element_type == ElementType::Hypercube)
+      {
+        mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
+        triangulation_description_setting =
+          dealii::TriangulationDescription::construct_multigrid_hierarchy;
+      }
     }
 
     triangulation =
