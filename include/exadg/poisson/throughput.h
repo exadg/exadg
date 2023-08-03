@@ -35,6 +35,7 @@
 #include <exadg/poisson/driver.h>
 
 // utilities
+#include <exadg/operators/finite_element.h>
 #include <exadg/operators/hypercube_resolution_parameters.h>
 #include <exadg/operators/throughput_parameters.h>
 #include <exadg/utilities/enum_patterns.h>
@@ -162,11 +163,15 @@ main(int argc, char ** argv)
 
   prm.parse_input(input_file, "", true, true);
 
-  auto const lambda_get_dofs_per_element = [&](unsigned int const       dim,
-                                               unsigned int const       degree,
-                                               ExaDG::ElementType const element_type) {
-    return ExaDG::Poisson::get_dofs_per_element(spatial_discretization, dim, degree, element_type);
-  };
+  auto const lambda_get_dofs_per_element =
+    [&](unsigned int const dim, unsigned int const degree, ExaDG::ElementType const element_type) {
+      return ExaDG::get_dofs_per_element(element_type,
+                                         spatial_discretization ==
+                                           ExaDG::Poisson::SpatialDiscretization::DG,
+                                         1 /* n_components */,
+                                         degree,
+                                         dim);
+    };
 
   // fill resolution vector depending on the operator_type
   resolution.fill_resolution_vector(lambda_get_dofs_per_element);

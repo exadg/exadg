@@ -35,6 +35,7 @@
 #include <exadg/structure/driver.h>
 
 // utilities
+#include <exadg/operators/finite_element.h>
 #include <exadg/operators/hypercube_resolution_parameters.h>
 #include <exadg/operators/throughput_parameters.h>
 #include <exadg/utilities/enum_patterns.h>
@@ -149,7 +150,8 @@ main(int argc, char ** argv)
 
   auto const lambda_get_dofs_per_element =
     [&](unsigned int const dim, unsigned int const degree, ExaDG::ElementType const element_type) {
-      return ExaDG::Structure::get_dofs_per_element(dim, degree, element_type);
+      return ExaDG::get_dofs_per_element(
+        element_type, false /* is_dg */, dim /* n_components */, degree, dim);
     };
 
   // fill resolution vector depending on the operator_type

@@ -35,6 +35,7 @@
 #include <exadg/convection_diffusion/driver.h>
 
 // utilities
+#include <exadg/operators/finite_element.h>
 #include <exadg/operators/hypercube_resolution_parameters.h>
 #include <exadg/operators/throughput_parameters.h>
 #include <exadg/utilities/enum_patterns.h>
@@ -151,7 +152,8 @@ main(int argc, char ** argv)
 
   auto const lambda_get_dofs_per_element =
     [&](unsigned int const dim, unsigned int const degree, ExaDG::ElementType const element_type) {
-      return ExaDG::ConvDiff::get_dofs_per_element(dim, degree, element_type);
+      return ExaDG::get_dofs_per_element(
+        element_type, true /* is_dg */, 1 /* n_components */, degree, dim);
     };
 
   // fill resolution vector
