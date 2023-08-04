@@ -337,7 +337,7 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
     // directional derivative of 1st Piola-Kirchhoff stresses P
 
     // 1. elastic and initial displacement stiffness contributions
-    tensor delta_P = F_lin * material->second_piola_kirchhoff_stress_derivative(
+    tensor delta_P = F_lin * material->second_piola_kirchhoff_stress_displacement_derivative(
                                Grad_delta, F_lin, integrator.get_current_cell_index(), q);
 
     // 2. geometric (or initial stress) stiffness contribution

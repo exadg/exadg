@@ -198,7 +198,7 @@ StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(
 
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_derivative(
+StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_displacement_derivative(
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_increment,
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & deformation_gradient,
   unsigned int const                                              cell,

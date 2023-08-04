@@ -76,7 +76,7 @@ public:
     unsigned int const                                              q) const final;
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  second_piola_kirchhoff_stress_derivative(
+  second_piola_kirchhoff_stress_displacement_derivative(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_increment,
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & deformation_gradient,
     unsigned int const                                              cell,
