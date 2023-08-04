@@ -75,10 +75,10 @@ public:
   }
 
   void
-  update(VectorType const & const_vector, double const factor, double const time)
+  update(VectorType const & const_vector, double const scaling_factor_mass, double const time)
   {
     this->const_vector        = &const_vector;
-    this->scaling_factor_mass = factor;
+    this->scaling_factor_mass = scaling_factor_mass;
     this->time                = time;
   }
 
@@ -137,9 +137,9 @@ public:
   }
 
   void
-  update(double const factor, double const time)
+  update(double const scaling_factor_mass, double const time)
   {
-    this->scaling_factor_mass = factor;
+    this->scaling_factor_mass = scaling_factor_mass;
     this->time                = time;
   }
 
@@ -197,7 +197,7 @@ public:
    * linear systems of equation required for implicit formulations.
    */
   void
-  setup_solver(double const & scaling_factor_mass);
+  setup_solver(double const & scaling_factor_acceleration, double const & scaling_factor_velocity);
 
   /*
    * Initialization of dof-vector.
@@ -226,6 +226,9 @@ public:
 
   void
   evaluate_mass_operator(VectorType & dst, VectorType const & src) const final;
+
+  void
+  apply_add_damping_operator(VectorType & dst, VectorType const & src) const final;
 
   /*
    * This function evaluates the nonlinear residual which is required by the Newton solver. In order
@@ -269,7 +272,8 @@ public:
   std::tuple<unsigned int, unsigned int>
   solve_nonlinear(VectorType &       sol,
                   VectorType const & const_vector,
-                  double const       scaling_factor_mass,
+                  double const       scaling_factor_acceleration,
+                  double const       scaling_factor_velocity,
                   double const       time,
                   bool const         update_preconditioner) const final;
 
@@ -288,7 +292,8 @@ public:
   unsigned int
   solve_linear(VectorType &       sol,
                VectorType const & rhs,
-               double const       scaling_factor_mass,
+               double const       scaling_factor_acceleration,
+               double const       scaling_factor_velocity,
                double const       time,
                bool const         update_preconditioner) const final;
 
@@ -345,6 +350,14 @@ private:
 
   unsigned int
   get_quad_index_gauss_lobatto() const;
+
+  /*
+   * Scaling factor for mass matrix assuming a weak damping operator leading to a scaled mass
+   * matrix.
+   */
+  double
+  compute_scaling_factor_mass(double const scaling_factor_acceleration,
+                              double const scaling_factor_velocity) const;
 
   /*
    * Initializes operators.

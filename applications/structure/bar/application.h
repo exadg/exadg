@@ -249,6 +249,12 @@ public:
       prm.add_parameter("BoundaryType",
                         boundary_type,
                         "Type of boundary condition, Dirichlet vs Neumann.");
+      prm.add_parameter("ProblemType",
+                        problem_type,
+                        "Problem type considered, QuasiStatic vs Unsteady vs. Steady");
+      prm.add_parameter("WeakDamping",
+                        weak_damping_coefficient,
+                        "Weak damping coefficient for unsteady problems.");
       prm.add_parameter("Displacement",
                         displacement,
                         "Displacement of right boundary in case of Dirichlet BC.");
@@ -263,20 +269,26 @@ private:
   void
   set_parameters() final
   {
-    this->param.problem_type         = ProblemType::QuasiStatic;
+    this->param.problem_type         = problem_type;
     this->param.body_force           = use_volume_force;
     this->param.large_deformation    = true;
     this->param.pull_back_body_force = false;
     this->param.pull_back_traction   = false;
 
     this->param.density = density;
+    if(this->param.problem_type == ProblemType::Unsteady and weak_damping_coefficient > 0.0)
+    {
+      this->param.weak_damping_active      = true;
+      this->param.weak_damping_coefficient = weak_damping_coefficient;
+    }
 
-    this->param.start_time                           = start_time;
-    this->param.end_time                             = end_time;
-    this->param.time_step_size                       = end_time / 200.;
-    this->param.gen_alpha_type                       = GenAlphaType::BossakAlpha;
-    this->param.spectral_radius                      = 0.8;
-    this->param.solver_info_data.interval_time_steps = 2;
+    this->param.start_time      = start_time;
+    this->param.end_time        = end_time;
+    this->param.time_step_size  = end_time / 200.;
+    this->param.gen_alpha_type  = GenAlphaType::BossakAlpha;
+    this->param.spectral_radius = 0.8;
+    this->param.solver_info_data.interval_time_steps =
+      problem_type == ProblemType::Unsteady ? 200 : 2;
 
     this->param.mapping_degree    = 1;
     this->param.grid.element_type = ElementType::Hypercube; // Simplex;
@@ -561,6 +573,9 @@ private:
     pp_data.output_data.write_higher_order = true;
     pp_data.output_data.degree             = this->param.degree;
 
+    pp_data.error_data.time_control_data.start_time       = start_time;
+    pp_data.error_data.time_control_data.trigger_interval = (end_time - start_time);
+
     pp_data.error_data.time_control_data.is_active = true;
     pp_data.error_data.calculate_relative_errors   = true;
     double const vol_force                         = use_volume_force ? this->volume_force : 0.0;
@@ -600,6 +615,9 @@ private:
     Neumann
   };
   BoundaryType boundary_type = BoundaryType::Dirichlet;
+  ProblemType  problem_type  = ProblemType::Unsteady;
+
+  double weak_damping_coefficient = 0.0;
 
   double displacement = 1.0; // "Dirichlet"
   double area_force   = 1.0; // "Neumann"
