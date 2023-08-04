@@ -175,13 +175,14 @@ $(function() {
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  time_integrator-&gt;setup(application-&gt;get_parameters().restarted_simulation);</div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span> </div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  pde_operator-&gt;setup_solver(time_integrator-&gt;get_scaling_factor_mass());</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>}</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span> </div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>} <span class="comment">// namespace FSI</span></div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span> </div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_STRUCTURE_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  pde_operator-&gt;setup_solver(time_integrator-&gt;get_scaling_factor_acceleration(),</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>                             time_integrator-&gt;get_scaling_factor_velocity());</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>}</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span> </div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>} <span class="comment">// namespace FSI</span></div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_STRUCTURE_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1FSI_1_1SolverStructure_html"><div class="ttname"><a href="classExaDG_1_1FSI_1_1SolverStructure.html">ExaDG::FSI::SolverStructure</a></div><div class="ttdef"><b>Definition</b> structure.h:38</div></div>
 <div class="ttc" id="aclassExaDG_1_1StructureFSI_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1StructureFSI_1_1ApplicationBase.html">ExaDG::StructureFSI::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:64</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
