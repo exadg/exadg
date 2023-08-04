@@ -446,8 +446,8 @@ create_triangulation_with_multigrid(
                                         data.n_refine_global,
                                         vector_local_refinements);
 
-    // Depending on the type of multigrid implementation, the coarse triangulations need to created
-    // explicitly.
+    // Depending on the type of multigrid implementation, the coarse triangulations need to be
+    // created explicitly.
     if(data.create_coarse_triangulations)
     {
       GridUtilities::create_coarse_triangulations(*grid.triangulation,
