@@ -64,15 +64,16 @@ private:
     this->param.right_hand_side = false;
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.element_type = ElementType::Simplex;
+    this->param.grid.element_type = ElementType::Hypercube;
     if(this->param.grid.element_type == ElementType::Simplex)
     {
-      this->param.grid.triangulation_type           = TriangulationType::Serial;
+      this->param.grid.triangulation_type           = TriangulationType::FullyDistributed;
       this->param.grid.create_coarse_triangulations = false;
     }
     else if(this->param.grid.element_type == ElementType::Hypercube)
     {
-      this->param.grid.triangulation_type = TriangulationType::Distributed;
+      this->param.grid.triangulation_type           = TriangulationType::Distributed;
+      this->param.grid.create_coarse_triangulations = false;
     }
 
     this->param.mapping_degree         = 1;
