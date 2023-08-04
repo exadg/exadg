@@ -226,6 +226,9 @@ create_triangulation(
         dealii::TriangulationDescription::construct_multigrid_hierarchy;
     }
 
+    triangulation =
+      std::make_shared<dealii::parallel::fullydistributed::Triangulation<dim>>(mpi_comm);
+
     auto const description = dealii::TriangulationDescription::Utilities::
       create_description_from_triangulation_in_groups<dim, dim>(serial_grid_generator,
                                                                 serial_grid_partitioner,
@@ -233,9 +236,6 @@ create_triangulation(
                                                                 group_size,
                                                                 mesh_smoothing,
                                                                 triangulation_description_setting);
-
-    triangulation =
-      std::make_shared<dealii::parallel::fullydistributed::Triangulation<dim>>(mpi_comm);
 
     triangulation->create_triangulation(description);
   }
