@@ -142,7 +142,7 @@ private:
     }
     else if(this->param.grid.element_type == ElementType::Hypercube)
     {
-      this->param.grid.triangulation_type           = TriangulationType::FullyDistributed;
+      this->param.grid.triangulation_type           = TriangulationType::Distributed;
       this->param.mapping_degree                    = 3;
       this->param.grid.create_coarse_triangulations = false; // can also be set to true if desired
     }
