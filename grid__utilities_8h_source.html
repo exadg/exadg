@@ -288,16 +288,16 @@ $(function() {
 <div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>        dealii::TriangulationDescription::construct_multigrid_hierarchy;</div>
 <div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>    }</div>
 <div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span> </div>
-<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>    <span class="keyword">auto</span> <span class="keyword">const</span> description = dealii::TriangulationDescription::Utilities::</div>
-<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>      create_description_from_triangulation_in_groups&lt;dim, dim&gt;(serial_grid_generator,</div>
-<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>                                                                serial_grid_partitioner,</div>
-<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>                                                                triangulation-&gt;get_communicator(),</div>
-<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>                                                                group_size,</div>
-<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>                                                                mesh_smoothing,</div>
-<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>                                                                triangulation_description_setting);</div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span> </div>
-<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>    triangulation =</div>
-<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>      std::make_shared&lt;dealii::parallel::fullydistributed::Triangulation&lt;dim&gt;&gt;(mpi_comm);</div>
+<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>    triangulation =</div>
+<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>      std::make_shared&lt;dealii::parallel::fullydistributed::Triangulation&lt;dim&gt;&gt;(mpi_comm);</div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span> </div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>    <span class="keyword">auto</span> <span class="keyword">const</span> description = dealii::TriangulationDescription::Utilities::</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>      create_description_from_triangulation_in_groups&lt;dim, dim&gt;(serial_grid_generator,</div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>                                                                serial_grid_partitioner,</div>
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>                                                                triangulation-&gt;get_communicator(),</div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>                                                                group_size,</div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>                                                                mesh_smoothing,</div>
+<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>                                                                triangulation_description_setting);</div>
 <div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span> </div>
 <div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>    triangulation-&gt;create_triangulation(description);</div>
 <div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>  }</div>
