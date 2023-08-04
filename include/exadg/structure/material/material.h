@@ -42,23 +42,23 @@ public:
   }
 
   /*
-   * Evaluate 2nd Piola-Kirchhoff stress tensor given a strain measure, e.g., the engineering
-   * strain, Green-Lagrange strain tensor or Cauchy-Green strain tensor
+   * Evaluate 2nd Piola-Kirchhoff stress tensor given the gradient of the displacement field
+   * with respect to the reference configuration (not to be confused with the deformation gradient)
    */
   virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   second_piola_kirchhoff_stress(
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & strain_measure,
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
     unsigned int const                                              cell,
     unsigned int const                                              q) const = 0;
 
   /*
    * Evaluate directional derivative of the 2nd Piola-Kirchhoff stress tensor given the displacement
-   * shape function gradient Grad_delta and deformation gradient at current linearization point
-   * F_lin
+   * increment shape function gradient *gradient_increment* with respect to the reference
+   * configuration and deformation gradient at the current linearization point *F_lin*
    */
   virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   second_piola_kirchhoff_stress_derivative(
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & Grad_delta,
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_increment,
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & F_lin,
     unsigned int const                                              cell,
     unsigned int const                                              q) const = 0;

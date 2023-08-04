@@ -32,10 +32,12 @@ StVenantKirchhoff<dim, Number>::StVenantKirchhoff(
   dealii::MatrixFree<dim, Number> const & matrix_free,
   unsigned int const                      dof_index,
   unsigned int const                      quad_index,
-  StVenantKirchhoffData<dim> const &      data)
+  StVenantKirchhoffData<dim> const &      data,
+  bool const                              large_deformation)
   : dof_index(dof_index),
     quad_index(quad_index),
     data(data),
+    large_deformation(large_deformation),
     E_is_variable(data.E_function != nullptr)
 {
   // initialize (potentially variable) factors
@@ -139,8 +141,8 @@ StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients(
 
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & strain_measure,
+StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_symmetrize(
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & strain,
   unsigned int const                                              cell,
   unsigned int const                                              q) const
 {
@@ -155,21 +157,21 @@ StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(
 
   if(dim == 3)
   {
-    S[0][0] = f0 * strain_measure[0][0] + f1 * (strain_measure[1][1] + strain_measure[2][2]);
-    S[1][1] = f0 * strain_measure[1][1] + f1 * (strain_measure[0][0] + strain_measure[2][2]);
-    S[2][2] = f0 * strain_measure[2][2] + f1 * (strain_measure[0][0] + strain_measure[1][1]);
-    S[0][1] = f2 * (strain_measure[0][1] + strain_measure[1][0]);
-    S[1][2] = f2 * (strain_measure[1][2] + strain_measure[2][1]);
-    S[0][2] = f2 * (strain_measure[0][2] + strain_measure[2][0]);
+    S[0][0] = f0 * strain[0][0] + f1 * (strain[1][1] + strain[2][2]);
+    S[1][1] = f0 * strain[1][1] + f1 * (strain[0][0] + strain[2][2]);
+    S[2][2] = f0 * strain[2][2] + f1 * (strain[0][0] + strain[1][1]);
+    S[0][1] = f2 * (strain[0][1] + strain[1][0]);
+    S[1][2] = f2 * (strain[1][2] + strain[2][1]);
+    S[0][2] = f2 * (strain[0][2] + strain[2][0]);
     S[1][0] = S[0][1];
     S[2][1] = S[1][2];
     S[2][0] = S[0][2];
   }
   else
   {
-    S[0][0] = f0 * strain_measure[0][0] + f1 * strain_measure[1][1];
-    S[1][1] = f1 * strain_measure[0][0] + f0 * strain_measure[1][1];
-    S[0][1] = f2 * (strain_measure[0][1] + strain_measure[1][0]);
+    S[0][0] = f0 * strain[0][0] + f1 * strain[1][1];
+    S[1][1] = f1 * strain[0][0] + f0 * strain[1][1];
+    S[0][1] = f2 * (strain[0][1] + strain[1][0]);
     S[1][0] = S[0][1];
   }
 
@@ -178,17 +180,34 @@ StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(
 
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
+  unsigned int const                                              cell,
+  unsigned int const                                              q) const
+{
+  if(large_deformation)
+  {
+    return (this->second_piola_kirchhoff_stress_symmetrize(
+      get_E<dim, Number>(get_F<dim, Number>(gradient_displacement)), cell, q));
+  }
+  else
+  {
+    return (this->second_piola_kirchhoff_stress_symmetrize(gradient_displacement, cell, q));
+  }
+}
+
+template<int dim, typename Number>
+dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_derivative(
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & Grad_delta,
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_increment,
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & F_lin,
   unsigned int const                                              cell,
   unsigned int const                                              q) const
 {
-  // Exploit linear stress-strain relationship and minor symmetries in C
-  // when forming directional derivative Du(PK2) = Du(C : E) = C : Du(E)
-  // = C : (0.5 * ( transpose(F_lin) * Grad_delta + transpose(Grad_delta) * F_lin ))
-  // = C : (transpose(F_lin) * Grad_delta )
-  return (this->second_piola_kirchhoff_stress(transpose(F_lin) * Grad_delta, cell, q));
+  // Exploit linear stress-strain relationship and symmetrizing in
+  // second_piola_kirchhoff_stress_symmetrize
+  return (
+    this->second_piola_kirchhoff_stress_symmetrize(transpose(F_lin) * gradient_increment, cell, q));
 }
 
 template class StVenantKirchhoff<2, float>;

@@ -252,12 +252,9 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
     // material deformation gradient
     tensor const F = get_F<dim, Number>(Grad_d);
 
-    // Green-Lagrange strains
-    tensor const E = get_E<dim, Number>(F);
-
     // 2nd Piola-Kirchhoff stresses
     tensor const S =
-      material->second_piola_kirchhoff_stress(E, integrator.get_current_cell_index(), q);
+      material->second_piola_kirchhoff_stress(Grad_d, integrator.get_current_cell_index(), q);
 
     // 1st Piola-Kirchhoff stresses P = F * S
     tensor const P = F * S;
@@ -327,13 +324,15 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
     // kinematics
     tensor const Grad_delta = integrator.get_gradient(q);
 
-    tensor const F_lin = get_F<dim, Number>(integrator_lin->get_gradient(q));
+    tensor const Grad_displacement = integrator_lin->get_gradient(q);
 
-    tensor const E_lin = get_E<dim, Number>(F_lin);
+    tensor const F_lin = get_F<dim, Number>(Grad_displacement);
 
     // 2nd Piola-Kirchhoff stresses
     tensor const S_lin =
-      material->second_piola_kirchhoff_stress(E_lin, integrator.get_current_cell_index(), q);
+      material->second_piola_kirchhoff_stress(Grad_displacement,
+                                              integrator.get_current_cell_index(),
+                                              q);
 
     // directional derivative of 1st Piola-Kirchhoff stresses P
 
