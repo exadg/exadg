@@ -113,9 +113,14 @@ Driver<dim, Number>::setup()
     }
 
     if(application->get_parameters().problem_type == ProblemType::Unsteady)
-      pde_operator->setup_solver(time_integrator->get_scaling_factor_mass());
+    {
+      pde_operator->setup_solver(time_integrator->get_scaling_factor_acceleration(),
+                                 time_integrator->get_scaling_factor_velocity());
+    }
     else
-      pde_operator->setup_solver(0.0);
+    {
+      pde_operator->setup_solver(0.0 /* no acceleration term */, 0.0 /* no damping term */);
+    }
   }
 
   timer_tree.insert({"Elasticity", "Setup"}, timer.wall_time());

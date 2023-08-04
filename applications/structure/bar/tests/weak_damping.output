@@ -1,0 +1,130 @@
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up elasticity solver:
+
+List of parameters:
+
+Mathematical model:
+  Problem type:                              Unsteady
+  Body force:                                false
+  Large deformation:                         true
+  Pull back body force:                      false
+  Pull back traction:                        false
+
+Physical quantities:
+  Density:                                   1.0000e-03
+  Weak damping coefficient:                  1.0000e+04
+
+Temporal discretization:
+  Start time:                                0.0000e+00
+  End time:                                  1.0000e+02
+  Max. number of time steps:                 4294967295
+  Temporal refinements:                      0
+  Time integration type:                     BossakAlpha
+  Spectral radius:                           8.0000e-01
+  Solver information:
+  Interval physical time:                    1.7977e+308
+  Interval wall time:                        1.7977e+308
+  Interval time steps:                       200
+
+Spatial Discretization:
+  Triangulation type:                        Distributed
+  Element type:                              Hypercube
+  Number of global refinements:              0
+  Create coarse triangulations:              false
+  Mapping degree:                            1
+  Polynomial degree:                         1
+
+Solver:
+
+Newton:
+  Maximum number of iterations:              100
+  Absolute solver tolerance:                 1.0000e-09
+  Relative solver tolerance:                 1.0000e-09
+
+Linear solver:
+  Solver:                                    FGMRES
+  Maximum number of iterations:              1000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-08
+  Maximum size of Krylov space:              100
+  Preconditioner:                            Multigrid
+  Multigrid type:                            phMG
+  p-sequence:                                Bisect
+  Smoother:                                  Chebyshev
+  Preconditioner smoother:                   PointJacobi
+  Iterations smoother:                       5
+  Smoothing range:                           2.0000e+01
+  Iterations eigenvalue estimation:          20
+  Coarse grid solver:                        CG
+  Coarse grid preconditioner:                AMG
+  Maximum number of iterations:              10000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-03
+  Maximum size of Krylov space:              30
+      AMG type:                              ML
+      Smoother sweeps:                       1
+      Number of cycles:                      1
+      Smoother type:                         ILU
+
+Generating grid for 3-dimensional problem:
+
+  Max. number of refinements:                0
+  Number of cells:                           4
+
+Construct elasticity operator ...
+
+Continuous Galerkin finite element discretization:
+
+  degree of 1D polynomials:                  1
+  number of dofs per cell:                   24
+  number of dofs (total):                    60
+
+... done!
+
+Setup elasticity operator ...
+
+... done!
+
+Setup elasticity time integrator ...
+
+... done!
+
+Setup elasticity solver ...
+
+... done!
+
+Starting time loop ...
+
+Calculate error for all fields at time t = 0.0000e+00:
+  Relative error (L2-norm): 1.00000e+00
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 5.00000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 200     t = 9.95000e+01 -> t + dt = 1.00000e+02
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 1.0000e+02:
+  Relative error (L2-norm): 6.27902e-01
