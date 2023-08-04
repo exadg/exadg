@@ -188,7 +188,7 @@ StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_derivative(
   // when forming directional derivative Du(PK2) = Du(C : E) = C : Du(E)
   // = C : (0.5 * ( transpose(F_lin) * Grad_delta + transpose(Grad_delta) * F_lin ))
   // = C : (transpose(F_lin) * Grad_delta )
-  return (this->PK2_stress(transpose(F_lin) * Grad_delta, cell, q));
+  return (this->second_piola_kirchhoff_stress(transpose(F_lin) * Grad_delta, cell, q));
 }
 
 template class StVenantKirchhoff<2, float>;
