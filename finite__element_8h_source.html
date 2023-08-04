@@ -160,11 +160,42 @@ $(function() {
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <span class="keywordflow">return</span> fe;</div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>}</div>
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span> </div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_OPERATORS_FINITE_ELEMENT_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span><span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span></div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>get_dofs_per_element(ExaDG::ElementType <span class="keyword">const</span> element_type,</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>                     <span class="keywordtype">bool</span> <span class="keyword">const</span>               is_dg,</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>                     <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>       n_components,</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>                     <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>       degree,</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>                     <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>       dim)</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>{</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> scalar_dofs_per_element = 1;</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span> </div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n_points_1d = degree;</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span> </div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  <span class="keywordflow">if</span>(is_dg)</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    n_points_1d += 1;</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span> </div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  <span class="keywordflow">if</span>(element_type == ElementType::Hypercube)</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  {</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    scalar_dofs_per_element = dealii::Utilities::pow(n_points_1d, dim);</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  }</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  <span class="keywordflow">else</span> <span class="keywordflow">if</span>(element_type == ElementType::Simplex)</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  {</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> d = 0; d &lt; dim; ++d)</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>      scalar_dofs_per_element = (scalar_dofs_per_element * (n_points_1d + d)) / (d + 1);</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  }</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  <span class="keywordflow">else</span></div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  {</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>    AssertThrow(<span class="keyword">false</span>, ExcNotImplemented());</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  }</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <span class="keywordflow">return</span> scalar_dofs_per_element * n_components;</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>}</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span> </div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span> </div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span> </div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_OPERATORS_FINITE_ELEMENT_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 <div class="ttc" id="anamespaceExaDG_html_a4ee9607ef908f9a2d5599d52a185abce"><div class="ttname"><a href="namespaceExaDG.html#a4ee9607ef908f9a2d5599d52a185abce">ExaDG::create_finite_element</a></div><div class="ttdeci">std::shared_ptr&lt; dealii::FiniteElement&lt; dim &gt; &gt; create_finite_element(ElementType const &amp;element_type, bool const is_dg, unsigned int const n_components, unsigned int const degree)</div><div class="ttdef"><b>Definition</b> finite_element.h:45</div></div>
 </div><!-- fragment --></div><!-- contents -->
