@@ -200,14 +200,14 @@ template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_derivative(
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_increment,
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & F_lin,
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & deformation_gradient,
   unsigned int const                                              cell,
   unsigned int const                                              q) const
 {
   // Exploit linear stress-strain relationship and symmetrizing in
   // second_piola_kirchhoff_stress_symmetrize
   return (
-    this->second_piola_kirchhoff_stress_symmetrize(transpose(F_lin) * gradient_increment, cell, q));
+    this->second_piola_kirchhoff_stress_symmetrize(transpose(deformation_gradient) * gradient_increment, cell, q));
 }
 
 template class StVenantKirchhoff<2, float>;

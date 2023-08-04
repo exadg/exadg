@@ -54,12 +54,12 @@ public:
   /*
    * Evaluate directional derivative of the 2nd Piola-Kirchhoff stress tensor given the displacement
    * increment shape function gradient *gradient_increment* with respect to the reference
-   * configuration and deformation gradient at the current linearization point *F_lin*
+   * configuration and deformation gradient at the current linearization point *deformation_gradient*
    */
   virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   second_piola_kirchhoff_stress_derivative(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_increment,
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & F_lin,
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & deformation_gradient,
     unsigned int const                                              cell,
     unsigned int const                                              q) const = 0;
 };
