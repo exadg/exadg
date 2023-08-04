@@ -50,14 +50,6 @@ enum class OperatorType
   EvaluateOperatorExplicit
 };
 
-inline unsigned int
-get_dofs_per_element(unsigned int const dim, unsigned int const degree)
-{
-  unsigned int const dofs_per_element = (dim + 2) * dealii::Utilities::pow(degree + 1, dim);
-
-  return dofs_per_element;
-}
-
 template<int dim, typename Number = double>
 class Driver
 {

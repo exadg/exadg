@@ -6,6 +6,7 @@
     },
     "Resolution": {
         "RunType": "FixedProblemSize",
+        "ElementType": "Hypercube",
         "DegreeMin": "2",
         "DegreeMax": "15",
         "RefineSpaceMin": "3",

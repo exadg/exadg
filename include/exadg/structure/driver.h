@@ -49,14 +49,6 @@ enum class OperatorType
             // nonlinear problems
 };
 
-inline unsigned int
-get_dofs_per_element(unsigned int const dim, unsigned int const degree)
-{
-  unsigned int const dofs_per_element = dealii::Utilities::pow(degree, dim) * dim;
-
-  return dofs_per_element;
-}
-
 template<int dim, typename Number>
 class Driver
 {

@@ -43,23 +43,6 @@ enum class OperatorType
   Apply
 };
 
-inline unsigned int
-get_dofs_per_element(SpatialDiscretization const & spatial_discretization,
-                     unsigned int const            dim,
-                     unsigned int const            degree)
-{
-  unsigned int dofs_per_element = 1;
-
-  if(spatial_discretization == SpatialDiscretization::CG)
-    dofs_per_element = dealii::Utilities::pow(degree, dim);
-  else if(spatial_discretization == SpatialDiscretization::DG)
-    dofs_per_element = dealii::Utilities::pow(degree + 1, dim);
-  else
-    AssertThrow(false, dealii::ExcMessage("Not implemented."));
-
-  return dofs_per_element;
-}
-
 template<int dim, int n_components, typename Number>
 class Solver
 {

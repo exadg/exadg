@@ -64,10 +64,20 @@ private:
     this->param.right_hand_side = false;
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.mapping_degree          = 1;
-    this->param.spatial_discretization  = SpatialDiscretization::DG;
-    this->param.IP_factor               = 1.0e0;
+    this->param.grid.element_type = ElementType::Simplex;
+    if(this->param.grid.element_type == ElementType::Simplex)
+    {
+      this->param.grid.triangulation_type           = TriangulationType::FullyDistributed;
+      this->param.grid.create_coarse_triangulations = false;
+    }
+    else if(this->param.grid.element_type == ElementType::Hypercube)
+    {
+      this->param.grid.triangulation_type = TriangulationType::Distributed;
+    }
+
+    this->param.mapping_degree         = 1;
+    this->param.spatial_discretization = SpatialDiscretization::DG;
+    this->param.IP_factor              = 1.0e0;
 
     // SOLVER
     this->param.solver         = LinearSolver::CG;
@@ -86,16 +96,33 @@ private:
         (void)vector_local_refinements;
 
         double const left = -1.0, right = 1.0;
-        double const deformation = 0.1;
 
-        create_periodic_box(tria,
-                            global_refinements,
-                            periodic_face_pairs,
-                            this->n_subdivisions_1d_hypercube,
-                            left,
-                            right,
-                            mesh_type == MeshType::Curvilinear,
-                            deformation);
+        // periodic boundary conditions are currently not available in deal.II for simplex meshes
+
+        if(this->param.grid.element_type == ElementType::Hypercube)
+        {
+          double const deformation = 0.1;
+
+          create_periodic_box(tria,
+                              global_refinements,
+                              periodic_face_pairs,
+                              this->n_subdivisions_1d_hypercube,
+                              left,
+                              right,
+                              mesh_type == MeshType::Curvilinear,
+                              deformation);
+        }
+        else if(this->param.grid.element_type == ElementType::Simplex)
+        {
+          dealii::GridGenerator::subdivided_hyper_cube_with_simplices(
+            tria, this->n_subdivisions_1d_hypercube, left, right);
+
+          tria.refine_global(global_refinements);
+        }
+        else
+        {
+          AssertThrow(false, ExcNotImplemented());
+        }
       };
 
 
@@ -110,6 +137,16 @@ private:
   void
   set_boundary_descriptor() final
   {
+    // periodic boundary conditions are currently not available in deal.II for simplex meshes.
+    // Hence, we set homogeneous Dirichlet boundary conditions in case of simplex meshes
+    if(this->param.grid.element_type == ElementType::Simplex)
+    {
+      typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+        pair;
+
+      this->boundary_descriptor->dirichlet_bc.insert(
+        pair(0, new dealii::Functions::ZeroFunction<dim>(1)));
+    }
   }
 
   void

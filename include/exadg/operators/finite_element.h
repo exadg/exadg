@@ -88,6 +88,37 @@ create_finite_element(ElementType const & element_type,
   return fe;
 }
 
+inline unsigned int
+get_dofs_per_element(ExaDG::ElementType const element_type,
+                     bool const               is_dg,
+                     unsigned int const       n_components,
+                     unsigned int const       degree,
+                     unsigned int const       dim)
+{
+  unsigned int scalar_dofs_per_element = 1;
+
+  unsigned int n_points_1d = degree;
+
+  if(is_dg)
+    n_points_1d += 1;
+
+  if(element_type == ElementType::Hypercube)
+  {
+    scalar_dofs_per_element = dealii::Utilities::pow(n_points_1d, dim);
+  }
+  else if(element_type == ElementType::Simplex)
+  {
+    for(unsigned int d = 0; d < dim; ++d)
+      scalar_dofs_per_element = (scalar_dofs_per_element * (n_points_1d + d)) / (d + 1);
+  }
+  else
+  {
+    AssertThrow(false, ExcNotImplemented());
+  }
+
+  return scalar_dofs_per_element * n_components;
+}
+
 } // namespace ExaDG
 
 

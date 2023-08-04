@@ -35,6 +35,7 @@
 #include <exadg/poisson/driver.h>
 
 // utilities
+#include <exadg/operators/finite_element.h>
 #include <exadg/operators/hypercube_resolution_parameters.h>
 #include <exadg/operators/throughput_parameters.h>
 #include <exadg/utilities/enum_patterns.h>
@@ -89,7 +90,7 @@ run(ThroughputParameters<Poisson::OperatorType> const & throughput,
   std::shared_ptr<Poisson::ApplicationBase<dim, 1, Number>> application =
     Poisson::get_application<dim, 1, Number>(input_file, mpi_comm);
 
-  application->set_parameters_refinement_study(degree, refine_space, n_cells_1d);
+  application->set_parameters_throughput_study(degree, refine_space, n_cells_1d);
 
   std::shared_ptr<Poisson::Driver<dim, Number>> driver =
     std::make_shared<Poisson::Driver<dim, Number>>(mpi_comm, application, is_test, true);
@@ -162,9 +163,15 @@ main(int argc, char ** argv)
 
   prm.parse_input(input_file, "", true, true);
 
-  auto const lambda_get_dofs_per_element = [&](unsigned int const dim, unsigned int const degree) {
-    return ExaDG::Poisson::get_dofs_per_element(spatial_discretization, dim, degree);
-  };
+  auto const lambda_get_dofs_per_element =
+    [&](unsigned int const dim, unsigned int const degree, ExaDG::ElementType const element_type) {
+      return ExaDG::get_dofs_per_element(element_type,
+                                         spatial_discretization ==
+                                           ExaDG::Poisson::SpatialDiscretization::DG,
+                                         1 /* n_components */,
+                                         degree,
+                                         dim);
+    };
 
   // fill resolution vector depending on the operator_type
   resolution.fill_resolution_vector(lambda_get_dofs_per_element);

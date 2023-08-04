@@ -30,6 +30,7 @@
 #include <exadg/compressible_navier_stokes/driver.h>
 
 // utilities
+#include <exadg/operators/finite_element.h>
 #include <exadg/operators/hypercube_resolution_parameters.h>
 #include <exadg/operators/throughput_parameters.h>
 #include <exadg/utilities/general_parameters.h>
@@ -142,8 +143,14 @@ main(int argc, char ** argv)
   ExaDG::HypercubeResolutionParameters                     resolution(input_file, general.dim);
   ExaDG::ThroughputParameters<ExaDG::CompNS::OperatorType> throughput(input_file);
 
+  auto const lambda_get_dofs_per_element =
+    [&](unsigned int const dim, unsigned int const degree, ExaDG::ElementType const element_type) {
+      return ExaDG::get_dofs_per_element(
+        element_type, true /* is_dg */, dim + 2 /* n_components */, degree, dim);
+    };
+
   // fill resolution vector depending on the operator_type
-  resolution.fill_resolution_vector(&ExaDG::CompNS::get_dofs_per_element);
+  resolution.fill_resolution_vector(lambda_get_dofs_per_element);
 
   // loop over resolutions vector and run simulations
   for(auto iter = resolution.resolutions.begin(); iter != resolution.resolutions.end(); ++iter)

@@ -35,6 +35,7 @@
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
 #include <exadg/incompressible_navier_stokes/user_interface/application_base.h>
 #include <exadg/matrix_free/matrix_free_data.h>
+#include <exadg/operators/finite_element.h>
 #include <exadg/utilities/print_general_infos.h>
 
 namespace ExaDG
@@ -67,26 +68,33 @@ enum class PressureDegree
 };
 
 inline unsigned int
-get_dofs_per_element(OperatorType const &   operator_type,
-                     PressureDegree const & pressure_degree,
-                     unsigned int const     dim,
-                     unsigned int const     degree)
+get_dofs_per_element(OperatorType const &     operator_type,
+                     PressureDegree const &   pressure_degree,
+                     unsigned int const       dim,
+                     unsigned int const       degree,
+                     ExaDG::ElementType const element_type)
 {
-  unsigned int const velocity_dofs_per_element = dim * dealii::Utilities::pow(degree + 1, dim);
-  unsigned int       pressure_dofs_per_element = 1;
+  unsigned int degree_p = 1;
   if(pressure_degree == PressureDegree::MixedOrder)
-    pressure_dofs_per_element = dealii::Utilities::pow(degree, dim);
+    degree_p = degree - 1;
   else if(pressure_degree == PressureDegree::EqualOrder)
-    pressure_dofs_per_element = dealii::Utilities::pow(degree + 1, dim);
+    degree_p = degree;
   else
     AssertThrow(false, dealii::ExcMessage("Not implemented."));
 
+  unsigned int const velocity_dofs_per_element = ExaDG::get_dofs_per_element(
+    element_type, true /* is_dg */, dim /* n_components */, degree, dim);
+
+  unsigned int const pressure_dofs_per_element = ExaDG::get_dofs_per_element(
+    element_type, true /* is_dg */, 1 /* n_components */, degree_p, dim);
+
+  // coupled/monolithic problem
   if(operator_type == OperatorType::CoupledNonlinearResidual or
      operator_type == OperatorType::CoupledLinearized)
   {
     return velocity_dofs_per_element + pressure_dofs_per_element;
   }
-  // velocity
+  // velocity only
   else if(operator_type == OperatorType::ConvectiveOperator or
           operator_type == OperatorType::VelocityConvDiffOperator or
           operator_type == OperatorType::HelmholtzOperator or
@@ -95,7 +103,7 @@ get_dofs_per_element(OperatorType const &   operator_type,
   {
     return velocity_dofs_per_element;
   }
-  // pressure
+  // pressure only
   else if(operator_type == OperatorType::PressurePoissonOperator)
   {
     return pressure_dofs_per_element;
