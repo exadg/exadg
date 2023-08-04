@@ -206,8 +206,8 @@ StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_derivative(
 {
   // Exploit linear stress-strain relationship and symmetrizing in
   // second_piola_kirchhoff_stress_symmetrize
-  return (
-    this->second_piola_kirchhoff_stress_symmetrize(transpose(deformation_gradient) * gradient_increment, cell, q));
+  return (this->second_piola_kirchhoff_stress_symmetrize(
+    transpose(deformation_gradient) * gradient_increment, cell, q));
 }
 
 template class StVenantKirchhoff<2, float>;
