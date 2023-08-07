@@ -101,6 +101,13 @@ struct KineticEnergySpectrumData
   double       length_symmetric_domain;
 };
 
+/**
+ * This class evaluates the kinetic energy spectrum on a periodic box. The mesh must be composed of
+ * hypercube (quad, hex) elements. Exploiting the symmetries of the Taylor-Green problem is
+ * implemented as a special case, in order to be able to solve the PDE problem only on the symmetric
+ * box instead of the periodic box ("full" domain).
+ *
+ */
 template<int dim, typename Number>
 class KineticEnergySpectrumCalculator
 {

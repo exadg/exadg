@@ -53,6 +53,15 @@ apply_taylor_green_symmetry(dealii::DoFHandler<dim> const & dof_handler_symm,
                             const dealii::LinearAlgebra::distributed::Vector<Number> & vector_symm,
                             dealii::LinearAlgebra::distributed::Vector<Number> &       vector)
 {
+  AssertThrow(
+    dof_handler_symm.get_triangulation().all_reference_cells_are_hyper_cube(),
+    dealii::ExcMessage(
+      "This functionality is only available for meshes consisting of hypercube elements."));
+  AssertThrow(
+    dof_handler.get_triangulation().all_reference_cells_are_hyper_cube(),
+    dealii::ExcMessage(
+      "This functionality is only available for meshes consisting of hypercube elements."));
+
   // determine some useful constants
   auto const & fe = dof_handler.get_fe();
 
