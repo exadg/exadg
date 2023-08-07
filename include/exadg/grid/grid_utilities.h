@@ -120,6 +120,7 @@ create_triangulation(
   PeriodicFacePairs<dim> &                                       periodic_face_pairs,
   MPI_Comm const &                                               mpi_comm,
   GridData const &                                               data,
+  bool const                                                     construct_multigrid_hierarchy,
   std::function<void(dealii::Triangulation<dim> &,
                      PeriodicFacePairs<dim> &,
                      unsigned int const,
@@ -135,13 +136,20 @@ create_triangulation(
         "Currently, dealii triangulations composed of simplicial elements do not allow local refinements."));
   }
 
+  // mesh smoothing
+  auto mesh_smoothing = dealii::Triangulation<dim>::none;
+
+  // the mesh used for a simulation should not depend on the preconditioner used to solve the
+  // problem (like whether multigrid is used or not). Hence, we always set this parameter for
+  // ElementType::Hypercube. It is not posible to set this parameter for ElementType::Simplex due to
+  // the implementation in deal.II.
+  if(data.element_type == ElementType::Hypercube)
+  {
+    mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
+  }
+
   if(data.triangulation_type == TriangulationType::Serial)
   {
-    auto mesh_smoothing = dealii::Triangulation<dim>::none;
-
-    if(not data.create_coarse_triangulations)
-      mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
-
     AssertDimension(dealii::Utilities::MPI::n_mpi_processes(mpi_comm), 1);
     triangulation = std::make_shared<dealii::Triangulation<dim>>(mesh_smoothing);
 
@@ -152,15 +160,10 @@ create_triangulation(
   }
   else if(data.triangulation_type == TriangulationType::Distributed)
   {
-    auto mesh_smoothing = dealii::Triangulation<dim>::none;
     typename dealii::parallel::distributed::Triangulation<dim>::Settings distributed_settings;
 
-    // TODO It seems as if we set these values in case where we do not want/need this.
-    // Assume for example one wants to use only p-multigrid or no multigrid at all. In that case,
-    // it seems as if construct_multigrid_hierarchy is set unnecessarily.
-    if(not data.create_coarse_triangulations)
+    if(construct_multigrid_hierarchy)
     {
-      mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
       distributed_settings =
         dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy;
     }
@@ -206,21 +209,13 @@ create_triangulation(
 
     unsigned int const group_size = 1;
 
-    auto mesh_smoothing = dealii::Triangulation<dim>::none;
     typename dealii::TriangulationDescription::Settings triangulation_description_setting =
       dealii::TriangulationDescription::default_setting;
 
-    // TODO It seems as if we set these values in case where we do not want/need this.
-    // Assume for example one wants to use only p-multigrid or no multigrid at all. In that case,
-    // it seems as if construct_multigrid_hierarchy is set unnecessarily.
-    if(not data.create_coarse_triangulations)
+    if(construct_multigrid_hierarchy)
     {
-      if(data.element_type == ElementType::Hypercube)
-      {
-        mesh_smoothing = dealii::Triangulation<dim>::limit_level_difference_at_vertices;
-        triangulation_description_setting =
-          dealii::TriangulationDescription::construct_multigrid_hierarchy;
-      }
+      triangulation_description_setting =
+        dealii::TriangulationDescription::construct_multigrid_hierarchy;
     }
 
     triangulation =
@@ -333,6 +328,7 @@ create_coarse_triangulations(
                                                    coarse_periodic_face_pairs[level],
                                                    fine_triangulation.get_communicator(),
                                                    data,
+                                                   false /*construct_multigrid_hierarchy */,
                                                    lambda_create_triangulation,
                                                    refine_global,
                                                    refine_local);
@@ -359,6 +355,7 @@ create_coarse_triangulations(
                                                    coarse_periodic_face_pairs[level],
                                                    fine_triangulation.get_communicator(),
                                                    data,
+                                                   false /*construct_multigrid_hierarchy */,
                                                    lambda_create_triangulation,
                                                    0 /*refine_global*/,
                                                    refine_local);
@@ -406,6 +403,7 @@ create_triangulation(
                                       grid.periodic_face_pairs,
                                       mpi_comm,
                                       data,
+                                      false /*construct_multigrid_hierarchy */,
                                       lambda_create_triangulation,
                                       data.n_refine_global,
                                       vector_local_refinements);
@@ -418,7 +416,7 @@ create_triangulation(
  */
 template<int dim>
 inline void
-create_fine_and_coarse_triangulations(
+create_triangulation_with_multigrid(
   Grid<dim> &                                                    grid,
   MPI_Comm const &                                               mpi_comm,
   GridData const &                                               data,
@@ -429,25 +427,43 @@ create_fine_and_coarse_triangulations(
                      std::vector<unsigned int> const &)> const & lambda_create_triangulation,
   std::vector<unsigned int> const                                vector_local_refinements)
 {
-  GridUtilities::create_triangulation(grid.triangulation,
-                                      grid.periodic_face_pairs,
-                                      mpi_comm,
-                                      data,
-                                      lambda_create_triangulation,
-                                      data.n_refine_global,
-                                      vector_local_refinements);
-
-  // Depending on the properties of the fine triangulation, we need to explicitly create the coarse
-  // triangulations.
-  if(involves_h_multigrid and data.create_coarse_triangulations)
+  if(involves_h_multigrid)
   {
-    GridUtilities::create_coarse_triangulations(*grid.triangulation,
-                                                grid.periodic_face_pairs,
-                                                grid.coarse_triangulations,
-                                                grid.coarse_periodic_face_pairs,
-                                                data,
-                                                lambda_create_triangulation,
-                                                vector_local_refinements);
+    if(data.element_type == ElementType::Simplex)
+    {
+      AssertThrow(data.create_coarse_triangulations == true,
+                  dealii::ExcMessage(
+                    "You need to set GridData::create_coarse_triangulations = true "
+                    "in order to use h-multigrid for simplex meshes."));
+    }
+
+    GridUtilities::create_triangulation(grid.triangulation,
+                                        grid.periodic_face_pairs,
+                                        mpi_comm,
+                                        data,
+                                        not data.create_coarse_triangulations,
+                                        lambda_create_triangulation,
+                                        data.n_refine_global,
+                                        vector_local_refinements);
+
+    // Depending on the type of multigrid implementation, the coarse triangulations need to be
+    // created explicitly.
+    if(data.create_coarse_triangulations)
+    {
+      GridUtilities::create_coarse_triangulations(*grid.triangulation,
+                                                  grid.periodic_face_pairs,
+                                                  grid.coarse_triangulations,
+                                                  grid.coarse_periodic_face_pairs,
+                                                  data,
+                                                  lambda_create_triangulation,
+                                                  vector_local_refinements);
+    }
+  }
+  else
+  {
+    // If no h-multigrid is involved, simply re-direct to the other function above.
+    GridUtilities::create_triangulation<dim>(
+      grid, mpi_comm, data, lambda_create_triangulation, vector_local_refinements);
   }
 }
 
