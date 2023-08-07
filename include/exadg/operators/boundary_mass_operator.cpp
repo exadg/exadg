@@ -143,6 +143,9 @@ BoundaryMassOperator<dim, Number, n_components>::boundary_face_loop_full_operato
     if(auto it{this->ids_normal_coefficients.find(boundary_id)};
        it != this->ids_normal_coefficients.end())
     {
+
+      this->reinit_boundary_face(integrator_m, face); // ##+ added this
+
       Number scaled_coefficient = it->second.second * scaling_factor;
       bool   normal_projection  = it->second.first;
 

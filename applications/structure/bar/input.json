@@ -26,7 +26,7 @@
         "BoundaryType": "Dirichlet",
         "Displacement": "20.0",
         "Traction":	"0.0",
-        "SpringCoefficient": "0.0",
+        "SpringCoefficient": "10000.0",
         "DashpotCoefficient": "0.0",
         "ExteriorPressure": "0.0"
     },
