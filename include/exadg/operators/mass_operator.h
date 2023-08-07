@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MASS_MATRIX_OPERATOR_H_
-#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MASS_MATRIX_OPERATOR_H_
+#ifndef INCLUDE_OPERATORS_MASS_OPERATOR_H_
+#define INCLUDE_OPERATORS_MASS_OPERATOR_H_
 
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/mass_kernel.h>
@@ -74,5 +74,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MASS_MATRIX_OPERATOR_H_ \
-        */
+#endif /* INCLUDE_OPERATORS_MASS_OPERATOR_H_ */

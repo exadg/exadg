@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_OPERATORS_MASS_MATRIX_OPERATOR_H_
-#define INCLUDE_OPERATORS_MASS_MATRIX_OPERATOR_H_
+#ifndef INCLUDE_OPERATORS_MASS_KERNEL_H_
+#define INCLUDE_OPERATORS_MASS_KERNEL_H_
 
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/integrator_flags.h>
@@ -73,4 +73,4 @@ public:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_OPERATORS_MASS_MATRIX_OPERATOR_H_ */
+#endif /* INCLUDE_OPERATORS_MASS_KERNEL_H_ */
