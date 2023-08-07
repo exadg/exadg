@@ -98,10 +98,10 @@ StVenantKirchhoff<dim, Number>::get_f2_factor() const
   Number const nu           = data.nu;
   Type2D const type_two_dim = data.type_two_dim;
 
-  return (dim == 3) ? (1. - 2. * nu) * 0.5 / ((1. + nu) * (1. - 2. * nu)) :
+  return (dim == 3) ? (1. - 2. * nu) / (2.0 * (1. + nu) * (1. - 2. * nu)) :
                       (type_two_dim == Type2D::PlaneStress ?
-                         ((1. - nu) * 0.5 / (1. - nu * nu)) :
-                         ((1. - 2. * nu) * 0.5 / ((1. + nu) * (1. - 2. * nu))));
+                         ((1. - nu) / (2.0 * (1. - nu * nu))) :
+                         ((1. - 2. * nu) / (2.0 * (1. + nu) * (1. - 2. * nu))));
 }
 
 template<int dim, typename Number>

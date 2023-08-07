@@ -43,7 +43,7 @@ public:
 
   /*
    * Evaluate 2nd Piola-Kirchhoff stress tensor given the gradient of the displacement field
-   * with respect to the reference configuration (not to be confused with the deformation gradient)
+   * with respect to the reference configuration (not to be confused with the deformation gradient).
    */
   virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   second_piola_kirchhoff_stress(
@@ -53,9 +53,9 @@ public:
 
   /*
    * Evaluate the directional derivative with respect to the displacement of the 2nd Piola-Kirchhoff
-   * stress tensor given the displacement increment shape function gradient *gradient_increment*
-   * with respect to the reference configuration and deformation gradient at the current
-   * linearization point *deformation_gradient*
+   * stress tensor given gradient of the displacment increment with respect to the reference
+   * configuration "gradient_increment" and deformation gradient at the current linearization point
+   * "deformation_gradient".
    */
   virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   second_piola_kirchhoff_stress_displacement_derivative(

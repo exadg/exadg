@@ -324,15 +324,13 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
     // kinematics
     tensor const Grad_delta = integrator.get_gradient(q);
 
-    tensor const Grad_displacement = integrator_lin->get_gradient(q);
+    tensor const Grad_d_lin = integrator_lin->get_gradient(q);
 
-    tensor const F_lin = get_F<dim, Number>(Grad_displacement);
+    tensor const F_lin = get_F<dim, Number>(Grad_d_lin);
 
     // 2nd Piola-Kirchhoff stresses
     tensor const S_lin =
-      material->second_piola_kirchhoff_stress(Grad_displacement,
-                                              integrator.get_current_cell_index(),
-                                              q);
+      material->second_piola_kirchhoff_stress(Grad_d_lin, integrator.get_current_cell_index(), q);
 
     // directional derivative of 1st Piola-Kirchhoff stresses P
 

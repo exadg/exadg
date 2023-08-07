@@ -99,7 +99,7 @@ private:
   /*
    * The second Piola-Kirchhoff stress tensor S is given as S = lambda * I * tr(E) + 2 mu E, with E
    * being the Green-Lagrange strain tensor and Lamee parameters lambda and mu. This leads to
-   * Sii = f0 * Eii + f1 * Eij, for i, j = 1, ..., dim and i != j, and
+   * Sii = f0 * Eii + f1 * sum_{j = 1, ..., dim; i!=j} Eij, for i = 1, ..., dim, and
    * Sij = f2 * (Eij + Eji),    for i, j = 1, ..., dim and i != j.
    * The latter symmetrizes the off-diagonal entries in the strain argument to reduce computations.
    */
