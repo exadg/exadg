@@ -213,22 +213,29 @@ NonLinearOperator<dim, Number>::boundary_face_loop_nonlinear(
                                                this->operator_data.dof_index,
                                                this->operator_data.quad_index);
 
-  // apply Neumann BCs
+  // apply Neumann or Robin BCs
   for(unsigned int face = range.first; face < range.second; face++)
   {
     this->reinit_boundary_face(integrator_m_inhom, face);
     integrator_m.reinit(face);
 
-    // In case of a pull-back of the traction vector, we need to evaluate
-    // the displacement gradient to obtain the surface area ratio da/dA.
-    // We write the integrator flags explicitly in this case since they
-    // depend on the parameter pull_back_traction.
-    if(this->operator_data.pull_back_traction)
+    // In case of a pull-back of the traction vector, we need to evaluate the displacement gradient
+    // to obtain the surface area ratio da/dA. We write the integrator flags explicitly in this case
+    // since they depend on the parameter pull_back_traction. On Robin boundaries, we need the
+    // solution values.
+    bool const is_on_robin_boundary =
+      this->operator_data.bc->get_boundary_type(matrix_free.get_boundary_id(face)) ==
+      BoundaryType::RobinSpringDashpotPressure;
+    if(this->operator_data.pull_back_traction or is_on_robin_boundary)
     {
-      integrator_m_inhom.gather_evaluate(src, dealii::EvaluationFlags::gradients);
+      integrator_m_inhom.gather_evaluate(src,
+                                         dealii::EvaluationFlags::gradients |
+                                           dealii::EvaluationFlags::values);
     }
 
-    do_boundary_integral_continuous(integrator_m_inhom, matrix_free.get_boundary_id(face));
+    do_boundary_integral_continuous(integrator_m_inhom,
+                                    OperatorType::full,
+                                    matrix_free.get_boundary_id(face));
 
     // make sure that we do not write into Dirichlet degrees of freedom
     integrator_m_inhom.integrate(this->integrator_flags.face_integrate,
@@ -277,27 +284,80 @@ template<int dim, typename Number>
 void
 NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
   IntegratorFace &                   integrator,
+  OperatorType const &               operator_type,
   dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
-    auto traction = calculate_neumann_value<dim, Number>(
-      q, integrator, boundary_type, boundary_id, this->operator_data.bc, this->time);
+    vector traction;
 
-    if(this->operator_data.pull_back_traction)
+    if(boundary_type == BoundaryType::Neumann or boundary_type == BoundaryType::NeumannCached or
+       boundary_type == BoundaryType::RobinSpringDashpotPressure)
     {
-      tensor F = get_F<dim, Number>(integrator.get_gradient(q));
-      vector N = integrator.get_normal_vector(q);
-      // da/dA * n = det F F^{-T} * N := n_star
-      // -> da/dA = n_star.norm()
-      vector n_star = determinant(F) * transpose(invert(F)) * N;
-      // t_0 = da/dA * t
-      traction *= n_star.norm();
+      if(operator_type == OperatorType::inhomogeneous or operator_type == OperatorType::full)
+      {
+        traction -= calculate_neumann_value<dim, Number>(
+          q, integrator, boundary_type, boundary_id, this->operator_data.bc, this->time);
+
+        if(this->operator_data.pull_back_traction)
+        {
+          tensor F = get_F<dim, Number>(integrator.get_gradient(q));
+          vector N = integrator.get_normal_vector(q);
+          // da/dA * n = det F F^{-T} * N := n_star
+          // -> da/dA = n_star.norm()
+          vector n_star = determinant(F) * transpose(invert(F)) * N;
+          // t_0 = da/dA * t
+          traction *= n_star.norm();
+        }
+      }
     }
 
-    integrator.submit_value(-traction, q);
+    if(boundary_type == BoundaryType::NeumannCached or
+       boundary_type == BoundaryType::RobinSpringDashpotPressure)
+    {
+      if(operator_type == OperatorType::homogeneous or operator_type == OperatorType::full)
+      {
+        auto const it = this->operator_data.bc->robin_k_c_p_param.find(boundary_id);
+
+        if(it != this->operator_data.bc->robin_k_c_p_param.end())
+        {
+          bool const   normal_projection_displacement = it->second.first[0];
+          double const coefficient_displacement       = it->second.second[0];
+
+          if(normal_projection_displacement)
+          {
+            vector const N = integrator.get_normal_vector(q);
+            traction += N * (coefficient_displacement * (N * integrator.get_value(q)));
+          }
+          else
+          {
+            traction += coefficient_displacement * integrator.get_value(q);
+          }
+
+          if(this->operator_data.unsteady)
+          {
+            bool const   normal_projection_velocity = it->second.first[1];
+            double const coefficient_velocity       = it->second.second[1];
+
+            if(normal_projection_velocity)
+            {
+              vector const N = integrator.get_normal_vector(q);
+              traction += N * (coefficient_velocity * this->scaling_factor_mass_boundary *
+                               (N * integrator.get_value(q)));
+            }
+            else
+            {
+              traction +=
+                coefficient_velocity * this->scaling_factor_mass_boundary * integrator.get_value(q);
+            }
+          }
+        }
+      }
+    }
+
+    integrator.submit_value(traction, q);
   }
 }
 

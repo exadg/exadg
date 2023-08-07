@@ -28,6 +28,7 @@
 // ExaDG
 #include <exadg/grid/grid.h>
 #include <exadg/matrix_free/matrix_free_data.h>
+#include <exadg/operators/boundary_mass_operator.h>
 #include <exadg/operators/inverse_mass_operator.h>
 #include <exadg/operators/mass_operator.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver.h>
@@ -64,7 +65,11 @@ private:
 
 public:
   ResidualOperator()
-    : pde_operator(nullptr), const_vector(nullptr), scaling_factor_mass(0.0), time(0.0)
+    : pde_operator(nullptr),
+      const_vector(nullptr),
+      scaling_factor_mass(0.0),
+      scaling_factor_mass_boundary(0.0),
+      time(0.0)
   {
   }
 
@@ -75,11 +80,15 @@ public:
   }
 
   void
-  update(VectorType const & const_vector, double const scaling_factor_mass, double const time)
+  update(VectorType const & const_vector,
+         double const       scaling_factor_mass,
+         double const       scaling_factor_mass_boundary,
+         double const       time)
   {
-    this->const_vector        = &const_vector;
-    this->scaling_factor_mass = scaling_factor_mass;
-    this->time                = time;
+    this->const_vector                 = &const_vector;
+    this->scaling_factor_mass          = scaling_factor_mass;
+    this->scaling_factor_mass_boundary = scaling_factor_mass_boundary;
+    this->time                         = time;
   }
 
   /*
@@ -89,7 +98,8 @@ public:
   void
   evaluate_residual(VectorType & dst, VectorType const & src) const
   {
-    pde_operator->evaluate_nonlinear_residual(dst, src, *const_vector, scaling_factor_mass, time);
+    pde_operator->evaluate_nonlinear_residual(
+      dst, src, *const_vector, scaling_factor_mass, scaling_factor_mass_boundary, time);
   }
 
 private:
@@ -98,6 +108,7 @@ private:
   VectorType const * const_vector;
 
   double scaling_factor_mass;
+  double scaling_factor_mass_boundary;
   double time;
 };
 
@@ -116,7 +127,11 @@ private:
 
 public:
   LinearizedOperator()
-    : dealii::Subscriptor(), pde_operator(nullptr), scaling_factor_mass(0.0), time(0.0)
+    : dealii::Subscriptor(),
+      pde_operator(nullptr),
+      scaling_factor_mass(0.0),
+      scaling_factor_mass_boundary(0.0),
+      time(0.0)
   {
   }
 
@@ -137,10 +152,13 @@ public:
   }
 
   void
-  update(double const scaling_factor_mass, double const time)
+  update(double const scaling_factor_mass,
+         double const scaling_factor_mass_boundary,
+         double const time)
   {
-    this->scaling_factor_mass = scaling_factor_mass;
-    this->time                = time;
+    this->scaling_factor_mass          = scaling_factor_mass;
+    this->scaling_factor_mass_boundary = scaling_factor_mass_boundary;
+    this->time                         = time;
   }
 
   /*
@@ -150,13 +168,15 @@ public:
   void
   vmult(VectorType & dst, VectorType const & src) const
   {
-    pde_operator->apply_linearized_operator(dst, src, scaling_factor_mass, time);
+    pde_operator->apply_linearized_operator(
+      dst, src, scaling_factor_mass, scaling_factor_mass_boundary, time);
   }
 
 private:
   PDEOperator const * pde_operator;
 
   double scaling_factor_mass;
+  double scaling_factor_mass_boundary;
   double time;
 };
 
@@ -230,6 +250,12 @@ public:
   void
   apply_add_damping_operator(VectorType & dst, VectorType const & src) const final;
 
+  void
+  evaluate_add_boundary_mass_operator(VectorType & dst, VectorType const & src) const final;
+
+  void
+  update_boundary_mass_operator(Number const factor) const;
+
   /*
    * This function evaluates the nonlinear residual which is required by the Newton solver. In order
    * to evaluate inhomogeneous Dirichlet boundary conditions correctly, inhomogeneous Dirichlet
@@ -239,7 +265,8 @@ public:
   evaluate_nonlinear_residual(VectorType &       dst,
                               VectorType const & src,
                               VectorType const & const_vector,
-                              double const       factor,
+                              double const       factor_mass,
+                              double const       factor_mass_boundary,
                               double const       time) const;
 
   void
@@ -248,20 +275,23 @@ public:
   void
   apply_linearized_operator(VectorType &       dst,
                             VectorType const & src,
-                            double const       factor,
+                            double const       factor_mass,
+                            double const       factor_mass_boundary,
                             double const       time) const;
 
   void
   evaluate_elasticity_operator(VectorType &       dst,
                                VectorType const & src,
-                               double const       factor,
+                               double const       factor_mass,
+                               double const       factor_mass_boundary,
                                double const       time) const;
 
   void
   apply_elasticity_operator(VectorType &       dst,
                             VectorType const & src,
                             VectorType const & linearization,
-                            double const       factor,
+                            double const       factor_mass,
+                            double const       factor_mass_boundary,
                             double const       time) const;
 
   /*
@@ -463,6 +493,12 @@ private:
   // of new displacements) appearing on the right-hand side for linear
   // problems and in the residual for nonlinear problems.
   Structure::MassOperator<dim, Number> mass_operator;
+
+  // The boundary mass operator to evaluate the mass operator term stemming from a Robin boundary
+  // condition, which is applied to a constant vector (when a time derivative term is present in the
+  // BC) appearing on the right-hand side for linear problems and in the residual for nonlinear
+  // problems.
+  BoundaryMassOperator<dim, Number, dim> boundary_mass_operator;
 
   /*
    * Solution of nonlinear systems of equations

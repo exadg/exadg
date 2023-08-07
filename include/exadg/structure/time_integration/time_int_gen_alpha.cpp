@@ -134,6 +134,10 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
   this->compute_const_vector_velocity_remainder(rhs, displacement_n, velocity_n, acceleration_n);
   pde_operator->apply_add_damping_operator(const_vector, rhs);
 
+  // add contribution from velocity term in Robin boundary conditions
+  // (rhs still holds const_vector_velocity_remainder)
+  pde_operator->evaluate_add_boundary_mass_operator(const_vector, rhs);
+
   if(param.large_deformation == false) // linear case
   {
     // calculate right-hand side vector

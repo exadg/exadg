@@ -247,11 +247,11 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
   const std::function<void(void)> operator_evaluation = [&](void) {
     if(operator_type == OperatorType::Evaluate)
     {
-      pde_operator->evaluate_elasticity_operator(dst, src, 1.0, 0.0);
+      pde_operator->evaluate_elasticity_operator(dst, src, 1.0, 1.0, 0.0);
     }
     else if(operator_type == OperatorType::Apply)
     {
-      pde_operator->apply_elasticity_operator(dst, src, linearization, 1.0, 0.0);
+      pde_operator->apply_elasticity_operator(dst, src, linearization, 1.0, 1.0, 0.0);
     }
   };
 

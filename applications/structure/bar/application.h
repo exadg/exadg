@@ -246,6 +246,7 @@ public:
       prm.add_parameter("Width", width, "Width of domain.");
       prm.add_parameter("UseVolumeForce", use_volume_force, "Use volume force.");
       prm.add_parameter("VolumeForce", volume_force, "Volume force.");
+      prm.add_parameter("LargeDeformation", large_deformation, "Consider finite strain elasticity");
       prm.add_parameter("BoundaryType",
                         boundary_type,
                         "Type of boundary condition, Dirichlet vs Neumann.");
@@ -261,6 +262,9 @@ public:
       prm.add_parameter("Traction",
                         area_force,
                         "Traction acting on right boundary in case of Neumann BC.");
+      prm.add_parameter("SpringCoefficient", spring_coefficient, "Exterior spring stiffness.");
+      prm.add_parameter("DashpotCoefficient", dashpot_coefficient, "Exterior daspot coefficient.");
+      prm.add_parameter("ExteriorPressure", exterior_pressure, "Exterior pressure.");
     }
     prm.leave_subsection();
   }
@@ -271,7 +275,7 @@ private:
   {
     this->param.problem_type         = problem_type;
     this->param.body_force           = use_volume_force;
-    this->param.large_deformation    = true;
+    this->param.large_deformation    = large_deformation;
     this->param.pull_back_body_force = false;
     this->param.pull_back_traction   = false;
 
@@ -435,8 +439,15 @@ private:
                                                                                   pair;
     typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
 
-    this->boundary_descriptor->neumann_bc.insert(
-      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
+    // exterior support
+    bool const   spring_active_in_normal_direction_only  = true;
+    bool const   dashpot_active_in_normal_direction_only = true;
+    this->boundary_descriptor->robin_k_c_p_param.insert(std::make_pair(
+      0,
+      std::make_pair(std::array<bool, 2>{{spring_active_in_normal_direction_only,
+                                          dashpot_active_in_normal_direction_only}},
+                     std::array<double, 3>{
+                       {spring_coefficient, dashpot_coefficient, exterior_pressure}})));
 
     // left face
     std::vector<bool> mask_left = {true, clamp_at_left_boundary};
@@ -576,9 +587,11 @@ private:
     pp_data.error_data.time_control_data.start_time       = start_time;
     pp_data.error_data.time_control_data.trigger_interval = (end_time - start_time);
 
-    pp_data.error_data.time_control_data.is_active = true;
-    pp_data.error_data.calculate_relative_errors   = true;
-    double const vol_force                         = use_volume_force ? this->volume_force : 0.0;
+    pp_data.error_data.time_control_data.is_active        = true;
+    pp_data.error_data.time_control_data.start_time       = start_time;
+    pp_data.error_data.time_control_data.trigger_interval = (end_time - start_time);
+    pp_data.error_data.calculate_relative_errors          = true;
+    double const vol_force = use_volume_force ? this->volume_force : 0.0;
     if(boundary_type == BoundaryType::Dirichlet)
     {
       pp_data.error_data.analytical_solution.reset(
@@ -604,6 +617,8 @@ private:
 
   bool use_volume_force = true;
 
+  bool large_deformation = true;
+
   bool const clamp_at_right_boundary = false;
   bool const clamp_at_left_boundary  = false;
 
@@ -621,6 +636,10 @@ private:
 
   double displacement = 1.0; // "Dirichlet"
   double area_force   = 1.0; // "Neumann"
+
+  double spring_coefficient  = 0.0;
+  double dashpot_coefficient = 0.0;
+  double exterior_pressure   = 0.0;
 
   // mesh parameters
   unsigned int const repetitions0 = 4, repetitions1 = 1, repetitions2 = 1;

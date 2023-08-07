@@ -102,6 +102,12 @@ public:
   get_scaling_factor_mass_operator() const;
 
   void
+  set_scaling_factor_mass_boundary_operator(double const scaling_factor) const;
+
+  double
+  get_scaling_factor_mass_boundary_operator() const;
+
+  void
   set_inhomogeneous_boundary_values(VectorType & dst) const final;
 
 protected:
@@ -113,6 +119,7 @@ protected:
   mutable MaterialHandler<dim, Number> material_handler;
 
   mutable double scaling_factor_mass;
+  mutable double scaling_factor_mass_boundary;
 };
 
 } // namespace Structure
