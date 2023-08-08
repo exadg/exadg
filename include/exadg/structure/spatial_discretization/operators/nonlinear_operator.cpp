@@ -101,6 +101,21 @@ NonLinearOperator<dim, Number>::get_solution_linearization() const
 
 template<int dim, typename Number>
 void
+NonLinearOperator<dim, Number>::update_ghost_values_linearization_vector() const
+{
+  // Return whether the vector currently is in a state where ghost values can be read or not. This
+  // is the same functionality as other parallel vectors have. If this method returns false, this
+  // only means that read-access to ghost elements is prohibited whereas write access is still
+  // possible (to those entries specified as ghosts during initialization), not that there are no
+  // ghost elements at all.
+  if(not displacement_lin.has_ghost_elements())
+  {
+    displacement_lin.update_ghost_values();
+  }
+}
+
+template<int dim, typename Number>
+void
 NonLinearOperator<dim, Number>::reinit_cell_nonlinear(IntegratorCell &   integrator,
                                                       unsigned int const cell) const
 {
