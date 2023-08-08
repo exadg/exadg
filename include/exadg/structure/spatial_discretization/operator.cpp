@@ -786,8 +786,8 @@ Operator<dim, Number>::apply_add_damping_operator(VectorType & dst, VectorType c
 {
   if(param.weak_damping_active)
   {
-	AssertThrow(param.problem_type == ProblemType::Unsteady,
-				dealii::ExcMessage("Weak damping only well-defined for instationary problems."));
+    AssertThrow(param.problem_type == ProblemType::Unsteady,
+                dealii::ExcMessage("Weak damping only well-defined for instationary problems."));
 
     VectorType tmp;
     tmp.reinit(src);
