@@ -440,8 +440,8 @@ private:
     typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
 
     // exterior support
-    bool const   spring_active_in_normal_direction_only  = true;
-    bool const   dashpot_active_in_normal_direction_only = true;
+    bool const spring_active_in_normal_direction_only  = true;
+    bool const dashpot_active_in_normal_direction_only = true;
     this->boundary_descriptor->robin_k_c_p_param.insert(std::make_pair(
       0,
       std::make_pair(std::array<bool, 2>{{spring_active_in_normal_direction_only,
