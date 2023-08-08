@@ -447,7 +447,7 @@ void
 OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) const
 {
   // compute diagonal
-  if(false) // evaluate_face_integrals())
+  if(evaluate_face_integrals())
   {
     if(is_dg)
     {
@@ -477,8 +477,6 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
   }
   else
   {
-    std::cout << "here\n";
-
     dealii::MatrixFreeTools::
       compute_diagonal<dim, -1, 0, n_components, Number, dealii::VectorizedArray<Number>>(
         *matrix_free,

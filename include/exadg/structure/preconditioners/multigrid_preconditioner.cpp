@@ -121,6 +121,12 @@ MultigridPreconditioner<dim, Number>::update()
         this->transfers->interpolate(fine_level, vector_coarse_level, vector_fine_level);
         this->get_operator_nonlinear(coarse_level)->set_solution_linearization(vector_coarse_level);
       });
+
+    // update ghost values of linearization vector on coarse levels
+    for(unsigned int level = 1; level < this->get_number_of_levels(); ++level)
+    {
+      this->get_operator_nonlinear(level)->update_ghost_values_linearization_vector();
+    }
   }
 
   // In case that the operators have been updated, we also need to update the smoothers and the
