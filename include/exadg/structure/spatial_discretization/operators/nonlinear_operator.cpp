@@ -103,6 +103,7 @@ template<int dim, typename Number>
 void
 NonLinearOperator<dim, Number>::update_ghost_values_linearization_vector() const
 {
+  // See the deal.II documentation:
   // Return whether the vector currently is in a state where ghost values can be read or not. This
   // is the same functionality as other parallel vectors have. If this method returns false, this
   // only means that read-access to ghost elements is prohibited whereas write access is still
