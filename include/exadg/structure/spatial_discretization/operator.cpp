@@ -390,11 +390,8 @@ Operator<dim, Number>::setup_operators()
 
     // setup boundary mass operator
     BoundaryMassOperatorData<dim, Number> boundary_mass_data;
-    boundary_mass_data.dof_index = get_dof_index();
-    boundary_mass_data.dof_index_inhomogeneous =
-      get_dof_index_periodicity_and_hanging_node_constraints();
+    boundary_mass_data.dof_index  = get_dof_index();
     boundary_mass_data.quad_index = get_quad_index();
-    // boundary_mass_data.bc                      = boundary_descriptor; ##+
 
     boundary_mass_operator.initialize(*matrix_free, affine_constraints, boundary_mass_data);
   }
@@ -836,7 +833,8 @@ void
 Operator<dim, Number>::evaluate_add_boundary_mass_operator(VectorType &       dst,
                                                            VectorType const & src) const
 {
-  // boundary mass operator is used to add velocity-dependent Robin boundary integral on the rhs for the instationary case
+  // boundary mass operator is used to add velocity-dependent Robin boundary integral on the rhs for
+  // the instationary case
   if(boundary_mass_operator.non_empty() and param.problem_type == ProblemType::Unsteady)
   {
     boundary_mass_operator.evaluate_add(dst, src);
@@ -854,18 +852,18 @@ Operator<dim, Number>::update_boundary_mass_operator(Number const factor) const
   // update operator data from boundary_descriptor's velocity part from Robin boundaries
   if(param.problem_type == ProblemType::Unsteady)
   {
-	  for(auto const & entry : this->boundary_descriptor->robin_k_c_p_param)
-	  {
-		dealii::types::boundary_id boundary_id          = entry.first;
-		bool                       normal_projection    = entry.second.first[1];
-		Number                     velocity_coefficient = entry.second.second[1];
+    for(auto const & entry : this->boundary_descriptor->robin_k_c_p_param)
+    {
+      dealii::types::boundary_id boundary_id          = entry.first;
+      bool                       normal_projection    = entry.second.first[1];
+      Number                     velocity_coefficient = entry.second.second[1];
 
-		if(std::abs(velocity_coefficient) > 1e-20)
-		{
-		  robin_c_param.insert(
-			std::make_pair(boundary_id, std::make_pair(normal_projection, velocity_coefficient)));
-		}
-	  }
+      if(std::abs(velocity_coefficient) > 1e-20)
+      {
+        robin_c_param.insert(
+          std::make_pair(boundary_id, std::make_pair(normal_projection, velocity_coefficient)));
+      }
+    }
   }
 
   boundary_mass_operator.set_ids_normal_coefficients(robin_c_param);

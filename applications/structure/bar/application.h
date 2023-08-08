@@ -449,6 +449,9 @@ private:
                      std::array<double, 3>{
                        {spring_coefficient, dashpot_coefficient, exterior_pressure}})));
 
+    //    this->boundary_descriptor->neumann_bc.insert(
+    //      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
+
     // left face
     std::vector<bool> mask_left = {true, clamp_at_left_boundary};
     if(dim == 3)

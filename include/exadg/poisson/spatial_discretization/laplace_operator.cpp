@@ -387,16 +387,17 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
   OperatorType const &               operator_type,
   dealii::types::boundary_id const & boundary_id) const
 {
-  (void)operator_type;
-
-  BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
-
-  for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+  if(operator_type == OperatorType::inhomogeneous || operator_type == OperatorType::full)
   {
-    value neumann_value = calculate_neumann_value<dim, Number, n_components, rank>(
-      q, integrator_m, boundary_type, boundary_id, operator_data.bc, this->time);
+    BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
-    integrator_m.submit_value(-neumann_value, q);
+    for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+    {
+      value neumann_value = calculate_neumann_value<dim, Number, n_components, rank>(
+        q, integrator_m, boundary_type, boundary_id, operator_data.bc, this->time);
+
+      integrator_m.submit_value(-neumann_value, q);
+    }
   }
 }
 

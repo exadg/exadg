@@ -27,7 +27,7 @@
         "Displacement": "20.0",
         "Traction":	"0.0",
         "SpringCoefficient": "1e5",
-        "DashpotCoefficient": "1e3",
+        "DashpotCoefficient": "0.0",
         "ExteriorPressure": "0.0"
     },
     "Output": {

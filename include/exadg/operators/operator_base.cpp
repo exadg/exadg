@@ -447,7 +447,7 @@ void
 OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) const
 {
   // compute diagonal
-  if(evaluate_face_integrals())
+  if(false) // evaluate_face_integrals())
   {
     if(is_dg)
     {
@@ -477,6 +477,8 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
   }
   else
   {
+    std::cout << "here\n";
+
     dealii::MatrixFreeTools::
       compute_diagonal<dim, -1, 0, n_components, Number, dealii::VectorizedArray<Number>>(
         *matrix_free,
@@ -1542,7 +1544,8 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
 {
   (void)src;
 
-  AssertThrow(is_dg, dealii::ExcMessage("This function is not suitable for CG discretizations."));
+  AssertThrow(is_dg,
+              dealii::ExcMessage("Cell-based face integrals useful for DG discretizations only."));
 
   IntegratorCell integrator =
     IntegratorCell(matrix_free, this->data.dof_index, this->data.quad_index);
