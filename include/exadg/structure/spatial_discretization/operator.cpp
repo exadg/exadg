@@ -389,13 +389,12 @@ Operator<dim, Number>::setup_operators()
     mass_solver = std::make_shared<CG>(mass_operator, *mass_preconditioner, solver_data);
 
     // setup boundary mass operator
-    // is this valid for the general case?? ##+
     BoundaryMassOperatorData<dim, Number> boundary_mass_data;
     boundary_mass_data.dof_index = get_dof_index();
     boundary_mass_data.dof_index_inhomogeneous =
       get_dof_index_periodicity_and_hanging_node_constraints();
     boundary_mass_data.quad_index = get_quad_index();
-    // boundary_mass_data.bc                      = boundary_descriptor;
+    // boundary_mass_data.bc                      = boundary_descriptor; ##+
 
     boundary_mass_operator.initialize(*matrix_free, affine_constraints, boundary_mass_data);
   }
