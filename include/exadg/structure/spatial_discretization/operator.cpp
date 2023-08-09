@@ -317,6 +317,7 @@ Operator<dim, Number>::setup_operators()
   operator_data.material_descriptor = material_descriptor;
   operator_data.unsteady            = (param.problem_type == ProblemType::Unsteady);
   operator_data.density             = param.density;
+  operator_data.large_deformation   = param.large_deformation;
   if(param.large_deformation)
   {
     operator_data.pull_back_traction = param.pull_back_traction;

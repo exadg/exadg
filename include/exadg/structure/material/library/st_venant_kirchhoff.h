@@ -66,19 +66,27 @@ public:
   StVenantKirchhoff(dealii::MatrixFree<dim, Number> const & matrix_free,
                     unsigned int const                      dof_index,
                     unsigned int const                      quad_index,
-                    StVenantKirchhoffData<dim> const &      data);
+                    StVenantKirchhoffData<dim> const &      data,
+                    bool const                              large_deformation);
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  evaluate_stress(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
-                  unsigned int const                                              cell,
-                  unsigned int const                                              q) const final;
+  second_piola_kirchhoff_stress(
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
+    unsigned int const                                              cell,
+    unsigned int const                                              q) const final;
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  apply_C(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
-          unsigned int const                                              cell,
-          unsigned int const                                              q) const final;
+  second_piola_kirchhoff_stress_displacement_derivative(
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_increment,
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & deformation_gradient,
+    unsigned int const                                              cell,
+    unsigned int const                                              q) const final;
 
 private:
+  /*
+   * Factor out coefficients for faster computation. Note that these factors do not contain the
+   * (potentially variable) Young's modulus.
+   */
   Number
   get_f0_factor() const;
 
@@ -88,6 +96,22 @@ private:
   Number
   get_f2_factor() const;
 
+  /*
+   * The second Piola-Kirchhoff stress tensor S is given as S = lambda * I * tr(E) + 2 mu E, with E
+   * being the Green-Lagrange strain tensor and Lamee parameters lambda and mu. This leads to
+   * Sii = f0 * Eii + f1 * sum_{j = 1, ..., dim; i!=j} Eij, for i = 1, ..., dim, and
+   * Sij = f2 * (Eij + Eji),    for i, j = 1, ..., dim and i != j.
+   * The latter symmetrizes the off-diagonal entries in the strain argument to reduce computations.
+   */
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  second_piola_kirchhoff_stress_symmetrize(
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & strain,
+    unsigned int const                                              cell,
+    unsigned int const                                              q) const;
+
+  /*
+   * Store factors involving (potentially variable) Young's modulus.
+   */
   void
   cell_loop_set_coefficients(dealii::MatrixFree<dim, Number> const & matrix_free,
                              VectorType &,
@@ -98,6 +122,8 @@ private:
   unsigned int quad_index;
 
   StVenantKirchhoffData<dim> const & data;
+
+  bool large_deformation;
 
   mutable dealii::VectorizedArray<Number> f0;
   mutable dealii::VectorizedArray<Number> f1;
