@@ -68,6 +68,7 @@ enum class Preconditioner
   PointJacobi,
   BlockJacobi,
   AMG,
+  AdditiveSchwarz,
   Multigrid
 };
 

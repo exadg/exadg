@@ -87,6 +87,12 @@ public:
   virtual void
   apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const = 0;
 
+  virtual void
+  apply_inverse_as_matrices(VectorType & dst, VectorType const & src) const = 0;
+
+  virtual void
+  compute_factorized_as_matrices() const = 0;
+
 #ifdef DEAL_II_WITH_TRILINOS
   virtual void
   init_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix,

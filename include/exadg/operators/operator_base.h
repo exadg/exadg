@@ -106,7 +106,8 @@ public:
 
   static unsigned int const vectorization_length = dealii::VectorizedArray<Number>::size();
 
-  typedef std::vector<dealii::LAPACKFullMatrix<Number>> BlockMatrix;
+  typedef dealii::LAPACKFullMatrix<Number> CellMatrix;
+  typedef std::vector<CellMatrix>          BlockMatrix;
 
   typedef dealii::FullMatrix<dealii::TrilinosScalar> FullMatrix_;
 
@@ -325,6 +326,15 @@ public:
                                        dealii::VectorizedArray<Number> * const       dst,
                                        dealii::VectorizedArray<Number> const * const src,
                                        unsigned int const problem_size) const;
+
+  /*
+   * additive Schwarz preconditioner (cellwise block-diagonal)
+   */
+  virtual void
+  compute_factorized_as_matrices() const;
+
+  void
+  apply_inverse_as_matrices(VectorType & dst, VectorType const & src) const;
 
 protected:
   void
@@ -633,7 +643,9 @@ private:
    */
   template<typename SparseMatrix>
   void
-  internal_init_system_matrix(SparseMatrix & system_matrix, MPI_Comm const & mpi_comm) const;
+  internal_init_system_matrix(SparseMatrix &                   system_matrix,
+                              dealii::DynamicSparsityPattern & dsp,
+                              MPI_Comm const &                 mpi_comm) const;
 
   template<typename SparseMatrix>
   void
@@ -677,6 +689,13 @@ private:
   evaluate_face_integrals() const;
 
   /*
+   * Compute factorized additive Schwarz matrices.
+   */
+  template<typename SparseMatrix>
+  void
+  internal_compute_factorized_as_matrices() const;
+
+  /*
    * Data structure containing all operator-specific data.
    */
   OperatorBaseData data;
@@ -690,7 +709,12 @@ private:
   /*
    * Vector of matrices for block-diagonal preconditioners.
    */
-  mutable std::vector<dealii::LAPACKFullMatrix<Number>> matrices;
+  mutable BlockMatrix matrices;
+
+  /*
+   * Vector with weights for additive Schwarz preconditioner.
+   */
+  mutable VectorType weights;
 
   /*
    * We want to initialize the block diagonal preconditioner (block diagonal matrices or elementwise
