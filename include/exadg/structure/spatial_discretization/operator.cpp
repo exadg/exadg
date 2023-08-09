@@ -134,13 +134,6 @@ Operator<dim, Number>::distribute_dofs()
 
   // copy periodicity and hanging node constraints, and add further constraints stemming from
   // Dirichlet boundary conditions
-  affine_constraints.clear();
-
-  dealii::IndexSet locally_relevant_dofs;
-  dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
-  affine_constraints.reinit(locally_relevant_dofs);
-
-  // affine constraints to copy from need to be non-closed to add further constraints
   affine_constraints.copy_from(affine_constraints_periodicity_and_hanging_nodes);
 
   // use all the component masks defined by the user
@@ -164,7 +157,8 @@ Operator<dim, Number>::distribute_dofs()
   // call deal.II utility function to add Dirichlet constraints
   add_homogeneous_dirichlet_constraints(affine_constraints, dof_handler, map_bid_to_mask);
 
-  // compress constraints *once after* complete setup
+  // compress constraints *once after* complete setup, since affine constraints to copy from need to
+  // be non-closed to add further constraints
   affine_constraints_periodicity_and_hanging_nodes.close();
   affine_constraints.close();
 
@@ -327,6 +321,7 @@ Operator<dim, Number>::setup_operators()
   operator_data.material_descriptor = material_descriptor;
   operator_data.unsteady            = (param.problem_type == ProblemType::Unsteady);
   operator_data.density             = param.density;
+  operator_data.large_deformation   = param.large_deformation;
   if(param.large_deformation)
   {
     operator_data.pull_back_traction = param.pull_back_traction;

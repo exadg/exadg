@@ -36,6 +36,7 @@ struct OperatorData : public OperatorBaseData
 {
   OperatorData()
     : OperatorBaseData(),
+      large_deformation(false),
       pull_back_traction(false),
       unsteady(false),
       density(1.0),
@@ -45,6 +46,9 @@ struct OperatorData : public OperatorBaseData
 
   std::shared_ptr<BoundaryDescriptor<dim> const> bc;
   std::shared_ptr<MaterialDescriptor const>      material_descriptor;
+
+  // Boolean parameter differentiating between linear elasticity and finite strain theory
+  bool large_deformation;
 
   // This parameter is only relevant for nonlinear operator
   // with large deformations. When set to true, the traction t

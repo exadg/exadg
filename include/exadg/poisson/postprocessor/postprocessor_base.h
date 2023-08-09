@@ -27,6 +27,8 @@
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/matrix_free.h>
+
+// ExaDG
 #include <exadg/utilities/numbers.h>
 
 namespace ExaDG

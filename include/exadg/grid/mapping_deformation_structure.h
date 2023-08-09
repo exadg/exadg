@@ -36,6 +36,8 @@ namespace Structure
 {
 /**
  * Class for moving grid problems based on a pseudo-solid grid motion technique.
+ *
+ * TODO: extend this class to simplicial elements.
  */
 template<int dim, typename Number>
 class DeformedMapping : public DeformedMappingBase<dim, Number>

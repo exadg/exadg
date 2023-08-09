@@ -30,6 +30,8 @@ namespace ExaDG
 /**
  * Class for mesh deformations that can be described analytically via a dealii::Function<dim>
  * object.
+ *
+ * TODO: extend this class to simplicial elements.
  */
 template<int dim, typename Number>
 class DeformedMappingFunction : public DeformedMappingBase<dim, Number>

@@ -1066,11 +1066,11 @@ SpatialOperatorBase<dim, Number>::calculate_cfl_from_time_step(VectorType &     
 
 template<int dim, typename Number>
 double
-SpatialOperatorBase<dim, Number>::calculate_characteristic_element_length() const
+SpatialOperatorBase<dim, Number>::get_characteristic_element_length() const
 {
   double const h_min = calculate_minimum_element_length();
 
-  return ExaDG::calculate_characteristic_element_length(h_min, param.degree_u);
+  return calculate_characteristic_element_length(h_min, param.degree_u, true /* is_dg */);
 }
 
 template<int dim, typename Number>

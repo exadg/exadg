@@ -64,7 +64,7 @@ private:
     this->param.right_hand_side = false;
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.element_type = ElementType::Simplex;
+    this->param.grid.element_type = ElementType::Hypercube;
     if(this->param.grid.element_type == ElementType::Simplex)
     {
       this->param.grid.triangulation_type           = TriangulationType::FullyDistributed;
@@ -72,7 +72,8 @@ private:
     }
     else if(this->param.grid.element_type == ElementType::Hypercube)
     {
-      this->param.grid.triangulation_type = TriangulationType::Distributed;
+      this->param.grid.triangulation_type           = TriangulationType::Distributed;
+      this->param.grid.create_coarse_triangulations = false;
     }
 
     this->param.mapping_degree         = 1;
@@ -126,12 +127,12 @@ private:
       };
 
 
-    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
-                                                              this->mpi_comm,
-                                                              this->param.grid,
-                                                              this->param.involves_h_multigrid(),
-                                                              lambda_create_triangulation,
-                                                              {} /* no local refinements */);
+    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+                                                            this->mpi_comm,
+                                                            this->param.grid,
+                                                            this->param.involves_h_multigrid(),
+                                                            lambda_create_triangulation,
+                                                            {} /* no local refinements */);
   }
 
   void

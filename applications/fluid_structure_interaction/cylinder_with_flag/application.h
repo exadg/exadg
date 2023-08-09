@@ -506,7 +506,7 @@ private:
             {
               manifold_vec[i] =
                 std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
-                  new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
+                  new OneSidedCylindricalManifold<dim>(tria, cell, face_ids[i], center)));
               tria.set_manifold(manifold_ids[i], *(manifold_vec[i]));
             }
           }
@@ -515,12 +515,12 @@ private:
         tria.refine_global(global_refinements);
       };
 
-    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
-                                                              this->mpi_comm,
-                                                              this->param.grid,
-                                                              this->param.involves_h_multigrid(),
-                                                              lambda_create_triangulation,
-                                                              {} /* no local refinements */);
+    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+                                                            this->mpi_comm,
+                                                            this->param.grid,
+                                                            this->param.involves_h_multigrid(),
+                                                            lambda_create_triangulation,
+                                                            {} /* no local refinements */);
   }
 
   void
@@ -1030,7 +1030,7 @@ private:
             {
               manifold_vec[i] =
                 std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
-                  new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
+                  new OneSidedCylindricalManifold<dim>(tria, cell, face_ids[i], center)));
               tria.set_manifold(manifold_ids[i], *(manifold_vec[i]));
             }
           }
@@ -1039,12 +1039,12 @@ private:
         tria.refine_global(global_refinements);
       };
 
-    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
-                                                              this->mpi_comm,
-                                                              this->param.grid,
-                                                              this->param.involves_h_multigrid(),
-                                                              lambda_create_triangulation,
-                                                              {} /* no local refinements */);
+    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+                                                            this->mpi_comm,
+                                                            this->param.grid,
+                                                            this->param.involves_h_multigrid(),
+                                                            lambda_create_triangulation,
+                                                            {} /* no local refinements */);
   }
 
   void

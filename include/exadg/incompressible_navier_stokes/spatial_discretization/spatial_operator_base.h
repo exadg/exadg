@@ -251,10 +251,10 @@ public:
                                double const       time_step_size) const;
 
   /*
-   * Calculates characteristic element length h
+   * Returns characteristic element length for high-order elements / shape functions
    */
   double
-  calculate_characteristic_element_length() const;
+  get_characteristic_element_length() const;
 
   /*
    * For certain setups and types of boundary conditions, the pressure field is only defined up to

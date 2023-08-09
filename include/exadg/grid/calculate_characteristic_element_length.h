@@ -28,7 +28,7 @@
 
 namespace ExaDG
 {
-/*
+/**
  *  This function calculates the characteristic element length h
  *  defined as h = min_{e=1,...,N_el} h_e, where h_e is the
  *  minimum vertex distance of element e.
@@ -56,10 +56,23 @@ calculate_minimum_vertex_distance(dealii::Triangulation<dim> const & triangulati
   return global_min_cell_diameter;
 }
 
+/**
+ * This function calculates a characteristic resolution limit for high-order Lagrange polynomials
+ * given a mesh size h. This one-dimensional resolution limit is calculated as the grid size divided
+ * by the number of nodes per coordinate direction. Hence, the result depends on the function space
+ * (H^1 vs. L^2).
+ */
 inline double
-calculate_characteristic_element_length(double const element_length, unsigned int const fe_degree)
+calculate_characteristic_element_length(double const       element_length,
+                                        unsigned int const fe_degree,
+                                        bool const         is_dg)
 {
-  return element_length / ((double)(fe_degree + 1));
+  unsigned int n_nodes_1d = fe_degree;
+
+  if(is_dg)
+    n_nodes_1d += 1;
+
+  return element_length / ((double)n_nodes_1d);
 }
 
 } // namespace ExaDG

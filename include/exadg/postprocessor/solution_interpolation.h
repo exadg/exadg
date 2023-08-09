@@ -41,6 +41,11 @@ my_point_value(dealii::Vector<Number> &                                       re
                typename dealii::DoFHandler<dim>::active_cell_iterator const & cell,
                dealii::Point<dim> const &                                     point_in_ref_coord)
 {
+  AssertThrow(
+    dof_handler.get_triangulation().all_reference_cells_are_hyper_cube(),
+    dealii::ExcMessage(
+      "This functionality is only available for meshes consisting of hypercube elements."));
+
   Assert(dealii::GeometryInfo<dim>::distance_to_unit_cell(point_in_ref_coord) < 1e-10,
          dealii::ExcInternalError());
 
@@ -160,6 +165,11 @@ get_dof_indices_and_shape_values(
   dealii::Mapping<dim> const &                               mapping,
   dealii::LinearAlgebra::distributed::Vector<Number> const & solution)
 {
+  AssertThrow(
+    dof_handler.get_triangulation().all_reference_cells_are_hyper_cube(),
+    dealii::ExcMessage(
+      "This functionality is only available for meshes consisting of hypercube elements."));
+
   // fill dof_indices_and_shape_values
   std::vector<std::pair<std::vector<dealii::types::global_dof_index>, std::vector<Number>>>
     dof_indices_and_shape_values;
