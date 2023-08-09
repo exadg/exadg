@@ -884,12 +884,18 @@ Operator<dim, Number>::calculate_time_step_cfl_global(double const time) const
   // tend to infinity
   max_velocity = std::max(max_velocity, param.max_velocity);
 
-  double const h_min = calculate_minimum_element_length();
+  std::shared_ptr<dealii::Function<dim>> const velocity_field =
+    std::make_shared<dealii::Functions::ConstantFunction<dim>>(max_velocity, dim);
 
-  return ExaDG::calculate_time_step_cfl_global(max_velocity,
-                                               h_min,
-                                               param.degree,
-                                               param.exponent_fe_degree_convection);
+  return calculate_time_step_cfl_local<dim, Number>(*matrix_free,
+                                                    get_dof_index(),
+                                                    get_quad_index(),
+                                                    velocity_field,
+                                                    time,
+                                                    param.degree,
+                                                    param.exponent_fe_degree_convection,
+                                                    param.adaptive_time_stepping_cfl_type,
+                                                    mpi_comm);
 }
 
 template<int dim, typename Number>

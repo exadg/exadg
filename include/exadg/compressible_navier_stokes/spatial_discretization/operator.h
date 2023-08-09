@@ -170,9 +170,6 @@ public:
   calculate_time_step_diffusion() const final;
 
 private:
-  double
-  calculate_minimum_element_length() const;
-
   void
   distribute_dofs();
 

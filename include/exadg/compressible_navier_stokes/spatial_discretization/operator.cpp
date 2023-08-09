@@ -430,13 +430,6 @@ Operator<dim, Number>::get_wall_time_operator_evaluation() const
 
 template<int dim, typename Number>
 double
-Operator<dim, Number>::calculate_minimum_element_length() const
-{
-  return calculate_minimum_vertex_distance(dof_handler.get_triangulation(), mpi_comm);
-}
-
-template<int dim, typename Number>
-double
 Operator<dim, Number>::calculate_time_step_cfl_global() const
 {
   // speed of sound a = sqrt(gamma * R * T)
@@ -444,19 +437,26 @@ Operator<dim, Number>::calculate_time_step_cfl_global() const
     sqrt(param.heat_capacity_ratio * param.specific_gas_constant * param.max_temperature);
   double const acoustic_wave_speed = param.max_velocity + speed_of_sound;
 
-  double const h_min = calculate_minimum_element_length();
+  std::shared_ptr<dealii::Function<dim>> const velocity_field =
+    std::make_shared<dealii::Functions::ConstantFunction<dim>>(acoustic_wave_speed, dim);
 
-  return ExaDG::calculate_time_step_cfl_global(acoustic_wave_speed,
-                                               h_min,
-                                               param.degree,
-                                               param.exponent_fe_degree_cfl);
+  return calculate_time_step_cfl_local<dim, Number>(
+    *matrix_free,
+    get_dof_index_vector(),
+    get_quad_index_standard(),
+    velocity_field,
+    param.start_time /* will not be used (ConstantFunction) */,
+    param.degree,
+    param.exponent_fe_degree_cfl,
+    CFLConditionType::VelocityNorm,
+    mpi_comm);
 }
 
 template<int dim, typename Number>
 double
 Operator<dim, Number>::calculate_time_step_diffusion() const
 {
-  double const h_min = calculate_minimum_element_length();
+  double const h_min = calculate_minimum_vertex_distance(dof_handler.get_triangulation(), mpi_comm);
 
   return ExaDG::calculate_const_time_step_diff(param.dynamic_viscosity / param.reference_density,
                                                h_min,

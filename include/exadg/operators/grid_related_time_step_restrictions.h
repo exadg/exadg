@@ -109,28 +109,12 @@ calculate_max_velocity(dealii::Triangulation<dim> const &     triangulation,
 }
 
 /*
- * This function calculates the time step size according to the CFL condition where a global
- * criterion is used based on the maximum velocity and the minimum mesh size. Hence, this leads to a
- * conservative estimate of the time step size. The time step size computed by this function
- * corresponds to a value of CFL = 1.
- *
- *    cfl/k^{exponent_fe_degree} = || U || * time_step / h
- */
-inline double
-calculate_time_step_cfl_global(double const       max_velocity,
-                               double const       global_min_cell_diameter,
-                               unsigned int const fe_degree,
-                               double const       exponent_fe_degree = 2.0)
-{
-  double const time_step =
-    global_min_cell_diameter / pow(fe_degree, exponent_fe_degree) / max_velocity;
-
-  return time_step;
-}
-
-/*
  * Calculate time step size according to local CFL criterion where the velocity field is a
  * prescribed analytical function. The computed time step size corresponds to CFL = 1.0.
+ *
+ * The underlying CFL condition reads
+ *
+ * 	cfl/k^{exponent_fe_degree} = || U || * time_step / h
  */
 template<int dim, typename value_type>
 inline double
