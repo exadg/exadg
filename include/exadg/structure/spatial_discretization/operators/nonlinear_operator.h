@@ -85,9 +85,6 @@ public:
   VectorType const &
   get_solution_linearization() const;
 
-  void
-  update_ghost_values_linearization_vector() const;
-
 private:
   /*
    * Non-linear operator.
