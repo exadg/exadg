@@ -66,6 +66,7 @@ LinearOperator<dim, Number>::do_boundary_integral_continuous(
   {
     vector traction;
 
+    // integrate standard (stored) traction or exterior pressure on Robin boundaries
     if(boundary_type == BoundaryType::Neumann or boundary_type == BoundaryType::NeumannCached or
        boundary_type == BoundaryType::RobinSpringDashpotPressure)
     {
@@ -76,6 +77,8 @@ LinearOperator<dim, Number>::do_boundary_integral_continuous(
       }
     }
 
+    // check boundary ID in robin_k_c_p_param to add boundary mass integrals from Robin boundaries
+    // on BoundaryType::NeumannCached or BoundaryType::RobinSpringDashpotPressure
     if(boundary_type == BoundaryType::NeumannCached or
        boundary_type == BoundaryType::RobinSpringDashpotPressure)
     {
