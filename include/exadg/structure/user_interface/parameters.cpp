@@ -105,10 +105,12 @@ Parameters::check() const
   }
   else
   {
-	AssertThrow(weak_damping_active == false,
-				dealii::ExcMessage("Weak damping only well-defined for ProblemType::Unsteady."));
-	AssertThrow(not(std::abs(weak_damping_coefficient) > 0.0),
-				dealii::ExcMessage("Do not set nonzero weak damping coefficient for ProblemType::Steady or ProblemType::QuasiStatic."));
+    AssertThrow(weak_damping_active == false,
+                dealii::ExcMessage("Weak damping only well-defined for ProblemType::Unsteady."));
+    AssertThrow(
+      not(std::abs(weak_damping_coefficient) > 0.0),
+      dealii::ExcMessage(
+        "Do not set nonzero weak damping coefficient for ProblemType::Steady or ProblemType::QuasiStatic."));
   }
 
   // SPATIAL DISCRETIZATION
