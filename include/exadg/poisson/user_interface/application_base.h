@@ -29,7 +29,6 @@
 
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
-#include <exadg/grid/calculate_maximum_aspect_ratio.h>
 #include <exadg/grid/grid.h>
 #include <exadg/grid/grid_parameters.h>
 #include <exadg/grid/grid_utilities.h>
@@ -109,18 +108,15 @@ public:
 
     if(compute_aspect_ratio)
     {
-      // this variant is only for comparison
-      double AR = calculate_aspect_ratio_vertex_distance(*grid->triangulation, mpi_comm);
-      pcout << std::endl << "Maximum aspect ratio (vertex distance) = " << AR << std::endl;
-
       auto const reference_cells = grid->triangulation->get_reference_cells();
       AssertThrow(reference_cells.size() == 1, dealii::ExcMessage("No mixed meshes allowed"));
 
       auto const quad =
         reference_cells[0].template get_gauss_type_quadrature<dim>(param.degree + 1);
 
-      AR = dealii::GridTools::compute_maximum_aspect_ratio(*mapping, *grid->triangulation, quad);
-      pcout << std::endl << "Maximum aspect ratio (Jacobian) = " << AR << std::endl;
+      double const aspect_ratio =
+        dealii::GridTools::compute_maximum_aspect_ratio(*mapping, *grid->triangulation, quad);
+      pcout << std::endl << "Maximum aspect ratio = " << aspect_ratio << std::endl;
     }
 
     // boundary conditions
