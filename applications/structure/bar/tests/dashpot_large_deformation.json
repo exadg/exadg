@@ -2,11 +2,11 @@
     "General": {
         "Precision": "double",
         "Dim": "3",
-        "IsTest": "false"
+        "IsTest": "true"
     },
     "SpatialResolution": {
-        "DegreeMin": "4",
-        "DegreeMax": "4",
+        "DegreeMin": "2",
+        "DegreeMax": "2",
         "RefineSpaceMin": "1",
         "RefineSpaceMax": "1"
     },
@@ -18,17 +18,17 @@
         "Length": "100.0",
         "Height": "10.0",
         "Width": "10.0",
-        "ProblemType": "Steady",
+        "ProblemType": "Unsteady",
         "WeakDamping": "0.0",
         "UseVolumeForce": "false",
         "VolumeForce": "1.0",
-        "LargeDeformation": "false",
+        "LargeDeformation": "true",
         "BoundaryType": "Dirichlet",
         "Displacement": "20.0",
-        "Traction": "0.0",
-        "SpringCoefficient": "1e5",
-        "DashpotCoefficient": "1e3",
-        "ExteriorPressure": "0"
+        "Traction":	"0.0",
+        "SpringCoefficient": "0",
+        "DashpotCoefficient": "1e8",
+        "ExteriorPressure": "0.0"
     },
     "Output": {
         "OutputDirectory": "output/bar/",

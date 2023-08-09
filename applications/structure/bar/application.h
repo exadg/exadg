@@ -587,12 +587,9 @@ private:
     pp_data.output_data.write_higher_order = true;
     pp_data.output_data.degree             = this->param.degree;
 
-    pp_data.error_data.time_control_data.start_time       = start_time;
-    pp_data.error_data.time_control_data.trigger_interval = (end_time - start_time);
-
     pp_data.error_data.time_control_data.is_active        = true;
     pp_data.error_data.time_control_data.start_time       = start_time;
-    pp_data.error_data.time_control_data.trigger_interval = (end_time - start_time);
+    pp_data.error_data.time_control_data.trigger_interval = (end_time - start_time)*0.25;
     pp_data.error_data.calculate_relative_errors          = true;
     double const vol_force = use_volume_force ? this->volume_force : 0.0;
     if(boundary_type == BoundaryType::Dirichlet)
