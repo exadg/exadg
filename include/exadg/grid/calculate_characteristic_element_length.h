@@ -57,33 +57,6 @@ calculate_minimum_vertex_distance(dealii::Triangulation<dim> const & triangulati
 }
 
 /**
- * Calculates the maximum vertex distance for a given cell.
- */
-template<int dim>
-inline double
-calculate_maximum_vertex_distance(
-  typename dealii::Triangulation<dim>::active_cell_iterator const & cell)
-{
-  double maximum_vertex_distance = 0.0;
-
-  for(unsigned int const i : cell->vertex_indices())
-  {
-    dealii::Point<dim> & ref_vertex = cell->vertex(i);
-    // start the loop with the second vertex!
-    for(unsigned int const j : cell->vertex_indices())
-    {
-      if(j != i)
-      {
-        dealii::Point<dim> & vertex = cell->vertex(j);
-        maximum_vertex_distance = std::max(maximum_vertex_distance, vertex.distance(ref_vertex));
-      }
-    }
-  }
-
-  return maximum_vertex_distance;
-}
-
-/**
  * This function calculates a characteristic resolution limit for high-order Lagrange polynomials
  * given a mesh size h. This one-dimensional resolution limit is calculated as the grid size divided
  * by the number of nodes per coordinate direction. Hence, the result depends on the function space
