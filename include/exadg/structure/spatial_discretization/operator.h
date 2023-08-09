@@ -265,8 +265,8 @@ public:
   evaluate_nonlinear_residual(VectorType &       dst,
                               VectorType const & src,
                               VectorType const & const_vector,
-                              double const       factor_mass,
-                              double const       factor_mass_boundary,
+                              double const       factor,
+                              double const       factor_boundary,
                               double const       time) const;
 
   void
@@ -275,23 +275,23 @@ public:
   void
   apply_linearized_operator(VectorType &       dst,
                             VectorType const & src,
-                            double const       factor_mass,
-                            double const       factor_mass_boundary,
+                            double const       factor,
+                            double const       factor_boundary,
                             double const       time) const;
 
   void
   evaluate_elasticity_operator(VectorType &       dst,
                                VectorType const & src,
-                               double const       factor_mass,
-                               double const       factor_mass_boundary,
+                               double const       factor,
+                               double const       factor_boundary,
                                double const       time) const;
 
   void
   apply_elasticity_operator(VectorType &       dst,
                             VectorType const & src,
                             VectorType const & linearization,
-                            double const       factor_mass,
-                            double const       factor_mass_boundary,
+                            double const       factor,
+                            double const       factor_boundary,
                             double const       time) const;
 
   /*
