@@ -241,8 +241,6 @@ Operator<dim, Number>::compute_scaling_factor_mass(double const scaling_factor_a
   double scaling_factor_mass = scaling_factor_acceleration;
   if(param.weak_damping_active)
   {
-    AssertThrow(param.problem_type == ProblemType::Unsteady,
-                dealii::ExcMessage("Weak damping only well-defined for instationary problems."));
     scaling_factor_mass += param.weak_damping_coefficient * scaling_factor_velocity;
   }
   return scaling_factor_mass;
@@ -786,9 +784,6 @@ Operator<dim, Number>::apply_add_damping_operator(VectorType & dst, VectorType c
 {
   if(param.weak_damping_active)
   {
-    AssertThrow(param.problem_type == ProblemType::Unsteady,
-                dealii::ExcMessage("Weak damping only well-defined for instationary problems."));
-
     VectorType tmp;
     tmp.reinit(src);
     tmp.equ(param.weak_damping_coefficient, src);
