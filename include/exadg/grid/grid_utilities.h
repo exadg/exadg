@@ -128,12 +128,12 @@ create_triangulation(
   unsigned int const                                             global_refinements,
   std::vector<unsigned int> const &                              vector_local_refinements)
 {
-  if(data.element_type == ElementType::Simplex)
+  if(vector_local_refinements.size() != 0)
   {
     AssertThrow(
-      vector_local_refinements.size() == 0,
+      data.element_type == ElementType::Hypercube,
       dealii::ExcMessage(
-        "Currently, dealii triangulations composed of simplicial elements do not allow local refinements."));
+        "Local refinements are currently only supported for meshes composed of hypercube elements."));
   }
 
   // mesh smoothing

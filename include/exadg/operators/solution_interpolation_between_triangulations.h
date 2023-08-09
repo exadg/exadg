@@ -32,7 +32,7 @@ namespace ExaDG
 {
 /**
  * Class to transfer solutions between different DoFHandlers via interpolation. This class requires,
- * that the destination DofHandler has generalized support points.
+ * that the destination DoFHandler has generalized support points.
  */
 template<int dim>
 class SolutionInterpolationBetweenTriangulations
@@ -66,12 +66,12 @@ public:
   }
 
   /**
-   * Interpolate the solution from a source to a target triangulation, that were set with reinit.
-   * At support points which are not overlapping the source triangulation, corresponding dof entries
-   * are set to 0.
+   * Interpolate the solution from a source to a target triangulation.
+   * At support points which are not overlapping the source triangulation, corresponding degrees of
+   * freedom are set to 0.
    *
-   * @param[in] dst Target Dof Vector.
-   * @param[in] src Source Dof Vector.
+   * @param[in] dst Target DoF Vector.
+   * @param[in] src Source DoF Vector.
    */
   template<int n_components, typename VectorType1, typename VectorType2>
   void

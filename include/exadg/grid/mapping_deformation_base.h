@@ -41,6 +41,8 @@ namespace ExaDG
  * domains / grids, where the displacement vector describes the time-dependent deformation of the
  * grid. However, this class may also be used for stationary problems, e.g. to apply high-order
  * curved boundaries on top of low-order approximation of a certain geometry.
+ *
+ * TODO: extend this class to simplicial elements.
  */
 template<int dim, typename Number>
 class DeformedMappingBase : public MappingDoFVector<dim, Number>

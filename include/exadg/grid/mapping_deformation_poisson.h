@@ -36,6 +36,8 @@ namespace Poisson
 {
 /**
  * Class for moving grid problems based on a Poisson-type grid motion technique.
+ *
+ * TODO: extend this class to simplicial elements.
  */
 template<int dim, typename Number>
 class DeformedMapping : public DeformedMappingBase<dim, Number>
