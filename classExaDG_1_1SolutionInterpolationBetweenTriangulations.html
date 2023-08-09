@@ -92,7 +92,7 @@ Public Member Functions</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;int dim&gt;<br />
-class ExaDG::SolutionInterpolationBetweenTriangulations&lt; dim &gt;</div><p>Class to transfer solutions between different DoFHandlers via interpolation. This class requires, that the destination DofHandler has generalized support points. </p>
+class ExaDG::SolutionInterpolationBetweenTriangulations&lt; dim &gt;</div><p>Class to transfer solutions between different DoFHandlers via interpolation. This class requires, that the destination DoFHandler has generalized support points. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="ad9ee5dec6acfac11eba23d600acd51e2" name="ad9ee5dec6acfac11eba23d600acd51e2"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad9ee5dec6acfac11eba23d600acd51e2">&#9670;&#160;</a></span>interpolate_solution()</h2>
@@ -137,11 +137,11 @@ template&lt;int n_components, typename VectorType1 , typename VectorType2 &gt; <
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Interpolate the solution from a source to a target triangulation, that were set with reinit. At support points which are not overlapping the source triangulation, corresponding dof entries are set to 0.</p>
+<p>Interpolate the solution from a source to a target triangulation. At support points which are not overlapping the source triangulation, corresponding degrees of freedom are set to 0.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">dst</td><td>Target Dof Vector. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">src</td><td>Source Dof Vector. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">dst</td><td>Target DoF Vector. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">src</td><td>Source DoF Vector. </td></tr>
   </table>
   </dd>
 </dl>

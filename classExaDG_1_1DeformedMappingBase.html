@@ -146,7 +146,8 @@ std::vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bot
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;int dim, typename Number&gt;<br />
 class ExaDG::DeformedMappingBase&lt; dim, Number &gt;</div><p>Base class to describe grid deformations, where the grid coordinates described by a reference mapping are superimposed by a displacement DoF vector.</p>
-<p>A typical use case of this class are Arbitrary Lagrangian-Eulerian type problems with moving domains / grids, where the displacement vector describes the time-dependent deformation of the grid. However, this class may also be used for stationary problems, e.g. to apply high-order curved boundaries on top of low-order approximation of a certain geometry. </p>
+<p>A typical use case of this class are Arbitrary Lagrangian-Eulerian type problems with moving domains / grids, where the displacement vector describes the time-dependent deformation of the grid. However, this class may also be used for stationary problems, e.g. to apply high-order curved boundaries on top of low-order approximation of a certain geometry.</p>
+<p>TODO: extend this class to simplicial elements. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a86405b4e0bdeb479b61a915efc45c55e" name="a86405b4e0bdeb479b61a915efc45c55e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a86405b4e0bdeb479b61a915efc45c55e">&#9670;&#160;</a></span>DeformedMappingBase()</h2>

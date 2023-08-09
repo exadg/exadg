@@ -81,6 +81,8 @@ $(function() {
   <div class="headertitle"><div class="title">ExaDG::KineticEnergySpectrumCalculator&lt; dim, Number &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p><code>#include &lt;<a class="el" href="kinetic__energy__spectrum_8h_source.html">kinetic_energy_spectrum.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
@@ -106,7 +108,10 @@ Public Attributes</h2></td></tr>
 <a class="el" href="classExaDG_1_1TimeControl.html">TimeControl</a>&#160;</td><td class="memItemRight" valign="bottom"><b>time_control</b></td></tr>
 <tr class="separator:a5026d9b923c4b9d2e25243740045d708"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<hr/>The documentation for this class was generated from the following files:<ul>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><div class="compoundTemplParams">template&lt;int dim, typename Number&gt;<br />
+class ExaDG::KineticEnergySpectrumCalculator&lt; dim, Number &gt;</div><p>This class evaluates the kinetic energy spectrum on a periodic box. The mesh must be composed of hypercube (quad, hex) elements. Exploiting the symmetries of the Taylor-Green problem is implemented as a special case, in order to be able to solve the PDE problem only on the symmetric box instead of the periodic box ("full" domain). </p>
+</div><hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/exadg/postprocessor/<a class="el" href="kinetic__energy__spectrum_8h_source.html">kinetic_energy_spectrum.h</a></li>
 <li>include/exadg/postprocessor/kinetic_energy_spectrum.cpp</li>
 </ul>

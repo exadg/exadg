@@ -79,6 +79,8 @@ $(function() {
   <div class="headertitle"><div class="title">ExaDG::OneSidedCylindricalManifold&lt; dim &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p><code>#include &lt;<a class="el" href="one__sided__cylindrical__manifold_8h_source.html">one_sided_cylindrical_manifold.h</a>&gt;</code></p>
 <div class="dynheader">
 Inheritance diagram for ExaDG::OneSidedCylindricalManifold&lt; dim &gt;:</div>
 <div class="dyncontent">
@@ -88,9 +90,9 @@ Inheritance diagram for ExaDG::OneSidedCylindricalManifold&lt; dim &gt;:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:afe488f026d0a58656f95b556840afd84"><td class="memItemLeft" align="right" valign="top"><a id="afe488f026d0a58656f95b556840afd84" name="afe488f026d0a58656f95b556840afd84"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>OneSidedCylindricalManifold</b> (typename dealii::Triangulation&lt; dim &gt;::cell_iterator const &amp;cell_in, unsigned int const face_in, dealii::Point&lt; dim &gt; const &amp;center_in)</td></tr>
-<tr class="separator:afe488f026d0a58656f95b556840afd84"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a396093680320052231bb91e7aa4018cc"><td class="memItemLeft" align="right" valign="top"><a id="a396093680320052231bb91e7aa4018cc" name="a396093680320052231bb91e7aa4018cc"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>OneSidedCylindricalManifold</b> (dealii::Triangulation&lt; dim &gt; const &amp;tria_in, typename dealii::Triangulation&lt; dim &gt;::cell_iterator const &amp;cell_in, unsigned int const face_in, dealii::Point&lt; dim &gt; const &amp;center_in)</td></tr>
+<tr class="separator:a396093680320052231bb91e7aa4018cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4162114f73c8b47f7cc4e758ae6ad278"><td class="memItemLeft" align="right" valign="top"><a id="a4162114f73c8b47f7cc4e758ae6ad278" name="a4162114f73c8b47f7cc4e758ae6ad278"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::Point&lt; 2 &gt; const &amp;x_1, dealii::Point&lt; 2 &gt; const &amp;x_2)</td></tr>
 <tr class="separator:a4162114f73c8b47f7cc4e758ae6ad278"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -119,7 +121,10 @@ dealii::Point&lt; dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><b
 std::unique_ptr&lt; dealii::Manifold&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>clone</b> () const override</td></tr>
 <tr class="separator:a0be8dc5ea1ff58d9549fbd89131589b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<hr/>The documentation for this class was generated from the following file:<ul>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><div class="compoundTemplParams">template&lt;int dim&gt;<br />
+class ExaDG::OneSidedCylindricalManifold&lt; dim &gt;</div><p>Class that provides a spherical manifold applied to one of the faces of a quadrilateral element. On the face subject to the spherical manifold intermediate points are inserted so that an equidistant distribution of points in terms of arclength is obtained. When refining the mesh, all child cells are subject to this "one-sided" spherical volume manifold. This manifold description is available for the two-dimensional case, and for the three-dimensional case with the restriction that the geometry has to be extruded in x3/z-direction. </p>
+</div><hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/grid/<a class="el" href="one__sided__cylindrical__manifold_8h_source.html">one_sided_cylindrical_manifold.h</a></li>
 </ul>
 </div><!-- contents -->

@@ -188,7 +188,7 @@ $(function() {
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    <span class="keywordflow">if</span>(compute_aspect_ratio)</div>
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    {</div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>      <span class="comment">// this variant is only for comparison</span></div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>      <span class="keywordtype">double</span> AR = calculate_aspect_ratio_vertex_distance(*grid-&gt;triangulation, mpi_comm);</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>      <span class="keywordtype">double</span> AR = <a class="code hl_function" href="namespaceExaDG.html#ab1fb23c670624b2536ca454efaa42301">calculate_aspect_ratio_vertex_distance</a>(*grid-&gt;triangulation, mpi_comm);</div>
 <div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>      pcout &lt;&lt; std::endl &lt;&lt; <span class="stringliteral">&quot;Maximum aspect ratio (vertex distance) = &quot;</span> &lt;&lt; AR &lt;&lt; std::endl;</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>      <span class="keyword">auto</span> <span class="keyword">const</span> reference_cells = grid-&gt;triangulation-&gt;get_reference_cells();</div>
@@ -298,6 +298,7 @@ $(function() {
 <div class="ttc" id="aclassExaDG_1_1Poisson_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1ApplicationBase.html">ExaDG::Poisson::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:50</div></div>
 <div class="ttc" id="aclassExaDG_1_1Poisson_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1Parameters.html">ExaDG::Poisson::Parameters</a></div><div class="ttdef"><b>Definition</b> parameters.h:36</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
+<div class="ttc" id="anamespaceExaDG_html_ab1fb23c670624b2536ca454efaa42301"><div class="ttname"><a href="namespaceExaDG.html#ab1fb23c670624b2536ca454efaa42301">ExaDG::calculate_aspect_ratio_vertex_distance</a></div><div class="ttdeci">double calculate_aspect_ratio_vertex_distance(dealii::Triangulation&lt; dim &gt; const &amp;triangulation, MPI_Comm const &amp;mpi_comm)</div><div class="ttdef"><b>Definition</b> calculate_maximum_aspect_ratio.h:47</div></div>
 <div class="ttc" id="astructExaDG_1_1GridParameters_html"><div class="ttname"><a href="structExaDG_1_1GridParameters.html">ExaDG::GridParameters</a></div><div class="ttdef"><b>Definition</b> grid_parameters.h:32</div></div>
 <div class="ttc" id="astructExaDG_1_1OutputParameters_html"><div class="ttname"><a href="structExaDG_1_1OutputParameters.html">ExaDG::OutputParameters</a></div><div class="ttdef"><b>Definition</b> output_parameters.h:32</div></div>
 </div><!-- fragment --></div><!-- contents -->
