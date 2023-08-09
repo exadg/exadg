@@ -874,14 +874,14 @@ void
 Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
                                                    VectorType const & src,
                                                    VectorType const & const_vector,
-                                                   double const       factor_mass,
-                                                   double const       factor_mass_boundary,
+                                                   double const       factor,
+                                                   double const       factor_boundary,
                                                    double const       time) const
 {
   // elasticity operator: make sure that constrained degrees of freedom have been set correctly
   // before evaluating the elasticity operator.
-  elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor_mass);
-  elasticity_operator_nonlinear.set_scaling_factor_mass_boundary_operator(factor_mass_boundary);
+  elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
+  elasticity_operator_nonlinear.set_scaling_factor_mass_boundary_operator(factor_boundary);
   elasticity_operator_nonlinear.set_time(time);
   elasticity_operator_nonlinear.evaluate_nonlinear(dst, src);
 
@@ -918,12 +918,12 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::apply_linearized_operator(VectorType &       dst,
                                                  VectorType const & src,
-                                                 double const       factor_mass,
-                                                 double const       factor_mass_boundary,
+                                                 double const       factor,
+                                                 double const       factor_boundary,
                                                  double const       time) const
 {
-  elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor_mass);
-  elasticity_operator_nonlinear.set_scaling_factor_mass_boundary_operator(factor_mass_boundary);
+  elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
+  elasticity_operator_nonlinear.set_scaling_factor_mass_boundary_operator(factor_boundary);
   elasticity_operator_nonlinear.set_time(time);
   elasticity_operator_nonlinear.vmult(dst, src);
 }
@@ -932,21 +932,21 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::evaluate_elasticity_operator(VectorType &       dst,
                                                     VectorType const & src,
-                                                    double const       factor_mass,
-                                                    double const       factor_mass_boundary,
+                                                    double const       factor,
+                                                    double const       factor_boundary,
                                                     double const       time) const
 {
   if(param.large_deformation)
   {
-    elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor_mass);
-    elasticity_operator_nonlinear.set_scaling_factor_mass_boundary_operator(factor_mass_boundary);
+    elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
+    elasticity_operator_nonlinear.set_scaling_factor_mass_boundary_operator(factor_boundary);
     elasticity_operator_nonlinear.set_time(time);
     elasticity_operator_nonlinear.evaluate_nonlinear(dst, src);
   }
   else
   {
-    elasticity_operator_linear.set_scaling_factor_mass_operator(factor_mass);
-    elasticity_operator_linear.set_scaling_factor_mass_boundary_operator(factor_mass_boundary);
+    elasticity_operator_linear.set_scaling_factor_mass_operator(factor);
+    elasticity_operator_linear.set_scaling_factor_mass_boundary_operator(factor_boundary);
     elasticity_operator_linear.set_time(time);
     elasticity_operator_linear.evaluate(dst, src);
   }
@@ -957,19 +957,19 @@ void
 Operator<dim, Number>::apply_elasticity_operator(VectorType &       dst,
                                                  VectorType const & src,
                                                  VectorType const & linearization,
-                                                 double const       factor_mass,
-                                                 double const       factor_mass_boundary,
+                                                 double const       factor,
+                                                 double const       factor_boundary,
                                                  double const       time) const
 {
   if(param.large_deformation)
   {
     set_solution_linearization(linearization);
-    apply_linearized_operator(dst, src, factor_mass, factor_mass_boundary, time);
+    apply_linearized_operator(dst, src, factor, factor_boundary, time);
   }
   else
   {
-    elasticity_operator_linear.set_scaling_factor_mass_operator(factor_mass);
-    elasticity_operator_linear.set_scaling_factor_mass_boundary_operator(factor_mass_boundary);
+    elasticity_operator_linear.set_scaling_factor_mass_operator(factor);
+    elasticity_operator_linear.set_scaling_factor_mass_boundary_operator(factor_boundary);
     elasticity_operator_linear.set_time(time);
     elasticity_operator_linear.vmult(dst, src);
   }
