@@ -91,12 +91,12 @@ Inheritance diagram for ExaDG::Structure::Material&lt; dim, Number &gt;:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a57441631b81911df6a08ac8e940cd541"><td class="memItemLeft" align="right" valign="top"><a id="a57441631b81911df6a08ac8e940cd541" name="a57441631b81911df6a08ac8e940cd541"></a>
-virtual dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_stress</b> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;E, unsigned int const cell, unsigned int const q) const =0</td></tr>
-<tr class="separator:a57441631b81911df6a08ac8e940cd541"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab04d4d83a9a2d68364de5e76dcd07fe7"><td class="memItemLeft" align="right" valign="top"><a id="ab04d4d83a9a2d68364de5e76dcd07fe7" name="ab04d4d83a9a2d68364de5e76dcd07fe7"></a>
-virtual dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>apply_C</b> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;E, unsigned int const cell, unsigned int const q) const =0</td></tr>
-<tr class="separator:ab04d4d83a9a2d68364de5e76dcd07fe7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab5d74ee299590a3f4344c3f690fc807c"><td class="memItemLeft" align="right" valign="top"><a id="ab5d74ee299590a3f4344c3f690fc807c" name="ab5d74ee299590a3f4344c3f690fc807c"></a>
+virtual dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>second_piola_kirchhoff_stress</b> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;gradient_displacement, unsigned int const cell, unsigned int const q) const =0</td></tr>
+<tr class="separator:ab5d74ee299590a3f4344c3f690fc807c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afbeae9050a333d855a0b3a7c958ff71c"><td class="memItemLeft" align="right" valign="top"><a id="afbeae9050a333d855a0b3a7c958ff71c" name="afbeae9050a333d855a0b3a7c958ff71c"></a>
+virtual dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>second_piola_kirchhoff_stress_displacement_derivative</b> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;gradient_increment, dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;deformation_gradient, unsigned int const cell, unsigned int const q) const =0</td></tr>
+<tr class="separator:afbeae9050a333d855a0b3a7c958ff71c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/structure/material/<a class="el" href="material_8h_source.html">material.h</a></li>

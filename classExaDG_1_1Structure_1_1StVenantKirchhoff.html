@@ -104,23 +104,23 @@ typedef CellIntegrator&lt; dim, dim, Number &gt;&#160;</td><td class="memItemRig
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:afbe24c6cad472b99c8edea62b6daa574"><td class="memItemLeft" align="right" valign="top"><a id="afbe24c6cad472b99c8edea62b6daa574" name="afbe24c6cad472b99c8edea62b6daa574"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>StVenantKirchhoff</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, unsigned int const dof_index, unsigned int const quad_index, <a class="el" href="structExaDG_1_1Structure_1_1StVenantKirchhoffData.html">StVenantKirchhoffData</a>&lt; dim &gt; const &amp;data)</td></tr>
-<tr class="separator:afbe24c6cad472b99c8edea62b6daa574"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a560191e10d928708a6218b96b909f12d"><td class="memItemLeft" align="right" valign="top">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html#a560191e10d928708a6218b96b909f12d">evaluate_stress</a> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;E, unsigned int const cell, unsigned int const q) const final</td></tr>
-<tr class="separator:a560191e10d928708a6218b96b909f12d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9c06aca1b7ce91beed007887556ab106"><td class="memItemLeft" align="right" valign="top">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html#a9c06aca1b7ce91beed007887556ab106">apply_C</a> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;E, unsigned int const cell, unsigned int const q) const final</td></tr>
-<tr class="separator:a9c06aca1b7ce91beed007887556ab106"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a57441631b81911df6a08ac8e940cd541"><td class="memItemLeft" align="right" valign="top"><a id="a57441631b81911df6a08ac8e940cd541" name="a57441631b81911df6a08ac8e940cd541"></a>
-virtual dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_stress</b> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;E, unsigned int const cell, unsigned int const q) const =0</td></tr>
-<tr class="separator:a57441631b81911df6a08ac8e940cd541"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab04d4d83a9a2d68364de5e76dcd07fe7"><td class="memItemLeft" align="right" valign="top"><a id="ab04d4d83a9a2d68364de5e76dcd07fe7" name="ab04d4d83a9a2d68364de5e76dcd07fe7"></a>
-virtual dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>apply_C</b> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;E, unsigned int const cell, unsigned int const q) const =0</td></tr>
-<tr class="separator:ab04d4d83a9a2d68364de5e76dcd07fe7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:accdfdfd1f9ff683215d21248e7d22147"><td class="memItemLeft" align="right" valign="top"><a id="accdfdfd1f9ff683215d21248e7d22147" name="accdfdfd1f9ff683215d21248e7d22147"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>StVenantKirchhoff</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, unsigned int const dof_index, unsigned int const quad_index, <a class="el" href="structExaDG_1_1Structure_1_1StVenantKirchhoffData.html">StVenantKirchhoffData</a>&lt; dim &gt; const &amp;data, bool const large_deformation)</td></tr>
+<tr class="separator:accdfdfd1f9ff683215d21248e7d22147"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa304f44db7a004597a41faa9aa7bb3b1"><td class="memItemLeft" align="right" valign="top">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html#aa304f44db7a004597a41faa9aa7bb3b1">second_piola_kirchhoff_stress</a> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;gradient_displacement, unsigned int const cell, unsigned int const q) const final</td></tr>
+<tr class="separator:aa304f44db7a004597a41faa9aa7bb3b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa331e39346a1de92eee160defc81a558"><td class="memItemLeft" align="right" valign="top">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html#aa331e39346a1de92eee160defc81a558">second_piola_kirchhoff_stress_displacement_derivative</a> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;gradient_increment, dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;deformation_gradient, unsigned int const cell, unsigned int const q) const final</td></tr>
+<tr class="separator:aa331e39346a1de92eee160defc81a558"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab5d74ee299590a3f4344c3f690fc807c"><td class="memItemLeft" align="right" valign="top"><a id="ab5d74ee299590a3f4344c3f690fc807c" name="ab5d74ee299590a3f4344c3f690fc807c"></a>
+virtual dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>second_piola_kirchhoff_stress</b> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;gradient_displacement, unsigned int const cell, unsigned int const q) const =0</td></tr>
+<tr class="separator:ab5d74ee299590a3f4344c3f690fc807c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afbeae9050a333d855a0b3a7c958ff71c"><td class="memItemLeft" align="right" valign="top"><a id="afbeae9050a333d855a0b3a7c958ff71c" name="afbeae9050a333d855a0b3a7c958ff71c"></a>
+virtual dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>second_piola_kirchhoff_stress_displacement_derivative</b> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;gradient_increment, dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;deformation_gradient, unsigned int const cell, unsigned int const q) const =0</td></tr>
+<tr class="separator:afbeae9050a333d855a0b3a7c958ff71c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a9c06aca1b7ce91beed007887556ab106" name="a9c06aca1b7ce91beed007887556ab106"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9c06aca1b7ce91beed007887556ab106">&#9670;&#160;</a></span>apply_C()</h2>
+<a id="aa304f44db7a004597a41faa9aa7bb3b1" name="aa304f44db7a004597a41faa9aa7bb3b1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa304f44db7a004597a41faa9aa7bb3b1">&#9670;&#160;</a></span>second_piola_kirchhoff_stress()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -131,10 +131,10 @@ template&lt;int dim, typename Number &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; <a class="el" href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html">ExaDG::Structure::StVenantKirchhoff</a>&lt; dim, Number &gt;::apply_C </td>
+          <td class="memname">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; <a class="el" href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html">ExaDG::Structure::StVenantKirchhoff</a>&lt; dim, Number &gt;::second_piola_kirchhoff_stress </td>
           <td>(</td>
           <td class="paramtype">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;&#160;</td>
-          <td class="paramname"><em>E</em>, </td>
+          <td class="paramname"><em>gradient_displacement</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -165,8 +165,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a560191e10d928708a6218b96b909f12d" name="a560191e10d928708a6218b96b909f12d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a560191e10d928708a6218b96b909f12d">&#9670;&#160;</a></span>evaluate_stress()</h2>
+<a id="aa331e39346a1de92eee160defc81a558" name="aa331e39346a1de92eee160defc81a558"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa331e39346a1de92eee160defc81a558">&#9670;&#160;</a></span>second_piola_kirchhoff_stress_displacement_derivative()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -177,10 +177,16 @@ template&lt;int dim, typename Number &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; <a class="el" href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html">ExaDG::Structure::StVenantKirchhoff</a>&lt; dim, Number &gt;::evaluate_stress </td>
+          <td class="memname">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; <a class="el" href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html">ExaDG::Structure::StVenantKirchhoff</a>&lt; dim, Number &gt;::second_piola_kirchhoff_stress_displacement_derivative </td>
           <td>(</td>
           <td class="paramtype">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;&#160;</td>
-          <td class="paramname"><em>E</em>, </td>
+          <td class="paramname"><em>gradient_increment</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>deformation_gradient</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>

@@ -119,21 +119,34 @@ $(function() {
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  {</div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  }</div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keyword">virtual</span> dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt;</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  evaluate_stress(dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt; <span class="keyword">const</span> &amp; E,</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>                  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                              cell,</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>                  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                              q) <span class="keyword">const</span> = 0;</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keyword">virtual</span> dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt;</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  apply_C(dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt; <span class="keyword">const</span> &amp; E,</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                              cell,</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>          <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                              q) <span class="keyword">const</span> = 0;</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>};</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>} <span class="comment">// namespace Structure</span></div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span><span class="comment">   * Evaluate 2nd Piola-Kirchhoff stress tensor given the gradient of the displacement field</span></div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="comment">   * with respect to the reference configuration (not to be confused with the deformation gradient).</span></div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="keyword">virtual</span> dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt;</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  second_piola_kirchhoff_stress(</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt; <span class="keyword">const</span> &amp; gradient_displacement,</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                              cell,</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                              q) <span class="keyword">const</span> = 0;</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span><span class="comment">   * Evaluate the directional derivative with respect to the displacement of the 2nd Piola-Kirchhoff</span></div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="comment">   * stress tensor given gradient of the displacment increment with respect to the reference</span></div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="comment">   * configuration &quot;gradient_increment&quot; and deformation gradient at the current linearization point</span></div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span><span class="comment">   * &quot;deformation_gradient&quot;.</span></div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="keyword">virtual</span> dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt;</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  second_piola_kirchhoff_stress_displacement_derivative(</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt; <span class="keyword">const</span> &amp; gradient_increment,</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt; <span class="keyword">const</span> &amp; deformation_gradient,</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                              cell,</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                              q) <span class="keyword">const</span> = 0;</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>};</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>} <span class="comment">// namespace Structure</span></div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span><span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1Material_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1Material.html">ExaDG::Structure::Material</a></div><div class="ttdef"><b>Definition</b> material.h:38</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 </div><!-- fragment --></div><!-- contents -->
