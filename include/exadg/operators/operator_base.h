@@ -147,7 +147,7 @@ public:
   bool
   operator_is_singular() const;
 
-  void
+  virtual void
   vmult(VectorType & dst, VectorType const & src) const;
 
   void
@@ -192,21 +192,21 @@ public:
    * preconditioner when this function is called the first time. Recompute block matrices in case of
    * matrix-based implementation.
    */
-  void
+  virtual void
   update_block_diagonal_preconditioner() const;
 
-  void
+  virtual void
   apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const;
 
   /*
    * Algebraic multigrid (AMG): sparse matrix (Trilinos) methods
    */
 #ifdef DEAL_II_WITH_TRILINOS
-  void
+  virtual void
   init_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix,
                      MPI_Comm const &                         mpi_comm) const;
 
-  void
+  virtual void
   calculate_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix) const;
 #endif
 
@@ -214,11 +214,11 @@ public:
    * Algebraic multigrid (AMG): sparse matrix (PETSc) methods
    */
 #ifdef DEAL_II_WITH_PETSC
-  void
+  virtual void
   init_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix,
                      MPI_Comm const &                           mpi_comm) const;
 
-  void
+  virtual void
   calculate_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const;
 #endif
 
@@ -288,7 +288,7 @@ public:
   void
   calculate_diagonal(VectorType & diagonal) const;
 
-  void
+  virtual void
   add_diagonal(VectorType & diagonal) const;
 
   /*
@@ -299,7 +299,7 @@ public:
   void
   calculate_block_diagonal_matrices() const;
 
-  void
+  virtual void
   add_block_diagonal_matrices(BlockMatrix & matrices) const;
 
   void
