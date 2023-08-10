@@ -58,15 +58,7 @@ Operator<dim, Number>::Operator(
 {
   pcout << std::endl << "Construct compressible Navier-Stokes DG operator ..." << std::endl;
 
-<<<<<<< HEAD
-  fe        = create_finite_element<dim>(ElementType::Hypercube, true, dim + 2, param.degree);
-  fe_vector = create_finite_element<dim>(ElementType::Hypercube, true, dim, param.degree);
-  fe_scalar = create_finite_element<dim>(ElementType::Hypercube, true, 1, param.degree);
-
   initialize_dof_handler_and_constraints();
-=======
-  distribute_dofs();
->>>>>>> 6722ba3cf (apply similar changes to ConvDiff and CompNS modules)
 
   pcout << std::endl << "... done!" << std::endl;
 }
