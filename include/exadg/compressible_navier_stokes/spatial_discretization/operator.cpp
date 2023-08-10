@@ -453,7 +453,7 @@ Operator<dim, Number>::calculate_time_step_cfl_global() const
     param.start_time /* will not be used (ConstantFunction) */,
     param.degree,
     param.exponent_fe_degree_cfl,
-    CFLConditionType::VelocityNorm,
+    CFLConditionType::VelocityComponents,
     mpi_comm);
 }
 

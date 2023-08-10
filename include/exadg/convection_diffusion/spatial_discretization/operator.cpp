@@ -899,7 +899,7 @@ Operator<dim, Number>::calculate_time_step_cfl_global(double const time) const
                                                     time,
                                                     param.degree,
                                                     param.exponent_fe_degree_convection,
-                                                    param.adaptive_time_stepping_cfl_type,
+                                                    CFLConditionType::VelocityComponents,
                                                     mpi_comm);
 }
 

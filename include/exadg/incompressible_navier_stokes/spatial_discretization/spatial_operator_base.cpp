@@ -1037,7 +1037,7 @@ SpatialOperatorBase<dim, Number>::calculate_time_step_cfl_global() const
     param.start_time /* will not be used (ConstantFunction) */,
     param.degree_u,
     param.cfl_exponent_fe_degree_velocity,
-    param.adaptive_time_stepping_cfl_type,
+    CFLConditionType::VelocityComponents,
     mpi_comm);
 }
 
