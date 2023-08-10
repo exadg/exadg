@@ -19,6 +19,7 @@
         "Height": "10.0",
         "Width": "10.0",
         "ProblemType": "Unsteady",
+        "MaterialType": "StVenantKirchhoff",
         "WeakDamping": "10000.0",
         "UseVolumeForce": "false",
         "VolumeForce": "1.0",
