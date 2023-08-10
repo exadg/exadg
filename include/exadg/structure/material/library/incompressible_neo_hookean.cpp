@@ -102,14 +102,13 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
   tensor F = get_F<dim, Number>(gradient_displacement);
   scalar J = determinant(F);
   tensor C = transpose(F) * F;
-  scalar I_1 = trace(C);
   tensor C_inv = invert(C);
 
   // S_vol, i.e., penalty term enforcing J = 1.
-  S = (data.bulk_modulus * 0.5 * (J*J - 1.0)) * C_inv;
+  S = (data.bulk_modulus * 0.5 * (J * J - 1.0)) * C_inv;
 
   // S_iso, isochoric term.
-  S -= (shear_modulus_stored * pow(J, static_cast<Number>(-2.0 * one_third))) * subtract_identity<dim, Number>(one_third * I_1 * C_inv);
+  S -= (shear_modulus_stored * pow(J, static_cast<Number>(-2.0 * one_third))) * subtract_identity<dim, Number>(one_third * trace(C) * C_inv);
 
   return S;
 }
@@ -122,21 +121,34 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacemen
   unsigned int const                                              cell,
   unsigned int const                                              q) const
 {
-  tensor S_lin;
+  tensor Dd_S;
 
-  tensor F = get_F<dim, Number>(gradient_displacement);
-  scalar J = determinant(F);
-  tensor C = transpose(F) * F;
+  if(shear_modulus_is_variable)
+  {
+	shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+  }
+
+  scalar J = determinant(deformation_gradient);
+  tensor C = transpose(deformation_gradient) * deformation_gradient;
   scalar I_1 = trace(C);
 
-  tensor F_inv = invert(F);
+  tensor F_inv = invert(deformation_gradient);
   tensor C_inv = invert(C);
 
-  scalar J_lin = J * trace(F_inv * )
+  scalar one_over_J_times_Dd_J = trace(F_inv * gradient_increment);
+  tensor Dd_F_inv = -F_inv * ( gradient_increment * F_inv );
+  tensor Dd_C_inv = Dd_F_inv * transpose(F_inv) + F_inv * transpose(Dd_F_inv);
+
+  scalar Dd_I_1 = trace(transpose(gradient_increment) * deformation_gradient + transpose(deformation_gradient) * gradient_increment);
 
   // S_vol, i.e., penalty term enforcing J = 1.
+  Dd_S = data.bulk_modulus * ( J * J * one_over_J_times_Dd_J * C_inv + 0.5 * (J * J - 1.0) * Dd_C_inv);
 
   // S_iso, isochoric term.
+  Dd_S -= shear_modulus_stored * one_third * pow(J, static_cast<Number>(-2.0 * one_third)) *
+		  ( 2.0 * one_over_J_times_Dd_J * subtract_identity<dim, Number>(one_third * I_1 * C_inv) - Dd_I_1 * C_inv + I_1 * Dd_C_inv);
+
+  return Dd_S;
 }
 
 template class IncompressibleNeoHookean<2, float>;
