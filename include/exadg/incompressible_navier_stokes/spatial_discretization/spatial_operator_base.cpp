@@ -71,7 +71,7 @@ SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
 
   initialize_boundary_descriptor_laplace();
 
-  distribute_dofs();
+  initialize_dof_handler_and_constraints();
 
   constraint_u.close();
   constraint_p.close();
@@ -254,7 +254,7 @@ SpatialOperatorBase<dim, Number>::initialize_boundary_descriptor_laplace()
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::distribute_dofs()
+SpatialOperatorBase<dim, Number>::initialize_dof_handler_and_constraints()
 {
   fe_p = create_finite_element<dim>(param.grid.element_type,
                                     true,

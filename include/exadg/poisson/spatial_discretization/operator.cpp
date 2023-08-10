@@ -66,14 +66,14 @@ Operator<dim, n_components, Number>::Operator(
 {
   pcout << std::endl << "Construct Poisson operator ..." << std::endl;
 
-  distribute_dofs();
+  initialize_dof_handler_and_constraints();
 
   pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, int n_components, typename Number>
 void
-Operator<dim, n_components, Number>::distribute_dofs()
+Operator<dim, n_components, Number>::initialize_dof_handler_and_constraints()
 {
   fe = create_finite_element<dim>(param.grid.element_type,
                                   param.spatial_discretization == SpatialDiscretization::DG,

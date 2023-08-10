@@ -145,7 +145,7 @@ private:
   get_quad_index_gauss_lobatto() const;
 
   void
-  distribute_dofs();
+  initialize_dof_handler_and_constraints();
 
   void
   setup_operators();

@@ -71,7 +71,7 @@ Operator<dim, Number>::Operator(
     dof_handler_velocity = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
   }
 
-  distribute_dofs();
+  initialize_dof_handler_and_constraints();
 
   affine_constraints.close();
 
@@ -296,7 +296,7 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> con
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::distribute_dofs()
+Operator<dim, Number>::initialize_dof_handler_and_constraints()
 {
   // enumerate degrees of freedom
   dof_handler.distribute_dofs(*fe);
