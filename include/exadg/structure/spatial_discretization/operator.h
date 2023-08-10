@@ -328,7 +328,7 @@ private:
    * Initializes dealii::DoFHandler.
    */
   void
-  distribute_dofs();
+  initialize_dof_handler_and_constraints();
 
   std::string
   get_dof_name() const;

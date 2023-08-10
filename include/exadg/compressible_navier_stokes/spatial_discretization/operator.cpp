@@ -62,7 +62,7 @@ Operator<dim, Number>::Operator(
   fe_vector = create_finite_element<dim>(ElementType::Hypercube, true, dim, param.degree);
   fe_scalar = create_finite_element<dim>(ElementType::Hypercube, true, 1, param.degree);
 
-  distribute_dofs();
+  initialize_dof_handler_and_constraints();
 
   constraint.close();
 
@@ -466,7 +466,7 @@ Operator<dim, Number>::calculate_time_step_diffusion() const
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::distribute_dofs()
+Operator<dim, Number>::initialize_dof_handler_and_constraints()
 {
   // enumerate degrees of freedom
   dof_handler.distribute_dofs(*fe);

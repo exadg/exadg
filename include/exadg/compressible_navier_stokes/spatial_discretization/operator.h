@@ -174,7 +174,7 @@ private:
   calculate_minimum_element_length() const;
 
   void
-  distribute_dofs();
+  initialize_dof_handler_and_constraints();
 
   void
   setup_operators();

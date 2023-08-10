@@ -595,7 +595,7 @@ private:
   initialize_boundary_descriptor_laplace();
 
   void
-  distribute_dofs();
+  initialize_dof_handler_and_constraints();
 
   void
   initialize_operators(std::string const & dof_index_temperature);

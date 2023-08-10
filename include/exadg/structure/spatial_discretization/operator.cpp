@@ -63,7 +63,7 @@ Operator<dim, Number>::Operator(
 {
   pcout << std::endl << "Construct elasticity operator ..." << std::endl;
 
-  distribute_dofs();
+  initialize_dof_handler_and_constraints();
 
   pcout << std::endl << "... done!" << std::endl;
 }
@@ -114,7 +114,7 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> con
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::distribute_dofs()
+Operator<dim, Number>::initialize_dof_handler_and_constraints()
 {
   // create finite element
   fe = create_finite_element<dim>(param.grid.element_type,

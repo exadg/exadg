@@ -293,7 +293,7 @@ private:
    * Initializes dealii::DoFHandlers.
    */
   void
-  distribute_dofs();
+  initialize_dof_handler_and_constraints();
 
   bool
   needs_own_dof_handler_velocity() const;
