@@ -69,39 +69,11 @@ SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
         << "Construct incompressible Navier-Stokes operator ..." << std::endl
         << std::flush;
 
-  initialize_boundary_descriptor_laplace();
-
   initialize_dof_handler_and_constraints();
 
-  constraint_u.close();
-  constraint_p.close();
-  constraint_u_scalar.close();
+  initialize_boundary_descriptor_laplace();
 
-  // Erroneously, the boundary descriptor might contain too many boundary IDs which
-  // do not even exist in the triangulation. Here, we make sure that each entry of
-  // the boundary descriptor has indeed a counterpart in the triangulation.
-  std::vector<dealii::types::boundary_id> boundary_ids = grid->triangulation->get_boundary_ids();
-  for(auto it = boundary_descriptor->pressure->dirichlet_bc.begin();
-      it != boundary_descriptor->pressure->dirichlet_bc.end();
-      ++it)
-  {
-    bool const triangulation_has_boundary_id =
-      std::find(boundary_ids.begin(), boundary_ids.end(), it->first) != boundary_ids.end();
-
-    AssertThrow(triangulation_has_boundary_id,
-                dealii::ExcMessage("The boundary descriptor for the pressure contains boundary IDs "
-                                   "that are not part of the triangulation."));
-  }
-
-  pressure_level_is_undefined = boundary_descriptor->pressure->dirichlet_bc.empty();
-
-  if(is_pressure_level_undefined())
-  {
-    if(param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
-    {
-      initialization_pure_dirichlet_bc();
-    }
-  }
+  initialization_pure_dirichlet_bc();
 
   pcout << std::endl << "... done!" << std::endl << std::flush;
 }
@@ -181,33 +153,13 @@ SpatialOperatorBase<dim, Number>::setup(
   matrix_free      = matrix_free_in;
   matrix_free_data = matrix_free_data_in;
 
-  // initialize data container for DirichletCached boundary conditions
-  if(not(boundary_descriptor->velocity->dirichlet_cached_bc.empty()))
-  {
-    std::vector<unsigned int> quad_indices;
-    quad_indices.emplace_back(get_quad_index_velocity_linear());
-    quad_indices.emplace_back(get_quad_index_velocity_nonlinear());
-    quad_indices.emplace_back(get_quad_index_velocity_gauss_lobatto());
+  // Next, initialize data structures depending on MatrixFree:
 
-    interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<1, dim, double>>();
-    interface_data_dirichlet_cached->setup(*matrix_free,
-                                           get_dof_index_velocity(),
-                                           quad_indices,
-                                           boundary_descriptor->velocity->dirichlet_cached_bc);
+  initialize_dirichlet_cached_bc();
 
-    boundary_descriptor->velocity->set_dirichlet_cached_data(interface_data_dirichlet_cached);
-  }
-
-  // initialize data structures depending on MatrixFree
   initialize_operators(dof_index_temperature);
 
   initialize_calculators_for_derived_quantities();
-
-  if(param.viscosity_is_variable())
-  {
-    pcout << std::endl << "... initializing viscosity model ..." << std::endl << std::flush;
-    initialize_viscosity_model();
-  }
 
   pcout << std::endl << "... done!" << std::endl << std::flush;
 }
@@ -333,6 +285,11 @@ SpatialOperatorBase<dim, Number>::initialize_dof_handler_and_constraints()
     }
   }
 
+  constraint_u.close();
+  constraint_p.close();
+  constraint_u_scalar.close();
+
+  // Output to pcout
   pcout << "Velocity:" << std::endl;
   if(param.spatial_discretization == SpatialDiscretization::L2)
   {
@@ -378,37 +335,30 @@ SpatialOperatorBase<dim, Number>::get_number_of_dofs() const
 
 template<int dim, typename Number>
 void
+SpatialOperatorBase<dim, Number>::initialize_dirichlet_cached_bc()
+{
+// initialize data container for DirichletCached boundary conditions
+if(not(boundary_descriptor->velocity->dirichlet_cached_bc.empty()))
+{
+  std::vector<unsigned int> quad_indices;
+  quad_indices.emplace_back(get_quad_index_velocity_linear());
+  quad_indices.emplace_back(get_quad_index_velocity_nonlinear());
+  quad_indices.emplace_back(get_quad_index_velocity_gauss_lobatto());
+
+  interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<1, dim, double>>();
+  interface_data_dirichlet_cached->setup(*matrix_free,
+                                         get_dof_index_velocity(),
+                                         quad_indices,
+                                         boundary_descriptor->velocity->dirichlet_cached_bc);
+
+  boundary_descriptor->velocity->set_dirichlet_cached_data(interface_data_dirichlet_cached);
+}
+}
+
+template<int dim, typename Number>
+void
 SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_index_temperature)
 {
-  // operator kernels
-  convective_kernel_data.formulation       = param.formulation_convective_term;
-  convective_kernel_data.upwind_factor     = param.upwind_factor;
-  convective_kernel_data.use_outflow_bc    = param.use_outflow_bc_convective_term;
-  convective_kernel_data.type_dirichlet_bc = param.type_dirichlet_bc_convective;
-  convective_kernel_data.ale               = param.ale_formulation;
-  convective_kernel = std::make_shared<Operators::ConvectiveKernel<dim, Number>>();
-  convective_kernel->reinit(*matrix_free,
-                            convective_kernel_data,
-                            get_dof_index_velocity(),
-                            get_quad_index_velocity_linearized(),
-                            false /* is_mg */);
-
-  viscous_kernel_data.IP_factor                    = param.IP_factor_viscous;
-  viscous_kernel_data.viscosity                    = param.viscosity;
-  viscous_kernel_data.formulation_viscous_term     = param.formulation_viscous_term;
-  viscous_kernel_data.penalty_term_div_formulation = param.penalty_term_div_formulation;
-  viscous_kernel_data.IP_formulation               = param.IP_formulation_viscous;
-  viscous_kernel_data.viscosity_is_variable        = param.viscosity_is_variable();
-  viscous_kernel_data.variable_normal_vector       = param.neumann_with_variable_normal_vector;
-  viscous_kernel = std::make_shared<Operators::ViscousKernel<dim, Number>>();
-  viscous_kernel->reinit(*matrix_free,
-                         viscous_kernel_data,
-                         get_dof_index_velocity(),
-                         get_quad_index_velocity_linear());
-
-  dealii::AffineConstraints<Number> constraint_dummy;
-  constraint_dummy.close();
-
   // mass operator
   MassOperatorData<dim> mass_operator_data;
   mass_operator_data.dof_index  = get_dof_index_velocity();
@@ -503,6 +453,21 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   divergence_operator.initialize(*matrix_free, divergence_operator_data);
 
   // convective operator
+  convective_kernel_data.formulation       = param.formulation_convective_term;
+  convective_kernel_data.upwind_factor     = param.upwind_factor;
+  convective_kernel_data.use_outflow_bc    = param.use_outflow_bc_convective_term;
+  convective_kernel_data.type_dirichlet_bc = param.type_dirichlet_bc_convective;
+  convective_kernel_data.ale               = param.ale_formulation;
+  convective_kernel = std::make_shared<Operators::ConvectiveKernel<dim, Number>>();
+  convective_kernel->reinit(*matrix_free,
+                            convective_kernel_data,
+                            get_dof_index_velocity(),
+                            get_quad_index_velocity_linearized(),
+                            false /* is_mg */);
+
+  dealii::AffineConstraints<Number> constraint_dummy;
+  constraint_dummy.close();
+
   ConvectiveOperatorData<dim> convective_operator_data;
   convective_operator_data.kernel_data          = convective_kernel_data;
   convective_operator_data.dof_index            = get_dof_index_velocity();
@@ -516,6 +481,38 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
                                  convective_kernel);
 
   // viscous operator
+  viscous_kernel_data.IP_factor                    = param.IP_factor_viscous;
+  viscous_kernel_data.viscosity                    = param.viscosity;
+  viscous_kernel_data.formulation_viscous_term     = param.formulation_viscous_term;
+  viscous_kernel_data.penalty_term_div_formulation = param.penalty_term_div_formulation;
+  viscous_kernel_data.IP_formulation               = param.IP_formulation_viscous;
+  viscous_kernel_data.viscosity_is_variable        = param.viscosity_is_variable();
+  viscous_kernel_data.variable_normal_vector       = param.neumann_with_variable_normal_vector;
+  viscous_kernel = std::make_shared<Operators::ViscousKernel<dim, Number>>();
+  viscous_kernel->reinit(*matrix_free,
+                         viscous_kernel_data,
+                         get_dof_index_velocity(),
+                         get_quad_index_velocity_linear());
+
+  // initialize and check turbulence model data
+  if(param.turbulence_model_data.is_active)
+  {
+    turbulence_model.initialize(*matrix_free,
+                                *get_mapping(),
+                                viscous_kernel,
+                                param.turbulence_model_data,
+                                get_dof_index_velocity());
+  }
+
+  // initialize and check generalized Newtonian model data
+  if(param.generalized_newtonian_model_data.is_active)
+  {
+    generalized_newtonian_model.initialize(*matrix_free,
+                                           viscous_kernel,
+                                           param.generalized_newtonian_model_data,
+                                           get_dof_index_velocity());
+  }
+
   ViscousOperatorData<dim> viscous_operator_data;
   viscous_operator_data.kernel_data          = viscous_kernel_data;
   viscous_operator_data.bc                   = boundary_descriptor->velocity;
@@ -640,30 +637,6 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::initialize_viscosity_model()
-{
-  // initialize and check turbulence model data
-  if(param.turbulence_model_data.is_active)
-  {
-    turbulence_model.initialize(*matrix_free,
-                                *get_mapping(),
-                                viscous_kernel,
-                                param.turbulence_model_data,
-                                get_dof_index_velocity());
-  }
-
-  // initialize and check generalized Newtonian model data
-  if(param.generalized_newtonian_model_data.is_active)
-  {
-    generalized_newtonian_model.initialize(*matrix_free,
-                                           viscous_kernel,
-                                           param.generalized_newtonian_model_data,
-                                           get_dof_index_velocity());
-  }
-}
-
-template<int dim, typename Number>
-void
 SpatialOperatorBase<dim, Number>::initialize_calculators_for_derived_quantities()
 {
   vorticity_calculator.initialize(*matrix_free,
@@ -691,7 +664,28 @@ SpatialOperatorBase<dim, Number>::initialize_calculators_for_derived_quantities(
 template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::initialization_pure_dirichlet_bc()
-{
+{  // Erroneously, the boundary descriptor might contain too many boundary IDs which
+	  // do not even exist in the triangulation. Here, we make sure that each entry of
+	  // the boundary descriptor has indeed a counterpart in the triangulation.
+	  std::vector<dealii::types::boundary_id> boundary_ids = grid->triangulation->get_boundary_ids();
+	  for(auto it = boundary_descriptor->pressure->dirichlet_bc.begin();
+	      it != boundary_descriptor->pressure->dirichlet_bc.end();
+	      ++it)
+	  {
+	    bool const triangulation_has_boundary_id =
+	      std::find(boundary_ids.begin(), boundary_ids.end(), it->first) != boundary_ids.end();
+
+	    AssertThrow(triangulation_has_boundary_id,
+	                dealii::ExcMessage("The boundary descriptor for the pressure contains boundary IDs "
+	                                   "that are not part of the triangulation."));
+	  }
+
+	  pressure_level_is_undefined = boundary_descriptor->pressure->dirichlet_bc.empty();
+
+	  if(is_pressure_level_undefined())
+	  {
+	    if(param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
+	    {
   dof_index_first_point = 0;
   for(unsigned int d = 0; d < dim; ++d)
     first_point[d] = 0.0;
@@ -732,6 +726,8 @@ SpatialOperatorBase<dim, Number>::initialization_pure_dirichlet_bc()
   {
     first_point[d] = dealii::Utilities::MPI::sum(first_point[d], mpi_comm);
   }
+	    }
+	  }
 }
 
 template<int dim, typename Number>
