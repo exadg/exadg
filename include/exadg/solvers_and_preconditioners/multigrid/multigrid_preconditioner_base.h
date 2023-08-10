@@ -57,11 +57,11 @@ class MGCoarseGridBase;
 
 namespace ExaDG
 {
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber_ = float>
 class MultigridPreconditionerBase : public PreconditionerBase<Number>
 {
 public:
-  typedef float MultigridNumber;
+  typedef MultigridNumber_ MultigridNumber;
 
 protected:
   typedef std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> Map_DBC;
