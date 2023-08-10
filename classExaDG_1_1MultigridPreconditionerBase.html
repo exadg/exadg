@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.7"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::MultigridPreconditionerBase&lt; dim, Number &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::MultigridPreconditionerBase&lt; dim, Number, MultigridNumber_ &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -80,15 +80,15 @@ $(function() {
 <a href="#pro-methods">Protected Member Functions</a> &#124;
 <a href="#pro-attribs">Protected Attributes</a> &#124;
 <a href="classExaDG_1_1MultigridPreconditionerBase-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::MultigridPreconditionerBase&lt; dim, Number &gt; Class Template Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div></div>
+  <div class="headertitle"><div class="title">ExaDG::MultigridPreconditionerBase&lt; dim, Number, MultigridNumber_ &gt; Class Template Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div></div>
 </div><!--header-->
 <div class="contents">
 <div class="dynheader">
-Inheritance diagram for ExaDG::MultigridPreconditionerBase&lt; dim, Number &gt;:</div>
+Inheritance diagram for ExaDG::MultigridPreconditionerBase&lt; dim, Number, MultigridNumber_ &gt;:</div>
 <div class="dyncontent">
  <div class="center">
-  <img src="classExaDG_1_1MultigridPreconditionerBase.png" usemap="#ExaDG::MultigridPreconditionerBase_3C_20dim_2C_20Number_20_3E_map" alt=""/>
-  <map id="ExaDG::MultigridPreconditionerBase_3C_20dim_2C_20Number_20_3E_map" name="ExaDG::MultigridPreconditionerBase_3C_20dim_2C_20Number_20_3E_map">
+  <img src="classExaDG_1_1MultigridPreconditionerBase.png" usemap="#ExaDG::MultigridPreconditionerBase_3C_20dim_2C_20Number_2C_20MultigridNumber_5F_20_3E_map" alt=""/>
+  <map id="ExaDG::MultigridPreconditionerBase_3C_20dim_2C_20Number_2C_20MultigridNumber_5F_20_3E_map" name="ExaDG::MultigridPreconditionerBase_3C_20dim_2C_20Number_2C_20MultigridNumber_5F_20_3E_map">
 <area href="classExaDG_1_1PreconditionerBase.html" alt="ExaDG::PreconditionerBase&lt; Number &gt;" shape="rect" coords="870,0,1295,24"/>
 <area href="classExaDG_1_1ConvDiff_1_1MultigridPreconditioner.html" alt="ExaDG::ConvDiff::MultigridPreconditioner&lt; dim, Number &gt;" shape="rect" coords="0,112,425,136"/>
 <area href="classExaDG_1_1IncNS_1_1MultigridPreconditioner.html" alt="ExaDG::IncNS::MultigridPreconditioner&lt; dim, Number &gt;" shape="rect" coords="435,112,860,136"/>
@@ -100,9 +100,9 @@ Inheritance diagram for ExaDG::MultigridPreconditionerBase&lt; dim, Number &gt;:
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a3257c5285108ec4e7da15f4e056fb88d"><td class="memItemLeft" align="right" valign="top"><a id="a3257c5285108ec4e7da15f4e056fb88d" name="a3257c5285108ec4e7da15f4e056fb88d"></a>
-typedef float&#160;</td><td class="memItemRight" valign="bottom"><b>MultigridNumber</b></td></tr>
-<tr class="separator:a3257c5285108ec4e7da15f4e056fb88d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a617c407c2bc9c43b73aa9c055b553d8e"><td class="memItemLeft" align="right" valign="top"><a id="a617c407c2bc9c43b73aa9c055b553d8e" name="a617c407c2bc9c43b73aa9c055b553d8e"></a>
+typedef MultigridNumber_&#160;</td><td class="memItemRight" valign="bottom"><b>MultigridNumber</b></td></tr>
+<tr class="separator:a617c407c2bc9c43b73aa9c055b553d8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_types_classExaDG_1_1PreconditionerBase"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classExaDG_1_1PreconditionerBase')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classExaDG_1_1PreconditionerBase.html">ExaDG::PreconditionerBase&lt; Number &gt;</a></td></tr>
 <tr class="memitem:a13d78c9f5110d1cb9b590ee0255c8aad inherit pub_types_classExaDG_1_1PreconditionerBase"><td class="memItemLeft" align="right" valign="top">
 typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
@@ -110,24 +110,24 @@ typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a12f35f9d5ab25cecf669c2782c7e7fce"><td class="memItemLeft" align="right" valign="top"><a id="a12f35f9d5ab25cecf669c2782c7e7fce" name="a12f35f9d5ab25cecf669c2782c7e7fce"></a>
+<tr class="memitem:a4c41692965f1fc95a72f28bdfac62206"><td class="memItemLeft" align="right" valign="top"><a id="a4c41692965f1fc95a72f28bdfac62206" name="a4c41692965f1fc95a72f28bdfac62206"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>MultigridPreconditionerBase</b> (MPI_Comm const &amp;comm)</td></tr>
-<tr class="separator:a12f35f9d5ab25cecf669c2782c7e7fce"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a883511972f7dd40a2d7a9247177aee3c"><td class="memItemLeft" align="right" valign="top"><a id="a883511972f7dd40a2d7a9247177aee3c" name="a883511972f7dd40a2d7a9247177aee3c"></a>
+<tr class="separator:a4c41692965f1fc95a72f28bdfac62206"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac61fe66a918994bc390e7afb1cc20146"><td class="memItemLeft" align="right" valign="top"><a id="ac61fe66a918994bc390e7afb1cc20146" name="ac61fe66a918994bc390e7afb1cc20146"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (<a class="el" href="structExaDG_1_1MultigridData.html">MultigridData</a> const &amp;data, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping, dealii::FiniteElement&lt; dim &gt; const &amp;fe, bool const operator_is_singular, Map_DBC const &amp;dirichlet_bc, Map_DBC_ComponentMask const &amp;dirichlet_bc_component_mask)</td></tr>
-<tr class="separator:a883511972f7dd40a2d7a9247177aee3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1bd50b4f951ec49185fb40fd617cebe8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a1bd50b4f951ec49185fb40fd617cebe8">vmult</a> (VectorType &amp;dst, VectorType const &amp;src) const override</td></tr>
-<tr class="separator:a1bd50b4f951ec49185fb40fd617cebe8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0f4d4058d90bf76730a722c4c7be220e"><td class="memItemLeft" align="right" valign="top"><a id="a0f4d4058d90bf76730a722c4c7be220e" name="a0f4d4058d90bf76730a722c4c7be220e"></a>
+<tr class="separator:ac61fe66a918994bc390e7afb1cc20146"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6ee5e6e4fd330daf511d9190d71841bc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a6ee5e6e4fd330daf511d9190d71841bc">vmult</a> (VectorType &amp;dst, VectorType const &amp;src) const override</td></tr>
+<tr class="separator:a6ee5e6e4fd330daf511d9190d71841bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5c41bb323f02499f920e47fad38368a7"><td class="memItemLeft" align="right" valign="top"><a id="a5c41bb323f02499f920e47fad38368a7" name="a5c41bb323f02499f920e47fad38368a7"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:a0f4d4058d90bf76730a722c4c7be220e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7f925bd456812ee747e79e2aa2d79bd1"><td class="memItemLeft" align="right" valign="top"><a id="a7f925bd456812ee747e79e2aa2d79bd1" name="a7f925bd456812ee747e79e2aa2d79bd1"></a>
+<tr class="separator:a5c41bb323f02499f920e47fad38368a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad7b94c03bc419cce9686a3ea0dc3f64b"><td class="memItemLeft" align="right" valign="top"><a id="ad7b94c03bc419cce9686a3ea0dc3f64b" name="ad7b94c03bc419cce9686a3ea0dc3f64b"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_smoother_on_fine_level</b> (VectorTypeMG &amp;dst, VectorTypeMG const &amp;src) const</td></tr>
-<tr class="separator:a7f925bd456812ee747e79e2aa2d79bd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac51be41c15ef2a0072c4ba49db8085cf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#ac51be41c15ef2a0072c4ba49db8085cf">update</a> () override</td></tr>
-<tr class="separator:ac51be41c15ef2a0072c4ba49db8085cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5d1219a73b0c59ba60be7b3fe039aaf3"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a5d1219a73b0c59ba60be7b3fe039aaf3">get_timings</a> () const override</td></tr>
-<tr class="separator:a5d1219a73b0c59ba60be7b3fe039aaf3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:ad7b94c03bc419cce9686a3ea0dc3f64b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0250081095f4dc526b83bbdf4457efb8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a0250081095f4dc526b83bbdf4457efb8">update</a> () override</td></tr>
+<tr class="separator:a0250081095f4dc526b83bbdf4457efb8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a93728e75b8ba128fb915abf956e2d112"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a93728e75b8ba128fb915abf956e2d112">get_timings</a> () const override</td></tr>
+<tr class="separator:a93728e75b8ba128fb915abf956e2d112"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a74358c9117ee01847ccc3a368dfadf05"><td class="memItemLeft" align="right" valign="top"><a id="a74358c9117ee01847ccc3a368dfadf05" name="a74358c9117ee01847ccc3a368dfadf05"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (VectorType &amp;dst, VectorType const &amp;src) const=0</td></tr>
 <tr class="separator:a74358c9117ee01847ccc3a368dfadf05"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -139,99 +139,99 @@ virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">Ti
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-types" name="pro-types"></a>
 Protected Types</h2></td></tr>
-<tr class="memitem:a9cf83c52e845568592afbd4a2d8c3235"><td class="memItemLeft" align="right" valign="top"><a id="a9cf83c52e845568592afbd4a2d8c3235" name="a9cf83c52e845568592afbd4a2d8c3235"></a>
+<tr class="memitem:ab3bd4711bfafc9c5f8745238a2d4f163"><td class="memItemLeft" align="right" valign="top"><a id="ab3bd4711bfafc9c5f8745238a2d4f163" name="ab3bd4711bfafc9c5f8745238a2d4f163"></a>
 typedef std::map&lt; dealii::types::boundary_id, std::shared_ptr&lt; dealii::Function&lt; dim &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Map_DBC</b></td></tr>
-<tr class="separator:a9cf83c52e845568592afbd4a2d8c3235"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a90320425261ba4a9576889a7d2f39349"><td class="memItemLeft" align="right" valign="top"><a id="a90320425261ba4a9576889a7d2f39349" name="a90320425261ba4a9576889a7d2f39349"></a>
+<tr class="separator:ab3bd4711bfafc9c5f8745238a2d4f163"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:addb8550173421deeb5d83ecc18e91774"><td class="memItemLeft" align="right" valign="top"><a id="addb8550173421deeb5d83ecc18e91774" name="addb8550173421deeb5d83ecc18e91774"></a>
 typedef std::map&lt; dealii::types::boundary_id, dealii::ComponentMask &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Map_DBC_ComponentMask</b></td></tr>
-<tr class="separator:a90320425261ba4a9576889a7d2f39349"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a30c959f1e8d5048046a55fe2225b4929"><td class="memItemLeft" align="right" valign="top"><a id="a30c959f1e8d5048046a55fe2225b4929" name="a30c959f1e8d5048046a55fe2225b4929"></a>
+<tr class="separator:addb8550173421deeb5d83ecc18e91774"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5b332e8b920df9ab31f5ee7d29a6a0b4"><td class="memItemLeft" align="right" valign="top"><a id="a5b332e8b920df9ab31f5ee7d29a6a0b4" name="a5b332e8b920df9ab31f5ee7d29a6a0b4"></a>
 typedef std::vector&lt; dealii::GridTools::PeriodicFacePair&lt; typename dealii::Triangulation&lt; dim &gt;::cell_iterator &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>PeriodicFacePairs</b></td></tr>
-<tr class="separator:a30c959f1e8d5048046a55fe2225b4929"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a65d0e8096733f1757274c71a1b8e52cc"><td class="memItemLeft" align="right" valign="top"><a id="a65d0e8096733f1757274c71a1b8e52cc" name="a65d0e8096733f1757274c71a1b8e52cc"></a>
+<tr class="separator:a5b332e8b920df9ab31f5ee7d29a6a0b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5675d5d1d21f92b4df4d4259177f157"><td class="memItemLeft" align="right" valign="top"><a id="ae5675d5d1d21f92b4df4d4259177f157" name="ae5675d5d1d21f92b4df4d4259177f157"></a>
 typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:a65d0e8096733f1757274c71a1b8e52cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3fb1a553f8c398cd194dae252dfdf1c0"><td class="memItemLeft" align="right" valign="top"><a id="a3fb1a553f8c398cd194dae252dfdf1c0" name="a3fb1a553f8c398cd194dae252dfdf1c0"></a>
+<tr class="separator:ae5675d5d1d21f92b4df4d4259177f157"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a521bce38538e4debcb23f58c304aed0d"><td class="memItemLeft" align="right" valign="top"><a id="a521bce38538e4debcb23f58c304aed0d" name="a521bce38538e4debcb23f58c304aed0d"></a>
 typedef dealii::LinearAlgebra::distributed::Vector&lt; MultigridNumber &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorTypeMG</b></td></tr>
-<tr class="separator:a3fb1a553f8c398cd194dae252dfdf1c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a521bce38538e4debcb23f58c304aed0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
-<tr class="memitem:ac1313f6ddb5bd31cc89bcdf3a52a9ac8"><td class="memItemLeft" align="right" valign="top"><a id="ac1313f6ddb5bd31cc89bcdf3a52a9ac8" name="ac1313f6ddb5bd31cc89bcdf3a52a9ac8"></a>
+<tr class="memitem:a3b231fe098ccaace9872285b4e08fbe1"><td class="memItemLeft" align="right" valign="top"><a id="a3b231fe098ccaace9872285b4e08fbe1" name="a3b231fe098ccaace9872285b4e08fbe1"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_mapping</b> ()</td></tr>
-<tr class="separator:ac1313f6ddb5bd31cc89bcdf3a52a9ac8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acf6198e1e6660fa97dfc5f9276177a1e"><td class="memItemLeft" align="right" valign="top"><a id="acf6198e1e6660fa97dfc5f9276177a1e" name="acf6198e1e6660fa97dfc5f9276177a1e"></a>
+<tr class="separator:a3b231fe098ccaace9872285b4e08fbe1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf294acc27eba1de0c1be15df611ad51"><td class="memItemLeft" align="right" valign="top"><a id="adf294acc27eba1de0c1be15df611ad51" name="adf294acc27eba1de0c1be15df611ad51"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_matrix_free_objects</b> ()</td></tr>
-<tr class="separator:acf6198e1e6660fa97dfc5f9276177a1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a65e53c36b73aaee921055cdbb705ea45"><td class="memItemLeft" align="right" valign="top"><a id="a65e53c36b73aaee921055cdbb705ea45" name="a65e53c36b73aaee921055cdbb705ea45"></a>
+<tr class="separator:adf294acc27eba1de0c1be15df611ad51"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a287dbab33e2ad91dce4a00db0b56f0cc"><td class="memItemLeft" align="right" valign="top"><a id="a287dbab33e2ad91dce4a00db0b56f0cc" name="a287dbab33e2ad91dce4a00db0b56f0cc"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update_matrix_free_objects</b> ()</td></tr>
-<tr class="separator:a65e53c36b73aaee921055cdbb705ea45"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0ba9a82ba61f882ce17031d0c178f26d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a0ba9a82ba61f882ce17031d0c178f26d">update_smoothers</a> ()</td></tr>
-<tr class="separator:a0ba9a82ba61f882ce17031d0c178f26d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a08945d6d587246217b77ab3d56b31bb2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a08945d6d587246217b77ab3d56b31bb2">update_coarse_solver</a> ()</td></tr>
-<tr class="separator:a08945d6d587246217b77ab3d56b31bb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a03516da477bb10aed08dccf1291821ee"><td class="memItemLeft" align="right" valign="top"><a id="a03516da477bb10aed08dccf1291821ee" name="a03516da477bb10aed08dccf1291821ee"></a>
+<tr class="separator:a287dbab33e2ad91dce4a00db0b56f0cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ada498d4941ceabd2f97464fc0d0ffb50"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#ada498d4941ceabd2f97464fc0d0ffb50">update_smoothers</a> ()</td></tr>
+<tr class="separator:ada498d4941ceabd2f97464fc0d0ffb50"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af1f0f0635d2237fae2558ecfc9f4f0d9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#af1f0f0635d2237fae2558ecfc9f4f0d9">update_coarse_solver</a> ()</td></tr>
+<tr class="separator:af1f0f0635d2237fae2558ecfc9f4f0d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a940adef8f973cdb628846794372d055e"><td class="memItemLeft" align="right" valign="top"><a id="a940adef8f973cdb628846794372d055e" name="a940adef8f973cdb628846794372d055e"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_dof_handler_and_constraints</b> (bool is_singular, unsigned int const n_components, Map_DBC const &amp;dirichlet_bc, Map_DBC_ComponentMask const &amp;dirichlet_bc_component_mask)</td></tr>
-<tr class="separator:a03516da477bb10aed08dccf1291821ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae49a462b92cc7827130db453c39e4f8c"><td class="memItemLeft" align="right" valign="top"><a id="ae49a462b92cc7827130db453c39e4f8c" name="ae49a462b92cc7827130db453c39e4f8c"></a>
+<tr class="separator:a940adef8f973cdb628846794372d055e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8480e92b5d5c69ca33919d833778f566"><td class="memItemLeft" align="right" valign="top"><a id="a8480e92b5d5c69ca33919d833778f566" name="a8480e92b5d5c69ca33919d833778f566"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>do_initialize_dof_handler_and_constraints</b> (bool is_singular, unsigned int const n_components, Map_DBC const &amp;dirichlet_bc, Map_DBC_ComponentMask const &amp;dirichlet_bc_component_mask, dealii::MGLevelObject&lt; std::shared_ptr&lt; dealii::DoFHandler&lt; dim &gt; const &gt; &gt; &amp;dofhandlers, dealii::MGLevelObject&lt; std::shared_ptr&lt; dealii::AffineConstraints&lt; MultigridNumber &gt; &gt; &gt; &amp;constraints)</td></tr>
-<tr class="separator:ae49a462b92cc7827130db453c39e4f8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7d88836617de97be3addf665e2fba802"><td class="memItemLeft" align="right" valign="top"><a id="a7d88836617de97be3addf665e2fba802" name="a7d88836617de97be3addf665e2fba802"></a>
+<tr class="separator:a8480e92b5d5c69ca33919d833778f566"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:addfc233660d1451830282f00f9a8ac0b"><td class="memItemLeft" align="right" valign="top"><a id="addfc233660d1451830282f00f9a8ac0b" name="addfc233660d1451830282f00f9a8ac0b"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_transfer_operators</b> ()</td></tr>
-<tr class="separator:a7d88836617de97be3addf665e2fba802"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5ed61ca851567d68060d16c2bf82ea73"><td class="memItemLeft" align="right" valign="top"><a id="a5ed61ca851567d68060d16c2bf82ea73" name="a5ed61ca851567d68060d16c2bf82ea73"></a>
+<tr class="separator:addfc233660d1451830282f00f9a8ac0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a32b0d00adbf3c7c94155b10151d1f1cc"><td class="memItemLeft" align="right" valign="top"><a id="a32b0d00adbf3c7c94155b10151d1f1cc" name="a32b0d00adbf3c7c94155b10151d1f1cc"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>do_initialize_transfer_operators</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridTransfer.html">MultigridTransfer</a>&lt; dim, MultigridNumber, VectorTypeMG &gt; &gt; &amp;transfers, unsigned int const dof_index)</td></tr>
-<tr class="separator:a5ed61ca851567d68060d16c2bf82ea73"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6f9e9e58c3979ba70388c9d4d6198d26"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a6f9e9e58c3979ba70388c9d4d6198d26">get_number_of_levels</a> () const</td></tr>
-<tr class="separator:a6f9e9e58c3979ba70388c9d4d6198d26"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a07b810576315f8daf49f79017bac426d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a07b810576315f8daf49f79017bac426d">for_all_levels</a> (std::function&lt; void(unsigned int const)&gt; const &amp;function_on_level)</td></tr>
-<tr class="separator:a07b810576315f8daf49f79017bac426d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8e2bbec687d7878aff9c14f1ed303270"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a8e2bbec687d7878aff9c14f1ed303270">for_all_smoothing_levels</a> (std::function&lt; void(unsigned int const)&gt; const &amp;function_on_level)</td></tr>
-<tr class="separator:a8e2bbec687d7878aff9c14f1ed303270"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac153fa62e7afab3ad2dabbec78e7e52f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#ac153fa62e7afab3ad2dabbec78e7e52f">transfer_from_fine_to_coarse_levels</a> (std::function&lt; void(unsigned int const, unsigned int const)&gt; const &amp;levelwise_transfer)</td></tr>
-<tr class="separator:ac153fa62e7afab3ad2dabbec78e7e52f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a32b0d00adbf3c7c94155b10151d1f1cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad7992b065ad67cd9f1d98400b6d9631a"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#ad7992b065ad67cd9f1d98400b6d9631a">get_number_of_levels</a> () const</td></tr>
+<tr class="separator:ad7992b065ad67cd9f1d98400b6d9631a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad07f3a7916b75b79ad456bdc50821cf5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#ad07f3a7916b75b79ad456bdc50821cf5">for_all_levels</a> (std::function&lt; void(unsigned int const)&gt; const &amp;function_on_level)</td></tr>
+<tr class="separator:ad07f3a7916b75b79ad456bdc50821cf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6cb1daa5376bfc598241addca3be360f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a6cb1daa5376bfc598241addca3be360f">for_all_smoothing_levels</a> (std::function&lt; void(unsigned int const)&gt; const &amp;function_on_level)</td></tr>
+<tr class="separator:a6cb1daa5376bfc598241addca3be360f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9a515dabb1046e155c07ae0a6becd353"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a9a515dabb1046e155c07ae0a6becd353">transfer_from_fine_to_coarse_levels</a> (std::function&lt; void(unsigned int const, unsigned int const)&gt; const &amp;levelwise_transfer)</td></tr>
+<tr class="separator:a9a515dabb1046e155c07ae0a6becd353"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
-<tr class="memitem:aba8fe264a0a0bb1afeed4cab4ecd0849"><td class="memItemLeft" align="right" valign="top"><a id="aba8fe264a0a0bb1afeed4cab4ecd0849" name="aba8fe264a0a0bb1afeed4cab4ecd0849"></a>
+<tr class="memitem:ae8ef73e7a42e6ca44b00159b6d585437"><td class="memItemLeft" align="right" valign="top"><a id="ae8ef73e7a42e6ca44b00159b6d585437" name="ae8ef73e7a42e6ca44b00159b6d585437"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>grid</b></td></tr>
-<tr class="separator:aba8fe264a0a0bb1afeed4cab4ecd0849"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae08bf0d3866871c90571684f379c79d5"><td class="memItemLeft" align="right" valign="top"><a id="ae08bf0d3866871c90571684f379c79d5" name="ae08bf0d3866871c90571684f379c79d5"></a>
+<tr class="separator:ae8ef73e7a42e6ca44b00159b6d585437"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af9a8c6f7450fa77881d9f9b75d0eec36"><td class="memItemLeft" align="right" valign="top"><a id="af9a8c6f7450fa77881d9f9b75d0eec36" name="af9a8c6f7450fa77881d9f9b75d0eec36"></a>
 dealii::MGLevelObject&lt; std::shared_ptr&lt; dealii::DoFHandler&lt; dim &gt; const  &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>dof_handlers</b></td></tr>
-<tr class="separator:ae08bf0d3866871c90571684f379c79d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afbb0a0e11898dd52c02b36b1e9355a6a"><td class="memItemLeft" align="right" valign="top"><a id="afbb0a0e11898dd52c02b36b1e9355a6a" name="afbb0a0e11898dd52c02b36b1e9355a6a"></a>
+<tr class="separator:af9a8c6f7450fa77881d9f9b75d0eec36"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a05f1367e672fe91df0e5ac00d3739e2f"><td class="memItemLeft" align="right" valign="top"><a id="a05f1367e672fe91df0e5ac00d3739e2f" name="a05f1367e672fe91df0e5ac00d3739e2f"></a>
 dealii::MGLevelObject&lt; std::shared_ptr&lt; dealii::AffineConstraints&lt; MultigridNumber &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>constraints</b></td></tr>
-<tr class="separator:afbb0a0e11898dd52c02b36b1e9355a6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7569146f27b29851ccec5b840e7f40f3"><td class="memItemLeft" align="right" valign="top"><a id="a7569146f27b29851ccec5b840e7f40f3" name="a7569146f27b29851ccec5b840e7f40f3"></a>
+<tr class="separator:a05f1367e672fe91df0e5ac00d3739e2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a12643b7b3774ad852f896e82931a4bdb"><td class="memItemLeft" align="right" valign="top"><a id="a12643b7b3774ad852f896e82931a4bdb" name="a12643b7b3774ad852f896e82931a4bdb"></a>
 dealii::MGLevelObject&lt; std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, MultigridNumber &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>matrix_free_data_objects</b></td></tr>
-<tr class="separator:a7569146f27b29851ccec5b840e7f40f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a70012e2bf865e8d40b858094645ae713"><td class="memItemLeft" align="right" valign="top"><a id="a70012e2bf865e8d40b858094645ae713" name="a70012e2bf865e8d40b858094645ae713"></a>
+<tr class="separator:a12643b7b3774ad852f896e82931a4bdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a453fee90e7b689d7eb60bbfccdbcdecb"><td class="memItemLeft" align="right" valign="top"><a id="a453fee90e7b689d7eb60bbfccdbcdecb" name="a453fee90e7b689d7eb60bbfccdbcdecb"></a>
 dealii::MGLevelObject&lt; std::shared_ptr&lt; dealii::MatrixFree&lt; dim, MultigridNumber &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>matrix_free_objects</b></td></tr>
-<tr class="separator:a70012e2bf865e8d40b858094645ae713"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa048b040922fb8feae99ce4e99b259a8"><td class="memItemLeft" align="right" valign="top"><a id="aa048b040922fb8feae99ce4e99b259a8" name="aa048b040922fb8feae99ce4e99b259a8"></a>
+<tr class="separator:a453fee90e7b689d7eb60bbfccdbcdecb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1c6550d992c71f0d8fa6dd3cfecfbe9b"><td class="memItemLeft" align="right" valign="top"><a id="a1c6550d992c71f0d8fa6dd3cfecfbe9b" name="a1c6550d992c71f0d8fa6dd3cfecfbe9b"></a>
 dealii::MGLevelObject&lt; std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridOperatorBase.html">Operator</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>operators</b></td></tr>
-<tr class="separator:aa048b040922fb8feae99ce4e99b259a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a55a0c3c96fafddf6551f5d1928c07876"><td class="memItemLeft" align="right" valign="top"><a id="a55a0c3c96fafddf6551f5d1928c07876" name="a55a0c3c96fafddf6551f5d1928c07876"></a>
+<tr class="separator:a1c6550d992c71f0d8fa6dd3cfecfbe9b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acf97ca1bb2411c388fdc4e5d91c3923b"><td class="memItemLeft" align="right" valign="top"><a id="acf97ca1bb2411c388fdc4e5d91c3923b" name="acf97ca1bb2411c388fdc4e5d91c3923b"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridTransfer.html">MultigridTransfer</a>&lt; dim, MultigridNumber, VectorTypeMG &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>transfers</b></td></tr>
-<tr class="separator:a55a0c3c96fafddf6551f5d1928c07876"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8959ed38f2dd6d87b6bed3b5ffa516b1"><td class="memItemLeft" align="right" valign="top"><a id="a8959ed38f2dd6d87b6bed3b5ffa516b1" name="a8959ed38f2dd6d87b6bed3b5ffa516b1"></a>
+<tr class="separator:acf97ca1bb2411c388fdc4e5d91c3923b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad7652a62174c309fbf7d2afbfbd5e5d5"><td class="memItemLeft" align="right" valign="top"><a id="ad7652a62174c309fbf7d2afbfbd5e5d5" name="ad7652a62174c309fbf7d2afbfbd5e5d5"></a>
 std::vector&lt; <a class="el" href="structExaDG_1_1MGLevelInfo.html">MGLevelInfo</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>level_info</b></td></tr>
-<tr class="separator:a8959ed38f2dd6d87b6bed3b5ffa516b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:ad7652a62174c309fbf7d2afbfbd5e5d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a07b810576315f8daf49f79017bac426d" name="a07b810576315f8daf49f79017bac426d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a07b810576315f8daf49f79017bac426d">&#9670;&#160;</a></span>for_all_levels()</h2>
+<a id="ad07f3a7916b75b79ad456bdc50821cf5" name="ad07f3a7916b75b79ad456bdc50821cf5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad07f3a7916b75b79ad456bdc50821cf5">&#9670;&#160;</a></span>for_all_levels()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;int dim, typename Number , typename MultigridNumber_  = float&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number &gt;::for_all_levels </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number, MultigridNumber_ &gt;::for_all_levels </td>
           <td>(</td>
           <td class="paramtype">std::function&lt; void(unsigned int const)&gt; const &amp;&#160;</td>
           <td class="paramname"><em>function_on_level</em></td><td>)</td>
@@ -248,19 +248,19 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a8e2bbec687d7878aff9c14f1ed303270" name="a8e2bbec687d7878aff9c14f1ed303270"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8e2bbec687d7878aff9c14f1ed303270">&#9670;&#160;</a></span>for_all_smoothing_levels()</h2>
+<a id="a6cb1daa5376bfc598241addca3be360f" name="a6cb1daa5376bfc598241addca3be360f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6cb1daa5376bfc598241addca3be360f">&#9670;&#160;</a></span>for_all_smoothing_levels()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;int dim, typename Number , typename MultigridNumber_  = float&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number &gt;::for_all_smoothing_levels </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number, MultigridNumber_ &gt;::for_all_smoothing_levels </td>
           <td>(</td>
           <td class="paramtype">std::function&lt; void(unsigned int const)&gt; const &amp;&#160;</td>
           <td class="paramname"><em>function_on_level</em></td><td>)</td>
@@ -277,19 +277,19 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a6f9e9e58c3979ba70388c9d4d6198d26" name="a6f9e9e58c3979ba70388c9d4d6198d26"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6f9e9e58c3979ba70388c9d4d6198d26">&#9670;&#160;</a></span>get_number_of_levels()</h2>
+<a id="ad7992b065ad67cd9f1d98400b6d9631a" name="ad7992b065ad67cd9f1d98400b6d9631a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad7992b065ad67cd9f1d98400b6d9631a">&#9670;&#160;</a></span>get_number_of_levels()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;int dim, typename Number , typename MultigridNumber &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">unsigned int <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number &gt;::get_number_of_levels</td>
+          <td class="memname">unsigned int <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number, MultigridNumber &gt;::get_number_of_levels</td>
         </tr>
       </table>
   </td>
@@ -303,19 +303,19 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a5d1219a73b0c59ba60be7b3fe039aaf3" name="a5d1219a73b0c59ba60be7b3fe039aaf3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5d1219a73b0c59ba60be7b3fe039aaf3">&#9670;&#160;</a></span>get_timings()</h2>
+<a id="a93728e75b8ba128fb915abf956e2d112" name="a93728e75b8ba128fb915abf956e2d112"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a93728e75b8ba128fb915abf956e2d112">&#9670;&#160;</a></span>get_timings()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;int dim, typename Number , typename MultigridNumber &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree</a> &gt; <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number &gt;::get_timings</td>
+          <td class="memname">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree</a> &gt; <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number, MultigridNumber &gt;::get_timings</td>
         </tr>
       </table>
   </td>
@@ -329,19 +329,19 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="ac153fa62e7afab3ad2dabbec78e7e52f" name="ac153fa62e7afab3ad2dabbec78e7e52f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac153fa62e7afab3ad2dabbec78e7e52f">&#9670;&#160;</a></span>transfer_from_fine_to_coarse_levels()</h2>
+<a id="a9a515dabb1046e155c07ae0a6becd353" name="a9a515dabb1046e155c07ae0a6becd353"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9a515dabb1046e155c07ae0a6becd353">&#9670;&#160;</a></span>transfer_from_fine_to_coarse_levels()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;int dim, typename Number , typename MultigridNumber_  = float&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number &gt;::transfer_from_fine_to_coarse_levels </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number, MultigridNumber_ &gt;::transfer_from_fine_to_coarse_levels </td>
           <td>(</td>
           <td class="paramtype">std::function&lt; void(unsigned int const, unsigned int const)&gt; const &amp;&#160;</td>
           <td class="paramname"><em>levelwise_transfer</em></td><td>)</td>
@@ -358,19 +358,19 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="ac51be41c15ef2a0072c4ba49db8085cf" name="ac51be41c15ef2a0072c4ba49db8085cf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac51be41c15ef2a0072c4ba49db8085cf">&#9670;&#160;</a></span>update()</h2>
+<a id="a0250081095f4dc526b83bbdf4457efb8" name="a0250081095f4dc526b83bbdf4457efb8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0250081095f4dc526b83bbdf4457efb8">&#9670;&#160;</a></span>update()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;int dim, typename Number , typename MultigridNumber &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number &gt;::update</td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number, MultigridNumber &gt;::update</td>
         </tr>
       </table>
   </td>
@@ -384,19 +384,19 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a08945d6d587246217b77ab3d56b31bb2" name="a08945d6d587246217b77ab3d56b31bb2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a08945d6d587246217b77ab3d56b31bb2">&#9670;&#160;</a></span>update_coarse_solver()</h2>
+<a id="af1f0f0635d2237fae2558ecfc9f4f0d9" name="af1f0f0635d2237fae2558ecfc9f4f0d9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af1f0f0635d2237fae2558ecfc9f4f0d9">&#9670;&#160;</a></span>update_coarse_solver()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;int dim, typename Number , typename MultigridNumber &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number &gt;::update_coarse_solver</td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number, MultigridNumber &gt;::update_coarse_solver</td>
         </tr>
       </table>
   </td>
@@ -409,19 +409,19 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a0ba9a82ba61f882ce17031d0c178f26d" name="a0ba9a82ba61f882ce17031d0c178f26d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0ba9a82ba61f882ce17031d0c178f26d">&#9670;&#160;</a></span>update_smoothers()</h2>
+<a id="ada498d4941ceabd2f97464fc0d0ffb50" name="ada498d4941ceabd2f97464fc0d0ffb50"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ada498d4941ceabd2f97464fc0d0ffb50">&#9670;&#160;</a></span>update_smoothers()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;int dim, typename Number , typename MultigridNumber &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number &gt;::update_smoothers</td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number, MultigridNumber &gt;::update_smoothers</td>
         </tr>
       </table>
   </td>
@@ -434,19 +434,19 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a1bd50b4f951ec49185fb40fd617cebe8" name="a1bd50b4f951ec49185fb40fd617cebe8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1bd50b4f951ec49185fb40fd617cebe8">&#9670;&#160;</a></span>vmult()</h2>
+<a id="a6ee5e6e4fd330daf511d9190d71841bc" name="a6ee5e6e4fd330daf511d9190d71841bc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6ee5e6e4fd330daf511d9190d71841bc">&#9670;&#160;</a></span>vmult()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;int dim, typename Number , typename MultigridNumber &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number &gt;::vmult </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase</a>&lt; dim, Number, MultigridNumber &gt;::vmult </td>
           <td>(</td>
           <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>dst</em>, </td>
