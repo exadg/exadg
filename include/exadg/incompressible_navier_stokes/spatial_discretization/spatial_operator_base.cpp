@@ -337,22 +337,22 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::initialize_dirichlet_cached_bc()
 {
-// initialize data container for DirichletCached boundary conditions
-if(not(boundary_descriptor->velocity->dirichlet_cached_bc.empty()))
-{
-  std::vector<unsigned int> quad_indices;
-  quad_indices.emplace_back(get_quad_index_velocity_linear());
-  quad_indices.emplace_back(get_quad_index_velocity_nonlinear());
-  quad_indices.emplace_back(get_quad_index_velocity_gauss_lobatto());
+  // initialize data container for DirichletCached boundary conditions
+  if(not(boundary_descriptor->velocity->dirichlet_cached_bc.empty()))
+  {
+    std::vector<unsigned int> quad_indices;
+    quad_indices.emplace_back(get_quad_index_velocity_linear());
+    quad_indices.emplace_back(get_quad_index_velocity_nonlinear());
+    quad_indices.emplace_back(get_quad_index_velocity_gauss_lobatto());
 
-  interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<1, dim, double>>();
-  interface_data_dirichlet_cached->setup(*matrix_free,
-                                         get_dof_index_velocity(),
-                                         quad_indices,
-                                         boundary_descriptor->velocity->dirichlet_cached_bc);
+    interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<1, dim, double>>();
+    interface_data_dirichlet_cached->setup(*matrix_free,
+                                           get_dof_index_velocity(),
+                                           quad_indices,
+                                           boundary_descriptor->velocity->dirichlet_cached_bc);
 
-  boundary_descriptor->velocity->set_dirichlet_cached_data(interface_data_dirichlet_cached);
-}
+    boundary_descriptor->velocity->set_dirichlet_cached_data(interface_data_dirichlet_cached);
+  }
 }
 
 template<int dim, typename Number>
@@ -664,70 +664,71 @@ SpatialOperatorBase<dim, Number>::initialize_calculators_for_derived_quantities(
 template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::initialization_pure_dirichlet_bc()
-{  // Erroneously, the boundary descriptor might contain too many boundary IDs which
-	  // do not even exist in the triangulation. Here, we make sure that each entry of
-	  // the boundary descriptor has indeed a counterpart in the triangulation.
-	  std::vector<dealii::types::boundary_id> boundary_ids = grid->triangulation->get_boundary_ids();
-	  for(auto it = boundary_descriptor->pressure->dirichlet_bc.begin();
-	      it != boundary_descriptor->pressure->dirichlet_bc.end();
-	      ++it)
-	  {
-	    bool const triangulation_has_boundary_id =
-	      std::find(boundary_ids.begin(), boundary_ids.end(), it->first) != boundary_ids.end();
-
-	    AssertThrow(triangulation_has_boundary_id,
-	                dealii::ExcMessage("The boundary descriptor for the pressure contains boundary IDs "
-	                                   "that are not part of the triangulation."));
-	  }
-
-	  pressure_level_is_undefined = boundary_descriptor->pressure->dirichlet_bc.empty();
-
-	  if(is_pressure_level_undefined())
-	  {
-	    if(param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
-	    {
-  dof_index_first_point = 0;
-  for(unsigned int d = 0; d < dim; ++d)
-    first_point[d] = 0.0;
-
-  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+{ // Erroneously, the boundary descriptor might contain too many boundary IDs which
+  // do not even exist in the triangulation. Here, we make sure that each entry of
+  // the boundary descriptor has indeed a counterpart in the triangulation.
+  std::vector<dealii::types::boundary_id> boundary_ids = grid->triangulation->get_boundary_ids();
+  for(auto it = boundary_descriptor->pressure->dirichlet_bc.begin();
+      it != boundary_descriptor->pressure->dirichlet_bc.end();
+      ++it)
   {
-    typename dealii::DoFHandler<dim>::active_cell_iterator first_cell;
+    bool const triangulation_has_boundary_id =
+      std::find(boundary_ids.begin(), boundary_ids.end(), it->first) != boundary_ids.end();
 
-    bool processor_has_active_cells = false;
-    for(auto const & cell : dof_handler_p.active_cell_iterators())
+    AssertThrow(triangulation_has_boundary_id,
+                dealii::ExcMessage("The boundary descriptor for the pressure contains boundary IDs "
+                                   "that are not part of the triangulation."));
+  }
+
+  pressure_level_is_undefined = boundary_descriptor->pressure->dirichlet_bc.empty();
+
+  if(is_pressure_level_undefined())
+  {
+    if(param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
     {
-      if(cell->is_locally_owned())
-      {
-        first_cell = cell;
+      dof_index_first_point = 0;
+      for(unsigned int d = 0; d < dim; ++d)
+        first_point[d] = 0.0;
 
-        processor_has_active_cells = true;
-        break;
+      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+      {
+        typename dealii::DoFHandler<dim>::active_cell_iterator first_cell;
+
+        bool processor_has_active_cells = false;
+        for(auto const & cell : dof_handler_p.active_cell_iterators())
+        {
+          if(cell->is_locally_owned())
+          {
+            first_cell = cell;
+
+            processor_has_active_cells = true;
+            break;
+          }
+        }
+
+        AssertThrow(processor_has_active_cells == true,
+                    dealii::ExcMessage("No active cells on Processor with ID=0"));
+
+        dealii::FEValues<dim> fe_values(dof_handler_p.get_fe(),
+                                        dealii::Quadrature<dim>(
+                                          dof_handler_p.get_fe().get_unit_support_points()),
+                                        dealii::update_quadrature_points);
+
+        fe_values.reinit(first_cell);
+
+        first_point = fe_values.quadrature_point(0);
+        std::vector<dealii::types::global_dof_index> dof_indices(
+          dof_handler_p.get_fe().dofs_per_cell);
+        first_cell->get_dof_indices(dof_indices);
+        dof_index_first_point = dof_indices[0];
+      }
+      dof_index_first_point = dealii::Utilities::MPI::sum(dof_index_first_point, mpi_comm);
+      for(unsigned int d = 0; d < dim; ++d)
+      {
+        first_point[d] = dealii::Utilities::MPI::sum(first_point[d], mpi_comm);
       }
     }
-
-    AssertThrow(processor_has_active_cells == true,
-                dealii::ExcMessage("No active cells on Processor with ID=0"));
-
-    dealii::FEValues<dim> fe_values(dof_handler_p.get_fe(),
-                                    dealii::Quadrature<dim>(
-                                      dof_handler_p.get_fe().get_unit_support_points()),
-                                    dealii::update_quadrature_points);
-
-    fe_values.reinit(first_cell);
-
-    first_point = fe_values.quadrature_point(0);
-    std::vector<dealii::types::global_dof_index> dof_indices(dof_handler_p.get_fe().dofs_per_cell);
-    first_cell->get_dof_indices(dof_indices);
-    dof_index_first_point = dof_indices[0];
   }
-  dof_index_first_point = dealii::Utilities::MPI::sum(dof_index_first_point, mpi_comm);
-  for(unsigned int d = 0; d < dim; ++d)
-  {
-    first_point[d] = dealii::Utilities::MPI::sum(first_point[d], mpi_comm);
-  }
-	    }
-	  }
 }
 
 template<int dim, typename Number>
