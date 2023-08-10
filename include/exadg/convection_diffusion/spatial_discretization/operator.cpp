@@ -63,17 +63,7 @@ Operator<dim, Number>::Operator(
 {
   pcout << std::endl << "Construct convection-diffusion operator ..." << std::endl;
 
-  fe = create_finite_element<dim>(ElementType::Hypercube, true, 1, param.degree);
-
-  if(needs_own_dof_handler_velocity())
-  {
-    fe_velocity = create_finite_element<dim>(ElementType::Hypercube, true, dim, param.degree);
-    dof_handler_velocity = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
-  }
-
   initialize_dof_handler_and_constraints();
-
-  affine_constraints.close();
 
   pcout << std::endl << "... done!" << std::endl;
 }
@@ -298,13 +288,17 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::initialize_dof_handler_and_constraints()
 {
-  // enumerate degrees of freedom
+  fe = create_finite_element<dim>(ElementType::Hypercube, true, 1, param.degree);
   dof_handler.distribute_dofs(*fe);
 
   if(needs_own_dof_handler_velocity())
   {
+    fe_velocity = create_finite_element<dim>(ElementType::Hypercube, true, dim, param.degree);
+    dof_handler_velocity = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
     dof_handler_velocity->distribute_dofs(*fe_velocity);
   }
+
+  affine_constraints.close();
 
   pcout << std::endl
         << "Discontinuous Galerkin finite element discretization:" << std::endl
