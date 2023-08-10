@@ -114,7 +114,7 @@ calculate_max_velocity(dealii::Triangulation<dim> const &     triangulation,
  *
  * The underlying CFL condition reads
  *
- * 	cfl/k^{exponent_fe_degree} = || U || * time_step / h
+ * 	cfl/k^{exponent_fe_degree} = (|| U || / h) * time_step
  */
 template<int dim, typename value_type>
 inline double

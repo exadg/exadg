@@ -137,6 +137,11 @@ SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
     matrix_free_data.append_mapping_flags(
       Operators::ContinuityPenaltyKernel<dim, Number>::get_mapping_flags());
 
+  // mapping flags required for CFL condition
+  MappingFlags flags_cfl;
+  flags_cfl.cells = dealii::update_quadrature_points;
+  matrix_free_data.append_mapping_flags(flags_cfl);
+
   // dof handler
   matrix_free_data.insert_dof_handler(&dof_handler_u, field + dof_index_u);
   matrix_free_data.insert_dof_handler(&dof_handler_p, field + dof_index_p);

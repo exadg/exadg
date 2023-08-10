@@ -73,15 +73,20 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const
 {
-  // append mapping flags of compressible solver
-  MappingFlags mapping_flags_compressible;
-  mapping_flags_compressible.cells =
+  // append mapping flags
+  MappingFlags mapping_flags_operator;
+  mapping_flags_operator.cells =
     (dealii::update_gradients | dealii::update_JxW_values | dealii::update_quadrature_points |
      dealii::update_normal_vectors | dealii::update_values);
-  mapping_flags_compressible.inner_faces |= dealii::update_quadrature_points;
-  mapping_flags_compressible.boundary_faces |= dealii::update_quadrature_points;
+  mapping_flags_operator.inner_faces |= dealii::update_quadrature_points;
+  mapping_flags_operator.boundary_faces |= dealii::update_quadrature_points;
 
-  matrix_free_data.append_mapping_flags(mapping_flags_compressible);
+  matrix_free_data.append_mapping_flags(mapping_flags_operator);
+
+  // mapping flags required for CFL condition
+  MappingFlags flags_cfl;
+  flags_cfl.cells = dealii::update_quadrature_points;
+  matrix_free_data.append_mapping_flags(flags_cfl);
 
   // dof handler
   matrix_free_data.insert_dof_handler(&dof_handler, field + dof_index_all);
