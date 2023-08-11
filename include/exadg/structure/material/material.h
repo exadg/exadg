@@ -53,7 +53,7 @@ public:
 
   /*
    * Evaluate the directional derivative with respect to the displacement of the 2nd Piola-Kirchhoff
-   * stress tensor given gradient of the displacment increment with respect to the reference
+   * stress tensor given gradient of the displacement increment with respect to the reference
    * configuration "gradient_increment" and deformation gradient at the current linearization point
    * "deformation_gradient".
    */

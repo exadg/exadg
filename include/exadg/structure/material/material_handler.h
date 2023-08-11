@@ -72,10 +72,19 @@ public:
         {
           std::shared_ptr<StVenantKirchhoffData<dim>> data_svk =
             std::static_pointer_cast<StVenantKirchhoffData<dim>>(data);
-          material_map.insert(
-            Pair(id,
-                 new StVenantKirchhoff<dim, Number>(
-                   matrix_free, dof_index, quad_index, *data_svk, large_deformation)));
+
+          if(large_deformation)
+          {
+            material_map.insert(Pair(id,
+                                     new StVenantKirchhoffLargeDeformation<dim, Number>(
+                                       matrix_free, dof_index, quad_index, *data_svk)));
+          }
+          else
+          {
+            material_map.insert(Pair(id,
+                                     new StVenantKirchhoffSmallDeformation<dim, Number>(
+                                       matrix_free, dof_index, quad_index, *data_svk)));
+          }
           break;
         }
         default:

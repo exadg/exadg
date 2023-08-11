@@ -56,31 +56,33 @@ struct StVenantKirchhoffData : public MaterialData
 };
 
 template<int dim, typename Number>
-class StVenantKirchhoff : public Material<dim, Number>
+class StVenantKirchhoffBase : public Material<dim, Number>
 {
 public:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
   typedef std::pair<unsigned int, unsigned int>              Range;
   typedef CellIntegrator<dim, dim, Number>                   IntegratorCell;
 
-  StVenantKirchhoff(dealii::MatrixFree<dim, Number> const & matrix_free,
-                    unsigned int const                      dof_index,
-                    unsigned int const                      quad_index,
-                    StVenantKirchhoffData<dim> const &      data,
-                    bool const                              large_deformation);
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
 
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  second_piola_kirchhoff_stress(
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
-    unsigned int const                                              cell,
-    unsigned int const                                              q) const final;
+  StVenantKirchhoffBase(dealii::MatrixFree<dim, Number> const & matrix_free,
+                        unsigned int const                      dof_index,
+                        unsigned int const                      quad_index,
+                        StVenantKirchhoffData<dim> const &      data);
 
+protected:
+  /*
+   * The second Piola-Kirchhoff stress tensor S is given as S = lambda * I * tr(E) + 2 mu E, with E
+   * being the Green-Lagrange strain tensor and Lamee parameters lambda and mu. This leads to
+   * Sii = f0 * Eii + f1 * sum_{j = 1, ..., dim; i!=j} Eij, for i = 1, ..., dim, and
+   * Sij = f2 * (Eij + Eji),    for i, j = 1, ..., dim and i != j.
+   * The latter symmetrizes the off-diagonal entries in the strain argument to reduce computations.
+   */
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  second_piola_kirchhoff_stress_displacement_derivative(
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_increment,
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & deformation_gradient,
-    unsigned int const                                              cell,
-    unsigned int const                                              q) const final;
+  second_piola_kirchhoff_stress_symmetrize(tensor const &     strain,
+                                           unsigned int const cell,
+                                           unsigned int const q) const;
 
 private:
   /*
@@ -97,19 +99,6 @@ private:
   get_f2_factor() const;
 
   /*
-   * The second Piola-Kirchhoff stress tensor S is given as S = lambda * I * tr(E) + 2 mu E, with E
-   * being the Green-Lagrange strain tensor and Lamee parameters lambda and mu. This leads to
-   * Sii = f0 * Eii + f1 * sum_{j = 1, ..., dim; i!=j} Eij, for i = 1, ..., dim, and
-   * Sij = f2 * (Eij + Eji),    for i, j = 1, ..., dim and i != j.
-   * The latter symmetrizes the off-diagonal entries in the strain argument to reduce computations.
-   */
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  second_piola_kirchhoff_stress_symmetrize(
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & strain,
-    unsigned int const                                              cell,
-    unsigned int const                                              q) const;
-
-  /*
    * Store factors involving (potentially variable) Young's modulus.
    */
   void
@@ -123,8 +112,6 @@ private:
 
   StVenantKirchhoffData<dim> const & data;
 
-  bool large_deformation;
-
   mutable dealii::VectorizedArray<Number> f0;
   mutable dealii::VectorizedArray<Number> f1;
   mutable dealii::VectorizedArray<Number> f2;
@@ -135,6 +122,53 @@ private:
   mutable VariableCoefficients<dealii::VectorizedArray<Number>> f1_coefficients;
   mutable VariableCoefficients<dealii::VectorizedArray<Number>> f2_coefficients;
 };
+
+template<int dim, typename Number>
+class StVenantKirchhoffLargeDeformation : public StVenantKirchhoffBase<dim, Number>
+{
+public:
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
+
+  StVenantKirchhoffLargeDeformation(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                    unsigned int const                      dof_index,
+                                    unsigned int const                      quad_index,
+                                    StVenantKirchhoffData<dim> const &      data);
+
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
+                                unsigned int const cell,
+                                unsigned int const q) const final;
+
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  second_piola_kirchhoff_stress_displacement_derivative(tensor const &     gradient_increment,
+                                                        tensor const &     deformation_gradient,
+                                                        unsigned int const cell,
+                                                        unsigned int const q) const final;
+};
+
+template<int dim, typename Number>
+class StVenantKirchhoffSmallDeformation : public StVenantKirchhoffBase<dim, Number>
+{
+public:
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
+
+  StVenantKirchhoffSmallDeformation(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                    unsigned int const                      dof_index,
+                                    unsigned int const                      quad_index,
+                                    StVenantKirchhoffData<dim> const &      data);
+
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
+                                unsigned int const cell,
+                                unsigned int const q) const final;
+
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  second_piola_kirchhoff_stress_displacement_derivative(tensor const &     gradient_increment,
+                                                        tensor const &     deformation_gradient,
+                                                        unsigned int const cell,
+                                                        unsigned int const q) const final;
+};
+
 } // namespace Structure
 } // namespace ExaDG
 

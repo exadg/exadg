@@ -28,16 +28,14 @@ namespace ExaDG
 namespace Structure
 {
 template<int dim, typename Number>
-StVenantKirchhoff<dim, Number>::StVenantKirchhoff(
+StVenantKirchhoffBase<dim, Number>::StVenantKirchhoffBase(
   dealii::MatrixFree<dim, Number> const & matrix_free,
   unsigned int const                      dof_index,
   unsigned int const                      quad_index,
-  StVenantKirchhoffData<dim> const &      data,
-  bool const                              large_deformation)
+  StVenantKirchhoffData<dim> const &      data)
   : dof_index(dof_index),
     quad_index(quad_index),
     data(data),
-    large_deformation(large_deformation),
     E_is_variable(data.E_function != nullptr)
 {
   // initialize (potentially variable) factors
@@ -59,7 +57,7 @@ StVenantKirchhoff<dim, Number>::StVenantKirchhoff(
     f2_coefficients.set_coefficients(get_f2_factor() * E);
 
     VectorType dummy;
-    matrix_free.cell_loop(&StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients,
+    matrix_free.cell_loop(&StVenantKirchhoffBase<dim, Number>::cell_loop_set_coefficients,
                           this,
                           dummy,
                           dummy);
@@ -67,8 +65,34 @@ StVenantKirchhoff<dim, Number>::StVenantKirchhoff(
 }
 
 template<int dim, typename Number>
+StVenantKirchhoffLargeDeformation<dim, Number>::StVenantKirchhoffLargeDeformation(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  unsigned int const                      dof_index,
+  unsigned int const                      quad_index,
+  StVenantKirchhoffData<dim> const &      data)
+  : StVenantKirchhoffBase<dim, Number>::StVenantKirchhoffBase(matrix_free,
+                                                              dof_index,
+                                                              quad_index,
+                                                              data)
+{
+}
+
+template<int dim, typename Number>
+StVenantKirchhoffSmallDeformation<dim, Number>::StVenantKirchhoffSmallDeformation(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  unsigned int const                      dof_index,
+  unsigned int const                      quad_index,
+  StVenantKirchhoffData<dim> const &      data)
+  : StVenantKirchhoffBase<dim, Number>::StVenantKirchhoffBase(matrix_free,
+                                                              dof_index,
+                                                              quad_index,
+                                                              data)
+{
+}
+
+template<int dim, typename Number>
 Number
-StVenantKirchhoff<dim, Number>::get_f0_factor() const
+StVenantKirchhoffBase<dim, Number>::get_f0_factor() const
 {
   Number const nu           = data.nu;
   Type2D const type_two_dim = data.type_two_dim;
@@ -81,7 +105,7 @@ StVenantKirchhoff<dim, Number>::get_f0_factor() const
 
 template<int dim, typename Number>
 Number
-StVenantKirchhoff<dim, Number>::get_f1_factor() const
+StVenantKirchhoffBase<dim, Number>::get_f1_factor() const
 {
   Number const nu           = data.nu;
   Type2D const type_two_dim = data.type_two_dim;
@@ -93,7 +117,7 @@ StVenantKirchhoff<dim, Number>::get_f1_factor() const
 
 template<int dim, typename Number>
 Number
-StVenantKirchhoff<dim, Number>::get_f2_factor() const
+StVenantKirchhoffBase<dim, Number>::get_f2_factor() const
 {
   Number const nu           = data.nu;
   Type2D const type_two_dim = data.type_two_dim;
@@ -106,7 +130,7 @@ StVenantKirchhoff<dim, Number>::get_f2_factor() const
 
 template<int dim, typename Number>
 void
-StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients(
+StVenantKirchhoffBase<dim, Number>::cell_loop_set_coefficients(
   dealii::MatrixFree<dim, Number> const & matrix_free,
   VectorType &,
   VectorType const &,
@@ -141,10 +165,10 @@ StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients(
 
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_symmetrize(
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & strain,
-  unsigned int const                                              cell,
-  unsigned int const                                              q) const
+StVenantKirchhoffBase<dim, Number>::second_piola_kirchhoff_stress_symmetrize(
+  tensor const &     strain,
+  unsigned int const cell,
+  unsigned int const q) const
 {
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> S;
 
@@ -180,29 +204,32 @@ StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_symmetrize(
 
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
-  unsigned int const                                              cell,
-  unsigned int const                                              q) const
+StVenantKirchhoffLargeDeformation<dim, Number>::second_piola_kirchhoff_stress(
+  tensor const &     gradient_displacement,
+  unsigned int const cell,
+  unsigned int const q) const
 {
-  if(large_deformation)
-  {
-    return (this->second_piola_kirchhoff_stress_symmetrize(
-      get_E<dim, Number>(get_F<dim, Number>(gradient_displacement)), cell, q));
-  }
-  else
-  {
-    return (this->second_piola_kirchhoff_stress_symmetrize(gradient_displacement, cell, q));
-  }
+  return (this->second_piola_kirchhoff_stress_symmetrize(
+    get_E<dim, Number>(get_F<dim, Number>(gradient_displacement)), cell, q));
 }
 
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_displacement_derivative(
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_increment,
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & deformation_gradient,
-  unsigned int const                                              cell,
-  unsigned int const                                              q) const
+StVenantKirchhoffSmallDeformation<dim, Number>::second_piola_kirchhoff_stress(
+  tensor const &     gradient_displacement,
+  unsigned int const cell,
+  unsigned int const q) const
+{
+  return (this->second_piola_kirchhoff_stress_symmetrize(gradient_displacement, cell, q));
+}
+
+template<int dim, typename Number>
+dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+StVenantKirchhoffLargeDeformation<dim, Number>::
+  second_piola_kirchhoff_stress_displacement_derivative(tensor const &     gradient_increment,
+                                                        tensor const &     deformation_gradient,
+                                                        unsigned int const cell,
+                                                        unsigned int const q) const
 {
   // Exploit linear stress-strain relationship and symmetrizing in
   // second_piola_kirchhoff_stress_symmetrize
@@ -210,11 +237,38 @@ StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_displacement_deriv
     transpose(deformation_gradient) * gradient_increment, cell, q));
 }
 
-template class StVenantKirchhoff<2, float>;
-template class StVenantKirchhoff<2, double>;
+template<int dim, typename Number>
+dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+StVenantKirchhoffSmallDeformation<dim, Number>::
+  second_piola_kirchhoff_stress_displacement_derivative(tensor const &     gradient_increment,
+                                                        tensor const &     deformation_gradient,
+                                                        unsigned int const cell,
+                                                        unsigned int const q) const
+{
+  (void)deformation_gradient;
 
-template class StVenantKirchhoff<3, float>;
-template class StVenantKirchhoff<3, double>;
+  // Exploit linear stress-strain relationship and symmetrizing in
+  // second_piola_kirchhoff_stress_symmetrize
+  return (this->second_piola_kirchhoff_stress_symmetrize(gradient_increment, cell, q));
+}
+
+template class StVenantKirchhoffBase<2, float>;
+template class StVenantKirchhoffBase<2, double>;
+
+template class StVenantKirchhoffBase<3, float>;
+template class StVenantKirchhoffBase<3, double>;
+
+template class StVenantKirchhoffSmallDeformation<2, float>;
+template class StVenantKirchhoffSmallDeformation<2, double>;
+
+template class StVenantKirchhoffSmallDeformation<3, float>;
+template class StVenantKirchhoffSmallDeformation<3, double>;
+
+template class StVenantKirchhoffLargeDeformation<2, float>;
+template class StVenantKirchhoffLargeDeformation<2, double>;
+
+template class StVenantKirchhoffLargeDeformation<3, float>;
+template class StVenantKirchhoffLargeDeformation<3, double>;
 
 } // namespace Structure
 } // namespace ExaDG
