@@ -247,6 +247,10 @@ StVenantKirchhoffSmallDeformation<dim, Number>::
 {
   (void)deformation_gradient;
 
+  AssertThrow(false,
+              dealiiExcMessage(
+                "This code path is not implemented in NonLinearOperator::do_cell_integral ."));
+
   // Exploit linear stress-strain relationship and symmetrizing in
   // second_piola_kirchhoff_stress_symmetrize
   return (this->second_piola_kirchhoff_stress_symmetrize(gradient_increment, cell, q));
