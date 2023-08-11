@@ -96,21 +96,14 @@ Parameters::check() const
   {
     AssertThrow(restarted_simulation == false,
                 dealii::ExcMessage("Restart has not been implemented."));
-
-    if(weak_damping_active)
-    {
-      AssertThrow(weak_damping_coefficient > 0.0,
-                  dealii::ExcMessage("Weak linear damping requires positive coefficient."));
-    }
   }
-  else
+
+  if(weak_damping_active)
   {
-    AssertThrow(weak_damping_active == false,
+    AssertThrow(problem_type == ProblemType::Unsteady,
                 dealii::ExcMessage("Weak damping only well-defined for ProblemType::Unsteady."));
-    AssertThrow(
-      not(std::abs(weak_damping_coefficient) > 0.0),
-      dealii::ExcMessage(
-        "Do not set nonzero weak damping coefficient for ProblemType::Steady or ProblemType::QuasiStatic."));
+    AssertThrow(weak_damping_coefficient > 0.0,
+                dealii::ExcMessage("Weak damping coefficient defined positive."));
   }
 
   // SPATIAL DISCRETIZATION
