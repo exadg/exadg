@@ -290,7 +290,8 @@ private:
     this->param.time_step_size  = end_time / 200.;
     this->param.gen_alpha_type  = GenAlphaType::BossakAlpha;
     this->param.spectral_radius = 0.8;
-    this->param.solver_info_data.interval_time_steps = 1; // ##+ problem_type == ProblemType::Unsteady ? 200 : 2;
+    this->param.solver_info_data.interval_time_steps =
+      problem_type == ProblemType::Unsteady ? 200 : 2;
 
     this->param.mapping_degree    = 1;
     this->param.grid.element_type = ElementType::Hypercube; // Simplex;
@@ -310,8 +311,7 @@ private:
     this->param.newton_solver_data                   = Newton::SolverData(1e2, 1.e-9, 1.e-9);
     this->param.solver                               = Solver::FGMRES;
     this->param.solver_data                          = SolverData(1e3, 1.e-12, 1.e-8, 100);
-    // this->param.preconditioner                       = Preconditioner::Multigrid; ##+
-    this->param.preconditioner                       = Preconditioner::AMG;
+    this->param.preconditioner                       = Preconditioner::Multigrid;
     this->param.multigrid_data.type                  = MultigridType::phMG;
     this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
     this->param.multigrid_data.coarse_problem.preconditioner =
@@ -548,7 +548,7 @@ private:
     else if(material_type == MaterialType::IncompressibleNeoHookean)
     {
       Type2D const two_dim_type  = Type2D::Undefined;
-      double const shear_modulus = 1.0e5;
+      double const shear_modulus = 1.0e2;
       double const nu            = 0.49;
       double const bulk_modulus  = shear_modulus * 2.0 * (1.0 + nu) / (3.0 * (1.0 - 2.0 * nu));
 
@@ -584,18 +584,21 @@ private:
     PostProcessorData<dim> pp_data;
     pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
     pp_data.output_data.time_control_data.start_time       = start_time;
-    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 2000000.0; // ##+
+    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
     pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = this->output_parameters.filename;
     pp_data.output_data.write_higher_order = true;
     pp_data.output_data.degree             = this->param.degree;
 
-    pp_data.error_data.time_control_data.start_time       = start_time;
-    pp_data.error_data.time_control_data.trigger_interval = (end_time - start_time);
+    if(material_type == MaterialType::StVenantKirchhoff)
+    {
+      pp_data.error_data.time_control_data.start_time       = start_time;
+      pp_data.error_data.time_control_data.trigger_interval = (end_time - start_time);
+      pp_data.error_data.time_control_data.is_active        = true;
+      pp_data.error_data.calculate_relative_errors          = true;
+    }
 
-    pp_data.error_data.time_control_data.is_active = true;
-    pp_data.error_data.calculate_relative_errors   = true;
-    double const vol_force                         = use_volume_force ? this->volume_force : 0.0;
+    double const vol_force = use_volume_force ? this->volume_force : 0.0;
     if(boundary_type == BoundaryType::Dirichlet)
     {
       pp_data.error_data.analytical_solution.reset(
@@ -646,9 +649,9 @@ private:
   double const E_modul       = 200.0;
 
   double const start_time = 0.0;
-  double const end_time   = 2e-1;
+  double const end_time   = 100.0;
 
-  double const density = 1e3;
+  double const density = 0.001;
 };
 
 } // namespace Structure

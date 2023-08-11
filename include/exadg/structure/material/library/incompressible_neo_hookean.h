@@ -71,10 +71,10 @@ public:
   typedef dealii::VectorizedArray<Number>                         scalar;
   typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
 
-  IncompressibleNeoHookean(dealii::MatrixFree<dim, Number> const & matrix_free,
-                           unsigned int const                      dof_index,
-                           unsigned int const                      quad_index,
-                           IncompressibleNeoHookeanData<dim> const &      data);
+  IncompressibleNeoHookean(dealii::MatrixFree<dim, Number> const &   matrix_free,
+                           unsigned int const                        dof_index,
+                           unsigned int const                        quad_index,
+                           IncompressibleNeoHookeanData<dim> const & data);
 
   /*
    * The second Piola-Kirchhoff stress is defined as S = S_vol + S_iso (Flory split),
@@ -107,17 +107,15 @@ public:
    */
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  second_piola_kirchhoff_stress(
-    tensor const & gradient_displacement,
-    unsigned int const                                              cell,
-    unsigned int const                                              q) const final;
+  second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
+                                unsigned int const cell,
+                                unsigned int const q) const final;
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  second_piola_kirchhoff_stress_displacement_derivative(
-    tensor const & gradient_increment,
-    tensor const & deformation_gradient,
-    unsigned int const                                              cell,
-    unsigned int const                                              q) const final;
+  second_piola_kirchhoff_stress_displacement_derivative(tensor const &     gradient_increment,
+                                                        tensor const &     deformation_gradient,
+                                                        unsigned int const cell,
+                                                        unsigned int const q) const final;
 
 private:
   /*

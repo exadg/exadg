@@ -5,31 +5,31 @@
         "IsTest": "false"
     },
     "SpatialResolution": {
-        "DegreeMin": "1",
-        "DegreeMax": "1",
-        "RefineSpaceMin": "2",
-        "RefineSpaceMax": "2"
+        "DegreeMin": "2",
+        "DegreeMax": "2",
+        "RefineSpaceMin": "1",
+        "RefineSpaceMax": "1"
     },
     "TemporalResolution": {
         "RefineTimeMin": "0",
         "RefineTimeMax": "0"
     },
     "Application": {
-        "Length": "100.0e-3",
-        "Height": "10.0e-3",
-        "Width": "10.0e-3",
-        "ProblemType": "Unsteady",
+        "Length": "100.0",
+        "Height": "10.0",
+        "Width": "10.0",
+        "ProblemType": "QuasiStatic",
         "MaterialType": "IncompressibleNeoHookean",
         "WeakDamping": "0.0",
         "UseVolumeForce": "false",
-        "VolumeForce": "0.0",
+        "VolumeForce": "1.0",
         "BoundaryType": "Dirichlet",
-        "Displacement": "2.0e-3",
+        "Displacement": "20.0",
         "Traction":	"0.0"
     },
     "Output": {
         "OutputDirectory": "output/bar/",
         "OutputName": "test",
-        "WriteOutput": "true"
+        "WriteOutput": "false"
     }
 }

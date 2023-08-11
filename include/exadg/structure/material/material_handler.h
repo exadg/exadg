@@ -92,10 +92,8 @@ public:
             std::static_pointer_cast<IncompressibleNeoHookeanData<dim>>(data);
           material_map.insert(
             Pair(id,
-                 new IncompressibleNeoHookean<dim, Number>(matrix_free,
-                                                           dof_index,
-                                                           quad_index,
-                                                           *data_IncompressibleNeoHookean)));
+                 new IncompressibleNeoHookean<dim, Number>(
+                   matrix_free, dof_index, quad_index, *data_IncompressibleNeoHookean)));
           break;
         }
         default:
