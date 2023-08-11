@@ -170,7 +170,7 @@ StVenantKirchhoffBase<dim, Number>::second_piola_kirchhoff_stress_symmetrize(
   unsigned int const cell,
   unsigned int const q) const
 {
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> S;
+  tensor S;
 
   if(E_is_variable)
   {

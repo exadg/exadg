@@ -63,7 +63,6 @@ public:
   typedef std::pair<unsigned int, unsigned int>              Range;
   typedef CellIntegrator<dim, dim, Number>                   IntegratorCell;
 
-  typedef dealii::VectorizedArray<Number>                         scalar;
   typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
 
   StVenantKirchhoffBase(dealii::MatrixFree<dim, Number> const & matrix_free,
