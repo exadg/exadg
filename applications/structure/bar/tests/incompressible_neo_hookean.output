@@ -22,35 +22,24 @@ Setting up elasticity solver:
 List of parameters:
 
 Mathematical model:
-  Problem type:                              Unsteady
+  Problem type:                              QuasiStatic
   Body force:                                false
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
 
 Physical quantities:
-  Density:                                   1.0000e-03
-  Weak damping coefficient:                  1.0000e+04
 
 Temporal discretization:
-  Start time:                                0.0000e+00
-  End time:                                  1.0000e+02
-  Max. number of time steps:                 4294967295
-  Temporal refinements:                      0
-  Time integration type:                     BossakAlpha
-  Spectral radius:                           8.0000e-01
-  Solver information:
-  Interval physical time:                    1.7977e+308
-  Interval wall time:                        1.7977e+308
-  Interval time steps:                       200
+  load_increment:                            1.0000e-01
 
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
-  Number of global refinements:              0
+  Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
-  Polynomial degree:                         1
+  Polynomial degree:                         4
 
 Solver:
 
@@ -86,16 +75,16 @@ Linear solver:
 
 Generating grid for 3-dimensional problem:
 
-  Max. number of refinements:                0
-  Number of cells:                           4
+  Max. number of refinements:                1
+  Number of cells:                           32
 
 Construct elasticity operator ...
 
 Continuous Galerkin finite element discretization:
 
-  degree of 1D polynomials:                  1
-  number of dofs per cell:                   24
-  number of dofs (total):                    60
+  degree of 1D polynomials:                  4
+  number of dofs per cell:                   375
+  number of dofs (total):                    8019
 
 ... done!
 
@@ -103,28 +92,71 @@ Setup elasticity operator ...
 
 ... done!
 
-Setup elasticity time integrator ...
-
-... done!
-
 Setup elasticity solver ...
 
 ... done!
 
-Starting time loop ...
-
-Calculate error for all fields at time t = 0.0000e+00:
+Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
-________________________________________________________________________________
-
- Time step number = 1       t = 0.00000e+00 -> t + dt = 5.00000e-01
-________________________________________________________________________________
+Solving quasi-static problem ...
 
 ________________________________________________________________________________
 
- Time step number = 200     t = 9.95000e+01 -> t + dt = 1.00000e+02
+ Solve non-linear problem for load factor = 1.0000e-03
 ________________________________________________________________________________
 
-Calculate error for all fields at time t = 1.0000e+02:
-  Relative error (L2-norm): 6.27902e-01
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 1.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 2.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 3.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 4.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 5.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 6.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 7.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 8.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 9.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 1.0000e+00
+________________________________________________________________________________
+
+... done!
+
+Calculate error for all fields for solution data:
+  Relative error (L2-norm): 6.03102e-02

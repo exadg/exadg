@@ -108,8 +108,8 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
   S = (data.bulk_modulus * 0.5 * (J * J - 1.0)) * C_inv;
 
   // S_iso, isochoric term.
-  S -= (shear_modulus_stored * pow(J, static_cast<Number>(-2.0 * one_third))) *
-       subtract_identity<dim, Number>(one_third * trace(C) * C_inv);
+  S += (shear_modulus_stored * pow(J, static_cast<Number>(-2.0 * one_third))) *
+       add_identity<dim, Number>((-one_third * trace(C)) * C_inv);
 
   return S;
 }
@@ -144,13 +144,14 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacemen
                         transpose(deformation_gradient) * gradient_increment);
 
   // S_vol, i.e., penalty term enforcing J = 1.
-  Dd_S =
-    data.bulk_modulus * (J * J * one_over_J_times_Dd_J * C_inv + 0.5 * (J * J - 1.0) * Dd_C_inv);
+  Dd_S = data.bulk_modulus *
+         ((J * J * one_over_J_times_Dd_J) * C_inv + (0.5 * (J * J - 1.0)) * Dd_C_inv);
 
   // S_iso, isochoric term.
-  Dd_S += shear_modulus_stored * one_third * pow(J, static_cast<Number>(-2.0 * one_third)) *
-          (2.0 * one_over_J_times_Dd_J * subtract_identity<dim, Number>(one_third * I_1 * C_inv) -
-           Dd_I_1 * C_inv - I_1 * Dd_C_inv);
+  Dd_S +=
+    shear_modulus_stored * one_third * pow(J, static_cast<Number>(-2.0 * one_third)) *
+    ((2.0 * one_over_J_times_Dd_J) * subtract_identity<dim, Number>((one_third * I_1) * C_inv) -
+     Dd_I_1 * C_inv - I_1 * Dd_C_inv);
 
   return Dd_S;
 }

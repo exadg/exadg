@@ -590,7 +590,7 @@ private:
     pp_data.output_data.write_higher_order = true;
     pp_data.output_data.degree             = this->param.degree;
 
-    if(material_type == MaterialType::StVenantKirchhoff)
+    // if(material_type == MaterialType::StVenantKirchhoff)
     {
       pp_data.error_data.time_control_data.start_time       = start_time;
       pp_data.error_data.time_control_data.trigger_interval = (end_time - start_time);
