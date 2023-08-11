@@ -598,10 +598,10 @@ private:
   initialize_dof_handler_and_constraints();
 
   void
-  initialize_operators(std::string const & dof_index_temperature);
+  initialize_dirichlet_cached_bc();
 
   void
-  initialize_viscosity_model();
+  initialize_operators(std::string const & dof_index_temperature);
 
   void
   initialize_calculators_for_derived_quantities();

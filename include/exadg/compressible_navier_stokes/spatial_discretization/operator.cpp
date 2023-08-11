@@ -58,13 +58,7 @@ Operator<dim, Number>::Operator(
 {
   pcout << std::endl << "Construct compressible Navier-Stokes DG operator ..." << std::endl;
 
-  fe        = create_finite_element<dim>(ElementType::Hypercube, true, dim + 2, param.degree);
-  fe_vector = create_finite_element<dim>(ElementType::Hypercube, true, dim, param.degree);
-  fe_scalar = create_finite_element<dim>(ElementType::Hypercube, true, 1, param.degree);
-
   initialize_dof_handler_and_constraints();
-
-  constraint.close();
 
   pcout << std::endl << "... done!" << std::endl;
 }
@@ -473,10 +467,16 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::initialize_dof_handler_and_constraints()
 {
+  fe        = create_finite_element<dim>(ElementType::Hypercube, true, dim + 2, param.degree);
+  fe_vector = create_finite_element<dim>(ElementType::Hypercube, true, dim, param.degree);
+  fe_scalar = create_finite_element<dim>(ElementType::Hypercube, true, 1, param.degree);
+
   // enumerate degrees of freedom
   dof_handler.distribute_dofs(*fe);
   dof_handler_vector.distribute_dofs(*fe_vector);
   dof_handler_scalar.distribute_dofs(*fe_scalar);
+
+  constraint.close();
 
   pcout << std::endl
         << "Discontinuous Galerkin finite element discretization:" << std::endl

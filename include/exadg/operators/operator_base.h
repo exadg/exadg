@@ -72,9 +72,9 @@ struct OperatorBaseData
 
   unsigned int dof_index;
 
-  // In addition to the dof_index in OperatorBaseData, we need a separate dof index to evaluate
-  // inhomogeneous boundary data correctly. This dof index corresponds to an AffineConstraints
-  // object that only applies periodicity and hanging node constraints.
+  // In addition to the "standard" dof_index above, we need a separate dof index to evaluate
+  // inhomogeneous boundary data correctly. This "inhomogeneous" dof index corresponds to an
+  // AffineConstraints object that only applies periodicity and hanging node constraints.
   unsigned int dof_index_inhomogeneous;
 
   unsigned int quad_index;
