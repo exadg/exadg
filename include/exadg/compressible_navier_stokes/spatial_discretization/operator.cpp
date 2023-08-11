@@ -73,15 +73,20 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const
 {
-  // append mapping flags of compressible solver
-  MappingFlags mapping_flags_compressible;
-  mapping_flags_compressible.cells =
+  // append mapping flags
+  MappingFlags mapping_flags_operator;
+  mapping_flags_operator.cells =
     (dealii::update_gradients | dealii::update_JxW_values | dealii::update_quadrature_points |
      dealii::update_normal_vectors | dealii::update_values);
-  mapping_flags_compressible.inner_faces |= dealii::update_quadrature_points;
-  mapping_flags_compressible.boundary_faces |= dealii::update_quadrature_points;
+  mapping_flags_operator.inner_faces |= dealii::update_quadrature_points;
+  mapping_flags_operator.boundary_faces |= dealii::update_quadrature_points;
 
-  matrix_free_data.append_mapping_flags(mapping_flags_compressible);
+  matrix_free_data.append_mapping_flags(mapping_flags_operator);
+
+  // mapping flags required for CFL condition
+  MappingFlags flags_cfl;
+  flags_cfl.cells = dealii::update_quadrature_points;
+  matrix_free_data.append_mapping_flags(flags_cfl);
 
   // dof handler
   matrix_free_data.insert_dof_handler(&dof_handler, field + dof_index_all);
@@ -430,13 +435,6 @@ Operator<dim, Number>::get_wall_time_operator_evaluation() const
 
 template<int dim, typename Number>
 double
-Operator<dim, Number>::calculate_minimum_element_length() const
-{
-  return calculate_minimum_vertex_distance(dof_handler.get_triangulation(), mpi_comm);
-}
-
-template<int dim, typename Number>
-double
 Operator<dim, Number>::calculate_time_step_cfl_global() const
 {
   // speed of sound a = sqrt(gamma * R * T)
@@ -444,19 +442,26 @@ Operator<dim, Number>::calculate_time_step_cfl_global() const
     sqrt(param.heat_capacity_ratio * param.specific_gas_constant * param.max_temperature);
   double const acoustic_wave_speed = param.max_velocity + speed_of_sound;
 
-  double const h_min = calculate_minimum_element_length();
+  std::shared_ptr<dealii::Function<dim>> const velocity_field =
+    std::make_shared<dealii::Functions::ConstantFunction<dim>>(acoustic_wave_speed, dim);
 
-  return ExaDG::calculate_time_step_cfl_global(acoustic_wave_speed,
-                                               h_min,
-                                               param.degree,
-                                               param.exponent_fe_degree_cfl);
+  return calculate_time_step_cfl_local<dim, Number>(
+    *matrix_free,
+    get_dof_index_vector(),
+    get_quad_index_standard(),
+    velocity_field,
+    param.start_time /* will not be used (ConstantFunction) */,
+    param.degree,
+    param.exponent_fe_degree_cfl,
+    CFLConditionType::VelocityComponents,
+    mpi_comm);
 }
 
 template<int dim, typename Number>
 double
 Operator<dim, Number>::calculate_time_step_diffusion() const
 {
-  double const h_min = calculate_minimum_element_length();
+  double const h_min = calculate_minimum_vertex_distance(dof_handler.get_triangulation(), mpi_comm);
 
   return ExaDG::calculate_const_time_step_diff(param.dynamic_viscosity / param.reference_density,
                                                h_min,

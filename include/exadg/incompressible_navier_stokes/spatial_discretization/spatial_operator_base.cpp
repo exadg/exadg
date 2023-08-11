@@ -137,6 +137,11 @@ SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
     matrix_free_data.append_mapping_flags(
       Operators::ContinuityPenaltyKernel<dim, Number>::get_mapping_flags());
 
+  // mapping flags required for CFL condition
+  MappingFlags flags_cfl;
+  flags_cfl.cells = dealii::update_quadrature_points;
+  matrix_free_data.append_mapping_flags(flags_cfl);
+
   // dof handler
   matrix_free_data.insert_dof_handler(&dof_handler_u, field + dof_index_u);
   matrix_free_data.insert_dof_handler(&dof_handler_p, field + dof_index_p);
@@ -1021,12 +1026,19 @@ template<int dim, typename Number>
 double
 SpatialOperatorBase<dim, Number>::calculate_time_step_cfl_global() const
 {
-  double const h_min = calculate_minimum_element_length();
+  std::shared_ptr<dealii::Function<dim>> const velocity_field =
+    std::make_shared<dealii::Functions::ConstantFunction<dim>>(param.max_velocity, dim);
 
-  return ExaDG::calculate_time_step_cfl_global(param.max_velocity,
-                                               h_min,
-                                               param.degree_u,
-                                               param.cfl_exponent_fe_degree_velocity);
+  return calculate_time_step_cfl_local<dim, Number>(
+    *matrix_free,
+    get_dof_index_velocity(),
+    get_quad_index_velocity_linear(),
+    velocity_field,
+    param.start_time /* will not be used (ConstantFunction) */,
+    param.degree_u,
+    param.cfl_exponent_fe_degree_velocity,
+    CFLConditionType::VelocityComponents,
+    mpi_comm);
 }
 
 template<int dim, typename Number>

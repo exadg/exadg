@@ -107,6 +107,11 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
       Operators::DiffusiveKernel<dim, Number>::get_mapping_flags(true, true));
   }
 
+  // mapping flags required for CFL condition
+  MappingFlags flags_cfl;
+  flags_cfl.cells = dealii::update_quadrature_points;
+  matrix_free_data.append_mapping_flags(flags_cfl);
+
   // dealii::DoFHandler, dealii::AffineConstraints
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
   matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
@@ -884,12 +889,18 @@ Operator<dim, Number>::calculate_time_step_cfl_global(double const time) const
   // tend to infinity
   max_velocity = std::max(max_velocity, param.max_velocity);
 
-  double const h_min = calculate_minimum_element_length();
+  std::shared_ptr<dealii::Function<dim>> const velocity_field =
+    std::make_shared<dealii::Functions::ConstantFunction<dim>>(max_velocity, dim);
 
-  return ExaDG::calculate_time_step_cfl_global(max_velocity,
-                                               h_min,
-                                               param.degree,
-                                               param.exponent_fe_degree_convection);
+  return calculate_time_step_cfl_local<dim, Number>(*matrix_free,
+                                                    get_dof_index(),
+                                                    get_quad_index(),
+                                                    velocity_field,
+                                                    time,
+                                                    param.degree,
+                                                    param.exponent_fe_degree_convection,
+                                                    CFLConditionType::VelocityComponents,
+                                                    mpi_comm);
 }
 
 template<int dim, typename Number>

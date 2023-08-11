@@ -170,9 +170,6 @@ public:
   calculate_time_step_diffusion() const final;
 
 private:
-  double
-  calculate_minimum_element_length() const;
-
   void
   initialize_dof_handler_and_constraints();
 
