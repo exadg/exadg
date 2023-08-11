@@ -248,7 +248,7 @@ StVenantKirchhoffSmallDeformation<dim, Number>::
   (void)deformation_gradient;
 
   AssertThrow(false,
-              dealiiExcMessage(
+              dealii::ExcMessage(
                 "This code path is not implemented in NonLinearOperator::do_cell_integral ."));
 
   // Exploit linear stress-strain relationship and symmetrizing in
