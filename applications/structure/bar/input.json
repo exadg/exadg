@@ -2,7 +2,7 @@
     "General": {
         "Precision": "double",
         "Dim": "3",
-        "IsTest": "true"
+        "IsTest": "false"
     },
     "SpatialResolution": {
         "DegreeMin": "4",
