@@ -547,9 +547,9 @@ template double&#160;</td><td class="memItemRight" valign="bottom"><b>linear_int
 template&lt;int dim, typename BoundaryDescriptor &gt; </td></tr>
 <tr class="memitem:ace959bc87a21a7d7d1922de1e088bd2a"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>verify_boundary_conditions</b> (BoundaryDescriptor const &amp;boundary_descriptor, <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &amp;grid)</td></tr>
 <tr class="separator:ace959bc87a21a7d7d1922de1e088bd2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac9fadac802fcfe05f9d3ad88a8636d02"><td class="memTemplParams" colspan="2">template&lt;int dim&gt; </td></tr>
-<tr class="memitem:ac9fadac802fcfe05f9d3ad88a8636d02"><td class="memTemplItemLeft" align="right" valign="top">double&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#ac9fadac802fcfe05f9d3ad88a8636d02">calculate_minimum_vertex_distance</a> (dealii::Triangulation&lt; dim &gt; const &amp;triangulation, MPI_Comm const &amp;mpi_comm)</td></tr>
-<tr class="separator:ac9fadac802fcfe05f9d3ad88a8636d02"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab4e8cd1d7dfdaf430424ebe151e08bfe"><td class="memTemplParams" colspan="2">template&lt;int dim&gt; </td></tr>
+<tr class="memitem:ab4e8cd1d7dfdaf430424ebe151e08bfe"><td class="memTemplItemLeft" align="right" valign="top">double&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#ab4e8cd1d7dfdaf430424ebe151e08bfe">calculate_minimum_vertex_distance</a> (dealii::Triangulation&lt; dim &gt; const &amp;triangulation, dealii::Mapping&lt; dim &gt; const &amp;mapping, MPI_Comm const &amp;mpi_comm)</td></tr>
+<tr class="separator:ab4e8cd1d7dfdaf430424ebe151e08bfe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a234ab5185472bd283373a7dee57fb584"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#a234ab5185472bd283373a7dee57fb584">calculate_characteristic_element_length</a> (double const element_length, unsigned int const fe_degree, bool const is_dg)</td></tr>
 <tr class="separator:a234ab5185472bd283373a7dee57fb584"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a57fafc16d839db10dd7b832cbe62be55"><td class="memTemplParams" colspan="2"><a id="a57fafc16d839db10dd7b832cbe62be55" name="a57fafc16d839db10dd7b832cbe62be55"></a>
@@ -1000,8 +1000,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="ac9fadac802fcfe05f9d3ad88a8636d02" name="ac9fadac802fcfe05f9d3ad88a8636d02"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac9fadac802fcfe05f9d3ad88a8636d02">&#9670;&#160;</a></span>calculate_minimum_vertex_distance()</h2>
+<a id="ab4e8cd1d7dfdaf430424ebe151e08bfe" name="ab4e8cd1d7dfdaf430424ebe151e08bfe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab4e8cd1d7dfdaf430424ebe151e08bfe">&#9670;&#160;</a></span>calculate_minimum_vertex_distance()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1016,6 +1016,12 @@ template&lt;int dim&gt; </div>
           <td>(</td>
           <td class="paramtype">dealii::Triangulation&lt; dim &gt; const &amp;&#160;</td>
           <td class="paramname"><em>triangulation</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">dealii::Mapping&lt; dim &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>mapping</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>

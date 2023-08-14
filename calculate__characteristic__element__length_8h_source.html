@@ -108,46 +108,45 @@ $(function() {
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>{</div>
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim&gt;</div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="keyword">inline</span> <span class="keywordtype">double</span></div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno"><a class="line" href="namespaceExaDG.html#ac9fadac802fcfe05f9d3ad88a8636d02">   38</a></span><a class="code hl_function" href="namespaceExaDG.html#ac9fadac802fcfe05f9d3ad88a8636d02">calculate_minimum_vertex_distance</a>(dealii::Triangulation&lt;dim&gt; <span class="keyword">const</span> &amp; triangulation,</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>                                  MPI_Comm <span class="keyword">const</span> &amp;                   mpi_comm)</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>{</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keywordtype">double</span> diameter = 0.0, min_cell_diameter = std::numeric_limits&lt;double&gt;::max();</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="keywordflow">for</span>(<span class="keyword">auto</span> <span class="keyword">const</span> &amp; cell : triangulation.active_cell_iterators())</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  {</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    <span class="keywordflow">if</span>(cell-&gt;is_locally_owned())</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    {</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>      diameter = cell-&gt;minimum_vertex_distance();</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>      <span class="keywordflow">if</span>(diameter &lt; min_cell_diameter)</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>        min_cell_diameter = diameter;</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    }</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  }</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="keywordtype">double</span> <span class="keyword">const</span> global_min_cell_diameter =</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    -dealii::Utilities::MPI::max(-min_cell_diameter, mpi_comm);</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keywordflow">return</span> global_min_cell_diameter;</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>}</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span><span class="keyword">inline</span> <span class="keywordtype">double</span></div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno"><a class="line" href="namespaceExaDG.html#a234ab5185472bd283373a7dee57fb584">   66</a></span><a class="code hl_function" href="namespaceExaDG.html#a234ab5185472bd283373a7dee57fb584">calculate_characteristic_element_length</a>(<span class="keywordtype">double</span> <span class="keyword">const</span>       element_length,</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>                                        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> fe_degree,</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>                                        <span class="keywordtype">bool</span> <span class="keyword">const</span>         is_dg)</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>{</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n_nodes_1d = fe_degree;</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  <span class="keywordflow">if</span>(is_dg)</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    n_nodes_1d += 1;</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span> </div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keywordflow">return</span> element_length / ((double)n_nodes_1d);</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>}</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span> </div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span> </div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_FUNCTIONALITIES_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno"><a class="line" href="namespaceExaDG.html#ab4e8cd1d7dfdaf430424ebe151e08bfe">   38</a></span><a class="code hl_function" href="namespaceExaDG.html#ab4e8cd1d7dfdaf430424ebe151e08bfe">calculate_minimum_vertex_distance</a>(dealii::Triangulation&lt;dim&gt; <span class="keyword">const</span> &amp; triangulation,</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>                                  dealii::Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;       mapping,</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>                                  MPI_Comm <span class="keyword">const</span> &amp;                   mpi_comm)</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>{</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keywordtype">double</span> min_cell_diameter = std::numeric_limits&lt;double&gt;::max();</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keywordflow">for</span>(<span class="keyword">auto</span> <span class="keyword">const</span> &amp; cell : triangulation.active_cell_iterators())</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  {</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    <span class="keywordflow">if</span>(cell-&gt;is_locally_owned())</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    {</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>      <span class="keyword">auto</span> <span class="keyword">const</span> vertices = mapping.get_vertices(cell);</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>      <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; vertices.size(); ++i)</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>        <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> j = i + 1; j &lt; vertices.size(); ++j)</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>          min_cell_diameter = std::min(min_cell_diameter, vertices[i].distance(vertices[j]));</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    }</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  }</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keywordflow">return</span> dealii::Utilities::MPI::min(min_cell_diameter, mpi_comm);</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>}</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span><span class="keyword">inline</span> <span class="keywordtype">double</span></div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno"><a class="line" href="namespaceExaDG.html#a234ab5185472bd283373a7dee57fb584">   65</a></span><a class="code hl_function" href="namespaceExaDG.html#a234ab5185472bd283373a7dee57fb584">calculate_characteristic_element_length</a>(<span class="keywordtype">double</span> <span class="keyword">const</span>       element_length,</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>                                        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> fe_degree,</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>                                        <span class="keywordtype">bool</span> <span class="keyword">const</span>         is_dg)</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>{</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n_nodes_1d = fe_degree;</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  <span class="keywordflow">if</span>(is_dg)</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    n_nodes_1d += 1;</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  <span class="keywordflow">return</span> element_length / ((double)n_nodes_1d);</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>}</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span> </div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span> </div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_FUNCTIONALITIES_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
-<div class="ttc" id="anamespaceExaDG_html_a234ab5185472bd283373a7dee57fb584"><div class="ttname"><a href="namespaceExaDG.html#a234ab5185472bd283373a7dee57fb584">ExaDG::calculate_characteristic_element_length</a></div><div class="ttdeci">double calculate_characteristic_element_length(double const element_length, unsigned int const fe_degree, bool const is_dg)</div><div class="ttdef"><b>Definition</b> calculate_characteristic_element_length.h:66</div></div>
-<div class="ttc" id="anamespaceExaDG_html_ac9fadac802fcfe05f9d3ad88a8636d02"><div class="ttname"><a href="namespaceExaDG.html#ac9fadac802fcfe05f9d3ad88a8636d02">ExaDG::calculate_minimum_vertex_distance</a></div><div class="ttdeci">double calculate_minimum_vertex_distance(dealii::Triangulation&lt; dim &gt; const &amp;triangulation, MPI_Comm const &amp;mpi_comm)</div><div class="ttdef"><b>Definition</b> calculate_characteristic_element_length.h:38</div></div>
+<div class="ttc" id="anamespaceExaDG_html_a234ab5185472bd283373a7dee57fb584"><div class="ttname"><a href="namespaceExaDG.html#a234ab5185472bd283373a7dee57fb584">ExaDG::calculate_characteristic_element_length</a></div><div class="ttdeci">double calculate_characteristic_element_length(double const element_length, unsigned int const fe_degree, bool const is_dg)</div><div class="ttdef"><b>Definition</b> calculate_characteristic_element_length.h:65</div></div>
+<div class="ttc" id="anamespaceExaDG_html_ab4e8cd1d7dfdaf430424ebe151e08bfe"><div class="ttname"><a href="namespaceExaDG.html#ab4e8cd1d7dfdaf430424ebe151e08bfe">ExaDG::calculate_minimum_vertex_distance</a></div><div class="ttdeci">double calculate_minimum_vertex_distance(dealii::Triangulation&lt; dim &gt; const &amp;triangulation, dealii::Mapping&lt; dim &gt; const &amp;mapping, MPI_Comm const &amp;mpi_comm)</div><div class="ttdef"><b>Definition</b> calculate_characteristic_element_length.h:38</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
