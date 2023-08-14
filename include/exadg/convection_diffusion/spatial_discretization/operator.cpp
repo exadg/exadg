@@ -322,11 +322,12 @@ Operator<dim, Number>::setup()
              mf_data->get_quadrature_vector(),
              mf_data->data);
 
-  matrix_free_own_storage = mf;
+  if(param.ale_formulation)
+    matrix_free_own_storage = mf;
 
   // Subsequently, call the other setup function with MatrixFree/MatrixFreeData objects as
   // arguments.
-  this->setup(matrix_free_own_storage, mf_data);
+  this->setup(mf, mf_data);
 }
 
 template<int dim, typename Number>

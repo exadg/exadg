@@ -717,7 +717,7 @@ SpatialOperatorBase<dim, Number>::setup()
 
   // Subsequently, call the other setup function with MatrixFree/MatrixFreeData objects as
   // arguments.
-  this->setup(matrix_free_own_storage, mf_data);
+  this->setup(mf, mf_data);
 }
 
 template<int dim, typename Number>
