@@ -455,7 +455,8 @@ template<int dim, typename Number>
 double
 Operator<dim, Number>::calculate_time_step_diffusion() const
 {
-  double const h_min = calculate_minimum_vertex_distance(dof_handler.get_triangulation(), mpi_comm);
+  double const h_min =
+    calculate_minimum_vertex_distance(dof_handler.get_triangulation(), get_mapping(), mpi_comm);
 
   return ExaDG::calculate_const_time_step_diff(param.dynamic_viscosity / param.reference_density,
                                                h_min,
