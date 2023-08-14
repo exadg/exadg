@@ -168,12 +168,6 @@ private:
   std::shared_ptr<HelpersALE<Number>> helpers_ale;
 
   /*
-   * MatrixFree
-   */
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
-
-  /*
    * Spatial discretization
    */
   std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_operator;

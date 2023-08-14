@@ -712,9 +712,12 @@ SpatialOperatorBase<dim, Number>::setup()
              mf_data->get_quadrature_vector(),
              mf_data->data);
 
+  if(param.ale_formulation)
+    matrix_free_own_storage = mf;
+
   // Subsequently, call the other setup function with MatrixFree/MatrixFreeData objects as
   // arguments.
-  this->setup(mf, mf_data);
+  this->setup(matrix_free_own_storage, mf_data);
 }
 
 template<int dim, typename Number>
@@ -1528,8 +1531,15 @@ SpatialOperatorBase<dim, Number>::calculate_dissipation_continuity_term(
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::update_after_grid_motion()
+SpatialOperatorBase<dim, Number>::update_after_grid_motion(bool const update_matrix_free)
 {
+  if(update_matrix_free)
+  {
+    // Since matrix_free points to matrix_free_own_storage, we also update the actual/main
+    // MatrixFree object called matrix_free.
+    matrix_free_own_storage->update_mapping(*get_mapping());
+  }
+
   if(param.turbulence_model_data.is_active)
   {
     // the mesh (and hence the filter width) changes in case of an ALE formulation

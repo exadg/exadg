@@ -322,9 +322,11 @@ Operator<dim, Number>::setup()
              mf_data->get_quadrature_vector(),
              mf_data->data);
 
+  matrix_free_own_storage = mf;
+
   // Subsequently, call the other setup function with MatrixFree/MatrixFreeData objects as
   // arguments.
-  this->setup(mf, mf_data);
+  this->setup(matrix_free_own_storage, mf_data);
 }
 
 template<int dim, typename Number>
@@ -777,8 +779,16 @@ Operator<dim, Number>::update_conv_diff_operator(double const       time,
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::update_after_grid_motion()
+Operator<dim, Number>::update_after_grid_motion(bool const update_matrix_free)
 {
+  if(update_matrix_free)
+  {
+    // Since matrix_free points to matrix_free_own_storage, we also update the actual/main
+    // MatrixFree object called matrix_free.
+    matrix_free_own_storage->update_mapping(*get_mapping());
+  }
+
+
   // update SIPG penalty parameter of diffusive operator which depends on the deformation
   // of elements
   if(param.diffusive_problem())

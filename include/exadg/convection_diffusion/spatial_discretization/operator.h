@@ -205,7 +205,7 @@ public:
    * Updates spatial operators after grid has been moved.
    */
   void
-  update_after_grid_motion();
+  update_after_grid_motion(bool const update_matrix_free);
 
   /*
    * Fills a dof-vector with grid coordinates for ALE-type problems.
@@ -393,6 +393,11 @@ private:
    */
   std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free;
   std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data;
+
+  // If we want to be able to update the mapping, we need a pointer to a non-const MatrixFree
+  // object. In case this object is created, we let the above object called matrix_free point to
+  // matrix_free_own_storage. This variable is needed for ALE formulations.
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_own_storage;
 
   /*
    * Basic operators.

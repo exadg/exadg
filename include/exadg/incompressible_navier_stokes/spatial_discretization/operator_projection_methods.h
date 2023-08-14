@@ -68,7 +68,7 @@ protected:
 
 public:
   void
-  update_after_grid_motion() override;
+  update_after_grid_motion(bool const update_matrix_free) final;
 
   /*
    * This function evaluates the rhs-contribution of the viscous term and adds the result to the

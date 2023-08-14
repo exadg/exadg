@@ -111,9 +111,6 @@ private:
   // ALE helper functions required by time integrator
   std::shared_ptr<HelpersALE<Number>> helpers_ale;
 
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
-
   std::shared_ptr<Operator<dim, Number>> pde_operator;
 
   std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;

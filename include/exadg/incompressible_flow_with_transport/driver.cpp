@@ -93,9 +93,9 @@ Driver<dim, Number>::setup()
     helpers_ale->update_pde_operator_after_grid_motion = [&]() {
       matrix_free->update_mapping(*ale_mapping);
 
-      fluid_operator->update_after_grid_motion();
+      fluid_operator->update_after_grid_motion(false /* update_matrix_free */);
       for(unsigned int i = 0; i < application->scalars.size(); ++i)
-        scalar_operator[i]->update_after_grid_motion();
+        scalar_operator[i]->update_after_grid_motion(false /* update_matrix_free */);
     };
   }
 
