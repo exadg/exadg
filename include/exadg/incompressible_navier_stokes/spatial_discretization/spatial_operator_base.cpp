@@ -80,137 +80,6 @@ SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
-  MatrixFreeData<dim, Number> & matrix_free_data) const
-{
-  // append mapping flags
-  matrix_free_data.append_mapping_flags(MassKernel<dim, Number>::get_mapping_flags());
-  matrix_free_data.append_mapping_flags(
-    Operators::DivergenceKernel<dim, Number>::get_mapping_flags());
-  matrix_free_data.append_mapping_flags(
-    Operators::GradientKernel<dim, Number>::get_mapping_flags());
-
-  if(param.convective_problem())
-    matrix_free_data.append_mapping_flags(
-      Operators::ConvectiveKernel<dim, Number>::get_mapping_flags());
-
-  if(param.viscous_problem())
-    matrix_free_data.append_mapping_flags(
-      Operators::ViscousKernel<dim, Number>::get_mapping_flags(true, true));
-
-  if(param.right_hand_side)
-    matrix_free_data.append_mapping_flags(Operators::RHSKernel<dim, Number>::get_mapping_flags());
-
-  if(param.use_divergence_penalty)
-    matrix_free_data.append_mapping_flags(
-      Operators::DivergencePenaltyKernel<dim, Number>::get_mapping_flags());
-
-  if(param.use_continuity_penalty)
-    matrix_free_data.append_mapping_flags(
-      Operators::ContinuityPenaltyKernel<dim, Number>::get_mapping_flags());
-
-  // mapping flags required for CFL condition
-  MappingFlags flags_cfl;
-  flags_cfl.cells = dealii::update_quadrature_points;
-  matrix_free_data.append_mapping_flags(flags_cfl);
-
-  // dof handler
-  matrix_free_data.insert_dof_handler(&dof_handler_u, field + dof_index_u);
-  matrix_free_data.insert_dof_handler(&dof_handler_p, field + dof_index_p);
-  matrix_free_data.insert_dof_handler(&dof_handler_u_scalar, field + dof_index_u_scalar);
-
-  // constraint
-  matrix_free_data.insert_constraint(&constraint_u, field + dof_index_u);
-  matrix_free_data.insert_constraint(&constraint_p, field + dof_index_p);
-  matrix_free_data.insert_constraint(&constraint_u_scalar, field + dof_index_u_scalar);
-
-  // quadrature
-  std::shared_ptr<dealii::Quadrature<dim>> quadrature_u =
-    create_quadrature<dim>(param.grid.element_type, param.degree_u + 1);
-  matrix_free_data.insert_quadrature(*quadrature_u, field + quad_index_u);
-  std::shared_ptr<dealii::Quadrature<dim>> quadrature_p =
-    create_quadrature<dim>(param.grid.element_type, param.get_degree_p(param.degree_u) + 1);
-  matrix_free_data.insert_quadrature(*quadrature_p, field + quad_index_p);
-  std::shared_ptr<dealii::Quadrature<dim>> quadrature_u_overintegration =
-    create_quadrature<dim>(param.grid.element_type, param.degree_u + (param.degree_u + 2) / 2);
-  matrix_free_data.insert_quadrature(*quadrature_u_overintegration, field + quad_index_u_nonlinear);
-
-  // TODO create these quadrature rules only when needed
-  matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree_u + 1),
-                                     field + quad_index_u_gauss_lobatto);
-  matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.get_degree_p(param.degree_u) +
-                                                              1),
-                                     field + quad_index_p_gauss_lobatto);
-}
-
-template<int dim, typename Number>
-void
-SpatialOperatorBase<dim, Number>::setup(
-  std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
-  std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data_in,
-  std::string const &                                    dof_index_temperature)
-{
-  pcout << std::endl
-        << "Setup incompressible Navier-Stokes operator ..." << std::endl
-        << std::flush;
-
-  // MatrixFree
-  matrix_free      = matrix_free_in;
-  matrix_free_data = matrix_free_data_in;
-
-  // Next, initialize data structures depending on MatrixFree:
-
-  initialize_dirichlet_cached_bc();
-
-  initialize_operators(dof_index_temperature);
-
-  initialize_calculators_for_derived_quantities();
-
-  pcout << std::endl << "... done!" << std::endl << std::flush;
-}
-
-template<int dim, typename Number>
-void
-SpatialOperatorBase<dim, Number>::setup_solvers(double const &     scaling_factor_mass,
-                                                VectorType const & velocity)
-{
-  momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
-  momentum_operator.set_velocity_ptr(velocity);
-
-  // remaining setup of preconditioners and solvers is done in derived classes
-}
-
-template<int dim, typename Number>
-void
-SpatialOperatorBase<dim, Number>::initialize_boundary_descriptor_laplace()
-{
-  boundary_descriptor_laplace = std::make_shared<Poisson::BoundaryDescriptor<0, dim>>();
-
-  // Dirichlet BCs for pressure
-  boundary_descriptor_laplace->dirichlet_bc = boundary_descriptor->pressure->dirichlet_bc;
-
-  // Neumann BCs for pressure: These boundary conditions are empty.
-  // However, when using projection methods with the solution of a pressure Poisson
-  // equation, the interface of the Laplace operator requires to set functions on
-  // Neumann boundaries, which we simply fill by ZeroFunction. In case that a
-  // projection method prescribes inhomogeneous Neumann boundary conditions for the
-  // pressure (e.g. dual splitting projection scheme), this is done by separate
-  // routines.
-  for(typename std::set<dealii::types::boundary_id>::const_iterator it =
-        boundary_descriptor->pressure->neumann_bc.begin();
-      it != boundary_descriptor->pressure->neumann_bc.end();
-      ++it)
-  {
-    std::shared_ptr<dealii::Function<dim>> zero_function;
-    zero_function = std::make_shared<dealii::Functions::ZeroFunction<dim>>(1);
-    boundary_descriptor_laplace->neumann_bc.insert(
-      std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>(*it,
-                                                                                    zero_function));
-  }
-}
-
-template<int dim, typename Number>
-void
 SpatialOperatorBase<dim, Number>::initialize_dof_handler_and_constraints()
 {
   fe_p = create_finite_element<dim>(param.grid.element_type,
@@ -332,10 +201,167 @@ SpatialOperatorBase<dim, Number>::initialize_dof_handler_and_constraints()
 }
 
 template<int dim, typename Number>
-dealii::types::global_dof_index
-SpatialOperatorBase<dim, Number>::get_number_of_dofs() const
+void
+SpatialOperatorBase<dim, Number>::initialize_boundary_descriptor_laplace()
 {
-  return dof_handler_u.n_dofs() + dof_handler_p.n_dofs();
+  boundary_descriptor_laplace = std::make_shared<Poisson::BoundaryDescriptor<0, dim>>();
+
+  // Dirichlet BCs for pressure
+  boundary_descriptor_laplace->dirichlet_bc = boundary_descriptor->pressure->dirichlet_bc;
+
+  // Neumann BCs for pressure: These boundary conditions are empty.
+  // However, when using projection methods with the solution of a pressure Poisson
+  // equation, the interface of the Laplace operator requires to set functions on
+  // Neumann boundaries, which we simply fill by ZeroFunction. In case that a
+  // projection method prescribes inhomogeneous Neumann boundary conditions for the
+  // pressure (e.g. dual splitting projection scheme), this is done by separate
+  // routines.
+  for(typename std::set<dealii::types::boundary_id>::const_iterator it =
+        boundary_descriptor->pressure->neumann_bc.begin();
+      it != boundary_descriptor->pressure->neumann_bc.end();
+      ++it)
+  {
+    std::shared_ptr<dealii::Function<dim>> zero_function;
+    zero_function = std::make_shared<dealii::Functions::ZeroFunction<dim>>(1);
+    boundary_descriptor_laplace->neumann_bc.insert(
+      std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>(*it,
+                                                                                    zero_function));
+  }
+}
+
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::initialization_pure_dirichlet_bc()
+{ // Erroneously, the boundary descriptor might contain too many boundary IDs which
+  // do not even exist in the triangulation. Here, we make sure that each entry of
+  // the boundary descriptor has indeed a counterpart in the triangulation.
+  std::vector<dealii::types::boundary_id> boundary_ids = grid->triangulation->get_boundary_ids();
+  for(auto it = boundary_descriptor->pressure->dirichlet_bc.begin();
+      it != boundary_descriptor->pressure->dirichlet_bc.end();
+      ++it)
+  {
+    bool const triangulation_has_boundary_id =
+      std::find(boundary_ids.begin(), boundary_ids.end(), it->first) != boundary_ids.end();
+
+    AssertThrow(triangulation_has_boundary_id,
+                dealii::ExcMessage("The boundary descriptor for the pressure contains boundary IDs "
+                                   "that are not part of the triangulation."));
+  }
+
+  pressure_level_is_undefined = boundary_descriptor->pressure->dirichlet_bc.empty();
+
+  if(is_pressure_level_undefined())
+  {
+    if(param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
+    {
+      dof_index_first_point = 0;
+      for(unsigned int d = 0; d < dim; ++d)
+        first_point[d] = 0.0;
+
+      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+      {
+        typename dealii::DoFHandler<dim>::active_cell_iterator first_cell;
+
+        bool processor_has_active_cells = false;
+        for(auto const & cell : dof_handler_p.active_cell_iterators())
+        {
+          if(cell->is_locally_owned())
+          {
+            first_cell = cell;
+
+            processor_has_active_cells = true;
+            break;
+          }
+        }
+
+        AssertThrow(processor_has_active_cells == true,
+                    dealii::ExcMessage("No active cells on Processor with ID=0"));
+
+        dealii::FEValues<dim> fe_values(dof_handler_p.get_fe(),
+                                        dealii::Quadrature<dim>(
+                                          dof_handler_p.get_fe().get_unit_support_points()),
+                                        dealii::update_quadrature_points);
+
+        fe_values.reinit(first_cell);
+
+        first_point = fe_values.quadrature_point(0);
+        std::vector<dealii::types::global_dof_index> dof_indices(
+          dof_handler_p.get_fe().dofs_per_cell);
+        first_cell->get_dof_indices(dof_indices);
+        dof_index_first_point = dof_indices[0];
+      }
+      dof_index_first_point = dealii::Utilities::MPI::sum(dof_index_first_point, mpi_comm);
+      for(unsigned int d = 0; d < dim; ++d)
+      {
+        first_point[d] = dealii::Utilities::MPI::sum(first_point[d], mpi_comm);
+      }
+    }
+  }
+}
+
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
+  MatrixFreeData<dim, Number> & matrix_free_data) const
+{
+  // append mapping flags
+  matrix_free_data.append_mapping_flags(MassKernel<dim, Number>::get_mapping_flags());
+  matrix_free_data.append_mapping_flags(
+    Operators::DivergenceKernel<dim, Number>::get_mapping_flags());
+  matrix_free_data.append_mapping_flags(
+    Operators::GradientKernel<dim, Number>::get_mapping_flags());
+
+  if(param.convective_problem())
+    matrix_free_data.append_mapping_flags(
+      Operators::ConvectiveKernel<dim, Number>::get_mapping_flags());
+
+  if(param.viscous_problem())
+    matrix_free_data.append_mapping_flags(
+      Operators::ViscousKernel<dim, Number>::get_mapping_flags(true, true));
+
+  if(param.right_hand_side)
+    matrix_free_data.append_mapping_flags(Operators::RHSKernel<dim, Number>::get_mapping_flags());
+
+  if(param.use_divergence_penalty)
+    matrix_free_data.append_mapping_flags(
+      Operators::DivergencePenaltyKernel<dim, Number>::get_mapping_flags());
+
+  if(param.use_continuity_penalty)
+    matrix_free_data.append_mapping_flags(
+      Operators::ContinuityPenaltyKernel<dim, Number>::get_mapping_flags());
+
+  // mapping flags required for CFL condition
+  MappingFlags flags_cfl;
+  flags_cfl.cells = dealii::update_quadrature_points;
+  matrix_free_data.append_mapping_flags(flags_cfl);
+
+  // dof handler
+  matrix_free_data.insert_dof_handler(&dof_handler_u, field + dof_index_u);
+  matrix_free_data.insert_dof_handler(&dof_handler_p, field + dof_index_p);
+  matrix_free_data.insert_dof_handler(&dof_handler_u_scalar, field + dof_index_u_scalar);
+
+  // constraint
+  matrix_free_data.insert_constraint(&constraint_u, field + dof_index_u);
+  matrix_free_data.insert_constraint(&constraint_p, field + dof_index_p);
+  matrix_free_data.insert_constraint(&constraint_u_scalar, field + dof_index_u_scalar);
+
+  // quadrature
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature_u =
+    create_quadrature<dim>(param.grid.element_type, param.degree_u + 1);
+  matrix_free_data.insert_quadrature(*quadrature_u, field + quad_index_u);
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature_p =
+    create_quadrature<dim>(param.grid.element_type, param.get_degree_p(param.degree_u) + 1);
+  matrix_free_data.insert_quadrature(*quadrature_p, field + quad_index_p);
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature_u_overintegration =
+    create_quadrature<dim>(param.grid.element_type, param.degree_u + (param.degree_u + 2) / 2);
+  matrix_free_data.insert_quadrature(*quadrature_u_overintegration, field + quad_index_u_nonlinear);
+
+  // TODO create these quadrature rules only when needed
+  matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree_u + 1),
+                                     field + quad_index_u_gauss_lobatto);
+  matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.get_degree_p(param.degree_u) +
+                                                              1),
+                                     field + quad_index_p_gauss_lobatto);
 }
 
 template<int dim, typename Number>
@@ -668,72 +694,46 @@ SpatialOperatorBase<dim, Number>::initialize_calculators_for_derived_quantities(
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::initialization_pure_dirichlet_bc()
-{ // Erroneously, the boundary descriptor might contain too many boundary IDs which
-  // do not even exist in the triangulation. Here, we make sure that each entry of
-  // the boundary descriptor has indeed a counterpart in the triangulation.
-  std::vector<dealii::types::boundary_id> boundary_ids = grid->triangulation->get_boundary_ids();
-  for(auto it = boundary_descriptor->pressure->dirichlet_bc.begin();
-      it != boundary_descriptor->pressure->dirichlet_bc.end();
-      ++it)
-  {
-    bool const triangulation_has_boundary_id =
-      std::find(boundary_ids.begin(), boundary_ids.end(), it->first) != boundary_ids.end();
+SpatialOperatorBase<dim, Number>::setup(
+  std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
+  std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data_in,
+  std::string const &                                    dof_index_temperature)
+{
+  pcout << std::endl
+        << "Setup incompressible Navier-Stokes operator ..." << std::endl
+        << std::flush;
 
-    AssertThrow(triangulation_has_boundary_id,
-                dealii::ExcMessage("The boundary descriptor for the pressure contains boundary IDs "
-                                   "that are not part of the triangulation."));
-  }
+  // MatrixFree
+  matrix_free      = matrix_free_in;
+  matrix_free_data = matrix_free_data_in;
 
-  pressure_level_is_undefined = boundary_descriptor->pressure->dirichlet_bc.empty();
+  // Next, initialize data structures depending on MatrixFree:
 
-  if(is_pressure_level_undefined())
-  {
-    if(param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
-    {
-      dof_index_first_point = 0;
-      for(unsigned int d = 0; d < dim; ++d)
-        first_point[d] = 0.0;
+  initialize_dirichlet_cached_bc();
 
-      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      {
-        typename dealii::DoFHandler<dim>::active_cell_iterator first_cell;
+  initialize_operators(dof_index_temperature);
 
-        bool processor_has_active_cells = false;
-        for(auto const & cell : dof_handler_p.active_cell_iterators())
-        {
-          if(cell->is_locally_owned())
-          {
-            first_cell = cell;
+  initialize_calculators_for_derived_quantities();
 
-            processor_has_active_cells = true;
-            break;
-          }
-        }
+  pcout << std::endl << "... done!" << std::endl << std::flush;
+}
 
-        AssertThrow(processor_has_active_cells == true,
-                    dealii::ExcMessage("No active cells on Processor with ID=0"));
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::setup_solvers(double const &     scaling_factor_mass,
+                                                VectorType const & velocity)
+{
+  momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
+  momentum_operator.set_velocity_ptr(velocity);
 
-        dealii::FEValues<dim> fe_values(dof_handler_p.get_fe(),
-                                        dealii::Quadrature<dim>(
-                                          dof_handler_p.get_fe().get_unit_support_points()),
-                                        dealii::update_quadrature_points);
+  // remaining setup of preconditioners and solvers is done in derived classes
+}
 
-        fe_values.reinit(first_cell);
-
-        first_point = fe_values.quadrature_point(0);
-        std::vector<dealii::types::global_dof_index> dof_indices(
-          dof_handler_p.get_fe().dofs_per_cell);
-        first_cell->get_dof_indices(dof_indices);
-        dof_index_first_point = dof_indices[0];
-      }
-      dof_index_first_point = dealii::Utilities::MPI::sum(dof_index_first_point, mpi_comm);
-      for(unsigned int d = 0; d < dim; ++d)
-      {
-        first_point[d] = dealii::Utilities::MPI::sum(first_point[d], mpi_comm);
-      }
-    }
-  }
+template<int dim, typename Number>
+dealii::types::global_dof_index
+SpatialOperatorBase<dim, Number>::get_number_of_dofs() const
+{
+  return dof_handler_u.n_dofs() + dof_handler_p.n_dofs();
 }
 
 template<int dim, typename Number>

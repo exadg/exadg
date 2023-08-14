@@ -148,6 +148,9 @@ private:
   initialize_dof_handler_and_constraints();
 
   void
+  setup_coupling_boundary_conditions();
+
+  void
   setup_operators();
 
   /*

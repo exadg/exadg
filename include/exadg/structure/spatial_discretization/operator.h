@@ -351,7 +351,7 @@ private:
   unsigned int
   get_quad_index_gauss_lobatto() const;
 
-  /*
+  /**
    * Scaling factor for mass matrix assuming a weak damping operator leading to a scaled mass
    * matrix.
    */
@@ -359,19 +359,25 @@ private:
   compute_scaling_factor_mass(double const scaling_factor_acceleration,
                               double const scaling_factor_velocity) const;
 
-  /*
+  /**
+   * Setup of "cached" boundary conditions for coupling with other domains.
+   */
+  void
+  setup_coupling_boundary_conditions();
+
+  /**
    * Initializes operators.
    */
   void
   setup_operators();
 
-  /*
+  /**
    * Initializes preconditioner.
    */
   void
   initialize_preconditioner();
 
-  /*
+  /**
    * Initializes solver.
    */
   void
