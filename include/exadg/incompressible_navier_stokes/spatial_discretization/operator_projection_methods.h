@@ -58,15 +58,15 @@ public:
    */
   virtual ~OperatorProjectionMethods();
 
+protected:
   /*
    * Calls setup() function of base class and additionally initializes the pressure Poisson operator
    * needed for projection-type methods.
    */
   void
-  setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
-        std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
-        std::string const &                                    dof_index_temperature = "") override;
+  setup_derived() override;
 
+public:
   void
   update_after_grid_motion() override;
 

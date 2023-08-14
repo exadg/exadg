@@ -103,16 +103,31 @@ public:
   void
   fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
 
-  /*
-   * Setup function. Initializes basic finite element components, matrix-free object, and basic
-   * operators. This function does not perform the setup related to the solution of linear systems
-   * of equations.
+  /**
+   * Call this setup() function if the dealii::MatrixFree object can be set up by the present class.
    */
-  virtual void
+  void
+  setup();
+
+  /**
+   * Call this setup() function if the dealii::MatrixFree object needs to be created outside this
+   * class. The typical use case would be multiphysics-coupling with one MatrixFree object handed
+   * over to several single-field solvers. Another typical use case is the use of an ALE
+   * formulation.
+   */
+  void
   setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
         std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
         std::string const &                                    dof_index_temperature = "");
 
+private:
+  /**
+   * Additional setup to be done by derived classes.
+   */
+  virtual void
+  setup_derived() = 0;
+
+public:
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
    * (non-)linear systems of equation required for implicit formulations. It has to be extended
