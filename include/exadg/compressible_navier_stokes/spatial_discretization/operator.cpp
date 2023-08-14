@@ -65,6 +65,30 @@ Operator<dim, Number>::Operator(
 
 template<int dim, typename Number>
 void
+Operator<dim, Number>::initialize_dof_handler_and_constraints()
+{
+  fe        = create_finite_element<dim>(ElementType::Hypercube, true, dim + 2, param.degree);
+  fe_vector = create_finite_element<dim>(ElementType::Hypercube, true, dim, param.degree);
+  fe_scalar = create_finite_element<dim>(ElementType::Hypercube, true, 1, param.degree);
+
+  // enumerate degrees of freedom
+  dof_handler.distribute_dofs(*fe);
+  dof_handler_vector.distribute_dofs(*fe_vector);
+  dof_handler_scalar.distribute_dofs(*fe_scalar);
+
+  constraint.close();
+
+  pcout << std::endl
+        << "Discontinuous Galerkin finite element discretization:" << std::endl
+        << std::endl;
+
+  print_parameter(pcout, "degree of 1D polynomials", param.degree);
+  print_parameter(pcout, "number of dofs per cell", fe->n_dofs_per_cell());
+  print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
+}
+
+template<int dim, typename Number>
+void
 Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const
 {
   // append mapping flags
@@ -127,6 +151,102 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   std::shared_ptr<dealii::Quadrature<dim>> quadrature_vis =
     create_quadrature<dim>(param.grid.element_type, n_q_points_vis);
   matrix_free_data.insert_quadrature(*quadrature_vis, field + quad_index_overintegration_vis);
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::setup_operators()
+{
+  // mass operator
+  MassOperatorData mass_operator_data;
+  mass_operator_data.dof_index  = get_dof_index_all();
+  mass_operator_data.quad_index = get_quad_index_standard();
+  mass_operator.initialize(*matrix_free, mass_operator_data);
+
+  // inverse mass operator
+  InverseMassOperatorData inverse_mass_operator_data_all;
+  inverse_mass_operator_data_all.dof_index  = get_dof_index_all();
+  inverse_mass_operator_data_all.quad_index = get_quad_index_standard();
+  inverse_mass_all.initialize(*matrix_free, inverse_mass_operator_data_all);
+
+  InverseMassOperatorData inverse_mass_operator_data_vector;
+  inverse_mass_operator_data_vector.dof_index  = get_dof_index_vector();
+  inverse_mass_operator_data_vector.quad_index = get_quad_index_standard();
+  inverse_mass_vector.initialize(*matrix_free, inverse_mass_operator_data_vector);
+
+  InverseMassOperatorData inverse_mass_operator_data_scalar;
+  inverse_mass_operator_data_scalar.dof_index  = get_dof_index_scalar();
+  inverse_mass_operator_data_scalar.quad_index = get_quad_index_standard();
+  inverse_mass_scalar.initialize(*matrix_free, inverse_mass_operator_data_scalar);
+
+  // body force operator
+  BodyForceOperatorData<dim> body_force_operator_data;
+  body_force_operator_data.dof_index  = get_dof_index_all();
+  body_force_operator_data.quad_index = get_quad_index_standard();
+  body_force_operator_data.rhs_rho    = field_functions->right_hand_side_density;
+  body_force_operator_data.rhs_u      = field_functions->right_hand_side_velocity;
+  body_force_operator_data.rhs_E      = field_functions->right_hand_side_energy;
+  body_force_operator.initialize(*matrix_free, body_force_operator_data);
+
+  // convective operator
+  ConvectiveOperatorData<dim> convective_operator_data;
+  convective_operator_data.dof_index             = get_dof_index_all();
+  convective_operator_data.quad_index            = get_quad_index_overintegration_conv();
+  convective_operator_data.bc                    = boundary_descriptor;
+  convective_operator_data.heat_capacity_ratio   = param.heat_capacity_ratio;
+  convective_operator_data.specific_gas_constant = param.specific_gas_constant;
+  convective_operator.initialize(*matrix_free, convective_operator_data);
+
+  // viscous operator
+  ViscousOperatorData<dim> viscous_operator_data;
+  viscous_operator_data.dof_index             = get_dof_index_all();
+  viscous_operator_data.quad_index            = get_quad_index_overintegration_vis();
+  viscous_operator_data.IP_factor             = param.IP_factor;
+  viscous_operator_data.dynamic_viscosity     = param.dynamic_viscosity;
+  viscous_operator_data.reference_density     = param.reference_density;
+  viscous_operator_data.thermal_conductivity  = param.thermal_conductivity;
+  viscous_operator_data.heat_capacity_ratio   = param.heat_capacity_ratio;
+  viscous_operator_data.specific_gas_constant = param.specific_gas_constant;
+  viscous_operator_data.bc                    = boundary_descriptor;
+  viscous_operator.initialize(*matrix_free, viscous_operator_data);
+
+  if(param.use_combined_operator == true)
+  {
+    AssertThrow(param.n_q_points_convective == param.n_q_points_viscous,
+                dealii::ExcMessage("Use the same number of quadrature points for convective term "
+                                   "and viscous term in case of combined operator."));
+
+    CombinedOperatorData<dim> combined_operator_data;
+    combined_operator_data.dof_index  = get_dof_index_all();
+    combined_operator_data.quad_index = get_quad_index_overintegration_vis();
+    combined_operator_data.bc         = boundary_descriptor;
+
+    combined_operator.initialize(*matrix_free,
+                                 combined_operator_data,
+                                 convective_operator,
+                                 viscous_operator);
+  }
+
+  // calculators
+  p_u_T_calculator.initialize(*matrix_free,
+                              get_dof_index_all(),
+                              get_dof_index_vector(),
+                              get_dof_index_scalar(),
+                              get_quad_index_l2_projections(),
+                              param.heat_capacity_ratio,
+                              param.specific_gas_constant);
+
+  vorticity_calculator.initialize(*matrix_free, get_dof_index_vector(), get_quad_index_standard());
+
+  divergence_calculator.initialize(*matrix_free,
+                                   get_dof_index_vector(),
+                                   get_dof_index_scalar(),
+                                   get_quad_index_standard());
+
+  shear_rate_calculator.initialize(*matrix_free,
+                                   get_dof_index_vector(),
+                                   get_dof_index_scalar(),
+                                   get_quad_index_standard());
 }
 
 template<int dim, typename Number>
@@ -461,126 +581,6 @@ Operator<dim, Number>::calculate_time_step_diffusion() const
                                                h_min,
                                                param.degree,
                                                param.exponent_fe_degree_viscous);
-}
-
-template<int dim, typename Number>
-void
-Operator<dim, Number>::initialize_dof_handler_and_constraints()
-{
-  fe        = create_finite_element<dim>(ElementType::Hypercube, true, dim + 2, param.degree);
-  fe_vector = create_finite_element<dim>(ElementType::Hypercube, true, dim, param.degree);
-  fe_scalar = create_finite_element<dim>(ElementType::Hypercube, true, 1, param.degree);
-
-  // enumerate degrees of freedom
-  dof_handler.distribute_dofs(*fe);
-  dof_handler_vector.distribute_dofs(*fe_vector);
-  dof_handler_scalar.distribute_dofs(*fe_scalar);
-
-  constraint.close();
-
-  pcout << std::endl
-        << "Discontinuous Galerkin finite element discretization:" << std::endl
-        << std::endl;
-
-  print_parameter(pcout, "degree of 1D polynomials", param.degree);
-  print_parameter(pcout, "number of dofs per cell", fe->n_dofs_per_cell());
-  print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
-}
-
-template<int dim, typename Number>
-void
-Operator<dim, Number>::setup_operators()
-{
-  // mass operator
-  MassOperatorData mass_operator_data;
-  mass_operator_data.dof_index  = get_dof_index_all();
-  mass_operator_data.quad_index = get_quad_index_standard();
-  mass_operator.initialize(*matrix_free, mass_operator_data);
-
-  // inverse mass operator
-  InverseMassOperatorData inverse_mass_operator_data_all;
-  inverse_mass_operator_data_all.dof_index  = get_dof_index_all();
-  inverse_mass_operator_data_all.quad_index = get_quad_index_standard();
-  inverse_mass_all.initialize(*matrix_free, inverse_mass_operator_data_all);
-
-  InverseMassOperatorData inverse_mass_operator_data_vector;
-  inverse_mass_operator_data_vector.dof_index  = get_dof_index_vector();
-  inverse_mass_operator_data_vector.quad_index = get_quad_index_standard();
-  inverse_mass_vector.initialize(*matrix_free, inverse_mass_operator_data_vector);
-
-  InverseMassOperatorData inverse_mass_operator_data_scalar;
-  inverse_mass_operator_data_scalar.dof_index  = get_dof_index_scalar();
-  inverse_mass_operator_data_scalar.quad_index = get_quad_index_standard();
-  inverse_mass_scalar.initialize(*matrix_free, inverse_mass_operator_data_scalar);
-
-  // body force operator
-  BodyForceOperatorData<dim> body_force_operator_data;
-  body_force_operator_data.dof_index  = get_dof_index_all();
-  body_force_operator_data.quad_index = get_quad_index_standard();
-  body_force_operator_data.rhs_rho    = field_functions->right_hand_side_density;
-  body_force_operator_data.rhs_u      = field_functions->right_hand_side_velocity;
-  body_force_operator_data.rhs_E      = field_functions->right_hand_side_energy;
-  body_force_operator.initialize(*matrix_free, body_force_operator_data);
-
-  // convective operator
-  ConvectiveOperatorData<dim> convective_operator_data;
-  convective_operator_data.dof_index             = get_dof_index_all();
-  convective_operator_data.quad_index            = get_quad_index_overintegration_conv();
-  convective_operator_data.bc                    = boundary_descriptor;
-  convective_operator_data.heat_capacity_ratio   = param.heat_capacity_ratio;
-  convective_operator_data.specific_gas_constant = param.specific_gas_constant;
-  convective_operator.initialize(*matrix_free, convective_operator_data);
-
-  // viscous operator
-  ViscousOperatorData<dim> viscous_operator_data;
-  viscous_operator_data.dof_index             = get_dof_index_all();
-  viscous_operator_data.quad_index            = get_quad_index_overintegration_vis();
-  viscous_operator_data.IP_factor             = param.IP_factor;
-  viscous_operator_data.dynamic_viscosity     = param.dynamic_viscosity;
-  viscous_operator_data.reference_density     = param.reference_density;
-  viscous_operator_data.thermal_conductivity  = param.thermal_conductivity;
-  viscous_operator_data.heat_capacity_ratio   = param.heat_capacity_ratio;
-  viscous_operator_data.specific_gas_constant = param.specific_gas_constant;
-  viscous_operator_data.bc                    = boundary_descriptor;
-  viscous_operator.initialize(*matrix_free, viscous_operator_data);
-
-  if(param.use_combined_operator == true)
-  {
-    AssertThrow(param.n_q_points_convective == param.n_q_points_viscous,
-                dealii::ExcMessage("Use the same number of quadrature points for convective term "
-                                   "and viscous term in case of combined operator."));
-
-    CombinedOperatorData<dim> combined_operator_data;
-    combined_operator_data.dof_index  = get_dof_index_all();
-    combined_operator_data.quad_index = get_quad_index_overintegration_vis();
-    combined_operator_data.bc         = boundary_descriptor;
-
-    combined_operator.initialize(*matrix_free,
-                                 combined_operator_data,
-                                 convective_operator,
-                                 viscous_operator);
-  }
-
-  // calculators
-  p_u_T_calculator.initialize(*matrix_free,
-                              get_dof_index_all(),
-                              get_dof_index_vector(),
-                              get_dof_index_scalar(),
-                              get_quad_index_l2_projections(),
-                              param.heat_capacity_ratio,
-                              param.specific_gas_constant);
-
-  vorticity_calculator.initialize(*matrix_free, get_dof_index_vector(), get_quad_index_standard());
-
-  divergence_calculator.initialize(*matrix_free,
-                                   get_dof_index_vector(),
-                                   get_dof_index_scalar(),
-                                   get_quad_index_standard());
-
-  shear_rate_calculator.initialize(*matrix_free,
-                                   get_dof_index_vector(),
-                                   get_dof_index_scalar(),
-                                   get_quad_index_standard());
 }
 
 template class Operator<2, float>;

@@ -247,7 +247,6 @@ public:
   double
   calculate_time_step_diffusion() const final;
 
-public:
   /*
    * Setters and getters.
    */
@@ -277,23 +276,29 @@ public:
   get_mapping() const;
 
 private:
-  /*
+  /**
+   * Initializes dealii::DoFHandlers and dealii::AffineConstraints.
+   */
+  void
+  initialize_dof_handler_and_constraints();
+
+  /**
+   * Performs setup of operators.
+   */
+  void
+  setup_operators();
+
+  /**
    * Calculates maximum velocity (required for global CFL criterion).
    */
   double
   calculate_maximum_velocity(double const time) const;
 
-  /*
-   * Calculates minimum element length (required for global CFL criterion).
+  /**
+   * Calculates minimum element length.
    */
   double
   calculate_minimum_element_length() const;
-
-  /*
-   * Initializes dealii::DoFHandlers.
-   */
-  void
-  initialize_dof_handler_and_constraints();
 
   bool
   needs_own_dof_handler_velocity() const;

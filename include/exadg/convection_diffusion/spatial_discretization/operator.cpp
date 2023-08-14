@@ -68,6 +68,30 @@ Operator<dim, Number>::Operator(
   pcout << std::endl << "... done!" << std::endl;
 }
 
+template<int dim, typename Number>
+void
+Operator<dim, Number>::initialize_dof_handler_and_constraints()
+{
+  fe = create_finite_element<dim>(ElementType::Hypercube, true, 1, param.degree);
+  dof_handler.distribute_dofs(*fe);
+
+  if(needs_own_dof_handler_velocity())
+  {
+    fe_velocity = create_finite_element<dim>(ElementType::Hypercube, true, dim, param.degree);
+    dof_handler_velocity = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
+    dof_handler_velocity->distribute_dofs(*fe_velocity);
+  }
+
+  affine_constraints.close();
+
+  pcout << std::endl
+        << "Discontinuous Galerkin finite element discretization:" << std::endl
+        << std::endl;
+
+  print_parameter(pcout, "degree of 1D polynomials", param.degree);
+  print_parameter(pcout, "number of dofs per cell", fe->n_dofs_per_cell());
+  print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
+}
 
 template<int dim, typename Number>
 void
@@ -127,17 +151,8 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
-                             std::shared_ptr<MatrixFreeData<dim, Number> const> matrix_free_data_in,
-                             std::string const & dof_index_velocity_external_in)
+Operator<dim, Number>::setup_operators()
 {
-  pcout << std::endl << "Setup convection-diffusion operator ..." << std::endl;
-
-  matrix_free      = matrix_free_in;
-  matrix_free_data = matrix_free_data_in;
-
-  dof_index_velocity_external = dof_index_velocity_external_in;
-
   // mass operator
   MassOperatorData<dim> mass_operator_data;
   mass_operator_data.dof_index            = get_dof_index();
@@ -285,115 +300,25 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> con
                                  convective_kernel,
                                  diffusive_kernel);
   }
-
-  pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::initialize_dof_handler_and_constraints()
+Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
+                             std::shared_ptr<MatrixFreeData<dim, Number> const> matrix_free_data_in,
+                             std::string const & dof_index_velocity_external_in)
 {
-  fe = create_finite_element<dim>(ElementType::Hypercube, true, 1, param.degree);
-  dof_handler.distribute_dofs(*fe);
+  pcout << std::endl << "Setup convection-diffusion operator ..." << std::endl;
 
-  if(needs_own_dof_handler_velocity())
-  {
-    fe_velocity = create_finite_element<dim>(ElementType::Hypercube, true, dim, param.degree);
-    dof_handler_velocity = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
-    dof_handler_velocity->distribute_dofs(*fe_velocity);
-  }
+  matrix_free      = matrix_free_in;
+  matrix_free_data = matrix_free_data_in;
 
-  affine_constraints.close();
+  dof_index_velocity_external = dof_index_velocity_external_in;
 
-  pcout << std::endl
-        << "Discontinuous Galerkin finite element discretization:" << std::endl
-        << std::endl;
+  setup_operators();
 
-  print_parameter(pcout, "degree of 1D polynomials", param.degree);
-  print_parameter(pcout, "number of dofs per cell", fe->n_dofs_per_cell());
-  print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
+  pcout << std::endl << "... done!" << std::endl;
 }
-
-template<int dim, typename Number>
-std::string
-Operator<dim, Number>::get_dof_name() const
-{
-  return field + dof_index_std;
-}
-
-template<int dim, typename Number>
-std::string
-Operator<dim, Number>::get_quad_name() const
-{
-  return field + quad_index_std;
-}
-
-template<int dim, typename Number>
-std::string
-Operator<dim, Number>::get_quad_name_overintegration() const
-{
-  return field + quad_index_overintegration;
-}
-
-template<int dim, typename Number>
-bool
-Operator<dim, Number>::needs_own_dof_handler_velocity() const
-{
-  return param.analytical_velocity_field and param.store_analytical_velocity_in_dof_vector;
-}
-
-template<int dim, typename Number>
-unsigned int
-Operator<dim, Number>::get_dof_index() const
-{
-  return matrix_free_data->get_dof_index(get_dof_name());
-}
-
-template<int dim, typename Number>
-std::string
-Operator<dim, Number>::get_dof_name_velocity() const
-{
-  if(needs_own_dof_handler_velocity())
-  {
-    return field + dof_index_velocity;
-  }
-  else // external velocity field not hosted by the convection-diffusion operator
-  {
-    return dof_index_velocity_external;
-  }
-}
-
-template<int dim, typename Number>
-unsigned int
-Operator<dim, Number>::get_dof_index_velocity() const
-{
-  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
-    return matrix_free_data->get_dof_index(get_dof_name_velocity());
-  else
-    return dealii::numbers::invalid_unsigned_int;
-}
-
-template<int dim, typename Number>
-unsigned int
-Operator<dim, Number>::get_quad_index() const
-{
-  return matrix_free_data->get_quad_index(field + quad_index_std);
-}
-
-template<int dim, typename Number>
-unsigned int
-Operator<dim, Number>::get_quad_index_overintegration() const
-{
-  return matrix_free_data->get_quad_index(field + quad_index_overintegration);
-}
-
-template<int dim, typename Number>
-std::shared_ptr<dealii::Mapping<dim> const>
-Operator<dim, Number>::get_mapping() const
-{
-  return mapping;
-}
-
 
 template<int dim, typename Number>
 void
@@ -991,6 +916,86 @@ dealii::MatrixFree<dim, Number> const &
 Operator<dim, Number>::get_matrix_free() const
 {
   return *matrix_free;
+}
+
+template<int dim, typename Number>
+std::string
+Operator<dim, Number>::get_dof_name() const
+{
+  return field + dof_index_std;
+}
+
+template<int dim, typename Number>
+std::string
+Operator<dim, Number>::get_quad_name() const
+{
+  return field + quad_index_std;
+}
+
+template<int dim, typename Number>
+std::string
+Operator<dim, Number>::get_quad_name_overintegration() const
+{
+  return field + quad_index_overintegration;
+}
+
+template<int dim, typename Number>
+bool
+Operator<dim, Number>::needs_own_dof_handler_velocity() const
+{
+  return param.analytical_velocity_field and param.store_analytical_velocity_in_dof_vector;
+}
+
+template<int dim, typename Number>
+unsigned int
+Operator<dim, Number>::get_dof_index() const
+{
+  return matrix_free_data->get_dof_index(get_dof_name());
+}
+
+template<int dim, typename Number>
+std::string
+Operator<dim, Number>::get_dof_name_velocity() const
+{
+  if(needs_own_dof_handler_velocity())
+  {
+    return field + dof_index_velocity;
+  }
+  else // external velocity field not hosted by the convection-diffusion operator
+  {
+    return dof_index_velocity_external;
+  }
+}
+
+template<int dim, typename Number>
+unsigned int
+Operator<dim, Number>::get_dof_index_velocity() const
+{
+  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+    return matrix_free_data->get_dof_index(get_dof_name_velocity());
+  else
+    return dealii::numbers::invalid_unsigned_int;
+}
+
+template<int dim, typename Number>
+unsigned int
+Operator<dim, Number>::get_quad_index() const
+{
+  return matrix_free_data->get_quad_index(field + quad_index_std);
+}
+
+template<int dim, typename Number>
+unsigned int
+Operator<dim, Number>::get_quad_index_overintegration() const
+{
+  return matrix_free_data->get_quad_index(field + quad_index_overintegration);
+}
+
+template<int dim, typename Number>
+std::shared_ptr<dealii::Mapping<dim> const>
+Operator<dim, Number>::get_mapping() const
+{
+  return mapping;
 }
 
 template class Operator<2, float>;
