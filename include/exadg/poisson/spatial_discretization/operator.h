@@ -69,7 +69,7 @@ public:
 
   /**
    * Call this setup() function if the dealii::MatrixFree object needs to be created outside this
-   * function. The typical use case would be multiphysics-coupling with one MatrixFree object handed
+   * class. The typical use case would be multiphysics-coupling with one MatrixFree object handed
    * over to several single-field solvers.
    */
   void
