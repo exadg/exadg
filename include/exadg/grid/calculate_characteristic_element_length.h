@@ -61,8 +61,9 @@ calculate_minimum_vertex_distance(dealii::Triangulation<dim> const & triangulati
  * by the number of nodes per coordinate direction. Hence, the result depends on the function space
  * (H^1 vs. L^2).
  */
-inline double
-calculate_characteristic_element_length(double const       element_length,
+template<typename Number>
+inline Number
+calculate_characteristic_element_length(Number const       element_length,
                                         unsigned int const fe_degree,
                                         bool const         is_dg)
 {
