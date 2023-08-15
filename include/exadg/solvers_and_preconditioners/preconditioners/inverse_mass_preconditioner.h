@@ -27,6 +27,16 @@
 
 namespace ExaDG
 {
+/**
+ * A preconditioner available for discontinuous Galerkin methods. This class is simply a wrapper
+ * around the InverseMassOperator, realizing the interface defined by PreconditionerBase. It is
+ * not only available for ElementType:::Hypercube, but e.g. also for ElementType::Simplex.
+ *
+ * Note, however, that application of this preconditioner might be expensive in case that the
+ * inverse mass can not be realized as a matrix-free operator evaluation (which is the case for
+ * simplex elements). In this case, you might want to use a simple Jacobi preconditioner as an
+ * efficient alternative to the inverse mass preconditioner.
+ */
 template<int dim, int n_components, typename Number>
 class InverseMassPreconditioner : public PreconditionerBase<Number>
 {

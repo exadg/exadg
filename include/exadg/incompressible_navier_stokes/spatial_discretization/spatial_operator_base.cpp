@@ -1548,41 +1548,41 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
   // divergence penalty only -> local, elementwise problem
   if(param.use_divergence_penalty == true and param.use_continuity_penalty == false)
   {
+    // elementwise operator
+    elementwise_projection_operator =
+      std::make_shared<ELEMENTWISE_PROJ_OPERATOR>(*projection_operator);
+
+    // elementwise preconditioner
+    if(param.preconditioner_projection == PreconditionerProjection::None)
+    {
+      typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<Number>> IDENTITY;
+
+      elementwise_preconditioner_projection =
+        std::make_shared<IDENTITY>(elementwise_projection_operator->get_problem_size());
+    }
+    else if(param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
+    {
+      typedef Elementwise::InverseMassPreconditioner<dim, dim, Number> INVERSE_MASS;
+
+      elementwise_preconditioner_projection =
+        std::make_shared<INVERSE_MASS>(projection_operator->get_matrix_free(),
+                                       projection_operator->get_dof_index(),
+                                       projection_operator->get_quad_index());
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("The specified preconditioner is not implemented."));
+    }
+
+    // elementwise solver
     if(param.solver_projection == SolverProjection::CG)
     {
-      // projection operator
-      elementwise_projection_operator =
-        std::make_shared<ELEMENTWISE_PROJ_OPERATOR>(*projection_operator);
-
-      // preconditioner
-      typedef Elementwise::PreconditionerBase<dealii::VectorizedArray<Number>> PROJ_PRECONDITIONER;
-
-      if(param.preconditioner_projection == PreconditionerProjection::None)
-      {
-        typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<Number>> IDENTITY;
-
-        elementwise_preconditioner_projection =
-          std::make_shared<IDENTITY>(elementwise_projection_operator->get_problem_size());
-      }
-      else if(param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
-      {
-        typedef Elementwise::InverseMassPreconditioner<dim, dim, Number> INVERSE_MASS;
-
-        elementwise_preconditioner_projection =
-          std::make_shared<INVERSE_MASS>(projection_operator->get_matrix_free(),
-                                         projection_operator->get_dof_index(),
-                                         projection_operator->get_quad_index());
-      }
-      else
-      {
-        AssertThrow(false, dealii::ExcMessage("The specified preconditioner is not implemented."));
-      }
-
-      // solver
       Elementwise::IterativeSolverData projection_solver_data;
       projection_solver_data.solver_type         = Elementwise::Solver::CG;
       projection_solver_data.solver_data.abs_tol = param.solver_data_projection.abs_tol;
       projection_solver_data.solver_data.rel_tol = param.solver_data_projection.rel_tol;
+
+      typedef Elementwise::PreconditionerBase<dealii::VectorizedArray<Number>> PROJ_PRECONDITIONER;
 
       typedef Elementwise::
         IterativeSolver<dim, dim, Number, ELEMENTWISE_PROJ_OPERATOR, PROJ_PRECONDITIONER>
@@ -1595,7 +1595,8 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
     }
     else
     {
-      AssertThrow(false, dealii::ExcMessage("Specified projection solver not implemented."));
+      AssertThrow(param.solver_projection == SolverProjection::CG,
+                  dealii::ExcMessage("Specified projection solver not implemented."));
     }
   }
   // continuity penalty term with/without divergence penalty term -> globally coupled problem
