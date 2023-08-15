@@ -195,6 +195,14 @@ Driver<dim, Number>::setup()
                               fluid_operator->get_dof_name_velocity());
   }
 
+  // Initialize DoF-vector temperature in case of transport->fluid coupling with Boussinesq term:
+  if(application->fluid->get_parameters().boussinesq_term)
+  {
+    // assume that the first scalar quantity with index 0 is the active scalar coupled to the
+    // incompressible Navier-Stokes equations via the Boussinesq term
+    scalar_operator[0]->initialize_dof_vector(temperature);
+  }
+
   // setup postprocessor
   fluid_postprocessor = application->fluid->create_postprocessor();
   fluid_postprocessor->setup(*fluid_operator);
@@ -317,12 +325,6 @@ Driver<dim, Number>::setup()
   {
     use_adaptive_time_stepping = true;
   }
-
-  // Initialize DoF-vector temperature in case of transport->fluid coupling with Boussinesq term:
-  // assume that the first scalar quantity with index 0 is the active scalar coupled to the
-  // incompressible Navier-Stokes equations via the Boussinesq term
-  if(application->fluid->get_parameters().boussinesq_term)
-    scalar_operator[0]->initialize_dof_vector(temperature);
 
   timer_tree.insert({"Flow + transport", "Setup"}, timer.wall_time());
 }
