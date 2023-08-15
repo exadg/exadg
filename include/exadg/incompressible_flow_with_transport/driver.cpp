@@ -284,15 +284,12 @@ Driver<dim, Number>::setup()
 
     scalar_time_integrator[i]->setup(
       application->scalars[i]->get_parameters().restarted_simulation);
-  }
 
-  // setup solvers in case of BDF time integration (solution of linear systems of equations)
-  for(unsigned int i = 0; i < n_scalars; ++i)
-  {
     AssertThrow(application->scalars[i]->get_parameters().analytical_velocity_field == false,
                 dealii::ExcMessage(
                   "An analytical velocity field can not be used for this coupled solver."));
 
+    // setup solvers in case of BDF time integration (solution of linear systems of equations)
     if(application->scalars[i]->get_parameters().temporal_discretization ==
        ConvDiff::TemporalDiscretization::BDF)
     {
@@ -321,9 +318,9 @@ Driver<dim, Number>::setup()
     use_adaptive_time_stepping = true;
   }
 
-  // Boussinesq term
-  // assume that the first scalar quantity with index 0 is the active scalar coupled to
-  // the incompressible Navier-Stokes equations via the Boussinesq term
+  // Initialize DoF-vector temperature in case of transport->fluid coupling with Boussinesq term:
+  // assume that the first scalar quantity with index 0 is the active scalar coupled to the
+  // incompressible Navier-Stokes equations via the Boussinesq term
   if(application->fluid->get_parameters().boussinesq_term)
     scalar_operator[0]->initialize_dof_vector(temperature);
 
