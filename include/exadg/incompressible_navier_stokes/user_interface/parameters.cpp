@@ -562,7 +562,10 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
     AssertThrow(
       treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit,
       dealii::ExcMessage(
-        "An implicit treatment of the variable viscosity field (rendering the viscous step of the dual splitting scheme nonlinear regarding the unknown velocity field) is currently not implemented for the dual splitting scheme."));
+        "An implicit treatment of the variable viscosity field "
+        "(rendering the viscous step of the dual splitting scheme "
+        "nonlinear regarding the unknown velocity field) is currently "
+        "not implemented for the dual splitting scheme."));
   }
 
   // SIMPLEX ELEMENTS
@@ -584,13 +587,6 @@ Parameters::viscous_problem() const
 {
   return (equation_type == EquationType::Stokes or equation_type == EquationType::NavierStokes or
           turbulence_model_data.is_active);
-}
-
-bool
-Parameters::viscous_term_is_nonlinear() const
-{
-  return (viscosity_is_variable() and
-          treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Implicit);
 }
 
 bool
@@ -618,7 +614,7 @@ Parameters::implicit_convective_problem() const
 bool
 Parameters::nonlinear_viscous_problem() const
 {
-  return (viscous_problem() and viscous_term_is_nonlinear());
+  return (viscous_problem() and viscosity_is_variable() and treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Implicit);
 }
 
 bool

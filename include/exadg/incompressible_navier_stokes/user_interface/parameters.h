@@ -57,9 +57,6 @@ public:
   viscous_problem() const;
 
   bool
-  viscous_term_is_nonlinear() const;
-
-  bool
   viscosity_is_variable() const;
 
   bool

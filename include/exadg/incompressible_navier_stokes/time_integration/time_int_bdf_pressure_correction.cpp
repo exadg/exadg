@@ -357,7 +357,7 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
   /*
    *  explicit variable viscosity update executed prior to calculation of rhs_momentum
    */
-  if(this->param.viscosity_is_variable() and not this->param.viscous_term_is_nonlinear())
+  if(this->param.viscosity_is_variable() and this->param.treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit)
   {
     dealii::Timer timer_viscosity_update;
     timer_viscosity_update.restart();

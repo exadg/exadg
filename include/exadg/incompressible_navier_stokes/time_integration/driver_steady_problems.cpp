@@ -142,7 +142,7 @@ DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_pro
   }
 
   // explicit viscosity update
-  if(this->param.viscosity_is_variable() and not this->param.viscous_term_is_nonlinear())
+  if(this->param.viscosity_is_variable() and this->param.treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit)
   {
     dealii::Timer timer_viscosity_update;
     timer_viscosity_update.restart();
