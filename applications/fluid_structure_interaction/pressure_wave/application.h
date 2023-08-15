@@ -557,10 +557,14 @@ private:
     // inflow
     boundary_descriptor->dirichlet_bc.insert(
       pair(BOUNDARY_ID_INFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+      pair(BOUNDARY_ID_INFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(BOUNDARY_ID_INFLOW, mask));
 
     // outflow
     boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
       pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(BOUNDARY_ID_OUTFLOW, mask));
 
@@ -747,10 +751,14 @@ private:
     // left and right boundaries are clamped
     boundary_descriptor->dirichlet_bc.insert(
       pair(BOUNDARY_ID_INFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+      pair(BOUNDARY_ID_INFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
       pair_mask(BOUNDARY_ID_INFLOW, dealii::ComponentMask()));
 
     boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
       pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
       pair_mask(BOUNDARY_ID_OUTFLOW, dealii::ComponentMask()));
