@@ -159,8 +159,9 @@ public:
         }
         norm_U_mean /= volume;
 
-        tau_convective =
-          norm_U_mean * std::exp(std::log(volume) / (double)dim) / (double)(data.degree + 1);
+        scalar h_eff = std::exp(std::log(volume) / (double)dim) / (double)(data.degree + 1);
+
+        tau_convective = norm_U_mean * h_eff;
       }
 
       if(data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm)
