@@ -43,7 +43,7 @@ public:
   static unsigned int const rank = n_components_to_rank<data_dim, dim>();
 
   ExaDGCoupling(
-    std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
+    dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
 #ifdef EXADG_WITH_PRECICE
     std::shared_ptr<precice::SolverInterface> precice,
 #endif
@@ -88,7 +88,7 @@ private:
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 ExaDGCoupling<dim, data_dim, VectorizedArrayType>::ExaDGCoupling(
-  std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
+  dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
 #ifdef EXADG_WITH_PRECICE
   std::shared_ptr<precice::SolverInterface> precice,
 #endif

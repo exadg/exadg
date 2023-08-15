@@ -91,6 +91,8 @@ Driver<dim, Number>::setup()
     };
 
     helpers_ale->update_pde_operator_after_grid_motion = [&]() {
+      // Since we use the same MatrixFree object for the fluid field and the scalar transport field,
+      // we need to update MatrixFree here in the Driver.
       matrix_free->update_mapping(*ale_mapping);
 
       fluid_operator->update_after_grid_motion(false /* update_matrix_free */);
@@ -257,7 +259,7 @@ Driver<dim, Number>::setup()
 
     fluid_time_integrator->setup(application->fluid->get_parameters().restarted_simulation);
 
-    // setup solvers once time integrator has been initialized
+    // setup solvers once the time integrator has been initialized
     fluid_operator->setup_solvers(fluid_time_integrator->get_scaling_factor_time_derivative_term(),
                                   fluid_time_integrator->get_velocity());
   }
@@ -265,6 +267,7 @@ Driver<dim, Number>::setup()
   {
     fluid_driver_steady->setup();
 
+    // setup solvers once the driver for steady problems has been initialized
     fluid_operator->setup_solvers(1.0 /* dummy */, fluid_driver_steady->get_velocity());
   }
   else

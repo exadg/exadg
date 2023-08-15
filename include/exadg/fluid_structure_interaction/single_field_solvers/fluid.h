@@ -68,10 +68,6 @@ public:
   std::shared_ptr<TimerTree>
   get_timings_ale() const;
 
-  // matrix-free
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
-
   // spatial discretization
   std::shared_ptr<IncNS::SpatialOperatorBase<dim, Number>> pde_operator;
 
@@ -137,22 +133,8 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
                                                      "fluid",
                                                      mpi_comm);
 
-  // initialize matrix_free
-  matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-  matrix_free_data->append(pde_operator);
-
-  matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-  if(application->get_parameters().use_cell_based_face_loops)
-    Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
-                                        matrix_free_data->data);
-  matrix_free->reinit(*ale_mapping,
-                      matrix_free_data->get_dof_handler_vector(),
-                      matrix_free_data->get_constraint_vector(),
-                      matrix_free_data->get_quadrature_vector(),
-                      matrix_free_data->data);
-
   // setup Navier-Stokes operator
-  pde_operator->setup(matrix_free, matrix_free_data);
+  pde_operator->setup();
 
   // setup postprocessor
   postprocessor = application->create_postprocessor();
@@ -173,9 +155,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   };
 
   helpers_ale->update_pde_operator_after_grid_motion = [&]() {
-    matrix_free->update_mapping(*ale_mapping);
-
-    pde_operator->update_after_grid_motion(false /* update_matrix_free */);
+    pde_operator->update_after_grid_motion(true /* update_matrix_free */);
   };
 
   time_integrator = IncNS::create_time_integrator<dim, Number>(

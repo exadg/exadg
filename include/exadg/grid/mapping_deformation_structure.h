@@ -85,10 +85,10 @@ public:
     return pde_operator;
   }
 
-  std::shared_ptr<dealii::MatrixFree<dim, Number> const>
+  dealii::MatrixFree<dim, Number> const &
   get_matrix_free() const
   {
-    return pde_operator->get_matrix_free();
+    return *pde_operator->get_matrix_free();
   }
 
   /**

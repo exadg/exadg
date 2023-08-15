@@ -85,7 +85,7 @@ public:
         this->precice_parameters.write_mesh_name,
         {this->precice_parameters.stress_data_name},
         this->precice_parameters.write_data_type,
-        fluid->matrix_free,
+        fluid->pde_operator->get_matrix_free(),
         fluid->pde_operator->get_dof_index_velocity(),
         fluid->pde_operator->get_quad_index_velocity_linear());
     }
@@ -126,7 +126,7 @@ public:
 
     // structure to fluid
     {
-      this->precice->add_read_surface(fluid->matrix_free,
+      this->precice->add_read_surface(fluid->pde_operator->get_matrix_free(),
                                       fluid->pde_operator->get_container_interface_data(),
                                       this->precice_parameters.read_mesh_name,
                                       {this->precice_parameters.velocity_data_name});

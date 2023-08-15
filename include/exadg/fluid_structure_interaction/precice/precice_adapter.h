@@ -103,21 +103,20 @@ public:
   initialize_precice(VectorType const & dealii_to_precice);
 
   void
-  add_write_surface(
-    dealii::types::boundary_id const                                            surface_id,
-    std::string const &                                                         mesh_name,
-    std::vector<std::string> const &                                            write_data_names,
-    WriteDataType const                                                         write_data_type,
-    std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
-    unsigned int const                                                          dof_index,
-    unsigned int const                                                          write_quad_index);
+  add_write_surface(dealii::types::boundary_id const                             surface_id,
+                    std::string const &                                          mesh_name,
+                    std::vector<std::string> const &                             write_data_names,
+                    WriteDataType const                                          write_data_type,
+                    dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
+                    unsigned int const                                           dof_index,
+                    unsigned int const                                           write_quad_index);
 
 
   void
-  add_read_surface(std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
-                   std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data,
-                   std::string const &                                        mesh_name,
-                   std::vector<std::string> const &                           read_data_name);
+  add_read_surface(dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
+                   std::shared_ptr<ContainerInterfaceData<rank, dim, double>>   interface_data,
+                   std::string const &                                          mesh_name,
+                   std::vector<std::string> const &                             read_data_name);
 
   /**
    * @brief      Advances preCICE after every timestep
@@ -234,13 +233,13 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::Adapter(ParameterClass 
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_surface(
-  dealii::types::boundary_id const dealii_boundary_surface_id,
-  std::string const &              mesh_name,
-  std::vector<std::string> const & write_data_names,
-  WriteDataType const              write_data_type,
-  std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
-  unsigned int const                                                          dof_index,
-  unsigned int const                                                          quad_index)
+  dealii::types::boundary_id const                             dealii_boundary_surface_id,
+  std::string const &                                          mesh_name,
+  std::vector<std::string> const &                             write_data_names,
+  WriteDataType const                                          write_data_type,
+  dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
+  unsigned int const                                           dof_index,
+  unsigned int const                                           quad_index)
 {
   // Check, if we already have such an interface
   auto const found_reader = reader.find(mesh_name);
@@ -294,10 +293,10 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_write_surface(
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_read_surface(
-  std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
-  std::shared_ptr<ContainerInterfaceData<rank, dim, double>>                  interface_data,
-  std::string const &                                                         mesh_name,
-  std::vector<std::string> const &                                            read_data_names)
+  dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
+  std::shared_ptr<ContainerInterfaceData<rank, dim, double>>   interface_data,
+  std::string const &                                          mesh_name,
+  std::vector<std::string> const &                             read_data_names)
 {
   reader.insert(
     {mesh_name,
