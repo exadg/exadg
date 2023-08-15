@@ -294,12 +294,6 @@ Driver<dim, Number>::setup()
 
     scalar_time_integrator[i]->setup(
       application->scalars[i]->get_parameters().restarted_simulation);
-
-    // adaptive time stepping
-    if(application->fluid->get_parameters().adaptive_time_stepping == true)
-    {
-      use_adaptive_time_stepping = true;
-    }
   }
 
   // setup solvers in case of BDF time integration (solution of linear systems of equations)
@@ -329,6 +323,12 @@ Driver<dim, Number>::setup()
                     ConvDiff::TemporalDiscretization::ExplRK,
                   dealii::ExcMessage("Not implemented."));
     }
+  }
+
+  // Initialize member variable use_adaptive_time_stepping
+  if(application->fluid->get_parameters().adaptive_time_stepping == true)
+  {
+    use_adaptive_time_stepping = true;
   }
 
   // Boussinesq term
