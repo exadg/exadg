@@ -201,7 +201,7 @@ public:
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
-   * (non-)linear systems of equation.
+   * (non-)linear systems of equations.
    */
   void
   setup_solver(double const & scaling_factor_acceleration, double const & scaling_factor_velocity);
