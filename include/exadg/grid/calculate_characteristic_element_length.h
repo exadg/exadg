@@ -24,6 +24,7 @@
 
 // deal.II
 #include <deal.II/base/mpi.h>
+#include <deal.II/fe/mapping.h>
 #include <deal.II/grid/tria.h>
 
 namespace ExaDG
@@ -63,9 +64,9 @@ calculate_minimum_vertex_distance(dealii::Triangulation<dim> const & triangulati
  */
 template<typename Number>
 inline Number
-calculate_characteristic_element_length(Number const       element_length,
-                                        unsigned int const fe_degree,
-                                        bool const         is_dg)
+calculate_high_order_element_length(Number const       element_length,
+                                    unsigned int const fe_degree,
+                                    bool const         is_dg)
 {
   unsigned int n_nodes_1d = fe_degree;
 
