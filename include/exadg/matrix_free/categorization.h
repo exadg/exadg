@@ -72,7 +72,7 @@ do_cell_based_loops(dealii::Triangulation<dim> const & tria,
     unsigned int c_num = 0;
     for(unsigned int i = 0; i < n_faces_per_cell; i++)
     {
-      auto & face = *cell->face(i);
+      const auto face = *cell->face(i);
       if(face.at_boundary())
         c_num += factors[i] * bid_map[face.boundary_id()];
     }

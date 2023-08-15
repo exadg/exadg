@@ -23,6 +23,7 @@
 #define INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_INTERFACE_H_
 
 #include <deal.II/lac/la_parallel_vector.h>
+#include <exadg/structure/time_integration/time_int_gen_alpha.h>
 
 namespace ExaDG
 {
@@ -59,22 +60,27 @@ public:
                                double const       time) const = 0;
 
   virtual void
-  apply_mass_operator(VectorType & dst, VectorType const & src) const = 0;
+  evaluate_mass_operator(VectorType & dst, VectorType const & src) const = 0;
 
   virtual void
-  compute_rhs_linear(VectorType & dst, double const time) const = 0;
+  apply_add_damping_operator(VectorType & dst, VectorType const & src) const = 0;
 
   virtual std::tuple<unsigned int, unsigned int>
   solve_nonlinear(VectorType &       sol,
                   VectorType const & rhs,
-                  double const       factor,
+                  double const       scaling_factor_acceleration,
+                  double const       scaling_factor_velocity,
                   double const       time,
                   bool const         update_preconditioner) const = 0;
+
+  virtual void
+  rhs(VectorType & dst, double const time) const = 0;
 
   virtual unsigned int
   solve_linear(VectorType &       sol,
                VectorType const & rhs,
-               double const       factor,
+               double const       scaling_factor_acceleration,
+               double const       scaling_factor_velocity,
                double const       time,
                bool const         update_preconditioner) const = 0;
 };

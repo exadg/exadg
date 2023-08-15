@@ -19,6 +19,8 @@
  *  ______________________________________________________________________
  */
 
+#include <exadg/grid/grid_data.h>
+#include <exadg/operators/quadrature.h>
 #include <exadg/poisson/preconditioners/multigrid_preconditioner.h>
 
 namespace ExaDG
@@ -36,7 +38,6 @@ template<int dim, typename Number, int n_components>
 void
 MultigridPreconditioner<dim, Number, n_components>::initialize(
   MultigridData const &                       mg_data,
-  MultigridVariant const &                    multigrid_variant,
   std::shared_ptr<Grid<dim> const>            grid,
   std::shared_ptr<dealii::Mapping<dim> const> mapping,
   dealii::FiniteElement<dim> const &          fe,
@@ -52,7 +53,6 @@ MultigridPreconditioner<dim, Number, n_components>::initialize(
   this->mesh_is_moving = mesh_is_moving;
 
   Base::initialize(mg_data,
-                   multigrid_variant,
                    grid,
                    mapping,
                    fe,
@@ -79,9 +79,7 @@ MultigridPreconditioner<dim, Number, n_components>::update()
     // Once the operators are updated, the update of smoothers and the coarse grid solver is generic
     // functionality implemented in the base class.
     this->update_smoothers();
-
-    // singular operators do not occur for this operator
-    this->update_coarse_solver(data.operator_is_singular);
+    this->update_coarse_solver();
   }
 }
 
@@ -90,9 +88,9 @@ void
 MultigridPreconditioner<dim, Number, n_components>::fill_matrix_free_data(
   MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
   unsigned int const                     level,
-  unsigned int const                     h_level)
+  unsigned int const                     dealii_triangulation_level)
 {
-  matrix_free_data.data.mg_level = h_level;
+  matrix_free_data.data.mg_level = dealii_triangulation_level;
 
   matrix_free_data.append_mapping_flags(
     Operators::LaplaceKernel<dim, Number>::get_mapping_flags(this->level_info[level].is_dg(),
@@ -102,30 +100,16 @@ MultigridPreconditioner<dim, Number, n_components>::fill_matrix_free_data(
   if(data.use_cell_based_loops and this->level_info[level].is_dg())
   {
     auto tria = &this->dof_handlers[level]->get_triangulation();
-    Categorization::do_cell_based_loops(*tria, matrix_free_data.data, h_level);
+    Categorization::do_cell_based_loops(*tria, matrix_free_data.data, dealii_triangulation_level);
   }
 
   matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "laplace_dof_handler");
   matrix_free_data.insert_constraint(&(*this->constraints[level]), "laplace_dof_handler");
 
-  if(this->dof_handlers[level]->get_triangulation().all_reference_cells_are_hyper_cube())
-  {
-    matrix_free_data.insert_quadrature(dealii::QGauss<1>(this->level_info[level].degree() + 1),
-                                       "laplace_quadrature");
-  }
-  else if(this->dof_handlers[level]->get_triangulation().all_reference_cells_are_simplex())
-  {
-    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(this->level_info[level].degree() +
-                                                                  1),
-                                       "laplace_quadrature");
-  }
-  else
-  {
-    AssertThrow(
-      false,
-      dealii::ExcMessage(
-        "Only pure hypercube or pure simplex meshes are implemented for Poisson::MultigridPreconditioner."));
-  }
+  ElementType const element_type = get_element_type(*this->grid->triangulation);
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature =
+    create_quadrature<dim>(element_type, this->level_info[level].degree() + 1);
+  matrix_free_data.insert_quadrature(*quadrature, "laplace_quadrature");
 }
 
 template<int dim, typename Number, int n_components>

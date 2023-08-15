@@ -4,15 +4,25 @@
         "Dim": "2",
         "IsTest": "false"
     },
-    "SpatialResolution": {
-        "Degree": "3",
-        "RefineSpace": "4"
+    "Fluid": {
+        "SpatialResolution": {
+            "Degree": "3",
+            "RefineSpace": "4"
+        },
+        "Output": {
+            "OutputDirectory": "output/cavity_natural_convection/",
+            "OutputName": "l4_k3_fluid",
+            "WriteOutput": "false"
+        }
     },
-    "Application": {
-    },
-    "Output": {
-        "OutputDirectory": "output/cavity_natural_convection/",
-        "OutputName": "l4_k3",
-        "WriteOutput": "false"
+    "Scalar0": {
+        "SpatialResolution": {
+            "Degree": "3"
+        },
+        "Output": {
+            "OutputDirectory": "output/cavity_natural_convection/",
+            "OutputName": "l4_k3_scalar0",
+            "WriteOutput": "false"
+        }
     }
 }

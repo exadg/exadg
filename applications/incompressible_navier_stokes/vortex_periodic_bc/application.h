@@ -239,64 +239,35 @@ private:
   void
   create_grid() final
   {
-    double const left = -1.0, right = 1.0;
-    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    // use periodic boundary conditions
-    // x-direction
-    this->grid->triangulation->begin()->face(0)->set_all_boundary_ids(0);
-    this->grid->triangulation->begin()->face(1)->set_all_boundary_ids(1);
-    // y-direction
-    this->grid->triangulation->begin()->face(2)->set_all_boundary_ids(2);
-    this->grid->triangulation->begin()->face(3)->set_all_boundary_ids(3);
+        double const left = -1.0, right = 1.0;
 
-    dealii::GridTools::collect_periodic_faces(
-      *this->grid->triangulation, 0, 1, 0, this->grid->periodic_face_pairs);
-    dealii::GridTools::collect_periodic_faces(
-      *this->grid->triangulation, 2, 3, 1, this->grid->periodic_face_pairs);
-    this->grid->triangulation->add_periodicity(this->grid->periodic_face_pairs);
+        double const deformation                 = 0.05;
+        unsigned int n_subdivisions_1d_hypercube = 1;
+        create_periodic_box(tria,
+                            global_refinements,
+                            periodic_face_pairs,
+                            n_subdivisions_1d_hypercube,
+                            left,
+                            right,
+                            mesh_type == MeshType::Curvilinear,
+                            deformation);
+      };
 
-
-    bool curvilinear_mesh = false;
-    if(mesh_type == MeshType::Cartesian)
-    {
-      // do nothing
-    }
-    else if(mesh_type == MeshType::Curvilinear)
-    {
-      curvilinear_mesh = true;
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
-    }
-    const double deformation = 0.05;
-
-    if(curvilinear_mesh)
-    {
-      unsigned int const               frequency = 2;
-      static DeformedCubeManifold<dim> manifold(0.0, right, deformation, frequency);
-      this->grid->triangulation->set_all_manifold_ids(1);
-      this->grid->triangulation->set_manifold(1, manifold);
-
-      std::vector<bool> vertex_touched(this->grid->triangulation->n_vertices(), false);
-
-      for(auto cell : this->grid->triangulation->cell_iterators())
-      {
-        for(auto const & v : cell->vertex_indices())
-        {
-          if(vertex_touched[cell->vertex_index(v)] == false)
-          {
-            dealii::Point<dim> & vertex           = cell->vertex(v);
-            dealii::Point<dim>   new_point        = manifold.push_forward(vertex);
-            vertex                                = new_point;
-            vertex_touched[cell->vertex_index(v)] = true;
-          }
-        }
-      }
-    }
-
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+                                                            this->mpi_comm,
+                                                            this->param.grid,
+                                                            this->param.involves_h_multigrid(),
+                                                            lambda_create_triangulation,
+                                                            {} /* no local refinements */);
   }
 
   void

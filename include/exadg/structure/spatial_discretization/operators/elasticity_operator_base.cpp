@@ -82,10 +82,8 @@ ElasticityOperatorBase<dim, Number>::initialize(
 
   this->integrator_flags = this->get_integrator_flags(data.unsteady);
 
-  material_handler.initialize(matrix_free,
-                              data.dof_index,
-                              data.quad_index,
-                              data.material_descriptor);
+  material_handler.initialize(
+    matrix_free, data.dof_index, data.quad_index, data.material_descriptor, data.large_deformation);
 }
 
 template<int dim, typename Number>
@@ -112,14 +110,13 @@ ElasticityOperatorBase<dim, Number>::get_scaling_factor_mass_operator() const
 
 template<int dim, typename Number>
 void
-ElasticityOperatorBase<dim, Number>::set_constrained_values(VectorType & dst,
-                                                            double const time) const
+ElasticityOperatorBase<dim, Number>::set_inhomogeneous_boundary_values(VectorType & dst) const
 {
   // standard Dirichlet boundary conditions
   std::map<dealii::types::global_dof_index, double> boundary_values;
   for(auto dbc : operator_data.bc->dirichlet_bc)
   {
-    dbc.second->set_time(time);
+    dbc.second->set_time(this->get_time());
     dealii::ComponentMask mask =
       operator_data.bc->dirichlet_bc_component_mask.find(dbc.first)->second;
 
@@ -200,9 +197,10 @@ ElasticityOperatorBase<dim, Number>::set_constrained_values(VectorType & dst,
 
 template<int dim, typename Number>
 void
-ElasticityOperatorBase<dim, Number>::reinit_cell(unsigned int const cell) const
+ElasticityOperatorBase<dim, Number>::reinit_cell_derived(IntegratorCell &   integrator,
+                                                         unsigned int const cell) const
 {
-  Base::reinit_cell(cell);
+  (void)integrator;
 
   this->material_handler.reinit(*this->matrix_free, cell);
 }

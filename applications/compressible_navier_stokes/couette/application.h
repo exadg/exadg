@@ -175,55 +175,66 @@ private:
   void
   create_grid() final
   {
-    std::vector<unsigned int> repetitions({2, 1});
-    dealii::Point<dim>        point1(0.0, 0.0), point2(L, H);
-    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                                      repetitions,
-                                                      point1,
-                                                      point2);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)vector_local_refinements;
 
-    // indicator
-    // fixed wall = 0
-    // moving wall = 1
-    /*
-     *             indicator = 1
-     *   ___________________________________
-     *   |             --->                 |
-     *   |                                  |
-     *   | <---- periodic B.C.  --------->  |
-     *   |                                  |
-     *   |                                  |
-     *   |__________________________________|
-     *             indicator = 0
-     */
-    for(auto cell : *this->grid->triangulation)
-    {
-      for(auto const & face : cell.face_indices())
-      {
-        if(std::fabs(cell.face(face)->center()(1) - point2[1]) < 1e-12)
-        {
-          cell.face(face)->set_boundary_id(1);
-        }
-        else if(std::fabs(cell.face(face)->center()(1) - 0.0) < 1e-12)
-        {
-          cell.face(face)->set_boundary_id(0);
-        }
-        else if(std::fabs(cell.face(face)->center()(0) - 0.0) < 1e-12)
-        {
-          cell.face(face)->set_boundary_id(0 + 10);
-        }
-        else if(std::fabs(cell.face(face)->center()(0) - point2[0]) < 1e-12)
-        {
-          cell.face(face)->set_boundary_id(1 + 10);
-        }
-      }
-    }
+        std::vector<unsigned int> repetitions({2, 1});
+        dealii::Point<dim>        point1(0.0, 0.0), point2(L, H);
+        dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, point1, point2);
 
-    dealii::GridTools::collect_periodic_faces(
-      *this->grid->triangulation, 0 + 10, 1 + 10, 0, this->grid->periodic_face_pairs);
-    this->grid->triangulation->add_periodicity(this->grid->periodic_face_pairs);
+        // indicator
+        // fixed wall = 0
+        // moving wall = 1
+        /*
+         *             indicator = 1
+         *   ___________________________________
+         *   |             --->                 |
+         *   |                                  |
+         *   | <---- periodic B.C.  --------->  |
+         *   |                                  |
+         *   |                                  |
+         *   |__________________________________|
+         *             indicator = 0
+         */
+        for(auto cell : tria)
+        {
+          for(auto const & face : cell.face_indices())
+          {
+            if(std::fabs(cell.face(face)->center()(1) - point2[1]) < 1e-12)
+            {
+              cell.face(face)->set_boundary_id(1);
+            }
+            else if(std::fabs(cell.face(face)->center()(1) - 0.0) < 1e-12)
+            {
+              cell.face(face)->set_boundary_id(0);
+            }
+            else if(std::fabs(cell.face(face)->center()(0) - 0.0) < 1e-12)
+            {
+              cell.face(face)->set_boundary_id(0 + 10);
+            }
+            else if(std::fabs(cell.face(face)->center()(0) - point2[0]) < 1e-12)
+            {
+              cell.face(face)->set_boundary_id(1 + 10);
+            }
+          }
+        }
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        dealii::GridTools::collect_periodic_faces(tria, 0 + 10, 1 + 10, 0, periodic_face_pairs);
+        tria.add_periodicity(periodic_face_pairs);
+
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_triangulation<dim>(*this->grid,
+                                             this->mpi_comm,
+                                             this->param.grid,
+                                             lambda_create_triangulation,
+                                             {} /* no local refinements */);
   }
 
   void

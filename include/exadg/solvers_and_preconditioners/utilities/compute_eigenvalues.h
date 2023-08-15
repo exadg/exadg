@@ -22,6 +22,8 @@
 #ifndef INCLUDE_EXADG_SOLVERS_AND_PRECONDITIONERS_UTIL_COMPUTE_EIGENVALUES_H_
 #define INCLUDE_EXADG_SOLVERS_AND_PRECONDITIONERS_UTIL_COMPUTE_EIGENVALUES_H_
 
+#include <deal.II/numerics/vector_tools_mean_value.h>
+
 namespace ExaDG
 {
 // manually compute eigenvalues for the coarsest level for proper setup of the
@@ -41,7 +43,7 @@ compute_eigenvalues(Operator const &   op,
   for(unsigned int i = 0; i < rhs.locally_owned_size(); ++i)
     rhs.local_element(i) = (double)rand() / RAND_MAX;
   if(operator_is_singular)
-    set_zero_mean_value(rhs);
+    dealii::VectorTools::subtract_mean_value(rhs);
 
   dealii::SolverControl control(eig_n_iter, rhs.l2_norm() * 1e-5);
   dealii::internal::PreconditionChebyshevImplementation::EigenvalueTracker eigenvalue_tracker;

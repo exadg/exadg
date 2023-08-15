@@ -31,7 +31,7 @@
 
 // ExaDG
 #include <exadg/matrix_free/integrators.h>
-#include <exadg/utilities/n_components_to_rank.h>
+#include <exadg/utilities/tensor_utilities.h>
 
 namespace ExaDG
 {

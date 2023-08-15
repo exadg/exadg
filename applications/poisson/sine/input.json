@@ -4,14 +4,11 @@
         "Dim": "3",
         "IsTest": "false"
     },
-    "Resolution": {
-        "RunType": "RefineHAndP",
+    "SpatialResolution": {
         "DegreeMin": "1",
         "DegreeMax": "15",
         "RefineSpaceMin": "2",
-        "RefineSpaceMax": "2",
-        "DofsMin": "1000",
-        "DofsMax": "10000"
+        "RefineSpaceMax": "2"
     },
     "Application": {
         "MeshType": "Cartesian"

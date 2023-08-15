@@ -37,10 +37,12 @@ ContainerInterfaceData<rank, dim, number_type>::get_data(unsigned int const q_in
                                                          unsigned int const v) const
 {
   Assert(map_vector_index.find(q_index) != map_vector_index.end(),
-         dealii::ExcMessage("Specified q_index does not exist in map_vector_index."));
+         dealii::ExcMessage("Specified q_index = " + std::to_string(q_index) +
+                            " does not exist in map_vector_index."));
 
   Assert(map_solution.find(q_index) != map_solution.end(),
-         dealii::ExcMessage("Specified q_index does not exist in map_solution."));
+         dealii::ExcMessage("Specified q_index = " + std::to_string(q_index) +
+                            " does not exist in map_solution."));
 
   Id                              id    = std::make_tuple(face, q, v);
   dealii::types::global_dof_index index = map_vector_index.find(q_index)->second.find(id)->second;

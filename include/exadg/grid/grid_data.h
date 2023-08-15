@@ -22,12 +22,68 @@
 #ifndef INCLUDE_EXADG_GRID_GRID_DATA_H_
 #define INCLUDE_EXADG_GRID_GRID_DATA_H_
 
+// C/C++
+#include <string>
+
+// deal.II
+#include <deal.II/grid/tria.h>
+
 // ExaDG
-#include <exadg/grid/enum_types.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
 {
+/*
+ * Triangulation type
+ */
+enum class TriangulationType
+{
+  Serial,
+  Distributed,
+  FullyDistributed
+};
+
+/*
+ * Element type
+ */
+enum class ElementType
+{
+  Hypercube,
+  Simplex
+};
+
+/*
+ * Partitioning type (relevant for fully-distributed triangulation)
+ */
+enum class PartitioningType
+{
+  Metis,
+  z_order
+};
+
+/**
+ * Returns the type of elements, where we currently only allow triangulations consisting of the same
+ * type of elements.
+ */
+template<int dim>
+ElementType
+get_element_type(dealii::Triangulation<dim> const & tria)
+{
+  if(tria.all_reference_cells_are_simplex())
+  {
+    return ElementType::Simplex;
+  }
+  else if(tria.all_reference_cells_are_hyper_cube())
+  {
+    return ElementType::Hypercube;
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("Invalid parameter element_type."));
+    return ElementType::Hypercube;
+  }
+}
+
 struct GridData
 {
   GridData()
@@ -36,7 +92,7 @@ struct GridData
       partitioning_type(PartitioningType::Metis),
       n_refine_global(0),
       file_name(),
-      multigrid(MultigridVariant::LocalSmoothing)
+      create_coarse_triangulations(false)
   {
   }
 
@@ -60,7 +116,7 @@ struct GridData
     if(not file_name.empty())
       print_parameter(pcout, "Grid file name", file_name);
 
-    print_parameter(pcout, "Multigrid variant", multigrid);
+    print_parameter(pcout, "Create coarse triangulations", create_coarse_triangulations);
   }
 
   TriangulationType triangulation_type;
@@ -77,7 +133,16 @@ struct GridData
   // deduce the correct type of the file format
   std::string file_name;
 
-  MultigridVariant multigrid;
+  // In case of a hypercube mesh that is globally refined, i.e. without hanging nodes, the fine
+  // triangulation can be used for all multigrid h-levels without the need to create coarse
+  // triangulations explicitly. Hence, this parameter is typically set to false for globally-refined
+  // hypercube meshes.
+  // Nevertheless, it is possible to set this parameter to true for globally-refined hypercube
+  // meshes. In that case, the coarse triangulations are created explicitly for use in
+  // h-multigrid methods.
+  // This parameter needs to be set to true if one wants to use h-multigrid methods for
+  // locally-refined hypercube meshes or non-hypercube meshes.
+  bool create_coarse_triangulations;
 };
 
 } // namespace ExaDG

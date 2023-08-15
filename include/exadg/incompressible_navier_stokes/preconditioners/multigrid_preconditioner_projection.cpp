@@ -19,8 +19,10 @@
  *  ______________________________________________________________________
  */
 
+#include <exadg/grid/grid_data.h>
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_projection.h>
 #include <exadg/operators/mass_kernel.h>
+#include <exadg/operators/quadrature.h>
 
 namespace ExaDG
 {
@@ -37,7 +39,6 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerProjection<dim, Number>::initialize(
   MultigridData const &                       mg_data,
-  MultigridVariant const &                    multigrid_variant,
   std::shared_ptr<Grid<dim> const>            grid,
   std::shared_ptr<dealii::Mapping<dim> const> mapping,
   dealii::FiniteElement<dim> const &          fe,
@@ -53,7 +54,6 @@ MultigridPreconditionerProjection<dim, Number>::initialize(
   this->mesh_is_moving = mesh_is_moving;
 
   Base::initialize(mg_data,
-                   multigrid_variant,
                    grid,
                    mapping,
                    fe,
@@ -117,9 +117,7 @@ MultigridPreconditionerProjection<dim, Number>::update()
   // Once the operators are updated, the update of smoothers and the coarse grid solver is generic
   // functionality implemented in the base class.
   this->update_smoothers();
-
-  // singular operators do not occur for this operator
-  this->update_coarse_solver(false /* operator_is_singular */);
+  this->update_coarse_solver();
 }
 
 template<int dim, typename Number>
@@ -127,9 +125,9 @@ void
 MultigridPreconditionerProjection<dim, Number>::fill_matrix_free_data(
   MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
   unsigned int const                     level,
-  unsigned int const                     h_level)
+  unsigned int const                     dealii_tria_level)
 {
-  matrix_free_data.data.mg_level = h_level;
+  matrix_free_data.data.mg_level = dealii_tria_level;
 
   MappingFlags flags;
   matrix_free_data.append_mapping_flags(MassKernel<dim, Number>::get_mapping_flags());
@@ -143,28 +141,16 @@ MultigridPreconditionerProjection<dim, Number>::fill_matrix_free_data(
   if(data.use_cell_based_loops and this->level_info[level].is_dg())
   {
     auto tria = &this->dof_handlers[level]->get_triangulation();
-    Categorization::do_cell_based_loops(*tria, matrix_free_data.data, h_level);
+    Categorization::do_cell_based_loops(*tria, matrix_free_data.data, dealii_tria_level);
   }
 
   matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "std_dof_handler");
   matrix_free_data.insert_constraint(&(*this->constraints[level]), "std_dof_handler");
-  if(this->dof_handlers[level]->get_triangulation().all_reference_cells_are_hyper_cube())
-  {
-    matrix_free_data.insert_quadrature(dealii::QGauss<1>(this->level_info[level].degree() + 1),
-                                       "std_quadrature");
-  }
-  else if(this->dof_handlers[level]->get_triangulation().all_reference_cells_are_simplex())
-  {
-    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(this->level_info[level].degree() +
-                                                                  1),
-                                       "std_quadrature");
-  }
-  else
-  {
-    AssertThrow(false,
-                dealii::ExcMessage("Only pure hypercube or pure simplex meshes are implemented for "
-                                   "IncNS::MultigridPreconditionerProjection."));
-  }
+
+  ElementType const element_type = get_element_type(*this->grid->triangulation);
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature =
+    create_quadrature<dim>(element_type, this->level_info[level].degree() + 1);
+  matrix_free_data.insert_quadrature(*quadrature, "std_quadrature");
 }
 
 template<int dim, typename Number>

@@ -36,8 +36,11 @@ NonLinearOperator<dim, Number>::initialize(
 {
   Base::initialize(matrix_free, affine_constraints, data);
 
-  integrator_lin = std::make_shared<IntegratorCell>(*this->matrix_free);
-  this->matrix_free->initialize_dof_vector(displacement_lin, data.dof_index);
+  integrator_lin = std::make_shared<IntegratorCell>(*this->matrix_free,
+                                                    this->operator_data.dof_index_inhomogeneous,
+                                                    this->operator_data.quad_index);
+  // it should not make a difference here whether we use dof_index or dof_index_inhomogeneous
+  this->matrix_free->initialize_dof_vector(displacement_lin, this->operator_data.dof_index);
   displacement_lin.update_ghost_values();
 }
 
@@ -70,7 +73,7 @@ NonLinearOperator<dim, Number>::valid_deformation(VectorType const & displacemen
   // sum over all MPI processes
   Number valid = 0.0;
   valid        = dealii::Utilities::MPI::sum(
-    dst, this->matrix_free->get_dof_handler(this->get_dof_index()).get_communicator());
+    dst, this->matrix_free->get_dof_handler(this->operator_data.dof_index).get_communicator());
 
   return (valid == 0.0);
 }
@@ -114,6 +117,10 @@ NonLinearOperator<dim, Number>::cell_loop_nonlinear(
   VectorType const &                      src,
   Range const &                           range) const
 {
+  IntegratorCell integrator_inhom(matrix_free,
+                                  this->operator_data.dof_index_inhomogeneous,
+                                  this->operator_data.quad_index);
+
   IntegratorCell integrator(matrix_free,
                             this->operator_data.dof_index,
                             this->operator_data.quad_index);
@@ -123,15 +130,54 @@ NonLinearOperator<dim, Number>::cell_loop_nonlinear(
 
   for(auto cell = range.first; cell < range.second; ++cell)
   {
+    reinit_cell_nonlinear(integrator_inhom, cell);
+    integrator.reinit(cell);
+
+    integrator_inhom.gather_evaluate(src, unsteady_flag | dealii::EvaluationFlags::gradients);
+
+    do_cell_integral_nonlinear(integrator_inhom);
+
+    // make sure that we do not write into Dirichlet degrees of freedom
+    integrator_inhom.integrate(unsteady_flag | dealii::EvaluationFlags::gradients,
+                               integrator.begin_dof_values());
+    integrator.distribute_local_to_global(dst);
+  }
+}
+
+template<int dim, typename Number>
+void
+NonLinearOperator<dim, Number>::cell_loop_valid_deformation(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  Number &                                dst,
+  VectorType const &                      src,
+  Range const &                           range) const
+{
+  IntegratorCell integrator(matrix_free,
+                            this->operator_data.dof_index_inhomogeneous,
+                            this->operator_data.quad_index);
+
+  for(auto cell = range.first; cell < range.second; ++cell)
+  {
     reinit_cell_nonlinear(integrator, cell);
 
-    integrator.read_dof_values_plain(src);
+    integrator.gather_evaluate(src, dealii::EvaluationFlags::gradients);
 
-    integrator.evaluate(unsteady_flag | dealii::EvaluationFlags::gradients);
+    // loop over all quadrature points
+    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+    {
+      // material displacement gradient
+      tensor const Grad_d = integrator.get_gradient(q);
 
-    do_cell_integral_nonlinear(integrator);
-
-    integrator.integrate_scatter(unsteady_flag | dealii::EvaluationFlags::gradients, dst);
+      // material deformation gradient
+      tensor const F     = get_F<dim, Number>(Grad_d);
+      scalar const det_F = determinant(F);
+      for(unsigned int v = 0; v < det_F.size(); ++v)
+      {
+        // if deformation is invalid, add a positive value to dst
+        if(det_F[v] <= 0.0)
+          dst += 1.0;
+      }
+    }
   }
 }
 
@@ -157,12 +203,21 @@ NonLinearOperator<dim, Number>::boundary_face_loop_nonlinear(
   VectorType const &                      src,
   Range const &                           range) const
 {
-  (void)src;
+  IntegratorFace integrator_m_inhom(matrix_free,
+                                    true,
+                                    this->operator_data.dof_index_inhomogeneous,
+                                    this->operator_data.quad_index);
+
+  IntegratorFace integrator_m = IntegratorFace(matrix_free,
+                                               true,
+                                               this->operator_data.dof_index,
+                                               this->operator_data.quad_index);
 
   // apply Neumann BCs
   for(unsigned int face = range.first; face < range.second; face++)
   {
-    this->reinit_boundary_face(face);
+    this->reinit_boundary_face(integrator_m_inhom, face);
+    integrator_m.reinit(face);
 
     // In case of a pull-back of the traction vector, we need to evaluate
     // the displacement gradient to obtain the surface area ratio da/dA.
@@ -170,13 +225,15 @@ NonLinearOperator<dim, Number>::boundary_face_loop_nonlinear(
     // depend on the parameter pull_back_traction.
     if(this->operator_data.pull_back_traction)
     {
-      this->integrator_m->read_dof_values_plain(src);
-      this->integrator_m->evaluate(dealii::EvaluationFlags::gradients);
+      integrator_m_inhom.gather_evaluate(src, dealii::EvaluationFlags::gradients);
     }
 
-    do_boundary_integral_continuous(*this->integrator_m, matrix_free.get_boundary_id(face));
+    do_boundary_integral_continuous(integrator_m_inhom, matrix_free.get_boundary_id(face));
 
-    this->integrator_m->integrate_scatter(this->integrator_flags.face_integrate, dst);
+    // make sure that we do not write into Dirichlet degrees of freedom
+    integrator_m_inhom.integrate(this->integrator_flags.face_integrate,
+                                 integrator_m.begin_dof_values());
+    integrator_m.distribute_local_to_global(dst);
   }
 }
 
@@ -195,11 +252,9 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
     // material deformation gradient
     tensor const F = get_F<dim, Number>(Grad_d);
 
-    // Green-Lagrange strains
-    tensor const E = get_E<dim, Number>(F);
-
-    // 2. Piola-Kirchhoff stresses
-    tensor const S = material->evaluate_stress(E, integrator.get_current_cell_index(), q);
+    // 2nd Piola-Kirchhoff stresses
+    tensor const S =
+      material->second_piola_kirchhoff_stress(Grad_d, integrator.get_current_cell_index(), q);
 
     // 1st Piola-Kirchhoff stresses P = F * S
     tensor const P = F * S;
@@ -208,29 +263,31 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
     integrator.submit_gradient(P, q);
 
     if(this->operator_data.unsteady)
+    {
       integrator.submit_value(this->scaling_factor_mass * this->operator_data.density *
                                 integrator.get_value(q),
                               q);
+    }
   }
 }
 
 template<int dim, typename Number>
 void
 NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
-  IntegratorFace &                   integrator_m,
+  IntegratorFace &                   integrator,
   dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 
-  for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+  for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
     auto traction = calculate_neumann_value<dim, Number>(
-      q, integrator_m, boundary_type, boundary_id, this->operator_data.bc, this->time);
+      q, integrator, boundary_type, boundary_id, this->operator_data.bc, this->time);
 
     if(this->operator_data.pull_back_traction)
     {
-      tensor F = get_F<dim, Number>(integrator_m.get_gradient(q));
-      vector N = integrator_m.get_normal_vector(q);
+      tensor F = get_F<dim, Number>(integrator.get_gradient(q));
+      vector N = integrator.get_normal_vector(q);
       // da/dA * n = det F F^{-T} * N := n_star
       // -> da/dA = n_star.norm()
       vector n_star = determinant(F) * transpose(invert(F)) * N;
@@ -238,19 +295,20 @@ NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
       traction *= n_star.norm();
     }
 
-    integrator_m.submit_value(-traction, q);
+    integrator.submit_value(-traction, q);
   }
 }
 
 template<int dim, typename Number>
 void
-NonLinearOperator<dim, Number>::reinit_cell(unsigned int const cell) const
+NonLinearOperator<dim, Number>::reinit_cell_derived(IntegratorCell &   integrator,
+                                                    unsigned int const cell) const
 {
-  Base::reinit_cell(cell);
+  Base::reinit_cell_derived(integrator, cell);
 
   integrator_lin->reinit(cell);
 
-  integrator_lin->read_dof_values_plain(displacement_lin);
+  integrator_lin->read_dof_values(displacement_lin);
   integrator_lin->evaluate(dealii::EvaluationFlags::gradients);
 }
 
@@ -266,20 +324,19 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
     // kinematics
     tensor const Grad_delta = integrator.get_gradient(q);
 
-    tensor const F_lin = get_F<dim, Number>(integrator_lin->get_gradient(q));
+    tensor const Grad_d_lin = integrator_lin->get_gradient(q);
 
-    // Green-Lagrange strains
-    tensor const E_lin = get_E<dim, Number>(F_lin);
+    tensor const F_lin = get_F<dim, Number>(Grad_d_lin);
 
     // 2nd Piola-Kirchhoff stresses
-    tensor const S_lin = material->evaluate_stress(E_lin, integrator.get_current_cell_index(), q);
+    tensor const S_lin =
+      material->second_piola_kirchhoff_stress(Grad_d_lin, integrator.get_current_cell_index(), q);
 
     // directional derivative of 1st Piola-Kirchhoff stresses P
 
     // 1. elastic and initial displacement stiffness contributions
-    tensor delta_P =
-      F_lin *
-      material->apply_C(transpose(F_lin) * Grad_delta, integrator.get_current_cell_index(), q);
+    tensor delta_P = F_lin * material->second_piola_kirchhoff_stress_displacement_derivative(
+                               Grad_delta, F_lin, integrator.get_current_cell_index(), q);
 
     // 2. geometric (or initial stress) stiffness contribution
     delta_P += Grad_delta * S_lin;
@@ -292,45 +349,6 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       integrator.submit_value(this->scaling_factor_mass * this->operator_data.density *
                                 integrator.get_value(q),
                               q);
-    }
-  }
-}
-
-template<int dim, typename Number>
-void
-NonLinearOperator<dim, Number>::cell_loop_valid_deformation(
-  dealii::MatrixFree<dim, Number> const & matrix_free,
-  Number &                                dst,
-  VectorType const &                      src,
-  Range const &                           range) const
-{
-  IntegratorCell integrator(matrix_free,
-                            this->operator_data.dof_index,
-                            this->operator_data.quad_index);
-
-  for(auto cell = range.first; cell < range.second; ++cell)
-  {
-    reinit_cell_nonlinear(integrator, cell);
-
-    integrator.read_dof_values_plain(src);
-
-    integrator.evaluate(dealii::EvaluationFlags::gradients);
-
-    // loop over all quadrature points
-    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-    {
-      // material displacement gradient
-      tensor const Grad_d = integrator.get_gradient(q);
-
-      // material deformation gradient
-      tensor const F     = get_F<dim, Number>(Grad_d);
-      scalar const det_F = determinant(F);
-      for(unsigned int v = 0; v < det_F.size(); ++v)
-      {
-        // if deformation is invalid, add a positive value to dst
-        if(det_F[v] <= 0.0)
-          dst += 1.0;
-      }
     }
   }
 }

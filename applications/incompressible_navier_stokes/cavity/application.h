@@ -207,20 +207,37 @@ private:
   void
   create_grid() final
   {
-    double const left = 0.0, right = L;
-    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    // set boundary indicator
-    for(auto cell : this->grid->triangulation->cell_iterators())
-    {
-      for(auto const & face : cell->face_indices())
-      {
-        if((std::fabs(cell->face(face)->center()(1) - L) < 1e-12))
-          cell->face(face)->set_boundary_id(1);
-      }
-    }
+        double const left = 0.0, right = L;
+        dealii::GridGenerator::hyper_cube(tria, left, right);
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        // set boundary indicator
+        for(auto cell : tria.cell_iterators())
+        {
+          for(auto const & face : cell->face_indices())
+          {
+            if((std::fabs(cell->face(face)->center()(1) - L) < 1e-12))
+              cell->face(face)->set_boundary_id(1);
+          }
+        }
+
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+                                                            this->mpi_comm,
+                                                            this->param.grid,
+                                                            this->param.involves_h_multigrid(),
+                                                            lambda_create_triangulation,
+                                                            {} /* no local refinements */);
   }
 
   void

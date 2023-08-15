@@ -96,8 +96,8 @@ radius_function(double const z)
 template<int dim>
 void
 create_grid_and_set_boundary_ids_nozzle(
-  std::shared_ptr<dealii::Triangulation<dim>> triangulation,
-  unsigned int const                          n_refine_space,
+  dealii::Triangulation<dim> & triangulation,
+  unsigned int const           n_refine_space,
   std::vector<dealii::GridTools::PeriodicFacePair<
     typename dealii::Triangulation<dim>::cell_iterator>> & /*periodic_faces*/)
 {
@@ -115,8 +115,6 @@ create_grid_and_set_boundary_ids_nozzle(
   dealii::Tensor<1, dim> offset_inflow;
   offset_inflow[2] = Z1_INFLOW;
   dealii::GridTools::shift(offset_inflow, tria_inflow);
-
-  dealii::Triangulation<dim> * current_tria = &tria_inflow;
 
   /*
    *   Cone
@@ -214,12 +212,12 @@ create_grid_and_set_boundary_ids_nozzle(
   dealii::Triangulation<dim> tria_tmp, tria_tmp2;
   dealii::GridGenerator::merge_triangulations(tria_inflow, tria_cone, tria_tmp);
   dealii::GridGenerator::merge_triangulations(tria_tmp, tria_throat, tria_tmp2);
-  dealii::GridGenerator::merge_triangulations(tria_tmp2, tria_outflow, *triangulation);
+  dealii::GridGenerator::merge_triangulations(tria_tmp2, tria_outflow, triangulation);
 
   /*
    *  MANIFOLDS
    */
-  current_tria = &(*triangulation);
+  dealii::Triangulation<dim> * current_tria = &triangulation;
   current_tria->set_all_manifold_ids(0);
 
   // first fill vectors of manifold_ids and face_ids
@@ -389,7 +387,7 @@ create_grid_and_set_boundary_ids_nozzle(
         dealii::Point<dim> center = dealii::Point<dim>();
         manifold_vec[i] =
           std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
-            new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
+            new OneSidedCylindricalManifold<dim>(*current_tria, cell, face_ids[i], center)));
         current_tria->set_manifold(manifold_ids[i], *(manifold_vec[i]));
       }
     }
@@ -408,7 +406,7 @@ create_grid_and_set_boundary_ids_nozzle(
         dealii::Point<dim> center = dealii::Point<dim>();
         manifold_vec_cone[i]      = std::shared_ptr<dealii::Manifold<dim>>(
           static_cast<dealii::Manifold<dim> *>(new OneSidedConicalManifold<dim>(
-            cell, face_ids_cone[i], center, radius_0_cone[i], radius_1_cone[i])));
+            *current_tria, cell, face_ids_cone[i], center, radius_0_cone[i], radius_1_cone[i])));
         current_tria->set_manifold(manifold_ids_cone[i], *(manifold_vec_cone[i]));
       }
     }
@@ -423,7 +421,7 @@ create_grid_and_set_boundary_ids_nozzle(
   /*
    *  BOUNDARY ID's
    */
-  for(auto cell : triangulation->cell_iterators())
+  for(auto cell : triangulation.cell_iterators())
   {
     for(auto const & f : cell->face_indices())
     {
@@ -442,7 +440,103 @@ create_grid_and_set_boundary_ids_nozzle(
   }
 
   // perform global refinements
-  triangulation->refine_global(n_refine_space);
+  triangulation.refine_global(n_refine_space);
+}
+
+template<int dim>
+void
+create_grid_and_set_boundary_ids_precursor(
+  dealii::Triangulation<dim> & tria,
+  unsigned int const           n_refine_space,
+  std::vector<
+    dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>> &
+    periodic_face_pairs)
+{
+  dealii::Triangulation<2> tria_2d;
+  dealii::GridGenerator::hyper_ball(tria_2d, dealii::Point<2>(), R_OUTER);
+  dealii::GridGenerator::extrude_triangulation(tria_2d,
+                                               N_CELLS_AXIAL_PRECURSOR + 1,
+                                               LENGTH_PRECURSOR,
+                                               tria);
+  dealii::Tensor<1, dim> offset = dealii::Tensor<1, dim>();
+  offset[2]                     = Z1_PRECURSOR;
+  dealii::GridTools::shift(offset, tria);
+
+  /*
+   *  MANIFOLDS
+   */
+  tria.set_all_manifold_ids(0);
+
+  // first fill vectors of manifold_ids and face_ids
+  std::vector<unsigned int> manifold_ids;
+  std::vector<unsigned int> face_ids;
+
+  for(auto cell : tria.cell_iterators())
+  {
+    for(auto const & f : cell->face_indices())
+    {
+      bool face_at_sphere_boundary = true;
+      for(auto const & v : cell->face(f)->vertex_indices())
+      {
+        dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
+
+        if(std::abs((cell->face(f)->vertex(v) - point).norm() - R_OUTER) > 1e-12)
+          face_at_sphere_boundary = false;
+      }
+      if(face_at_sphere_boundary)
+      {
+        face_ids.push_back(f);
+        unsigned int manifold_id = manifold_ids.size() + 1;
+        cell->set_all_manifold_ids(manifold_id);
+        manifold_ids.push_back(manifold_id);
+      }
+    }
+  }
+
+  // generate vector of manifolds and apply manifold to all cells that have been marked
+  static std::vector<std::shared_ptr<dealii::Manifold<dim>>> manifold_vec;
+  manifold_vec.resize(manifold_ids.size());
+
+  for(unsigned int i = 0; i < manifold_ids.size(); ++i)
+  {
+    for(auto cell : tria.cell_iterators())
+    {
+      if(cell->manifold_id() == manifold_ids[i])
+      {
+        manifold_vec[i] =
+          std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
+            new OneSidedCylindricalManifold<dim>(tria, cell, face_ids[i], dealii::Point<dim>())));
+        tria.set_manifold(manifold_ids[i], *(manifold_vec[i]));
+      }
+    }
+  }
+
+  /*
+   *  BOUNDARY ID's
+   */
+  for(auto cell : tria.cell_iterators())
+  {
+    for(auto const & face : cell->face_indices())
+    {
+      // left boundary
+      if((std::fabs(cell->face(face)->center()[2] - Z1_PRECURSOR) < 1e-12))
+      {
+        cell->face(face)->set_boundary_id(0 + 10);
+      }
+
+      // right boundary
+      if((std::fabs(cell->face(face)->center()[2] - Z2_PRECURSOR) < 1e-12))
+      {
+        cell->face(face)->set_boundary_id(1 + 10);
+      }
+    }
+  }
+
+  dealii::GridTools::collect_periodic_faces(tria, 0 + 10, 1 + 10, 2, periodic_face_pairs);
+  tria.add_periodicity(periodic_face_pairs);
+
+  // perform global refinements
+  tria.refine_global(n_refine_space);
 }
 
 } // namespace FDANozzle

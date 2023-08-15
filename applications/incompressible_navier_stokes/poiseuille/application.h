@@ -207,16 +207,17 @@ private:
 
 
     // TEMPORAL DISCRETIZATION
-    this->param.solver_type                   = SolverType::Unsteady;
-    this->param.temporal_discretization       = TemporalDiscretization::BDFDualSplittingScheme;
-    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
-    this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
-    this->param.adaptive_time_stepping        = true;
-    this->param.max_velocity                  = max_velocity;
-    this->param.cfl                           = 2.0e-1;
-    this->param.time_step_size                = 1.0e-1;
-    this->param.order_time_integrator         = 2;    // 1; // 2; // 3;
-    this->param.start_with_low_order          = true; // true; // false;
+    this->param.solver_type                     = SolverType::Unsteady;
+    this->param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
+    this->param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
+    this->param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
+    this->param.adaptive_time_stepping          = true;
+    this->param.max_velocity                    = max_velocity;
+    this->param.cfl                             = 2.0e-1;
+    this->param.cfl_exponent_fe_degree_velocity = 1.5;
+    this->param.time_step_size                  = 1.0e-1;
+    this->param.order_time_integrator           = 2;    // 1; // 2; // 3;
+    this->param.start_with_low_order            = true; // true; // false;
 
     this->param.convergence_criterion_steady_problem =
       ConvergenceCriterionSteadyProblem::SolutionIncrement; // ResidualSteadyNavierStokes;
@@ -314,38 +315,50 @@ private:
   void
   create_grid() final
   {
-    double const              y_upper = apply_symmetry_bc ? 0.0 : H / 2.;
-    dealii::Point<dim>        point1(0.0, -H / 2.), point2(L, y_upper);
-    std::vector<unsigned int> repetitions({2, 1});
-    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                                      repetitions,
-                                                      point1,
-                                                      point2);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)vector_local_refinements;
 
-    // set boundary indicator
-    for(auto cell : this->grid->triangulation->cell_iterators())
-    {
-      for(auto const & face : cell->face_indices())
-      {
-        if((std::fabs(cell->face(face)->center()(0) - 0.0) < 1e-12))
-          cell->face(face)->set_boundary_id(1);
-        if((std::fabs(cell->face(face)->center()(0) - L) < 1e-12))
-          cell->face(face)->set_boundary_id(2);
+        double const              y_upper = apply_symmetry_bc ? 0.0 : H / 2.;
+        dealii::Point<dim>        point1(0.0, -H / 2.), point2(L, y_upper);
+        std::vector<unsigned int> repetitions({2, 1});
+        dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, point1, point2);
 
-        if(apply_symmetry_bc) // upper wall
-          if((std::fabs(cell->face(face)->center()(1) - y_upper) < 1e-12))
-            cell->face(face)->set_boundary_id(3);
-      }
-    }
+        // set boundary indicator
+        for(auto cell : tria.cell_iterators())
+        {
+          for(auto const & face : cell->face_indices())
+          {
+            if((std::fabs(cell->face(face)->center()(0) - 0.0) < 1e-12))
+              cell->face(face)->set_boundary_id(1);
+            if((std::fabs(cell->face(face)->center()(0) - L) < 1e-12))
+              cell->face(face)->set_boundary_id(2);
 
-    if(boundary_condition == BoundaryCondition::Periodic)
-    {
-      dealii::GridTools::collect_periodic_faces(
-        *this->grid->triangulation, 1, 2, 0, this->grid->periodic_face_pairs);
-      this->grid->triangulation->add_periodicity(this->grid->periodic_face_pairs);
-    }
+            if(apply_symmetry_bc) // upper wall
+              if((std::fabs(cell->face(face)->center()(1) - y_upper) < 1e-12))
+                cell->face(face)->set_boundary_id(3);
+          }
+        }
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        if(boundary_condition == BoundaryCondition::Periodic)
+        {
+          dealii::GridTools::collect_periodic_faces(tria, 1, 2, 0, periodic_face_pairs);
+          tria.add_periodicity(periodic_face_pairs);
+        }
+
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+                                                            this->mpi_comm,
+                                                            this->param.grid,
+                                                            this->param.involves_h_multigrid(),
+                                                            lambda_create_triangulation,
+                                                            {} /* no local refinements */);
   }
 
   void

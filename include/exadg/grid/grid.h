@@ -23,12 +23,10 @@
 #define INCLUDE_EXADG_GRID_GRID_H_
 
 // deal.II
-#include <deal.II/distributed/fully_distributed_tria.h>
-#include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
+#include <deal.II/grid/tria.h>
 
 // ExaDG
-#include <exadg/grid/grid_data.h>
 #include <exadg/grid/mapping_dof_vector.h>
 
 namespace ExaDG
@@ -44,19 +42,6 @@ public:
   typedef typename std::vector<
     dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>>
     PeriodicFacePairs;
-
-  /**
-   * Constructor.
-   */
-  Grid()
-  {
-  }
-
-  /**
-   * Initialize function
-   */
-  void
-  initialize(GridData const & data, MPI_Comm const & mpi_comm);
 
   /**
    * dealii::Triangulation.
@@ -101,12 +86,11 @@ public:
     initialize_coarse_mappings =
       [&](std::vector<std::shared_ptr<dealii::Mapping<dim> const>> & coarse_mappings,
           std::shared_ptr<dealii::Mapping<dim> const> const &        fine_mapping) {
-        MappingTools::initialize_coarse_mappings<dim, double>(
-          coarse_mappings, fine_mapping, data.multigrid, triangulation, coarse_triangulations);
+        MappingTools::initialize_coarse_mappings<dim, double>(coarse_mappings,
+                                                              fine_mapping,
+                                                              triangulation,
+                                                              coarse_triangulations);
       };
-
-private:
-  GridData data;
 };
 
 } // namespace ExaDG

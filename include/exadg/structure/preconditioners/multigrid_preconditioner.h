@@ -62,7 +62,6 @@ public:
 
   void
   initialize(MultigridData const &                       mg_data,
-             MultigridVariant const &                    multigrid_variant,
              std::shared_ptr<Grid<dim> const>            grid,
              std::shared_ptr<dealii::Mapping<dim> const> mapping,
              dealii::FiniteElement<dim> const &          fe,
@@ -79,9 +78,16 @@ public:
 
 private:
   void
+  initialize_dof_handler_and_constraints(
+    bool const                    operator_is_singular,
+    unsigned int const            n_components,
+    Map_DBC const &               dirichlet_bc,
+    Map_DBC_ComponentMask const & dirichlet_bc_component_mask) final;
+
+  void
   fill_matrix_free_data(MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
                         unsigned int const                     level,
-                        unsigned int const                     h_level) final;
+                        unsigned int const                     dealii_tria_level) final;
 
   std::shared_ptr<MGOperatorBase>
   initialize_operator(unsigned int const level) final;
@@ -102,6 +108,11 @@ private:
   OperatorData<dim> data;
 
   ElasticityOperatorBase<dim, Number> const * pde_operator;
+
+  // additional constraints without Dirichlet degrees of freedom
+  dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> dof_handlers_inhomogeneous;
+  dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>>
+    constraints_inhomogeneous;
 
   bool nonlinear;
 };

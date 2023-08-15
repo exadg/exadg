@@ -974,7 +974,7 @@ create_coarse_triangulation(dealii::Triangulation<dim> &                        
       {
         manifold_vec[i] =
           std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
-            new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
+            new OneSidedCylindricalManifold<dim>(triangulation, cell, face_ids[i], center)));
         triangulation.set_manifold(manifold_ids[i], *(manifold_vec[i]));
       }
     }

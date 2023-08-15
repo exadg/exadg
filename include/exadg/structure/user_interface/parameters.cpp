@@ -41,6 +41,10 @@ Parameters::Parameters()
     // PHYSICAL QUANTITIES
     density(1.0),
 
+    // WEAK LINEAR DAMPING
+    weak_damping_active(false),
+    weak_damping_coefficient(0.0),
+
     // TEMPORAL DISCRETIZATION
     start_time(0.0),
     end_time(1.0),
@@ -58,6 +62,7 @@ Parameters::Parameters()
 
     // SPATIAL DISCRETIZATION
     grid(GridData()),
+    mapping_degree(1),
     degree(1),
 
     // SOLVER
@@ -91,6 +96,12 @@ Parameters::check() const
   {
     AssertThrow(restarted_simulation == false,
                 dealii::ExcMessage("Restart has not been implemented."));
+
+    if(weak_damping_active)
+    {
+      AssertThrow(weak_damping_coefficient > 0.0,
+                  dealii::ExcMessage("Weak linear damping requires positive coefficient."));
+    }
   }
 
   // SPATIAL DISCRETIZATION
@@ -158,6 +169,11 @@ Parameters::print_parameters_physical_quantities(dealii::ConditionalOStream cons
   if(problem_type == ProblemType::Unsteady)
   {
     print_parameter(pcout, "Density", density);
+
+    if(weak_damping_active)
+    {
+      print_parameter(pcout, "Weak damping coefficient", weak_damping_coefficient);
+    }
   }
 }
 
@@ -191,6 +207,8 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
   pcout << std::endl << "Spatial Discretization:" << std::endl;
 
   grid.print(pcout);
+
+  print_parameter(pcout, "Mapping degree", mapping_degree);
 
   print_parameter(pcout, "Polynomial degree", degree);
 }

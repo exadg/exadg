@@ -21,6 +21,7 @@
 
 #include <exadg/functions_and_boundary_conditions/evaluate_functions.h>
 #include <exadg/structure/material/library/st_venant_kirchhoff.h>
+#include <exadg/structure/spatial_discretization/operators/continuum_mechanics.h>
 
 namespace ExaDG
 {
@@ -31,12 +32,15 @@ StVenantKirchhoff<dim, Number>::StVenantKirchhoff(
   dealii::MatrixFree<dim, Number> const & matrix_free,
   unsigned int const                      dof_index,
   unsigned int const                      quad_index,
-  StVenantKirchhoffData<dim> const &      data)
+  StVenantKirchhoffData<dim> const &      data,
+  bool const                              large_deformation)
   : dof_index(dof_index),
     quad_index(quad_index),
     data(data),
+    large_deformation(large_deformation),
     E_is_variable(data.E_function != nullptr)
 {
+  // initialize (potentially variable) factors
   Number const E = data.E;
   f0             = dealii::make_vectorized_array<Number>(get_f0_factor() * E);
   f1             = dealii::make_vectorized_array<Number>(get_f1_factor() * E);
@@ -70,9 +74,9 @@ StVenantKirchhoff<dim, Number>::get_f0_factor() const
   Type2D const type_two_dim = data.type_two_dim;
 
   return (dim == 3) ?
-           (1. - nu) / (1. + nu) / (1. - 2. * nu) :
+           (1. - nu) / ((1. + nu) * (1. - 2. * nu)) :
            (type_two_dim == Type2D::PlaneStress ? (1. / (1. - nu * nu)) :
-                                                  ((1. - nu) / (1. + nu) / (1. - 2. * nu)));
+                                                  ((1. - nu) / ((1. + nu) * (1. - 2. * nu))));
 }
 
 template<int dim, typename Number>
@@ -82,9 +86,9 @@ StVenantKirchhoff<dim, Number>::get_f1_factor() const
   Number const nu           = data.nu;
   Type2D const type_two_dim = data.type_two_dim;
 
-  return (dim == 3) ? (nu) / (1. + nu) / (1. - 2. * nu) :
+  return (dim == 3) ? (nu) / ((1. + nu) * (1. - 2. * nu)) :
                       (type_two_dim == Type2D::PlaneStress ? (nu / (1. - nu * nu)) :
-                                                             (nu / (1. + nu) / (1. - 2. * nu)));
+                                                             (nu / ((1. + nu) * (1. - 2. * nu))));
 }
 
 template<int dim, typename Number>
@@ -94,10 +98,10 @@ StVenantKirchhoff<dim, Number>::get_f2_factor() const
   Number const nu           = data.nu;
   Type2D const type_two_dim = data.type_two_dim;
 
-  return (dim == 3) ? (1. - 2. * nu) / 2. / (1. + nu) / (1. - 2. * nu) :
+  return (dim == 3) ? (1. - 2. * nu) / (2.0 * (1. + nu) * (1. - 2. * nu)) :
                       (type_two_dim == Type2D::PlaneStress ?
-                         ((1. - nu) / 2. / (1. - nu * nu)) :
-                         ((1. - 2. * nu) / 2. / (1. + nu) / (1. - 2. * nu)));
+                         ((1. - nu) / (2.0 * (1. - nu * nu))) :
+                         ((1. - 2. * nu) / (2.0 * (1. + nu) * (1. - 2. * nu))));
 }
 
 template<int dim, typename Number>
@@ -109,6 +113,10 @@ StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients(
   Range const & cell_range) const
 {
   IntegratorCell integrator(matrix_free, dof_index, quad_index);
+
+  auto const f0_factor = get_f0_factor();
+  auto const f1_factor = get_f1_factor();
+  auto const f2_factor = get_f2_factor();
 
   // loop over all cells
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
@@ -124,17 +132,17 @@ StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients(
                                                  0.0 /*time*/);
 
       // set the coefficients
-      f0_coefficients.set_coefficient_cell(cell, q, get_f0_factor() * E_vec);
-      f1_coefficients.set_coefficient_cell(cell, q, get_f1_factor() * E_vec);
-      f2_coefficients.set_coefficient_cell(cell, q, get_f2_factor() * E_vec);
+      f0_coefficients.set_coefficient_cell(cell, q, f0_factor * E_vec);
+      f1_coefficients.set_coefficient_cell(cell, q, f1_factor * E_vec);
+      f2_coefficients.set_coefficient_cell(cell, q, f2_factor * E_vec);
     }
   }
 }
 
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-StVenantKirchhoff<dim, Number>::evaluate_stress(
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
+StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_symmetrize(
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & strain,
   unsigned int const                                              cell,
   unsigned int const                                              q) const
 {
@@ -149,22 +157,22 @@ StVenantKirchhoff<dim, Number>::evaluate_stress(
 
   if(dim == 3)
   {
-    S[0][0] = f0 * E[0][0] + f1 * E[1][1] + f1 * E[2][2];
-    S[1][1] = f1 * E[0][0] + f0 * E[1][1] + f1 * E[2][2];
-    S[2][2] = f1 * E[0][0] + f1 * E[1][1] + f0 * E[2][2];
-    S[0][1] = f2 * (E[0][1] + E[1][0]);
-    S[1][2] = f2 * (E[1][2] + E[2][1]);
-    S[0][2] = f2 * (E[0][2] + E[2][0]);
-    S[1][0] = f2 * (E[0][1] + E[1][0]);
-    S[2][1] = f2 * (E[1][2] + E[2][1]);
-    S[2][0] = f2 * (E[0][2] + E[2][0]);
+    S[0][0] = f0 * strain[0][0] + f1 * (strain[1][1] + strain[2][2]);
+    S[1][1] = f0 * strain[1][1] + f1 * (strain[0][0] + strain[2][2]);
+    S[2][2] = f0 * strain[2][2] + f1 * (strain[0][0] + strain[1][1]);
+    S[0][1] = f2 * (strain[0][1] + strain[1][0]);
+    S[1][2] = f2 * (strain[1][2] + strain[2][1]);
+    S[0][2] = f2 * (strain[0][2] + strain[2][0]);
+    S[1][0] = S[0][1];
+    S[2][1] = S[1][2];
+    S[2][0] = S[0][2];
   }
   else
   {
-    S[0][0] = f0 * E[0][0] + f1 * E[1][1];
-    S[1][1] = f1 * E[0][0] + f0 * E[1][1];
-    S[0][1] = f2 * (E[0][1] + E[1][0]);
-    S[1][0] = f2 * (E[0][1] + E[1][0]);
+    S[0][0] = f0 * strain[0][0] + f1 * strain[1][1];
+    S[1][1] = f1 * strain[0][0] + f0 * strain[1][1];
+    S[0][1] = f2 * (strain[0][1] + strain[1][0]);
+    S[1][0] = S[0][1];
   }
 
   return S;
@@ -172,12 +180,34 @@ StVenantKirchhoff<dim, Number>::evaluate_stress(
 
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-StVenantKirchhoff<dim, Number>::apply_C(
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
+StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
   unsigned int const                                              cell,
   unsigned int const                                              q) const
 {
-  return evaluate_stress(E, cell, q);
+  if(large_deformation)
+  {
+    return (this->second_piola_kirchhoff_stress_symmetrize(
+      get_E<dim, Number>(get_F<dim, Number>(gradient_displacement)), cell, q));
+  }
+  else
+  {
+    return (this->second_piola_kirchhoff_stress_symmetrize(gradient_displacement, cell, q));
+  }
+}
+
+template<int dim, typename Number>
+dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_displacement_derivative(
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_increment,
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & deformation_gradient,
+  unsigned int const                                              cell,
+  unsigned int const                                              q) const
+{
+  // Exploit linear stress-strain relationship and symmetrizing in
+  // second_piola_kirchhoff_stress_symmetrize
+  return (this->second_piola_kirchhoff_stress_symmetrize(
+    transpose(deformation_gradient) * gradient_increment, cell, q));
 }
 
 template class StVenantKirchhoff<2, float>;

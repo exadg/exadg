@@ -31,8 +31,9 @@
 
 // ExaDG
 #include <exadg/grid/grid.h>
+#include <exadg/grid/grid_utilities.h>
+#include <exadg/operators/resolution_parameters.h>
 #include <exadg/postprocessor/output_parameters.h>
-#include <exadg/utilities/resolution_parameters.h>
 
 // Fluid
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
@@ -105,7 +106,6 @@ public:
     param.print(pcout, "List of parameters for structure:");
 
     // grid
-    grid->initialize(param.grid, mpi_comm);
     GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
     create_grid();
     print_grid_info(pcout, *grid);
@@ -202,7 +202,7 @@ private:
   virtual void
   set_field_functions() = 0;
 
-  ResolutionParameters resolution;
+  SpatialResolutionParameters resolution;
 };
 
 } // namespace StructureFSI
@@ -259,7 +259,6 @@ public:
                 dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
     // grid
-    grid->initialize(param.grid, mpi_comm);
     GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
     create_grid();
     print_grid_info(pcout, *grid);
@@ -284,7 +283,8 @@ public:
       AssertThrow(ale_poisson_param.right_hand_side == false,
                   dealii::ExcMessage("Parameter does not make sense in context of FSI."));
       AssertThrow(
-        ale_poisson_param.grid.multigrid == param.grid.multigrid,
+        ale_poisson_param.grid.create_coarse_triangulations ==
+          param.grid.create_coarse_triangulations,
         dealii::ExcMessage(
           "ALE and fluid use the same Grid, requiring the same settings in terms of multigrid coarsening."));
 
@@ -307,7 +307,8 @@ public:
       AssertThrow(ale_elasticity_param.body_force == false,
                   dealii::ExcMessage("Parameter does not make sense in context of FSI."));
       AssertThrow(
-        ale_poisson_param.grid.multigrid == param.grid.multigrid,
+        ale_poisson_param.grid.create_coarse_triangulations ==
+          param.grid.create_coarse_triangulations,
         dealii::ExcMessage(
           "ALE and fluid use the same Grid, requiring the same settings in terms of multigrid coarsening."));
 
@@ -482,7 +483,7 @@ private:
   virtual void
   set_field_functions_ale_elasticity() = 0;
 
-  ResolutionParameters resolution;
+  SpatialResolutionParameters resolution;
 };
 } // namespace FluidFSI
 

@@ -28,6 +28,7 @@
 #include <deal.II/fe/fe_values.h>
 
 // ExaDG
+#include <exadg/grid/grid_data.h>
 #include <exadg/postprocessor/statistics_manager.h>
 #include <exadg/utilities/create_directories.h>
 
@@ -46,6 +47,8 @@ StatisticsManager<dim, Number>::StatisticsManager(
     number_of_samples(0),
     data(TurbulentChannelData())
 {
+  AssertThrow(get_element_type(dof_handler_velocity.get_triangulation()) == ElementType::Hypercube,
+              dealii::ExcMessage("Only implemented for hypercube elements."));
 }
 
 template<int dim, typename Number>
@@ -388,8 +391,6 @@ StatisticsManager<dim, Number>::do_evaluate(const std::vector<VectorType const *
   // vector of dealii::FEValues for all x-z-planes of a cell
   std::vector<std::shared_ptr<dealii::FEValues<dim, dim>>> fe_values(n_points_y_per_cell);
 
-  // TODO
-  //  dealii::MappingQ<dim> mapping(fe_degree);
   for(unsigned int i = 0; i < n_points_y_per_cell; ++i)
   {
     std::vector<dealii::Point<dim>> points(gauss_2d.size());
@@ -411,8 +412,6 @@ StatisticsManager<dim, Number>::do_evaluate(const std::vector<VectorType const *
   }
 
   unsigned int const scalar_dofs_per_cell = dof_handler.get_fe().base_element(0).dofs_per_cell;
-  // TODO this variable is not used
-  //  std::vector<double> vel_values(fe_values[0]->n_quadrature_points);
   std::vector<dealii::Tensor<1, dim>>          velocity_vector(scalar_dofs_per_cell);
   std::vector<dealii::types::global_dof_index> dof_indices(dof_handler.get_fe().dofs_per_cell);
 

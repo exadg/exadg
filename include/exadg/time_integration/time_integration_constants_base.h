@@ -50,7 +50,7 @@ public:
     // when starting the time integrator with a low order method, ensure that
     // the time integrator constants are set properly
     unsigned int const update_order =
-      (current_order <= order && start_with_low_order == true) ? current_order : order;
+      (current_order <= order and start_with_low_order == true) ? current_order : order;
 
     if(adaptive_time_stepping)
       set_adaptive_time_step(update_order, time_steps);

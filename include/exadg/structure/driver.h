@@ -43,21 +43,11 @@ namespace Structure
 {
 enum class OperatorType
 {
-  Nonlinear,
-  Linearized
+  Evaluate, // includes inhomogeneous boundary conditions, where the nonlinear operator is evaluated
+            // in case of nonlinear problems
+  Apply     // homogeneous action of operator, where the linearized operator is applied in case of
+            // nonlinear problems
 };
-
-inline unsigned int
-get_dofs_per_element(std::string const & input_file,
-                     unsigned int const  dim,
-                     unsigned int const  degree)
-{
-  (void)input_file;
-
-  unsigned int const dofs_per_element = dealii::Utilities::pow(degree, dim) * dim;
-
-  return dofs_per_element;
-}
 
 template<int dim, typename Number>
 class Driver
@@ -81,9 +71,9 @@ public:
    * Throughput study
    */
   std::tuple<unsigned int, dealii::types::global_dof_index, double>
-  apply_operator(std::string const & operator_type_string,
-                 unsigned int const  n_repetitions_inner,
-                 unsigned int const  n_repetitions_outer) const;
+  apply_operator(OperatorType const & operator_type,
+                 unsigned int const   n_repetitions_inner,
+                 unsigned int const   n_repetitions_outer) const;
 
 private:
   // MPI communicator

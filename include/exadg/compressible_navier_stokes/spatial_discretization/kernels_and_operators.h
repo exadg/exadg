@@ -32,7 +32,6 @@
 #include <exadg/compressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/compressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/functions_and_boundary_conditions/evaluate_functions.h>
-#include <exadg/grid/grid_utilities.h>
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/interior_penalty_parameter.h>
 
@@ -1020,7 +1019,7 @@ public:
                fe_eval_p.read_cell_data(array_penalty_parameter)) *
       IP::get_penalty_factor<dim, Number>(
         degree,
-        GridUtilities::get_element_type(
+        get_element_type(
           fe_eval_m.get_matrix_free().get_dof_handler(data.dof_index).get_triangulation()),
         data.IP_factor) *
       nu;
@@ -1035,7 +1034,7 @@ public:
     scalar tau = fe_eval.read_cell_data(array_penalty_parameter) *
                  IP::get_penalty_factor<dim, Number>(
                    degree,
-                   GridUtilities::get_element_type(
+                   get_element_type(
                      fe_eval.get_matrix_free().get_dof_handler(data.dof_index).get_triangulation()),
                    data.IP_factor) *
                  nu;

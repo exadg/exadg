@@ -200,7 +200,6 @@ private:
     this->param.mapping_degree          = this->param.degree_u;
     this->param.degree_p                = DegreePressure::MixedOrder;
     this->param.grid.element_type       = ElementType::Hypercube;
-    this->param.grid.multigrid          = MultigridVariant::LocalSmoothing;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -336,9 +335,8 @@ private:
             typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
           unsigned int const                                       global_refinements,
           std::vector<unsigned int> const &                        vector_local_refinements) {
-        (void)periodic_face_pairs;
         create_coarse_grid<dim>(tria,
-                                this->grid->periodic_face_pairs,
+                                periodic_face_pairs,
                                 cylinder_type,
                                 this->param.grid.element_type);
 
@@ -349,10 +347,12 @@ private:
           tria.refine_global(global_refinements);
       };
 
-    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
-                                                              this->param.grid,
-                                                              this->param.involves_h_multigrid(),
-                                                              lambda_create_triangulation);
+    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+                                                            this->mpi_comm,
+                                                            this->param.grid,
+                                                            this->param.involves_h_multigrid(),
+                                                            lambda_create_triangulation,
+                                                            {} /* no local refinements */);
   }
 
   void

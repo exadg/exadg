@@ -117,19 +117,37 @@ private:
   void
   create_grid() final
   {
-    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    // set boundary id of 1 at right boundary (outflow)
-    for(auto cell : *this->grid->triangulation)
-    {
-      for(auto const & f : cell.face_indices())
-      {
-        if((std::fabs(cell.face(f)->center()(0) - right) < 1e-12))
-          cell.face(f)->set_boundary_id(1);
-      }
-    }
+        // hypercube volume is [left,right]^dim
+        dealii::GridGenerator::hyper_cube(tria, left, right);
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        // set boundary id of 1 at right boundary (outflow)
+        for(auto cell : tria)
+        {
+          for(auto const & f : cell.face_indices())
+          {
+            if((std::fabs(cell.face(f)->center()(0) - right) < 1e-12))
+              cell.face(f)->set_boundary_id(1);
+          }
+        }
+
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+                                                            this->mpi_comm,
+                                                            this->param.grid,
+                                                            this->param.involves_h_multigrid(),
+                                                            lambda_create_triangulation,
+                                                            {} /* no local refinements */);
   }
 
   std::shared_ptr<dealii::Function<dim>>

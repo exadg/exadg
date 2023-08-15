@@ -28,8 +28,9 @@
 #include <exadg/poisson/driver.h>
 
 // utilities
+#include <exadg/grid/grid_data.h>
+#include <exadg/operators/resolution_parameters.h>
 #include <exadg/utilities/general_parameters.h>
-#include <exadg/utilities/hypercube_resolution_parameters.h>
 
 // application
 #include <exadg/poisson/user_interface/declare_get_application.h>
@@ -44,8 +45,8 @@ create_input_file(std::string const & input_file)
   GeneralParameters general;
   general.add_parameters(prm);
 
-  HypercubeResolutionParameters resolution;
-  resolution.add_parameters(prm);
+  SpatialResolutionParametersMinMax spatial;
+  spatial.add_parameters(prm);
 
   // we have to assume a default dimension and default Number type
   // for the automatic generation of a default input file
@@ -64,7 +65,6 @@ run(std::vector<SolverResult> & results,
     std::string const &         input_file,
     unsigned int const          degree,
     unsigned int const          refine_space,
-    unsigned int const          n_cells_1d,
     MPI_Comm const &            mpi_comm,
     bool const                  is_test)
 {
@@ -74,7 +74,7 @@ run(std::vector<SolverResult> & results,
   std::shared_ptr<Poisson::ApplicationBase<dim, 1, Number>> application =
     Poisson::get_application<dim, 1, Number>(input_file, mpi_comm);
 
-  application->set_parameters_refinement_study(degree, refine_space, n_cells_1d);
+  application->set_parameters_convergence_study(degree, refine_space);
 
   std::shared_ptr<Poisson::Driver<dim, Number>> driver =
     std::make_shared<Poisson::Driver<dim, Number>>(mpi_comm, application, is_test, false);
@@ -120,36 +120,41 @@ main(int argc, char ** argv)
     }
   }
 
-  ExaDG::GeneralParameters             general(input_file);
-  ExaDG::HypercubeResolutionParameters resolution(input_file, general.dim);
-
-  // fill resolution vector
-  resolution.fill_resolution_vector(&ExaDG::Poisson::get_dofs_per_element, input_file);
+  ExaDG::GeneralParameters                 general(input_file);
+  ExaDG::SpatialResolutionParametersMinMax spatial(input_file);
 
   std::vector<ExaDG::SolverResult> results;
 
-  // loop over resolutions vector and run simulations
-  for(auto iter = resolution.resolutions.begin(); iter != resolution.resolutions.end(); ++iter)
+  // k-refinement
+  for(unsigned int degree = spatial.degree_min; degree <= spatial.degree_max; ++degree)
   {
-    unsigned int const degree       = std::get<0>(*iter);
-    unsigned int const refine_space = std::get<1>(*iter);
-    unsigned int const n_cells_1d   = std::get<2>(*iter);
-
-    if(general.dim == 2 and general.precision == "float")
-      ExaDG::run<2, float>(
-        results, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
-    else if(general.dim == 2 and general.precision == "double")
-      ExaDG::run<2, double>(
-        results, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
-    else if(general.dim == 3 and general.precision == "float")
-      ExaDG::run<3, float>(
-        results, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
-    else if(general.dim == 3 and general.precision == "double")
-      ExaDG::run<3, double>(
-        results, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
-    else
-      AssertThrow(false,
-                  dealii::ExcMessage("Only dim = 2|3 and precision = float|double implemented."));
+    // h-refinement
+    for(unsigned int refine_space = spatial.refine_space_min;
+        refine_space <= spatial.refine_space_max;
+        ++refine_space)
+    {
+      if(general.dim == 2 and general.precision == "float")
+      {
+        ExaDG::run<2, float>(results, input_file, degree, refine_space, mpi_comm, general.is_test);
+      }
+      else if(general.dim == 2 and general.precision == "double")
+      {
+        ExaDG::run<2, double>(results, input_file, degree, refine_space, mpi_comm, general.is_test);
+      }
+      else if(general.dim == 3 and general.precision == "float")
+      {
+        ExaDG::run<3, float>(results, input_file, degree, refine_space, mpi_comm, general.is_test);
+      }
+      else if(general.dim == 3 and general.precision == "double")
+      {
+        ExaDG::run<3, double>(results, input_file, degree, refine_space, mpi_comm, general.is_test);
+      }
+      else
+      {
+        AssertThrow(false,
+                    dealii::ExcMessage("Only dim = 2|3 and precision = float|double implemented."));
+      }
+    }
   }
 
   if(not(general.is_test))

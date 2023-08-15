@@ -26,7 +26,6 @@
 #include <deal.II/base/conditional_ostream.h>
 
 // ExaDG
-#include <exadg/grid/enum_types.h>
 #include <exadg/grid/grid_data.h>
 #include <exadg/incompressible_navier_stokes/user_interface/enum_types.h>
 #include <exadg/incompressible_navier_stokes/user_interface/viscosity_model_data.h>

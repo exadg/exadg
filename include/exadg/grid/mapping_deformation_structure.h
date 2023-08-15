@@ -36,6 +36,8 @@ namespace Structure
 {
 /**
  * Class for moving grid problems based on a pseudo-solid grid motion technique.
+ *
+ * TODO: extend this class to simplicial elements.
  */
 template<int dim, typename Number>
 class DeformedMapping : public DeformedMappingBase<dim, Number>
@@ -84,7 +86,7 @@ public:
 
     // setup PDE operator and solver
     pde_operator->setup(matrix_free, matrix_free_data);
-    pde_operator->setup_solver(0.0 /*stationary ALE extension only*/);
+    pde_operator->setup_solver(0.0 /* no acceleration term */, 0.0 /* no damping term */);
 
     // finally, initialize dof vector
     pde_operator->initialize_dof_vector(displacement);
@@ -121,8 +123,12 @@ public:
         this->param.update_preconditioner &&
         time_step_number % this->param.update_preconditioner_every_time_steps == 0;
 
-      auto const iter = pde_operator->solve_nonlinear(
-        displacement, const_vector, 0.0 /* no mass term */, time, update_preconditioner);
+      auto const iter = pde_operator->solve_nonlinear(displacement,
+                                                      const_vector,
+                                                      0.0 /* no acceleration term */,
+                                                      0.0 /* no damping term */,
+                                                      time,
+                                                      update_preconditioner);
 
       iterations.first += 1;
       std::get<0>(iterations.second) += std::get<0>(iter);
@@ -139,10 +145,14 @@ public:
       // calculate right-hand side vector
       VectorType rhs;
       pde_operator->initialize_dof_vector(rhs);
-      pde_operator->compute_rhs_linear(rhs, time);
+      pde_operator->rhs(rhs, time);
 
-      auto const iter = pde_operator->solve_linear(
-        displacement, rhs, 0.0 /* no mass term */, time, false /* do not update preconditioner */);
+      auto const iter = pde_operator->solve_linear(displacement,
+                                                   rhs,
+                                                   0.0 /* no acceleration term */,
+                                                   0.0 /* no damping term */,
+                                                   time,
+                                                   false /* do not update preconditioner */);
 
       iterations.first += 1;
       std::get<1>(iterations.second) += iter;

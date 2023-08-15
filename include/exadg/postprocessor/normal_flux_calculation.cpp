@@ -77,6 +77,7 @@ NormalFluxCalculator<dim, Number>::evaluate(VectorType const & solution,
     if(it != flux.end())
     {
       integrator.reinit(face);
+      // TODO: note that this will not be correct in case of hanging nodes
       integrator.read_dof_values_plain(solution);
       integrator.evaluate(dealii::EvaluationFlags::gradients);
 

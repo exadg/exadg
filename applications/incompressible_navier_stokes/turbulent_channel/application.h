@@ -393,48 +393,62 @@ private:
   void
   create_grid() final
   {
-    dealii::Tensor<1, dim> dimensions;
-    dimensions[0] = DIMENSIONS_X1;
-    dimensions[1] = DIMENSIONS_X2;
-    if(dim == 3)
-      dimensions[2] = DIMENSIONS_X3;
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)vector_local_refinements;
 
-    dealii::GridGenerator::hyper_rectangle(*this->grid->triangulation,
-                                           dealii::Point<dim>(-dimensions / 2.0),
-                                           dealii::Point<dim>(dimensions / 2.0));
+        dealii::Tensor<1, dim> dimensions;
+        dimensions[0] = DIMENSIONS_X1;
+        dimensions[1] = DIMENSIONS_X2;
+        if(dim == 3)
+          dimensions[2] = DIMENSIONS_X3;
 
-    // manifold
-    unsigned int manifold_id = 1;
-    for(auto cell : this->grid->triangulation->cell_iterators())
-    {
-      cell->set_all_manifold_ids(manifold_id);
-    }
+        dealii::GridGenerator::hyper_rectangle(tria,
+                                               dealii::Point<dim>(-dimensions / 2.0),
+                                               dealii::Point<dim>(dimensions / 2.0));
 
-    // apply mesh stretching towards no-slip boundaries in y-direction
-    static const ManifoldTurbulentChannel<dim> manifold(dimensions);
-    this->grid->triangulation->set_manifold(manifold_id, manifold);
+        // manifold
+        unsigned int manifold_id = 1;
+        for(auto cell : tria.cell_iterators())
+        {
+          cell->set_all_manifold_ids(manifold_id);
+        }
 
-    // periodicity in x--direction
-    this->grid->triangulation->begin()->face(0)->set_all_boundary_ids(0 + 10);
-    this->grid->triangulation->begin()->face(1)->set_all_boundary_ids(1 + 10);
-    // periodicity in z-direction
-    if(dim == 3)
-    {
-      this->grid->triangulation->begin()->face(4)->set_all_boundary_ids(2 + 10);
-      this->grid->triangulation->begin()->face(5)->set_all_boundary_ids(3 + 10);
-    }
+        // apply mesh stretching towards no-slip boundaries in y-direction
+        static const ManifoldTurbulentChannel<dim> manifold(dimensions);
+        tria.set_manifold(manifold_id, manifold);
 
-    dealii::GridTools::collect_periodic_faces(
-      *this->grid->triangulation, 0 + 10, 1 + 10, 0, this->grid->periodic_face_pairs);
-    if(dim == 3)
-    {
-      dealii::GridTools::collect_periodic_faces(
-        *this->grid->triangulation, 2 + 10, 3 + 10, 2, this->grid->periodic_face_pairs);
-    }
+        // periodicity in x--direction
+        tria.begin()->face(0)->set_all_boundary_ids(0 + 10);
+        tria.begin()->face(1)->set_all_boundary_ids(1 + 10);
+        // periodicity in z-direction
+        if(dim == 3)
+        {
+          tria.begin()->face(4)->set_all_boundary_ids(2 + 10);
+          tria.begin()->face(5)->set_all_boundary_ids(3 + 10);
+        }
 
-    this->grid->triangulation->add_periodicity(this->grid->periodic_face_pairs);
+        dealii::GridTools::collect_periodic_faces(tria, 0 + 10, 1 + 10, 0, periodic_face_pairs);
+        if(dim == 3)
+        {
+          dealii::GridTools::collect_periodic_faces(tria, 2 + 10, 3 + 10, 2, periodic_face_pairs);
+        }
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        tria.add_periodicity(periodic_face_pairs);
+
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+                                                            this->mpi_comm,
+                                                            this->param.grid,
+                                                            this->param.involves_h_multigrid(),
+                                                            lambda_create_triangulation,
+                                                            {} /* no local refinements */);
   }
 
   void

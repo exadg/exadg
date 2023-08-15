@@ -66,25 +66,20 @@ CONFIGURE_FILE(
 SET(TARGET_SRC
      include/exadg/utilities/timer_tree.cpp
      include/exadg/utilities/print_general_infos.cpp
-     include/exadg/time_integration/bdf_time_integration.cpp
+     include/exadg/time_integration/bdf_constants.cpp
      include/exadg/time_integration/ab_constants.cpp
      include/exadg/time_integration/am_constants.cpp
-     include/exadg/time_integration/extrapolation_scheme.cpp
+     include/exadg/time_integration/extrapolation_constants.cpp
      include/exadg/time_integration/time_int_base.cpp
-     include/exadg/time_integration/time_int_bdf_base.cpp
+     include/exadg/time_integration/time_int_multistep_base.cpp
      include/exadg/time_integration/time_int_explicit_runge_kutta_base.cpp
      include/exadg/time_integration/time_int_gen_alpha_base.cpp
-     include/exadg/grid/grid.cpp
      include/exadg/functions_and_boundary_conditions/container_interface_data.cpp
      include/exadg/functions_and_boundary_conditions/linear_interpolation.cpp
      include/exadg/functions_and_boundary_conditions/interface_coupling.cpp
      include/exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.cpp
      include/exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.cpp
-     include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_p.cpp
-     include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_c.cpp
-     include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_h.cpp
-     include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_global_coarsening.cpp
-     include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_global_refinement.cpp
+     include/exadg/solvers_and_preconditioners/multigrid/transfer.cpp
      include/exadg/postprocessor/time_control.cpp
      include/exadg/postprocessor/time_control_statistics.cpp
      include/exadg/postprocessor/error_calculation.cpp
@@ -160,7 +155,7 @@ SET(TARGET_SRC
      include/exadg/incompressible_navier_stokes/postprocessor/flow_rate_calculator.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/postprocessor.cpp
      include/exadg/incompressible_navier_stokes/driver.cpp
-     include/exadg/incompressible_navier_stokes/driver_precursor.cpp
+     include/exadg/incompressible_navier_stokes/precursor/driver.cpp
      # incompressible flow with transport
      include/exadg/incompressible_flow_with_transport/driver.cpp
      # compressible Navier-Stokes equations

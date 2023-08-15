@@ -29,17 +29,16 @@
 
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
-#include <exadg/grid/calculate_maximum_aspect_ratio.h>
 #include <exadg/grid/grid.h>
 #include <exadg/grid/grid_parameters.h>
 #include <exadg/grid/grid_utilities.h>
+#include <exadg/operators/resolution_parameters.h>
 #include <exadg/poisson/postprocessor/postprocessor.h>
 #include <exadg/poisson/user_interface/boundary_descriptor.h>
 #include <exadg/poisson/user_interface/field_functions.h>
 #include <exadg/poisson/user_interface/parameters.h>
 #include <exadg/postprocessor/output_parameters.h>
 #include <exadg/utilities/exceptions.h>
-#include <exadg/utilities/resolution_parameters.h>
 
 namespace ExaDG
 {
@@ -76,29 +75,25 @@ public:
   {
   }
 
-  virtual void
-  set_parameters_refinement_study(unsigned int const degree,
+  void
+  set_parameters_throughput_study(unsigned int const degree,
                                   unsigned int const refine_space,
                                   unsigned int const n_subdivisions_1d_hypercube)
   {
-    this->param.degree = degree;
-
+    this->param.degree                = degree;
     this->param.grid.n_refine_global  = refine_space;
     this->n_subdivisions_1d_hypercube = n_subdivisions_1d_hypercube;
   }
 
   void
-  setup()
+  set_parameters_convergence_study(unsigned int const degree, unsigned int const refine_space)
   {
-    setup_pre();
-
-    calculate_aspect_ratio();
-
-    setup_post();
+    this->param.degree               = degree;
+    this->param.grid.n_refine_global = refine_space;
   }
 
   void
-  setup_pre()
+  setup()
   {
     // parameters
     parse_parameters();
@@ -107,15 +102,23 @@ public:
     param.print(pcout, "List of parameters:");
 
     // grid
-    grid->initialize(param.grid, mpi_comm);
     GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
     create_grid();
     print_grid_info(pcout, *grid);
-  }
 
-  void
-  setup_post()
-  {
+    if(compute_aspect_ratio)
+    {
+      auto const reference_cells = grid->triangulation->get_reference_cells();
+      AssertThrow(reference_cells.size() == 1, dealii::ExcMessage("No mixed meshes allowed"));
+
+      auto const quad =
+        reference_cells[0].template get_gauss_type_quadrature<dim>(param.degree + 1);
+
+      double const aspect_ratio =
+        dealii::GridTools::compute_maximum_aspect_ratio(*mapping, *grid->triangulation, quad);
+      pcout << std::endl << "Maximum aspect ratio = " << aspect_ratio << std::endl;
+    }
+
     // boundary conditions
     boundary_descriptor = std::make_shared<BoundaryDescriptor<rank, dim>>();
     set_boundary_descriptor();
@@ -166,26 +169,6 @@ protected:
     dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(parameter_file, "", true, true);
-  }
-
-  void
-  calculate_aspect_ratio()
-  {
-    if(compute_aspect_ratio)
-    {
-      // this variant is only for comparison
-      double AR = calculate_aspect_ratio_vertex_distance(*grid->triangulation, mpi_comm);
-      pcout << std::endl << "Maximum aspect ratio (vertex distance) = " << AR << std::endl;
-
-      auto const reference_cells = grid->triangulation->get_reference_cells();
-      AssertThrow(reference_cells.size() == 1, dealii::ExcMessage("No mixed meshes allowed"));
-
-      auto const quad =
-        reference_cells[0].template get_gauss_type_quadrature<dim>(param.degree + 1);
-
-      AR = dealii::GridTools::compute_maximum_aspect_ratio(*mapping, *grid->triangulation, quad);
-      pcout << std::endl << "Maximum aspect ratio (Jacobian) = " << AR << std::endl;
-    }
   }
 
   MPI_Comm const & mpi_comm;

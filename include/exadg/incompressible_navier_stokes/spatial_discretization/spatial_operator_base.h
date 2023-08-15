@@ -251,10 +251,10 @@ public:
                                double const       time_step_size) const;
 
   /*
-   * Calculates characteristic element length h
+   * Returns characteristic element length for high-order elements / shape functions
    */
   double
-  calculate_characteristic_element_length() const;
+  get_characteristic_element_length() const;
 
   /*
    * For certain setups and types of boundary conditions, the pressure field is only defined up to
@@ -595,7 +595,7 @@ private:
   initialize_boundary_descriptor_laplace();
 
   void
-  distribute_dofs();
+  initialize_dof_handler_and_constraints();
 
   void
   initialize_operators(std::string const & dof_index_temperature);

@@ -60,27 +60,27 @@ Driver<dim, Number>::setup()
   // SolverType might be Steady for the fluid problem in order to be able
   // to neglect the inertial term in the fluid equations. The overall coupled
   // flow-transport problem is then still a transient/unsteady problem.
-  for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
+  for(unsigned int i = 0; i < application->scalars.size(); ++i)
   {
-    AssertThrow(application->get_parameters_scalar(i).problem_type ==
+    AssertThrow(application->scalars[i]->get_parameters().problem_type ==
                   ConvDiff::ProblemType::Unsteady,
                 dealii::ExcMessage("ProblemType must be unsteady!"));
   }
 
-  if(application->get_parameters().ale_formulation) // moving mesh
+  if(application->fluid->get_parameters().ale_formulation) // moving mesh
   {
-    AssertThrow(application->get_parameters().mesh_movement_type ==
+    AssertThrow(application->fluid->get_parameters().mesh_movement_type ==
                   IncNS::MeshMovementType::Function,
                 dealii::ExcMessage("not implemented."));
 
     std::shared_ptr<dealii::Function<dim>> mesh_motion;
-    mesh_motion = application->create_mesh_movement_function();
+    mesh_motion = application->fluid->create_mesh_movement_function();
     ale_mapping = std::make_shared<DeformedMappingFunction<dim, Number>>(
-      application->get_mapping(),
-      application->get_parameters().degree_u,
-      *application->get_grid()->triangulation,
+      application->fluid->get_mapping(),
+      application->fluid->get_parameters().degree_u,
+      *application->fluid->get_grid()->triangulation,
       mesh_motion,
-      application->get_parameters().start_time);
+      application->fluid->get_parameters().start_time);
 
     helpers_ale = std::make_shared<HelpersALE<Number>>();
 
@@ -94,42 +94,43 @@ Driver<dim, Number>::setup()
       matrix_free->update_mapping(*ale_mapping);
 
       fluid_operator->update_after_grid_motion();
-      for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
+      for(unsigned int i = 0; i < application->scalars.size(); ++i)
         scalar_operator[i]->update_after_grid_motion();
     };
   }
 
   std::shared_ptr<dealii::Mapping<dim> const> dynamic_mapping =
-    get_dynamic_mapping<dim, Number>(application->get_mapping(), ale_mapping);
+    get_dynamic_mapping<dim, Number>(application->fluid->get_mapping(), ale_mapping);
 
   // initialize fluid_operator
-  if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
-  {
-    fluid_operator = IncNS::create_operator<dim, Number>(application->get_grid(),
-                                                         dynamic_mapping,
-                                                         application->get_boundary_descriptor(),
-                                                         application->get_field_functions(),
-                                                         application->get_parameters(),
-                                                         "fluid",
-                                                         mpi_comm);
-  }
-  else if(application->get_parameters().solver_type == IncNS::SolverType::Steady)
+  if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
     fluid_operator =
-      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(application->get_grid(),
-                                                            dynamic_mapping,
-                                                            application->get_boundary_descriptor(),
-                                                            application->get_field_functions(),
-                                                            application->get_parameters(),
-                                                            "fluid",
-                                                            mpi_comm);
+      IncNS::create_operator<dim, Number>(application->fluid->get_grid(),
+                                          dynamic_mapping,
+                                          application->fluid->get_boundary_descriptor(),
+                                          application->fluid->get_field_functions(),
+                                          application->fluid->get_parameters(),
+                                          "fluid",
+                                          mpi_comm);
+  }
+  else if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Steady)
+  {
+    fluid_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
+      application->fluid->get_grid(),
+      dynamic_mapping,
+      application->fluid->get_boundary_descriptor(),
+      application->fluid->get_field_functions(),
+      application->fluid->get_parameters(),
+      "fluid",
+      mpi_comm);
   }
   else
   {
     AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
-  unsigned int const n_scalars = application->get_n_scalars();
+  unsigned int const n_scalars = application->scalars.size();
 
   scalar_operator.resize(n_scalars);
   scalar_postprocessor.resize(n_scalars);
@@ -138,15 +139,14 @@ Driver<dim, Number>::setup()
   // initialize convection-diffusion operator
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    scalar_operator[i] =
-      std::make_shared<ConvDiff::Operator<dim, Number>>(application->get_grid(),
-                                                        dynamic_mapping,
-                                                        application->get_boundary_descriptor_scalar(
-                                                          i),
-                                                        application->get_field_functions_scalar(i),
-                                                        application->get_parameters_scalar(i),
-                                                        "scalar" + std::to_string(i),
-                                                        mpi_comm);
+    scalar_operator[i] = std::make_shared<ConvDiff::Operator<dim, Number>>(
+      application->fluid->get_grid(),
+      dynamic_mapping,
+      application->scalars[i]->get_boundary_descriptor(),
+      application->scalars[i]->get_field_functions(),
+      application->scalars[i]->get_parameters(),
+      "scalar" + std::to_string(i),
+      mpi_comm);
   }
 
   // initialize matrix_free
@@ -156,8 +156,8 @@ Driver<dim, Number>::setup()
     matrix_free_data->append(scalar_operator[i]);
 
   matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-  if(application->get_parameters().use_cell_based_face_loops)
-    Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
+  if(application->fluid->get_parameters().use_cell_based_face_loops)
+    Categorization::do_cell_based_loops(*application->fluid->get_grid()->triangulation,
                                         matrix_free_data->data);
 
   matrix_free->reinit(*dynamic_mapping,
@@ -169,14 +169,14 @@ Driver<dim, Number>::setup()
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     AssertThrow(
-      application->get_parameters_scalar(i).use_cell_based_face_loops ==
-        application->get_parameters().use_cell_based_face_loops,
+      application->scalars[i]->get_parameters().use_cell_based_face_loops ==
+        application->fluid->get_parameters().use_cell_based_face_loops,
       dealii::ExcMessage(
         "Parameter use_cell_based_face_loops should be the same for fluid and scalar transport."));
   }
 
   // setup Navier-Stokes operator
-  if(application->get_parameters().boussinesq_term)
+  if(application->fluid->get_parameters().boussinesq_term)
   {
     // assume that the first scalar field with index 0 is the active scalar that
     // couples to the incompressible Navier-Stokes equations
@@ -196,29 +196,29 @@ Driver<dim, Number>::setup()
   }
 
   // setup postprocessor
-  fluid_postprocessor = application->create_postprocessor();
+  fluid_postprocessor = application->fluid->create_postprocessor();
   fluid_postprocessor->setup(*fluid_operator);
 
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    scalar_postprocessor[i] = application->create_postprocessor_scalar(i);
+    scalar_postprocessor[i] = application->scalars[i]->create_postprocessor();
     scalar_postprocessor[i]->setup(*scalar_operator[i]);
   }
 
   // setup time integrator before calling setup_solvers
   // (this is necessary since the setup of the solvers
   // depends on quantities such as the time_step_size or gamma0!)
-  if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
+  if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
     fluid_time_integrator =
       IncNS::create_time_integrator<dim, Number>(fluid_operator,
                                                  helpers_ale,
                                                  fluid_postprocessor,
-                                                 application->get_parameters(),
+                                                 application->fluid->get_parameters(),
                                                  mpi_comm,
                                                  is_test);
   }
-  else if(application->get_parameters().solver_type == IncNS::SolverType::Steady)
+  else if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Steady)
   {
     std::shared_ptr<IncNS::OperatorCoupled<dim, Number>> fluid_operator_coupled =
       std::dynamic_pointer_cast<IncNS::OperatorCoupled<dim, Number>>(fluid_operator);
@@ -226,7 +226,7 @@ Driver<dim, Number>::setup()
     // initialize driver for steady state problem that depends on fluid_operator
     fluid_driver_steady = std::make_shared<DriverSteady>(fluid_operator_coupled,
                                                          fluid_postprocessor,
-                                                         application->get_parameters(),
+                                                         application->fluid->get_parameters(),
                                                          mpi_comm,
                                                          is_test);
   }
@@ -235,9 +235,9 @@ Driver<dim, Number>::setup()
     AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
-  if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
+  if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
-    if(application->get_parameters().restarted_simulation == false)
+    if(application->fluid->get_parameters().restarted_simulation == false)
     {
       // The parameter start_with_low_order for BDF time integration has to be true.
       // This is due to the fact that the setup function of the time integrator initializes
@@ -251,17 +251,17 @@ Driver<dim, Number>::setup()
       // inconsistency is to preclude the case start_with_low_order == false.
       // In case of a restart, start_with_low_order = false is possible since it has been
       // enforced that all previous time steps are identical for fluid and scalar transport.
-      AssertThrow(application->get_parameters().start_with_low_order == true,
+      AssertThrow(application->fluid->get_parameters().start_with_low_order == true,
                   dealii::ExcMessage("start_with_low_order has to be true for this solver."));
     }
 
-    fluid_time_integrator->setup(application->get_parameters().restarted_simulation);
+    fluid_time_integrator->setup(application->fluid->get_parameters().restarted_simulation);
 
     // setup solvers once time integrator has been initialized
     fluid_operator->setup_solvers(fluid_time_integrator->get_scaling_factor_time_derivative_term(),
                                   fluid_time_integrator->get_velocity());
   }
-  else if(application->get_parameters().solver_type == IncNS::SolverType::Steady)
+  else if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Steady)
   {
     fluid_driver_steady->setup();
 
@@ -279,23 +279,24 @@ Driver<dim, Number>::setup()
       ConvDiff::create_time_integrator<dim, Number>(scalar_operator[i],
                                                     helpers_ale,
                                                     scalar_postprocessor[i],
-                                                    application->get_parameters_scalar(i),
+                                                    application->scalars[i]->get_parameters(),
                                                     mpi_comm,
                                                     is_test);
 
-    if(application->get_parameters_scalar(i).restarted_simulation == false and
-       application->get_parameters_scalar(i).temporal_discretization ==
+    if(application->scalars[i]->get_parameters().restarted_simulation == false and
+       application->scalars[i]->get_parameters().temporal_discretization ==
          ConvDiff::TemporalDiscretization::BDF)
     {
       // See comment above for fluid field.
-      AssertThrow(application->get_parameters_scalar(i).start_with_low_order == true,
+      AssertThrow(application->scalars[i]->get_parameters().start_with_low_order == true,
                   dealii::ExcMessage("start_with_low_order has to be true for this solver."));
     }
 
-    scalar_time_integrator[i]->setup(application->get_parameters_scalar(i).restarted_simulation);
+    scalar_time_integrator[i]->setup(
+      application->scalars[i]->get_parameters().restarted_simulation);
 
     // adaptive time stepping
-    if(application->get_parameters().adaptive_time_stepping == true)
+    if(application->fluid->get_parameters().adaptive_time_stepping == true)
     {
       use_adaptive_time_stepping = true;
     }
@@ -304,11 +305,11 @@ Driver<dim, Number>::setup()
   // setup solvers in case of BDF time integration (solution of linear systems of equations)
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    AssertThrow(application->get_parameters_scalar(i).analytical_velocity_field == false,
+    AssertThrow(application->scalars[i]->get_parameters().analytical_velocity_field == false,
                 dealii::ExcMessage(
                   "An analytical velocity field can not be used for this coupled solver."));
 
-    if(application->get_parameters_scalar(i).temporal_discretization ==
+    if(application->scalars[i]->get_parameters().temporal_discretization ==
        ConvDiff::TemporalDiscretization::BDF)
     {
       std::shared_ptr<ConvDiff::TimeIntBDF<dim, Number>> scalar_time_integrator_BDF =
@@ -324,7 +325,7 @@ Driver<dim, Number>::setup()
     }
     else
     {
-      AssertThrow(application->get_parameters_scalar(i).temporal_discretization ==
+      AssertThrow(application->scalars[i]->get_parameters().temporal_discretization ==
                     ConvDiff::TemporalDiscretization::ExplRK,
                   dealii::ExcMessage("Not implemented."));
     }
@@ -333,7 +334,7 @@ Driver<dim, Number>::setup()
   // Boussinesq term
   // assume that the first scalar quantity with index 0 is the active scalar coupled to
   // the incompressible Navier-Stokes equations via the Boussinesq term
-  if(application->get_parameters().boussinesq_term)
+  if(application->fluid->get_parameters().boussinesq_term)
     scalar_operator[0]->initialize_dof_vector(temperature);
 
   timer_tree.insert({"Flow + transport", "Setup"}, timer.wall_time());
@@ -346,10 +347,10 @@ Driver<dim, Number>::set_start_time() const
   double time = std::numeric_limits<double>::max();
 
   // Setup time integrator and get time step size
-  if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
+  if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady)
     time = std::min(time, fluid_time_integrator->get_time());
 
-  for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
+  for(unsigned int i = 0; i < application->scalars.size(); ++i)
   {
     time = std::min(time, scalar_time_integrator[i]->get_time());
   }
@@ -357,11 +358,11 @@ Driver<dim, Number>::set_start_time() const
   // Set the same start time for both solvers
 
   // fluid
-  if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
+  if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady)
     fluid_time_integrator->reset_time(time);
 
   // scalar transport
-  for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
+  for(unsigned int i = 0; i < application->scalars.size(); ++i)
   {
     scalar_time_integrator[i]->reset_time(time);
   }
@@ -375,12 +376,12 @@ Driver<dim, Number>::synchronize_time_step_size() const
 
   double time_step_size = std::numeric_limits<double>::max();
 
-  if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
+  if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
     // Setup time integrator and get time step size
     double time_step_size_fluid = std::numeric_limits<double>::max();
 
-    IncNS::Parameters const & fluid_param = application->get_parameters();
+    IncNS::Parameters const & fluid_param = application->fluid->get_parameters();
 
     // fluid
     if(fluid_time_integrator->get_time() > fluid_param.start_time - EPSILON)
@@ -398,9 +399,9 @@ Driver<dim, Number>::synchronize_time_step_size() const
   }
 
   // scalar transport
-  for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
+  for(unsigned int i = 0; i < application->scalars.size(); ++i)
   {
-    ConvDiff::Parameters const & scalar_param_i = application->get_parameters_scalar(i);
+    ConvDiff::Parameters const & scalar_param_i = application->scalars[i]->get_parameters();
 
     double time_step_size_scalar = std::numeric_limits<double>::max();
     if(scalar_time_integrator[i]->get_time() > scalar_param_i.start_time - EPSILON)
@@ -425,13 +426,13 @@ Driver<dim, Number>::synchronize_time_step_size() const
   // Set the same time step size for both solvers
 
   // fluid
-  if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
+  if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
     fluid_time_integrator->set_current_time_step_size(time_step_size);
   }
 
   // scalar transport
-  for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
+  for(unsigned int i = 0; i < application->scalars.size(); ++i)
   {
     scalar_time_integrator[i]->set_current_time_step_size(time_step_size);
   }
@@ -444,18 +445,18 @@ Driver<dim, Number>::communicate_scalar_to_fluid() const
   // We need to communicate between fluid solver and scalar transport solver, i.e., ask the
   // scalar transport solver (scalar 0 by definition) for the temperature and hand it over to the
   // fluid solver.
-  if(application->get_parameters().boussinesq_term)
+  if(application->fluid->get_parameters().boussinesq_term)
   {
     // assume that the first scalar quantity with index 0 is the active scalar coupled to
     // the incompressible Navier-Stokes equations via the Boussinesq term
-    if(application->get_parameters_scalar(0).temporal_discretization ==
+    if(application->scalars[0]->get_parameters().temporal_discretization ==
        ConvDiff::TemporalDiscretization::ExplRK)
     {
       std::shared_ptr<ConvDiff::TimeIntExplRK<Number>> time_int_scalar =
         std::dynamic_pointer_cast<ConvDiff::TimeIntExplRK<Number>>(scalar_time_integrator[0]);
       time_int_scalar->extrapolate_solution(temperature);
     }
-    else if(application->get_parameters_scalar(0).temporal_discretization ==
+    else if(application->scalars[0]->get_parameters().temporal_discretization ==
             ConvDiff::TemporalDiscretization::BDF)
     {
       std::shared_ptr<ConvDiff::TimeIntBDF<dim, Number>> time_int_scalar =
@@ -480,11 +481,11 @@ Driver<dim, Number>::communicate_fluid_to_all_scalars() const
   std::vector<dealii::LinearAlgebra::distributed::Vector<Number> const *> velocities;
   std::vector<double>                                                     times;
 
-  if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
+  if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
     fluid_time_integrator->get_velocities_and_times_np(velocities, times);
   }
-  else if(application->get_parameters().solver_type == IncNS::SolverType::Steady)
+  else if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Steady)
   {
     velocities.resize(1);
     times.resize(1);
@@ -498,16 +499,16 @@ Driver<dim, Number>::communicate_fluid_to_all_scalars() const
     AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
-  for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
+  for(unsigned int i = 0; i < application->scalars.size(); ++i)
   {
-    if(application->get_parameters_scalar(i).temporal_discretization ==
+    if(application->scalars[i]->get_parameters().temporal_discretization ==
        ConvDiff::TemporalDiscretization::ExplRK)
     {
       std::shared_ptr<ConvDiff::TimeIntExplRK<Number>> time_int_scalar =
         std::dynamic_pointer_cast<ConvDiff::TimeIntExplRK<Number>>(scalar_time_integrator[i]);
       time_int_scalar->set_velocities_and_times(velocities, times);
     }
-    else if(application->get_parameters_scalar(i).temporal_discretization ==
+    else if(application->scalars[i]->get_parameters().temporal_discretization ==
             ConvDiff::TemporalDiscretization::BDF)
     {
       std::shared_ptr<ConvDiff::TimeIntBDF<dim, Number>> time_int_scalar =
@@ -541,7 +542,7 @@ Driver<dim, Number>::ale_update() const
 
   sub_timer.restart();
   fluid_time_integrator->ale_update();
-  for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
+  for(unsigned int i = 0; i < application->scalars.size(); ++i)
   {
     std::shared_ptr<ConvDiff::TimeIntBDF<dim, Number>> time_int_bdf =
       std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<dim, Number>>(scalar_time_integrator[i]);
@@ -568,16 +569,16 @@ Driver<dim, Number>::solve() const
     /*
      * pre solve
      */
-    if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
+    if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady)
       fluid_time_integrator->advance_one_timestep_pre_solve(true);
 
-    for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
+    for(unsigned int i = 0; i < application->scalars.size(); ++i)
       scalar_time_integrator[i]->advance_one_timestep_pre_solve(false);
 
     /*
      * ALE: move the mesh and update dependent data structures
      */
-    if(application->get_parameters().ale_formulation)
+    if(application->fluid->get_parameters().ale_formulation)
       ale_update();
 
     /*
@@ -588,11 +589,11 @@ Driver<dim, Number>::solve() const
     communicate_scalar_to_fluid();
 
     // fluid: advance one time step
-    if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
+    if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady)
     {
       fluid_time_integrator->advance_one_timestep_solve();
     }
-    else if(application->get_parameters().solver_type == IncNS::SolverType::Steady)
+    else if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Steady)
     {
       fluid_driver_steady->solve(scalar_time_integrator[0]->get_next_time(), true /*unsteady*/);
     }
@@ -605,16 +606,16 @@ Driver<dim, Number>::solve() const
     communicate_fluid_to_all_scalars();
 
     // scalar transport: advance one time step
-    for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
+    for(unsigned int i = 0; i < application->scalars.size(); ++i)
       scalar_time_integrator[i]->advance_one_timestep_solve();
 
     /*
      * post solve
      */
-    if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
+    if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady)
       fluid_time_integrator->advance_one_timestep_post_solve();
 
-    for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
+    for(unsigned int i = 0; i < application->scalars.size(); ++i)
       scalar_time_integrator[i]->advance_one_timestep_post_solve();
 
     // Both solvers have already calculated the new, adaptive time step size individually in
@@ -623,12 +624,12 @@ Driver<dim, Number>::solve() const
       synchronize_time_step_size();
 
     // check if all finished
-    if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
+    if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady)
       finished = fluid_time_integrator->finished();
     else
       finished = true;
 
-    for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
+    for(unsigned int i = 0; i < application->scalars.size(); ++i)
       finished = finished and scalar_time_integrator[i]->finished();
 
     ++N_time_steps;
@@ -652,11 +653,11 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   // Fluid
   this->pcout << std::endl << "Incompressible Navier-Stokes solver:" << std::endl;
 
-  if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
+  if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
     this->fluid_time_integrator->print_iterations();
   }
-  else if(application->get_parameters().solver_type == IncNS::SolverType::Steady)
+  else if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Steady)
   {
     fluid_driver_steady->print_iterations();
   }
@@ -666,19 +667,19 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   }
 
   // Scalar
-  for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
+  for(unsigned int i = 0; i < application->scalars.size(); ++i)
   {
     this->pcout << std::endl << "Convection-diffusion solver for scalar " << i << ":" << std::endl;
 
     // only relevant for BDF time integrator
-    if(application->get_parameters_scalar(i).temporal_discretization ==
+    if(application->scalars[i]->get_parameters().temporal_discretization ==
        ConvDiff::TemporalDiscretization::BDF)
     {
       std::shared_ptr<ConvDiff::TimeIntBDF<dim, Number>> time_integrator_bdf =
         std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<dim, Number>>(scalar_time_integrator[i]);
       time_integrator_bdf->print_iterations();
     }
-    else if(application->get_parameters_scalar(i).temporal_discretization ==
+    else if(application->scalars[i]->get_parameters().temporal_discretization ==
             ConvDiff::TemporalDiscretization::ExplRK)
     {
       this->pcout << "  Explicit solver (no systems of equations have to be solved)" << std::endl;
@@ -693,11 +694,11 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 
   timer_tree.insert({"Flow + transport"}, total_time);
 
-  if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
+  if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
     timer_tree.insert({"Flow + transport"}, fluid_time_integrator->get_timings(), "Timeloop fluid");
   }
-  else if(application->get_parameters().solver_type == IncNS::SolverType::Steady)
+  else if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Steady)
   {
     timer_tree.insert({"Flow + transport"}, fluid_driver_steady->get_timings(), "Timeloop fluid");
   }
@@ -706,7 +707,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
     AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
-  for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
+  for(unsigned int i = 0; i < application->scalars.size(); ++i)
   {
     timer_tree.insert({"Flow + transport"},
                       scalar_time_integrator[i]->get_timings(),
@@ -722,7 +723,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   // Throughput in DoFs/s per time step per core
   dealii::types::global_dof_index DoFs = this->fluid_operator->get_number_of_dofs();
 
-  for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
+  for(unsigned int i = 0; i < application->scalars.size(); ++i)
   {
     DoFs += this->scalar_operator[i]->get_number_of_dofs();
   }

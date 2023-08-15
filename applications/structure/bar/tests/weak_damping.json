@@ -1,0 +1,34 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "3",
+        "IsTest": "true"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "1",
+        "DegreeMax": "1",
+        "RefineSpaceMin": "0",
+        "RefineSpaceMax": "0"
+    },
+    "TemporalResolution": {
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+        "Length": "100.0",
+        "Height": "10.0",
+        "Width": "10.0",
+        "ProblemType": "Unsteady",
+        "WeakDamping": "10000.0",
+        "UseVolumeForce": "false",
+        "VolumeForce": "1.0",
+        "BoundaryType": "Neumann",
+        "Displacement": "20.0",
+        "Traction":	"10.0" 
+    },
+    "Output": {
+        "OutputDirectory": "output/bar/",
+        "OutputName": "test",
+        "WriteOutput": "false"
+    }
+}

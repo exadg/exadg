@@ -179,63 +179,80 @@ private:
   void
   create_grid() final
   {
-    dealii::Point<dim> p1, p2;
-    p1[0] = 0;
-    p1[1] = -(this->height / 2);
-    if(dim == 3)
-      p1[2] = -(this->width / 2);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    p2[0] = this->length;
-    p2[1] = +(this->height / 2);
-    if(dim == 3)
-      p2[2] = (this->width / 2);
+        dealii::Point<dim> p1, p2;
+        p1[0] = 0;
+        p1[1] = -(this->height / 2);
+        if(dim == 3)
+          p1[2] = -(this->width / 2);
 
-    std::vector<unsigned int> repetitions(dim);
-    repetitions[0] = this->repetitions0;
-    repetitions[1] = this->repetitions1;
-    if(dim == 3)
-      repetitions[2] = this->repetitions2;
+        p2[0] = this->length;
+        p2[1] = +(this->height / 2);
+        if(dim == 3)
+          p2[2] = (this->width / 2);
 
-    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                                      repetitions,
-                                                      p1,
-                                                      p2);
+        std::vector<unsigned int> repetitions(dim);
+        repetitions[0] = this->repetitions0;
+        repetitions[1] = this->repetitions1;
+        if(dim == 3)
+          repetitions[2] = this->repetitions2;
 
-    element_length = this->length / (this->repetitions0 * pow(2, this->param.grid.n_refine_global));
+        dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                                          repetitions,
+                                                          p1,
+                                                          p2);
 
-    double const tol = 1.e-8;
-    for(auto cell : *this->grid->triangulation)
-    {
-      for(auto const & face : cell.face_indices())
-      {
-        // left face
-        if(std::fabs(cell.face(face)->center()(0) - 0) < tol)
+        element_length = this->length / (this->repetitions0 * pow(2, global_refinements));
+
+        double const tol = 1.e-8;
+        for(auto cell : tria)
         {
-          cell.face(face)->set_all_boundary_ids(1);
-        }
-        // right face
-        else if(std::fabs(cell.face(face)->center()(0) - this->length) < tol)
-        {
-          cell.face(face)->set_all_boundary_ids(2);
-        }
-        // top-right edge
-        else if(std::fabs(cell.face(face)->center()(0) - this->length) < element_length and
-                std::fabs(cell.face(face)->center()(1) - this->height / 2) < tol)
-        {
-          if(boundary_type == BoundaryType::SingleForce)
+          for(auto const & face : cell.face_indices())
           {
-            cell.face(face)->set_all_boundary_ids(3);
-          }
-          else
-          {
-            AssertThrow(boundary_type == BoundaryType::BendingMoment,
-                        dealii::ExcMessage("Not implemented."));
+            // left face
+            if(std::fabs(cell.face(face)->center()(0) - 0) < tol)
+            {
+              cell.face(face)->set_all_boundary_ids(1);
+            }
+            // right face
+            else if(std::fabs(cell.face(face)->center()(0) - this->length) < tol)
+            {
+              cell.face(face)->set_all_boundary_ids(2);
+            }
+            // top-right edge
+            else if(std::fabs(cell.face(face)->center()(0) - this->length) < element_length and
+                    std::fabs(cell.face(face)->center()(1) - this->height / 2) < tol)
+            {
+              if(boundary_type == BoundaryType::SingleForce)
+              {
+                cell.face(face)->set_all_boundary_ids(3);
+              }
+              else
+              {
+                AssertThrow(boundary_type == BoundaryType::BendingMoment,
+                            dealii::ExcMessage("Not implemented."));
+              }
+            }
           }
         }
-      }
-    }
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+                                                            this->mpi_comm,
+                                                            this->param.grid,
+                                                            this->param.involves_h_multigrid(),
+                                                            lambda_create_triangulation,
+                                                            {} /* no local refinements */);
   }
 
   void
@@ -251,6 +268,9 @@ private:
     // left side
     this->boundary_descriptor->dirichlet_bc.insert(
       pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
+
     this->boundary_descriptor->dirichlet_bc_component_mask.insert(
       pair_mask(1, dealii::ComponentMask()));
 

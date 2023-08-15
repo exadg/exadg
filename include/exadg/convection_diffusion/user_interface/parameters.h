@@ -27,7 +27,6 @@
 
 // ExaDG
 #include <exadg/convection_diffusion/user_interface/enum_types.h>
-#include <exadg/grid/enum_types.h>
 #include <exadg/grid/grid_data.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/enum_types.h>

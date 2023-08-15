@@ -35,6 +35,7 @@
 #include <exadg/structure/spatial_discretization/interface.h>
 #include <exadg/structure/spatial_discretization/operators/body_force_operator.h>
 #include <exadg/structure/spatial_discretization/operators/linear_operator.h>
+#include <exadg/structure/spatial_discretization/operators/mass_operator.h>
 #include <exadg/structure/spatial_discretization/operators/nonlinear_operator.h>
 #include <exadg/structure/user_interface/boundary_descriptor.h>
 #include <exadg/structure/user_interface/field_functions.h>
@@ -74,10 +75,10 @@ public:
   }
 
   void
-  update(VectorType const & const_vector, double const factor, double const time)
+  update(VectorType const & const_vector, double const scaling_factor_mass, double const time)
   {
     this->const_vector        = &const_vector;
-    this->scaling_factor_mass = factor;
+    this->scaling_factor_mass = scaling_factor_mass;
     this->time                = time;
   }
 
@@ -136,9 +137,9 @@ public:
   }
 
   void
-  update(double const factor, double const time)
+  update(double const scaling_factor_mass, double const time)
   {
-    this->scaling_factor_mass = factor;
+    this->scaling_factor_mass = scaling_factor_mass;
     this->time                = time;
   }
 
@@ -196,7 +197,7 @@ public:
    * linear systems of equation required for implicit formulations.
    */
   void
-  setup_solver(double const & scaling_factor_mass);
+  setup_solver(double const & scaling_factor_acceleration, double const & scaling_factor_velocity);
 
   /*
    * Initialization of dof-vector.
@@ -213,24 +214,26 @@ public:
   void
   prescribe_initial_velocity(VectorType & velocity, double const time) const final;
 
+  /*
+   * This computes the initial acceleration field by evaluating all PDE terms for the given
+   * initial condition, shifting all terms to the right-hand side of the equations, and solving a
+   * mass matrix system to obtain the initial acceleration.
+   */
   void
-  compute_initial_acceleration(VectorType &       acceleration,
-                               VectorType const & displacement,
+  compute_initial_acceleration(VectorType &       initial_acceleration,
+                               VectorType const & initial_displacement,
                                double const       time) const final;
 
   void
-  apply_mass_operator(VectorType & dst, VectorType const & src) const final;
+  evaluate_mass_operator(VectorType & dst, VectorType const & src) const final;
 
-  /*
-   * This function calculates the right-hand side of the linear system
-   * of equations for linear elasticity problems.
-   */
   void
-  compute_rhs_linear(VectorType & dst, double const time) const final;
+  apply_add_damping_operator(VectorType & dst, VectorType const & src) const final;
 
   /*
-   * This function evaluates the nonlinear residual which is required by
-   * the Newton solver.
+   * This function evaluates the nonlinear residual which is required by the Newton solver. In order
+   * to evaluate inhomogeneous Dirichlet boundary conditions correctly, inhomogeneous Dirichlet
+   * degrees of freedom need to be set correctly in the src-vector prior to calling this function.
    */
   void
   evaluate_nonlinear_residual(VectorType &       dst,
@@ -249,31 +252,48 @@ public:
                             double const       time) const;
 
   void
-  apply_nonlinear_operator(VectorType &       dst,
-                           VectorType const & src,
-                           double const       factor,
-                           double const       time) const;
+  evaluate_elasticity_operator(VectorType &       dst,
+                               VectorType const & src,
+                               double const       factor,
+                               double const       time) const;
 
   void
-  apply_linear_operator(VectorType &       dst,
-                        VectorType const & src,
-                        double const       factor,
-                        double const       time) const;
+  apply_elasticity_operator(VectorType &       dst,
+                            VectorType const & src,
+                            VectorType const & linearization,
+                            double const       factor,
+                            double const       time) const;
 
   /*
-   * This function solves the (non-)linear system of equations.
+   * This function solves the system of equations for nonlinear problems. This function needs to
+   * make sure that Dirichlet degrees of freedom are filled correctly with their inhomogeneous
+   * boundary data before calling the nonlinear solver.
    */
   std::tuple<unsigned int, unsigned int>
   solve_nonlinear(VectorType &       sol,
-                  VectorType const & rhs,
-                  double const       factor,
+                  VectorType const & const_vector,
+                  double const       scaling_factor_acceleration,
+                  double const       scaling_factor_velocity,
                   double const       time,
                   bool const         update_preconditioner) const final;
 
+  /*
+   * This function calculates the right-hand side of the linear system of equations for linear
+   * elasticity problems.
+   */
+  void
+  rhs(VectorType & dst, double const time) const final;
+
+  /*
+   * This function solves the system of equations for linear problems.
+   *
+   * Before calling this function, make sure that the function rhs() has been called.
+   */
   unsigned int
   solve_linear(VectorType &       sol,
                VectorType const & rhs,
-               double const       factor,
+               double const       scaling_factor_acceleration,
+               double const       scaling_factor_velocity,
                double const       time,
                bool const         update_preconditioner) const final;
 
@@ -308,13 +328,13 @@ private:
    * Initializes dealii::DoFHandler.
    */
   void
-  distribute_dofs();
+  initialize_dof_handler_and_constraints();
 
   std::string
   get_dof_name() const;
 
   std::string
-  get_dof_name_mass() const;
+  get_dof_name_periodicity_and_hanging_node_constraints() const;
 
   std::string
   get_quad_name() const;
@@ -323,13 +343,21 @@ private:
   get_quad_gauss_lobatto_name() const;
 
   unsigned int
-  get_dof_index_mass() const;
+  get_dof_index_periodicity_and_hanging_node_constraints() const;
 
   unsigned int
   get_quad_index() const;
 
   unsigned int
   get_quad_index_gauss_lobatto() const;
+
+  /*
+   * Scaling factor for mass matrix assuming a weak damping operator leading to a scaled mass
+   * matrix.
+   */
+  double
+  compute_scaling_factor_mass(double const scaling_factor_acceleration,
+                              double const scaling_factor_velocity) const;
 
   /*
    * Initializes operators.
@@ -378,13 +406,32 @@ private:
    */
   std::shared_ptr<dealii::FiniteElement<dim>> fe;
   dealii::DoFHandler<dim>                     dof_handler;
-  dealii::AffineConstraints<Number>           affine_constraints;
-  // constraints for mass operator (we use a separate AffineConstraints object, because we do not
-  // apply constraints from Dirichlet boundary conditions here)
-  dealii::AffineConstraints<Number> constraints_mass;
 
-  std::string const dof_index                = "dof";
-  std::string const dof_index_mass           = "dof_mass";
+  // AffineConstraints object as needed by iterative solvers and preconditioners for linear systems
+  // of equations. This constraint object contains additional constraints from Dirichlet boundary
+  // conditions as compared to the constraint object below. Note that the present constraint object
+  // can treat Dirichlet boundaries only in a homogeneous manner.
+  dealii::AffineConstraints<Number> affine_constraints;
+
+  // To treat inhomogeneous Dirichlet BCs correctly in the context of matrix-free operator
+  // evaluation using dealii::MatrixFree/FEEvaluation, we need a separate AffineConstraints
+  // object containing only periodicity and hanging node constraints.
+  // When using the standard AffineConstraints object including Dirichlet boundary conditions,
+  // inhomogeneous boundary data would be ignored by dealii::FEEvaluation::read_dof_values().
+  // While dealii::FEEvaluation::read_dof_values_plain() would take into account inhomogeneous
+  // Dirichlet data using the standard AffineConstraints object, hanging-node constraints would
+  // not be resolved correctly.
+  // The solution/workaround is to use dealii::FEEvaluation::read_dof_values() for a correct
+  // handling of hanging nodes, but to exclude Dirichlet degrees of freedom from the
+  // AffineConstraints object so that it is possible to read inhomogeneous boundary data when
+  // calling dealii::FEEvaluation::read_dof_values(). This inhomogeneous boundary data needs to be
+  // set beforehand in separate routines.
+  dealii::AffineConstraints<Number> affine_constraints_periodicity_and_hanging_nodes;
+
+  std::string const dof_index = "dof";
+  std::string const dof_index_periodicity_and_handing_node_constraints =
+    "dof_periodicity_hanging_nodes";
+
   std::string const quad_index               = "quad";
   std::string const quad_index_gauss_lobatto = "quad_gauss_lobatto";
 
@@ -415,7 +462,7 @@ private:
   // the mass operator term applied to a constant vector (independent
   // of new displacements) appearing on the right-hand side for linear
   // problems and in the residual for nonlinear problems.
-  MassOperator<dim, dim, Number> mass_operator;
+  Structure::MassOperator<dim, Number> mass_operator;
 
   /*
    * Solution of nonlinear systems of equations

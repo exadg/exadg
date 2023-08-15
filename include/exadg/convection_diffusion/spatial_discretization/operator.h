@@ -293,7 +293,7 @@ private:
    * Initializes dealii::DoFHandlers.
    */
   void
-  distribute_dofs();
+  initialize_dof_handler_and_constraints();
 
   bool
   needs_own_dof_handler_velocity() const;
@@ -354,14 +354,14 @@ private:
   /*
    * Basic finite element ingredients.
    */
-  dealii::FE_DGQ<dim>     fe;
-  dealii::DoFHandler<dim> dof_handler;
+  std::shared_ptr<dealii::FiniteElement<dim>> fe;
+  dealii::DoFHandler<dim>                     dof_handler;
 
   /*
    * Numerical velocity field.
    */
-  std::shared_ptr<dealii::FESystem<dim>>   fe_velocity;
-  std::shared_ptr<dealii::DoFHandler<dim>> dof_handler_velocity;
+  std::shared_ptr<dealii::FiniteElement<dim>> fe_velocity;
+  std::shared_ptr<dealii::DoFHandler<dim>>    dof_handler_velocity;
 
   /*
    * Constraints.

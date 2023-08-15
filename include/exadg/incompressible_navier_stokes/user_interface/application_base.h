@@ -30,24 +30,20 @@
 #include <deal.II/grid/manifold_lib.h>
 
 // ExaDG
-#include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/grid/grid.h>
 #include <exadg/grid/grid_utilities.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
 #include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
+#include <exadg/operators/resolution_parameters.h>
 #include <exadg/poisson/user_interface/analytical_solution.h>
 #include <exadg/poisson/user_interface/field_functions.h>
 #include <exadg/poisson/user_interface/parameters.h>
 #include <exadg/postprocessor/output_parameters.h>
-#include <exadg/utilities/resolution_parameters.h>
 
 namespace ExaDG
 {
-template<int>
-class Mesh;
-
 namespace IncNS
 {
 template<int dim, typename Number>
@@ -103,7 +99,6 @@ public:
     param.print(pcout, "List of parameters:");
 
     // grid
-    grid->initialize(param.grid, mpi_comm);
     GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
     create_grid();
     print_grid_info(pcout, *grid);
@@ -271,158 +266,6 @@ private:
                 dealii::ExcMessage("Has to be overwritten by derived classes in order "
                                    "to use Poisson solver for mesh movement."));
   }
-};
-
-template<int dim, typename Number>
-class ApplicationBasePrecursor : public ApplicationBase<dim, Number>
-{
-public:
-  ApplicationBasePrecursor(std::string parameter_file, MPI_Comm const & comm)
-    : ApplicationBase<dim, Number>(parameter_file, comm)
-  {
-  }
-
-  virtual ~ApplicationBasePrecursor()
-  {
-  }
-
-  virtual void
-  add_parameters(dealii::ParameterHandler & prm) final
-  {
-    ApplicationBase<dim, Number>::add_parameters(prm);
-
-    resolution.add_parameters(prm);
-  }
-
-  void
-  setup() final
-  {
-    this->parse_parameters();
-
-    // resolution parameters
-    set_resolution_parameters();
-
-    // actual domain
-    ApplicationBase<dim, Number>::setup();
-
-    // precursor domain
-
-    // parameters
-    set_parameters_precursor();
-    param_pre.check(this->pcout);
-    param_pre.print(this->pcout, "List of parameters for precursor domain:");
-
-    // make some additional parameter checks
-    AssertThrow(param_pre.ale_formulation == false, dealii::ExcMessage("not implemented."));
-    AssertThrow(this->param.ale_formulation == false, dealii::ExcMessage("not implemented."));
-
-    AssertThrow(
-      param_pre.calculation_of_time_step_size == this->param.calculation_of_time_step_size,
-      dealii::ExcMessage("Type of time step calculation has to be the same for both domains."));
-
-    AssertThrow(param_pre.adaptive_time_stepping == this->param.adaptive_time_stepping,
-                dealii::ExcMessage(
-                  "Type of time step calculation has to be the same for both domains."));
-
-    AssertThrow(param_pre.solver_type == SolverType::Unsteady and
-                  this->param.solver_type == SolverType::Unsteady,
-                dealii::ExcMessage("This is an unsteady solver. Check parameters."));
-
-    // For the two-domain solver the parameter start_with_low_order has to be true.
-    // This is due to the fact that the setup function of the time integrator initializes
-    // the solution at previous time instants t_0 - dt, t_0 - 2*dt, ... in case of
-    // start_with_low_order == false. However, the combined time step size
-    // is not known at this point since the two domains have to first communicate with each other
-    // in order to find the minimum time step size. Hence, the easiest way to avoid these kind of
-    // inconsistencies is to preclude the case start_with_low_order == false.
-    AssertThrow(param_pre.start_with_low_order == true and this->param.start_with_low_order == true,
-                dealii::ExcMessage("start_with_low_order has to be true for two-domain solver."));
-
-    // grid
-    grid_pre->initialize(param_pre.grid, this->mpi_comm);
-    GridUtilities::create_mapping(mapping_pre,
-                                  param_pre.grid.element_type,
-                                  param_pre.mapping_degree);
-    create_grid_precursor();
-    print_grid_info(this->pcout, *grid_pre);
-
-    // boundary conditions
-    boundary_descriptor_pre = std::make_shared<BoundaryDescriptor<dim>>();
-    set_boundary_descriptor_precursor();
-    verify_boundary_conditions<dim>(*boundary_descriptor_pre, *grid_pre);
-
-    // field functions
-    field_functions_pre = std::make_shared<FieldFunctions<dim>>();
-    set_field_functions_precursor();
-  }
-
-  virtual std::shared_ptr<PostProcessorBase<dim, Number>>
-  create_postprocessor_precursor() = 0;
-
-  Parameters const &
-  get_parameters_precursor() const
-  {
-    return param_pre;
-  }
-
-  std::shared_ptr<Grid<dim> const>
-  get_grid_precursor() const
-  {
-    return grid_pre;
-  }
-
-  std::shared_ptr<dealii::Mapping<dim> const>
-  get_mapping_precursor() const
-  {
-    return mapping_pre;
-  }
-
-  std::shared_ptr<BoundaryDescriptor<dim> const>
-  get_boundary_descriptor_precursor() const
-  {
-    return boundary_descriptor_pre;
-  }
-
-  std::shared_ptr<FieldFunctions<dim> const>
-  get_field_functions_precursor() const
-  {
-    return field_functions_pre;
-  }
-
-protected:
-  Parameters param_pre;
-
-  std::shared_ptr<Grid<dim>> grid_pre;
-
-  std::shared_ptr<dealii::Mapping<dim>> mapping_pre;
-
-  std::shared_ptr<FieldFunctions<dim>>     field_functions_pre;
-  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_pre;
-
-private:
-  void
-  set_resolution_parameters()
-  {
-    this->param.degree_u             = resolution.degree;
-    this->param.grid.n_refine_global = resolution.refine_space;
-
-    this->param_pre.degree_u             = resolution.degree;
-    this->param_pre.grid.n_refine_global = resolution.refine_space;
-  }
-
-  virtual void
-  set_parameters_precursor() = 0;
-
-  virtual void
-  create_grid_precursor() = 0;
-
-  virtual void
-  set_boundary_descriptor_precursor() = 0;
-
-  virtual void
-  set_field_functions_precursor() = 0;
-
-  ResolutionParameters resolution;
 };
 
 

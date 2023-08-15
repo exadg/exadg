@@ -26,8 +26,9 @@
 #include <exadg/incompressible_navier_stokes/driver.h>
 
 // utilities
+#include <exadg/operators/resolution_parameters.h>
+#include <exadg/time_integration/resolution_parameters.h>
 #include <exadg/utilities/general_parameters.h>
-#include <exadg/utilities/resolution_parameters.h>
 
 // application
 #include <exadg/incompressible_navier_stokes/user_interface/declare_get_application.h>
@@ -42,7 +43,7 @@ create_input_file(std::string const & input_file)
   GeneralParameters general;
   general.add_parameters(prm);
 
-  SpatialResolutionParameters spatial;
+  SpatialResolutionParametersMinMax spatial;
   spatial.add_parameters(prm);
 
   TemporalResolutionParameters temporal;
@@ -146,9 +147,9 @@ main(int argc, char ** argv)
     }
   }
 
-  ExaDG::GeneralParameters            general(input_file);
-  ExaDG::SpatialResolutionParameters  spatial(input_file);
-  ExaDG::TemporalResolutionParameters temporal(input_file);
+  ExaDG::GeneralParameters                 general(input_file);
+  ExaDG::SpatialResolutionParametersMinMax spatial(input_file);
+  ExaDG::TemporalResolutionParameters      temporal(input_file);
 
   // k-refinement
   for(unsigned int degree = spatial.degree_min; degree <= spatial.degree_max; ++degree)
@@ -165,20 +166,30 @@ main(int argc, char ** argv)
       {
         // run the simulation
         if(general.dim == 2 and general.precision == "float")
+        {
           ExaDG::run<2, float>(
             input_file, degree, refine_space, refine_time, sub_comm, general.is_test);
+        }
         else if(general.dim == 2 and general.precision == "double")
+        {
           ExaDG::run<2, double>(
             input_file, degree, refine_space, refine_time, sub_comm, general.is_test);
+        }
         else if(general.dim == 3 and general.precision == "float")
+        {
           ExaDG::run<3, float>(
             input_file, degree, refine_space, refine_time, sub_comm, general.is_test);
+        }
         else if(general.dim == 3 and general.precision == "double")
+        {
           ExaDG::run<3, double>(
             input_file, degree, refine_space, refine_time, sub_comm, general.is_test);
+        }
         else
+        {
           AssertThrow(
             false, dealii::ExcMessage("Only dim = 2|3 and precision = float|double implemented."));
+        }
       }
     }
   }

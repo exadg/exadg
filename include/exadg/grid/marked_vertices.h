@@ -25,6 +25,10 @@
 // deal.II
 #include <deal.II/grid/tria.h>
 
+/**
+ * Returns a vector of marked vertices indicating vertices on the boundary of a triangulation that
+ * have been marked according to a given set of boundary_ids.
+ */
 template<int dim>
 std::vector<bool>
 get_marked_vertices_via_boundary_ids(dealii::Triangulation<dim> const &           triangulation,

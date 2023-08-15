@@ -13,7 +13,7 @@
         "RefineSpace": "0"
     },
     "FSI" : {
-        "Method": "IQN-ILS",
+        "Method": "IQN_ILS",
         "AbsTol": "1.e-9",
         "RelTol": "1.e-3",
         "OmegaInit": "0.3",

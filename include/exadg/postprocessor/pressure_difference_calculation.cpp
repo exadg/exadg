@@ -24,9 +24,9 @@
 
 // ExaDG
 #include <exadg/postprocessor/pressure_difference_calculation.h>
+#include <exadg/postprocessor/solution_interpolation.h>
 #include <exadg/utilities/create_directories.h>
 #include <exadg/utilities/print_functions.h>
-#include <exadg/vector_tools/point_value.h>
 
 namespace ExaDG
 {

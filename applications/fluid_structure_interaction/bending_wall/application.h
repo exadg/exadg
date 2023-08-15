@@ -420,49 +420,67 @@ private:
   void
   create_grid() final
   {
-    create_triangulation(*this->grid->triangulation);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    for(auto cell : this->grid->triangulation->cell_iterators())
-    {
-      for(auto const & f : cell->face_indices())
-      {
-        double const x   = cell->face(f)->center()(0);
-        double const y   = cell->face(f)->center()(1);
-        double const z   = cell->face(f)->center()(2);
-        double const TOL = 1.e-10;
+        create_triangulation(tria);
 
-        // inflow
-        if(std::fabs(x - 0.0) < TOL)
+        for(auto cell : tria.cell_iterators())
         {
-          cell->face(f)->set_boundary_id(BOUNDARY_ID_INFLOW);
+          for(auto const & f : cell->face_indices())
+          {
+            double const x   = cell->face(f)->center()(0);
+            double const y   = cell->face(f)->center()(1);
+            double const z   = cell->face(f)->center()(2);
+            double const TOL = 1.e-10;
+
+            // inflow
+            if(std::fabs(x - 0.0) < TOL)
+            {
+              cell->face(f)->set_boundary_id(BOUNDARY_ID_INFLOW);
+            }
+
+            // outflow
+            if(std::fabs(x - L_F) < TOL)
+            {
+              cell->face(f)->set_boundary_id(BOUNDARY_ID_OUTFLOW);
+            }
+
+            // fluid-structure interface
+            if((std::fabs(x - L_IN) < TOL or std::fabs(x - (L_IN + T_S)) < TOL) and
+               y < H_S - H_F / 2.0 + TOL and std::fabs(z) < B_S / 2.0 + TOL)
+            {
+              cell->face(f)->set_boundary_id(BOUNDARY_ID_FSI);
+            }
+            if((std::fabs(z - (-B_S / 2.0)) < TOL or std::fabs(z - (+B_S / 2.0)) < TOL) and
+               y < H_S - H_F / 2.0 + TOL and std::fabs(x - (L_IN + T_S / 2.0)) < T_S / 2.0 + TOL)
+            {
+              cell->face(f)->set_boundary_id(BOUNDARY_ID_FSI);
+            }
+            if(std::fabs(y - (H_S - H_F / 2.0)) < TOL and
+               std::fabs(x - (L_IN + T_S / 2.0)) < T_S / 2.0 + TOL and
+               std::fabs(z) < B_S / 2.0 + TOL)
+            {
+              cell->face(f)->set_boundary_id(BOUNDARY_ID_FSI);
+            }
+          }
         }
 
-        // outflow
-        if(std::fabs(x - L_F) < TOL)
-        {
-          cell->face(f)->set_boundary_id(BOUNDARY_ID_OUTFLOW);
-        }
+        tria.refine_global(global_refinements);
+      };
 
-        // fluid-structure interface
-        if((std::fabs(x - L_IN) < TOL or std::fabs(x - (L_IN + T_S)) < TOL) and
-           y < H_S - H_F / 2.0 + TOL and std::fabs(z) < B_S / 2.0 + TOL)
-        {
-          cell->face(f)->set_boundary_id(BOUNDARY_ID_FSI);
-        }
-        if((std::fabs(z - (-B_S / 2.0)) < TOL or std::fabs(z - (+B_S / 2.0)) < TOL) and
-           y < H_S - H_F / 2.0 + TOL and std::fabs(x - (L_IN + T_S / 2.0)) < T_S / 2.0 + TOL)
-        {
-          cell->face(f)->set_boundary_id(BOUNDARY_ID_FSI);
-        }
-        if(std::fabs(y - (H_S - H_F / 2.0)) < TOL and
-           std::fabs(x - (L_IN + T_S / 2.0)) < T_S / 2.0 + TOL and std::fabs(z) < B_S / 2.0 + TOL)
-        {
-          cell->face(f)->set_boundary_id(BOUNDARY_ID_FSI);
-        }
-      }
-    }
-
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+                                                            this->mpi_comm,
+                                                            this->param.grid,
+                                                            this->param.involves_h_multigrid(),
+                                                            lambda_create_triangulation,
+                                                            {} /* no local refinements */);
   }
 
   void
@@ -561,7 +579,7 @@ private:
     param.spatial_discretization = SpatialDiscretization::CG;
 
     // SOLVER
-    param.solver         = Poisson::Solver::FGMRES;
+    param.solver         = Poisson::LinearSolver::FGMRES;
     param.solver_data    = SolverData(1e4, ABS_TOL, REL_TOL, 100);
     param.preconditioner = Preconditioner::Multigrid;
 
@@ -767,49 +785,63 @@ private:
   void
   create_grid() final
   {
-    dealii::Point<dim> p1, p2;
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    p1[0] = L_IN;
-    p1[1] = -H_F / 2.0;
-    p1[2] = -B_S / 2.0;
+        dealii::Point<dim> p1, p2;
 
-    p2[0] = L_IN + T_S;
-    p2[1] = H_S - H_F / 2.0;
-    p2[2] = B_S / 2.0;
+        p1[0] = L_IN;
+        p1[1] = -H_F / 2.0;
+        p1[2] = -B_S / 2.0;
 
-    std::vector<unsigned int> repetitions(dim);
-    repetitions[0] = N_CELLS_STRUCTURE_X;
-    repetitions[1] = N_CELLS_STRUCTURE_Y;
-    repetitions[2] = N_CELLS_STRUCTURE_Z;
+        p2[0] = L_IN + T_S;
+        p2[1] = H_S - H_F / 2.0;
+        p2[2] = B_S / 2.0;
 
-    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                                      repetitions,
-                                                      p1,
-                                                      p2);
+        std::vector<unsigned int> repetitions(dim);
+        repetitions[0] = N_CELLS_STRUCTURE_X;
+        repetitions[1] = N_CELLS_STRUCTURE_Y;
+        repetitions[2] = N_CELLS_STRUCTURE_Z;
 
-    for(auto cell : this->grid->triangulation->cell_iterators())
-    {
-      for(auto const & f : cell->face_indices())
-      {
-        if(cell->face(f)->at_boundary())
+        dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, p1, p2);
+
+        for(auto cell : tria.cell_iterators())
         {
-          double const y   = cell->face(f)->center()(1);
-          double const TOL = 1.e-10;
+          for(auto const & f : cell->face_indices())
+          {
+            if(cell->face(f)->at_boundary())
+            {
+              double const y   = cell->face(f)->center()(1);
+              double const TOL = 1.e-10;
 
-          // lower boundary
-          if(std::fabs(y - (-H_F / 2.0)) < TOL)
-          {
-            cell->face(f)->set_boundary_id(BOUNDARY_ID_WALLS);
-          }
-          else // all other boundaries at FSI interface
-          {
-            cell->face(f)->set_boundary_id(BOUNDARY_ID_FSI);
+              // lower boundary
+              if(std::fabs(y - (-H_F / 2.0)) < TOL)
+              {
+                cell->face(f)->set_boundary_id(BOUNDARY_ID_WALLS);
+              }
+              else // all other boundaries at FSI interface
+              {
+                cell->face(f)->set_boundary_id(BOUNDARY_ID_FSI);
+              }
+            }
           }
         }
-      }
-    }
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+                                                            this->mpi_comm,
+                                                            this->param.grid,
+                                                            this->param.involves_h_multigrid(),
+                                                            lambda_create_triangulation,
+                                                            {} /* no local refinements */);
   }
 
   void

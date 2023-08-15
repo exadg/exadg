@@ -19,6 +19,8 @@
  *  ______________________________________________________________________
  */
 
+#include <deal.II/numerics/vector_tools_mean_value.h>
+
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
@@ -666,7 +668,7 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_pressure(VectorType & rhs) const
   // in case of the pressure-correction scheme.
 
   if(pde_operator->is_pressure_level_undefined())
-    set_zero_mean_value(rhs);
+    dealii::VectorTools::subtract_mean_value(rhs);
 }
 
 template<int dim, typename Number>

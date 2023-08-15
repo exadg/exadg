@@ -4,19 +4,26 @@
         "Dim": "3",
         "IsTest": "false"
     },
-    "SpatialResolution": {
-        "DegreeMin": "3",
-        "DegreeMax": "3",
-        "RefineSpaceMin": "0",
-        "RefineSpaceMax": "0"
+    "Main": {
+        "SpatialResolution": {
+            "Degree": "3",
+            "RefineSpace": "0"
+        },
+        "Output": {
+            "OutputDirectory": "output/fda/",
+            "OutputName": "main",
+            "WriteOutput": "false"
+        }
     },
-    "TemporalResolution": {
-        "RefineTimeMin": "0",
-        "RefineTimeMax": "0"
-    },
-    "Output": {
-        "OutputDirectory": "output/",
-        "OutputName": "output",
-        "WriteOutput": "false"
+    "Precursor": {
+        "SpatialResolution": {
+            "Degree": "3",
+            "RefineSpace": "1"
+        },
+        "Output": {
+            "OutputDirectory": "output/fda/",
+            "OutputName": "precursor",
+            "WriteOutput": "false"
+        }
     }
 }

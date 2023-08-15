@@ -19,6 +19,8 @@
  *  ______________________________________________________________________
  */
 
+#include <deal.II/numerics/vector_tools_mean_value.h>
+
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_momentum.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
 #include <exadg/poisson/preconditioners/multigrid_preconditioner.h>
@@ -499,7 +501,6 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
   Map_DBC_ComponentMask                                               dirichlet_bc_component_mask;
 
   mg_preconditioner->initialize(this->param.multigrid_data_velocity_block,
-                                this->param.grid.multigrid,
                                 this->grid,
                                 this->get_mapping(),
                                 this->get_dof_handler_u().get_fe(),
@@ -650,7 +651,6 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complement()
 
   auto & dof_handler = this->get_dof_handler_p();
   mg_preconditioner->initialize(mg_data,
-                                this->param.grid.multigrid,
                                 this->grid,
                                 this->get_mapping(),
                                 dof_handler.get_fe(),
@@ -1223,7 +1223,7 @@ OperatorCoupled<dim, Number>::apply_inverse_negative_laplace_operator(VectorType
 
       if(laplace_operator->operator_is_singular())
       {
-        set_zero_mean_value(vector_zero_mean);
+        dealii::VectorTools::subtract_mean_value(vector_zero_mean);
       }
 
       pointer_to_src = &vector_zero_mean;

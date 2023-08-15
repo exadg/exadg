@@ -47,11 +47,11 @@ public:
 };
 
 template<int dim, typename Number>
-class Application : public FTI::ApplicationBase<dim, Number>
+class Fluid : public FluidBase<dim, Number>
 {
 public:
-  Application(std::string input_file, MPI_Comm const & comm)
-    : FTI::ApplicationBase<dim, Number>(input_file, comm, 1)
+  Fluid(std::string parameter_file, MPI_Comm const & comm)
+    : FluidBase<dim, Number>(parameter_file, comm)
   {
   }
 
@@ -65,21 +65,27 @@ private:
   }
 
   void
-  set_parameters_scalar(unsigned int const scalar_index) final
-  {
-    using namespace ConvDiff;
-
-    // Set parameters here
-    Parameters & param = this->scalar_param[scalar_index];
-    (void)param;
-  }
-
-  void
   create_grid() final
   {
-    // create triangulation
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        // create triangulation and perform local/global refinements
+        (void)tria;
+        (void)periodic_face_pairs;
+        (void)global_refinements;
+        (void)vector_local_refinements;
+      };
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+                                                            this->mpi_comm,
+                                                            this->param.grid,
+                                                            this->param.involves_h_multigrid(),
+                                                            lambda_create_triangulation,
+                                                            {} /* no local refinements */);
   }
 
   void
@@ -122,42 +128,69 @@ private:
 
     return pp;
   }
+};
+
+template<int dim, typename Number>
+class Scalar : public ScalarBase<dim, Number>
+{
+public:
+  Scalar(std::string parameter_file, MPI_Comm const & comm)
+    : ScalarBase<dim, Number>(parameter_file, comm)
+  {
+  }
+
+private:
+  void
+  set_parameters() final
+  {
+    using namespace ConvDiff;
+  }
 
   void
-  set_boundary_descriptor_scalar(unsigned int scalar_index = 0) final
+  set_boundary_descriptor() final
   {
     typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
       pair;
 
-    this->scalar_boundary_descriptor[scalar_index]->dirichlet_bc.insert(
+    this->boundary_descriptor->dirichlet_bc.insert(
       pair(0, new dealii::Functions::ZeroFunction<dim>(1)));
-    this->scalar_boundary_descriptor[scalar_index]->neumann_bc.insert(
+    this->boundary_descriptor->neumann_bc.insert(
       pair(1, new dealii::Functions::ZeroFunction<dim>(1)));
   }
 
 
   void
-  set_field_functions_scalar(unsigned int scalar_index = 0) final
+  set_field_functions() final
   {
-    this->scalar_field_functions[scalar_index]->initial_solution.reset(
-      new dealii::Functions::ZeroFunction<dim>(1));
-    this->scalar_field_functions[scalar_index]->right_hand_side.reset(
-      new dealii::Functions::ZeroFunction<dim>(1));
-    this->scalar_field_functions[scalar_index]->velocity.reset(
-      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution.reset(new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->velocity.reset(new dealii::Functions::ZeroFunction<dim>(1));
   }
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
-  create_postprocessor_scalar(unsigned int const scalar_index) final
+  create_postprocessor() final
   {
-    (void)scalar_index;
-
     ConvDiff::PostProcessorData<dim> pp_data;
 
     std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> pp;
     pp.reset(new ConvDiff::PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return pp;
+  }
+};
+
+template<int dim, typename Number>
+class Application : public ApplicationBase<dim, Number>
+{
+public:
+  Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, Number>(input_file, comm)
+  {
+    this->fluid = std::make_shared<Fluid<dim, Number>>(input_file, comm);
+
+    // create one (or even more) scalar fields
+    this->scalars.resize(1);
+    this->scalars[0] = std::make_shared<Scalar<dim, Number>>(input_file, comm);
   }
 };
 

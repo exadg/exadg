@@ -24,8 +24,8 @@
 
 // ExaDG
 #include <exadg/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.h>
+#include <exadg/postprocessor/solution_interpolation.h>
 #include <exadg/utilities/create_directories.h>
-#include <exadg/vector_tools/interpolate_solution.h>
 
 namespace ExaDG
 {
@@ -369,7 +369,7 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate_velocity(VectorType const
   // to sum the contributions of every single processor.
   dealii::Utilities::MPI::sum(counter_vector_local, mpi_comm, counter_vector_local);
 
-  // Perform MPI communcation as well as averaging for all quantities of the current line.
+  // Perform MPI communication as well as averaging for all quantities of the current line.
   for(typename std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
         line.quantities.begin();
       quantity != line.quantities.end();

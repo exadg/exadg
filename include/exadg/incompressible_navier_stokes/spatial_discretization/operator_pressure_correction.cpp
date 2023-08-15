@@ -150,7 +150,6 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
     Map_DBC_ComponentMask                                               dirichlet_bc_component_mask;
 
     mg_preconditioner->initialize(this->param.multigrid_data_momentum,
-                                  this->param.grid.multigrid,
                                   this->grid,
                                   this->get_mapping(),
                                   this->get_dof_handler_u().get_fe(),

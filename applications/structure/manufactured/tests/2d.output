@@ -47,7 +47,8 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              1
-  Multigrid variant:                         LocalSmoothing
+  Create coarse triangulations:              false
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -166,7 +167,8 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              1
-  Multigrid variant:                         LocalSmoothing
+  Create coarse triangulations:              false
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -285,7 +287,8 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              1
-  Multigrid variant:                         LocalSmoothing
+  Create coarse triangulations:              false
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -404,7 +407,8 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              1
-  Multigrid variant:                         LocalSmoothing
+  Create coarse triangulations:              false
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -523,7 +527,8 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              1
-  Multigrid variant:                         LocalSmoothing
+  Create coarse triangulations:              false
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -642,7 +647,8 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              1
-  Multigrid variant:                         LocalSmoothing
+  Create coarse triangulations:              false
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -761,7 +767,8 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              1
-  Multigrid variant:                         LocalSmoothing
+  Create coarse triangulations:              false
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -880,7 +887,8 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              1
-  Multigrid variant:                         LocalSmoothing
+  Create coarse triangulations:              false
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -999,7 +1007,8 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              1
-  Multigrid variant:                         LocalSmoothing
+  Create coarse triangulations:              false
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:

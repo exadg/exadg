@@ -31,7 +31,7 @@
 #include <exadg/grid/grid_utilities.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/matrix_free/categorization.h>
-#include <exadg/solvers_and_preconditioners/multigrid/coarse_grid_solvers.h>
+#include <exadg/operators/finite_element.h>
 #include <exadg/solvers_and_preconditioners/multigrid/constraints.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_algorithm.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h>
@@ -39,24 +39,23 @@
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/chebyshev_smoother.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/gmres_smoother.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/jacobi_smoother.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_global_coarsening.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_global_refinement.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfer.h>
 #include <exadg/solvers_and_preconditioners/utilities/compute_eigenvalues.h>
 #include <exadg/utilities/mpi.h>
 
 namespace ExaDG
 {
-template<int dim, typename Number>
-MultigridPreconditionerBase<dim, Number>::MultigridPreconditionerBase(MPI_Comm const & comm)
-  : mpi_comm(comm), multigrid_variant(MultigridVariant::LocalSmoothing)
+template<int dim, typename Number, typename MultigridNumber>
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::MultigridPreconditionerBase(
+  MPI_Comm const & comm)
+  : mpi_comm(comm)
 {
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number>::initialize(
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   MultigridData const &                       data,
-  MultigridVariant const &                    multigrid_variant,
   std::shared_ptr<Grid<dim> const>            grid,
   std::shared_ptr<dealii::Mapping<dim> const> mapping,
   dealii::FiniteElement<dim> const &          fe,
@@ -65,8 +64,6 @@ MultigridPreconditionerBase<dim, Number>::initialize(
   Map_DBC_ComponentMask const &               dirichlet_bc_component_mask)
 {
   this->data = data;
-
-  this->multigrid_variant = multigrid_variant;
 
   this->grid = grid;
 
@@ -79,7 +76,7 @@ MultigridPreconditionerBase<dim, Number>::initialize(
   this->initialize_mapping();
 
   this->initialize_dof_handler_and_constraints(operator_is_singular,
-                                               fe,
+                                               fe.n_components(),
                                                dirichlet_bc,
                                                dirichlet_bc_component_mask);
 
@@ -96,10 +93,11 @@ MultigridPreconditionerBase<dim, Number>::initialize(
   this->initialize_multigrid_algorithm();
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number>::initialize_levels(unsigned int const degree,
-                                                            bool const         is_dg)
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_levels(
+  unsigned int const degree,
+  bool const         is_dg)
 {
   /*
    *
@@ -138,30 +136,39 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(unsigned int const d
   MultigridType const mg_type = data.type;
 
   std::vector<unsigned int> h_levels;
+  std::vector<unsigned int> dealii_tria_levels;
 
 
   // setup h-levels
-  if(data.involves_h_transfer())
+
+  // In case only a single h-level exists
+  if(not(data.involves_h_transfer()) or (grid->triangulation->n_global_levels() == 1))
   {
-    if(multigrid_variant == MultigridVariant::LocalSmoothing)
-    {
-      for(unsigned int h = 0; h < grid->triangulation->n_global_levels(); h++)
-        h_levels.push_back(h);
-    }
-    else if(multigrid_variant == MultigridVariant::GlobalCoarsening)
+    h_levels.push_back(0);
+    // the only h-level that exists is an active level
+    dealii_tria_levels.push_back(dealii::numbers::invalid_unsigned_int);
+  }
+  else // involves_h_transfer == true and n_global_levels() > 1
+  {
+    // In case we have a separate Triangulation object for each h-level
+    if(grid->coarse_triangulations.size() > 0)
     {
       for(unsigned int h = 0; h < grid->coarse_triangulations.size() + 1; h++)
+      {
         h_levels.push_back(h);
+        dealii_tria_levels.push_back(dealii::numbers::invalid_unsigned_int);
+      }
     }
     else
     {
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      for(unsigned int h = 0; h < grid->triangulation->n_global_levels(); h++)
+      {
+        h_levels.push_back(h);
+        dealii_tria_levels.push_back(h);
+      }
     }
   }
-  else // no h-MG is involved
-  {
-    h_levels.push_back(grid->triangulation->n_global_levels() - 1);
-  }
+
 
   // setup p-levels
   if(mg_type == MultigridType::hMG)
@@ -225,73 +232,73 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(unsigned int const d
   if(mg_type == MultigridType::hMG)
   {
     for(unsigned int h = 0; h < h_levels.size(); h++)
-      level_info.push_back({h_levels[h], p_levels.front()});
+      level_info.push_back({h_levels[h], dealii_tria_levels[h], p_levels.front()});
   }
   else if(mg_type == MultigridType::cMG)
   {
-    level_info.push_back({h_levels.back(), p_levels.front()});
-    level_info.push_back({h_levels.back(), p_levels.back()});
+    level_info.push_back({h_levels.back(), dealii_tria_levels.back(), p_levels.front()});
+    level_info.push_back({h_levels.back(), dealii_tria_levels.back(), p_levels.back()});
   }
   else if(mg_type == MultigridType::chMG)
   {
     for(unsigned int h = 0; h < h_levels.size(); h++)
-      level_info.push_back({h_levels[h], p_levels.front()});
+      level_info.push_back({h_levels[h], dealii_tria_levels[h], p_levels.front()});
 
-    level_info.push_back({h_levels.back(), p_levels.back()});
+    level_info.push_back({h_levels.back(), dealii_tria_levels.back(), p_levels.back()});
   }
   else if(mg_type == MultigridType::hcMG)
   {
-    level_info.push_back({h_levels.front(), p_levels.front()});
+    level_info.push_back({h_levels.front(), dealii_tria_levels.front(), p_levels.front()});
 
     for(unsigned int h = 0; h < h_levels.size(); h++)
-      level_info.push_back({h_levels[h], p_levels.back()});
+      level_info.push_back({h_levels[h], dealii_tria_levels[h], p_levels.back()});
   }
   else if(mg_type == MultigridType::pMG or mg_type == MultigridType::pcMG or
           mg_type == MultigridType::cpMG)
   {
     for(unsigned int p = 0; p < p_levels.size(); p++)
-      level_info.push_back({h_levels.front(), p_levels[p]});
+      level_info.push_back({h_levels.front(), dealii_tria_levels.front(), p_levels[p]});
   }
   else if(mg_type == MultigridType::phMG or mg_type == MultigridType::cphMG or
           mg_type == MultigridType::pchMG)
   {
     for(unsigned int h = 0; h < h_levels.size() - 1; h++)
-      level_info.push_back({h_levels[h], p_levels.front()});
+      level_info.push_back({h_levels[h], dealii_tria_levels[h], p_levels.front()});
 
     for(auto p : p_levels)
-      level_info.push_back({h_levels.back(), p});
+      level_info.push_back({h_levels.back(), dealii_tria_levels.back(), p});
   }
   else if(mg_type == MultigridType::hpMG or mg_type == MultigridType::hcpMG or
           mg_type == MultigridType::hpcMG)
   {
     for(unsigned int p = 0; p < p_levels.size() - 1; p++)
-      level_info.push_back({h_levels.front(), p_levels[p]});
+      level_info.push_back({h_levels.front(), dealii_tria_levels.front(), p_levels[p]});
 
-    for(auto h : h_levels)
-      level_info.push_back({h, p_levels.back()});
+    for(unsigned int h = 0; h < h_levels.size(); h++)
+      level_info.push_back({h_levels[h], dealii_tria_levels[h], p_levels.back()});
   }
   else if(mg_type == MultigridType::phcMG)
   {
-    level_info.push_back({h_levels.front(), p_levels.front()});
+    level_info.push_back({h_levels.front(), dealii_tria_levels.front(), p_levels.front()});
 
     std::vector<MGDoFHandlerIdentifier>::iterator it = p_levels.begin();
     ++it;
 
     for(unsigned int h = 0; h < h_levels.size() - 1; h++)
-      level_info.push_back({h_levels[h], *it});
+      level_info.push_back({h_levels[h], dealii_tria_levels[h], *it});
 
     for(; it != p_levels.end(); ++it)
-      level_info.push_back({h_levels.back(), *it});
+      level_info.push_back({h_levels.back(), dealii_tria_levels.back(), *it});
   }
   else if(mg_type == MultigridType::chpMG)
   {
     for(unsigned int p = 0; p < p_levels.size() - 2; p++)
-      level_info.push_back({h_levels.front(), p_levels[p]});
+      level_info.push_back({h_levels.front(), dealii_tria_levels.front(), p_levels[p]});
 
-    for(auto h : h_levels)
-      level_info.push_back({h, p_levels[p_levels.size() - 2]});
+    for(unsigned int h = 0; h < h_levels.size(); h++)
+      level_info.push_back({h_levels[h], dealii_tria_levels[h], p_levels[p_levels.size() - 2]});
 
-    level_info.push_back({h_levels.back(), p_levels.back()});
+    level_info.push_back({h_levels.back(), dealii_tria_levels.back(), p_levels.back()});
   }
   else
   {
@@ -309,11 +316,14 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(unsigned int const d
       dealii::ExcMessage(
         "Between two consecutive multigrid levels, only one type of transfer is allowed."));
   }
+
+  AssertThrow(h_levels.size() == dealii_tria_levels.size(),
+              dealii::ExcMessage("h_levels and dealii_tria_levels have different size."));
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number>::initialize_mapping()
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mapping()
 {
   unsigned int const n_h_levels = level_info.back().h_level() - level_info.front().h_level() + 1;
 
@@ -325,9 +335,10 @@ MultigridPreconditionerBase<dim, Number>::initialize_mapping()
   }
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 dealii::Mapping<dim> const &
-MultigridPreconditionerBase<dim, Number>::get_mapping(unsigned int const h_level) const
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::get_mapping(
+  unsigned int const h_level) const
 {
   if(h_level < coarse_mappings.size())
   {
@@ -339,9 +350,9 @@ MultigridPreconditionerBase<dim, Number>::get_mapping(unsigned int const h_level
   }
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 unsigned int
-MultigridPreconditionerBase<dim, Number>::get_number_of_levels() const
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::get_number_of_levels() const
 {
   AssertThrow(level_info.size() > 0,
               dealii::ExcMessage(
@@ -350,95 +361,70 @@ MultigridPreconditionerBase<dim, Number>::get_number_of_levels() const
   return level_info.size();
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number>::initialize_dof_handler_and_constraints(
-  bool const                         operator_is_singular,
-  dealii::FiniteElement<dim> const & fe,
-  Map_DBC const &                    dirichlet_bc,
-  Map_DBC_ComponentMask const &      dirichlet_bc_component_mask)
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_dof_handler_and_constraints(
+  bool const                    operator_is_singular,
+  unsigned int const            n_components,
+  Map_DBC const &               dirichlet_bc,
+  Map_DBC_ComponentMask const & dirichlet_bc_component_mask)
 {
   this->do_initialize_dof_handler_and_constraints(operator_is_singular,
-                                                  fe,
+                                                  n_components,
                                                   dirichlet_bc,
                                                   dirichlet_bc_component_mask,
-                                                  this->level_info,
-                                                  this->p_levels,
                                                   this->dof_handlers,
-                                                  this->constrained_dofs,
                                                   this->constraints);
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constraints(
-  bool                                  is_singular,
-  dealii::FiniteElement<dim> const &    fe,
-  Map_DBC const &                       dirichlet_bc,
-  Map_DBC_ComponentMask const &         dirichlet_bc_component_mask,
-  std::vector<MGLevelInfo> &            level_info,
-  std::vector<MGDoFHandlerIdentifier> & p_levels,
-  dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> & dof_handlers,
-  dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> &     constrained_dofs,
-  dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> & constraints)
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::
+  do_initialize_dof_handler_and_constraints(
+    bool                          is_singular,
+    unsigned int const            n_components,
+    Map_DBC const &               dirichlet_bc,
+    Map_DBC_ComponentMask const & dirichlet_bc_component_mask,
+    dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> & dof_handlers,
+    dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> &
+      constraints)
 {
+  dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> constrained_dofs;
   constrained_dofs.resize(0, get_number_of_levels() - 1);
   dof_handlers.resize(0, get_number_of_levels() - 1);
   constraints.resize(0, get_number_of_levels() - 1);
 
-  // this type of transfer has to be used for triangulations with hanging nodes
-  if(multigrid_variant == MultigridVariant::GlobalCoarsening)
+  bool const is_hypercube_mesh_without_hanging_nodes =
+    grid->triangulation->all_reference_cells_are_hyper_cube() and
+    not(grid->triangulation->has_hanging_nodes());
+
+  if(grid->coarse_triangulations.size() > 0 or not(is_hypercube_mesh_without_hanging_nodes))
   {
     // setup dof-handler and constrained dofs for all multigrid levels
     for_all_levels([&](unsigned int const l) {
       auto const & level = level_info[l];
 
-      std::shared_ptr<dealii::DoFHandler<dim>> dof_handler;
+      std::shared_ptr<dealii::FiniteElement<dim>> fe = create_finite_element<dim>(
+        get_element_type(*grid->triangulation), level.is_dg(), n_components, level.degree());
+
+      std::shared_ptr<dealii::Triangulation<dim> const> triangulation;
       if(level.h_level() == level_info.back().h_level()) // fine-level triangulation
       {
-        dof_handler = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
+        triangulation = grid->triangulation;
       }
       else
       {
-        AssertThrow(
-          level.h_level() < grid->coarse_triangulations.size(),
-          dealii::ExcMessage(
-            "Vector of coarse_triangulations does not seem to be initialized correctly."));
+        AssertThrow(level.h_level() < grid->coarse_triangulations.size(),
+                    dealii::ExcMessage(
+                      "The vector of coarse_triangulations does not have correct size."));
 
-        dof_handler = std::make_shared<dealii::DoFHandler<dim>>(
-          *(grid->coarse_triangulations[level.h_level()]));
+        triangulation = grid->coarse_triangulations[level.h_level()];
       }
 
-      if(grid->triangulation->all_reference_cells_are_hyper_cube())
-      {
-        if(level.is_dg())
-        {
-          dof_handler->distribute_dofs(
-            dealii::FESystem<dim>(dealii::FE_DGQ<dim>(level.degree()), fe.n_components()));
-        }
-        else
-        {
-          dof_handler->distribute_dofs(
-            dealii::FESystem<dim>(dealii::FE_Q<dim>(level.degree()), fe.n_components()));
-        }
-      }
-      else if(grid->triangulation->all_reference_cells_are_simplex())
-      {
-        if(level.is_dg())
-        {
-          dof_handler->distribute_dofs(
-            dealii::FESystem<dim>(dealii::FE_SimplexDGP<dim>(level.degree()), fe.n_components()));
-        }
-        else
-        {
-          dof_handler->distribute_dofs(
-            dealii::FESystem<dim>(dealii::FE_SimplexP<dim>(level.degree()), fe.n_components()));
-        }
-      }
-      else
-      {
-        AssertThrow(false, dealii::ExcMessage("Only hypercube or simplex elements are supported."));
-      }
+      std::shared_ptr<dealii::DoFHandler<dim>> dof_handler =
+        std::make_shared<dealii::DoFHandler<dim>>(*triangulation);
+
+      dof_handler->distribute_dofs(*fe);
 
       dof_handlers[l] = dof_handler;
 
@@ -457,20 +443,28 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       // constraints from periodic boundary conditions
       if(not(grid->periodic_face_pairs.empty()))
       {
-        std::vector<
-          dealii::GridTools::PeriodicFacePair<typename dealii::DoFHandler<dim>::cell_iterator>>
-          periodic_faces_dof;
+        AssertThrow(grid->coarse_periodic_face_pairs.size() == level_info.back().h_level(),
+                    dealii::ExcMessage(
+                      "The vector of coarse_triangulations does not have correct size."));
 
+        std::vector<
+          dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>>
+          periodic_faces;
         if(level.h_level() == level_info.back().h_level()) // fine-level triangulation
         {
-          periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
-            grid->periodic_face_pairs, *dof_handler);
+          periodic_faces = grid->periodic_face_pairs;
         }
         else
         {
-          periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
-            grid->coarse_periodic_face_pairs[level.h_level()], *dof_handler);
+          periodic_faces = grid->coarse_periodic_face_pairs[level.h_level()];
         }
+
+        // change type of dealii cell iterator
+        std::vector<
+          dealii::GridTools::PeriodicFacePair<typename dealii::DoFHandler<dim>::cell_iterator>>
+          periodic_faces_dof =
+            GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(periodic_faces,
+                                                                              *dof_handler);
 
         dealii::DoFTools::make_periodicity_constraints<dim, dim, MultigridNumber>(
           periodic_faces_dof, *affine_constraints_own);
@@ -501,17 +495,11 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       constraints[l].reset(affine_constraints_own);
     });
   }
-  else if(multigrid_variant == MultigridVariant::LocalSmoothing)
+  else
   {
-    AssertThrow(grid->triangulation->has_hanging_nodes() == false,
-                dealii::ExcMessage("Hanging nodes are only supported with the option "
-                                   "use_global_coarsening enabled."));
-    AssertThrow(grid->triangulation->all_reference_cells_are_hyper_cube(),
-                dealii::ExcMessage("This multigrid implementation is currently only available for "
-                                   "hyper-cube elements. Other grids need to enable the option "
-                                   "use_global_coarsening."));
-
-    unsigned int const n_components = fe.n_components();
+    AssertThrow(is_hypercube_mesh_without_hanging_nodes,
+                dealii::ExcMessage(
+                  "This implementation only allows globally refined hypercube meshes."));
 
     // temporal storage for new DoFHandlers and constraints on each p-level
     std::map<MGDoFHandlerIdentifier, std::shared_ptr<dealii::DoFHandler<dim> const>>
@@ -522,20 +510,15 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
     // setup dof-handler and constrained dofs for each p-level
     for(auto level : p_levels)
     {
-      // setup dof_handler
+      // create finite element
+      std::shared_ptr<dealii::FiniteElement<dim>> fe =
+        create_finite_element<dim>(ElementType::Hypercube, level.is_dg, n_components, level.degree);
+
+      // create dof handler
       auto dof_handler = new dealii::DoFHandler<dim>(*grid->triangulation);
 
       // distribute dofs
-      if(level.is_dg)
-      {
-        dof_handler->distribute_dofs(
-          dealii::FESystem<dim>(dealii::FE_DGQ<dim>(level.degree), n_components));
-      }
-      else
-      {
-        dof_handler->distribute_dofs(
-          dealii::FESystem<dim>(dealii::FE_Q<dim>(level.degree), n_components));
-      }
+      dof_handler->distribute_dofs(*fe);
 
       // distribute MG dofs
       dof_handler->distribute_mg_dofs();
@@ -588,26 +571,20 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       constraints[level].reset(affine_constraints_own);
     });
   }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("not implemented."));
-  }
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number>::initialize_matrix_free_objects()
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrix_free_objects()
 {
   matrix_free_data_objects.resize(0, get_number_of_levels() - 1);
   matrix_free_objects.resize(0, get_number_of_levels() - 1);
 
   for_all_levels([&](unsigned int const level) {
-    unsigned int const h_level = (multigrid_variant == MultigridVariant::GlobalCoarsening) ?
-                                   dealii::numbers::invalid_unsigned_int :
-                                   level_info[level].h_level();
-
     matrix_free_data_objects[level] = std::make_shared<MatrixFreeData<dim, MultigridNumber>>();
-    fill_matrix_free_data(*matrix_free_data_objects[level], level, h_level);
+    fill_matrix_free_data(*matrix_free_data_objects[level],
+                          level,
+                          level_info[level].dealii_tria_level());
 
     matrix_free_objects[level] = std::make_shared<dealii::MatrixFree<dim, MultigridNumber>>();
 
@@ -619,18 +596,18 @@ MultigridPreconditionerBase<dim, Number>::initialize_matrix_free_objects()
   });
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number>::update_matrix_free_objects()
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_matrix_free_objects()
 {
   for_all_levels([&](unsigned int const level) {
     matrix_free_objects[level]->update_mapping(get_mapping(level_info[level].h_level()));
   });
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number>::initialize_operators()
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_operators()
 {
   this->operators.resize(0, this->get_number_of_levels() - 1);
 
@@ -638,10 +615,12 @@ MultigridPreconditionerBase<dim, Number>::initialize_operators()
     [&](unsigned int const level) { operators[level] = this->initialize_operator(level); });
 }
 
-template<int dim, typename Number>
-std::shared_ptr<
-  MultigridOperatorBase<dim, typename MultigridPreconditionerBase<dim, Number>::MultigridNumber>>
-MultigridPreconditionerBase<dim, Number>::initialize_operator(unsigned int const level)
+template<int dim, typename Number, typename MultigridNumber>
+std::shared_ptr<MultigridOperatorBase<
+  dim,
+  typename MultigridPreconditionerBase<dim, Number, MultigridNumber>::MultigridNumber>>
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_operator(
+  unsigned int const level)
 {
   (void)level;
 
@@ -653,76 +632,82 @@ MultigridPreconditionerBase<dim, Number>::initialize_operator(unsigned int const
   return op;
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number>::initialize_smoothers()
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_smoothers()
 {
-  this->smoothers.resize(0, get_number_of_levels() - 1);
+  if(get_number_of_levels() >= 2)
+    this->smoothers.resize(1, get_number_of_levels() - 1);
 
   for_all_smoothing_levels(
     [&](unsigned int const level) { this->initialize_smoother(*this->operators[level], level); });
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number>::update()
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::update()
 {
   // do nothing in base class (has to be implemented by derived classes if necessary)
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 std::shared_ptr<TimerTree>
-MultigridPreconditionerBase<dim, Number>::get_timings() const
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::get_timings() const
 {
   return multigrid_algorithm->get_timings();
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number>::vmult(VectorType & dst, VectorType const & src) const
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::vmult(VectorType &       dst,
+                                                                 VectorType const & src) const
 {
   multigrid_algorithm->vmult(dst, src);
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 unsigned int
-MultigridPreconditionerBase<dim, Number>::solve(VectorType & dst, VectorType const & src) const
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::solve(VectorType &       dst,
+                                                                 VectorType const & src) const
 {
   return multigrid_algorithm->solve(dst, src);
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number>::apply_smoother_on_fine_level(
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::apply_smoother_on_fine_level(
   VectorTypeMG &       dst,
   VectorTypeMG const & src) const
 {
   this->smoothers[this->smoothers.max_level()]->vmult(dst, src);
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number>::initialize_smoother(Operator &   mg_operator,
-                                                              unsigned int level)
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_smoother(
+  Operator &   mg_operator,
+  unsigned int level)
 {
+  AssertThrow(level > 0 and level < this->get_number_of_levels(),
+              dealii::ExcMessage(
+                "Multigrid level is invalid when initializing multigrid smoother!"));
+
   switch(data.smoother_data.smoother)
   {
     case MultigridSmoother::Chebyshev:
     {
-      if(data.smoother_data.preconditioner == PreconditionerSmoother::PointJacobi)
-      {
-        smoothers[level] = std::make_shared<
-          ChebyshevSmoother<Operator, VectorTypeMG, dealii::DiagonalMatrix<VectorTypeMG>>>();
-        initialize_chebyshev_smoother_point_jacobi(mg_operator, level);
-      }
-      else if(data.smoother_data.preconditioner == PreconditionerSmoother::BlockJacobi)
-      {
-        smoothers[level] = std::make_shared<
-          ChebyshevSmoother<Operator, VectorTypeMG, BlockJacobiPreconditioner<Operator>>>();
-        initialize_chebyshev_smoother_block_jacobi(mg_operator, level);
-      }
-      else
-        AssertThrow(false, dealii::ExcNotImplemented());
+      typedef ChebyshevSmoother<Operator, VectorTypeMG> Chebyshev;
+      smoothers[level] = std::make_shared<Chebyshev>();
+
+      typename Chebyshev::AdditionalData smoother_data;
+      smoother_data.preconditioner  = data.smoother_data.preconditioner;
+      smoother_data.smoothing_range = data.smoother_data.smoothing_range;
+      smoother_data.degree          = data.smoother_data.iterations;
+      smoother_data.iterations_eigenvalue_estimation =
+        data.smoother_data.iterations_eigenvalue_estimation;
+
+      std::shared_ptr<Chebyshev> smoother = std::dynamic_pointer_cast<Chebyshev>(smoothers[level]);
+      smoother->initialize(mg_operator, smoother_data);
       break;
     }
     case MultigridSmoother::GMRES:
@@ -772,120 +757,24 @@ MultigridPreconditionerBase<dim, Number>::initialize_smoother(Operator &   mg_op
   }
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number>::update_smoothers()
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_smoothers()
 {
-  for_all_smoothing_levels([&](unsigned int const level) { this->update_smoother(level); });
+  for_all_smoothing_levels([&](unsigned int const level) { smoothers[level]->update(); });
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number>::update_smoother(unsigned int level)
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_coarse_solver()
 {
-  AssertThrow(level > 0 and level < this->get_number_of_levels(),
-              dealii::ExcMessage(
-                "Multigrid level is invalid when initializing multigrid smoother!"));
-
-  switch(data.smoother_data.smoother)
-  {
-    case MultigridSmoother::Chebyshev:
-    {
-      if(data.smoother_data.preconditioner == PreconditionerSmoother::PointJacobi)
-      {
-        smoothers[level] = std::make_shared<
-          ChebyshevSmoother<Operator, VectorTypeMG, dealii::DiagonalMatrix<VectorTypeMG>>>();
-        initialize_chebyshev_smoother_point_jacobi(*operators[level], level);
-      }
-      else if(data.smoother_data.preconditioner == PreconditionerSmoother::BlockJacobi)
-      {
-        smoothers[level] = std::make_shared<
-          ChebyshevSmoother<Operator, VectorTypeMG, BlockJacobiPreconditioner<Operator>>>();
-        initialize_chebyshev_smoother_block_jacobi(*operators[level], level);
-      }
-      else
-        AssertThrow(false, dealii::ExcNotImplemented());
-      break;
-    }
-    case MultigridSmoother::GMRES:
-    {
-      typedef GMRESSmoother<Operator, VectorTypeMG> GMRES;
-
-      std::shared_ptr<GMRES> smoother = std::dynamic_pointer_cast<GMRES>(smoothers[level]);
-      smoother->update();
-      break;
-    }
-    case MultigridSmoother::CG:
-    {
-      typedef CGSmoother<Operator, VectorTypeMG> CG;
-
-      std::shared_ptr<CG> smoother = std::dynamic_pointer_cast<CG>(smoothers[level]);
-      smoother->update();
-      break;
-    }
-    case MultigridSmoother::Jacobi:
-    {
-      typedef JacobiSmoother<Operator, VectorTypeMG> Jacobi;
-
-      std::shared_ptr<Jacobi> smoother = std::dynamic_pointer_cast<Jacobi>(smoothers[level]);
-      smoother->update();
-      break;
-    }
-    default:
-    {
-      AssertThrow(false, dealii::ExcMessage("Specified MultigridSmoother not implemented!"));
-    }
-  }
+  coarse_grid_solver->update();
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number>::update_coarse_solver(bool const operator_is_singular)
-{
-  switch(data.coarse_problem.solver)
-  {
-    case MultigridCoarseGridSolver::Chebyshev:
-    {
-      AssertThrow(
-        data.coarse_problem.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi,
-        dealii::ExcMessage(
-          "Only PointJacobi preconditioner implemented for Chebyshev coarse grid solver."));
-
-      initialize_chebyshev_smoother_coarse_grid(*operators[0],
-                                                data.coarse_problem.solver_data,
-                                                operator_is_singular);
-      break;
-    }
-    case MultigridCoarseGridSolver::CG:
-    case MultigridCoarseGridSolver::GMRES:
-    {
-      if(data.coarse_problem.preconditioner != MultigridCoarseGridPreconditioner::None)
-      {
-        std::shared_ptr<MGCoarseKrylov<Operator>> coarse_solver =
-          std::dynamic_pointer_cast<MGCoarseKrylov<Operator>>(coarse_grid_solver);
-        coarse_solver->update();
-      }
-
-      break;
-    }
-    case MultigridCoarseGridSolver::AMG:
-    {
-      std::shared_ptr<MGCoarseAMG<Operator>> coarse_solver =
-        std::dynamic_pointer_cast<MGCoarseAMG<Operator>>(coarse_grid_solver);
-      coarse_solver->update();
-
-      break;
-    }
-    default:
-    {
-      AssertThrow(false, dealii::ExcMessage("Unknown coarse-grid solver given"));
-    }
-  }
-}
-
-template<int dim, typename Number>
-void
-MultigridPreconditionerBase<dim, Number>::initialize_coarse_solver(bool const operator_is_singular)
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_solver(
+  bool const operator_is_singular)
 {
   Operator & coarse_operator = *operators[0];
 
@@ -893,19 +782,11 @@ MultigridPreconditionerBase<dim, Number>::initialize_coarse_solver(bool const op
   {
     case MultigridCoarseGridSolver::Chebyshev:
     {
-      AssertThrow(
-        data.coarse_problem.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi,
-        dealii::ExcMessage(
-          "Only PointJacobi preconditioner implemented for Chebyshev coarse grid solver."));
-
-      smoothers[0] = std::make_shared<
-        ChebyshevSmoother<Operator, VectorTypeMG, dealii::DiagonalMatrix<VectorTypeMG>>>();
-      initialize_chebyshev_smoother_coarse_grid(coarse_operator,
-                                                data.coarse_problem.solver_data,
-                                                operator_is_singular);
-
       coarse_grid_solver =
-        std::make_shared<MGCoarseChebyshev<VectorTypeMG, Smoother>>(smoothers[0]);
+        std::make_shared<MGCoarseChebyshev<Operator>>(coarse_operator,
+                                                      data.coarse_problem.solver_data,
+                                                      data.coarse_problem.preconditioner,
+                                                      operator_is_singular);
       break;
     }
     case MultigridCoarseGridSolver::CG:
@@ -955,149 +836,39 @@ MultigridPreconditionerBase<dim, Number>::initialize_coarse_solver(bool const op
   }
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number>::initialize_transfer_operators()
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_transfer_operators()
 {
   unsigned int const dof_index = 0;
-  this->do_initialize_transfer_operators(transfers, constrained_dofs, dof_index);
+  this->do_initialize_transfer_operators(transfers, dof_index);
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number>::do_initialize_transfer_operators(
-  std::shared_ptr<MGTransfer<VectorTypeMG>> &                         transfers,
-  dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> & constrained_dofs,
-  unsigned int const                                                  dof_index)
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::do_initialize_transfer_operators(
+  std::shared_ptr<MultigridTransfer<dim, MultigridNumber, VectorTypeMG>> & transfers,
+  unsigned int const                                                       dof_index)
 {
-  if(multigrid_variant == MultigridVariant::GlobalCoarsening)
-  {
-    auto tmp = std::make_shared<MGTransferGlobalCoarsening<dim, MultigridNumber, VectorTypeMG>>();
+  transfers = std::make_shared<MultigridTransfer<dim, MultigridNumber, VectorTypeMG>>();
 
-    tmp->reinit(matrix_free_objects, dof_index);
-
-    transfers = tmp;
-  }
-  else if(multigrid_variant == MultigridVariant::LocalSmoothing)
-  {
-    auto tmp = std::make_shared<MGTransferGlobalRefinement<dim, MultigridNumber, VectorTypeMG>>();
-
-    tmp->reinit(*mapping, matrix_free_objects, constrained_dofs, dof_index);
-
-    transfers = tmp;
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("not implemented."));
-  }
+  transfers->reinit(matrix_free_objects, dof_index, level_info);
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number>::initialize_multigrid_algorithm()
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_multigrid_algorithm()
 {
   multigrid_algorithm = std::make_shared<MultigridAlgorithm<VectorTypeMG, Operator, Smoother>>(
     operators, *coarse_grid_solver, *transfers, smoothers, mpi_comm);
 }
 
-template<int dim, typename Number>
-void
-MultigridPreconditionerBase<dim, Number>::initialize_chebyshev_smoother_point_jacobi(
-  Operator &         mg_operator,
-  unsigned int const level)
-{
-  AssertThrow(data.smoother_data.preconditioner == PreconditionerSmoother::PointJacobi,
-              dealii::ExcNotImplemented());
-
-  typedef ChebyshevSmoother<Operator, VectorTypeMG, dealii::DiagonalMatrix<VectorTypeMG>> Chebyshev;
-  typename Chebyshev::AdditionalData smoother_data;
-
-  std::shared_ptr<dealii::DiagonalMatrix<VectorTypeMG>> diagonal_matrix =
-    std::make_shared<dealii::DiagonalMatrix<VectorTypeMG>>();
-  VectorTypeMG & diagonal_vector = diagonal_matrix->get_vector();
-
-  mg_operator.initialize_dof_vector(diagonal_vector);
-  mg_operator.calculate_inverse_diagonal(diagonal_vector);
-
-  smoother_data.preconditioner = diagonal_matrix;
-
-  smoother_data.smoothing_range     = data.smoother_data.smoothing_range;
-  smoother_data.degree              = data.smoother_data.iterations;
-  smoother_data.eig_cg_n_iterations = data.smoother_data.iterations_eigenvalue_estimation;
-
-  std::shared_ptr<Chebyshev> smoother = std::dynamic_pointer_cast<Chebyshev>(smoothers[level]);
-  smoother->initialize(mg_operator, smoother_data);
-}
-
-template<int dim, typename Number>
-void
-MultigridPreconditionerBase<dim, Number>::initialize_chebyshev_smoother_block_jacobi(
-  Operator &         mg_operator,
-  unsigned int const level)
-{
-  AssertThrow(data.smoother_data.preconditioner == PreconditionerSmoother::BlockJacobi,
-              dealii::ExcNotImplemented());
-
-  typedef ChebyshevSmoother<Operator, VectorTypeMG, BlockJacobiPreconditioner<Operator>> Chebyshev;
-  typename Chebyshev::AdditionalData smoother_data;
-
-  smoother_data.preconditioner = std::make_shared<BlockJacobiPreconditioner<Operator>>(mg_operator);
-
-  smoother_data.smoothing_range     = data.smoother_data.smoothing_range;
-  smoother_data.degree              = data.smoother_data.iterations;
-  smoother_data.eig_cg_n_iterations = data.smoother_data.iterations_eigenvalue_estimation;
-
-  std::shared_ptr<Chebyshev> smoother = std::dynamic_pointer_cast<Chebyshev>(smoothers[level]);
-  smoother->initialize(mg_operator, smoother_data);
-}
-
-template<int dim, typename Number>
-void
-MultigridPreconditionerBase<dim, Number>::initialize_chebyshev_smoother_coarse_grid(
-  Operator &         coarse_operator,
-  SolverData const & solver_data,
-  bool const         operator_is_singular)
-{
-  // use Chebyshev smoother of high degree to solve the coarse grid problem approximately
-  typedef ChebyshevSmoother<Operator, VectorTypeMG, dealii::DiagonalMatrix<VectorTypeMG>> Chebyshev;
-  typename Chebyshev::AdditionalData smoother_data;
-
-  std::shared_ptr<dealii::DiagonalMatrix<VectorTypeMG>> diagonal_matrix =
-    std::make_shared<dealii::DiagonalMatrix<VectorTypeMG>>();
-  VectorTypeMG & diagonal_vector = diagonal_matrix->get_vector();
-
-  coarse_operator.initialize_dof_vector(diagonal_vector);
-  coarse_operator.calculate_inverse_diagonal(diagonal_vector);
-
-  std::pair<double, double> eigenvalues =
-    compute_eigenvalues(coarse_operator, diagonal_vector, operator_is_singular);
-
-  double const factor = 1.1;
-
-  smoother_data.preconditioner  = diagonal_matrix;
-  smoother_data.max_eigenvalue  = factor * eigenvalues.second;
-  smoother_data.smoothing_range = eigenvalues.second / eigenvalues.first * factor;
-
-  double sigma = (1. - std::sqrt(1. / smoother_data.smoothing_range)) /
-                 (1. + std::sqrt(1. / smoother_data.smoothing_range));
-
-  // calculate/estimate the number of Chebyshev iterations needed to reach a specified relative
-  // solver tolerance
-  double const eps = solver_data.rel_tol;
-
-  smoother_data.degree = static_cast<unsigned int>(
-    std::log(1. / eps + std::sqrt(1. / eps / eps - 1.)) / std::log(1. / sigma));
-  smoother_data.eig_cg_n_iterations = 0;
-
-  std::shared_ptr<Chebyshev> smoother = std::dynamic_pointer_cast<Chebyshev>(smoothers[0]);
-  smoother->initialize(coarse_operator, smoother_data);
-}
-
-
 template class MultigridPreconditionerBase<2, float>;
 template class MultigridPreconditionerBase<2, double>;
+template class MultigridPreconditionerBase<2, double, double>;
 
 template class MultigridPreconditionerBase<3, float>;
 template class MultigridPreconditionerBase<3, double>;
+template class MultigridPreconditionerBase<3, double, double>;
 
 } // namespace ExaDG

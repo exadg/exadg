@@ -204,13 +204,12 @@ private:
 
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.grid.multigrid          = MultigridVariant::LocalSmoothing;
     this->param.mapping_degree          = this->param.degree;
     this->param.spatial_discretization  = SpatialDiscretization::DG;
     this->param.IP_factor               = 1.0e0;
 
     // SOLVER
-    this->param.solver                      = Poisson::Solver::CG;
+    this->param.solver                      = LinearSolver::CG;
     this->param.solver_data.abs_tol         = 1.e-20;
     this->param.solver_data.rel_tol         = 1.e-10;
     this->param.solver_data.max_iter        = 1e4;
@@ -231,47 +230,46 @@ private:
   void
   create_grid() final
   {
-    double const length = 1.0;
-    double const left = -length, right = length;
-    dealii::GridGenerator::subdivided_hyper_cube(*this->grid->triangulation,
-                                                 this->n_subdivisions_1d_hypercube,
-                                                 left,
-                                                 right);
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    if(mesh_type == MeshType::Cartesian)
-    {
-      // do nothing
-    }
-    else if(mesh_type == MeshType::Curvilinear)
-    {
-      double const              deformation = 0.1;
-      unsigned int const        frequency   = 2;
-      DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
-      this->grid->triangulation->set_all_manifold_ids(1);
-      this->grid->triangulation->set_manifold(1, manifold);
+        double const length = 1.0;
+        double const left = -length, right = length;
+        dealii::GridGenerator::subdivided_hyper_cube(tria,
+                                                     this->n_subdivisions_1d_hypercube,
+                                                     left,
+                                                     right);
 
-      std::vector<bool> vertex_touched(this->grid->triangulation->n_vertices(), false);
-
-      for(auto cell : *this->grid->triangulation)
-      {
-        for(auto const & v : cell.vertex_indices())
+        if(mesh_type == MeshType::Cartesian)
         {
-          if(vertex_touched[cell.vertex_index(v)] == false)
-          {
-            dealii::Point<dim> & vertex          = cell.vertex(v);
-            dealii::Point<dim>   new_point       = manifold.push_forward(vertex);
-            vertex                               = new_point;
-            vertex_touched[cell.vertex_index(v)] = true;
-          }
+          // do nothing
         }
-      }
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("not implemented."));
-    }
+        else if(mesh_type == MeshType::Curvilinear)
+        {
+          double const       deformation = 0.1;
+          unsigned int const frequency   = 2;
+          apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
+        }
+        else
+        {
+          AssertThrow(false, dealii::ExcMessage("not implemented."));
+        }
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+                                                            this->mpi_comm,
+                                                            this->param.grid,
+                                                            this->param.involves_h_multigrid(),
+                                                            lambda_create_triangulation,
+                                                            {} /* no local refinements */);
   }
 
   void

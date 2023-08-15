@@ -124,13 +124,20 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
   VectorType const_vector, rhs;
   const_vector.reinit(displacement_n);
   rhs.reinit(displacement_n);
-  this->compute_const_vector(rhs, displacement_n, velocity_n, acceleration_n);
-  pde_operator->apply_mass_operator(const_vector, rhs);
+  this->compute_const_vector_acceleration_remainder(rhs,
+                                                    displacement_n,
+                                                    velocity_n,
+                                                    acceleration_n);
+  pde_operator->evaluate_mass_operator(const_vector, rhs);
+
+  // add contribution from damping operator
+  this->compute_const_vector_velocity_remainder(rhs, displacement_n, velocity_n, acceleration_n);
+  pde_operator->apply_add_damping_operator(const_vector, rhs);
 
   if(param.large_deformation == false) // linear case
   {
     // calculate right-hand side vector
-    pde_operator->compute_rhs_linear(rhs, this->get_mid_time());
+    pde_operator->rhs(rhs, this->get_mid_time());
     // shift const_vector to right-hand side
     rhs.add(-1.0, const_vector);
   }
@@ -154,7 +161,8 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
   {
     auto const iter = pde_operator->solve_nonlinear(displacement_np,
                                                     const_vector,
-                                                    this->get_scaling_factor_mass(),
+                                                    this->get_scaling_factor_acceleration(),
+                                                    this->get_scaling_factor_velocity(),
                                                     this->get_mid_time(),
                                                     update_preconditioner);
 
@@ -173,7 +181,8 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
     // solve linear system of equations
     unsigned int const iter = pde_operator->solve_linear(displacement_np,
                                                          rhs,
-                                                         this->get_scaling_factor_mass(),
+                                                         this->get_scaling_factor_acceleration(),
+                                                         this->get_scaling_factor_velocity(),
                                                          this->get_mid_time(),
                                                          update_preconditioner);
 

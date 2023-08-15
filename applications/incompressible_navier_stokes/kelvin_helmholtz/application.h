@@ -196,32 +196,46 @@ private:
   void
   create_grid() final
   {
-    AssertThrow(dim == 2, dealii::ExcMessage("This application is only implemented for dim=2."));
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    std::vector<unsigned int> repetitions({1, 1});
-    dealii::Point<dim>        point1(0.0, 0.0), point2(L, L);
-    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                                      repetitions,
-                                                      point1,
-                                                      point2);
+        AssertThrow(dim == 2,
+                    dealii::ExcMessage("This application is only implemented for dim=2."));
 
-    // periodicity in x-direction
-    for(auto cell : this->grid->triangulation->cell_iterators())
-    {
-      for(auto const & f : cell->face_indices())
-      {
-        if(std::fabs(cell->face(f)->center()(0) - 0.0) < 1e-12)
-          cell->face(f)->set_boundary_id(1);
-        if(std::fabs(cell->face(f)->center()(0) - L) < 1e-12)
-          cell->face(f)->set_boundary_id(2);
-      }
-    }
+        std::vector<unsigned int> repetitions({1, 1});
+        dealii::Point<dim>        point1(0.0, 0.0), point2(L, L);
+        dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, point1, point2);
 
-    dealii::GridTools::collect_periodic_faces(
-      *this->grid->triangulation, 1, 2, 0, this->grid->periodic_face_pairs);
-    this->grid->triangulation->add_periodicity(this->grid->periodic_face_pairs);
+        // periodicity in x-direction
+        for(auto cell : tria.cell_iterators())
+        {
+          for(auto const & f : cell->face_indices())
+          {
+            if(std::fabs(cell->face(f)->center()(0) - 0.0) < 1e-12)
+              cell->face(f)->set_boundary_id(1);
+            if(std::fabs(cell->face(f)->center()(0) - L) < 1e-12)
+              cell->face(f)->set_boundary_id(2);
+          }
+        }
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        dealii::GridTools::collect_periodic_faces(tria, 1, 2, 0, periodic_face_pairs);
+        tria.add_periodicity(periodic_face_pairs);
+
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+                                                            this->mpi_comm,
+                                                            this->param.grid,
+                                                            this->param.involves_h_multigrid(),
+                                                            lambda_create_triangulation,
+                                                            {} /* no local refinements */);
   }
 
   void
@@ -261,6 +275,7 @@ private:
     pp_data.output_data.directory                 = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename                  = this->output_parameters.filename;
     pp_data.output_data.write_divergence          = true;
+    pp_data.output_data.write_vorticity           = true;
     pp_data.output_data.write_vorticity_magnitude = true;
     pp_data.output_data.write_processor_id        = true;
     pp_data.output_data.degree                    = this->param.degree_u;

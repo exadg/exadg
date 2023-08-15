@@ -22,6 +22,7 @@
 #ifndef INCLUDE_GRID_MAPPING_DEFORMATION_FUNCTION_H_
 #define INCLUDE_GRID_MAPPING_DEFORMATION_FUNCTION_H_
 
+#include <exadg/grid/grid_data.h>
 #include <exadg/grid/mapping_deformation_base.h>
 
 namespace ExaDG
@@ -29,6 +30,8 @@ namespace ExaDG
 /**
  * Class for mesh deformations that can be described analytically via a dealii::Function<dim>
  * object.
+ *
+ * TODO: extend this class to simplicial elements.
  */
 template<int dim, typename Number>
 class DeformedMappingFunction : public DeformedMappingBase<dim, Number>
@@ -78,6 +81,9 @@ private:
                 std::shared_ptr<dealii::Function<dim>> displacement_function)
   {
     AssertThrow(dealii::MultithreadInfo::n_threads() == 1, dealii::ExcNotImplemented());
+
+    AssertThrow(get_element_type(triangulation) == ElementType::Hypercube,
+                dealii::ExcMessage("Only implemented for hypercube elements."));
 
     // dummy FE for compatibility with interface of dealii::FEValues
     dealii::FE_Nothing<dim> dummy_fe;

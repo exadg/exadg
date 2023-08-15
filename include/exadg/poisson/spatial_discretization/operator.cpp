@@ -21,17 +21,14 @@
 
 // deal.II
 #include <deal.II/dofs/dof_tools.h>
-#include <deal.II/fe/fe_dgq.h>
-#include <deal.II/fe/fe_q.h>
-#include <deal.II/fe/fe_simplex_p.h>
-#include <deal.II/fe/fe_system.h>
-#ifdef DEAL_II_WITH_PETSC
-#  include <deal.II/lac/petsc_vector.h>
-#endif
+#include <deal.II/lac/petsc_vector.h>
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
-#include <exadg/grid/grid_utilities.h>
+#include <exadg/grid/grid_data.h>
+#include <exadg/operators/constraints.h>
+#include <exadg/operators/finite_element.h>
+#include <exadg/operators/quadrature.h>
 #include <exadg/poisson/preconditioners/multigrid_preconditioner.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
@@ -69,124 +66,56 @@ Operator<dim, n_components, Number>::Operator(
 {
   pcout << std::endl << "Construct Poisson operator ..." << std::endl;
 
-  distribute_dofs();
+  initialize_dof_handler_and_constraints();
 
   pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, int n_components, typename Number>
 void
-Operator<dim, n_components, Number>::distribute_dofs()
+Operator<dim, n_components, Number>::initialize_dof_handler_and_constraints()
 {
-  if(n_components == 1)
-  {
-    if(param.spatial_discretization == SpatialDiscretization::DG)
-    {
-      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
-        fe = std::make_shared<dealii::FE_DGQ<dim>>(param.degree);
-      else if(this->grid->triangulation->all_reference_cells_are_simplex())
-        fe = std::make_shared<dealii::FE_SimplexDGP<dim>>(param.degree);
-      else
-        AssertThrow(false, ExcNotImplemented());
-    }
-    else if(param.spatial_discretization == SpatialDiscretization::CG)
-    {
-      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
-        fe = std::make_shared<dealii::FE_Q<dim>>(param.degree);
-      else if(this->grid->triangulation->all_reference_cells_are_simplex())
-        fe = std::make_shared<dealii::FE_SimplexP<dim>>(param.degree);
-      else
-        AssertThrow(false, ExcNotImplemented());
-    }
-    else
-    {
-      AssertThrow(false, ExcNotImplemented());
-    }
-  }
-  else if(n_components == dim)
-  {
-    if(param.spatial_discretization == SpatialDiscretization::DG)
-    {
-      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
-        fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_DGQ<dim>(param.degree), dim);
-      else if(this->grid->triangulation->all_reference_cells_are_simplex())
-        fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_SimplexDGP<dim>(param.degree), dim);
-      else
-        AssertThrow(false, ExcNotImplemented());
-    }
-    else if(param.spatial_discretization == SpatialDiscretization::CG)
-    {
-      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
-        fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_Q<dim>(param.degree), dim);
-      else if(this->grid->triangulation->all_reference_cells_are_simplex())
-        fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_SimplexP<dim>(param.degree), dim);
-      else
-        AssertThrow(false, ExcNotImplemented());
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("not implemented."));
-    }
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("not implemented."));
-  }
+  fe = create_finite_element<dim>(param.grid.element_type,
+                                  param.spatial_discretization == SpatialDiscretization::DG,
+                                  n_components,
+                                  param.degree);
 
   dof_handler.distribute_dofs(*fe);
 
-  // Affine constraints are only relevant for continuous Galerin discretization.
-  // The AffineConstraints object is used to initialize MatrixFree. Here, we apply homogeneous
-  // boundary conditions as needed by vmult() in iterative solvers for linear systems of equations,
-  // implemented via dealii::MatrixFree and FEEvaluation::read_dof_values() (or gather_evaluate()).
-  // The actual inhomogeneous boundary data needs to be imposed separately due to the implementation
-  // in deal.II that can not handle multiple AffineConstraints. Hence, we need to do this explicitly
-  // in ExaDG.
+  // Affine constraints are only relevant for continuous Galerkin discretizations.
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
-    affine_constraints.clear();
+    affine_constraints_periodicity_and_hanging_nodes.clear();
 
-    dealii::IndexSet locally_relevant_dofs;
-    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
-    affine_constraints.reinit(locally_relevant_dofs);
+    add_hanging_node_and_periodicity_constraints(affine_constraints_periodicity_and_hanging_nodes,
+                                                 *this->grid,
+                                                 dof_handler);
 
-    // hanging nodes (needs to be done before imposing periodicity constraints and boundary
-    // conditions)
-    if(this->grid->triangulation->has_hanging_nodes())
-      dealii::DoFTools::make_hanging_node_constraints(dof_handler, affine_constraints);
+    // copy periodicity and hanging node constraints, and add further constraints stemming from
+    // Dirichlet boundary conditions
+    affine_constraints.copy_from(affine_constraints_periodicity_and_hanging_nodes);
 
-    // constraints from periodic boundary conditions
-    if(not(this->grid->periodic_face_pairs.empty()))
-    {
-      auto periodic_faces_dof = GridUtilities::transform_periodic_face_pairs_to_dof_cell_iterator(
-        this->grid->periodic_face_pairs, dof_handler);
+    // use all the component masks defined by the user
+    std::map<dealii::types::boundary_id, dealii::ComponentMask> map_bid_to_mask =
+      boundary_descriptor->dirichlet_bc_component_mask;
 
-      dealii::DoFTools::make_periodicity_constraints<dim, dim, Number>(periodic_faces_dof,
-                                                                       affine_constraints);
-    }
+    // collect all Dirichlet boundary IDs in a set:
+    // DirichletCached boundary IDs are already provided as a set
+    std::set<dealii::types::boundary_id> all_dirichlet_bids =
+      boundary_descriptor->dirichlet_cached_bc;
 
-    // standard Dirichlet boundaries
-    for(auto it : this->boundary_descriptor->dirichlet_bc)
-    {
-      dealii::ComponentMask mask = dealii::ComponentMask();
+    // standard Dirichlet boundaries: extract keys from map
+    fill_keys_of_map_into_set(all_dirichlet_bids, boundary_descriptor->dirichlet_bc);
 
-      auto it_mask = boundary_descriptor->dirichlet_bc_component_mask.find(it.first);
-      if(it_mask != boundary_descriptor->dirichlet_bc_component_mask.end())
-        mask = it_mask->second;
+    // fill with default mask if no mask has been defined
+    fill_map_bid_to_mask_with_default_mask(map_bid_to_mask, all_dirichlet_bids);
 
-      dealii::DoFTools::make_zero_boundary_constraints(dof_handler,
-                                                       it.first,
-                                                       affine_constraints,
-                                                       mask);
-    }
+    // call deal.II utility function to add Dirichlet constraints
+    add_homogeneous_dirichlet_constraints(affine_constraints, dof_handler, map_bid_to_mask);
 
-    // DirichletCached boundaries
-    for(auto it : this->boundary_descriptor->dirichlet_cached_bc)
-    {
-      dealii::ComponentMask mask = dealii::ComponentMask();
-      dealii::DoFTools::make_zero_boundary_constraints(dof_handler, it, affine_constraints, mask);
-    }
-
+    // compress constraints *once after* complete setup, since affine constraints to copy from need
+    // to be non-closed to add further constraints
+    affine_constraints_periodicity_and_hanging_nodes.close();
     affine_constraints.close();
   }
 
@@ -231,13 +160,16 @@ Operator<dim, n_components, Number>::fill_matrix_free_data(
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
   matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
 
-  if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
-    matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1), get_quad_name());
-  else if(this->grid->triangulation->all_reference_cells_are_simplex())
-    matrix_free_data.insert_quadrature(dealii::QGaussSimplex<dim>(param.degree + 1),
-                                       get_quad_name());
-  else
-    AssertThrow(false, ExcNotImplemented());
+  // inhomogeneous Dirichlet boundary conditions: use additional AffineConstraints object, but the
+  // same DoFHandler
+  matrix_free_data.insert_dof_handler(&dof_handler,
+                                      get_dof_name_periodicity_and_hanging_node_constraints());
+  matrix_free_data.insert_constraint(&affine_constraints_periodicity_and_hanging_nodes,
+                                     get_dof_name_periodicity_and_hanging_node_constraints());
+
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature =
+    create_quadrature<dim>(param.grid.element_type, param.degree + 1);
+  matrix_free_data.insert_quadrature(*quadrature, get_quad_name());
 
   // Create a Gauss-Lobatto quadrature rule for DirichletCached boundary conditions.
   // These quadrature points coincide with the nodes of the discretization, so that
@@ -264,7 +196,12 @@ Operator<dim, n_components, Number>::setup_operators()
 {
   // Laplace operator
   Poisson::LaplaceOperatorData<rank, dim> laplace_operator_data;
-  laplace_operator_data.dof_index  = get_dof_index();
+  laplace_operator_data.dof_index = get_dof_index();
+  if(param.spatial_discretization == SpatialDiscretization::CG)
+  {
+    laplace_operator_data.dof_index_inhomogeneous =
+      get_dof_index_periodicity_and_hanging_node_constraints();
+  }
   laplace_operator_data.quad_index = get_quad_index();
   if(param.spatial_discretization == SpatialDiscretization::CG and
      not(boundary_descriptor->dirichlet_cached_bc.empty()))
@@ -388,7 +325,6 @@ Operator<dim, n_components, Number>::setup_solver()
     }
 
     mg_preconditioner->initialize(mg_data,
-                                  param.grid.multigrid,
                                   grid,
                                   mapping,
                                   dof_handler.get_fe(),
@@ -402,7 +338,7 @@ Operator<dim, n_components, Number>::setup_solver()
     AssertThrow(false, dealii::ExcMessage("Specified preconditioner is not implemented!"));
   }
 
-  if(param.solver == Poisson::Solver::CG)
+  if(param.solver == LinearSolver::CG)
   {
     // initialize solver_data
     Krylov::SolverDataCG solver_data;
@@ -419,7 +355,7 @@ Operator<dim, n_components, Number>::setup_solver()
       std::make_shared<Krylov::SolverCG<Laplace, PreconditionerBase<Number>, VectorType>>(
         laplace_operator, *preconditioner, solver_data);
   }
-  else if(param.solver == Solver::FGMRES)
+  else if(param.solver == LinearSolver::FGMRES)
   {
     // initialize solver_data
     Krylov::SolverDataFGMRES solver_data;
@@ -473,10 +409,8 @@ template<int dim, int n_components, typename Number>
 void
 Operator<dim, n_components, Number>::rhs(VectorType & dst, double const time) const
 {
-  dst = 0;
-
   laplace_operator.set_time(time);
-  laplace_operator.rhs_add(dst);
+  laplace_operator.rhs(dst);
 
   if(param.right_hand_side)
     rhs_operator.evaluate_add(dst, time);
@@ -487,6 +421,16 @@ void
 Operator<dim, n_components, Number>::vmult(VectorType & dst, VectorType const & src) const
 {
   laplace_operator.vmult(dst, src);
+}
+
+template<int dim, int n_components, typename Number>
+void
+Operator<dim, n_components, Number>::evaluate(VectorType &       dst,
+                                              VectorType const & src,
+                                              double const       time) const
+{
+  laplace_operator.set_time(time);
+  laplace_operator.evaluate(dst, src);
 }
 
 template<int dim, int n_components, typename Number>
@@ -510,26 +454,16 @@ Operator<dim, n_components, Number>::solve(VectorType &       sol,
     check_multigrid.check();
   }
 
-  // Set constrained degrees of freedom of rhs vector according to the prescribed
-  // Dirichlet boundary conditions.
-  VectorType & rhs_mutable = const_cast<VectorType &>(rhs);
+  unsigned int n_iterations = iterative_solver->solve(sol, rhs);
+
+  // Set Dirichlet degrees of freedom according to Dirichlet boundary condition.
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
-    laplace_operator.set_constrained_values(rhs_mutable, time);
+    laplace_operator.set_time(time);
+    laplace_operator.set_inhomogeneous_boundary_values(sol);
   }
 
-  unsigned int iterations = iterative_solver->solve(sol, rhs_mutable);
-
-  // This step should actually be optional: The constrained degrees of freedom of the
-  // rhs vector contain the Dirichlet boundary values and the linear operator contains
-  // values of 1 on the diagonal. Hence, sol should already contain the correct
-  // Dirichlet boundary values for constrained degrees of freedom.
-  if(param.spatial_discretization == SpatialDiscretization::CG)
-  {
-    laplace_operator.set_constrained_values(sol, time);
-  }
-
-  return iterations;
+  return n_iterations;
 }
 
 template<int dim, int n_components, typename Number>
@@ -567,75 +501,18 @@ Operator<dim, n_components, Number>::get_average_convergence_rate() const
   return iterative_solver->rho;
 }
 
-#ifdef DEAL_II_WITH_TRILINOS
-template<int dim, int n_components, typename Number>
-void
-Operator<dim, n_components, Number>::init_system_matrix(
-  dealii::TrilinosWrappers::SparseMatrix & system_matrix,
-  MPI_Comm const &                         mpi_comm) const
-{
-  laplace_operator.init_system_matrix(system_matrix, mpi_comm);
-}
-
-template<int dim, int n_components, typename Number>
-void
-Operator<dim, n_components, Number>::calculate_system_matrix(
-  dealii::TrilinosWrappers::SparseMatrix & system_matrix) const
-{
-  laplace_operator.calculate_system_matrix(system_matrix);
-}
-
-template<int dim, int n_components, typename Number>
-void
-Operator<dim, n_components, Number>::vmult_matrix_based(
-  VectorTypeDouble &                             dst,
-  dealii::TrilinosWrappers::SparseMatrix const & system_matrix,
-  VectorTypeDouble const &                       src) const
-{
-  system_matrix.vmult(dst, src);
-}
-#endif
-
-#ifdef DEAL_II_WITH_PETSC
-template<int dim, int n_components, typename Number>
-void
-Operator<dim, n_components, Number>::init_system_matrix(
-  dealii::PETScWrappers::MPI::SparseMatrix & system_matrix,
-  MPI_Comm const &                           mpi_comm) const
-{
-  laplace_operator.init_system_matrix(system_matrix, mpi_comm);
-}
-
-template<int dim, int n_components, typename Number>
-void
-Operator<dim, n_components, Number>::calculate_system_matrix(
-  dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const
-{
-  laplace_operator.calculate_system_matrix(system_matrix);
-}
-
-template<int dim, int n_components, typename Number>
-void
-Operator<dim, n_components, Number>::vmult_matrix_based(
-  VectorTypeDouble &                               dst,
-  dealii::PETScWrappers::MPI::SparseMatrix const & system_matrix,
-  VectorTypeDouble const &                         src) const
-{
-  apply_petsc_operation(dst,
-                        src,
-                        system_matrix.get_mpi_communicator(),
-                        [&](dealii::PETScWrappers::VectorBase &       petsc_dst,
-                            dealii::PETScWrappers::VectorBase const & petsc_src) {
-                          system_matrix.vmult(petsc_dst, petsc_src);
-                        });
-}
-#endif
-
 template<int dim, int n_components, typename Number>
 std::string
 Operator<dim, n_components, Number>::get_dof_name() const
 {
   return field + "_" + dof_index;
+}
+
+template<int dim, int n_components, typename Number>
+std::string
+Operator<dim, n_components, Number>::get_dof_name_periodicity_and_hanging_node_constraints() const
+{
+  return field + "_" + dof_index_periodicity_and_handing_node_constraints;
 }
 
 template<int dim, int n_components, typename Number>
@@ -657,6 +534,13 @@ unsigned int
 Operator<dim, n_components, Number>::get_dof_index() const
 {
   return matrix_free_data->get_dof_index(get_dof_name());
+}
+
+template<int dim, int n_components, typename Number>
+unsigned int
+Operator<dim, n_components, Number>::get_dof_index_periodicity_and_hanging_node_constraints() const
+{
+  return matrix_free_data->get_dof_index(get_dof_name_periodicity_and_hanging_node_constraints());
 }
 
 template<int dim, int n_components, typename Number>

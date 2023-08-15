@@ -67,6 +67,54 @@ private:
   double const end_time;
 };
 
+// TODO: only the time factor is different compared to the above function -> refactor and unify the
+// code
+template<int dim>
+class AccelerationDBC : public dealii::Function<dim>
+{
+public:
+  AccelerationDBC(double const displacement,
+                  bool const   quasistatic_solver,
+                  bool const   unsteady,
+                  double const end_time)
+    : dealii::Function<dim>(dim),
+      displacement(displacement),
+      quasistatic(quasistatic_solver),
+      unsteady(unsteady),
+      end_time(end_time)
+  {
+  }
+
+  double
+  value(dealii::Point<dim> const & p, unsigned int const c) const final
+  {
+    (void)p;
+
+    double factor = 1.0;
+    if(quasistatic)
+      factor *= this->get_time();
+
+    if(unsteady)
+    {
+      factor =
+        2 * std::pow(2.0 * dealii::numbers::PI / end_time, 2.0) *
+        (1.0 -
+         2.0 * std::pow(std::sin(this->get_time() * 2.0 * dealii::numbers::PI / end_time), 2.0));
+    }
+
+    if(c == 0)
+      return displacement * factor;
+    else
+      return 0.0;
+  }
+
+private:
+  double const displacement;
+  bool const   quasistatic;
+  bool const   unsteady;
+  double const end_time;
+};
+
 template<int dim>
 class VolumeForce : public dealii::Function<dim>
 {
@@ -201,6 +249,12 @@ public:
       prm.add_parameter("BoundaryType",
                         boundary_type,
                         "Type of boundary condition, Dirichlet vs Neumann.");
+      prm.add_parameter("ProblemType",
+                        problem_type,
+                        "Problem type considered, QuasiStatic vs Unsteady vs. Steady");
+      prm.add_parameter("WeakDamping",
+                        weak_damping_coefficient,
+                        "Weak damping coefficient for unsteady problems.");
       prm.add_parameter("Displacement",
                         displacement,
                         "Displacement of right boundary in case of Dirichlet BC.");
@@ -215,32 +269,38 @@ private:
   void
   set_parameters() final
   {
-    this->param.problem_type         = ProblemType::QuasiStatic;
+    this->param.problem_type         = problem_type;
     this->param.body_force           = use_volume_force;
     this->param.large_deformation    = true;
     this->param.pull_back_body_force = false;
     this->param.pull_back_traction   = false;
 
     this->param.density = density;
+    if(this->param.problem_type == ProblemType::Unsteady and weak_damping_coefficient > 0.0)
+    {
+      this->param.weak_damping_active      = true;
+      this->param.weak_damping_coefficient = weak_damping_coefficient;
+    }
 
-    this->param.start_time                           = start_time;
-    this->param.end_time                             = end_time;
-    this->param.time_step_size                       = end_time / 200.;
-    this->param.gen_alpha_type                       = GenAlphaType::BossakAlpha;
-    this->param.spectral_radius                      = 0.8;
-    this->param.solver_info_data.interval_time_steps = 2;
+    this->param.start_time      = start_time;
+    this->param.end_time        = end_time;
+    this->param.time_step_size  = end_time / 200.;
+    this->param.gen_alpha_type  = GenAlphaType::BossakAlpha;
+    this->param.spectral_radius = 0.8;
+    this->param.solver_info_data.interval_time_steps =
+      problem_type == ProblemType::Unsteady ? 200 : 2;
 
     this->param.mapping_degree    = 1;
     this->param.grid.element_type = ElementType::Hypercube; // Simplex;
     if(this->param.grid.element_type == ElementType::Simplex)
     {
-      this->param.grid.triangulation_type = TriangulationType::FullyDistributed;
-      this->param.grid.multigrid          = MultigridVariant::GlobalCoarsening;
+      this->param.grid.triangulation_type           = TriangulationType::FullyDistributed;
+      this->param.grid.create_coarse_triangulations = true;
     }
     else if(this->param.grid.element_type == ElementType::Hypercube)
     {
-      this->param.grid.triangulation_type = TriangulationType::Distributed;
-      this->param.grid.multigrid          = MultigridVariant::LocalSmoothing;
+      this->param.grid.triangulation_type           = TriangulationType::Distributed;
+      this->param.grid.create_coarse_triangulations = false; // can also be set to true if desired
     }
 
     this->param.load_increment = 0.1;
@@ -360,10 +420,12 @@ private:
           tria.refine_global(global_refinements);
       };
 
-    GridUtilities::create_fine_and_coarse_triangulations<dim>(*this->grid,
-                                                              this->param.grid,
-                                                              this->param.involves_h_multigrid(),
-                                                              lambda_create_triangulation);
+    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+                                                            this->mpi_comm,
+                                                            this->param.grid,
+                                                            this->param.involves_h_multigrid(),
+                                                            lambda_create_triangulation,
+                                                            {} /* no local refinements */);
   }
 
   void
@@ -385,6 +447,9 @@ private:
     }
     this->boundary_descriptor->dirichlet_bc.insert(
       pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
+
     this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, mask_left));
 
     // right face: Dirichlet or Neumann BC
@@ -405,6 +470,9 @@ private:
       bool const unsteady = (this->param.problem_type == ProblemType::Unsteady);
       this->boundary_descriptor->dirichlet_bc.insert(
         pair(2, new DisplacementDBC<dim>(displacement, quasistatic_solver, unsteady, end_time)));
+      this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+        pair(2, new AccelerationDBC<dim>(displacement, quasistatic_solver, unsteady, end_time)));
+
       this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(2, mask_right));
     }
     else if(boundary_type == BoundaryType::Neumann)
@@ -435,6 +503,9 @@ private:
       {
         this->boundary_descriptor->dirichlet_bc.insert(
           pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
+        this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+          pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
+
         std::vector<bool> mask_y = {false, true};
         this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(3, mask_y));
       }
@@ -442,11 +513,17 @@ private:
       {
         this->boundary_descriptor->dirichlet_bc.insert(
           pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
+        this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+          pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
+
         std::vector<bool> mask_y = {false, true, false};
         this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(3, mask_y));
 
         this->boundary_descriptor->dirichlet_bc.insert(
           pair(4, new dealii::Functions::ZeroFunction<dim>(dim)));
+        this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+          pair(4, new dealii::Functions::ZeroFunction<dim>(dim)));
+
         std::vector<bool> mask_z = {false, false, true};
         this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(4, mask_z));
       }
@@ -496,6 +573,9 @@ private:
     pp_data.output_data.write_higher_order = true;
     pp_data.output_data.degree             = this->param.degree;
 
+    pp_data.error_data.time_control_data.start_time       = start_time;
+    pp_data.error_data.time_control_data.trigger_interval = (end_time - start_time);
+
     pp_data.error_data.time_control_data.is_active = true;
     pp_data.error_data.calculate_relative_errors   = true;
     double const vol_force                         = use_volume_force ? this->volume_force : 0.0;
@@ -535,6 +615,9 @@ private:
     Neumann
   };
   BoundaryType boundary_type = BoundaryType::Dirichlet;
+  ProblemType  problem_type  = ProblemType::Unsteady;
+
+  double weak_damping_coefficient = 0.0;
 
   double displacement = 1.0; // "Dirichlet"
   double area_force   = 1.0; // "Neumann"

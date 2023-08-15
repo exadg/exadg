@@ -29,11 +29,13 @@
 #include <exadg/convection_diffusion/spatial_discretization/project_velocity.h>
 #include <exadg/grid/get_dynamic_mapping.h>
 #include <exadg/grid/mapping_dof_vector.h>
+#include <exadg/operators/finite_element.h>
+#include <exadg/operators/grid_related_time_step_restrictions.h>
+#include <exadg/operators/quadrature.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
-#include <exadg/time_integration/time_step_calculation.h>
 
 namespace ExaDG
 {
@@ -55,20 +57,21 @@ Operator<dim, Number>::Operator(
     field_functions(field_functions_in),
     param(param_in),
     field(field_in),
-    fe(param_in.degree),
     dof_handler(*grid_in->triangulation),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
 {
   pcout << std::endl << "Construct convection-diffusion operator ..." << std::endl;
 
+  fe = create_finite_element<dim>(ElementType::Hypercube, true, 1, param.degree);
+
   if(needs_own_dof_handler_velocity())
   {
-    fe_velocity = std::make_shared<dealii::FESystem<dim>>(dealii::FE_DGQ<dim>(param.degree), dim);
+    fe_velocity = create_finite_element<dim>(ElementType::Hypercube, true, dim, param.degree);
     dof_handler_velocity = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
   }
 
-  distribute_dofs();
+  initialize_dof_handler_and_constraints();
 
   affine_constraints.close();
 
@@ -104,6 +107,11 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
       Operators::DiffusiveKernel<dim, Number>::get_mapping_flags(true, true));
   }
 
+  // mapping flags required for CFL condition
+  MappingFlags flags_cfl;
+  flags_cfl.cells = dealii::update_quadrature_points;
+  matrix_free_data.append_mapping_flags(flags_cfl);
+
   // dealii::DoFHandler, dealii::AffineConstraints
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
   matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
@@ -115,12 +123,15 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   }
 
   // dealii::Quadrature
-  matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1), get_quad_name());
+  std::shared_ptr<dealii::Quadrature<dim>> quadrature =
+    create_quadrature<dim>(param.grid.element_type, param.degree + 1);
+  matrix_free_data.insert_quadrature(*quadrature, get_quad_name());
 
   if(param.use_overintegration)
   {
-    matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + (param.degree + 2) / 2),
-                                       get_quad_name_overintegration());
+    std::shared_ptr<dealii::Quadrature<dim>> quadrature_over =
+      create_quadrature<dim>(param.grid.element_type, param.degree + (param.degree + 2) / 2);
+    matrix_free_data.insert_quadrature(*quadrature_over, get_quad_name_overintegration());
   }
 }
 
@@ -290,24 +301,22 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> con
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::distribute_dofs()
+Operator<dim, Number>::initialize_dof_handler_and_constraints()
 {
   // enumerate degrees of freedom
-  dof_handler.distribute_dofs(fe);
+  dof_handler.distribute_dofs(*fe);
 
   if(needs_own_dof_handler_velocity())
   {
     dof_handler_velocity->distribute_dofs(*fe_velocity);
   }
 
-  unsigned int const ndofs_per_cell = dealii::Utilities::pow(param.degree + 1, dim);
-
   pcout << std::endl
         << "Discontinuous Galerkin finite element discretization:" << std::endl
         << std::endl;
 
   print_parameter(pcout, "degree of 1D polynomials", param.degree);
-  print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
+  print_parameter(pcout, "number of dofs per cell", fe->n_dofs_per_cell());
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
 }
 
@@ -488,7 +497,6 @@ Operator<dim, Number>::initialize_preconditioner()
     Map_DBC_ComponentMask                                               dirichlet_bc_component_mask;
 
     mg_preconditioner->initialize(mg_data,
-                                  param.grid.multigrid,
                                   grid,
                                   get_mapping(),
                                   dof_handler.get_fe(),
@@ -881,12 +889,18 @@ Operator<dim, Number>::calculate_time_step_cfl_global(double const time) const
   // tend to infinity
   max_velocity = std::max(max_velocity, param.max_velocity);
 
-  double const h_min = calculate_minimum_element_length();
+  std::shared_ptr<dealii::Function<dim>> const velocity_field =
+    std::make_shared<dealii::Functions::ConstantFunction<dim>>(max_velocity, dim);
 
-  return ExaDG::calculate_time_step_cfl_global(max_velocity,
-                                               h_min,
-                                               param.degree,
-                                               param.exponent_fe_degree_convection);
+  return calculate_time_step_cfl_local<dim, Number>(*matrix_free,
+                                                    get_dof_index(),
+                                                    get_quad_index(),
+                                                    velocity_field,
+                                                    time,
+                                                    param.degree,
+                                                    param.exponent_fe_degree_convection,
+                                                    CFLConditionType::VelocityComponents,
+                                                    mpi_comm);
 }
 
 template<int dim, typename Number>

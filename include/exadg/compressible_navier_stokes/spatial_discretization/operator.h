@@ -113,7 +113,7 @@ public:
   dealii::Mapping<dim> const &
   get_mapping() const;
 
-  dealii::FESystem<dim> const &
+  dealii::FiniteElement<dim> const &
   get_fe() const;
 
   dealii::DoFHandler<dim> const &
@@ -170,11 +170,8 @@ public:
   calculate_time_step_diffusion() const final;
 
 private:
-  double
-  calculate_minimum_element_length() const;
-
   void
-  distribute_dofs();
+  initialize_dof_handler_and_constraints();
 
   void
   setup_operators();
@@ -218,13 +215,9 @@ private:
    * Basic finite element ingredients.
    */
 
-  std::shared_ptr<dealii::FESystem<dim>> fe;        // all (dim+2) components: (rho, rho u, rho E)
-  std::shared_ptr<dealii::FESystem<dim>> fe_vector; // e.g. velocity
-  dealii::FE_DGQ<dim>                    fe_scalar; // scalar quantity, e.g, pressure
-
-  // dealii::Quadrature points
-  unsigned int n_q_points_conv;
-  unsigned int n_q_points_visc;
+  std::shared_ptr<dealii::FiniteElement<dim>> fe; // all (dim+2) components: (rho, rho u, rho E)
+  std::shared_ptr<dealii::FiniteElement<dim>> fe_vector; // e.g. velocity
+  std::shared_ptr<dealii::FiniteElement<dim>> fe_scalar; // scalar quantity, e.g, pressure
 
   // dealii::DoFHandler
   dealii::DoFHandler<dim> dof_handler;        // all (dim+2) components: (rho, rho u, rho E)

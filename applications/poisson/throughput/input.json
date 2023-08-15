@@ -6,6 +6,7 @@
     },
     "Resolution": {
         "RunType": "FixedProblemSize",
+        "ElementType": "Hypercube",
         "DegreeMin": "1",
         "DegreeMax": "15",
         "RefineSpaceMin": "3",
@@ -13,12 +14,9 @@
         "DofsMin": "1000",
         "DofsMax": "10000"
     },
-    "Discretization":
-    {
-    	"SpatialDiscretization": "DG"
-    },
     "Throughput": {
-        "OperatorType": "MatrixFree",
+        "OperatorType": "Apply",
+        "SpatialDiscretization": "DG",
         "RepetitionsInner": "100",
         "RepetitionsOuter": "1"
     },

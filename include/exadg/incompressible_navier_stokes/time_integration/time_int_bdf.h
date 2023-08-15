@@ -27,7 +27,7 @@
 
 // ExaDG
 #include <exadg/time_integration/lambda_functions_ale.h>
-#include <exadg/time_integration/time_int_bdf_base.h>
+#include <exadg/time_integration/time_int_multistep_base.h>
 
 namespace ExaDG
 {
@@ -81,6 +81,14 @@ public:
                               std::vector<double> &             times) const;
 
   void
+  get_pressures_and_times(std::vector<VectorType const *> & pressures,
+                          std::vector<double> &             times) const;
+
+  void
+  get_pressures_and_times_np(std::vector<VectorType const *> & pressures,
+                             std::vector<double> &             times) const;
+
+  void
   ale_update();
 
   void
@@ -132,6 +140,19 @@ protected:
   std::shared_ptr<HelpersALE<Number> const> helpers_ale;
 
 private:
+  void
+  get_quantities_and_times(
+    std::vector<VectorType const *> &                             quantities,
+    std::vector<double> &                                         times,
+    std::function<VectorType const *(unsigned int const)> const & get_quantity) const;
+
+  void
+  get_quantities_and_times_np(
+    std::vector<VectorType const *> &                             quantities,
+    std::vector<double> &                                         times,
+    std::function<VectorType const *(unsigned int const)> const & get_quantity,
+    std::function<VectorType const *()> const &                   get_quantity_np) const;
+
   void
   initialize_vec_convective_term();
 

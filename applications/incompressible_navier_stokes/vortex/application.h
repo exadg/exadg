@@ -33,7 +33,7 @@ namespace IncNS
 {
 enum class MeshType
 {
-  UniformCartesian,
+  Cartesian,
   Curvilinear
 };
 
@@ -425,49 +425,60 @@ private:
   void
   create_grid() final
   {
-    if(ALE)
-    {
-      AssertThrow(mesh_type == MeshType::UniformCartesian,
-                  dealii::ExcMessage(
-                    "Taylor vortex problem: Parameter mesh_type is invalid for ALE."));
-    }
+    auto const lambda_create_triangulation =
+      [&](dealii::Triangulation<dim, dim> &                        tria,
+          std::vector<dealii::GridTools::PeriodicFacePair<
+            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
+          unsigned int const                                       global_refinements,
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-    if(mesh_type == MeshType::UniformCartesian)
-    {
-      // Uniform Cartesian grid
-      dealii::GridGenerator::subdivided_hyper_cube(*this->grid->triangulation, 2, left, right);
-    }
-    else if(mesh_type == MeshType::Curvilinear)
-    {
-      dealii::GridGenerator::subdivided_hyper_cube(*this->grid->triangulation, 2, left, right);
-
-      this->grid->triangulation->set_all_manifold_ids(1);
-      double const                     deformation = 0.1;
-      unsigned int const               frequency   = 2;
-      static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
-      this->grid->triangulation->set_manifold(1, manifold);
-    }
-
-    // boundary IDs
-    for(auto cell : this->grid->triangulation->cell_iterators())
-    {
-      for(auto const & f : cell->face_indices())
-      {
-        if(((std::fabs(cell->face(f)->center()(0) - right) < 1e-12) and
-            (cell->face(f)->center()(1) < 0)) or
-           ((std::fabs(cell->face(f)->center()(0) - left) < 1e-12) and
-            (cell->face(f)->center()(1) > 0)) or
-           ((std::fabs(cell->face(f)->center()(1) - left) < 1e-12) and
-            (cell->face(f)->center()(0) < 0)) or
-           ((std::fabs(cell->face(f)->center()(1) - right) < 1e-12) and
-            (cell->face(f)->center()(0) > 0)))
+        if(ALE)
         {
-          cell->face(f)->set_boundary_id(1);
+          AssertThrow(mesh_type == MeshType::Cartesian,
+                      dealii::ExcMessage(
+                        "Taylor vortex problem: Parameter mesh_type is invalid for ALE."));
         }
-      }
-    }
 
-    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
+        dealii::GridGenerator::subdivided_hyper_cube(tria, 2, left, right);
+
+        if(mesh_type == MeshType::Curvilinear)
+        {
+          double const       deformation = 0.1;
+          unsigned int const frequency   = 2;
+
+          apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
+        }
+
+        // boundary IDs
+        for(auto cell : tria.cell_iterators())
+        {
+          for(auto const & f : cell->face_indices())
+          {
+            if(((std::fabs(cell->face(f)->center()(0) - right) < 1e-12) and
+                (cell->face(f)->center()(1) < 0)) or
+               ((std::fabs(cell->face(f)->center()(0) - left) < 1e-12) and
+                (cell->face(f)->center()(1) > 0)) or
+               ((std::fabs(cell->face(f)->center()(1) - left) < 1e-12) and
+                (cell->face(f)->center()(0) < 0)) or
+               ((std::fabs(cell->face(f)->center()(1) - right) < 1e-12) and
+                (cell->face(f)->center()(0) > 0)))
+            {
+              cell->face(f)->set_boundary_id(1);
+            }
+          }
+        }
+
+        tria.refine_global(global_refinements);
+      };
+
+    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+                                                            this->mpi_comm,
+                                                            this->param.grid,
+                                                            this->param.involves_h_multigrid(),
+                                                            lambda_create_triangulation,
+                                                            {} /* no local refinements */);
   }
 
   void
@@ -539,7 +550,7 @@ private:
     this->poisson_param.IP_factor              = 1.0e0;
 
     // SOLVER
-    this->poisson_param.solver                    = Poisson::Solver::CG;
+    this->poisson_param.solver                    = Poisson::LinearSolver::CG;
     this->poisson_param.solver_data.abs_tol       = 1.e-20;
     this->poisson_param.solver_data.rel_tol       = 1.e-10;
     this->poisson_param.solver_data.max_iter      = 1e4;
@@ -636,7 +647,7 @@ private:
 
   FormulationViscousTerm const formulation_viscous = FormulationViscousTerm::LaplaceFormulation;
 
-  MeshType const mesh_type = MeshType::UniformCartesian;
+  MeshType const mesh_type = MeshType::Cartesian;
 
   bool const ALE = true;
 };

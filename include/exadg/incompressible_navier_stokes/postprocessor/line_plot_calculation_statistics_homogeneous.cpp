@@ -23,6 +23,7 @@
 #include <deal.II/fe/fe_values.h>
 
 // ExaDG
+#include <exadg/grid/grid_data.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics_homogeneous.h>
 #include <exadg/utilities/create_directories.h>
 
@@ -45,6 +46,8 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::LinePlotCalculatorStatisti
     averaging_direction(2),
     write_final_output(false)
 {
+  AssertThrow(get_element_type(dof_handler_velocity.get_triangulation()) == ElementType::Hypercube,
+              dealii::ExcMessage("Only implemented for hypercube elements."));
 }
 
 template<int dim, typename Number>
@@ -428,8 +431,6 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
       std::vector<dealii::Point<dim>> points(gauss_1d.size());  // 1D points
       std::vector<double>             weights(gauss_1d.size()); // 1D weights
 
-      typename dealii::DoFHandler<dim>::active_cell_iterator const cell = cell_and_ref_point->first;
-
       dealii::Point<dim> const p_unit = cell_and_ref_point->second;
 
       // Find points and weights for Gauss quadrature
@@ -442,6 +443,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
                                              dealii::update_quadrature_points |
                                              dealii::update_gradients);
 
+      typename dealii::DoFHandler<dim>::active_cell_iterator const cell = cell_and_ref_point->first;
       fe_values.reinit(typename dealii::Triangulation<dim>::active_cell_iterator(cell));
 
       cell->get_dof_indices(dof_indices);
@@ -655,8 +657,6 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::average_pressure_for_given
     std::vector<dealii::Point<dim>> points(gauss_1d.size());  // 1D points
     std::vector<double>             weights(gauss_1d.size()); // 1D weights
 
-    typename dealii::DoFHandler<dim>::active_cell_iterator const cell = cell_and_ref_point->first;
-
     dealii::Point<dim> const p_unit = cell_and_ref_point->second;
 
     // Find points and weights for Gauss quadrature
@@ -668,6 +668,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::average_pressure_for_given
                                          dealii::update_values | dealii::update_jacobians |
                                            dealii::update_quadrature_points);
 
+    typename dealii::DoFHandler<dim>::active_cell_iterator const cell = cell_and_ref_point->first;
     fe_values.reinit(typename dealii::Triangulation<dim>::active_cell_iterator(cell));
 
     cell->get_dof_indices(dof_indices);

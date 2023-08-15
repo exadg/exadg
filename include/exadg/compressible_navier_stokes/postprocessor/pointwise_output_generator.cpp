@@ -93,7 +93,7 @@ PointwiseOutputGenerator<dim, Number>::do_evaluate(VectorType const & solution)
     if(pointwise_output_data.write_rho_u)
       this->write_quantity("Rho_U", values, 1);
     if(pointwise_output_data.write_rho_E)
-      this->write_quantity("Rho_E", values, dim + 2);
+      this->write_quantity("Rho_E", values, dim + 1);
   }
 }
 
