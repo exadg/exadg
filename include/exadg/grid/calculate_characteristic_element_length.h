@@ -27,6 +27,9 @@
 #include <deal.II/fe/mapping.h>
 #include <deal.II/grid/tria.h>
 
+// ExaDG
+#include <exadg/grid/grid_data.h>
+
 namespace ExaDG
 {
 /**
@@ -57,13 +60,41 @@ calculate_minimum_vertex_distance(dealii::Triangulation<dim> const & triangulati
 }
 
 /**
- * This function calculates a characteristic element length given the volume of the element.
+ * This function calculates a characteristic element length given the volume of the element, the
+ * number of space dimensions, and the element type.
  */
 template<typename Number>
 inline Number
-calculate_characteristic_element_length(Number const element_volume, unsigned int const dim)
+calculate_characteristic_element_length(Number const        element_volume,
+                                        unsigned int const  dim,
+                                        ElementType const & element_type)
 {
-  return std::exp(std::log(element_volume) / (double)dim);
+  if(element_type == ElementType::Hypercube)
+  {
+    // calculate the length h of a dim-dimensional cube that has the volume "element_volume".
+    return std::exp(std::log(element_volume) / (double)dim);
+  }
+  else if(element_type == ElementType::Simplex)
+  {
+    // calculate the length h of an equilateral triangle/tetrahedron that has the volume
+    // "element_volume" (V = h^dim / factor).
+    double factor = 1.0;
+
+    if(dim == 2)
+      factor = 4.0 / std::sqrt(3.0);
+    else if(dim == 3)
+      factor = 6.0 * std::sqrt(2.0);
+    else
+      AssertThrow(false, dealii::ExcMessage("Only dim = 2, 3 implemented."));
+
+    return std::exp(std::log(element_volume * factor) / (double)dim);
+  }
+  else
+  {
+    AssertThrow(false,
+                dealii::ExcMessage("This function is not implemented for the given ElementType."));
+    return std::exp(std::log(element_volume) / (double)dim);
+  }
 }
 
 /**
