@@ -31,8 +31,8 @@ namespace IncNS
  *
  *            use convective term:  tau_div_conv = K * ||U||_mean * h_eff
  *
- *                                  where h_eff = h / (k_u+1) and
- *                                  h = V_e^{1/3} with the element volume V_e
+ *                                  where h_eff = h / (k_u+1) with a characteristic
+ *                                  element length h derived from the element volume V_e
  *
  *            use viscous term:     tau_div_viscous = K * nu
  *

@@ -40,8 +40,8 @@ namespace IncNS
  *
  *            use viscous term:     tau_conti_viscous = K * nu / h
  *
- *                                  where h_eff = h / (k_u+1) and
- *                                  h = V_e^{1/dim} with the element volume V_e
+ *                                  where h_eff = h / (k_u+1) with a characteristic
+ *                                  element length h derived from the element volume V_e
  *
  *            use both terms:       tau_conti = tau_conti_conv + tau_conti_viscous
  */
