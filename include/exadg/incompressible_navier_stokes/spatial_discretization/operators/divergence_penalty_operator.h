@@ -160,7 +160,7 @@ public:
         }
         norm_U_mean /= volume;
 
-        scalar h     = std::exp(std::log(volume) / (double)dim);
+        scalar h     = calculate_characteristic_element_length(volume, dim);
         scalar h_eff = calculate_high_order_element_length(h, data.degree, true);
 
         tau_convective = norm_U_mean * h_eff;

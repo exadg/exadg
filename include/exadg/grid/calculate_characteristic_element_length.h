@@ -57,6 +57,16 @@ calculate_minimum_vertex_distance(dealii::Triangulation<dim> const & triangulati
 }
 
 /**
+ * This function calculates a characteristic element length given the volume of the element.
+ */
+template<typename Number>
+inline Number
+calculate_characteristic_element_length(Number const element_volume, unsigned int const dim)
+{
+  return std::exp(std::log(element_volume) / (double)dim);
+}
+
+/**
  * This function calculates a characteristic resolution limit for high-order Lagrange polynomials
  * given a mesh size h. This one-dimensional resolution limit is calculated as the grid size divided
  * by the number of nodes per coordinate direction. Hence, the result depends on the function space

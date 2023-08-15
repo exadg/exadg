@@ -171,7 +171,7 @@ public:
       norm_U_mean /= volume;
 
       scalar tau_convective = norm_U_mean;
-      scalar h              = std::exp(std::log(volume) / (double)dim);
+      scalar h              = calculate_characteristic_element_length(volume, dim);
       scalar h_eff          = calculate_high_order_element_length(h, data.degree, true);
       scalar tau_viscous    = dealii::make_vectorized_array<Number>(data.viscosity) / h_eff;
 
