@@ -304,6 +304,34 @@ Operator<dim, Number>::setup_operators()
 
 template<int dim, typename Number>
 void
+Operator<dim, Number>::setup()
+{
+  // initialize MatrixFree and MatrixFreeData
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> mf =
+    std::make_shared<dealii::MatrixFree<dim, Number>>();
+  std::shared_ptr<MatrixFreeData<dim, Number>> mf_data =
+    std::make_shared<MatrixFreeData<dim, Number>>();
+
+  fill_matrix_free_data(*mf_data);
+
+  if(param.use_cell_based_face_loops)
+    Categorization::do_cell_based_loops(*grid->triangulation, mf_data->data);
+  mf->reinit(*get_mapping(),
+             mf_data->get_dof_handler_vector(),
+             mf_data->get_constraint_vector(),
+             mf_data->get_quadrature_vector(),
+             mf_data->data);
+
+  if(param.ale_formulation)
+    matrix_free_own_storage = mf;
+
+  // Subsequently, call the other setup function with MatrixFree/MatrixFreeData objects as
+  // arguments.
+  this->setup(mf, mf_data);
+}
+
+template<int dim, typename Number>
+void
 Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
                              std::shared_ptr<MatrixFreeData<dim, Number> const> matrix_free_data_in,
                              std::string const & dof_index_velocity_external_in)
@@ -752,8 +780,16 @@ Operator<dim, Number>::update_conv_diff_operator(double const       time,
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::update_after_grid_motion()
+Operator<dim, Number>::update_after_grid_motion(bool const update_matrix_free)
 {
+  if(update_matrix_free)
+  {
+    // Since matrix_free points to matrix_free_own_storage, we also update the actual/main
+    // MatrixFree object called matrix_free.
+    matrix_free_own_storage->update_mapping(*get_mapping());
+  }
+
+
   // update SIPG penalty parameter of diffusive operator which depends on the deformation
   // of elements
   if(param.diffusive_problem())

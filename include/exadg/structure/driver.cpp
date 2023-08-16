@@ -69,18 +69,7 @@ Driver<dim, Number>::setup()
                                                          "elasticity",
                                                          mpi_comm);
 
-  // initialize matrix_free
-  matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-  matrix_free_data->append(pde_operator);
-
-  matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-  matrix_free->reinit(*application->get_mapping(),
-                      matrix_free_data->get_dof_handler_vector(),
-                      matrix_free_data->get_constraint_vector(),
-                      matrix_free_data->get_quadrature_vector(),
-                      matrix_free_data->data);
-
-  pde_operator->setup(matrix_free, matrix_free_data);
+  pde_operator->setup();
 
   if(not is_throughput_study)
   {

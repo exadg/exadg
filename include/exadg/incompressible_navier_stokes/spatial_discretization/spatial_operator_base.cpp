@@ -694,6 +694,34 @@ SpatialOperatorBase<dim, Number>::initialize_calculators_for_derived_quantities(
 
 template<int dim, typename Number>
 void
+SpatialOperatorBase<dim, Number>::setup()
+{
+  // initialize MatrixFree and MatrixFreeData
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> mf =
+    std::make_shared<dealii::MatrixFree<dim, Number>>();
+  std::shared_ptr<MatrixFreeData<dim, Number>> mf_data =
+    std::make_shared<MatrixFreeData<dim, Number>>();
+
+  fill_matrix_free_data(*mf_data);
+
+  if(param.use_cell_based_face_loops)
+    Categorization::do_cell_based_loops(*grid->triangulation, mf_data->data);
+  mf->reinit(*get_mapping(),
+             mf_data->get_dof_handler_vector(),
+             mf_data->get_constraint_vector(),
+             mf_data->get_quadrature_vector(),
+             mf_data->data);
+
+  if(param.ale_formulation)
+    matrix_free_own_storage = mf;
+
+  // Subsequently, call the other setup function with MatrixFree/MatrixFreeData objects as
+  // arguments.
+  this->setup(mf, mf_data);
+}
+
+template<int dim, typename Number>
+void
 SpatialOperatorBase<dim, Number>::setup(
   std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
   std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data_in,
@@ -714,6 +742,9 @@ SpatialOperatorBase<dim, Number>::setup(
   initialize_operators(dof_index_temperature);
 
   initialize_calculators_for_derived_quantities();
+
+  // Finally, do set up of derived classes
+  setup_derived();
 
   pcout << std::endl << "... done!" << std::endl << std::flush;
 }
@@ -1081,7 +1112,7 @@ SpatialOperatorBase<dim, Number>::get_characteristic_element_length() const
 {
   double const h_min = calculate_minimum_element_length();
 
-  return calculate_characteristic_element_length(h_min, param.degree_u, true /* is_dg */);
+  return calculate_high_order_element_length(h_min, param.degree_u, true /* is_dg */);
 }
 
 template<int dim, typename Number>
@@ -1500,8 +1531,15 @@ SpatialOperatorBase<dim, Number>::calculate_dissipation_continuity_term(
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::update_after_grid_motion()
+SpatialOperatorBase<dim, Number>::update_after_grid_motion(bool const update_matrix_free)
 {
+  if(update_matrix_free)
+  {
+    // Since matrix_free points to matrix_free_own_storage, we also update the actual/main
+    // MatrixFree object called matrix_free.
+    matrix_free_own_storage->update_mapping(*get_mapping());
+  }
+
   if(param.turbulence_model_data.is_active)
   {
     // the mesh (and hence the filter width) changes in case of an ALE formulation

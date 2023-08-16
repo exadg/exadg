@@ -24,7 +24,11 @@
 
 // deal.II
 #include <deal.II/base/mpi.h>
+#include <deal.II/fe/mapping.h>
 #include <deal.II/grid/tria.h>
+
+// ExaDG
+#include <exadg/grid/grid_data.h>
 
 namespace ExaDG
 {
@@ -56,15 +60,54 @@ calculate_minimum_vertex_distance(dealii::Triangulation<dim> const & triangulati
 }
 
 /**
+ * This function calculates a characteristic element length given the volume of the element, the
+ * number of space dimensions, and the element type.
+ */
+template<typename Number>
+inline Number
+calculate_characteristic_element_length(Number const        element_volume,
+                                        unsigned int const  dim,
+                                        ElementType const & element_type)
+{
+  if(element_type == ElementType::Hypercube)
+  {
+    // calculate the length h of a dim-dimensional cube that has the volume "element_volume".
+    return std::exp(std::log(element_volume) / (double)dim);
+  }
+  else if(element_type == ElementType::Simplex)
+  {
+    // calculate the length h of an equilateral triangle/tetrahedron that has the volume
+    // "element_volume" (V = h^dim / factor).
+    double factor = 1.0;
+
+    if(dim == 2)
+      factor = 4.0 / std::sqrt(3.0);
+    else if(dim == 3)
+      factor = 6.0 * std::sqrt(2.0);
+    else
+      AssertThrow(false, dealii::ExcMessage("Only dim = 2, 3 implemented."));
+
+    return std::exp(std::log(element_volume * factor) / (double)dim);
+  }
+  else
+  {
+    AssertThrow(false,
+                dealii::ExcMessage("This function is not implemented for the given ElementType."));
+    return std::exp(std::log(element_volume) / (double)dim);
+  }
+}
+
+/**
  * This function calculates a characteristic resolution limit for high-order Lagrange polynomials
  * given a mesh size h. This one-dimensional resolution limit is calculated as the grid size divided
  * by the number of nodes per coordinate direction. Hence, the result depends on the function space
  * (H^1 vs. L^2).
  */
-inline double
-calculate_characteristic_element_length(double const       element_length,
-                                        unsigned int const fe_degree,
-                                        bool const         is_dg)
+template<typename Number>
+inline Number
+calculate_high_order_element_length(Number const       element_length,
+                                    unsigned int const fe_degree,
+                                    bool const         is_dg)
 {
   unsigned int n_nodes_1d = fe_degree;
 

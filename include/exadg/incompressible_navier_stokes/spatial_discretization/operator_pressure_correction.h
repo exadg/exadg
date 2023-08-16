@@ -116,15 +116,12 @@ public:
   virtual ~OperatorPressureCorrection();
 
   /*
-   * Calls setup() function of base class and additionally initializes the inverse pressure mass
-   * matrix operator needed for the pressure correction scheme, as well as the pressure mass
-   * operator needed in the ALE case only (where the mass operator may be evaluated at different
-   * times depending on the specific ALE formulation chosen).
+   * Initializes the inverse pressure mass matrix operator needed for the pressure correction
+   * scheme, as well as the pressure mass operator needed in the ALE case only (where the mass
+   * operator may be evaluated at different times depending on the specific ALE formulation chosen).
    */
   void
-  setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
-        std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
-        std::string const &                                    dof_index_temperature = "") final;
+  setup_derived() final;
 
   void
   setup_solvers(double const & scaling_factor_mass, VectorType const & velocity) final;
