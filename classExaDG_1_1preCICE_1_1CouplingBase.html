@@ -108,9 +108,9 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>value_type</b> = typ
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a1d3efad8edf67e1ee85c63529f3d2163"><td class="memItemLeft" align="right" valign="top"><a id="a1d3efad8edf67e1ee85c63529f3d2163" name="a1d3efad8edf67e1ee85c63529f3d2163"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>CouplingBase</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, double, VectorizedArrayType &gt; const &gt; data, std::string const <a class="el" href="classExaDG_1_1preCICE_1_1CouplingBase.html#a36e684b3ced1553f0017f75f42737fdb">mesh_name</a>, dealii::types::boundary_id const surface_id)</td></tr>
-<tr class="separator:a1d3efad8edf67e1ee85c63529f3d2163"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8b868d3ccd7cb96b378ba216347117ad"><td class="memItemLeft" align="right" valign="top"><a id="a8b868d3ccd7cb96b378ba216347117ad" name="a8b868d3ccd7cb96b378ba216347117ad"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>CouplingBase</b> (dealii::MatrixFree&lt; dim, double, VectorizedArrayType &gt; const &amp;data, std::string const <a class="el" href="classExaDG_1_1preCICE_1_1CouplingBase.html#a36e684b3ced1553f0017f75f42737fdb">mesh_name</a>, dealii::types::boundary_id const surface_id)</td></tr>
+<tr class="separator:a8b868d3ccd7cb96b378ba216347117ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abb0e72e5cb49a332e909a0f90fe8a301"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1preCICE_1_1CouplingBase.html#abb0e72e5cb49a332e909a0f90fe8a301">define_coupling_mesh</a> ()=0</td></tr>
 <tr class="memdesc:abb0e72e5cb49a332e909a0f90fe8a301"><td class="mdescLeft">&#160;</td><td class="mdescRight">define_coupling_mesh Define the coupling mesh associated to the data points  <br /></td></tr>
 <tr class="separator:abb0e72e5cb49a332e909a0f90fe8a301"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -146,10 +146,10 @@ virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><b>get_su
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
-<tr class="memitem:a9023ffde51ff77d11e2d065c415e4003"><td class="memItemLeft" align="right" valign="top"><a id="a9023ffde51ff77d11e2d065c415e4003" name="a9023ffde51ff77d11e2d065c415e4003"></a>
-std::shared_ptr&lt; dealii::MatrixFree&lt; dim, double, VectorizedArrayType &gt; const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>matrix_free</b></td></tr>
-<tr class="memdesc:a9023ffde51ff77d11e2d065c415e4003"><td class="mdescLeft">&#160;</td><td class="mdescRight">The dealii::MatrixFree object (preCICE can only handle double precision) <br /></td></tr>
-<tr class="separator:a9023ffde51ff77d11e2d065c415e4003"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa68703909bbca36ba75201e3acd813da"><td class="memItemLeft" align="right" valign="top"><a id="aa68703909bbca36ba75201e3acd813da" name="aa68703909bbca36ba75201e3acd813da"></a>
+dealii::MatrixFree&lt; dim, double, VectorizedArrayType &gt; const  &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>matrix_free</b></td></tr>
+<tr class="memdesc:aa68703909bbca36ba75201e3acd813da"><td class="mdescLeft">&#160;</td><td class="mdescRight">The dealii::MatrixFree object (preCICE can only handle double precision) <br /></td></tr>
+<tr class="separator:aa68703909bbca36ba75201e3acd813da"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a36e684b3ced1553f0017f75f42737fdb"><td class="memItemLeft" align="right" valign="top">std::string const&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1preCICE_1_1CouplingBase.html#a36e684b3ced1553f0017f75f42737fdb">mesh_name</a></td></tr>
 <tr class="memdesc:a36e684b3ced1553f0017f75f42737fdb"><td class="mdescLeft">&#160;</td><td class="mdescRight">public precice solverinterface  <br /></td></tr>
 <tr class="separator:a36e684b3ced1553f0017f75f42737fdb"><td class="memSeparator" colspan="2">&#160;</td></tr>

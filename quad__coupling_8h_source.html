@@ -112,7 +112,7 @@ $(function() {
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno"><a class="line" href="classExaDG_1_1preCICE_1_1QuadCoupling.html">   41</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1preCICE_1_1QuadCoupling.html">QuadCoupling</a> : <span class="keyword">public</span> <a class="code hl_class" href="classExaDG_1_1preCICE_1_1CouplingBase.html">CouplingBase</a>&lt;dim, data_dim, VectorizedArrayType&gt;</div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>{</div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <a class="code hl_class" href="classExaDG_1_1preCICE_1_1QuadCoupling.html">QuadCoupling</a>(std::shared_ptr&lt;dealii::MatrixFree&lt;dim, double, VectorizedArrayType&gt; <span class="keyword">const</span>&gt; data,</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <a class="code hl_class" href="classExaDG_1_1preCICE_1_1QuadCoupling.html">QuadCoupling</a>(dealii::MatrixFree&lt;dim, double, VectorizedArrayType&gt; <span class="keyword">const</span> &amp; data,</div>
 <div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>#ifdef EXADG_WITH_PRECICE</div>
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>               std::shared_ptr&lt;precice::SolverInterface&gt; precice,</div>
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>#endif</div>
@@ -153,7 +153,7 @@ $(function() {
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span> </div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keywordtype">int</span> data_dim, <span class="keyword">typename</span> VectorizedArrayType&gt;</div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span><a class="code hl_class" href="classExaDG_1_1preCICE_1_1QuadCoupling.html">QuadCoupling&lt;dim, data_dim, VectorizedArrayType&gt;::QuadCoupling</a>(</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  std::shared_ptr&lt;dealii::MatrixFree&lt;dim, double, VectorizedArrayType&gt; <span class="keyword">const</span>&gt; data,</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  dealii::MatrixFree&lt;dim, double, VectorizedArrayType&gt; <span class="keyword">const</span> &amp; data,</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>#ifdef EXADG_WITH_PRECICE</div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  std::shared_ptr&lt;precice::SolverInterface&gt; precice,</div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>#endif</div>
@@ -186,199 +186,197 @@ $(function() {
 <div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>    <span class="keywordflow">return</span>;</div>
 <div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span> </div>
 <div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>  <span class="comment">// Initial guess: half of the boundary is part of the coupling surface</span></div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>  coupling_nodes_ids.reserve(this-&gt;matrix_free-&gt;n_boundary_face_batches() / 2);</div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>  coupling_nodes_ids.reserve(this-&gt;matrix_free.n_boundary_face_batches() / 2);</div>
 <div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span> </div>
 <div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  <span class="comment">// Set up data structures</span></div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  <a class="code hl_typedef" href="classExaDG_1_1preCICE_1_1QuadCoupling.html#a2e4b7310539cb9c735dca435ac2e5bb4">FEFaceIntegrator</a> phi(*this-&gt;matrix_free, <span class="keyword">true</span>, mf_dof_index, mf_quad_index);</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  <a class="code hl_typedef" href="classExaDG_1_1preCICE_1_1QuadCoupling.html#a2e4b7310539cb9c735dca435ac2e5bb4">FEFaceIntegrator</a> phi(this-&gt;matrix_free, <span class="keyword">true</span>, mf_dof_index, mf_quad_index);</div>
 <div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>  std::array&lt;double, dim * VectorizedArrayType::size()&gt; unrolled_vertices;</div>
 <div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  std::array&lt;int, VectorizedArrayType::size()&gt;          node_ids;</div>
 <div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>                                          size = 0;</div>
 <div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  <span class="comment">// Loop over all boundary faces</span></div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> face = this-&gt;matrix_free-&gt;n_inner_face_batches();</div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>      face &lt;</div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>      this-&gt;matrix_free-&gt;n_boundary_face_batches() + this-&gt;matrix_free-&gt;n_inner_face_batches();</div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>      ++face)</div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>  {</div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>    <span class="keyword">auto</span> <span class="keyword">const</span> boundary_id = this-&gt;matrix_free-&gt;get_boundary_id(face);</div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span> </div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>    <span class="comment">// Only for interface nodes</span></div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>    <span class="keywordflow">if</span>(boundary_id != this-&gt;dealii_boundary_surface_id)</div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>      <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span> </div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>    phi.reinit(face);</div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>    <span class="keywordtype">int</span> <span class="keyword">const</span> active_faces = this-&gt;matrix_free-&gt;n_active_entries_per_face_batch(face);</div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span> </div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>    <span class="comment">// Loop over all quadrature points and pass the vertices to preCICE</span></div>
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> q = 0; q &lt; phi.n_q_points; ++q)</div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>    {</div>
-<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>      <span class="keyword">auto</span> <span class="keyword">const</span> local_vertex = phi.quadrature_point(q);</div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span> </div>
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>      <span class="comment">// Transform dealii::Point&lt;Vectorized&gt; into preCICE conform format</span></div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>      <span class="comment">// We store here also the potential &#39;dummy&#39;/empty lanes (not only</span></div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>      <span class="comment">// active_faces), but it allows us to use a static loop as well as a</span></div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>      <span class="comment">// static array for the indices</span></div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>      <span class="keywordflow">for</span>(<span class="keywordtype">int</span> d = 0; d &lt; dim; ++d)</div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>        <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> v = 0; v &lt; VectorizedArrayType::size(); ++v)</div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>          unrolled_vertices[d + dim * v] = local_vertex[d][v];</div>
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span> </div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span><span class="preprocessor">#ifdef EXADG_WITH_PRECICE</span></div>
-<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>      this-&gt;precice-&gt;setMeshVertices(this-&gt;mesh_id,</div>
-<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>                                     active_faces,</div>
-<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>                                     unrolled_vertices.data(),</div>
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>                                     node_ids.data());</div>
-<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span><span class="preprocessor">#else</span></div>
-<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>      (void)active_faces;</div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>      coupling_nodes_ids.emplace_back(node_ids);</div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>      ++size;</div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>    }</div>
-<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>  }</div>
-<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span> </div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>  <span class="comment">// resize the IDs in case the initial guess was too large</span></div>
-<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>  coupling_nodes_ids.resize(size);</div>
-<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span> </div>
-<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span><span class="preprocessor">#ifdef EXADG_WITH_PRECICE</span></div>
-<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  <span class="comment">// Consistency check: the number of IDs we stored is equal or greater than</span></div>
-<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>  <span class="comment">// the IDs preCICE knows</span></div>
-<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>  Assert(size * VectorizedArrayType::size() &gt;=</div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>           <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(this-&gt;precice-&gt;getMeshVertexSize(this-&gt;mesh_id)),</div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>         dealii::ExcInternalError());</div>
-<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span> </div>
-<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>  <span class="keywordflow">if</span>(this-&gt;read_data_map.size() &gt; 0)</div>
-<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>    this-&gt;print_info(<span class="keyword">true</span>, this-&gt;precice-&gt;getMeshVertexSize(this-&gt;mesh_id));</div>
-<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>  <span class="keywordflow">if</span>(this-&gt;write_data_map.size() &gt; 0)</div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>    this-&gt;print_info(<span class="keyword">false</span>, this-&gt;precice-&gt;getMeshVertexSize(this-&gt;mesh_id));</div>
-<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>}</div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> face = this-&gt;matrix_free.n_inner_face_batches();</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>      face &lt; this-&gt;matrix_free.n_boundary_face_batches() + this-&gt;matrix_free.n_inner_face_batches();</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>      ++face)</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  {</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>    <span class="keyword">auto</span> <span class="keyword">const</span> boundary_id = this-&gt;matrix_free.get_boundary_id(face);</div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span> </div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>    <span class="comment">// Only for interface nodes</span></div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>    <span class="keywordflow">if</span>(boundary_id != this-&gt;dealii_boundary_surface_id)</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>      <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span> </div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>    phi.reinit(face);</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>    <span class="keywordtype">int</span> <span class="keyword">const</span> active_faces = this-&gt;matrix_free.n_active_entries_per_face_batch(face);</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span> </div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>    <span class="comment">// Loop over all quadrature points and pass the vertices to preCICE</span></div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> q = 0; q &lt; phi.n_q_points; ++q)</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>    {</div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>      <span class="keyword">auto</span> <span class="keyword">const</span> local_vertex = phi.quadrature_point(q);</div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span> </div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>      <span class="comment">// Transform dealii::Point&lt;Vectorized&gt; into preCICE conform format</span></div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>      <span class="comment">// We store here also the potential &#39;dummy&#39;/empty lanes (not only</span></div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>      <span class="comment">// active_faces), but it allows us to use a static loop as well as a</span></div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>      <span class="comment">// static array for the indices</span></div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>      <span class="keywordflow">for</span>(<span class="keywordtype">int</span> d = 0; d &lt; dim; ++d)</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>        <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> v = 0; v &lt; VectorizedArrayType::size(); ++v)</div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>          unrolled_vertices[d + dim * v] = local_vertex[d][v];</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span> </div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span><span class="preprocessor">#ifdef EXADG_WITH_PRECICE</span></div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>      this-&gt;precice-&gt;setMeshVertices(this-&gt;mesh_id,</div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>                                     active_faces,</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>                                     unrolled_vertices.data(),</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>                                     node_ids.data());</div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span><span class="preprocessor">#else</span></div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>      (void)active_faces;</div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>      coupling_nodes_ids.emplace_back(node_ids);</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>      ++size;</div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>    }</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>  }</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span> </div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>  <span class="comment">// resize the IDs in case the initial guess was too large</span></div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>  coupling_nodes_ids.resize(size);</div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span> </div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span><span class="preprocessor">#ifdef EXADG_WITH_PRECICE</span></div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>  <span class="comment">// Consistency check: the number of IDs we stored is equal or greater than</span></div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  <span class="comment">// the IDs preCICE knows</span></div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>  Assert(size * VectorizedArrayType::size() &gt;=</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>           <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(this-&gt;precice-&gt;getMeshVertexSize(this-&gt;mesh_id)),</div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>         dealii::ExcInternalError());</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span> </div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>  <span class="keywordflow">if</span>(this-&gt;read_data_map.size() &gt; 0)</div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>    this-&gt;print_info(<span class="keyword">true</span>, this-&gt;precice-&gt;getMeshVertexSize(this-&gt;mesh_id));</div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>  <span class="keywordflow">if</span>(this-&gt;write_data_map.size() &gt; 0)</div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>    this-&gt;print_info(<span class="keyword">false</span>, this-&gt;precice-&gt;getMeshVertexSize(this-&gt;mesh_id));</div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>}</div>
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span> </div>
 <div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span> </div>
-<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span> </div>
-<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keywordtype">int</span> data_dim, <span class="keyword">typename</span> VectorizedArrayType&gt;</div>
-<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span><span class="keywordtype">void</span></div>
-<div class="line"><a id="l00215" name="l00215"></a><span class="lineno"><a class="line" href="classExaDG_1_1preCICE_1_1QuadCoupling.html#af2ee46af2435f1ec83e2349cd8c8673b">  215</a></span><a class="code hl_function" href="classExaDG_1_1preCICE_1_1QuadCoupling.html#af2ee46af2435f1ec83e2349cd8c8673b">QuadCoupling&lt;dim, data_dim, VectorizedArrayType&gt;::write_data</a>(</div>
-<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>  dealii::LinearAlgebra::distributed::Vector&lt;double&gt; <span class="keyword">const</span> &amp; data_vector,</div>
-<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>  std::string <span class="keyword">const</span> &amp;                                        data_name)</div>
-<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>{</div>
-<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>  <span class="keywordtype">int</span> <span class="keyword">const</span> write_data_id = this-&gt;write_data_map.at(data_name);</div>
-<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span> </div>
-<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>  <span class="keywordflow">switch</span>(this-&gt;write_data_type)</div>
-<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>  {</div>
-<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>    <span class="keywordflow">case</span> WriteDataType::values_on_q_points:</div>
-<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>      write_data_factory(data_vector,</div>
-<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>                         write_data_id,</div>
-<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>                         dealii::EvaluationFlags::values,</div>
-<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>                         [](<span class="keyword">auto</span> &amp; phi, <span class="keyword">auto</span> q_point) { <span class="keywordflow">return</span> phi.get_value(q_point); });</div>
-<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>      <span class="keywordflow">break</span>;</div>
-<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>    <span class="keywordflow">case</span> WriteDataType::normal_gradients_on_q_points:</div>
-<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>      write_data_factory(data_vector,</div>
-<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>                         write_data_id,</div>
-<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>                         dealii::EvaluationFlags::gradients,</div>
-<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>                         [](<span class="keyword">auto</span> &amp; phi, <span class="keyword">auto</span> q_point) {</div>
-<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>                           <span class="keywordflow">return</span> phi.get_normal_derivative(q_point);</div>
-<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>                         });</div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>      <span class="keywordflow">break</span>;</div>
-<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>    <span class="keywordflow">default</span>:</div>
-<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>      AssertThrow(<span class="keyword">false</span>, dealii::ExcNotImplemented());</div>
-<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>  }</div>
-<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>}</div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keywordtype">int</span> data_dim, <span class="keyword">typename</span> VectorizedArrayType&gt;</div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span><span class="keywordtype">void</span></div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno"><a class="line" href="classExaDG_1_1preCICE_1_1QuadCoupling.html#af2ee46af2435f1ec83e2349cd8c8673b">  214</a></span><a class="code hl_function" href="classExaDG_1_1preCICE_1_1QuadCoupling.html#af2ee46af2435f1ec83e2349cd8c8673b">QuadCoupling&lt;dim, data_dim, VectorizedArrayType&gt;::write_data</a>(</div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>  dealii::LinearAlgebra::distributed::Vector&lt;double&gt; <span class="keyword">const</span> &amp; data_vector,</div>
+<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>  std::string <span class="keyword">const</span> &amp;                                        data_name)</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>{</div>
+<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>  <span class="keywordtype">int</span> <span class="keyword">const</span> write_data_id = this-&gt;write_data_map.at(data_name);</div>
+<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span> </div>
+<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>  <span class="keywordflow">switch</span>(this-&gt;write_data_type)</div>
+<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>  {</div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>    <span class="keywordflow">case</span> WriteDataType::values_on_q_points:</div>
+<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>      write_data_factory(data_vector,</div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>                         write_data_id,</div>
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>                         dealii::EvaluationFlags::values,</div>
+<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>                         [](<span class="keyword">auto</span> &amp; phi, <span class="keyword">auto</span> q_point) { <span class="keywordflow">return</span> phi.get_value(q_point); });</div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>      <span class="keywordflow">break</span>;</div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>    <span class="keywordflow">case</span> WriteDataType::normal_gradients_on_q_points:</div>
+<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>      write_data_factory(data_vector,</div>
+<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>                         write_data_id,</div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>                         dealii::EvaluationFlags::gradients,</div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>                         [](<span class="keyword">auto</span> &amp; phi, <span class="keyword">auto</span> q_point) {</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>                           <span class="keywordflow">return</span> phi.get_normal_derivative(q_point);</div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>                         });</div>
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>      <span class="keywordflow">break</span>;</div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>    <span class="keywordflow">default</span>:</div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>      AssertThrow(<span class="keyword">false</span>, dealii::ExcNotImplemented());</div>
+<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>  }</div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>}</div>
+<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span> </div>
 <div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span> </div>
 <div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span> </div>
-<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span> </div>
-<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keywordtype">int</span> data_dim, <span class="keyword">typename</span> VectorizedArrayType&gt;</div>
-<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span><span class="keywordtype">void</span></div>
-<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span><a class="code hl_class" href="classExaDG_1_1preCICE_1_1QuadCoupling.html">QuadCoupling&lt;dim, data_dim, VectorizedArrayType&gt;::write_data_factory</a>(</div>
-<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  dealii::LinearAlgebra::distributed::Vector&lt;double&gt; <span class="keyword">const</span> &amp;          data_vector,</div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>  <span class="keywordtype">int</span> <span class="keyword">const</span>                                                           write_data_id,</div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>  dealii::EvaluationFlags::EvaluationFlags <span class="keyword">const</span>                      flags,</div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>  std::function&lt;value_type(FEFaceIntegrator &amp;, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>)&gt; <span class="keyword">const</span> &amp; get_write_value)</div>
-<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>{</div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>  Assert(write_data_id != -1, dealii::ExcNotInitialized());</div>
-<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>  Assert(coupling_nodes_ids.size() &gt; 0, dealii::ExcNotInitialized());</div>
-<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>  <span class="comment">// Similar as in define_coupling_mesh</span></div>
-<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>  FEFaceIntegrator phi(*this-&gt;matrix_free, <span class="keyword">true</span>, mf_dof_index, mf_quad_index);</div>
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span> </div>
-<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>  <span class="comment">// In order to unroll the vectorization</span></div>
-<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>  std::array&lt;double, data_dim * VectorizedArrayType::size()&gt; unrolled_local_data;</div>
-<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>  (void)unrolled_local_data;</div>
-<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span> </div>
-<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>  <span class="keyword">auto</span> index = coupling_nodes_ids.begin();</div>
-<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span> </div>
-<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>  <span class="comment">// Loop over all faces</span></div>
-<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> face = this-&gt;matrix_free-&gt;n_inner_face_batches();</div>
-<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>      face &lt;</div>
-<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>      this-&gt;matrix_free-&gt;n_boundary_face_batches() + this-&gt;matrix_free-&gt;n_inner_face_batches();</div>
-<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>      ++face)</div>
-<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>  {</div>
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>    <span class="keyword">auto</span> <span class="keyword">const</span> boundary_id = this-&gt;matrix_free-&gt;get_boundary_id(face);</div>
-<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span> </div>
-<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>    <span class="comment">// Only for interface nodes</span></div>
-<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>    <span class="keywordflow">if</span>(boundary_id != this-&gt;dealii_boundary_surface_id)</div>
-<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>      <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span> </div>
-<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>    <span class="comment">// Read and interpolate</span></div>
-<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>    phi.reinit(face);</div>
-<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>    phi.read_dof_values_plain(data_vector);</div>
-<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>    phi.evaluate(flags);</div>
-<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>    <span class="keywordtype">int</span> <span class="keyword">const</span> active_faces = this-&gt;matrix_free-&gt;n_active_entries_per_face_batch(face);</div>
-<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span> </div>
-<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> q = 0; q &lt; phi.n_q_points; ++q, ++index)</div>
-<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>    {</div>
-<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>      Assert(index != coupling_nodes_ids.end(), dealii::ExcInternalError());</div>
-<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>      <span class="keyword">auto</span> <span class="keyword">const</span> local_data = get_write_value(phi, q);</div>
-<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span> </div>
-<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>      <span class="comment">// Constexpr evaluation required in order to comply with the</span></div>
-<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>      <span class="comment">// compiler here</span></div>
-<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>      <span class="keywordflow">if</span> <span class="keyword">constexpr</span>(data_dim &gt; 1)</div>
-<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>      {</div>
-<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span>        <span class="comment">// Transform Tensor&lt;1,dim,VectorizedArrayType&gt; into preCICE</span></div>
-<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>        <span class="comment">// conform format</span></div>
-<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>        <span class="keywordflow">for</span>(<span class="keywordtype">int</span> d = 0; d &lt; data_dim; ++d)</div>
-<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>          <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> v = 0; v &lt; VectorizedArrayType::size(); ++v)</div>
-<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>            unrolled_local_data[d + data_dim * v] = local_data[d][v];</div>
-<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span> </div>
-<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span><span class="preprocessor">#ifdef EXADG_WITH_PRECICE</span></div>
-<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>        this-&gt;precice-&gt;writeBlockVectorData(write_data_id,</div>
-<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>                                            active_faces,</div>
-<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>                                            index-&gt;data(),</div>
-<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>                                            unrolled_local_data.data());</div>
-<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span><span class="preprocessor">#else</span></div>
-<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span>        (void)active_faces;</div>
-<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>        (void)write_data_id;</div>
-<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>      }</div>
-<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>      <span class="keywordflow">else</span></div>
-<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>      {</div>
-<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span><span class="preprocessor">#ifdef EXADG_WITH_PRECICE</span></div>
-<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>        this-&gt;precice-&gt;writeBlockScalarData(write_data_id,</div>
-<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span>                                            active_faces,</div>
-<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span>                                            index-&gt;data(),</div>
-<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>                                            &amp;local_data[0]);</div>
-<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>      }</div>
-<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span>    }</div>
-<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>  }</div>
-<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>}</div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keywordtype">int</span> data_dim, <span class="keyword">typename</span> VectorizedArrayType&gt;</div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span><span class="keywordtype">void</span></div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span><a class="code hl_class" href="classExaDG_1_1preCICE_1_1QuadCoupling.html">QuadCoupling&lt;dim, data_dim, VectorizedArrayType&gt;::write_data_factory</a>(</div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>  dealii::LinearAlgebra::distributed::Vector&lt;double&gt; <span class="keyword">const</span> &amp;          data_vector,</div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  <span class="keywordtype">int</span> <span class="keyword">const</span>                                                           write_data_id,</div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>  dealii::EvaluationFlags::EvaluationFlags <span class="keyword">const</span>                      flags,</div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>  std::function&lt;value_type(FEFaceIntegrator &amp;, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>)&gt; <span class="keyword">const</span> &amp; get_write_value)</div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>{</div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>  Assert(write_data_id != -1, dealii::ExcNotInitialized());</div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>  Assert(coupling_nodes_ids.size() &gt; 0, dealii::ExcNotInitialized());</div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>  <span class="comment">// Similar as in define_coupling_mesh</span></div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>  FEFaceIntegrator phi(this-&gt;matrix_free, <span class="keyword">true</span>, mf_dof_index, mf_quad_index);</div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span> </div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>  <span class="comment">// In order to unroll the vectorization</span></div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>  std::array&lt;double, data_dim * VectorizedArrayType::size()&gt; unrolled_local_data;</div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>  (void)unrolled_local_data;</div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span> </div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>  <span class="keyword">auto</span> index = coupling_nodes_ids.begin();</div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span> </div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>  <span class="comment">// Loop over all faces</span></div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> face = this-&gt;matrix_free.n_inner_face_batches();</div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>      face &lt; this-&gt;matrix_free.n_boundary_face_batches() + this-&gt;matrix_free.n_inner_face_batches();</div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>      ++face)</div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>  {</div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>    <span class="keyword">auto</span> <span class="keyword">const</span> boundary_id = this-&gt;matrix_free.get_boundary_id(face);</div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span> </div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>    <span class="comment">// Only for interface nodes</span></div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>    <span class="keywordflow">if</span>(boundary_id != this-&gt;dealii_boundary_surface_id)</div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>      <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span> </div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>    <span class="comment">// Read and interpolate</span></div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>    phi.reinit(face);</div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>    phi.read_dof_values_plain(data_vector);</div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>    phi.evaluate(flags);</div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>    <span class="keywordtype">int</span> <span class="keyword">const</span> active_faces = this-&gt;matrix_free.n_active_entries_per_face_batch(face);</div>
+<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span> </div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> q = 0; q &lt; phi.n_q_points; ++q, ++index)</div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>    {</div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>      Assert(index != coupling_nodes_ids.end(), dealii::ExcInternalError());</div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>      <span class="keyword">auto</span> <span class="keyword">const</span> local_data = get_write_value(phi, q);</div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span> </div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>      <span class="comment">// Constexpr evaluation required in order to comply with the</span></div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>      <span class="comment">// compiler here</span></div>
+<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>      <span class="keywordflow">if</span> <span class="keyword">constexpr</span>(data_dim &gt; 1)</div>
+<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>      {</div>
+<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>        <span class="comment">// Transform Tensor&lt;1,dim,VectorizedArrayType&gt; into preCICE</span></div>
+<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>        <span class="comment">// conform format</span></div>
+<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span>        <span class="keywordflow">for</span>(<span class="keywordtype">int</span> d = 0; d &lt; data_dim; ++d)</div>
+<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>          <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> v = 0; v &lt; VectorizedArrayType::size(); ++v)</div>
+<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>            unrolled_local_data[d + data_dim * v] = local_data[d][v];</div>
+<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span> </div>
+<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span><span class="preprocessor">#ifdef EXADG_WITH_PRECICE</span></div>
+<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>        this-&gt;precice-&gt;writeBlockVectorData(write_data_id,</div>
+<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>                                            active_faces,</div>
+<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>                                            index-&gt;data(),</div>
+<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>                                            unrolled_local_data.data());</div>
+<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span><span class="preprocessor">#else</span></div>
+<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>        (void)active_faces;</div>
+<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>        (void)write_data_id;</div>
+<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>      }</div>
+<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>      <span class="keywordflow">else</span></div>
+<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>      {</div>
+<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span><span class="preprocessor">#ifdef EXADG_WITH_PRECICE</span></div>
+<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>        this-&gt;precice-&gt;writeBlockScalarData(write_data_id,</div>
+<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>                                            active_faces,</div>
+<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>                                            index-&gt;data(),</div>
+<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span>                                            &amp;local_data[0]);</div>
+<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>      }</div>
+<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>    }</div>
+<div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>  }</div>
+<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span>}</div>
+<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span> </div>
+<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span> </div>
 <div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span> </div>
-<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span> </div>
-<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span> </div>
-<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keywordtype">int</span> data_dim, <span class="keyword">typename</span> VectorizedArrayType&gt;</div>
-<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>std::string</div>
-<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span>QuadCoupling&lt;dim, data_dim, VectorizedArrayType&gt;::get_surface_type()<span class="keyword"> const</span></div>
-<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span><span class="keyword"></span>{</div>
-<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>  <span class="keywordflow">return</span> <span class="stringliteral">&quot;quadrature points using matrix-free quad index &quot;</span> +</div>
-<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>         dealii::Utilities::to_string(mf_quad_index);</div>
-<div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>}</div>
-<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span> </div>
-<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>} <span class="comment">// namespace preCICE</span></div>
-<div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span> </div>
-<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keywordtype">int</span> data_dim, <span class="keyword">typename</span> VectorizedArrayType&gt;</div>
+<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span>std::string</div>
+<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>QuadCoupling&lt;dim, data_dim, VectorizedArrayType&gt;::get_surface_type()<span class="keyword"> const</span></div>
+<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span><span class="keyword"></span>{</div>
+<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span>  <span class="keywordflow">return</span> <span class="stringliteral">&quot;quadrature points using matrix-free quad index &quot;</span> +</div>
+<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>         dealii::Utilities::to_string(mf_quad_index);</div>
+<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>}</div>
+<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span> </div>
+<div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>} <span class="comment">// namespace preCICE</span></div>
+<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span> </div>
+<div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span><span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclassExaDG_1_1preCICE_1_1CouplingBase_html"><div class="ttname"><a href="classExaDG_1_1preCICE_1_1CouplingBase.html">ExaDG::preCICE::CouplingBase</a></div><div class="ttdef"><b>Definition</b> coupling_base.h:66</div></div>
 <div class="ttc" id="aclassExaDG_1_1preCICE_1_1CouplingBase_html_a36e684b3ced1553f0017f75f42737fdb"><div class="ttname"><a href="classExaDG_1_1preCICE_1_1CouplingBase.html#a36e684b3ced1553f0017f75f42737fdb">ExaDG::preCICE::CouplingBase::mesh_name</a></div><div class="ttdeci">std::string const mesh_name</div><div class="ttdoc">public precice solverinterface</div><div class="ttdef"><b>Definition</b> coupling_base.h:152</div></div>
 <div class="ttc" id="aclassExaDG_1_1preCICE_1_1CouplingBase_html_a78ce70584dbfb2bf4ce7b9f01c7f759c"><div class="ttname"><a href="classExaDG_1_1preCICE_1_1CouplingBase.html#a78ce70584dbfb2bf4ce7b9f01c7f759c">ExaDG::preCICE::CouplingBase::FEFaceIntegrator</a></div><div class="ttdeci">FaceIntegrator&lt; dim, data_dim, double, VectorizedArrayType &gt; FEFaceIntegrator</div><div class="ttdoc">Alias for the face integrator.</div><div class="ttdef"><b>Definition</b> coupling_base.h:78</div></div>
 <div class="ttc" id="aclassExaDG_1_1preCICE_1_1QuadCoupling_html"><div class="ttname"><a href="classExaDG_1_1preCICE_1_1QuadCoupling.html">ExaDG::preCICE::QuadCoupling</a></div><div class="ttdef"><b>Definition</b> quad_coupling.h:42</div></div>
 <div class="ttc" id="aclassExaDG_1_1preCICE_1_1QuadCoupling_html_a2e4b7310539cb9c735dca435ac2e5bb4"><div class="ttname"><a href="classExaDG_1_1preCICE_1_1QuadCoupling.html#a2e4b7310539cb9c735dca435ac2e5bb4">ExaDG::preCICE::QuadCoupling::FEFaceIntegrator</a></div><div class="ttdeci">typename CouplingBase&lt; dim, data_dim, VectorizedArrayType &gt;::FEFaceIntegrator FEFaceIntegrator</div><div class="ttdoc">Alias as defined in the base class.</div><div class="ttdef"><b>Definition</b> quad_coupling.h:55</div></div>
 <div class="ttc" id="aclassExaDG_1_1preCICE_1_1QuadCoupling_html_a60656e7c700980a1aabedc1fe8532692"><div class="ttname"><a href="classExaDG_1_1preCICE_1_1QuadCoupling.html#a60656e7c700980a1aabedc1fe8532692">ExaDG::preCICE::QuadCoupling::define_coupling_mesh</a></div><div class="ttdeci">virtual void define_coupling_mesh() override</div><div class="ttdoc">define_mesh_vertices Define a vertex coupling mesh for preCICE coupling the classical preCICE way</div><div class="ttdef"><b>Definition</b> quad_coupling.h:137</div></div>
-<div class="ttc" id="aclassExaDG_1_1preCICE_1_1QuadCoupling_html_af2ee46af2435f1ec83e2349cd8c8673b"><div class="ttname"><a href="classExaDG_1_1preCICE_1_1QuadCoupling.html#af2ee46af2435f1ec83e2349cd8c8673b">ExaDG::preCICE::QuadCoupling::write_data</a></div><div class="ttdeci">virtual void write_data(dealii::LinearAlgebra::distributed::Vector&lt; double &gt; const &amp;data_vector, std::string const &amp;data_name) override</div><div class="ttdoc">write_data Evaluates the given</div><div class="ttdef"><b>Definition</b> quad_coupling.h:215</div></div>
+<div class="ttc" id="aclassExaDG_1_1preCICE_1_1QuadCoupling_html_af2ee46af2435f1ec83e2349cd8c8673b"><div class="ttname"><a href="classExaDG_1_1preCICE_1_1QuadCoupling.html#af2ee46af2435f1ec83e2349cd8c8673b">ExaDG::preCICE::QuadCoupling::write_data</a></div><div class="ttdeci">virtual void write_data(dealii::LinearAlgebra::distributed::Vector&lt; double &gt; const &amp;data_vector, std::string const &amp;data_name) override</div><div class="ttdoc">write_data Evaluates the given</div><div class="ttdef"><b>Definition</b> quad_coupling.h:214</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->

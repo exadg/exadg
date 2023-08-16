@@ -94,8 +94,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a85d839d13ca1c8f40e97b81618f8e786"><td class="memItemLeft" align="right" valign="top"><a id="a85d839d13ca1c8f40e97b81618f8e786" name="a85d839d13ca1c8f40e97b81618f8e786"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data</b> (<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &amp;matrix_free_data) const</td></tr>
 <tr class="separator:a85d839d13ca1c8f40e97b81618f8e786"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4be938fef90f4dc6029a80812310ee87"><td class="memItemLeft" align="right" valign="top"><a id="a4be938fef90f4dc6029a80812310ee87" name="a4be938fef90f4dc6029a80812310ee87"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; const &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; const &gt; matrix_free_data)</td></tr>
+<tr class="memitem:ab7e875720482e7920ffb1e101b49595f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Poisson_1_1Operator.html#ab7e875720482e7920ffb1e101b49595f">setup</a> ()</td></tr>
+<tr class="separator:ab7e875720482e7920ffb1e101b49595f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4be938fef90f4dc6029a80812310ee87"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Poisson_1_1Operator.html#a4be938fef90f4dc6029a80812310ee87">setup</a> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; const &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; const &gt; matrix_free_data)</td></tr>
 <tr class="separator:a4be938fef90f4dc6029a80812310ee87"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aba15a62a9fe00511f7988ebeb6990660"><td class="memItemLeft" align="right" valign="top"><a id="aba15a62a9fe00511f7988ebeb6990660" name="aba15a62a9fe00511f7988ebeb6990660"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_solver</b> ()</td></tr>
@@ -118,9 +119,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorT
 <tr class="memitem:a0ae458fa2d9a354bbd0ff83bef4dcf94"><td class="memItemLeft" align="right" valign="top"><a id="a0ae458fa2d9a354bbd0ff83bef4dcf94" name="a0ae458fa2d9a354bbd0ff83bef4dcf94"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve</b> (VectorType &amp;sol, VectorType const &amp;rhs, double const time) const</td></tr>
 <tr class="separator:a0ae458fa2d9a354bbd0ff83bef4dcf94"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a540b02dfd5d090beda82d8ff0b3bd6b3"><td class="memItemLeft" align="right" valign="top"><a id="a540b02dfd5d090beda82d8ff0b3bd6b3" name="a540b02dfd5d090beda82d8ff0b3bd6b3"></a>
-dealii::MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_matrix_free</b> () const</td></tr>
-<tr class="separator:a540b02dfd5d090beda82d8ff0b3bd6b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee180ce85f2ae2cfecf8b829496a3add"><td class="memItemLeft" align="right" valign="top"><a id="aee180ce85f2ae2cfecf8b829496a3add" name="aee180ce85f2ae2cfecf8b829496a3add"></a>
+std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_matrix_free</b> () const</td></tr>
+<tr class="separator:aee180ce85f2ae2cfecf8b829496a3add"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5ffc8d0c8141b4769fad1fef9a5b5e94"><td class="memItemLeft" align="right" valign="top"><a id="a5ffc8d0c8141b4769fad1fef9a5b5e94" name="a5ffc8d0c8141b4769fad1fef9a5b5e94"></a>
 dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler</b> () const</td></tr>
 <tr class="separator:a5ffc8d0c8141b4769fad1fef9a5b5e94"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -149,6 +150,55 @@ unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index</b> () const</td></tr>
 <tr class="separator:ad9292e0bd98ad091418fd38127caa139"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="ab7e875720482e7920ffb1e101b49595f" name="ab7e875720482e7920ffb1e101b49595f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab7e875720482e7920ffb1e101b49595f">&#9670;&#160;</a></span>setup() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, int n_components, typename Number &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1Poisson_1_1Operator.html">ExaDG::Poisson::Operator</a>&lt; dim, n_components, Number &gt;::setup</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Call this <a class="el" href="classExaDG_1_1Poisson_1_1Operator.html#ab7e875720482e7920ffb1e101b49595f">setup()</a> function if the dealii::MatrixFree object can be set up by the present class. </p>
+
+</div>
+</div>
+<a id="a4be938fef90f4dc6029a80812310ee87" name="a4be938fef90f4dc6029a80812310ee87"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4be938fef90f4dc6029a80812310ee87">&#9670;&#160;</a></span>setup() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, int n_components, typename Number &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1Poisson_1_1Operator.html">ExaDG::Poisson::Operator</a>&lt; dim, n_components, Number &gt;::setup </td>
+          <td>(</td>
+          <td class="paramtype">std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; const &gt;&#160;</td>
+          <td class="paramname"><em>matrix_free</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; const &gt;&#160;</td>
+          <td class="paramname"><em>matrix_free_data</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Call this <a class="el" href="classExaDG_1_1Poisson_1_1Operator.html#ab7e875720482e7920ffb1e101b49595f">setup()</a> function if the dealii::MatrixFree object needs to be created outside this class. The typical use case would be multiphysics-coupling with one MatrixFree object handed over to several single-field solvers. </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/exadg/poisson/postprocessor/<a class="el" href="poisson_2postprocessor_2postprocessor__base_8h_source.html">postprocessor_base.h</a></li>
 <li>include/exadg/poisson/spatial_discretization/<a class="el" href="poisson_2spatial__discretization_2operator_8h_source.html">operator.h</a></li>

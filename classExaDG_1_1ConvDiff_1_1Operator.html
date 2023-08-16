@@ -97,8 +97,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a65c5bc919e153a4313bd4e5ff2b7c628"><td class="memItemLeft" align="right" valign="top"><a id="a65c5bc919e153a4313bd4e5ff2b7c628" name="a65c5bc919e153a4313bd4e5ff2b7c628"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data</b> (<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &amp;matrix_free_data) const</td></tr>
 <tr class="separator:a65c5bc919e153a4313bd4e5ff2b7c628"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7f6785ef345f7996bbb7a9e4e27dbf06"><td class="memItemLeft" align="right" valign="top"><a id="a7f6785ef345f7996bbb7a9e4e27dbf06" name="a7f6785ef345f7996bbb7a9e4e27dbf06"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; const &gt; matrix_free_in, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; const &gt; matrix_free_data_in, std::string const &amp;dof_index_velocity_external_in=&quot;&quot;)</td></tr>
+<tr class="memitem:a15f533352d75d8183fc50222043adf4b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a15f533352d75d8183fc50222043adf4b">setup</a> ()</td></tr>
+<tr class="separator:a15f533352d75d8183fc50222043adf4b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7f6785ef345f7996bbb7a9e4e27dbf06"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a7f6785ef345f7996bbb7a9e4e27dbf06">setup</a> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; const &gt; matrix_free_in, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; const &gt; matrix_free_data_in, std::string const &amp;dof_index_velocity_external_in=&quot;&quot;)</td></tr>
 <tr class="separator:a7f6785ef345f7996bbb7a9e4e27dbf06"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab54335883fff91970ff6f8861ad3555a"><td class="memItemLeft" align="right" valign="top"><a id="ab54335883fff91970ff6f8861ad3555a" name="ab54335883fff91970ff6f8861ad3555a"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_solver</b> (double const scaling_factor_mass=-1.0, VectorType const *velocity=nullptr)</td></tr>
@@ -142,8 +143,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_conv_diff_opera
 <tr class="memitem:ab0a9edc71a3572c652cae04d08e622a5"><td class="memItemLeft" align="right" valign="top"><a id="ab0a9edc71a3572c652cae04d08e622a5" name="ab0a9edc71a3572c652cae04d08e622a5"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update_conv_diff_operator</b> (double const evaluation_time, double const scaling_factor, VectorType const *velocity=nullptr)</td></tr>
 <tr class="separator:ab0a9edc71a3572c652cae04d08e622a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a003bfdfd6a5a23d2f9830af167391d0a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a003bfdfd6a5a23d2f9830af167391d0a">update_after_grid_motion</a> () final</td></tr>
-<tr class="separator:a003bfdfd6a5a23d2f9830af167391d0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9fee265e80e91c5d94fe078edf054e7c"><td class="memItemLeft" align="right" valign="top"><a id="a9fee265e80e91c5d94fe078edf054e7c" name="a9fee265e80e91c5d94fe078edf054e7c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>update_after_grid_motion</b> (bool const update_matrix_free)</td></tr>
+<tr class="separator:a9fee265e80e91c5d94fe078edf054e7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0a7abd93d0b03b699237e5811a070dd1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a0a7abd93d0b03b699237e5811a070dd1">fill_grid_coordinates_vector</a> (VectorType &amp;vector) const final</td></tr>
 <tr class="separator:a0a7abd93d0b03b699237e5811a070dd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8a3e92a1eb0446b7e9f1af254113bae"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#ab8a3e92a1eb0446b7e9f1af254113bae">solve</a> (VectorType &amp;sol, VectorType const &amp;rhs, bool const update_preconditioner, double const scaling_factor=-1.0, double const time=-1.0, VectorType const *velocity=nullptr) final</td></tr>
@@ -218,9 +220,6 @@ virtual double&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_t
 <tr class="memitem:a0e48a963c3b8ddcd99b6ce67d732db8a"><td class="memItemLeft" align="right" valign="top"><a id="a0e48a963c3b8ddcd99b6ce67d732db8a" name="a0e48a963c3b8ddcd99b6ce67d732db8a"></a>
 virtual double&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_time_step_diffusion</b> () const =0</td></tr>
 <tr class="separator:a0e48a963c3b8ddcd99b6ce67d732db8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a403927ae62b55b524876c580f59f9429"><td class="memItemLeft" align="right" valign="top"><a id="a403927ae62b55b524876c580f59f9429" name="a403927ae62b55b524876c580f59f9429"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update_after_grid_motion</b> ()=0</td></tr>
-<tr class="separator:a403927ae62b55b524876c580f59f9429"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7a2a784586b3480a46ab6ce31d935dab"><td class="memItemLeft" align="right" valign="top"><a id="a7a2a784586b3480a46ab6ce31d935dab" name="a7a2a784586b3480a46ab6ce31d935dab"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_grid_coordinates_vector</b> (VectorType &amp;vector) const =0</td></tr>
 <tr class="separator:a7a2a784586b3480a46ab6ce31d935dab"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -647,6 +646,60 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
+<a id="a15f533352d75d8183fc50222043adf4b" name="a15f533352d75d8183fc50222043adf4b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a15f533352d75d8183fc50222043adf4b">&#9670;&#160;</a></span>setup() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::setup</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Call this <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a15f533352d75d8183fc50222043adf4b">setup()</a> function if the dealii::MatrixFree object can be set up by the present class. </p>
+
+</div>
+</div>
+<a id="a7f6785ef345f7996bbb7a9e4e27dbf06" name="a7f6785ef345f7996bbb7a9e4e27dbf06"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7f6785ef345f7996bbb7a9e4e27dbf06">&#9670;&#160;</a></span>setup() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::setup </td>
+          <td>(</td>
+          <td class="paramtype">std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; const &gt;&#160;</td>
+          <td class="paramname"><em>matrix_free_in</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; const &gt;&#160;</td>
+          <td class="paramname"><em>matrix_free_data_in</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string const &amp;&#160;</td>
+          <td class="paramname"><em>dof_index_velocity_external_in</em> = <code>&quot;&quot;</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Call this <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a15f533352d75d8183fc50222043adf4b">setup()</a> function if the dealii::MatrixFree object needs to be created outside this class. The typical use case would be multiphysics-coupling with one MatrixFree object handed over to several single-field solvers. Another typical use case is the use of an ALE formulation. </p>
+
+</div>
+</div>
 <a id="ab8a3e92a1eb0446b7e9f1af254113bae" name="ab8a3e92a1eb0446b7e9f1af254113bae"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab8a3e92a1eb0446b7e9f1af254113bae">&#9670;&#160;</a></span>solve()</h2>
 
@@ -698,32 +751,6 @@ template&lt;int dim, typename Number &gt; </div>
           <td></td>
           <td>)</td>
           <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classExaDG_1_1ConvDiff_1_1Interface_1_1Operator.html">ExaDG::ConvDiff::Interface::Operator&lt; Number &gt;</a>.</p>
-
-</div>
-</div>
-<a id="a003bfdfd6a5a23d2f9830af167391d0a" name="a003bfdfd6a5a23d2f9830af167391d0a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a003bfdfd6a5a23d2f9830af167391d0a">&#9670;&#160;</a></span>update_after_grid_motion()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::update_after_grid_motion</td>
         </tr>
       </table>
   </td>

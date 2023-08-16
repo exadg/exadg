@@ -169,23 +169,20 @@ $(function() {
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  std::shared_ptr&lt;ApplicationBase&lt;dim, Number&gt;&gt; application;</div>
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt;&gt;     matrix_free_data;</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt;&gt; matrix_free;</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span> </div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  std::shared_ptr&lt;Operator&lt;dim, Number&gt;&gt; pde_operator;</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span> </div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  std::shared_ptr&lt;PostProcessorBase&lt;dim, Number&gt;&gt; postprocessor;</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span> </div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  std::shared_ptr&lt;TimeIntExplRK&lt;Number&gt;&gt; time_integrator;</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span> </div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  <span class="comment">// Computation time (wall clock time)</span></div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  <span class="keyword">mutable</span> <a class="code hl_class" href="classExaDG_1_1TimerTree.html">TimerTree</a> timer_tree;</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>};</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  std::shared_ptr&lt;Operator&lt;dim, Number&gt;&gt; pde_operator;</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span> </div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  std::shared_ptr&lt;PostProcessorBase&lt;dim, Number&gt;&gt; postprocessor;</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  std::shared_ptr&lt;TimeIntExplRK&lt;Number&gt;&gt; time_integrator;</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span> </div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  <span class="comment">// Computation time (wall clock time)</span></div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  <span class="keyword">mutable</span> <a class="code hl_class" href="classExaDG_1_1TimerTree.html">TimerTree</a> timer_tree;</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>};</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span> </div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>} <span class="comment">// namespace CompNS</span></div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>} <span class="comment">// namespace CompNS</span></div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span> </div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_DRIVER_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_DRIVER_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1CompNS_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1ApplicationBase.html">ExaDG::CompNS::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:48</div></div>
 <div class="ttc" id="aclassExaDG_1_1CompNS_1_1Driver_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1Driver.html">ExaDG::CompNS::Driver</a></div><div class="ttdef"><b>Definition</b> driver.h:55</div></div>
 <div class="ttc" id="aclassExaDG_1_1TimerTree_html"><div class="ttname"><a href="classExaDG_1_1TimerTree.html">ExaDG::TimerTree</a></div><div class="ttdef"><b>Definition</b> timer_tree.h:36</div></div>
