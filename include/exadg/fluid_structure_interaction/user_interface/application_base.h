@@ -83,6 +83,14 @@ public:
   }
 
   void
+  parse_parameters()
+  {
+    dealii::ParameterHandler prm;
+    this->add_parameters(prm);
+    prm.parse_input(parameter_file, "", true, true);
+  }
+
+  void
   setup()
   {
     parse_parameters();
@@ -156,14 +164,6 @@ public:
   create_postprocessor() = 0;
 
 protected:
-  virtual void
-  parse_parameters()
-  {
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(parameter_file, "", true, true);
-  }
-
   MPI_Comm const & mpi_comm;
 
   dealii::ConditionalOStream pcout;
@@ -230,6 +230,14 @@ public:
   {
     resolution.add_parameters(prm, "SpatialResolutionFluid");
     output_parameters.add_parameters(prm, "Output");
+  }
+
+  void
+  parse_parameters()
+  {
+    dealii::ParameterHandler prm;
+    this->add_parameters(prm);
+    prm.parse_input(parameter_file, "", true, true);
   }
 
   void
@@ -401,14 +409,6 @@ public:
   }
 
 protected:
-  virtual void
-  parse_parameters()
-  {
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(parameter_file, "", true, true);
-  }
-
   MPI_Comm const & mpi_comm;
 
   dealii::ConditionalOStream pcout;
