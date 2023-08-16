@@ -556,23 +556,14 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
   }
 
   // VARIABLE VISCOSITY MODELS
-  if(viscosity_is_variable())
+  if(viscosity_is_variable() and
+     temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-    {
-      AssertThrow(
-        treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit,
-        dealii::ExcMessage(
-          "An implicit treatment of the variable viscosity field (rendering the viscous step of the dual splitting scheme nonlinear regarding the unknown velocity field) is currently not implemented for the dual splitting scheme."));
-    }
-
-    if(treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Implicit)
-    {
-      AssertThrow(
-        implicit_convective_problem(),
-        dealii::ExcMessage(
-          "The current implementation only calls a Newton solver, if we have an implicit convective problem. Treat nonlinear convective and viscous terms alike."));
-    }
+    AssertThrow(treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit,
+                dealii::ExcMessage("An implicit treatment of the variable viscosity field "
+                                   "(rendering the viscous step of the dual splitting scheme "
+                                   "nonlinear regarding the unknown velocity field) is currently "
+                                   "not implemented for the dual splitting scheme."));
   }
 
   // SIMPLEX ELEMENTS
@@ -597,22 +588,9 @@ Parameters::viscous_problem() const
 }
 
 bool
-Parameters::viscous_term_is_linear() const
-{
-  return not viscous_term_is_nonlinear();
-}
-
-bool
-Parameters::viscous_term_is_nonlinear() const
-{
-  return (viscosity_is_variable() and
-          treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Implicit);
-}
-
-bool
 Parameters::viscosity_is_variable() const
 {
-  return turbulence_model_data.is_active or generalized_newtonian_model_data.is_active;
+  return (turbulence_model_data.is_active or generalized_newtonian_model_data.is_active);
 }
 
 bool
@@ -634,14 +612,14 @@ Parameters::implicit_convective_problem() const
 bool
 Parameters::nonlinear_viscous_problem() const
 {
-  return viscous_problem() and viscous_term_is_nonlinear();
+  return (viscous_problem() and viscosity_is_variable() and
+          treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Implicit);
 }
 
 bool
 Parameters::nonlinear_problem_has_to_be_solved() const
 {
-  // nonlinear_viscous_problem() ignored, i.e., does not trigger a Newton solve
-  return implicit_convective_problem();
+  return (implicit_convective_problem() or nonlinear_viscous_problem());
 }
 
 bool

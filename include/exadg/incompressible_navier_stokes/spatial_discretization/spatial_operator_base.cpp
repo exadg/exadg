@@ -560,9 +560,13 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
 
   data.unsteady_problem = unsteady_problem_has_to_be_solved();
   if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  {
     data.convective_problem = false;
+  }
   else
+  {
     data.convective_problem = param.implicit_convective_problem();
+  }
   data.viscous_problem = param.viscous_problem();
 
   data.convective_kernel_data = convective_kernel_data;

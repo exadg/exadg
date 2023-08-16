@@ -78,12 +78,6 @@ public:
   print(dealii::ConditionalOStream const & pcout, std::string const & name) const;
 
 private:
-  bool
-  viscous_term_is_linear() const;
-
-  bool
-  viscous_term_is_nonlinear() const;
-
   void
   print_parameters_mathematical_model(dealii::ConditionalOStream const & pcout) const;
 

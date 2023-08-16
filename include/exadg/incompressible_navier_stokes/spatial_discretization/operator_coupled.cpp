@@ -292,7 +292,7 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &     
   else
     dst.block(0) = 0.0;
 
-  if(this->param.convective_problem())
+  if(this->param.implicit_convective_problem())
   {
     this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0), src.block(0), time);
   }
@@ -316,7 +316,7 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &     
   this->gradient_operator.evaluate(temp_vector, src.block(1), time);
   dst.block(0).add(scaling_factor_continuity, temp_vector);
 
-  // constant right-hand side vector (body force vector and sum_alphai_ui term)
+  // constant right-hand side vector (body force, sum_alphai_ui and explicit convective terms)
   dst.block(0).add(-1.0, *rhs_vector);
 
   // pressure-block
@@ -355,7 +355,7 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVectorType
     dst.block(0) *= -1.0;
   }
 
-  if(this->param.convective_problem())
+  if(this->param.implicit_convective_problem())
   {
     this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0), src.block(0), time);
   }
@@ -756,7 +756,7 @@ OperatorCoupled<dim, Number>::setup_pressure_convection_diffusion_operator()
   operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
 
   operator_data.unsteady_problem   = this->unsteady_problem_has_to_be_solved();
-  operator_data.convective_problem = this->param.nonlinear_problem_has_to_be_solved();
+  operator_data.convective_problem = this->param.implicit_convective_problem();
   operator_data.diffusive_problem  = this->param.viscous_problem();
 
   operator_data.convective_kernel_data = convective_kernel_data;
@@ -1171,8 +1171,10 @@ OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &  
         this->momentum_operator.get_scaling_factor_mass_operator());
     }
 
-    if(this->param.nonlinear_problem_has_to_be_solved())
+    if(this->param.implicit_convective_problem())
+    {
       pressure_conv_diff_operator->set_velocity_ptr(this->convective_kernel->get_velocity());
+    }
 
     pressure_conv_diff_operator->apply(dst, tmp_scp_pressure);
 
