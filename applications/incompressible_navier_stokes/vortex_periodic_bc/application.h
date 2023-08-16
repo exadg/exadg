@@ -232,8 +232,8 @@ private:
     this->param.preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard;
 
     // Solve mass matrix
-    this->param.solver_data_mass    = SolverData(1000, ABS_TOL, REL_TOL);
-    this->param.preconditioner_mass = PreconditionerMass::PointJacobi;
+    this->param.inverse_mass_operator.solver_data    = SolverData(1000, ABS_TOL, REL_TOL);
+    this->param.inverse_mass_operator.preconditioner = PreconditionerMass::PointJacobi;
   }
 
   void
