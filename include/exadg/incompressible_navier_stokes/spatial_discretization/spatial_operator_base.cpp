@@ -1112,7 +1112,7 @@ SpatialOperatorBase<dim, Number>::get_characteristic_element_length() const
 {
   double const h_min = calculate_minimum_element_length();
 
-  return calculate_characteristic_element_length(h_min, param.degree_u, true /* is_dg */);
+  return calculate_high_order_element_length(h_min, param.degree_u, true /* is_dg */);
 }
 
 template<int dim, typename Number>

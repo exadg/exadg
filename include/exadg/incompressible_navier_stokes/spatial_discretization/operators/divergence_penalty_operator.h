@@ -8,6 +8,7 @@
 #ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_DIVERGENCE_PENALTY_OPERATOR_H_
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_DIVERGENCE_PENALTY_OPERATOR_H_
 
+#include <exadg/grid/calculate_characteristic_element_length.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/integrator_flags.h>
@@ -30,8 +31,8 @@ namespace IncNS
  *
  *            use convective term:  tau_div_conv = K * ||U||_mean * h_eff
  *
- *                                  where h_eff = h / (k_u+1) and
- *                                  h = V_e^{1/3} with the element volume V_e
+ *                                  where h_eff = h / (k_u+1) with a characteristic
+ *                                  element length h derived from the element volume V_e
  *
  *            use viscous term:     tau_div_viscous = K * nu
  *
@@ -137,6 +138,9 @@ public:
 
     dealii::AlignedVector<scalar> JxW_values(integrator.n_q_points);
 
+    ElementType const element_type =
+      get_element_type(matrix_free->get_dof_handler(dof_index).get_triangulation());
+
     unsigned int n_cells = matrix_free->n_cell_batches() + matrix_free->n_ghost_cell_batches();
     for(unsigned int cell = 0; cell < n_cells; ++cell)
     {
@@ -159,8 +163,10 @@ public:
         }
         norm_U_mean /= volume;
 
-        tau_convective =
-          norm_U_mean * std::exp(std::log(volume) / (double)dim) / (double)(data.degree + 1);
+        scalar h     = calculate_characteristic_element_length(volume, dim, element_type);
+        scalar h_eff = calculate_high_order_element_length(h, data.degree, true);
+
+        tau_convective = norm_U_mean * h_eff;
       }
 
       if(data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm)
