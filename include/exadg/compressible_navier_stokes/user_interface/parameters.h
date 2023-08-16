@@ -23,6 +23,7 @@
 
 #include <exadg/compressible_navier_stokes/user_interface/enum_types.h>
 #include <exadg/grid/grid_data.h>
+#include <exadg/operators/inverse_mass_parameters.h>
 #include <exadg/time_integration/restart_data.h>
 #include <exadg/time_integration/solver_info_data.h>
 #include <exadg/utilities/print_functions.h>
@@ -194,6 +195,17 @@ public:
   // use combined operator for viscous term and convective term in order to improve run
   // time
   bool use_combined_operator;
+
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                 Solver parameters for mass matrix problem                          */
+  /*                                                                                    */
+  /**************************************************************************************/
+  // These parameters are only relevant if the inverse mass can not be realized as a
+  // matrix-free operator evaluation. The typical use case is a DG formulation with non
+  // hypercube elements (e.g. simplex elements).
+
+  InverseMassSolverParameters inverse_mass_operator;
 };
 
 } // namespace CompNS
