@@ -550,8 +550,12 @@ template&lt;int dim, typename BoundaryDescriptor &gt; </td></tr>
 <tr class="memitem:ab4e8cd1d7dfdaf430424ebe151e08bfe"><td class="memTemplParams" colspan="2">template&lt;int dim&gt; </td></tr>
 <tr class="memitem:ab4e8cd1d7dfdaf430424ebe151e08bfe"><td class="memTemplItemLeft" align="right" valign="top">double&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#ab4e8cd1d7dfdaf430424ebe151e08bfe">calculate_minimum_vertex_distance</a> (dealii::Triangulation&lt; dim &gt; const &amp;triangulation, dealii::Mapping&lt; dim &gt; const &amp;mapping, MPI_Comm const &amp;mpi_comm)</td></tr>
 <tr class="separator:ab4e8cd1d7dfdaf430424ebe151e08bfe"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a234ab5185472bd283373a7dee57fb584"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#a234ab5185472bd283373a7dee57fb584">calculate_characteristic_element_length</a> (double const element_length, unsigned int const fe_degree, bool const is_dg)</td></tr>
-<tr class="separator:a234ab5185472bd283373a7dee57fb584"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afca01d4aad096a68644bb099f38840bb"><td class="memTemplParams" colspan="2">template&lt;typename Number &gt; </td></tr>
+<tr class="memitem:afca01d4aad096a68644bb099f38840bb"><td class="memTemplItemLeft" align="right" valign="top">Number&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#afca01d4aad096a68644bb099f38840bb">calculate_characteristic_element_length</a> (Number const element_volume, unsigned int const dim, ElementType const &amp;element_type)</td></tr>
+<tr class="separator:afca01d4aad096a68644bb099f38840bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aab8cd107751c9426891494c743716b12"><td class="memTemplParams" colspan="2">template&lt;typename Number &gt; </td></tr>
+<tr class="memitem:aab8cd107751c9426891494c743716b12"><td class="memTemplItemLeft" align="right" valign="top">Number&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#aab8cd107751c9426891494c743716b12">calculate_high_order_element_length</a> (Number const element_length, unsigned int const fe_degree, bool const is_dg)</td></tr>
+<tr class="separator:aab8cd107751c9426891494c743716b12"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a57fafc16d839db10dd7b832cbe62be55"><td class="memTemplParams" colspan="2"><a id="a57fafc16d839db10dd7b832cbe62be55" name="a57fafc16d839db10dd7b832cbe62be55"></a>
 template&lt;int dim&gt; </td></tr>
 <tr class="memitem:a57fafc16d839db10dd7b832cbe62be55"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>apply_deformed_cube_manifold</b> (dealii::Triangulation&lt; dim &gt; &amp;triangulation, double const left, double const right, double const deformation, unsigned int const frequency)</td></tr>
@@ -957,19 +961,66 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a234ab5185472bd283373a7dee57fb584" name="a234ab5185472bd283373a7dee57fb584"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a234ab5185472bd283373a7dee57fb584">&#9670;&#160;</a></span>calculate_characteristic_element_length()</h2>
+<a id="afca01d4aad096a68644bb099f38840bb" name="afca01d4aad096a68644bb099f38840bb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afca01d4aad096a68644bb099f38840bb">&#9670;&#160;</a></span>calculate_characteristic_element_length()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;typename Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">double ExaDG::calculate_characteristic_element_length </td>
+          <td class="memname">Number ExaDG::calculate_characteristic_element_length </td>
           <td>(</td>
-          <td class="paramtype">double const&#160;</td>
+          <td class="paramtype">Number const&#160;</td>
+          <td class="paramname"><em>element_volume</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>dim</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">ElementType const &amp;&#160;</td>
+          <td class="paramname"><em>element_type</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>This function calculates a characteristic element length given the volume of the element, the number of space dimensions, and the element type. </p>
+
+</div>
+</div>
+<a id="aab8cd107751c9426891494c743716b12" name="aab8cd107751c9426891494c743716b12"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aab8cd107751c9426891494c743716b12">&#9670;&#160;</a></span>calculate_high_order_element_length()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">Number ExaDG::calculate_high_order_element_length </td>
+          <td>(</td>
+          <td class="paramtype">Number const&#160;</td>
           <td class="paramname"><em>element_length</em>, </td>
         </tr>
         <tr>
