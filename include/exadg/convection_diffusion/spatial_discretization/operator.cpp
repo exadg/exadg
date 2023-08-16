@@ -165,8 +165,8 @@ Operator<dim, Number>::setup_operators()
 
   // inverse mass operator
   InverseMassOperatorData inverse_mass_operator_data;
-  inverse_mass_operator_data.dof_index  = get_dof_index();
-  inverse_mass_operator_data.quad_index = get_quad_index();
+  inverse_mass_operator_data.dof_index        = get_dof_index();
+  inverse_mass_operator_data.quad_index       = get_quad_index();
   inverse_mass_operator_data.iterative_solver = param.inverse_mass_operator;
 
   inverse_mass_operator.initialize(*matrix_free, inverse_mass_operator_data);
@@ -360,8 +360,8 @@ Operator<dim, Number>::initialize_preconditioner()
   if(param.preconditioner == Preconditioner::InverseMassMatrix)
   {
     InverseMassOperatorData inverse_mass_operator_data;
-    inverse_mass_operator_data.dof_index  = get_dof_index();
-    inverse_mass_operator_data.quad_index = get_quad_index();
+    inverse_mass_operator_data.dof_index        = get_dof_index();
+    inverse_mass_operator_data.quad_index       = get_quad_index();
     inverse_mass_operator_data.iterative_solver = param.inverse_mass_preconditioner;
 
     preconditioner =

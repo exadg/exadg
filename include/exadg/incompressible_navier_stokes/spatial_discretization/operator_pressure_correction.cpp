@@ -99,8 +99,8 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
   if(this->param.preconditioner_momentum == MomentumPreconditioner::InverseMassMatrix)
   {
     InverseMassOperatorData inverse_mass_operator_data;
-    inverse_mass_operator_data.dof_index  = this->get_dof_index_velocity();
-    inverse_mass_operator_data.quad_index = this->get_quad_index_velocity_linear();
+    inverse_mass_operator_data.dof_index        = this->get_dof_index_velocity();
+    inverse_mass_operator_data.quad_index       = this->get_quad_index_velocity_linear();
     inverse_mass_operator_data.iterative_solver = this->param.inverse_mass_preconditioner;
 
     momentum_preconditioner =
@@ -246,8 +246,8 @@ OperatorPressureCorrection<dim, Number>::setup_inverse_mass_operator_pressure()
   // inverse mass operator pressure (needed for pressure update in case of rotational
   // formulation)
   InverseMassOperatorData inverse_mass_operator_data_pressure;
-  inverse_mass_operator_data_pressure.dof_index  = this->get_dof_index_pressure();
-  inverse_mass_operator_data_pressure.quad_index = this->get_quad_index_pressure();
+  inverse_mass_operator_data_pressure.dof_index        = this->get_dof_index_pressure();
+  inverse_mass_operator_data_pressure.quad_index       = this->get_quad_index_pressure();
   inverse_mass_operator_data_pressure.iterative_solver = this->param.inverse_mass_operator;
 
   inverse_mass_pressure.initialize(this->get_matrix_free(), inverse_mass_operator_data_pressure);

@@ -428,15 +428,15 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   if(param.spatial_discretization == SpatialDiscretization::L2)
   {
     InverseMassOperatorData inverse_mass_operator_data_velocity;
-    inverse_mass_operator_data_velocity.dof_index  = get_dof_index_velocity();
-    inverse_mass_operator_data_velocity.quad_index = get_quad_index_velocity_linear();
+    inverse_mass_operator_data_velocity.dof_index        = get_dof_index_velocity();
+    inverse_mass_operator_data_velocity.quad_index       = get_quad_index_velocity_linear();
     inverse_mass_operator_data_velocity.iterative_solver = param.inverse_mass_operator;
     inverse_mass_velocity.initialize(*matrix_free, inverse_mass_operator_data_velocity);
   }
   // inverse mass operator velocity scalar
   InverseMassOperatorData inverse_mass_operator_data_velocity_scalar;
-  inverse_mass_operator_data_velocity_scalar.dof_index  = get_dof_index_velocity_scalar();
-  inverse_mass_operator_data_velocity_scalar.quad_index = get_quad_index_velocity_linear();
+  inverse_mass_operator_data_velocity_scalar.dof_index        = get_dof_index_velocity_scalar();
+  inverse_mass_operator_data_velocity_scalar.quad_index       = get_quad_index_velocity_linear();
   inverse_mass_operator_data_velocity_scalar.iterative_solver = param.inverse_mass_operator;
   inverse_mass_velocity_scalar.initialize(*matrix_free, inverse_mass_operator_data_velocity_scalar);
 
@@ -1604,8 +1604,8 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
     else if(param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
     {
       InverseMassOperatorData inverse_mass_operator_data;
-      inverse_mass_operator_data.dof_index  = get_dof_index_velocity();
-      inverse_mass_operator_data.quad_index = get_quad_index_velocity_linear();
+      inverse_mass_operator_data.dof_index        = get_dof_index_velocity();
+      inverse_mass_operator_data.quad_index       = get_quad_index_velocity_linear();
       inverse_mass_operator_data.iterative_solver = param.inverse_mass_preconditioner;
 
       preconditioner_projection =

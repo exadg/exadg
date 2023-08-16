@@ -84,14 +84,15 @@ public:
     dealii::FiniteElement<dim> const & fe = matrix_free->get_dof_handler(dof_index).get_fe();
 
     // The inverse mass operator is only available for discontinuous Galerkin discretizations
-    AssertThrow(fe.conforms(dealii::FiniteElementData<dim>::L2), dealii::ExcMessage("InverseMassOperator only implemented for DG!"));
+    AssertThrow(fe.conforms(dealii::FiniteElementData<dim>::L2),
+                dealii::ExcMessage("InverseMassOperator only implemented for DG!"));
 
-      // Currently, the inverse mass realized as matrix-free operator evaluation is only available
-      // in deal.II for tensor-product elements
-      if(fe.base_element(0).dofs_per_cell == dealii::Utilities::pow(fe.degree + 1, dim))
-      {
-        inverse_mass_available_as_matrix_free_operator = true;
-      }
+    // Currently, the inverse mass realized as matrix-free operator evaluation is only available
+    // in deal.II for tensor-product elements
+    if(fe.base_element(0).dofs_per_cell == dealii::Utilities::pow(fe.degree + 1, dim))
+    {
+      inverse_mass_available_as_matrix_free_operator = true;
+    }
 
     // We create a block-Jacobi preconditioner with MassOperator as underlying operator in case the
     // inverse mass can not be realized as a matrix-free operator.

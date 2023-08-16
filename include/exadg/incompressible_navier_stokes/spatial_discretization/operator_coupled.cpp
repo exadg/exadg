@@ -445,8 +445,8 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_velocity_block()
   else if(type == MomentumPreconditioner::InverseMassMatrix)
   {
     InverseMassOperatorData inverse_mass_operator_data;
-    inverse_mass_operator_data.dof_index  = this->get_dof_index_velocity();
-    inverse_mass_operator_data.quad_index = this->get_quad_index_velocity_linear();
+    inverse_mass_operator_data.dof_index        = this->get_dof_index_velocity();
+    inverse_mass_operator_data.quad_index       = this->get_quad_index_velocity_linear();
     inverse_mass_operator_data.iterative_solver = this->param.inverse_mass_preconditioner;
 
     preconditioner_momentum =
@@ -535,8 +535,8 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
   auto type = this->param.preconditioner_pressure_block;
 
   InverseMassOperatorData inverse_mass_operator_data;
-  inverse_mass_operator_data.dof_index  = this->get_dof_index_pressure();
-  inverse_mass_operator_data.quad_index = this->get_quad_index_pressure();
+  inverse_mass_operator_data.dof_index        = this->get_dof_index_pressure();
+  inverse_mass_operator_data.quad_index       = this->get_quad_index_pressure();
   inverse_mass_operator_data.iterative_solver = this->param.inverse_mass_preconditioner;
 
   if(type == SchurComplementPreconditioner::InverseMassMatrix)
