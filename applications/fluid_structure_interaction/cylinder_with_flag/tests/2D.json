@@ -1,0 +1,31 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "true"
+    },
+    "SpatialResolutionFluid": {
+        "Degree": "6",
+        "RefineSpace": "0"
+    },
+    "SpatialResolutionStructure": {
+        "Degree": "2",
+        "RefineSpace": "0"
+    },
+    "FSI" : {
+        "Method": "IQN_ILS",
+        "AbsTol": "1.e-8",
+        "RelTol": "1.e-3", 
+        "OmegaInit": "0.3",
+        "ReusedTimeSteps": "8",
+        "PartitionedIterMax": "100"
+    },
+    "Application" : {
+        "EndTimeFactor": "0.05"
+    },
+    "Output": {
+        "OutputDirectory": "output/cylinder_with_flag/",
+        "OutputName": "test",
+        "WriteOutput": "false"
+  }
+}

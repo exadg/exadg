@@ -87,7 +87,7 @@ unsigned int N_CELLS_FLAG_X = 16;
 double const U_X_MAX  = 1.5 * U_MEAN;
 double const END_TIME = 4.0 * L / U_MEAN;
 
-double const       OUTPUT_INTERVAL_TIME                = END_TIME / 600;
+double const       OUTPUT_INTERVAL_TIME                = 1.0 / 600.0;
 unsigned int const OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS = 1e2;
 
 double const REL_TOL = 1.e-6;
@@ -155,6 +155,28 @@ public:
   {
   }
 
+  void
+  add_parameters(dealii::ParameterHandler & prm) final
+  {
+    ApplicationBase<dim, Number>::add_parameters(prm);
+
+    // clang-format off
+    prm.enter_subsection("General");
+      prm.add_parameter("IsTest",
+                        is_test,
+                        "Shorten or elongate simulation time.",
+                        dealii::Patterns::Bool());
+    prm.leave_subsection();
+
+    prm.enter_subsection("Application");
+      prm.add_parameter("EndTimeFactor",
+                        end_time_factor,
+                        "Shorten or elongate simulation time.",
+                        dealii::Patterns::Double(0.0,1.0e20));
+    prm.leave_subsection();
+    // clang-format on
+  }
+
 private:
   void
   set_parameters() final
@@ -178,7 +200,7 @@ private:
 
     // PHYSICAL QUANTITIES
     param.start_time = 0.0;
-    param.end_time   = END_TIME;
+    param.end_time   = END_TIME * end_time_factor;
     param.viscosity  = FLUID_VISCOSITY;
     param.density    = FLUID_DENSITY;
 
@@ -190,7 +212,7 @@ private:
     param.start_with_low_order            = true;
     param.adaptive_time_stepping          = true;
     param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
-    param.time_step_size                  = END_TIME;
+    param.time_step_size                  = END_TIME * end_time_factor;
     param.max_velocity                    = U_X_MAX;
     param.cfl                             = 0.5;
     param.cfl_exponent_fe_degree_velocity = 1.5;
@@ -572,13 +594,33 @@ private:
     // write output for visualization of results
     pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
     pp_data.output_data.time_control_data.start_time       = 0.0;
-    pp_data.output_data.time_control_data.trigger_interval = OUTPUT_INTERVAL_TIME;
+    pp_data.output_data.time_control_data.trigger_interval = OUTPUT_INTERVAL_TIME * end_time_factor;
     pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = this->output_parameters.filename + "_fluid";
     pp_data.output_data.write_boundary_IDs = true;
     pp_data.output_data.write_processor_id = true;
     pp_data.output_data.write_higher_order = true;
     pp_data.output_data.degree             = this->param.degree_u;
+
+    // Compute norm of the solution ("absolute errors") as reference
+    if(is_test)
+    {
+      // calculation of velocity reference norms
+      pp_data.error_data_u.time_control_data.is_active        = true;
+      pp_data.error_data_u.time_control_data.start_time       = 0.0;
+      pp_data.error_data_u.time_control_data.trigger_interval = END_TIME * end_time_factor * 0.1;
+      pp_data.error_data_u.analytical_solution.reset(new dealii::Functions::ZeroFunction<dim>(dim));
+      pp_data.error_data_u.calculate_relative_errors = false;
+      pp_data.error_data_u.name                      = "velocity";
+
+      // ... pressure reference norms
+      pp_data.error_data_p.time_control_data.is_active        = true;
+      pp_data.error_data_p.time_control_data.start_time       = 0.0;
+      pp_data.error_data_p.time_control_data.trigger_interval = END_TIME * end_time_factor * 0.1;
+      pp_data.error_data_p.analytical_solution.reset(new dealii::Functions::ZeroFunction<dim>(1));
+      pp_data.error_data_p.calculate_relative_errors = false;
+      pp_data.error_data_p.name                      = "pressure";
+    }
 
     std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> pp;
     pp.reset(new IncNS::PostProcessor<dim, Number>(pp_data, this->mpi_comm));
@@ -687,17 +729,25 @@ private:
 
     boundary_descriptor->dirichlet_bc.insert(
       pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+      pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
       pair_mask(BOUNDARY_ID_WALLS, dealii::ComponentMask()));
     boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_INFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
       pair(BOUNDARY_ID_INFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
       pair_mask(BOUNDARY_ID_INFLOW, dealii::ComponentMask()));
     boundary_descriptor->dirichlet_bc.insert(
       pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+      pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
       pair_mask(BOUNDARY_ID_OUTFLOW, dealii::ComponentMask()));
     boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_CYLINDER, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
       pair(BOUNDARY_ID_CYLINDER, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
       pair_mask(BOUNDARY_ID_CYLINDER, dealii::ComponentMask()));
@@ -737,6 +787,9 @@ private:
     field_functions->initial_displacement.reset(new dealii::Functions::ZeroFunction<dim>(dim));
     field_functions->initial_velocity.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
+
+  bool   is_test         = false;
+  double end_time_factor = 1.0;
 };
 } // namespace FluidFSI
 
@@ -749,6 +802,28 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : StructureFSI::ApplicationBase<dim, Number>(input_file, comm)
   {
+  }
+
+  void
+  add_parameters(dealii::ParameterHandler & prm) final
+  {
+    ApplicationBase<dim, Number>::add_parameters(prm);
+
+    // clang-format off
+    prm.enter_subsection("General");
+      prm.add_parameter("IsTest",
+                        is_test,
+                        "Shorten or elongate simulation time.",
+                        dealii::Patterns::Bool());
+    prm.leave_subsection();
+
+    prm.enter_subsection("Application");
+      prm.add_parameter("EndTimeFactor",
+                        end_time_factor,
+                        "Shorten or elongate simulation time.",
+                        dealii::Patterns::Double(0.0,1.0e20));
+    prm.leave_subsection();
+    // clang-format on
   }
 
 private:
@@ -769,8 +844,8 @@ private:
     param.density = DENSITY_STRUCTURE;
 
     param.start_time                           = 0.0;
-    param.end_time                             = END_TIME;
-    param.time_step_size                       = END_TIME / 100.0;
+    param.end_time                             = END_TIME * end_time_factor;
+    param.time_step_size                       = END_TIME * end_time_factor / 100.0;
     param.gen_alpha_type                       = GenAlphaType::BossakAlpha;
     param.spectral_radius                      = 0.8;
     param.solver_info_data.interval_time_steps = OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS;
@@ -1059,6 +1134,8 @@ private:
 
     boundary_descriptor->dirichlet_bc.insert(
       pair(BOUNDARY_ID_CYLINDER, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+      pair(BOUNDARY_ID_CYLINDER, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
       pair_mask(BOUNDARY_ID_CYLINDER, dealii::ComponentMask()));
 
@@ -1100,7 +1177,7 @@ private:
     PostProcessorData<dim> pp_data;
     pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
     pp_data.output_data.time_control_data.start_time       = 0.0;
-    pp_data.output_data.time_control_data.trigger_interval = OUTPUT_INTERVAL_TIME;
+    pp_data.output_data.time_control_data.trigger_interval = OUTPUT_INTERVAL_TIME * end_time_factor;
     pp_data.output_data.directory = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename  = this->output_parameters.filename + "_structure";
 
@@ -1108,11 +1185,26 @@ private:
     pp_data.output_data.write_higher_order = true;
     pp_data.output_data.degree             = this->param.degree;
 
+    // Compute norm of the solution ("absolute error") as reference
+    if(is_test)
+    {
+      // calculation of velocity reference norms
+      pp_data.error_data.time_control_data.is_active        = true;
+      pp_data.error_data.time_control_data.start_time       = 0.0;
+      pp_data.error_data.time_control_data.trigger_interval = END_TIME * end_time_factor * 0.1;
+      pp_data.error_data.analytical_solution.reset(new dealii::Functions::ZeroFunction<dim>(dim));
+      pp_data.error_data.calculate_relative_errors = false;
+      pp_data.error_data.name                      = "displacement";
+    }
+
     std::shared_ptr<PostProcessor<dim, Number>> post(
       new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return post;
   }
+
+  bool   is_test         = false;
+  double end_time_factor = 1.0;
 };
 
 } // namespace StructureFSI

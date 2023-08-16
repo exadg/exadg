@@ -166,10 +166,9 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   // initialize time_integrator
   helpers_ale = std::make_shared<HelpersALE<Number>>();
 
+  bool print_solver_info = is_test ? false : time_integrator->print_solver_info();
   helpers_ale->move_grid = [&](double const & time) {
-    ale_mapping->update(time,
-                        time_integrator->print_solver_info(),
-                        this->time_integrator->get_number_of_time_steps());
+    ale_mapping->update(time, print_solver_info, this->time_integrator->get_number_of_time_steps());
   };
 
   helpers_ale->update_pde_operator_after_grid_motion = [&]() {

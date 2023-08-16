@@ -677,16 +677,22 @@ private:
     std::vector<bool> mask = {false, true, true};
     boundary_descriptor->dirichlet_bc.insert(
       pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
+      pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(BOUNDARY_ID_WALLS, mask));
 
     // inflow
     boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_INFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
       pair(BOUNDARY_ID_INFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
       pair_mask(BOUNDARY_ID_INFLOW, dealii::ComponentMask()));
 
     // outflow
     boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
       pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
       pair_mask(BOUNDARY_ID_OUTFLOW, dealii::ComponentMask()));
@@ -856,6 +862,8 @@ private:
 
     // lower boundary is clamped
     boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
       pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
       pair_mask(BOUNDARY_ID_WALLS, dealii::ComponentMask()));
