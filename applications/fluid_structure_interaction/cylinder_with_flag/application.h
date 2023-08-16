@@ -205,14 +205,15 @@ private:
     param.density    = FLUID_DENSITY;
 
     // TEMPORAL DISCRETIZATION
-    param.solver_type                     = SolverType::Unsteady;
-    param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
-    param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
-    param.order_time_integrator           = 2;
-    param.start_with_low_order            = true;
-    param.adaptive_time_stepping          = true;
-    param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
-    param.time_step_size                  = END_TIME * end_time_factor;
+    param.solver_type                  = SolverType::Unsteady;
+    param.temporal_discretization      = TemporalDiscretization::BDFDualSplittingScheme;
+    param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+    param.order_time_integrator        = 2;
+    param.start_with_low_order         = true;
+    param.adaptive_time_stepping       = is_test ? false : true;
+    param.calculation_of_time_step_size =
+      param.adaptive_time_stepping ? TimeStepCalculation::CFL : TimeStepCalculation::UserSpecified;
+    param.time_step_size                  = 1e-2;
     param.max_velocity                    = U_X_MAX;
     param.cfl                             = 0.5;
     param.cfl_exponent_fe_degree_velocity = 1.5;

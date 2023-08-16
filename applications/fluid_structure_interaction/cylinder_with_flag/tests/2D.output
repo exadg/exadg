@@ -112,11 +112,8 @@ Physical quantities:
 Temporal discretization:
   Temporal discretization method:            BDFDualSplittingScheme
   Treatment of convective term:              Explicit
-  Calculation of time step size:             CFL
-  Adaptive time stepping:                    true
-  Adaptive time stepping limiting factor:    1.2000e+00
-  Maximum allowable time step size:          1.7977e+308
-  Type of CFL condition:                     VelocityNorm
+  Calculation of time step size:             UserSpecified
+  Adaptive time stepping:                    false
   Maximum number of time steps:              4294967295
   Temporal refinements:                      0
   Order of time integration scheme:          2
@@ -330,11 +327,9 @@ Setup incompressible Navier-Stokes operator ...
 
 Setup BDF time integrator ...
 
-Calculation of time step size according to CFL condition:
+User specified time step size:
 
-  CFL:                                       5.0000e-01
-  Time step size (global):                   4.2017e-04
-  Time step size (adaptive):                 4.2017e-04
+  time step size:                            1.0000e-02
 
 ... done!
 
@@ -364,7 +359,7 @@ Calculate error for pressure at time t = 0.0000e+00:
 
 ________________________________________________________________________________
 
- Time step number = 1       t = 0.00000e+00 -> t + dt = 4.20171e-04
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 1.00000e-02
 ________________________________________________________________________________
 
 Starting time loop ...
@@ -376,94 +371,102 @@ Calculate error for displacement at time t = 0.0000e+00:
  Partitioned FSI: iteration counter = 0       
 ======================================================================
 
-Partitioned FSI iteration converged in 1 iterations.
+======================================================================
+ Partitioned FSI: iteration counter = 1       
+======================================================================
 
-Calculate error for velocity at time t = 5.3831e-02:
-  Absolute error (L2-norm): 1.83848e-03
+======================================================================
+ Partitioned FSI: iteration counter = 2       
+======================================================================
 
-Calculate error for pressure at time t = 5.3831e-02:
-  Absolute error (L2-norm): 9.77570e-02
+Partitioned FSI iteration converged in 3 iterations.
 
-Calculate error for displacement at time t = 5.3831e-02:
-  Absolute error (L2-norm): 2.82186e-07
+Calculate error for velocity at time t = 5.0000e-02:
+  Absolute error (L2-norm): 1.57620e-03
 
-Calculate error for velocity at time t = 1.1388e-01:
-  Absolute error (L2-norm): 8.26284e-03
+Calculate error for pressure at time t = 5.0000e-02:
+  Absolute error (L2-norm): 9.01074e-02
 
-Calculate error for pressure at time t = 1.1388e-01:
-  Absolute error (L2-norm): 2.11158e-01
+Calculate error for displacement at time t = 5.0000e-02:
+  Absolute error (L2-norm): 2.29401e-07
 
-Calculate error for displacement at time t = 1.1388e-01:
-  Absolute error (L2-norm): 4.70764e-07
+Calculate error for velocity at time t = 1.0000e-01:
+  Absolute error (L2-norm): 6.37359e-03
 
-Calculate error for velocity at time t = 1.6491e-01:
-  Absolute error (L2-norm): 1.73477e-02
+Calculate error for pressure at time t = 1.0000e-01:
+  Absolute error (L2-norm): 1.85068e-01
 
-Calculate error for pressure at time t = 1.6491e-01:
-  Absolute error (L2-norm): 3.08246e-01
+Calculate error for displacement at time t = 1.0000e-01:
+  Absolute error (L2-norm): 5.05372e-07
 
-Calculate error for displacement at time t = 1.6491e-01:
-  Absolute error (L2-norm): 5.31413e-07
+Calculate error for velocity at time t = 1.5000e-01:
+  Absolute error (L2-norm): 1.43516e-02
 
-Calculate error for velocity at time t = 2.3840e-01:
-  Absolute error (L2-norm): 3.62544e-02
+Calculate error for pressure at time t = 1.5000e-01:
+  Absolute error (L2-norm): 2.79008e-01
 
-Calculate error for pressure at time t = 2.3840e-01:
-  Absolute error (L2-norm): 4.48810e-01
+Calculate error for displacement at time t = 1.5000e-01:
+  Absolute error (L2-norm): 4.54834e-07
 
-Calculate error for displacement at time t = 2.3840e-01:
-  Absolute error (L2-norm): 7.19376e-07
+Calculate error for velocity at time t = 2.0000e-01:
+  Absolute error (L2-norm): 2.54836e-02
 
-Calculate error for velocity at time t = 2.7533e-01:
-  Absolute error (L2-norm): 4.82826e-02
+Calculate error for pressure at time t = 2.0000e-01:
+  Absolute error (L2-norm): 3.73154e-01
 
-Calculate error for pressure at time t = 2.7533e-01:
-  Absolute error (L2-norm): 5.17095e-01
+Calculate error for displacement at time t = 2.0000e-01:
+  Absolute error (L2-norm): 6.95630e-07
 
-Calculate error for displacement at time t = 2.7533e-01:
-  Absolute error (L2-norm): 6.70732e-07
+Calculate error for velocity at time t = 2.5000e-01:
+  Absolute error (L2-norm): 3.97057e-02
 
-Calculate error for velocity at time t = 3.0611e-01:
-  Absolute error (L2-norm): 5.94777e-02
+Calculate error for pressure at time t = 2.5000e-01:
+  Absolute error (L2-norm): 4.65145e-01
 
-Calculate error for pressure at time t = 3.0611e-01:
-  Absolute error (L2-norm): 5.65774e-01
+Calculate error for displacement at time t = 2.5000e-01:
+  Absolute error (L2-norm): 5.71230e-07
 
-Calculate error for displacement at time t = 3.0611e-01:
-  Absolute error (L2-norm): 7.08865e-07
+Calculate error for velocity at time t = 3.0000e-01:
+  Absolute error (L2-norm): 5.69439e-02
 
-Calculate error for velocity at time t = 3.5313e-01:
-  Absolute error (L2-norm): 7.86134e-02
+Calculate error for pressure at time t = 3.0000e-01:
+  Absolute error (L2-norm): 5.55896e-01
 
-Calculate error for pressure at time t = 3.5313e-01:
-  Absolute error (L2-norm): 6.46184e-01
+Calculate error for displacement at time t = 3.0000e-01:
+  Absolute error (L2-norm): 7.64290e-07
 
-Calculate error for displacement at time t = 3.5313e-01:
-  Absolute error (L2-norm): 8.63515e-07
+Calculate error for velocity at time t = 3.5000e-01:
+  Absolute error (L2-norm): 7.71008e-02
 
-Calculate error for velocity at time t = 4.0164e-01:
-  Absolute error (L2-norm): 1.00930e-01
+Calculate error for pressure at time t = 3.5000e-01:
+  Absolute error (L2-norm): 6.43989e-01
 
-Calculate error for pressure at time t = 4.0164e-01:
-  Absolute error (L2-norm): 7.30855e-01
+Calculate error for displacement at time t = 3.5000e-01:
+  Absolute error (L2-norm): 8.29746e-07
 
-Calculate error for displacement at time t = 4.0164e-01:
-  Absolute error (L2-norm): 1.10949e-06
+Calculate error for velocity at time t = 4.0000e-01:
+  Absolute error (L2-norm): 1.00060e-01
 
-Calculate error for velocity at time t = 4.5247e-01:
-  Absolute error (L2-norm): 1.27055e-01
+Calculate error for pressure at time t = 4.0000e-01:
+  Absolute error (L2-norm): 7.29087e-01
 
-Calculate error for pressure at time t = 4.5247e-01:
-  Absolute error (L2-norm): 8.12876e-01
+Calculate error for displacement at time t = 4.0000e-01:
+  Absolute error (L2-norm): 1.11664e-06
 
-Calculate error for displacement at time t = 4.5247e-01:
-  Absolute error (L2-norm): 1.53854e-06
+Calculate error for velocity at time t = 4.5000e-01:
+  Absolute error (L2-norm): 1.25691e-01
 
-Calculate error for velocity at time t = 5.0439e-01:
-  Absolute error (L2-norm): 1.56426e-01
+Calculate error for pressure at time t = 4.5000e-01:
+  Absolute error (L2-norm): 8.10024e-01
 
-Calculate error for pressure at time t = 5.0439e-01:
-  Absolute error (L2-norm): 8.92213e-01
+Calculate error for displacement at time t = 4.5000e-01:
+  Absolute error (L2-norm): 1.50536e-06
 
-Calculate error for displacement at time t = 5.0439e-01:
-  Absolute error (L2-norm): 2.11027e-06
+Calculate error for velocity at time t = 5.0000e-01:
+  Absolute error (L2-norm): 1.53843e-01
+
+Calculate error for pressure at time t = 5.0000e-01:
+  Absolute error (L2-norm): 8.87107e-01
+
+Calculate error for displacement at time t = 5.0000e-01:
+  Absolute error (L2-norm): 2.03330e-06

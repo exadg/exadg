@@ -87,6 +87,10 @@ public:
    * Computation time (wall clock time).
    */
   std::shared_ptr<TimerTree> timer_tree;
+
+private:
+  // do not print wall times if is_test
+  bool is_test = false;
 };
 
 template<int dim, typename Number>
@@ -95,6 +99,8 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
                                 MPI_Comm const                                          mpi_comm,
                                 bool const                                              is_test)
 {
+  this->is_test = is_test;
+
   // ALE: create grid motion object
   if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)
   {
@@ -148,8 +154,9 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   // initialize time_integrator
   helpers_ale = std::make_shared<HelpersALE<Number>>();
 
-  bool print_solver_info = is_test ? false : time_integrator->print_solver_info();
   helpers_ale->move_grid = [&](double const & time) {
+    bool const print_solver_info =
+      this->is_test ? false : this->time_integrator->print_solver_info();
     ale_mapping->update(time, print_solver_info, this->time_integrator->get_number_of_time_steps());
   };
 
