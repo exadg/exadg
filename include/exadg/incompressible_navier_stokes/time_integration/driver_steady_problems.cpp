@@ -164,7 +164,7 @@ DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_pro
     if(this->param.right_hand_side)
       pde_operator->evaluate_add_body_force_term(rhs, time);
 
-    // Newton solver with viscosity update
+    // Newton solver
     auto const iter = pde_operator->solve_nonlinear_problem(
       solution, rhs, this->param.update_preconditioner_coupled, time);
 

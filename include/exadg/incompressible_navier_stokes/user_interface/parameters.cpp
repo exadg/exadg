@@ -556,7 +556,7 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
   }
 
   // VARIABLE VISCOSITY MODELS
-  if(viscosity_is_variable() &&
+  if(viscosity_is_variable() and
      temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
     AssertThrow(treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit,

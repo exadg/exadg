@@ -260,7 +260,7 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
 
     // Add the convective term to the right-hand side of the equations
     // if the convective term is treated explicitly (additive decomposition):
-    // evaluate convective term and add extrapolation of convective term to the rhs (-> minus sign!)
+    // add extrapolation of convective term to the rhs (-> minus sign!)
     if(this->param.convective_problem() and
        this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
     {
@@ -301,7 +301,7 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
 
     // Add the convective term to the right-hand side of the equations
     // if the convective term is treated explicitly (additive decomposition):
-    // evaluate convective term and add extrapolation of convective term to the rhs (-> minus sign!)
+    // add extrapolation of convective term to the rhs (-> minus sign!)
     if(this->param.convective_problem() and
        this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
     {
