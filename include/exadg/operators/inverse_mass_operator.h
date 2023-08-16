@@ -28,6 +28,7 @@
 
 // ExaDG
 #include <exadg/matrix_free/integrators.h>
+#include <exadg/operators/inverse_mass_parameters.h>
 #include <exadg/operators/mass_operator.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 
@@ -35,16 +36,16 @@ namespace ExaDG
 {
 struct InverseMassOperatorData
 {
-  unsigned int dof_index  = 0;
-  unsigned int quad_index = 0;
+  InverseMassOperatorData() : dof_index(0), quad_index(0)
+  {
+  }
 
-  // Only relevant if the inverse mass can not be realized as a matrix-free operator
-  bool implement_block_diagonal_preconditioner_matrix_free = true;
+  // Parameters referring to dealii::MatrixFree
+  unsigned int dof_index;
+  unsigned int quad_index;
 
-  // If the above parameter is set to true, an elementwise Krylov solver with matrix-free
-  // implementation is used to solve the elementwise problem. In this case, one can specify solver
-  // tolerances for the linear system of equations.
-  SolverData solver_data_block_diagonal = SolverData(1000, 1e-12, 1e-10);
+  // only relevant if an explicit matrix-free inverse mass operator is not available
+  InverseMassSolverParameters iterative_solver;
 };
 
 template<int dim, int n_components, typename Number>
@@ -83,19 +84,14 @@ public:
     dealii::FiniteElement<dim> const & fe = matrix_free->get_dof_handler(dof_index).get_fe();
 
     // The inverse mass operator is only available for discontinuous Galerkin discretizations
-    if(fe.conforms(dealii::FiniteElementData<dim>::L2))
-    {
+    AssertThrow(fe.conforms(dealii::FiniteElementData<dim>::L2), dealii::ExcMessage("InverseMassOperator only implemented for DG!"));
+
       // Currently, the inverse mass realized as matrix-free operator evaluation is only available
       // in deal.II for tensor-product elements
       if(fe.base_element(0).dofs_per_cell == dealii::Utilities::pow(fe.degree + 1, dim))
       {
         inverse_mass_available_as_matrix_free_operator = true;
       }
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("InverseMassOperator only implemented for DG!"));
-    }
 
     // We create a block-Jacobi preconditioner with MassOperator as underlying operator in case the
     // inverse mass can not be realized as a matrix-free operator.
@@ -110,11 +106,19 @@ public:
       mass_operator_data.dof_index  = dof_index;
       mass_operator_data.quad_index = quad_index;
       mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
-        inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free;
-      mass_operator_data.solver_block_diagonal         = Elementwise::Solver::CG;
-      mass_operator_data.preconditioner_block_diagonal = Elementwise::Preconditioner::None;
-      mass_operator_data.solver_data_block_diagonal =
-        inverse_mass_operator_data.solver_data_block_diagonal;
+        inverse_mass_operator_data.iterative_solver.implement_block_diagonal_solver_matrix_free;
+      mass_operator_data.solver_block_diagonal = Elementwise::Solver::CG;
+      if(inverse_mass_operator_data.iterative_solver.preconditioner == PreconditionerMass::None)
+      {
+        mass_operator_data.preconditioner_block_diagonal = Elementwise::Preconditioner::None;
+      }
+      else if(inverse_mass_operator_data.iterative_solver.preconditioner ==
+              PreconditionerMass::PointJacobi)
+      {
+        mass_operator_data.preconditioner_block_diagonal = Elementwise::Preconditioner::PointJacobi;
+        mass_operator_data.solver_data_block_diagonal =
+          inverse_mass_operator_data.iterative_solver.solver_data;
+      }
 
       mass_operator.initialize(*matrix_free, constraint, mass_operator_data);
 

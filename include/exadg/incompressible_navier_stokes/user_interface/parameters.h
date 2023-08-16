@@ -29,6 +29,7 @@
 #include <exadg/grid/grid_data.h>
 #include <exadg/incompressible_navier_stokes/user_interface/enum_types.h>
 #include <exadg/incompressible_navier_stokes/user_interface/viscosity_model_data.h>
+#include <exadg/operators/inverse_mass_parameters.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver_data.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/enum_types.h>
@@ -463,6 +464,35 @@ public:
 
   /**************************************************************************************/
   /*                                                                                    */
+  /*                 Solver parameters for mass matrix problem                          */
+  /*                                                                                    */
+  /**************************************************************************************/
+  // These parameters are relevant if the inverse mass can not be realized as a
+  // matrix-free operator evaluation. Typical use cases are a DG formulation with non
+  // hypercube elements (e.g. simplex) or an H(div)-conforming formulation.
+
+  InverseMassSolverParameters inverse_mass_operator;
+
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                            InverseMassPreconditioner                               */
+  /*                                                                                    */
+  /**************************************************************************************/
+
+  // This parameter is used for all inverse mass preconditioners used for incompressible
+  // Navier-Stokes solvers. Note that there is a separate parameter above for the inverse
+  // mass operator (which needs to be inverted "exactly" for reasons of accuracy).
+  // This parameter is only relevant if the mass operator is block diagonal and if the
+  // inverse mass operator can not be realized as a matrix-free operator evaluation. The
+  // typical use case is a DG formulation with non hypercube elements (e.g. simplex). In
+  // these cases, however, you should think about replacing the inverse mass preconditioner
+  // by a simple point Jacobi preconditioner as an efficient alternative to the (exact)
+  // inverse mass preconditioner.
+
+  InverseMassSolverParameters inverse_mass_preconditioner;
+
+  /**************************************************************************************/
+  /*                                                                                    */
   /*                                 PROJECTION METHODS                                 */
   /*                                                                                    */
   /**************************************************************************************/
@@ -683,27 +713,6 @@ public:
   // solver data for Schur complement
   // (only relevant if exact_inversion_of_laplace_operator == true)
   SolverData solver_data_pressure_block;
-
-
-
-  /**************************************************************************************/
-  /*                                                                                    */
-  /*                            SOLVE MASS SYSTEM (projection)                          */
-  /*                                                                                    */
-  /**************************************************************************************/
-  // Used when matrix-free inverse mass operator is not avaliable, e.g in the case of HDIV.
-
-  // solver data for solving mass system
-  SolverData solver_data_mass;
-
-  // description: see enum declaration
-  PreconditionerMass preconditioner_mass;
-
-  // Used when matrix-free inverse mass operator is not available and when the spatial
-  // discretization is DG, e.g. simplex.
-  bool solve_elementwise_mass_system_matrix_free;
-
-  SolverData solver_data_elementwise_inverse_mass;
 };
 
 } // namespace IncNS
