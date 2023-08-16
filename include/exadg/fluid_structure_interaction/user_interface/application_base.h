@@ -76,18 +76,10 @@ public:
   }
 
   virtual void
-  add_parameters(dealii::ParameterHandler & prm) final
+  add_parameters(dealii::ParameterHandler & prm)
   {
     resolution.add_parameters(prm, "SpatialResolutionStructure");
     output_parameters.add_parameters(prm, "Output");
-  }
-
-  void
-  parse_parameters()
-  {
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(parameter_file, "", true, true);
   }
 
   void
@@ -164,6 +156,14 @@ public:
   create_postprocessor() = 0;
 
 protected:
+  virtual void
+  parse_parameters()
+  {
+    dealii::ParameterHandler prm;
+    this->add_parameters(prm);
+    prm.parse_input(parameter_file, "", true, true);
+  }
+
   MPI_Comm const & mpi_comm;
 
   dealii::ConditionalOStream pcout;
@@ -226,18 +226,10 @@ public:
   }
 
   virtual void
-  add_parameters(dealii::ParameterHandler & prm) final
+  add_parameters(dealii::ParameterHandler & prm)
   {
     resolution.add_parameters(prm, "SpatialResolutionFluid");
     output_parameters.add_parameters(prm, "Output");
-  }
-
-  void
-  parse_parameters()
-  {
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-    prm.parse_input(parameter_file, "", true, true);
   }
 
   void
@@ -409,6 +401,14 @@ public:
   }
 
 protected:
+  virtual void
+  parse_parameters()
+  {
+    dealii::ParameterHandler prm;
+    this->add_parameters(prm);
+    prm.parse_input(parameter_file, "", true, true);
+  }
+
   MPI_Comm const & mpi_comm;
 
   dealii::ConditionalOStream pcout;
