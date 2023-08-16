@@ -28,6 +28,7 @@
 // ExaDG
 #include <exadg/convection_diffusion/user_interface/enum_types.h>
 #include <exadg/grid/grid_data.h>
+#include <exadg/operators/inverse_mass_parameters.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/enum_types.h>
 #include <exadg/solvers_and_preconditioners/solvers/enum_types.h>
@@ -239,7 +240,34 @@ public:
   // interior penalty parameter scaling factor: default value is 1.0
   double IP_factor;
 
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                 Solver parameters for mass matrix problem                          */
+  /*                                                                                    */
+  /**************************************************************************************/
+  // These parameters are only relevant if the inverse mass can not be realized as a
+  // matrix-free operator evaluation. The typical use case is a DG formulation with non
+  // hypercube elements (e.g. simplex elements).
 
+  InverseMassSolverParameters inverse_mass_operator;
+
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                            InverseMassPreconditioner                               */
+  /*                                                                                    */
+  /**************************************************************************************/
+
+  // This parameter is used for the inverse mass preconditioner. Note that there is a
+  // separate parameter above for the inverse mass operator (which needs to be inverted
+  // "exactly" for reasons of accuracy).
+  // This parameter is only relevant if the inversion of the block-diagonal mass operator
+  // can not be realized as a matrix-free operator evaluation. The typical use case is a
+  // DG formulation with non hypercube elements (e.g. simplex). In this case, however,
+  // you should think about replacing the inverse mass preconditioner by a simple point
+  // Jacobi preconditioner as an efficient alternative to the (exact) inverse mass
+  // preconditioner.
+
+  InverseMassSolverParameters inverse_mass_preconditioner;
 
   /**************************************************************************************/
   /*                                                                                    */

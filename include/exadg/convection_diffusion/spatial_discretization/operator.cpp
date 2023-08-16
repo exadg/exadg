@@ -167,6 +167,8 @@ Operator<dim, Number>::setup_operators()
   InverseMassOperatorData inverse_mass_operator_data;
   inverse_mass_operator_data.dof_index  = get_dof_index();
   inverse_mass_operator_data.quad_index = get_quad_index();
+  inverse_mass_operator_data.iterative_solver = param.inverse_mass_operator;
+
   inverse_mass_operator.initialize(*matrix_free, inverse_mass_operator_data);
 
   // convective operator
@@ -360,6 +362,8 @@ Operator<dim, Number>::initialize_preconditioner()
     InverseMassOperatorData inverse_mass_operator_data;
     inverse_mass_operator_data.dof_index  = get_dof_index();
     inverse_mass_operator_data.quad_index = get_quad_index();
+    inverse_mass_operator_data.iterative_solver = param.inverse_mass_preconditioner;
+
     preconditioner =
       std::make_shared<InverseMassPreconditioner<dim, 1, Number>>(*matrix_free,
                                                                   inverse_mass_operator_data);
