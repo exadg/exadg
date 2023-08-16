@@ -301,6 +301,29 @@ Operator<dim, Number>::setup_operators()
 
 template<int dim, typename Number>
 void
+Operator<dim, Number>::setup()
+{
+  // initialize MatrixFree and MatrixFreeData
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> mf =
+    std::make_shared<dealii::MatrixFree<dim, Number>>();
+  std::shared_ptr<MatrixFreeData<dim, Number>> mf_data =
+    std::make_shared<MatrixFreeData<dim, Number>>();
+
+  fill_matrix_free_data(*mf_data);
+
+  mf->reinit(get_mapping(),
+             mf_data->get_dof_handler_vector(),
+             mf_data->get_constraint_vector(),
+             mf_data->get_quadrature_vector(),
+             mf_data->data);
+
+  // Subsequently, call the other setup function with MatrixFree/MatrixFreeData objects as
+  // arguments.
+  this->setup(mf, mf_data);
+}
+
+template<int dim, typename Number>
+void
 Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
                              std::shared_ptr<MatrixFreeData<dim, Number> const> matrix_free_data_in)
 {
@@ -981,10 +1004,10 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
 }
 
 template<int dim, typename Number>
-dealii::MatrixFree<dim, Number> const &
+std::shared_ptr<dealii::MatrixFree<dim, Number> const>
 Operator<dim, Number>::get_matrix_free() const
 {
-  return *matrix_free;
+  return matrix_free;
 }
 
 template<int dim, typename Number>

@@ -55,12 +55,9 @@ OperatorPressureCorrection<dim, Number>::~OperatorPressureCorrection()
 
 template<int dim, typename Number>
 void
-OperatorPressureCorrection<dim, Number>::setup(
-  std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
-  std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
-  std::string const &                                    dof_index_temperature)
+OperatorPressureCorrection<dim, Number>::setup_derived()
 {
-  ProjectionBase::setup(matrix_free, matrix_free_data, dof_index_temperature);
+  ProjectionBase::setup_derived();
 
   setup_inverse_mass_operator_pressure();
 }

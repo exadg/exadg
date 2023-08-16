@@ -63,24 +63,8 @@ public:
     pde_operator = std::make_shared<Poisson::Operator<dim, dim, Number>>(
       grid, mapping_undeformed, boundary_descriptor, field_functions, param, field, mpi_comm);
 
-    // initialize matrix_free_data
-    matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-
-    if(param.enable_cell_based_face_loops)
-      Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
-
-    matrix_free_data->append(pde_operator);
-
-    // initialize matrix_free
-    matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-    matrix_free->reinit(*mapping_undeformed,
-                        matrix_free_data->get_dof_handler_vector(),
-                        matrix_free_data->get_constraint_vector(),
-                        matrix_free_data->get_quadrature_vector(),
-                        matrix_free_data->data);
-
     // setup PDE operator and solver
-    pde_operator->setup(matrix_free, matrix_free_data);
+    pde_operator->setup();
     pde_operator->setup_solver();
 
     // finally, initialize dof vector
@@ -93,10 +77,10 @@ public:
     return pde_operator;
   }
 
-  std::shared_ptr<dealii::MatrixFree<dim, Number> const>
+  dealii::MatrixFree<dim, Number> const &
   get_matrix_free() const
   {
-    return matrix_free;
+    return *pde_operator->get_matrix_free();
   }
 
   /**
@@ -151,10 +135,6 @@ public:
   }
 
 private:
-  // matrix-free
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
-
   // PDE operator
   std::shared_ptr<Poisson::Operator<dim, dim, Number>> pde_operator;
 

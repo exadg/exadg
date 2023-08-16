@@ -94,10 +94,6 @@ private:
   // user parameters
   Parameters param;
 
-  // matrix-free
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
-
   // operator
   std::shared_ptr<Operator<dim, Number>> pde_operator;
 

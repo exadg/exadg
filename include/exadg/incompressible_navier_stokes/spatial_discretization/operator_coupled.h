@@ -209,11 +209,11 @@ public:
    */
   virtual ~OperatorCoupled();
 
+private:
   void
-  setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
-        std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
-        std::string const &                                    dof_index_temperature = "") final;
+  setup_derived() final;
 
+public:
   void
   setup_solvers(double const &     scaling_factor_time_derivative_term,
                 VectorType const & velocity) final;

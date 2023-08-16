@@ -71,21 +71,8 @@ public:
                                                            field,
                                                            mpi_comm);
 
-    // ALE: initialize matrix_free_data
-    matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-
-    matrix_free_data->append(pde_operator);
-
-    // initialize matrix_free
-    matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-    matrix_free->reinit(*mapping_undeformed,
-                        matrix_free_data->get_dof_handler_vector(),
-                        matrix_free_data->get_constraint_vector(),
-                        matrix_free_data->get_quadrature_vector(),
-                        matrix_free_data->data);
-
     // setup PDE operator and solver
-    pde_operator->setup(matrix_free, matrix_free_data);
+    pde_operator->setup();
     pde_operator->setup_solver(0.0 /* no acceleration term */, 0.0 /* no damping term */);
 
     // finally, initialize dof vector
@@ -98,10 +85,10 @@ public:
     return pde_operator;
   }
 
-  std::shared_ptr<dealii::MatrixFree<dim, Number> const>
+  dealii::MatrixFree<dim, Number> const &
   get_matrix_free() const
   {
-    return matrix_free;
+    return *pde_operator->get_matrix_free();
   }
 
   /**

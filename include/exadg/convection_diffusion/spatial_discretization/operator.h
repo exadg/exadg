@@ -65,10 +65,17 @@ public:
   void
   fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
 
-  /*
-   * Setup function. Initializes basic finite element components, matrix-free object, and basic
-   * operators. This function does not perform the setup related to the solution of linear systems
-   * of equations.
+  /**
+   * Call this setup() function if the dealii::MatrixFree object can be set up by the present class.
+   */
+  void
+  setup();
+
+  /**
+   * Call this setup() function if the dealii::MatrixFree object needs to be created outside this
+   * class. The typical use case would be multiphysics-coupling with one MatrixFree object handed
+   * over to several single-field solvers. Another typical use case is the use of an ALE
+   * formulation.
    */
   void
   setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
@@ -198,7 +205,7 @@ public:
    * Updates spatial operators after grid has been moved.
    */
   void
-  update_after_grid_motion() final;
+  update_after_grid_motion(bool const update_matrix_free);
 
   /*
    * Fills a dof-vector with grid coordinates for ALE-type problems.
@@ -386,6 +393,11 @@ private:
    */
   std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free;
   std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data;
+
+  // If we want to be able to update the mapping, we need a pointer to a non-const MatrixFree
+  // object. In case this object is created, we let the above object called matrix_free point to
+  // matrix_free_own_storage. This variable is needed for ALE formulations.
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_own_storage;
 
   /*
    * Basic operators.

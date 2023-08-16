@@ -80,9 +80,7 @@ Driver<dim, Number>::setup()
     };
 
     helpers_ale->update_pde_operator_after_grid_motion = [&]() {
-      matrix_free->update_mapping(*ale_mapping);
-
-      pde_operator->update_after_grid_motion();
+      pde_operator->update_after_grid_motion(true);
     };
   }
 
@@ -98,23 +96,8 @@ Driver<dim, Number>::setup()
                                                          "scalar",
                                                          mpi_comm);
 
-  // initialize matrix_free
-  matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-  matrix_free_data->append(pde_operator);
-
-  matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-  if(application->get_parameters().use_cell_based_face_loops)
-    Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
-                                        matrix_free_data->data);
-
-  matrix_free->reinit(*dynamic_mapping,
-                      matrix_free_data->get_dof_handler_vector(),
-                      matrix_free_data->get_constraint_vector(),
-                      matrix_free_data->get_quadrature_vector(),
-                      matrix_free_data->data);
-
   // setup convection-diffusion operator
-  pde_operator->setup(matrix_free, matrix_free_data);
+  pde_operator->setup();
 
   if(not is_throughput_study)
   {
