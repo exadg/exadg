@@ -223,17 +223,28 @@ Driver<dim, Number>::coupling_structure_to_ale(VectorType const & displacement_s
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::coupling_structure_to_fluid(bool const extrapolate) const
+Driver<dim, Number>::coupling_structure_to_fluid(unsigned int iteration) const
 {
   dealii::Timer sub_timer;
   sub_timer.restart();
 
   VectorType velocity_structure;
   structure->pde_operator->initialize_dof_vector(velocity_structure);
-  if(extrapolate)
-    structure->time_integrator->extrapolate_velocity_to_np(velocity_structure);
+  if(iteration == 0)
+  {
+    if(parameters.use_extrapolation)
+    {
+      structure->time_integrator->extrapolate_velocity_to_np(velocity_structure);
+    }
+    else
+    {
+      velocity_structure = structure->time_integrator->get_velocity_n();
+    }
+  }
   else
+  {
     velocity_structure = structure->time_integrator->get_velocity_np();
+  }
 
   structure_to_fluid->update_data(velocity_structure);
 
@@ -281,16 +292,18 @@ Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType &       d_tilde,
   fluid->solve_ale();
 
   // update velocity boundary condition for fluid
-  coupling_structure_to_fluid(iteration == 0);
+  coupling_structure_to_fluid(iteration);
 
   // solve fluid problem
-  fluid->time_integrator->advance_one_timestep_partitioned_solve(iteration == 0);
+  fluid->time_integrator->advance_one_timestep_partitioned_solve(iteration ==
+                                                                 0 /* use_extrapolation */);
 
   // update stress boundary condition for solid
-  coupling_fluid_to_structure(/* end_of_time_step = */ true);
+  coupling_fluid_to_structure(true /* end_of_time_step */);
 
   // solve structural problem
-  structure->time_integrator->advance_one_timestep_partitioned_solve(iteration == 0);
+  structure->time_integrator->advance_one_timestep_partitioned_solve(iteration ==
+                                                                     0 /* use_extrapolation */);
 
   d_tilde = structure->time_integrator->get_displacement_np();
 }

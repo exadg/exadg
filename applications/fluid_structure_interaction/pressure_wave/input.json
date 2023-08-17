@@ -17,6 +17,7 @@
         "AbsTol": "1.e-9",
         "RelTol": "1.e-3",
         "OmegaInit": "0.3",
+        "UseExtrapolation": "true",
         "PartitionedIterMax": "100",
         "ReusedTimeSteps": "10",
         "GeometricTolerance": "1.e-8"
