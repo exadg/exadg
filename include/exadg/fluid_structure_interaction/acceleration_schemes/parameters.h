@@ -40,6 +40,7 @@ struct Parameters
       abs_tol(1.e-12),
       rel_tol(1.e-3),
       omega_init(0.1),
+      use_extrapolation(true),
       reused_time_steps(0),
       partitioned_iter_max(100),
       geometric_tolerance(1.e-10)
@@ -62,6 +63,12 @@ struct Parameters
                         "Initial relaxation parameter.",
                         dealii::Patterns::Double(0.0, 1.0),
                         true);
+      prm.add_parameter(
+        "UseExtrapolation",
+        use_extrapolation,
+        "Use second order extrapolation in time as initial guess for FSI coupling scheme.",
+        dealii::Patterns::Bool(),
+        false);
       prm.add_parameter("ReusedTimeSteps",
                         reused_time_steps,
                         "Number of time steps reused for acceleration.",
@@ -85,6 +92,7 @@ struct Parameters
   double             abs_tol;
   double             rel_tol;
   double             omega_init;
+  bool               use_extrapolation;
   unsigned int       reused_time_steps;
   unsigned int       partitioned_iter_max;
 
