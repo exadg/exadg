@@ -109,8 +109,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a65545c4a62f5d0b9cb84b17e844bdfd6"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Elementwise_1_1IterativeSolver.html#a65545c4a62f5d0b9cb84b17e844bdfd6">solve</a> (VectorType &amp;dst, VectorType const &amp;src) const override</td></tr>
 <tr class="separator:a65545c4a62f5d0b9cb84b17e844bdfd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1Krylov_1_1SolverBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1Krylov_1_1SolverBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1Krylov_1_1SolverBase.html">ExaDG::Krylov::SolverBase&lt; dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; &gt;</a></td></tr>
-<tr class="memitem:ada0ff98445076cfbc31457dadfdcbbf5 inherit pub_methods_classExaDG_1_1Krylov_1_1SolverBase"><td class="memItemLeft" align="right" valign="top">
-virtual unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve</b> (dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; &amp;dst, dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; const &amp;rhs) const=0</td></tr>
+<tr class="memitem:ada0ff98445076cfbc31457dadfdcbbf5 inherit pub_methods_classExaDG_1_1Krylov_1_1SolverBase"><td class="memItemLeft" align="right" valign="top">virtual unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Krylov_1_1SolverBase.html#ada0ff98445076cfbc31457dadfdcbbf5">solve</a> (dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; &amp;dst, dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; const &amp;rhs) const=0</td></tr>
 <tr class="separator:ada0ff98445076cfbc31457dadfdcbbf5 inherit pub_methods_classExaDG_1_1Krylov_1_1SolverBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aac78604849fab7ae71bb1e2caf51d2f6 inherit pub_methods_classExaDG_1_1Krylov_1_1SolverBase"><td class="memItemLeft" align="right" valign="top">
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update_preconditioner</b> (bool const update_preconditioner) const=0</td></tr>
@@ -181,6 +180,7 @@ template&lt;int dim, int number_of_equations, typename Number , typename Operato
   </tr>
 </table>
 </div><div class="memdoc">
+<p>Solve function. This function may be called with identical dst, src vectors. </p>
 
 <p>Implements <a class="el" href="classExaDG_1_1Krylov_1_1SolverBase.html">ExaDG::Krylov::SolverBase&lt; dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; &gt;</a>.</p>
 

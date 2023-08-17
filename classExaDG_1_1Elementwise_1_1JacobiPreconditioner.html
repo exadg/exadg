@@ -79,6 +79,8 @@ $(function() {
   <div class="headertitle"><div class="title">ExaDG::Elementwise::JacobiPreconditioner&lt; dim, n_components, Number, Operator &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p><code>#include &lt;<a class="el" href="elementwise__preconditioners_8h_source.html">elementwise_preconditioners.h</a>&gt;</code></p>
 <div class="dynheader">
 Inheritance diagram for ExaDG::Elementwise::JacobiPreconditioner&lt; dim, n_components, Number, Operator &gt;:</div>
 <div class="dyncontent">
@@ -101,11 +103,13 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a89cbbd28c5f2965564679a9778a3e531"><td class="memItemLeft" align="right" valign="top"><a id="a89cbbd28c5f2965564679a9778a3e531" name="a89cbbd28c5f2965564679a9778a3e531"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (unsigned int const cell)=0</td></tr>
 <tr class="separator:a89cbbd28c5f2965564679a9778a3e531"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9a69021b941a0e9dffe99d0be27d6b70"><td class="memItemLeft" align="right" valign="top"><a id="a9a69021b941a0e9dffe99d0be27d6b70" name="a9a69021b941a0e9dffe99d0be27d6b70"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (dealii::VectorizedArray&lt; Number &gt; *dst, dealii::VectorizedArray&lt; Number &gt; const *src) const=0</td></tr>
+<tr class="memitem:a9a69021b941a0e9dffe99d0be27d6b70"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerBase.html#a9a69021b941a0e9dffe99d0be27d6b70">vmult</a> (dealii::VectorizedArray&lt; Number &gt; *dst, dealii::VectorizedArray&lt; Number &gt; const *src) const=0</td></tr>
 <tr class="separator:a9a69021b941a0e9dffe99d0be27d6b70"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Member Function Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><div class="compoundTemplParams">template&lt;int dim, int n_components, typename Number, typename Operator&gt;<br />
+class ExaDG::Elementwise::JacobiPreconditioner&lt; dim, n_components, Number, Operator &gt;</div><p>This class implements a Jacobi preconditioner for iterative solvers for elementwise problems. </p>
+</div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a232efd57ebd99f1f6ef765bbc39679cf" name="a232efd57ebd99f1f6ef765bbc39679cf"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a232efd57ebd99f1f6ef765bbc39679cf">&#9670;&#160;</a></span>setup()</h2>
 
@@ -171,6 +175,7 @@ template&lt;int dim, int n_components, typename Number , typename Operator &gt; 
   </tr>
 </table>
 </div><div class="memdoc">
+<p>The pointers dst, src may point to the same data. </p>
 
 <p>Implements <a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerBase.html">ExaDG::Elementwise::PreconditionerBase&lt; dealii::VectorizedArray&lt; Number &gt; &gt;</a>.</p>
 

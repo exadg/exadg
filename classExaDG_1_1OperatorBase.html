@@ -188,8 +188,7 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_inverse_dia
 <tr class="memitem:ae08e30ac18aec92a0ca15edfadf1502a"><td class="memItemLeft" align="right" valign="top"><a id="ae08e30ac18aec92a0ca15edfadf1502a" name="ae08e30ac18aec92a0ca15edfadf1502a"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update_block_diagonal_preconditioner</b> () const</td></tr>
 <tr class="separator:ae08e30ac18aec92a0ca15edfadf1502a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0d06a2e9ec836a9b7fa412c079c62dfa"><td class="memItemLeft" align="right" valign="top"><a id="a0d06a2e9ec836a9b7fa412c079c62dfa" name="a0d06a2e9ec836a9b7fa412c079c62dfa"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_inverse_block_diagonal</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
+<tr class="memitem:a0d06a2e9ec836a9b7fa412c079c62dfa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1OperatorBase.html#a0d06a2e9ec836a9b7fa412c079c62dfa">apply_inverse_block_diagonal</a> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:a0d06a2e9ec836a9b7fa412c079c62dfa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aab87cf1920517d98cdda7c6949074bd5"><td class="memItemLeft" align="right" valign="top"><a id="aab87cf1920517d98cdda7c6949074bd5" name="aab87cf1920517d98cdda7c6949074bd5"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>apply</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
@@ -324,6 +323,38 @@ std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Elementwise_1_1Preconditio
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Elementwise_1_1IterativeSolver.html">ELEMENTWISE_SOLVER</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>elementwise_solver</b></td></tr>
 <tr class="separator:a9d1247c9effb51c667229781b25e53a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a0d06a2e9ec836a9b7fa412c079c62dfa" name="a0d06a2e9ec836a9b7fa412c079c62dfa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0d06a2e9ec836a9b7fa412c079c62dfa">&#9670;&#160;</a></span>apply_inverse_block_diagonal()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number , int n_components&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1OperatorBase.html">ExaDG::OperatorBase</a>&lt; dim, Number, n_components &gt;::apply_inverse_block_diagonal </td>
+          <td>(</td>
+          <td class="paramtype">VectorType &amp;&#160;</td>
+          <td class="paramname"><em>dst</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">VectorType const &amp;&#160;</td>
+          <td class="paramname"><em>src</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>This function applies the inverse block diagonal to a src vector and stores the result in the dst vector. This function may be called with identical dst, src vectors. </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/exadg/operators/<a class="el" href="operator__base_8h_source.html">operator_base.h</a></li>
 <li>include/exadg/operators/operator_base.cpp</li>

@@ -14,7 +14,13 @@ var searchData=
   ['inversemassoperator_3c_20dim_2c_20dim_2c_20double_20_3e_11',['InverseMassOperator&lt; dim, dim, double &gt;',['../classExaDG_1_1InverseMassOperator.html',1,'ExaDG']]],
   ['inversemassoperator_3c_20dim_2c_20dim_2c_20number_20_3e_12',['InverseMassOperator&lt; dim, dim, Number &gt;',['../classExaDG_1_1InverseMassOperator.html',1,'ExaDG']]],
   ['inversemassoperatordata_13',['InverseMassOperatorData',['../structExaDG_1_1InverseMassOperatorData.html',1,'ExaDG']]],
-  ['inversemasspreconditioner_14',['InverseMassPreconditioner',['../classExaDG_1_1Elementwise_1_1InverseMassPreconditioner.html',1,'ExaDG::Elementwise::InverseMassPreconditioner&lt; dim, n_components, Number &gt;'],['../classExaDG_1_1InverseMassPreconditioner.html',1,'ExaDG::InverseMassPreconditioner&lt; dim, n_components, Number &gt;']]],
-  ['iterativesolver_15',['IterativeSolver',['../classExaDG_1_1Elementwise_1_1IterativeSolver.html',1,'ExaDG::Elementwise']]],
-  ['iterativesolverdata_16',['IterativeSolverData',['../structExaDG_1_1Elementwise_1_1IterativeSolverData.html',1,'ExaDG::Elementwise']]]
+  ['inversemassoperatordatahdiv_14',['InverseMassOperatorDataHdiv',['../structExaDG_1_1InverseMassOperatorDataHdiv.html',1,'ExaDG']]],
+  ['inversemassoperatorhdiv_15',['InverseMassOperatorHdiv',['../classExaDG_1_1InverseMassOperatorHdiv.html',1,'ExaDG']]],
+  ['inversemassoperatorhdiv_3c_20dim_2c_20dim_2c_20double_20_3e_16',['InverseMassOperatorHdiv&lt; dim, dim, double &gt;',['../classExaDG_1_1InverseMassOperatorHdiv.html',1,'ExaDG']]],
+  ['inversemassoperatorhdiv_3c_20dim_2c_20dim_2c_20number_20_3e_17',['InverseMassOperatorHdiv&lt; dim, dim, Number &gt;',['../classExaDG_1_1InverseMassOperatorHdiv.html',1,'ExaDG']]],
+  ['inversemassparameters_18',['InverseMassParameters',['../structExaDG_1_1InverseMassParameters.html',1,'ExaDG']]],
+  ['inversemassparametershdiv_19',['InverseMassParametersHdiv',['../structExaDG_1_1InverseMassParametersHdiv.html',1,'ExaDG']]],
+  ['inversemasspreconditioner_20',['InverseMassPreconditioner',['../classExaDG_1_1Elementwise_1_1InverseMassPreconditioner.html',1,'ExaDG::Elementwise::InverseMassPreconditioner&lt; dim, n_components, Number &gt;'],['../classExaDG_1_1InverseMassPreconditioner.html',1,'ExaDG::InverseMassPreconditioner&lt; dim, n_components, Number &gt;']]],
+  ['iterativesolver_21',['IterativeSolver',['../classExaDG_1_1Elementwise_1_1IterativeSolver.html',1,'ExaDG::Elementwise']]],
+  ['iterativesolverdata_22',['IterativeSolverData',['../structExaDG_1_1Elementwise_1_1IterativeSolverData.html',1,'ExaDG::Elementwise']]]
 ];

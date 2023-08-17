@@ -95,8 +95,7 @@ Inheritance diagram for ExaDG::Krylov::SolverBase&lt; VectorType &gt;:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ada0ff98445076cfbc31457dadfdcbbf5"><td class="memItemLeft" align="right" valign="top"><a id="ada0ff98445076cfbc31457dadfdcbbf5" name="ada0ff98445076cfbc31457dadfdcbbf5"></a>
-virtual unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve</b> (VectorType &amp;dst, VectorType const &amp;rhs) const =0</td></tr>
+<tr class="memitem:ada0ff98445076cfbc31457dadfdcbbf5"><td class="memItemLeft" align="right" valign="top">virtual unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Krylov_1_1SolverBase.html#ada0ff98445076cfbc31457dadfdcbbf5">solve</a> (VectorType &amp;dst, VectorType const &amp;rhs) const =0</td></tr>
 <tr class="separator:ada0ff98445076cfbc31457dadfdcbbf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aac78604849fab7ae71bb1e2caf51d2f6"><td class="memItemLeft" align="right" valign="top"><a id="aac78604849fab7ae71bb1e2caf51d2f6" name="aac78604849fab7ae71bb1e2caf51d2f6"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update_preconditioner</b> (bool const update_preconditioner) const =0</td></tr>
@@ -133,6 +132,47 @@ Protected Attributes</h2></td></tr>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>timer_tree</b></td></tr>
 <tr class="separator:a50afd7332cf7e83317358d00e2b93795"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="ada0ff98445076cfbc31457dadfdcbbf5" name="ada0ff98445076cfbc31457dadfdcbbf5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ada0ff98445076cfbc31457dadfdcbbf5">&#9670;&#160;</a></span>solve()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename VectorType &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual unsigned int <a class="el" href="classExaDG_1_1Krylov_1_1SolverBase.html">ExaDG::Krylov::SolverBase</a>&lt; VectorType &gt;::solve </td>
+          <td>(</td>
+          <td class="paramtype">VectorType &amp;&#160;</td>
+          <td class="paramname"><em>dst</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">VectorType const &amp;&#160;</td>
+          <td class="paramname"><em>rhs</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implemented in <a class="el" href="classExaDG_1_1Elementwise_1_1IterativeSolver.html#a65545c4a62f5d0b9cb84b17e844bdfd6">ExaDG::Elementwise::IterativeSolver&lt; dim, number_of_equations, Number, Operator, Preconditioner &gt;</a>.</p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/solvers_and_preconditioners/solvers/<a class="el" href="iterative__solvers__dealii__wrapper_8h_source.html">iterative_solvers_dealii_wrapper.h</a></li>
 </ul>

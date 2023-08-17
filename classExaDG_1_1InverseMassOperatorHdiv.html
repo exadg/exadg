@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.7"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::Elementwise::PreconditionerBase&lt; Number &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::InverseMassOperatorHdiv&lt; dim, n_components, Number &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -69,56 +69,47 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><b>Elementwise</b></li><li class="navelem"><a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerBase.html">PreconditionerBase</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><a class="el" href="classExaDG_1_1InverseMassOperatorHdiv.html">InverseMassOperatorHdiv</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="classExaDG_1_1Elementwise_1_1PreconditionerBase-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::Elementwise::PreconditionerBase&lt; Number &gt; Class Template Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div></div>
+<a href="classExaDG_1_1InverseMassOperatorHdiv-members.html">List of all members</a>  </div>
+  <div class="headertitle"><div class="title">ExaDG::InverseMassOperatorHdiv&lt; dim, n_components, Number &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="dynheader">
-Inheritance diagram for ExaDG::Elementwise::PreconditionerBase&lt; Number &gt;:</div>
-<div class="dyncontent">
- <div class="center">
-  <img src="classExaDG_1_1Elementwise_1_1PreconditionerBase.png" usemap="#ExaDG::Elementwise::PreconditionerBase_3C_20Number_20_3E_map" alt=""/>
-  <map id="ExaDG::Elementwise::PreconditionerBase_3C_20Number_20_3E_map" name="ExaDG::Elementwise::PreconditionerBase_3C_20Number_20_3E_map">
-<area href="classExaDG_1_1Elementwise_1_1PreconditionerIdentity.html" alt="ExaDG::Elementwise::PreconditionerIdentity&lt; Number &gt;" shape="rect" coords="0,56,323,80"/>
-  </map>
-</div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a89cbbd28c5f2965564679a9778a3e531"><td class="memItemLeft" align="right" valign="top"><a id="a89cbbd28c5f2965564679a9778a3e531" name="a89cbbd28c5f2965564679a9778a3e531"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (unsigned int const cell)=0</td></tr>
-<tr class="separator:a89cbbd28c5f2965564679a9778a3e531"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9a69021b941a0e9dffe99d0be27d6b70"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerBase.html#a9a69021b941a0e9dffe99d0be27d6b70">vmult</a> (Number *dst, Number const *src) const =0</td></tr>
-<tr class="separator:a9a69021b941a0e9dffe99d0be27d6b70"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4629442819e6b76cc5e7dbc4c0b7c4af"><td class="memItemLeft" align="right" valign="top"><a id="a4629442819e6b76cc5e7dbc4c0b7c4af" name="a4629442819e6b76cc5e7dbc4c0b7c4af"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;constraints, <a class="el" href="structExaDG_1_1InverseMassOperatorDataHdiv.html">InverseMassOperatorDataHdiv</a> const inverse_mass_operator_data)</td></tr>
+<tr class="separator:a4629442819e6b76cc5e7dbc4c0b7c4af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a02ff700d6e5dfc1b99acf3708bf5d6dd"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1InverseMassOperatorHdiv.html#a02ff700d6e5dfc1b99acf3708bf5d6dd">apply</a> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
+<tr class="separator:a02ff700d6e5dfc1b99acf3708bf5d6dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a9a69021b941a0e9dffe99d0be27d6b70" name="a9a69021b941a0e9dffe99d0be27d6b70"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9a69021b941a0e9dffe99d0be27d6b70">&#9670;&#160;</a></span>vmult()</h2>
+<a id="a02ff700d6e5dfc1b99acf3708bf5d6dd" name="a02ff700d6e5dfc1b99acf3708bf5d6dd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a02ff700d6e5dfc1b99acf3708bf5d6dd">&#9670;&#160;</a></span>apply()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename Number &gt; </div>
+template&lt;int dim, int n_components, typename Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void <a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerBase.html">ExaDG::Elementwise::PreconditionerBase</a>&lt; Number &gt;::vmult </td>
+          <td class="memname">unsigned int <a class="el" href="classExaDG_1_1InverseMassOperatorHdiv.html">ExaDG::InverseMassOperatorHdiv</a>&lt; dim, n_components, Number &gt;::apply </td>
           <td>(</td>
-          <td class="paramtype">Number *&#160;</td>
+          <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>dst</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">Number const *&#160;</td>
+          <td class="paramtype">VectorType const &amp;&#160;</td>
           <td class="paramname"><em>src</em>&#160;</td>
         </tr>
         <tr>
@@ -129,17 +120,16 @@ template&lt;typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
-
-<p>Implemented in <a class="el" href="classExaDG_1_1Elementwise_1_1JacobiPreconditioner.html#a3388ed26e11f59571d3e8ab6e45d7bce">ExaDG::Elementwise::JacobiPreconditioner&lt; dim, n_components, Number, Operator &gt;</a>, and <a class="el" href="classExaDG_1_1Elementwise_1_1InverseMassPreconditioner.html#a1f480ae1482708fd0fe5d377fe24e102">ExaDG::Elementwise::InverseMassPreconditioner&lt; dim, n_components, Number &gt;</a>.</p>
+<p>This function applies the inverse mass operator. Note that this function allows identical dst, src vector, i.e. the function can be called like apply(dst, dst). </p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/exadg/solvers_and_preconditioners/preconditioners/<a class="el" href="elementwise__preconditioners_8h_source.html">elementwise_preconditioners.h</a></li>
+<li>include/exadg/operators/<a class="el" href="inverse__mass__operator_8h_source.html">inverse_mass_operator.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
