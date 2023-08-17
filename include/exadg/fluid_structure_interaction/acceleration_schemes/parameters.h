@@ -63,12 +63,11 @@ struct Parameters
                         "Initial relaxation parameter.",
                         dealii::Patterns::Double(0.0, 1.0),
                         true);
-      prm.add_parameter(
-        "UseExtrapolation",
-        use_extrapolation,
-        "Use second order extrapolation in time as initial guess for FSI coupling scheme.",
-        dealii::Patterns::Bool(),
-        false);
+      prm.add_parameter("UseExtrapolation",
+                        use_extrapolation,
+                        "Extrapolate for initial guess in coupling scheme.",
+                        dealii::Patterns::Bool(),
+                        false);
       prm.add_parameter("ReusedTimeSteps",
                         reused_time_steps,
                         "Number of time steps reused for acceleration.",
