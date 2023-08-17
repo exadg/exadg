@@ -223,16 +223,23 @@ Driver<dim, Number>::coupling_structure_to_ale(VectorType const & displacement_s
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::coupling_structure_to_fluid(bool const extrapolate) const
+Driver<dim, Number>::coupling_structure_to_fluid(unsigned int iteration) const
 {
   dealii::Timer sub_timer;
   sub_timer.restart();
 
   VectorType velocity_structure;
   structure->pde_operator->initialize_dof_vector(velocity_structure);
-  if(extrapolate)
+  if(iteration == 0)
   {
-    structure->time_integrator->extrapolate_velocity_to_np(velocity_structure);
+    if(parameters.use_extrapolation)
+    {
+      structure->time_integrator->extrapolate_velocity_to_np(velocity_structure);
+    }
+    else
+    {
+      velocity_structure = structure->time_integrator->get_velocity_n();
+    }
   }
   else
   {
@@ -285,7 +292,7 @@ Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType &       d_tilde,
   fluid->solve_ale();
 
   // update velocity boundary condition for fluid
-  coupling_structure_to_fluid(iteration == 0 and parameters.use_extrapolation);
+  coupling_structure_to_fluid(iteration);
 
   // solve fluid problem
   fluid->time_integrator->advance_one_timestep_partitioned_solve(iteration ==
