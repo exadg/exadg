@@ -119,6 +119,9 @@ public:
     integrator->read_dof_values(global_inverse_diagonal, 0);
   }
 
+  /**
+   * The pointers dst, src may point to the same data.
+   */
   void
   vmult(dealii::VectorizedArray<Number> *       dst,
         dealii::VectorizedArray<Number> const * src) const final
@@ -189,6 +192,9 @@ public:
     integrator->reinit(cell);
   }
 
+  /**
+   * The pointers dst, src may point to the same data.
+   */
   void
   vmult(dealii::VectorizedArray<Number> *       dst,
         dealii::VectorizedArray<Number> const * src) const final
