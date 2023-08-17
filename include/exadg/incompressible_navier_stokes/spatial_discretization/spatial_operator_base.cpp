@@ -400,15 +400,15 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   if(param.spatial_discretization == SpatialDiscretization::HDIV)
   {
     Krylov::SolverDataCG solver_data;
-    solver_data.max_iter             = this->param.inverse_mass_operator.solver_data.max_iter;
-    solver_data.solver_tolerance_abs = this->param.inverse_mass_operator.solver_data.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.inverse_mass_operator.solver_data.rel_tol;
+    solver_data.max_iter             = this->param.inverse_mass_operator_hdiv.solver_data.max_iter;
+    solver_data.solver_tolerance_abs = this->param.inverse_mass_operator_hdiv.solver_data.abs_tol;
+    solver_data.solver_tolerance_rel = this->param.inverse_mass_operator_hdiv.solver_data.rel_tol;
 
-    if(param.inverse_mass_operator.preconditioner == PreconditionerMass::None)
+    if(param.inverse_mass_operator_hdiv.preconditioner == PreconditionerMass::None)
     {
       solver_data.use_preconditioner = false;
     }
-    else if(param.inverse_mass_operator.preconditioner == PreconditionerMass::PointJacobi)
+    else if(param.inverse_mass_operator_hdiv.preconditioner == PreconditionerMass::PointJacobi)
     {
       mass_preconditioner =
         std::make_shared<JacobiPreconditioner<MassOperator<dim, dim, Number>>>(this->mass_operator);

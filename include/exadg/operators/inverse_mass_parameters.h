@@ -33,6 +33,10 @@ enum class PreconditionerMass
   PointJacobi
 };
 
+/**
+ * Data struct for mass operator inversion in case of discontinuous Galerkin methods with a
+ * block-diagonal mass matrix.
+ */
 struct InverseMassSolverParameters
 {
   InverseMassSolverParameters()
@@ -42,15 +46,32 @@ struct InverseMassSolverParameters
   {
   }
 
-  // This parameter is only relevant if the mass matrix is block-diagonal, i.e. for a
-  // DG formulation, and if an explicit matrix-free inverse of the mass operator is not
-  // available (e.g. simplex elements). When activating this parameter, an assembly and
-  // inversion of block matrices is replaced by an elementwise Krylov solver with
-  // matrix-free evaluation.
+  // This parameter is only relevant if an explicit matrix-free inverse of the mass operator is not
+  // available (e.g. simplex elements). When activating this parameter, an assembly and inversion of
+  // block matrices is replaced by an elementwise Krylov solver with matrix-free evaluation.
   bool implement_block_diagonal_solver_matrix_free;
 
   // This parameter is only relevant if the mass operator is inverted by an iterative solver with
   // matrix-free implementation.
+  PreconditionerMass preconditioner;
+
+  // solver data for iterative solver
+  SolverData solver_data;
+};
+
+/**
+ * Data struct for mass operator inversion by iterative solution techniques in case of
+ * H(div)-conforming discretization where the mass matrix is a globally coupled problem as opposed
+ * to DG methods (where the mass matrix is block-diagonal).
+ */
+struct InverseMassSolverParametersHdiv
+{
+  InverseMassSolverParametersHdiv()
+    : preconditioner(PreconditionerMass::PointJacobi), solver_data(SolverData(1000, 1e-12, 1e-12))
+  {
+  }
+
+  // The preconditioner used to iteratively solve the global mass problem
   PreconditionerMass preconditioner;
 
   // solver data for iterative solver

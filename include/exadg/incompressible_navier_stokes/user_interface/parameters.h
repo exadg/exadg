@@ -468,10 +468,13 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
   // These parameters are relevant if the inverse mass can not be realized as a
-  // matrix-free operator evaluation. Typical use cases are a DG formulation with non
-  // hypercube elements (e.g. simplex) or an H(div)-conforming formulation.
+  // matrix-free operator evaluation. The typical use case is a DG formulation with non
+  // hypercube elements (e.g. simplex).
 
   InverseMassSolverParameters inverse_mass_operator;
+
+  // This parameter is only relevant if an H(div)-conforming formulation is chosen.
+  InverseMassSolverParametersHdiv inverse_mass_operator_hdiv;
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -487,7 +490,8 @@ public:
   // typical use case is a DG formulation with non hypercube elements (e.g. simplex). In
   // these cases, however, you should think about replacing the inverse mass preconditioner
   // by a simple point Jacobi preconditioner as an efficient alternative to the (exact)
-  // inverse mass preconditioner.
+  // inverse mass preconditioner. This type of preconditioner is not available for an
+  // H(div)-conforming formulation.
 
   InverseMassSolverParameters inverse_mass_preconditioner;
 
