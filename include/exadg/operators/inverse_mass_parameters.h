@@ -27,6 +27,14 @@
 
 namespace ExaDG
 {
+enum class InverseMassType
+{
+  MatrixfreeOperator, // currently only available via deal.II for Hypercube elements with n_nodes_1d
+                      // = n_q_points_1d
+  ElementwiseKrylovSolver,
+  BlockMatrices
+};
+
 enum class PreconditionerMass
 {
   None,
@@ -40,22 +48,21 @@ enum class PreconditionerMass
 struct InverseMassSolverParameters
 {
   InverseMassSolverParameters()
-    : implement_block_diagonal_solver_matrix_free(true),
+    : implementation_type(InverseMassType::MatrixfreeOperator),
       preconditioner(PreconditionerMass::PointJacobi),
       solver_data(SolverData(1000, 1e-12, 1e-12))
   {
   }
 
-  // This parameter is only relevant if an explicit matrix-free inverse of the mass operator is not
-  // available (e.g. simplex elements). When activating this parameter, an assembly and inversion of
-  // block matrices is replaced by an elementwise Krylov solver with matrix-free evaluation.
-  bool implement_block_diagonal_solver_matrix_free;
+  // The implementation type used to invert the mass operator.
+  InverseMassType implementation_type;
 
   // This parameter is only relevant if the mass operator is inverted by an iterative solver with
-  // matrix-free implementation.
+  // matrix-free implementation, InverseMassType::ElementwiseKrylovSolver.
   PreconditionerMass preconditioner;
 
-  // solver data for iterative solver
+  // solver data for iterative solver in case of implementation type
+  // InverseMassType::ElementwiseKrylovSolver.
   SolverData solver_data;
 };
 

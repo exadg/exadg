@@ -65,11 +65,7 @@ private:
   typedef std::pair<unsigned int, unsigned int> Range;
 
 public:
-  InverseMassOperator()
-    : matrix_free(nullptr),
-      dof_index(0),
-      quad_index(0),
-      inverse_mass_available_as_matrix_free_operator(false)
+  InverseMassOperator() : matrix_free(nullptr), dof_index(0), quad_index(0)
   {
   }
 
@@ -81,22 +77,34 @@ public:
     dof_index         = inverse_mass_operator_data.dof_index;
     quad_index        = inverse_mass_operator_data.quad_index;
 
+    data = inverse_mass_operator_data.iterative_solver;
+
     dealii::FiniteElement<dim> const & fe = matrix_free->get_dof_handler(dof_index).get_fe();
 
     // The inverse mass operator is only available for discontinuous Galerkin discretizations
     AssertThrow(fe.conforms(dealii::FiniteElementData<dim>::L2),
                 dealii::ExcMessage("InverseMassOperator only implemented for DG!"));
 
-    // Currently, the inverse mass realized as matrix-free operator evaluation is only available
-    // in deal.II for tensor-product elements
-    if(fe.base_element(0).dofs_per_cell == dealii::Utilities::pow(fe.degree + 1, dim))
+    if(data.implementation_type == InverseMassType::MatrixfreeOperator)
     {
-      inverse_mass_available_as_matrix_free_operator = true;
-    }
+      // Currently, the inverse mass realized as matrix-free operator evaluation is only available
+      // in deal.II for tensor-product elements.
+      AssertThrow(
+        fe.base_element(0).dofs_per_cell == dealii::Utilities::pow(fe.degree + 1, dim),
+        dealii::ExcMessage(
+          "The matrix-free inverse mass operator is currently only available for tensor-product elements."));
 
+      // Currently, the inverse mass realized as matrix-free operator evaluation is only available
+      // in deal.II if n_q_points_1d = n_nodes_1d.
+      AssertThrow(
+        this->matrix_free->get_shape_info(0, quad_index).data[0].n_q_points_1d == fe.degree + 1,
+        dealii::ExcMessage(
+          "The matrix-free inverse mass operator is currently only available if n_q_points_1d = n_nodes_1d."));
+    }
     // We create a block-Jacobi preconditioner with MassOperator as underlying operator in case the
     // inverse mass can not be realized as a matrix-free operator.
-    if(not(inverse_mass_available_as_matrix_free_operator))
+    else if(data.implementation_type == InverseMassType::ElementwiseKrylovSolver or
+            data.implementation_type == InverseMassType::BlockMatrices)
     {
       // initialize mass operator
       dealii::AffineConstraints<Number> constraint;
@@ -106,26 +114,33 @@ public:
       MassOperatorData<dim> mass_operator_data;
       mass_operator_data.dof_index  = dof_index;
       mass_operator_data.quad_index = quad_index;
-      mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
-        inverse_mass_operator_data.iterative_solver.implement_block_diagonal_solver_matrix_free;
-      mass_operator_data.solver_block_diagonal = Elementwise::Solver::CG;
-      if(inverse_mass_operator_data.iterative_solver.preconditioner == PreconditionerMass::None)
+      if(data.implementation_type == InverseMassType::ElementwiseKrylovSolver)
       {
-        mass_operator_data.preconditioner_block_diagonal = Elementwise::Preconditioner::None;
+        mass_operator_data.implement_block_diagonal_preconditioner_matrix_free = true;
+        mass_operator_data.solver_block_diagonal = Elementwise::Solver::CG;
+        if(inverse_mass_operator_data.iterative_solver.preconditioner == PreconditionerMass::None)
+        {
+          mass_operator_data.preconditioner_block_diagonal = Elementwise::Preconditioner::None;
+        }
+        else if(inverse_mass_operator_data.iterative_solver.preconditioner ==
+                PreconditionerMass::PointJacobi)
+        {
+          mass_operator_data.preconditioner_block_diagonal =
+            Elementwise::Preconditioner::PointJacobi;
+        }
+        mass_operator_data.solver_data_block_diagonal =
+          inverse_mass_operator_data.iterative_solver.solver_data;
       }
-      else if(inverse_mass_operator_data.iterative_solver.preconditioner ==
-              PreconditionerMass::PointJacobi)
-      {
-        mass_operator_data.preconditioner_block_diagonal = Elementwise::Preconditioner::PointJacobi;
-      }
-      mass_operator_data.solver_data_block_diagonal =
-        inverse_mass_operator_data.iterative_solver.solver_data;
 
       mass_operator.initialize(*matrix_free, constraint, mass_operator_data);
 
       block_jacobi_preconditioner =
         std::make_shared<BlockJacobiPreconditioner<MassOperator<dim, n_components, Number>>>(
           mass_operator);
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("The specified InverseMassType is not implemented."));
     }
   }
 
@@ -134,11 +149,11 @@ public:
   {
     dst.zero_out_ghost_values();
 
-    if(inverse_mass_available_as_matrix_free_operator)
+    if(data.implementation_type == InverseMassType::MatrixfreeOperator)
     {
       matrix_free->cell_loop(&This::cell_loop_matrix_free_operator, this, dst, src);
     }
-    else
+    else // ElementwiseKrylovSolver or BlockMatrices
     {
       block_jacobi_preconditioner->vmult(dst, src);
     }
@@ -169,10 +184,7 @@ private:
 
   unsigned int dof_index, quad_index;
 
-  // Depending on this parameter, the implementation switches between an inverse mass realized as
-  // matrix-free operator evaluation or an inverse mass realized by solving elementwise mass
-  // problems.
-  bool inverse_mass_available_as_matrix_free_operator;
+  InverseMassSolverParameters data;
 
   // This variable is only relevant if the inverse mass can not be realized as a matrix-free
   // operator. Since this class allows only L2-conforming spaces (discontinuous Galerkin method),

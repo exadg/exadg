@@ -162,11 +162,25 @@ public:
 
     dealii::FiniteElement<dim> const & fe = matrix_free.get_dof_handler(dof_index).get_fe();
 
+    // The inverse mass preconditioner is only available for discontinuous Galerkin discretizations.
     AssertThrow(
-      fe.conforms(dealii::FiniteElementData<dim>::L2) and
-        (fe.base_element(0).dofs_per_cell == dealii::Utilities::pow(fe.degree + 1, dim)),
+      fe.conforms(dealii::FiniteElementData<dim>::L2),
+      dealii::ExcMessage(
+        "The elementwise inverse mass preconditioner is only implemented for DG (L2-conforming) elements."));
+
+    // Currently, the inverse mass realized as matrix-free operator evaluation is only available
+    // in deal.II for tensor-product elements.
+    AssertThrow(
+      fe.base_element(0).dofs_per_cell == dealii::Utilities::pow(fe.degree + 1, dim),
       dealii::ExcMessage(
         "The elementwise inverse mass preconditioner is only implemented for tensor-product DG elements."));
+
+    // Currently, the inverse mass realized as matrix-free operator evaluation is only available
+    // in deal.II if n_q_points_1d = n_nodes_1d.
+    AssertThrow(
+      matrix_free.get_shape_info(0, quad_index).data[0].n_q_points_1d == fe.degree + 1,
+      dealii::ExcMessage(
+        "The elementwise inverse mass preconditioner is only available if n_q_points_1d = n_nodes_1d."));
   }
 
   void
