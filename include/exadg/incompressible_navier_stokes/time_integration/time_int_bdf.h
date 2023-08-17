@@ -92,7 +92,9 @@ public:
   ale_update();
 
   void
-  advance_one_timestep_partitioned_solve(bool const use_extrapolation);
+  advance_one_timestep_partitioned_solve(bool const use_extrapolation,
+                                         bool const update_velocity,
+                                         bool const update_pressure);
 
   virtual void
   print_iterations() const = 0;
@@ -135,6 +137,8 @@ protected:
   // required for strongly-coupled partitioned iteration
   bool use_extrapolation;
   bool store_solution;
+  bool update_velocity;
+  bool update_pressure;
 
   // This object allows to access utility functions needed for ALE
   std::shared_ptr<HelpersALE<Number> const> helpers_ale;

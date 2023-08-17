@@ -34,10 +34,20 @@ enum class AccelerationMethod
   IQN_IMVLS
 };
 
+enum class UpdateMethod
+{
+  Undefined,
+  Implicit,
+  GeometricExplicit,
+  ImplicitPressureStructure,
+  ImplicitVelocityStructure
+};
+
 struct Parameters
 {
   Parameters()
     : acceleration_method(AccelerationMethod::Undefined),
+      update_method(UpdateMethod::Implicit),
       abs_tol(1.e-12),
       rel_tol(1.e-3),
       omega_init(0.1),
@@ -58,6 +68,8 @@ struct Parameters
                         "Acceleration method.",
                         Patterns::Enum<AccelerationMethod>(),
                         true);
+      prm.add_parameter(
+        "UpdateMethod", update_method, "Update method.", Patterns::Enum<UpdateMethod>(), false);
       prm.add_parameter(
         "AbsTol", abs_tol, "Absolute solver tolerance.", dealii::Patterns::Double(0.0, 1.0), true);
       prm.add_parameter(
@@ -92,6 +104,7 @@ struct Parameters
   }
 
   AccelerationMethod acceleration_method;
+  UpdateMethod       update_method;
   double             abs_tol;
   double             rel_tol;
   double             omega_init;

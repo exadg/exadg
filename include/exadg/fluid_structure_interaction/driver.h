@@ -80,8 +80,19 @@ private:
   coupling_fluid_to_structure(bool const end_of_time_step) const;
 
   void
-  apply_dirichlet_neumann_scheme(VectorType &       d_tilde,
-                                 VectorType const & d,
+  solve_subproblem_mesh(VectorType const & displacement_structure) const;
+
+  void
+  solve_subproblem_fluid(unsigned int const iteration,
+                         bool const         update_velocity,
+                         bool const         update_pressure) const;
+
+  void
+  solve_subproblem_structure(unsigned int const iteration) const;
+
+  void
+  apply_dirichlet_neumann_scheme(VectorType &       displacement_structure_tilde,
+                                 VectorType const & displacement_structure,
                                  unsigned int       iteration) const;
 
   // MPI communicator

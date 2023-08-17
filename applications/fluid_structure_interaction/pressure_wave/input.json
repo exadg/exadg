@@ -12,8 +12,12 @@
         "Degree": "1",
         "RefineSpace": "0"
     },
+    "Fluid" : {
+        "TemporalDiscretization": "BDFDualSplittingScheme"
+    },
     "FSI" : {
         "AccelerationMethod": "IQN_ILS",
+        "UpdateMethod": "Implicit",
         "AbsTol": "1.e-9",
         "RelTol": "1.e-3",
         "OmegaInit": "0.3",
