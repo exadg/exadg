@@ -45,7 +45,6 @@ struct InverseMassOperatorData
   unsigned int dof_index;
   unsigned int quad_index;
 
-  // only relevant if an explicit matrix-free inverse mass operator is not available
   InverseMassParameters parameters;
 };
 
@@ -210,7 +209,6 @@ struct InverseMassOperatorDataHdiv
   unsigned int dof_index;
   unsigned int quad_index;
 
-  // only relevant if an explicit matrix-free inverse mass operator is not available
   InverseMassParametersHdiv parameters;
 };
 
