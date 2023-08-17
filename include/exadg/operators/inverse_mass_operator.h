@@ -266,6 +266,10 @@ public:
                                         VectorType>>(mass_operator, *preconditioner, solver_data);
   }
 
+  /**
+   * This function applies the inverse mass operator. Note that this function allows identical dst,
+   * src vector, i.e. the function can be called like apply(dst, dst).
+   */
   unsigned int
   apply(VectorType & dst, VectorType const & src) const
   {
