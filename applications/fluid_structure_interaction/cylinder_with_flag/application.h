@@ -87,7 +87,7 @@ unsigned int N_CELLS_FLAG_X = 16;
 double const U_X_MAX  = 1.5 * U_MEAN;
 double const END_TIME = 4.0 * L / U_MEAN;
 
-double const       OUTPUT_INTERVAL_TIME                = 1.0 / 600.0;
+double const       OUTPUT_INTERVAL_TIME                = END_TIME / 600.0;
 unsigned int const OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS = 1e2;
 
 double const REL_TOL = 1.e-6;
@@ -595,7 +595,7 @@ private:
     // write output for visualization of results
     pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
     pp_data.output_data.time_control_data.start_time       = 0.0;
-    pp_data.output_data.time_control_data.trigger_interval = OUTPUT_INTERVAL_TIME * end_time_factor;
+    pp_data.output_data.time_control_data.trigger_interval = OUTPUT_INTERVAL_TIME;
     pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = this->output_parameters.filename + "_fluid";
     pp_data.output_data.write_boundary_IDs = true;
@@ -1178,7 +1178,7 @@ private:
     PostProcessorData<dim> pp_data;
     pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
     pp_data.output_data.time_control_data.start_time       = 0.0;
-    pp_data.output_data.time_control_data.trigger_interval = OUTPUT_INTERVAL_TIME * end_time_factor;
+    pp_data.output_data.time_control_data.trigger_interval = OUTPUT_INTERVAL_TIME;
     pp_data.output_data.directory = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename  = this->output_parameters.filename + "_structure";
 
