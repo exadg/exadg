@@ -165,21 +165,21 @@ Operator<dim, Number>::setup_operators()
 
   // inverse mass operator
   InverseMassOperatorData inverse_mass_operator_data_all;
-  inverse_mass_operator_data_all.dof_index        = get_dof_index_all();
-  inverse_mass_operator_data_all.quad_index       = get_quad_index_standard();
-  inverse_mass_operator_data_all.iterative_solver = param.inverse_mass_operator;
+  inverse_mass_operator_data_all.dof_index  = get_dof_index_all();
+  inverse_mass_operator_data_all.quad_index = get_quad_index_standard();
+  inverse_mass_operator_data_all.parameters = param.inverse_mass_operator;
   inverse_mass_all.initialize(*matrix_free, inverse_mass_operator_data_all);
 
   InverseMassOperatorData inverse_mass_operator_data_vector;
-  inverse_mass_operator_data_vector.dof_index        = get_dof_index_vector();
-  inverse_mass_operator_data_vector.quad_index       = get_quad_index_standard();
-  inverse_mass_operator_data_vector.iterative_solver = param.inverse_mass_operator;
+  inverse_mass_operator_data_vector.dof_index  = get_dof_index_vector();
+  inverse_mass_operator_data_vector.quad_index = get_quad_index_standard();
+  inverse_mass_operator_data_vector.parameters = param.inverse_mass_operator;
   inverse_mass_vector.initialize(*matrix_free, inverse_mass_operator_data_vector);
 
   InverseMassOperatorData inverse_mass_operator_data_scalar;
-  inverse_mass_operator_data_scalar.dof_index        = get_dof_index_scalar();
-  inverse_mass_operator_data_scalar.quad_index       = get_quad_index_standard();
-  inverse_mass_operator_data_scalar.iterative_solver = param.inverse_mass_operator;
+  inverse_mass_operator_data_scalar.dof_index  = get_dof_index_scalar();
+  inverse_mass_operator_data_scalar.quad_index = get_quad_index_standard();
+  inverse_mass_operator_data_scalar.parameters = param.inverse_mass_operator;
   inverse_mass_scalar.initialize(*matrix_free, inverse_mass_operator_data_scalar);
 
   // body force operator

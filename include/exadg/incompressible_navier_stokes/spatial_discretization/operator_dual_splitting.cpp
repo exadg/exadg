@@ -91,9 +91,9 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
   else if(this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix)
   {
     InverseMassOperatorData inverse_mass_operator_data;
-    inverse_mass_operator_data.dof_index        = this->get_dof_index_velocity();
-    inverse_mass_operator_data.quad_index       = this->get_quad_index_velocity_linear();
-    inverse_mass_operator_data.iterative_solver = this->param.inverse_mass_preconditioner;
+    inverse_mass_operator_data.dof_index  = this->get_dof_index_velocity();
+    inverse_mass_operator_data.quad_index = this->get_quad_index_velocity_linear();
+    inverse_mass_operator_data.parameters = this->param.inverse_mass_preconditioner;
 
     helmholtz_preconditioner =
       std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(this->get_matrix_free(),

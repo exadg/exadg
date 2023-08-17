@@ -249,7 +249,7 @@ public:
   // matrix-free operator evaluation. The typical use case is a DG formulation with non
   // hypercube elements (e.g. simplex elements).
 
-  InverseMassSolverParameters inverse_mass_operator;
+  InverseMassParameters inverse_mass_operator;
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -267,7 +267,7 @@ public:
   // Jacobi preconditioner as an efficient alternative to the (exact) inverse mass
   // preconditioner.
 
-  InverseMassSolverParameters inverse_mass_preconditioner;
+  InverseMassParameters inverse_mass_preconditioner;
 
   /**************************************************************************************/
   /*                                                                                    */

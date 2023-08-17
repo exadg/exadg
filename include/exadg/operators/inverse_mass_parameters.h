@@ -45,9 +45,9 @@ enum class PreconditionerMass
  * Data struct for mass operator inversion in case of discontinuous Galerkin methods with a
  * block-diagonal mass matrix.
  */
-struct InverseMassSolverParameters
+struct InverseMassParameters
 {
-  InverseMassSolverParameters()
+  InverseMassParameters()
     : implementation_type(InverseMassType::MatrixfreeOperator),
       preconditioner(PreconditionerMass::PointJacobi),
       solver_data(SolverData(1000, 1e-12, 1e-12))
@@ -71,9 +71,9 @@ struct InverseMassSolverParameters
  * H(div)-conforming discretization where the mass matrix is a globally coupled problem as opposed
  * to DG methods (where the mass matrix is block-diagonal).
  */
-struct InverseMassSolverParametersHdiv
+struct InverseMassParametersHdiv
 {
-  InverseMassSolverParametersHdiv()
+  InverseMassParametersHdiv()
     : preconditioner(PreconditionerMass::PointJacobi), solver_data(SolverData(1000, 1e-12, 1e-12))
   {
   }

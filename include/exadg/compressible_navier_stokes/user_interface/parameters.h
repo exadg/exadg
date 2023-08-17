@@ -205,7 +205,7 @@ public:
   // matrix-free operator evaluation. The typical use case is a DG formulation with non
   // hypercube elements (e.g. simplex elements).
 
-  InverseMassSolverParameters inverse_mass_operator;
+  InverseMassParameters inverse_mass_operator;
 };
 
 } // namespace CompNS

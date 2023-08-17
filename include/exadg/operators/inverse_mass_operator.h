@@ -45,7 +45,7 @@ struct InverseMassOperatorData
   unsigned int quad_index;
 
   // only relevant if an explicit matrix-free inverse mass operator is not available
-  InverseMassSolverParameters iterative_solver;
+  InverseMassParameters parameters;
 };
 
 template<int dim, int n_components, typename Number>
@@ -77,7 +77,7 @@ public:
     dof_index         = inverse_mass_operator_data.dof_index;
     quad_index        = inverse_mass_operator_data.quad_index;
 
-    data = inverse_mass_operator_data.iterative_solver;
+    data = inverse_mass_operator_data.parameters;
 
     dealii::FiniteElement<dim> const & fe = matrix_free->get_dof_handler(dof_index).get_fe();
 
@@ -118,18 +118,18 @@ public:
       {
         mass_operator_data.implement_block_diagonal_preconditioner_matrix_free = true;
         mass_operator_data.solver_block_diagonal = Elementwise::Solver::CG;
-        if(inverse_mass_operator_data.iterative_solver.preconditioner == PreconditionerMass::None)
+        if(inverse_mass_operator_data.parameters.preconditioner == PreconditionerMass::None)
         {
           mass_operator_data.preconditioner_block_diagonal = Elementwise::Preconditioner::None;
         }
-        else if(inverse_mass_operator_data.iterative_solver.preconditioner ==
+        else if(inverse_mass_operator_data.parameters.preconditioner ==
                 PreconditionerMass::PointJacobi)
         {
           mass_operator_data.preconditioner_block_diagonal =
             Elementwise::Preconditioner::PointJacobi;
         }
         mass_operator_data.solver_data_block_diagonal =
-          inverse_mass_operator_data.iterative_solver.solver_data;
+          inverse_mass_operator_data.parameters.solver_data;
       }
 
       mass_operator.initialize(*matrix_free, constraint, mass_operator_data);
@@ -184,7 +184,7 @@ private:
 
   unsigned int dof_index, quad_index;
 
-  InverseMassSolverParameters data;
+  InverseMassParameters data;
 
   // This variable is only relevant if the inverse mass can not be realized as a matrix-free
   // operator. Since this class allows only L2-conforming spaces (discontinuous Galerkin method),
