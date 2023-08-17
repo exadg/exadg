@@ -184,7 +184,9 @@ public:
         coupling_structure_to_fluid();
 
         // solve fluid problem
-        fluid->time_integrator->advance_one_timestep_partitioned_solve(is_new_time_window, true /* update_velocity */, true /* update_pressure */);
+        fluid->time_integrator->advance_one_timestep_partitioned_solve(is_new_time_window,
+                                                                       true /* update_velocity */,
+                                                                       true /* update_pressure */);
 
         // compute and send stress to solid
         coupling_fluid_to_structure();
