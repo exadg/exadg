@@ -28,6 +28,7 @@ namespace FSI
 {
 enum class AccelerationMethod
 {
+  Undefined,
   Aitken,
   IQN_ILS,
   IQN_IMVLS
@@ -36,7 +37,7 @@ enum class AccelerationMethod
 struct Parameters
 {
   Parameters()
-    : method(AccelerationMethod::Aitken),
+    : acceleration_method(AccelerationMethod::Undefined),
       abs_tol(1.e-12),
       rel_tol(1.e-3),
       omega_init(0.1),
@@ -51,8 +52,11 @@ struct Parameters
   {
     prm.enter_subsection(subsection_name);
     {
-      prm.add_parameter(
-        "Method", method, "Acceleration method.", Patterns::Enum<AccelerationMethod>(), true);
+      prm.add_parameter("AccelerationMethod",
+                        acceleration_method,
+                        "Acceleration method.",
+                        Patterns::Enum<AccelerationMethod>(),
+                        true);
       prm.add_parameter(
         "AbsTol", abs_tol, "Absolute solver tolerance.", dealii::Patterns::Double(0.0, 1.0), true);
       prm.add_parameter(
@@ -81,7 +85,7 @@ struct Parameters
     prm.leave_subsection();
   }
 
-  AccelerationMethod method;
+  AccelerationMethod acceleration_method;
   double             abs_tol;
   double             rel_tol;
   double             omega_init;
