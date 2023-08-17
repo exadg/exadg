@@ -562,11 +562,9 @@ protected:
   InverseMassOperator<dim, 1, Number>   inverse_mass_velocity_scalar;
 
   /*
-   * solver for mass system (projection). Used when matrix-free inverse mass operator is not
-   * avaliable.
+   * Inverse mass operator used in case of H(div)-conforming space
    */
-  std::shared_ptr<PreconditionerBase<Number>>     mass_preconditioner;
-  std::shared_ptr<Krylov::SolverBase<VectorType>> mass_solver;
+  InverseMassOperatorHdiv<dim, dim, Number> inverse_mass_hdiv;
 
   /*
    * Projection operator.
@@ -578,7 +576,8 @@ protected:
    * Projection solver.
    */
 
-  // elementwise solver/preconditioner
+  // Elementwise solver/preconditioner used in case that only the divergence penalty term is used
+  // and the system of equations is block-diagonal.
   typedef Elementwise::OperatorBase<dim, Number, ProjOperator> ELEMENTWISE_PROJ_OPERATOR;
   std::shared_ptr<ELEMENTWISE_PROJ_OPERATOR>                   elementwise_projection_operator;
 
@@ -586,7 +585,7 @@ protected:
                                               ELEMENTWISE_PRECONDITIONER;
   std::shared_ptr<ELEMENTWISE_PRECONDITIONER> elementwise_preconditioner_projection;
 
-  // projection solver
+  // global solver/preconditioner to be used if the continuity penalty term is applied.
   std::shared_ptr<Krylov::SolverBase<VectorType>> projection_solver;
   std::shared_ptr<PreconditionerBase<Number>>     preconditioner_projection;
 

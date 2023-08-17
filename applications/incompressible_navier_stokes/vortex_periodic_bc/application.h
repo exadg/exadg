@@ -231,9 +231,9 @@ private:
     // preconditioner Schur-complement block
     this->param.preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard;
 
-    // Solve mass matrix
-    this->param.solver_data_mass    = SolverData(1000, ABS_TOL, REL_TOL);
-    this->param.preconditioner_mass = PreconditionerMass::PointJacobi;
+    // Inversion of mass operator in case of H(div)-conforming method
+    this->param.inverse_mass_operator_hdiv.solver_data    = SolverData(1000, ABS_TOL, REL_TOL);
+    this->param.inverse_mass_operator_hdiv.preconditioner = PreconditionerMass::PointJacobi;
   }
 
   void

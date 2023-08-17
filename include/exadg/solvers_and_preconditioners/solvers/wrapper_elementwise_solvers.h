@@ -83,6 +83,9 @@ public:
       false, dealii::ExcMessage("Should not arrive here. This function has not been implemented."));
   }
 
+  /**
+   * Solve function. This function may be called with identical dst, src vectors.
+   */
   unsigned int
   solve(VectorType & dst, VectorType const & src) const override
   {

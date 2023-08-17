@@ -98,10 +98,8 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
     InverseMassOperatorData inverse_mass_operator_data;
     inverse_mass_operator_data.dof_index  = this->get_dof_index_velocity();
     inverse_mass_operator_data.quad_index = this->get_quad_index_velocity_linear();
-    inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
-      this->param.solve_elementwise_mass_system_matrix_free;
-    inverse_mass_operator_data.solver_data_block_diagonal =
-      this->param.solver_data_elementwise_inverse_mass;
+    inverse_mass_operator_data.parameters = this->param.inverse_mass_preconditioner;
+
     momentum_preconditioner =
       std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(this->get_matrix_free(),
                                                                     inverse_mass_operator_data);
@@ -247,10 +245,8 @@ OperatorPressureCorrection<dim, Number>::setup_inverse_mass_operator_pressure()
   InverseMassOperatorData inverse_mass_operator_data_pressure;
   inverse_mass_operator_data_pressure.dof_index  = this->get_dof_index_pressure();
   inverse_mass_operator_data_pressure.quad_index = this->get_quad_index_pressure();
-  inverse_mass_operator_data_pressure.implement_block_diagonal_preconditioner_matrix_free =
-    this->param.solve_elementwise_mass_system_matrix_free;
-  inverse_mass_operator_data_pressure.solver_data_block_diagonal =
-    this->param.solver_data_elementwise_inverse_mass;
+  inverse_mass_operator_data_pressure.parameters = this->param.inverse_mass_operator;
+
   inverse_mass_pressure.initialize(this->get_matrix_free(), inverse_mass_operator_data_pressure);
 }
 
