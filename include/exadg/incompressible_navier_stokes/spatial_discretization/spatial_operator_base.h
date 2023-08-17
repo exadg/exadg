@@ -542,12 +542,9 @@ protected:
   InverseMassOperator<dim, 1, Number>   inverse_mass_velocity_scalar;
 
   /*
-   * Solver for mass system solving a global linear system of equations for all degrees of freedom.
-   * It is used in case the mass operator is not block-diagonal and can not be inverted element-wise
-   * (e.g. H(div)-conforming space).
+   * Inverse mass operator used in case of H(div)-conforming space
    */
-  std::shared_ptr<PreconditionerBase<Number>>     mass_preconditioner;
-  std::shared_ptr<Krylov::SolverBase<VectorType>> mass_solver;
+  InverseMassOperatorHdiv<dim, dim, Number> inverse_mass_hdiv;
 
   /*
    * Projection operator.

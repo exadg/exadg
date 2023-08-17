@@ -31,6 +31,7 @@
 #include <exadg/operators/inverse_mass_parameters.h>
 #include <exadg/operators/mass_operator.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
 
 namespace ExaDG
 {
@@ -197,6 +198,105 @@ private:
   // In case we realize the inverse mass as block-Jacobi preconditioner, we need a MassOperator as
   // underlying operator for the block-Jacobi preconditioner.
   MassOperator<dim, n_components, Number> mass_operator;
+};
+
+struct InverseMassOperatorDataHdiv
+{
+  InverseMassOperatorDataHdiv() : dof_index(0), quad_index(0)
+  {
+  }
+
+  // Parameters referring to dealii::MatrixFree
+  unsigned int dof_index;
+  unsigned int quad_index;
+
+  // only relevant if an explicit matrix-free inverse mass operator is not available
+  InverseMassParametersHdiv parameters;
+};
+
+/*
+ * Inverse mass operator for H(div)-conforming space:
+ *
+ * This class applies the inverse mass operator by solving the mass system as a global linear system
+ * of equations for all degrees of freedom. It is used in case the mass operator is not
+ * block-diagonal and can not be inverted element-wise (e.g. H(div)-conforming space).
+ */
+template<int dim, int n_components, typename Number>
+class InverseMassOperatorHdiv
+{
+private:
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+
+public:
+  void
+  initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
+             dealii::AffineConstraints<Number> const & constraints,
+             InverseMassOperatorDataHdiv const         inverse_mass_operator_data)
+  {
+    // mass operator
+    MassOperatorData<dim> mass_operator_data;
+    mass_operator_data.dof_index  = inverse_mass_operator_data.dof_index;
+    mass_operator_data.quad_index = inverse_mass_operator_data.quad_index;
+    mass_operator.initialize(matrix_free, constraints, mass_operator_data);
+
+    Krylov::SolverDataCG solver_data;
+    solver_data.max_iter             = inverse_mass_operator_data.parameters.solver_data.max_iter;
+    solver_data.solver_tolerance_abs = inverse_mass_operator_data.parameters.solver_data.abs_tol;
+    solver_data.solver_tolerance_rel = inverse_mass_operator_data.parameters.solver_data.rel_tol;
+
+    if(inverse_mass_operator_data.parameters.preconditioner == PreconditionerMass::None)
+    {
+      solver_data.use_preconditioner = false;
+    }
+    else if(inverse_mass_operator_data.parameters.preconditioner == PreconditionerMass::PointJacobi)
+    {
+      preconditioner =
+        std::make_shared<JacobiPreconditioner<MassOperator<dim, n_components, Number>>>(
+          mass_operator);
+      solver_data.use_preconditioner = true;
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+    }
+
+    solver =
+      std::make_shared<Krylov::SolverCG<MassOperator<dim, n_components, Number>,
+                                        PreconditionerBase<Number>,
+                                        VectorType>>(mass_operator, *preconditioner, solver_data);
+  }
+
+  unsigned int
+  apply(VectorType & dst, VectorType const & src) const
+  {
+    Assert(solver.get() != 0, dealii::ExcMessage("Mass solver has not been initialized."));
+
+    VectorType temp;
+
+    // Note that the inverse mass operator might be called like inverse_mass.apply(dst, dst),
+    // i.e. with identical destination and source vectors. In this case, we need to make sure
+    // that the result is still correct.
+    if(&dst == &src)
+    {
+      temp = src;
+      return solver->solve(dst, temp);
+    }
+    else
+    {
+      return solver->solve(dst, src);
+    }
+  }
+
+private:
+  // Solver/preconditioner for mass system solving a global linear system of equations for all
+  // degrees of freedom.
+  std::shared_ptr<PreconditionerBase<Number>>     preconditioner;
+  std::shared_ptr<Krylov::SolverBase<VectorType>> solver;
+
+  // We need a MassOperator as underlying operator.
+  MassOperator<dim, n_components, Number> mass_operator;
+
+  InverseMassParametersHdiv data;
 };
 
 } // namespace ExaDG

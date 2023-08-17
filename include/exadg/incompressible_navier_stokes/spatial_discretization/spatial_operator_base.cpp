@@ -396,33 +396,12 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   mass_operator_data.quad_index = get_quad_index_velocity_linear();
   mass_operator.initialize(*matrix_free, constraint_u, mass_operator_data);
 
-  // Mass solver (used only if inverse mass operator is not avaliable)
-  if(param.spatial_discretization == SpatialDiscretization::HDIV)
-  {
-    Krylov::SolverDataCG solver_data;
-    solver_data.max_iter             = this->param.inverse_mass_operator_hdiv.solver_data.max_iter;
-    solver_data.solver_tolerance_abs = this->param.inverse_mass_operator_hdiv.solver_data.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.inverse_mass_operator_hdiv.solver_data.rel_tol;
+  InverseMassOperatorDataHdiv inverse_mass_data_hdiv;
+  inverse_mass_data_hdiv.dof_index  = get_dof_index_velocity();
+  inverse_mass_data_hdiv.quad_index = get_quad_index_velocity_linear();
+  inverse_mass_data_hdiv.parameters = this->param.inverse_mass_operator_hdiv;
 
-    if(param.inverse_mass_operator_hdiv.preconditioner == PreconditionerMass::None)
-    {
-      solver_data.use_preconditioner = false;
-    }
-    else if(param.inverse_mass_operator_hdiv.preconditioner == PreconditionerMass::PointJacobi)
-    {
-      mass_preconditioner =
-        std::make_shared<JacobiPreconditioner<MassOperator<dim, dim, Number>>>(this->mass_operator);
-      solver_data.use_preconditioner = true;
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
-    }
-
-    mass_solver = std::make_shared<
-      Krylov::SolverCG<MassOperator<dim, dim, Number>, PreconditionerBase<Number>, VectorType>>(
-      this->mass_operator, *mass_preconditioner, solver_data);
-  }
+  inverse_mass_hdiv.initialize(*matrix_free, constraint_u, inverse_mass_data_hdiv);
 
   // inverse mass operator
   if(param.spatial_discretization == SpatialDiscretization::L2)
@@ -1338,19 +1317,7 @@ SpatialOperatorBase<dim, Number>::apply_inverse_mass_operator(VectorType &      
   }
   else if(param.spatial_discretization == SpatialDiscretization::HDIV)
   {
-    Assert(mass_solver.get() != 0, dealii::ExcMessage("Mass solver has not been initialized."));
-
-    VectorType temp;
-
-    if(&dst == &src)
-    {
-      temp = src;
-      return mass_solver->solve(dst, temp);
-    }
-    else
-    {
-      return mass_solver->solve(dst, src);
-    }
+    inverse_mass_hdiv.apply(dst, src);
   }
   else
   {
