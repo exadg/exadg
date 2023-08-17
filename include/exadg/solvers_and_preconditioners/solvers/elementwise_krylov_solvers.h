@@ -397,6 +397,7 @@ private:
 
   // temporary vector
   dealii::AlignedVector<value_type> temp;
+  dealii::AlignedVector<value_type> b_copy;
 
   // vectors of variable size
   dealii::AlignedVector<value_type> res;
@@ -455,6 +456,8 @@ SolverGMRES<value_type, Matrix, Preconditioner>::SolverGMRES(unsigned int const 
   convergence_status = -1.0;
 
   temp = dealii::AlignedVector<value_type>(M);
+
+  b_copy = dealii::AlignedVector<value_type>(M);
 
   one = 1.0;
 }
@@ -647,6 +650,12 @@ SolverGMRES<value_type, Matrix, Preconditioner>::solve(Matrix const *         A,
 {
   iterations = 0;
 
+  // copy rhs-vector b since x and b might point to the same data, in which
+  // case we want to guarantee that the result is still correct.
+  value_type * b_ptr = b_copy.begin();
+  vector_init(b_ptr, M);
+  equ(b_ptr, one, b, M);
+
   // restarted GMRES
   do
   {
@@ -660,7 +669,7 @@ SolverGMRES<value_type, Matrix, Preconditioner>::solve(Matrix const *         A,
     // apply GMRES solver where the
     // maximum number of iterations is set
     // to the maximum size of the Krylov subspace
-    do_solve(A, x, b, P);
+    do_solve(A, x, b_ptr, P);
 
     iterations += k;
 
