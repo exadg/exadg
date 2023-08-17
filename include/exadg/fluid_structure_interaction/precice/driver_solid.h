@@ -146,7 +146,7 @@ public:
 
       // solve structural problem
       // store_solution needs to be true for compatibility
-      structure->time_integrator->advance_one_timestep_partitioned_solve(is_new_time_window);
+      structure->time_integrator->advance_one_timestep_partitioned_solve(is_new_time_window, true /* update_velocity */, true /* update_pressure */);
       // send displacement data to ale
       coupling_structure_to_ale(structure->time_integrator->get_displacement_np(),
                                 structure->time_integrator->get_time_step_size());
