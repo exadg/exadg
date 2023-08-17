@@ -117,9 +117,9 @@ public:
               PreconditionerMass::PointJacobi)
       {
         mass_operator_data.preconditioner_block_diagonal = Elementwise::Preconditioner::PointJacobi;
-        mass_operator_data.solver_data_block_diagonal =
-          inverse_mass_operator_data.iterative_solver.solver_data;
       }
+      mass_operator_data.solver_data_block_diagonal =
+        inverse_mass_operator_data.iterative_solver.solver_data;
 
       mass_operator.initialize(*matrix_free, constraint, mass_operator_data);
 
