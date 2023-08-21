@@ -139,6 +139,10 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   if(param.body_force)
     matrix_free_data.append_mapping_flags(BodyForceOperator<dim, Number>::get_mapping_flags());
 
+  if(param.problem_type == ProblemType::Unsteady)
+    matrix_free_data.append_mapping_flags(
+      BoundaryMassOperator<dim, Number, dim /* n_components */>::get_mapping_flags());
+
   // dealii::DoFHandler, dealii::AffineConstraints
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
   matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
@@ -243,7 +247,7 @@ Operator<dim, Number>::setup_operators()
     elasticity_operator_linear.initialize(*matrix_free, affine_constraints, operator_data);
   }
 
-  // mass operator and related solver for inversion
+  // (boundary) mass operator and related solver for inversion
   if(param.problem_type == ProblemType::Unsteady)
   {
     Structure::MassOperatorData<dim> mass_data;
@@ -285,6 +289,13 @@ Operator<dim, Number>::setup_operators()
       SolverCG<Structure::MassOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
         CG;
     mass_solver = std::make_shared<CG>(mass_operator, *mass_preconditioner, solver_data);
+
+    // setup boundary mass operator
+    BoundaryMassOperatorData<dim, Number> boundary_mass_data;
+    boundary_mass_data.dof_index  = get_dof_index();
+    boundary_mass_data.quad_index = get_quad_index();
+
+    boundary_mass_operator.initialize(*matrix_free, affine_constraints, boundary_mass_data);
   }
 
   // setup rhs operator
@@ -349,9 +360,21 @@ Operator<dim, Number>::setup_solver(double const & scaling_factor_acceleration,
   double const scaling_factor_mass =
     compute_scaling_factor_mass(scaling_factor_acceleration, scaling_factor_velocity);
   if(param.large_deformation)
+  {
     elasticity_operator_nonlinear.set_scaling_factor_mass_operator(scaling_factor_mass);
+    elasticity_operator_nonlinear.set_scaling_factor_mass_boundary_operator(
+      scaling_factor_velocity);
+  }
   else
+  {
     elasticity_operator_linear.set_scaling_factor_mass_operator(scaling_factor_mass);
+    elasticity_operator_linear.set_scaling_factor_mass_boundary_operator(scaling_factor_velocity);
+  }
+
+  if(param.problem_type == ProblemType::Unsteady)
+  {
+    update_boundary_mass_operator(1.0);
+  }
 
   initialize_preconditioner();
 
@@ -727,10 +750,14 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
     {
       // elasticity operator
 
-      // NB: we have to deactivate the mass operator term
+      // NB: we have to deactivate the mass and boundary mass operator terms
       double const scaling_factor_mass =
         elasticity_operator_nonlinear.get_scaling_factor_mass_operator();
       elasticity_operator_nonlinear.set_scaling_factor_mass_operator(0.0);
+
+      double const scaling_factor_mass_boundary =
+        elasticity_operator_nonlinear.get_scaling_factor_mass_boundary_operator();
+      elasticity_operator_nonlinear.set_scaling_factor_mass_boundary_operator(0.0);
 
       // evaluate elasticity operator including inhomogeneous Dirichlet/Neumann boundary conditions:
       // Note that we do not have to set inhomogeneous Dirichlet degrees of freedom explicitly since
@@ -743,8 +770,10 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
       // shift to right-hand side
       rhs *= -1.0;
 
-      // revert scaling factor to initialized value
+      // revert scaling factors to initialized value
       elasticity_operator_nonlinear.set_scaling_factor_mass_operator(scaling_factor_mass);
+      elasticity_operator_nonlinear.set_scaling_factor_mass_boundary_operator(
+        scaling_factor_mass_boundary);
 
       // body forces
       if(param.body_force)
@@ -755,10 +784,14 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
     else // linear case
     {
       // elasticity operator
-      // NB: we have to deactivate the mass operator
+      // NB: we have to deactivate the mass and boundary mass operator terms
       double const scaling_factor_mass =
         elasticity_operator_linear.get_scaling_factor_mass_operator();
       elasticity_operator_linear.set_scaling_factor_mass_operator(0.0);
+
+      double const scaling_factor_mass_boundary =
+        elasticity_operator_linear.get_scaling_factor_mass_boundary_operator();
+      elasticity_operator_linear.set_scaling_factor_mass_boundary_operator(0.0);
 
       // evaluate elasticity operator including inhomogeneous Dirichlet/Neumann boundary conditions:
       // Note that we do not have to set inhomogeneous Dirichlet degrees of freedom explicitly since
@@ -771,8 +804,10 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
       // shift to right-hand side
       rhs *= -1.0;
 
-      // revert scaling factor to initialized value
+      // revert scaling factors to initialized value
       elasticity_operator_linear.set_scaling_factor_mass_operator(scaling_factor_mass);
+      elasticity_operator_linear.set_scaling_factor_mass_boundary_operator(
+        scaling_factor_mass_boundary);
 
       // body force
       if(param.body_force)
@@ -812,8 +847,51 @@ Operator<dim, Number>::apply_add_damping_operator(VectorType & dst, VectorType c
     VectorType tmp;
     tmp.reinit(src);
     tmp.equ(param.weak_damping_coefficient, src);
+
+    // mass_operator includes density as scaling_factor
     mass_operator.apply_add(dst, tmp);
   }
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::evaluate_add_boundary_mass_operator(VectorType &       dst,
+                                                           VectorType const & src) const
+{
+  // boundary mass operator is used to add velocity-dependent Robin boundary integral on the rhs for
+  // the instationary case
+  if(boundary_mass_operator.non_empty() and param.problem_type == ProblemType::Unsteady)
+  {
+    boundary_mass_operator.evaluate_add(dst, src);
+  }
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::update_boundary_mass_operator(Number const factor) const
+{
+  boundary_mass_operator.set_scaling_factor(factor);
+
+  std::map<dealii::types::boundary_id, std::pair<bool, Number>> robin_c_param;
+
+  // update operator data from boundary_descriptor's velocity part from Robin boundaries
+  if(param.problem_type == ProblemType::Unsteady)
+  {
+    for(auto const & entry : this->boundary_descriptor->robin_k_c_p_param)
+    {
+      dealii::types::boundary_id boundary_id          = entry.first;
+      bool                       normal_projection    = entry.second.first[1];
+      Number                     velocity_coefficient = entry.second.second[1];
+
+      if(std::abs(velocity_coefficient) > 1e-20)
+      {
+        robin_c_param.insert(
+          std::make_pair(boundary_id, std::make_pair(normal_projection, velocity_coefficient)));
+      }
+    }
+  }
+
+  boundary_mass_operator.set_ids_normal_coefficients(robin_c_param);
 }
 
 template<int dim, typename Number>
@@ -822,11 +900,13 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
                                                    VectorType const & src,
                                                    VectorType const & const_vector,
                                                    double const       factor,
+                                                   double const       factor_boundary,
                                                    double const       time) const
 {
   // elasticity operator: make sure that constrained degrees of freedom have been set correctly
   // before evaluating the elasticity operator.
   elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
+  elasticity_operator_nonlinear.set_scaling_factor_mass_boundary_operator(factor_boundary);
   elasticity_operator_nonlinear.set_time(time);
   elasticity_operator_nonlinear.evaluate_nonlinear(dst, src);
 
@@ -864,9 +944,11 @@ void
 Operator<dim, Number>::apply_linearized_operator(VectorType &       dst,
                                                  VectorType const & src,
                                                  double const       factor,
+                                                 double const       factor_boundary,
                                                  double const       time) const
 {
   elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
+  elasticity_operator_nonlinear.set_scaling_factor_mass_boundary_operator(factor_boundary);
   elasticity_operator_nonlinear.set_time(time);
   elasticity_operator_nonlinear.vmult(dst, src);
 }
@@ -876,17 +958,20 @@ void
 Operator<dim, Number>::evaluate_elasticity_operator(VectorType &       dst,
                                                     VectorType const & src,
                                                     double const       factor,
+                                                    double const       factor_boundary,
                                                     double const       time) const
 {
   if(param.large_deformation)
   {
     elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
+    elasticity_operator_nonlinear.set_scaling_factor_mass_boundary_operator(factor_boundary);
     elasticity_operator_nonlinear.set_time(time);
     elasticity_operator_nonlinear.evaluate_nonlinear(dst, src);
   }
   else
   {
     elasticity_operator_linear.set_scaling_factor_mass_operator(factor);
+    elasticity_operator_linear.set_scaling_factor_mass_boundary_operator(factor_boundary);
     elasticity_operator_linear.set_time(time);
     elasticity_operator_linear.evaluate(dst, src);
   }
@@ -898,16 +983,18 @@ Operator<dim, Number>::apply_elasticity_operator(VectorType &       dst,
                                                  VectorType const & src,
                                                  VectorType const & linearization,
                                                  double const       factor,
+                                                 double const       factor_boundary,
                                                  double const       time) const
 {
   if(param.large_deformation)
   {
     set_solution_linearization(linearization);
-    apply_linearized_operator(dst, src, factor, time);
+    apply_linearized_operator(dst, src, factor, factor_boundary, time);
   }
   else
   {
     elasticity_operator_linear.set_scaling_factor_mass_operator(factor);
+    elasticity_operator_linear.set_scaling_factor_mass_boundary_operator(factor_boundary);
     elasticity_operator_linear.set_time(time);
     elasticity_operator_linear.vmult(dst, src);
   }
@@ -925,9 +1012,9 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   // update operators
   double const scaling_factor_mass =
     compute_scaling_factor_mass(scaling_factor_acceleration, scaling_factor_velocity);
-  residual_operator.update(const_vector, scaling_factor_mass, time);
+  residual_operator.update(const_vector, scaling_factor_mass, scaling_factor_velocity, time);
 
-  linearized_operator.update(scaling_factor_mass, time);
+  linearized_operator.update(scaling_factor_mass, scaling_factor_velocity, time);
 
   // set inhomogeneous Dirichlet values in order to evaluate the nonlinear residual correctly
   elasticity_operator_nonlinear.set_time(time);
@@ -989,6 +1076,7 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
   double const scaling_factor_mass =
     compute_scaling_factor_mass(scaling_factor_acceleration, scaling_factor_velocity);
   elasticity_operator_linear.set_scaling_factor_mass_operator(scaling_factor_mass);
+  elasticity_operator_linear.set_scaling_factor_mass_boundary_operator(scaling_factor_velocity);
   elasticity_operator_linear.set_time(time);
 
   linear_solver->update_preconditioner(update_preconditioner);

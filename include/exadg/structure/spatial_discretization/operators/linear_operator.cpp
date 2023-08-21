@@ -57,16 +57,72 @@ template<int dim, typename Number>
 void
 LinearOperator<dim, Number>::do_boundary_integral_continuous(
   IntegratorFace &                   integrator_m,
+  OperatorType const &               operator_type,
   dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
-    auto const neumann_value = calculate_neumann_value<dim, Number>(
-      q, integrator_m, boundary_type, boundary_id, this->operator_data.bc, this->time);
+    vector traction;
 
-    integrator_m.submit_value(-neumann_value, q);
+    // integrate standard (stored) traction or exterior pressure on Robin boundaries
+    if(boundary_type == BoundaryType::Neumann or boundary_type == BoundaryType::NeumannCached or
+       boundary_type == BoundaryType::RobinSpringDashpotPressure)
+    {
+      if(operator_type == OperatorType::inhomogeneous or operator_type == OperatorType::full)
+      {
+        traction -= calculate_neumann_value<dim, Number>(
+          q, integrator_m, boundary_type, boundary_id, this->operator_data.bc, this->time);
+      }
+    }
+
+    // check boundary ID in robin_k_c_p_param to add boundary mass integrals from Robin boundaries
+    // on BoundaryType::NeumannCached or BoundaryType::RobinSpringDashpotPressure
+    if(boundary_type == BoundaryType::NeumannCached or
+       boundary_type == BoundaryType::RobinSpringDashpotPressure)
+    {
+      if(operator_type == OperatorType::homogeneous or operator_type == OperatorType::full)
+      {
+        auto const it = this->operator_data.bc->robin_k_c_p_param.find(boundary_id);
+
+        if(it != this->operator_data.bc->robin_k_c_p_param.end())
+        {
+          bool const   normal_projection_displacement = it->second.first[0];
+          double const coefficient_displacement       = it->second.second[0];
+
+          if(normal_projection_displacement)
+          {
+            vector const N = integrator_m.get_normal_vector(q);
+            traction += N * (coefficient_displacement * (N * integrator_m.get_value(q)));
+          }
+          else
+          {
+            traction += coefficient_displacement * integrator_m.get_value(q);
+          }
+
+          if(this->operator_data.unsteady)
+          {
+            bool const   normal_projection_velocity = it->second.first[1];
+            double const coefficient_velocity       = it->second.second[1];
+
+            if(normal_projection_velocity)
+            {
+              vector const N = integrator_m.get_normal_vector(q);
+              traction += N * (coefficient_velocity * this->scaling_factor_mass_boundary *
+                               (N * integrator_m.get_value(q)));
+            }
+            else
+            {
+              traction += coefficient_velocity * this->scaling_factor_mass_boundary *
+                          integrator_m.get_value(q);
+            }
+          }
+        }
+      }
+    }
+
+    integrator_m.submit_value(traction, q);
   }
 }
 

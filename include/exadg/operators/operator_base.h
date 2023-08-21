@@ -365,6 +365,7 @@ protected:
 
   virtual void
   do_boundary_integral_continuous(IntegratorFace &                   integrator,
+                                  OperatorType const &               operator_type,
                                   dealii::types::boundary_id const & boundary_id) const;
 
   // The computation of the diagonal and block-diagonal requires face integrals of type

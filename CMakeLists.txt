@@ -92,6 +92,7 @@ SET(TARGET_SRC
      include/exadg/postprocessor/statistics_manager.cpp
      include/exadg/operators/operator_base.cpp
      include/exadg/operators/mass_operator.cpp
+     include/exadg/operators/boundary_mass_operator.cpp
      include/exadg/operators/rhs_operator.cpp
      include/exadg/operators/navier_stokes_calculators.cpp
      # Poisson equation

@@ -30,7 +30,6 @@ Mathematical model:
 
 Physical quantities:
   Density:                                   1.0000e-03
-  Weak damping coefficient:                  1.0000e+04
 
 Temporal discretization:
   Start time:                                0.0000e+00
@@ -47,10 +46,10 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
-  Number of global refinements:              0
+  Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
-  Polynomial degree:                         1
+  Polynomial degree:                         2
 
 Solver:
 
@@ -86,16 +85,16 @@ Linear solver:
 
 Generating grid for 3-dimensional problem:
 
-  Max. number of refinements:                0
-  Number of cells:                           4
+  Max. number of refinements:                1
+  Number of cells:                           32
 
 Construct elasticity operator ...
 
 Continuous Galerkin finite element discretization:
 
-  degree of 1D polynomials:                  1
-  number of dofs per cell:                   24
-  number of dofs (total):                    60
+  degree of 1D polynomials:                  2
+  number of dofs per cell:                   81
+  number of dofs (total):                    1275
 
 ... done!
 
@@ -122,13 +121,13 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for all fields at time t = 2.5000e+01:
-  Relative error (L2-norm): 9.11314e-01
+  Relative error (L2-norm): 1.40923e-05
 
 Calculate error for all fields at time t = 5.0000e+01:
-  Relative error (L2-norm): 8.03837e-01
+  Relative error (L2-norm): 1.00002e+00
 
 Calculate error for all fields at time t = 7.5000e+01:
-  Relative error (L2-norm): 7.10108e-01
+  Relative error (L2-norm): 1.41055e-05
 
 ________________________________________________________________________________
 
@@ -136,4 +135,4 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for all fields at time t = 1.0000e+02:
-  Relative error (L2-norm): 6.27902e-01
+  Relative error (L2-norm): 1.00002e+00
