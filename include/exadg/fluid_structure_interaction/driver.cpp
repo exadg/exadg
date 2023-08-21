@@ -223,17 +223,28 @@ Driver<dim, Number>::coupling_structure_to_ale(VectorType const & displacement_s
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::coupling_structure_to_fluid(bool const extrapolate) const
+Driver<dim, Number>::coupling_structure_to_fluid(unsigned int iteration) const
 {
   dealii::Timer sub_timer;
   sub_timer.restart();
 
   VectorType velocity_structure;
   structure->pde_operator->initialize_dof_vector(velocity_structure);
-  if(extrapolate)
-    structure->time_integrator->extrapolate_velocity_to_np(velocity_structure);
+  if(iteration == 0)
+  {
+    if(parameters.use_extrapolation)
+    {
+      structure->time_integrator->extrapolate_velocity_to_np(velocity_structure);
+    }
+    else
+    {
+      velocity_structure = structure->time_integrator->get_velocity_n();
+    }
+  }
   else
+  {
     velocity_structure = structure->time_integrator->get_velocity_np();
+  }
 
   structure_to_fluid->update_data(velocity_structure);
 
@@ -271,28 +282,83 @@ Driver<dim, Number>::coupling_fluid_to_structure(bool const end_of_time_step) co
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType &       d_tilde,
-                                                    VectorType const & d,
-                                                    unsigned int       iteration) const
+Driver<dim, Number>::solve_subproblem_mesh(VectorType const & displacement_structure) const
 {
-  coupling_structure_to_ale(d);
+  // update displacement condition at interface
+  coupling_structure_to_ale(displacement_structure);
 
   // move the fluid mesh and update dependent data structures
   fluid->solve_ale();
+}
 
+template<int dim, typename Number>
+void
+Driver<dim, Number>::solve_subproblem_fluid(unsigned int const iteration,
+                                            bool const         update_velocity,
+                                            bool const         update_pressure) const
+{
   // update velocity boundary condition for fluid
-  coupling_structure_to_fluid(iteration == 0);
+  coupling_structure_to_fluid(iteration);
 
   // solve fluid problem
-  fluid->time_integrator->advance_one_timestep_partitioned_solve(iteration == 0);
+  fluid->time_integrator->advance_one_timestep_partitioned_solve(
+    iteration == 0 /* use_extrapolation */, update_velocity, update_pressure);
+}
 
+template<int dim, typename Number>
+void
+Driver<dim, Number>::solve_subproblem_structure(unsigned int const iteration) const
+{
   // update stress boundary condition for solid
-  coupling_fluid_to_structure(/* end_of_time_step = */ true);
+  coupling_fluid_to_structure(true /* end_of_time_step */);
 
   // solve structural problem
-  structure->time_integrator->advance_one_timestep_partitioned_solve(iteration == 0);
+  structure->time_integrator->advance_one_timestep_partitioned_solve(iteration ==
+                                                                     0 /* use_extrapolation */);
+}
 
-  d_tilde = structure->time_integrator->get_displacement_np();
+template<int dim, typename Number>
+void
+Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType &       displacement_structure_tilde,
+                                                    VectorType const & displacement_structure,
+                                                    unsigned int       iteration) const
+{
+  if(parameters.update_method == UpdateMethod::Implicit)
+  {
+    solve_subproblem_mesh(displacement_structure);
+    solve_subproblem_fluid(iteration, true /* update_velocity */, true /* update_pressure */);
+    solve_subproblem_structure(iteration);
+  }
+  else if(parameters.update_method == UpdateMethod::GeometricExplicit)
+  {
+    if(iteration == 0)
+    {
+      solve_subproblem_mesh(displacement_structure);
+    }
+    solve_subproblem_fluid(iteration, true /* update_velocity */, true /* update_pressure */);
+    solve_subproblem_structure(iteration);
+  }
+  else if(parameters.update_method == UpdateMethod::ImplicitPressureStructure or
+          parameters.update_method == UpdateMethod::ImplicitVelocityStructure)
+  {
+    if(iteration == 0)
+    {
+      solve_subproblem_mesh(displacement_structure);
+    }
+
+    bool const update_velocity =
+      iteration == 0 or parameters.update_method == UpdateMethod::ImplicitVelocityStructure;
+    bool const update_pressure =
+      iteration == 0 or parameters.update_method == UpdateMethod::ImplicitPressureStructure;
+    solve_subproblem_fluid(iteration, update_velocity, update_pressure);
+    solve_subproblem_structure(iteration);
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("UpdateMethod not implemented."));
+  }
+
+  displacement_structure_tilde = structure->time_integrator->get_displacement_np();
 }
 
 template<int dim, typename Number>

@@ -99,6 +99,20 @@ public:
   {
   }
 
+  void
+  add_parameters(dealii::ParameterHandler & prm) final
+  {
+    // clang format off
+    prm.enter_subsection("Fluid");
+    prm.add_parameter("TemporalDiscretization",
+                      temporal_discretization,
+                      "Temporal discretization of Navier-Stokes euqaitons.",
+                      Patterns::Enum<IncNS::TemporalDiscretization>(),
+                      false);
+    prm.leave_subsection();
+    // clang format on
+  }
+
 private:
   void
   set_parameters() final
@@ -128,7 +142,7 @@ private:
 
     // TEMPORAL DISCRETIZATION
     param.solver_type                     = SolverType::Unsteady;
-    param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
+    param.temporal_discretization         = temporal_discretization;
     param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     param.order_time_integrator           = 2;
     param.start_with_low_order            = true;
@@ -601,6 +615,9 @@ private:
     field_functions->initial_displacement.reset(new dealii::Functions::ZeroFunction<dim>(dim));
     field_functions->initial_velocity.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
+
+  IncNS::TemporalDiscretization temporal_discretization =
+    IncNS::TemporalDiscretization::BDFDualSplittingScheme;
 };
 } // namespace FluidFSI
 

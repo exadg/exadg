@@ -224,6 +224,13 @@ TimeIntGenAlpha<dim, Number>::get_displacement_np()
 }
 
 template<int dim, typename Number>
+typename TimeIntGenAlpha<dim, Number>::VectorType const &
+TimeIntGenAlpha<dim, Number>::get_displacement_n()
+{
+  return displacement_n;
+}
+
+template<int dim, typename Number>
 void
 TimeIntGenAlpha<dim, Number>::extrapolate_displacement_to_np(VectorType & displacement)
 {
