@@ -534,24 +534,6 @@ enum class SchurComplementPreconditioner
   PressureConvectionDiffusion
 };
 
-/**************************************************************************************/
-/*                                                                                    */
-/*                            SOLVE MASS SYSTEM (projection)                          */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- *  Preconditioner type for solution of mass system, only used for HDIV case as Matrix-free inverse
- * mass operator is not avaliable.
- *
- *  InverseMassMatrix and BlockJacobi are not availiable.
- */
-enum class PreconditionerMass
-{
-  None,
-  PointJacobi
-};
-
 } // namespace IncNS
 } // namespace ExaDG
 

@@ -397,33 +397,12 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   mass_operator_data.quad_index = get_quad_index_velocity_linear();
   mass_operator.initialize(*matrix_free, constraint_u, mass_operator_data);
 
-  // Mass solver (used only if inverse mass operator is not avaliable)
-  if(param.spatial_discretization == SpatialDiscretization::HDIV)
-  {
-    Krylov::SolverDataCG solver_data;
-    solver_data.max_iter             = this->param.solver_data_mass.max_iter;
-    solver_data.solver_tolerance_abs = this->param.solver_data_mass.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.solver_data_mass.rel_tol;
+  InverseMassOperatorDataHdiv inverse_mass_data_hdiv;
+  inverse_mass_data_hdiv.dof_index  = get_dof_index_velocity();
+  inverse_mass_data_hdiv.quad_index = get_quad_index_velocity_linear();
+  inverse_mass_data_hdiv.parameters = this->param.inverse_mass_operator_hdiv;
 
-    if(param.preconditioner_mass == PreconditionerMass::None)
-    {
-      solver_data.use_preconditioner = false;
-    }
-    else if(param.preconditioner_mass == PreconditionerMass::PointJacobi)
-    {
-      mass_preconditioner =
-        std::make_shared<JacobiPreconditioner<MassOperator<dim, dim, Number>>>(this->mass_operator);
-      solver_data.use_preconditioner = true;
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
-    }
-
-    mass_solver = std::make_shared<
-      Krylov::SolverCG<MassOperator<dim, dim, Number>, PreconditionerBase<Number>, VectorType>>(
-      this->mass_operator, *mass_preconditioner, solver_data);
-  }
+  inverse_mass_hdiv.initialize(*matrix_free, constraint_u, inverse_mass_data_hdiv);
 
   // inverse mass operator
   if(param.spatial_discretization == SpatialDiscretization::L2)
@@ -431,20 +410,14 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
     InverseMassOperatorData inverse_mass_operator_data_velocity;
     inverse_mass_operator_data_velocity.dof_index  = get_dof_index_velocity();
     inverse_mass_operator_data_velocity.quad_index = get_quad_index_velocity_linear();
-    inverse_mass_operator_data_velocity.implement_block_diagonal_preconditioner_matrix_free =
-      param.solve_elementwise_mass_system_matrix_free;
-    inverse_mass_operator_data_velocity.solver_data_block_diagonal =
-      param.solver_data_elementwise_inverse_mass;
+    inverse_mass_operator_data_velocity.parameters = param.inverse_mass_operator;
     inverse_mass_velocity.initialize(*matrix_free, inverse_mass_operator_data_velocity);
   }
   // inverse mass operator velocity scalar
   InverseMassOperatorData inverse_mass_operator_data_velocity_scalar;
   inverse_mass_operator_data_velocity_scalar.dof_index  = get_dof_index_velocity_scalar();
   inverse_mass_operator_data_velocity_scalar.quad_index = get_quad_index_velocity_linear();
-  inverse_mass_operator_data_velocity_scalar.implement_block_diagonal_preconditioner_matrix_free =
-    param.solve_elementwise_mass_system_matrix_free;
-  inverse_mass_operator_data_velocity_scalar.solver_data_block_diagonal =
-    param.solver_data_elementwise_inverse_mass;
+  inverse_mass_operator_data_velocity_scalar.parameters = param.inverse_mass_operator;
   inverse_mass_velocity_scalar.initialize(*matrix_free, inverse_mass_operator_data_velocity_scalar);
 
   // body force operator
@@ -1388,19 +1361,7 @@ SpatialOperatorBase<dim, Number>::apply_inverse_mass_operator(VectorType &      
   }
   else if(param.spatial_discretization == SpatialDiscretization::HDIV)
   {
-    Assert(mass_solver.get() != 0, dealii::ExcMessage("Mass solver has not been initialized."));
-
-    VectorType temp;
-
-    if(&dst == &src)
-    {
-      temp = src;
-      return mass_solver->solve(dst, temp);
-    }
-    else
-    {
-      return mass_solver->solve(dst, src);
-    }
+    inverse_mass_hdiv.apply(dst, src);
   }
   else
   {
@@ -1599,41 +1560,41 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
   // divergence penalty only -> local, elementwise problem
   if(param.use_divergence_penalty == true and param.use_continuity_penalty == false)
   {
+    // elementwise operator
+    elementwise_projection_operator =
+      std::make_shared<ELEMENTWISE_PROJ_OPERATOR>(*projection_operator);
+
+    // elementwise preconditioner
+    if(param.preconditioner_projection == PreconditionerProjection::None)
+    {
+      typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<Number>> IDENTITY;
+
+      elementwise_preconditioner_projection =
+        std::make_shared<IDENTITY>(elementwise_projection_operator->get_problem_size());
+    }
+    else if(param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
+    {
+      typedef Elementwise::InverseMassPreconditioner<dim, dim, Number> INVERSE_MASS;
+
+      elementwise_preconditioner_projection =
+        std::make_shared<INVERSE_MASS>(projection_operator->get_matrix_free(),
+                                       projection_operator->get_dof_index(),
+                                       projection_operator->get_quad_index());
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("The specified preconditioner is not implemented."));
+    }
+
+    // elementwise solver
     if(param.solver_projection == SolverProjection::CG)
     {
-      // projection operator
-      elementwise_projection_operator =
-        std::make_shared<ELEMENTWISE_PROJ_OPERATOR>(*projection_operator);
-
-      // preconditioner
-      typedef Elementwise::PreconditionerBase<dealii::VectorizedArray<Number>> PROJ_PRECONDITIONER;
-
-      if(param.preconditioner_projection == PreconditionerProjection::None)
-      {
-        typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<Number>> IDENTITY;
-
-        elementwise_preconditioner_projection =
-          std::make_shared<IDENTITY>(elementwise_projection_operator->get_problem_size());
-      }
-      else if(param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
-      {
-        typedef Elementwise::InverseMassPreconditioner<dim, dim, Number> INVERSE_MASS;
-
-        elementwise_preconditioner_projection =
-          std::make_shared<INVERSE_MASS>(projection_operator->get_matrix_free(),
-                                         projection_operator->get_dof_index(),
-                                         projection_operator->get_quad_index());
-      }
-      else
-      {
-        AssertThrow(false, dealii::ExcMessage("The specified preconditioner is not implemented."));
-      }
-
-      // solver
       Elementwise::IterativeSolverData projection_solver_data;
       projection_solver_data.solver_type         = Elementwise::Solver::CG;
       projection_solver_data.solver_data.abs_tol = param.solver_data_projection.abs_tol;
       projection_solver_data.solver_data.rel_tol = param.solver_data_projection.rel_tol;
+
+      typedef Elementwise::PreconditionerBase<dealii::VectorizedArray<Number>> PROJ_PRECONDITIONER;
 
       typedef Elementwise::
         IterativeSolver<dim, dim, Number, ELEMENTWISE_PROJ_OPERATOR, PROJ_PRECONDITIONER>
@@ -1646,7 +1607,8 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
     }
     else
     {
-      AssertThrow(false, dealii::ExcMessage("Specified projection solver not implemented."));
+      AssertThrow(param.solver_projection == SolverProjection::CG,
+                  dealii::ExcMessage("Specified projection solver not implemented."));
     }
   }
   // continuity penalty term with/without divergence penalty term -> globally coupled problem
@@ -1662,10 +1624,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       InverseMassOperatorData inverse_mass_operator_data;
       inverse_mass_operator_data.dof_index  = get_dof_index_velocity();
       inverse_mass_operator_data.quad_index = get_quad_index_velocity_linear();
-      inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
-        param.solve_elementwise_mass_system_matrix_free;
-      inverse_mass_operator_data.solver_data_block_diagonal =
-        param.solver_data_elementwise_inverse_mass;
+      inverse_mass_operator_data.parameters = param.inverse_mass_preconditioner;
 
       preconditioner_projection =
         std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(*matrix_free,

@@ -57,6 +57,9 @@ public:
 private:
 };
 
+/**
+ * This class implements an identity preconditioner for iterative solvers for elementwise problems.
+ */
 template<typename Number>
 class PreconditionerIdentity : public PreconditionerBase<Number>
 {
@@ -87,6 +90,9 @@ private:
   unsigned int const M;
 };
 
+/**
+ * This class implements a Jacobi preconditioner for iterative solvers for elementwise problems.
+ */
 template<int dim, int n_components, typename Number, typename Operator>
 class JacobiPreconditioner : public Elementwise::PreconditionerBase<dealii::VectorizedArray<Number>>
 {
@@ -113,6 +119,9 @@ public:
     integrator->read_dof_values(global_inverse_diagonal, 0);
   }
 
+  /**
+   * The pointers dst, src may point to the same data.
+   */
   void
   vmult(dealii::VectorizedArray<Number> *       dst,
         dealii::VectorizedArray<Number> const * src) const final
@@ -131,6 +140,11 @@ private:
   dealii::LinearAlgebra::distributed::Vector<Number> global_inverse_diagonal;
 };
 
+/**
+ * This class implements an elementwise inverse mass preconditioner. Currently, this class can only
+ * be used if the inverse mass can be realized as a matrix-free operator evaluation available via
+ * utility functions in deal.II.
+ */
 template<int dim, int n_components, typename Number>
 class InverseMassPreconditioner
   : public Elementwise::PreconditionerBase<dealii::VectorizedArray<Number>>
@@ -148,6 +162,28 @@ public:
   {
     integrator = std::make_shared<Integrator>(matrix_free, dof_index, quad_index);
     inverse    = std::make_shared<CellwiseInverseMass>(*integrator);
+
+    dealii::FiniteElement<dim> const & fe = matrix_free.get_dof_handler(dof_index).get_fe();
+
+    // The inverse mass preconditioner is only available for discontinuous Galerkin discretizations.
+    AssertThrow(
+      fe.conforms(dealii::FiniteElementData<dim>::L2),
+      dealii::ExcMessage(
+        "The elementwise inverse mass preconditioner is only implemented for DG (L2-conforming) elements."));
+
+    // Currently, the inverse mass realized as matrix-free operator evaluation is only available
+    // in deal.II for tensor-product elements.
+    AssertThrow(
+      fe.base_element(0).dofs_per_cell == dealii::Utilities::pow(fe.degree + 1, dim),
+      dealii::ExcMessage(
+        "The elementwise inverse mass preconditioner is only implemented for tensor-product DG elements."));
+
+    // Currently, the inverse mass realized as matrix-free operator evaluation is only available
+    // in deal.II if n_q_points_1d = n_nodes_1d.
+    AssertThrow(
+      matrix_free.get_shape_info(0, quad_index).data[0].n_q_points_1d == fe.degree + 1,
+      dealii::ExcMessage(
+        "The elementwise inverse mass preconditioner is only available if n_q_points_1d = n_nodes_1d."));
   }
 
   void
@@ -156,6 +192,9 @@ public:
     integrator->reinit(cell);
   }
 
+  /**
+   * The pointers dst, src may point to the same data.
+   */
   void
   vmult(dealii::VectorizedArray<Number> *       dst,
         dealii::VectorizedArray<Number> const * src) const final

@@ -93,10 +93,8 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
     InverseMassOperatorData inverse_mass_operator_data;
     inverse_mass_operator_data.dof_index  = this->get_dof_index_velocity();
     inverse_mass_operator_data.quad_index = this->get_quad_index_velocity_linear();
-    inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
-      this->param.solve_elementwise_mass_system_matrix_free;
-    inverse_mass_operator_data.solver_data_block_diagonal =
-      this->param.solver_data_elementwise_inverse_mass;
+    inverse_mass_operator_data.parameters = this->param.inverse_mass_preconditioner;
+
     helmholtz_preconditioner =
       std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(this->get_matrix_free(),
                                                                     inverse_mass_operator_data);

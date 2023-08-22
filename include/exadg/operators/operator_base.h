@@ -195,6 +195,10 @@ public:
   void
   update_block_diagonal_preconditioner() const;
 
+  /**
+   * This function applies the inverse block diagonal to a src vector and stores the result in the
+   * dst vector. This function may be called with identical dst, src vectors.
+   */
   void
   apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const;
 
