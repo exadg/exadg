@@ -68,6 +68,16 @@ Driver<dim, Number>::setup()
     timer_tree.insert({"FSI", "Setup", "Application"}, timer_local.wall_time());
   }
 
+  // setup structure
+  {
+    dealii::Timer timer_local;
+
+    std::cout << "##+ switch setup sequence\n";
+    structure->setup(application->structure, mpi_comm, is_test, 1.0); // compute_robin_parameter());
+
+    timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
+  }
+
   // setup fluid
   {
     dealii::Timer timer_local;
@@ -75,15 +85,6 @@ Driver<dim, Number>::setup()
     fluid->setup(application->fluid, mpi_comm, is_test);
 
     timer_tree.insert({"FSI", "Setup", "Fluid"}, timer_local.wall_time());
-  }
-
-  // setup structure
-  {
-    dealii::Timer timer_local;
-
-    structure->setup(application->structure, mpi_comm, is_test, compute_robin_parameter());
-
-    timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
   }
 
   setup_interface_coupling();
