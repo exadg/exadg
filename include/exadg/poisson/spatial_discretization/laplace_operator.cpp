@@ -387,7 +387,7 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
   OperatorType const &               operator_type,
   dealii::types::boundary_id const & boundary_id) const
 {
-  (void) operator_type;
+  (void)operator_type;
   // if(operator_type == OperatorType::inhomogeneous || operator_type == OperatorType::full)
   {
     BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
