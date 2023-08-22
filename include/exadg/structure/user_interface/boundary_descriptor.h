@@ -78,7 +78,8 @@ struct BoundaryDescriptor
   // using normal projections of displacement/velocity terms controlled via the
   // std::array<bool, 2> for the displacement (index 0) and velocity terms (index 1)
   // The std::array<double, 3> contains the parameters k (index 0), c (index 1) and p (index 2).
-  mutable std::map<dealii::types::boundary_id, std::pair<std::array<bool, 2>, std::array<double, 3>>>
+  mutable std::map<dealii::types::boundary_id,
+                   std::pair<std::array<bool, 2>, std::array<double, 3>>>
     robin_k_c_p_param;
 
   // another type of Neumann boundary condition where the traction force comes
@@ -191,13 +192,15 @@ struct BoundaryDescriptor
   std::map<dealii::types::boundary_id, std::pair<std::array<bool, 2>, std::array<double, 3>>>
   get_robin_k_c_p_param() const
   {
-	return robin_k_c_p_param;
+    return robin_k_c_p_param;
   }
 
   void
-  set_robin_k_c_p_param(std::map<dealii::types::boundary_id, std::pair<std::array<bool, 2>, std::array<double, 3>>> robin_k_c_p_param_in) const
+  set_robin_k_c_p_param(
+    std::map<dealii::types::boundary_id, std::pair<std::array<bool, 2>, std::array<double, 3>>>
+      robin_k_c_p_param_in) const
   {
-	this->robin_k_c_p_param = robin_k_c_p_param_in;
+    this->robin_k_c_p_param = robin_k_c_p_param_in;
   }
 
 private:

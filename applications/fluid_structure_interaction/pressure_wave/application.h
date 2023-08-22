@@ -632,6 +632,24 @@ public:
   {
   }
 
+  void
+  add_parameters(dealii::ParameterHandler & prm) final
+  {
+    // clang format off
+    prm.enter_subsection("Structure");
+    prm.add_parameter("WeakDamping",
+                      weak_damping_coefficient,
+                      "Weak damping coefficient for unsteady problems.");
+    prm.add_parameter("UseExteriorSupport",
+                      use_exterior_support,
+                      "Use exterior support or zero Neumann condition.");
+    prm.add_parameter("SpringCoefficient", spring_coefficient, "Exterior spring stiffness.");
+    prm.add_parameter("DashpotCoefficient", dashpot_coefficient, "Exterior daspot coefficient.");
+    prm.add_parameter("ExteriorPressure", exterior_pressure, "Exterior pressure.");
+    prm.leave_subsection();
+    // clang format on
+  }
+
 private:
   void
   set_parameters() final
@@ -647,6 +665,9 @@ private:
     param.pull_back_traction   = true;
 
     param.density = DENSITY_STRUCTURE;
+
+    param.weak_damping_coefficient = weak_damping_coefficient;
+    param.weak_damping_active      = weak_damping_coefficient > 0.0;
 
     param.start_time                           = 0.0;
     param.end_time                             = END_TIME;
@@ -780,17 +801,21 @@ private:
     boundary_descriptor->dirichlet_bc_component_mask.insert(
       pair_mask(BOUNDARY_ID_OUTFLOW, dealii::ComponentMask()));
 
-    // zero traction at wall boundaries
-    boundary_descriptor->neumann_bc.insert(
-      pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
-
-//    boundary_descriptor->robin_k_c_p_param.insert(std::make_pair(
-//        BOUNDARY_ID_WALLS,
-//        std::make_pair(std::array<bool, 2>{{true /* normal_projection_displacement */,
-//        	                                true /* normal_projection_velocity */}},
-//                       std::array<double, 3>{{E_STRUCTURE * 1e2 /* coefficient_displacement */,
-//                                              E_STRUCTURE /* coefficient_velocity */,
-//                                              0.0 /* exterior_pressure */}})));
+    // zero traction at wall boundaries or exterior support
+    if(use_exterior_support)
+    {
+      boundary_descriptor->robin_k_c_p_param.insert(std::make_pair(
+        BOUNDARY_ID_WALLS,
+        std::make_pair(std::array<bool, 2>{{true /* normal_projection_displacement */,
+                                            true /* normal_projection_velocity */}},
+                       std::array<double, 3>{
+                         {spring_coefficient, dashpot_coefficient, exterior_pressure}})));
+    }
+    else
+    {
+      boundary_descriptor->neumann_bc.insert(
+        pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
+    }
 
     // fluid-structure interface
     boundary_descriptor->neumann_cached_bc.insert(BOUNDARY_ID_FSI);
@@ -842,6 +867,12 @@ private:
 
     return post;
   }
+
+  double weak_damping_coefficient = 0.0;
+  double spring_coefficient       = 0.0;
+  double dashpot_coefficient      = 0.0;
+  double exterior_pressure        = 0.0;
+  bool   use_exterior_support     = false;
 };
 
 } // namespace StructureFSI

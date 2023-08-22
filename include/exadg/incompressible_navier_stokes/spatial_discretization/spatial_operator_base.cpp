@@ -60,7 +60,7 @@ SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
     dof_handler_p(*grid_in->triangulation),
     dof_handler_u_scalar(*grid_in->triangulation),
     pressure_level_is_undefined(false),
-	robin_parameter_traction_output(0.0),
+    robin_parameter_traction_output(0.0),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     velocity_ptr(nullptr),
@@ -1040,7 +1040,8 @@ SpatialOperatorBase<dim, Number>::interpolate_stress_bc(VectorType &       stres
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::set_robin_parameter_traction_output(double const robin_parameter_in) const
+SpatialOperatorBase<dim, Number>::set_robin_parameter_traction_output(
+  double const robin_parameter_in) const
 {
   this->robin_parameter_traction_output = robin_parameter_in;
 }
@@ -1845,8 +1846,6 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
   FaceIntegratorU integrator_u(matrix_free, true, dof_index_u, quad_index);
   FaceIntegratorP integrator_p(matrix_free, true, dof_index_p, quad_index);
 
-  std::cout << "##+ communicated robin parameter in fluid traction evaluation is :" << this->robin_parameter_traction_output << "\n";
-
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
     dealii::types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
@@ -1858,7 +1857,9 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
     if(boundary_type == BoundaryTypeU::DirichletCached)
     {
       integrator_u.reinit(face);
-      integrator_u.gather_evaluate(*velocity_ptr, dealii::EvaluationFlags::gradients | dealii::EvaluationFlags::values);
+      integrator_u.gather_evaluate(*velocity_ptr,
+                                   dealii::EvaluationFlags::gradients |
+                                     dealii::EvaluationFlags::values);
 
       integrator_p.reinit(face);
       integrator_p.gather_evaluate(*pressure_ptr, dealii::EvaluationFlags::values);
@@ -1881,7 +1882,9 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
 
         // Incompressible flow solver is formulated in terms of kinematic viscosity and kinematic
         // pressure, hence multiply by density to get true traction in N/m^2.
-        vector traction = this->robin_parameter_traction_output * u + param.density * (viscosity * ((grad_u + transpose(grad_u)) * normal) - p * normal);
+        vector traction =
+          this->robin_parameter_traction_output * u +
+          param.density * (viscosity * ((grad_u + transpose(grad_u)) * normal) - p * normal);
 
         integrator_u.submit_dof_value(traction, index);
       }

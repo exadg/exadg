@@ -896,43 +896,23 @@ Operator<dim, Number>::update_boundary_mass_operator(Number const factor) const
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::set_robin_parameters(std::set<dealii::types::boundary_id> const & boundary_IDs,
-                                            double const & robin_parameter) const
+Operator<dim, Number>::set_robin_parameters(
+  std::set<dealii::types::boundary_id> const & boundary_IDs,
+  double const &                               robin_parameter) const
 {
-  // create Robin parameter struct to update/append
-//  std::map<dealii::types::boundary_id, std::pair<std::array<bool, 2>, std::array<double, 3>>>
-//	robin_k_c_p_param_fsi;
-
-  auto robin_k_c_p_param = 	this->boundary_descriptor->get_robin_k_c_p_param();
+  auto robin_k_c_p_param = this->boundary_descriptor->get_robin_k_c_p_param();
 
   for(auto it = boundary_IDs.begin(); it != boundary_IDs.end(); ++it)
   {
-	std::cout << "##+ boundary ID: " << *it << ", robin parameter: " << robin_parameter << "\n";
-
-//	this->boundary_descriptor->robin_k_c_p_param.insert(std::make_pair(
-//	  *it /* boundary_id */,
-//	  std::make_pair(std::array<bool, 2>{{false /* normal_projection_displacement */,
-//										  false /* normal_projection_velocity */}},
-//					 std::array<double, 3>{{0.0 /* coefficient_displacement */,
-//											robin_parameter /* coefficient_velocity */,
-//											0.0 /* exterior_pressure */}})));
-
-	robin_k_c_p_param[*it] = std::make_pair(std::array<bool, 2>{{false /* normal_projection_displacement */,
-																							false /* normal_projection_velocity */}},
-																	   std::array<double, 3>{{0.0 /* coefficient_displacement */,
-																		                      robin_parameter /* coefficient_velocity */,
-																							  0.0 /* exterior_pressure */}});
+    robin_k_c_p_param[*it] =
+      std::make_pair(std::array<bool, 2>{{false /* normal_projection_displacement */,
+                                          false /* normal_projection_velocity */}},
+                     std::array<double, 3>{{0.0 /* coefficient_displacement */,
+                                            robin_parameter /* coefficient_velocity */,
+                                            0.0 /* exterior_pressure */}});
   }
 
   this->boundary_descriptor->set_robin_k_c_p_param(robin_k_c_p_param);
-
-//  // merge maps with automatic insertion for missing keys
-//  for(auto const & it : robin_k_c_p_param_in)
-//  {
-//	std::cout << "##+ simpify this; called set_combine_robin_parameter: ID=" << it.first << ", param=" << it.second.second[1] << "\n";
-//    // this->boundary_descriptor->robin_k_c_p_param[it.first] = it.second;
-//  }
-
 }
 
 template<int dim, typename Number>

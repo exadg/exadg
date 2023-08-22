@@ -15,15 +15,22 @@
     "Fluid" : {
         "TemporalDiscretization": "BDFDualSplittingScheme"
     },
+    "Structure" : {
+        "WeakDamping": "0.0",
+        "UseExteriorSupport" : "false",
+        "SpringCoefficient": "0",
+        "DashpotCoefficient": "1e8",
+        "ExteriorPressure": "0.0"
+    },
     "FSI" : {
         "AccelerationMethod": "IQN_ILS",
         "UpdateMethod": "Implicit",
         "CouplingMethod": "DirichletNeumann",
-        "RobinParameterScale": "0.005",
+        "RobinParameterScale": "0.000",
         "AbsTol": "1.e-9",
         "RelTol": "1.e-3",
         "OmegaInit": "0.3",
-        "UseExtrapolation": "true",
+        "UseExtrapolation": "false",
         "PartitionedIterMax": "100",
         "ReusedTimeSteps": "10",
         "GeometricTolerance": "1.e-8"
@@ -33,6 +40,6 @@
     "Output": {
         "OutputDirectory": "output/pressure_wave/",
         "OutputName": "fsi_test",
-        "WriteOutput": "false"
+        "WriteOutput": "true"
     }
 }

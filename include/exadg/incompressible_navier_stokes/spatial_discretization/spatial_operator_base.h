@@ -526,7 +526,7 @@ private:
    * Interface coupling
    */
   std::shared_ptr<ContainerInterfaceData<1, dim, double>> interface_data_dirichlet_cached;
-  mutable double robin_parameter_traction_output;
+  mutable double                                          robin_parameter_traction_output;
 
 protected:
   /*
