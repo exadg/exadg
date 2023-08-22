@@ -98,10 +98,16 @@ struct BoundaryDescriptor
       return BoundaryType::DirichletCached;
     else if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
       return BoundaryType::Neumann;
-    else if(this->robin_k_c_p_param.find(boundary_id) != this->robin_k_c_p_param.end())
-      return BoundaryType::RobinSpringDashpotPressure;
     else if(this->neumann_cached_bc.find(boundary_id) != this->neumann_cached_bc.end())
       return BoundaryType::NeumannCached;
+    else if(this->robin_k_c_p_param.find(boundary_id) != this->robin_k_c_p_param.end() and
+            this->neumann_cached_bc.find(boundary_id) == this->neumann_cached_bc.end())
+    {
+      // In FSI, the  interface is a BoundaryType::NeumannCached, where we also evaluate a Robin
+      // term, but BoundaryType::RobinSpringDashpotPressure refers to spring/dashpot support, which
+      // does not include the interface traction term in the FSI case.
+      return BoundaryType::RobinSpringDashpotPressure;
+    }
 
     AssertThrow(false,
                 dealii::ExcMessage(

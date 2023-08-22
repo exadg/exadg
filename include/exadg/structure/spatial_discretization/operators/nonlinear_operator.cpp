@@ -225,9 +225,9 @@ NonLinearOperator<dim, Number>::boundary_face_loop_nonlinear(
     // solution values.
     bool const is_on_robin_boundary =
       this->operator_data.bc->get_boundary_type(matrix_free.get_boundary_id(face)) ==
-      BoundaryType::RobinSpringDashpotPressure
-	  or this->operator_data.bc->get_boundary_type(matrix_free.get_boundary_id(face)) ==
-	  BoundaryType::NeumannCached;
+        BoundaryType::RobinSpringDashpotPressure or
+      this->operator_data.bc->get_boundary_type(matrix_free.get_boundary_id(face)) ==
+        BoundaryType::NeumannCached;
     if(this->operator_data.pull_back_traction or is_on_robin_boundary)
     {
       integrator_m_inhom.gather_evaluate(src,
