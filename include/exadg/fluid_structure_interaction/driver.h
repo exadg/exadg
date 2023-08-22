@@ -90,10 +90,16 @@ private:
   void
   solve_subproblem_structure(unsigned int const iteration) const;
 
+  double
+  compute_robin_parameter() const;
+
   void
-  apply_dirichlet_neumann_scheme(VectorType &       displacement_structure_tilde,
-                                 VectorType const & displacement_structure,
-                                 unsigned int       iteration) const;
+  update_robin_parameters(double const & robin_parameter_in) const;
+
+  void
+  apply_dirichlet_robin_scheme(VectorType &       displacement_structure_tilde,
+                               VectorType const & displacement_structure,
+                               unsigned int const iteration) const;
 
   // MPI communicator
   MPI_Comm const mpi_comm;

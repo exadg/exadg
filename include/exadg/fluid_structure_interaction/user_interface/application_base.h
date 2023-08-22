@@ -390,7 +390,7 @@ public:
     return ale_elasticity_param;
   }
 
-  std::shared_ptr<Structure::BoundaryDescriptor<dim> const>
+  std::shared_ptr<Structure::BoundaryDescriptor<dim>>
   get_boundary_descriptor_ale_elasticity() const
   {
     return ale_elasticity_boundary_descriptor;

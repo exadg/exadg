@@ -43,11 +43,21 @@ enum class UpdateMethod
   ImplicitVelocityStructure
 };
 
+enum class CouplingMethod
+{
+  Undefined,
+  DirichletNeumann,
+  DirichletRobinFixedParameter,
+  DirichletRobinAdaptiveParameter
+};
+
 struct Parameters
 {
   Parameters()
     : acceleration_method(AccelerationMethod::Undefined),
       update_method(UpdateMethod::Implicit),
+	  coupling_method(CouplingMethod::DirichletNeumann),
+	  robin_parameter_scale(0.0),
       abs_tol(1.e-12),
       rel_tol(1.e-3),
       omega_init(0.1),
@@ -70,6 +80,8 @@ struct Parameters
                         true);
       prm.add_parameter(
         "UpdateMethod", update_method, "Update method.", Patterns::Enum<UpdateMethod>(), false);
+      prm.add_parameter("CouplingMethod", coupling_method, "Coupling method.", Patterns::Enum<CouplingMethod>(), false);
+      prm.add_parameter("RobinParameterScale", robin_parameter_scale, "Parameter scale for Robin coupling.", dealii::Patterns::Double(), false);
       prm.add_parameter(
         "AbsTol", abs_tol, "Absolute solver tolerance.", dealii::Patterns::Double(0.0, 1.0), true);
       prm.add_parameter(
@@ -105,6 +117,8 @@ struct Parameters
 
   AccelerationMethod acceleration_method;
   UpdateMethod       update_method;
+  CouplingMethod     coupling_method;
+  double             robin_parameter_scale;
   double             abs_tol;
   double             rel_tol;
   double             omega_init;

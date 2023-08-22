@@ -40,7 +40,12 @@ public:
   void
   setup(std::shared_ptr<StructureFSI::ApplicationBase<dim, Number>> application,
         MPI_Comm const                                              mpi_comm,
-        bool const                                                  is_test);
+        bool const                                                  is_test,
+		double const &                                              robin_parameter_in);
+
+  void
+  set_robin_parameters(std::set<dealii::types::boundary_id> const & boundary_IDs,
+  		               double const & robin_parameter) const;
 
   // matrix-free
   std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
@@ -61,7 +66,8 @@ void
 SolverStructure<dim, Number>::setup(
   std::shared_ptr<StructureFSI::ApplicationBase<dim, Number>> application,
   MPI_Comm const                                              mpi_comm,
-  bool const                                                  is_test)
+  bool const                                                  is_test,
+  double const &                                              robin_parameter_in)
 {
   // setup spatial operator
   pde_operator =
@@ -97,8 +103,19 @@ SolverStructure<dim, Number>::setup(
 
   time_integrator->setup(application->get_parameters().restarted_simulation);
 
+  // Robin parameters need to be set *before* solver setup
+  set_robin_parameters(application->get_boundary_descriptor()->neumann_cached_bc, robin_parameter_in);
+
   pde_operator->setup_solver(time_integrator->get_scaling_factor_acceleration(),
                              time_integrator->get_scaling_factor_velocity());
+}
+
+template<int dim, typename Number>
+void
+SolverStructure<dim, Number>::set_robin_parameters(std::set<dealii::types::boundary_id> const & boundary_IDs,
+		                                           double const & robin_parameter) const
+{
+  pde_operator->set_robin_parameters(boundary_IDs, robin_parameter);
 }
 
 } // namespace FSI

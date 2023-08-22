@@ -263,6 +263,10 @@ public:
   void
   update_boundary_mass_operator(Number const factor) const;
 
+  void
+  set_robin_parameters(std::set<dealii::types::boundary_id> const & boundary_IDs,
+                       double const & robin_parameter) const final;
+
   /*
    * This function evaluates the nonlinear residual which is required by the Newton solver. In order
    * to evaluate inhomogeneous Dirichlet boundary conditions correctly, inhomogeneous Dirichlet

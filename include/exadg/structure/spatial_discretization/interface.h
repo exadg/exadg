@@ -68,6 +68,10 @@ public:
   virtual void
   evaluate_add_boundary_mass_operator(VectorType & dst, VectorType const & src) const = 0;
 
+  virtual void
+  set_robin_parameters(std::set<dealii::types::boundary_id> const & boundary_IDs,
+                       double const & robin_parameter) const = 0;
+
   virtual std::tuple<unsigned int, unsigned int>
   solve_nonlinear(VectorType &       sol,
                   VectorType const & rhs,

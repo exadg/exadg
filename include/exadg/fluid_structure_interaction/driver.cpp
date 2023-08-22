@@ -68,15 +68,6 @@ Driver<dim, Number>::setup()
     timer_tree.insert({"FSI", "Setup", "Application"}, timer_local.wall_time());
   }
 
-  // setup structure
-  {
-    dealii::Timer timer_local;
-
-    structure->setup(application->structure, mpi_comm, is_test);
-
-    timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
-  }
-
   // setup fluid
   {
     dealii::Timer timer_local;
@@ -84,6 +75,15 @@ Driver<dim, Number>::setup()
     fluid->setup(application->fluid, mpi_comm, is_test);
 
     timer_tree.insert({"FSI", "Setup", "Fluid"}, timer_local.wall_time());
+  }
+
+  // setup structure
+  {
+    dealii::Timer timer_local;
+
+    structure->setup(application->structure, mpi_comm, is_test, compute_robin_parameter());
+
+    timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
   }
 
   setup_interface_coupling();
@@ -318,10 +318,46 @@ Driver<dim, Number>::solve_subproblem_structure(unsigned int const iteration) co
 }
 
 template<int dim, typename Number>
+double
+Driver<dim, Number>::compute_robin_parameter() const
+{
+  if(parameters.coupling_method == CouplingMethod::DirichletNeumann)
+  {
+    return 0.0;
+  }
+  else if(parameters.coupling_method == CouplingMethod::DirichletRobinFixedParameter)
+  {
+    return parameters.robin_parameter_scale;
+  }
+  else if(parameters.coupling_method == CouplingMethod::DirichletRobinAdaptiveParameter)
+  {
+    return parameters.robin_parameter_scale * application->fluid->get_parameters().density /
+           fluid->time_integrator->get_time_step_size();
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("This CouplingScheme is not implemented."));
+  }
+
+  return 0.0;
+}
+
+template<int dim, typename Number>
 void
-Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType &       displacement_structure_tilde,
-                                                    VectorType const & displacement_structure,
-                                                    unsigned int       iteration) const
+Driver<dim, Number>::update_robin_parameters(double const & robin_parameter_in) const
+{
+  // update Robin parameter in fluid operator traction output
+  fluid->pde_operator->set_robin_parameter_traction_output(robin_parameter_in);
+
+  // update Robin parameter parameters in boundary descriptor
+  structure->set_robin_parameters(application->structure->get_boundary_descriptor()->neumann_cached_bc, robin_parameter_in);
+}
+
+template<int dim, typename Number>
+void
+Driver<dim, Number>::apply_dirichlet_robin_scheme(VectorType &       displacement_structure_tilde,
+                                                  VectorType const & displacement_structure,
+                                                  unsigned int const iteration) const
 {
   if(parameters.update_method == UpdateMethod::Implicit)
   {
@@ -372,7 +408,8 @@ Driver<dim, Number>::solve() const
   // compute initial acceleration for structural problem
   {
     // update stress boundary condition for solid at time t_n (not t_{n+1})
-    coupling_fluid_to_structure(/* end_of_time_step = */ false);
+	update_robin_parameters(0.0 /* Dirichlet-Neumann scheme */);
+    coupling_fluid_to_structure(false /* end_of_time_step */);
     structure->time_integrator->compute_initial_acceleration(
       application->structure->get_parameters().restarted_simulation);
   }
@@ -384,12 +421,15 @@ Driver<dim, Number>::solve() const
     fluid->time_integrator->advance_one_timestep_pre_solve(true);
     structure->time_integrator->advance_one_timestep_pre_solve(false);
 
+    // Update Robin parameters before entering coupling loop
+    update_robin_parameters(compute_robin_parameter());
+
     // solve (using strongly-coupled partitioned scheme)
-    auto const lambda_dirichlet_neumann =
+    auto const lambda_dirichlet_robin =
       [&](VectorType & d_tilde, VectorType const & d, unsigned int k) {
-        apply_dirichlet_neumann_scheme(d_tilde, d, k);
+        apply_dirichlet_robin_scheme(d_tilde, d, k);
       };
-    partitioned_solver->solve(lambda_dirichlet_neumann);
+    partitioned_solver->solve(lambda_dirichlet_robin);
 
     // post-solve
     fluid->time_integrator->advance_one_timestep_post_solve();

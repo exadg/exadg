@@ -18,6 +18,8 @@
     "FSI" : {
         "AccelerationMethod": "IQN_ILS",
         "UpdateMethod": "Implicit",
+        "CouplingMethod": "DirichletNeumann",
+        "RobinParameterScale": "0.005",
         "AbsTol": "1.e-9",
         "RelTol": "1.e-3",
         "OmegaInit": "0.3",

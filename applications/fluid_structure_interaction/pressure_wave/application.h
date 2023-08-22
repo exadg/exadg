@@ -784,6 +784,14 @@ private:
     boundary_descriptor->neumann_bc.insert(
       pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
 
+//    boundary_descriptor->robin_k_c_p_param.insert(std::make_pair(
+//        BOUNDARY_ID_WALLS,
+//        std::make_pair(std::array<bool, 2>{{true /* normal_projection_displacement */,
+//        	                                true /* normal_projection_velocity */}},
+//                       std::array<double, 3>{{E_STRUCTURE * 1e2 /* coefficient_displacement */,
+//                                              E_STRUCTURE /* coefficient_velocity */,
+//                                              0.0 /* exterior_pressure */}})));
+
     // fluid-structure interface
     boundary_descriptor->neumann_cached_bc.insert(BOUNDARY_ID_FSI);
   }
