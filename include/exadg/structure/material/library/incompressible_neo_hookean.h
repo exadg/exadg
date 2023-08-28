@@ -84,7 +84,7 @@ public:
    *
    * and
    *
-   * Psi_iso = shear_modulus / 2 * ( I_1_bar - 3 )
+   * Psi_iso = shear_modulus / 2 * ( I_1_bar - trace(I) )
    *
    * with the classic relations
    *
