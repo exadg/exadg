@@ -558,6 +558,21 @@ private:
                                                                                    bulk_modulus,
                                                                                    two_dim_type)));
     }
+    else if(material_type == MaterialType::CompressibleNeoHookean)
+    {
+      Type2D const two_dim_type  = Type2D::Undefined;
+      double const shear_modulus = 1.0e2;
+      double const nu            = 0.3;
+      double const lambda        = shear_modulus * 2.0 * nu / (1.0 - 2.0 * nu);
+
+      this->material_descriptor->insert(Pair(
+        0,
+        new IncompressibleNeoHookeanData<dim>(material_type, shear_modulus, lambda, two_dim_type)));
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage(""));
+    }
   }
 
   void

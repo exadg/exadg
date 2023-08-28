@@ -57,7 +57,8 @@ enum class MaterialType
 {
   Undefined,
   StVenantKirchhoff,
-  IncompressibleNeoHookean
+  IncompressibleNeoHookean,
+  CompressibleNeoHookean
 };
 
 /**************************************************************************************/

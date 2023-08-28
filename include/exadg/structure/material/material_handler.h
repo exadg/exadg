@@ -26,6 +26,7 @@
 #include <deal.II/matrix_free/matrix_free.h>
 
 // ExaDG
+#include <exadg/structure/material/library/compressible_neo_hookean.h>
 #include <exadg/structure/material/library/incompressible_neo_hookean.h>
 #include <exadg/structure/material/library/st_venant_kirchhoff.h>
 #include <exadg/structure/material/material.h>
@@ -94,6 +95,21 @@ public:
             Pair(id,
                  new IncompressibleNeoHookean<dim, Number>(
                    matrix_free, dof_index, quad_index, *data_IncompressibleNeoHookean)));
+          break;
+        }
+        case MaterialType::CompressibleNeoHookean:
+        {
+          AssertThrow(
+            large_deformation == true,
+            dealii::ExcMessage(
+              "Compressible Neo-Hookean material model defined for finite strain theory."));
+
+          std::shared_ptr<CompressibleNeoHookeanData<dim>> data_CompressibleNeoHookean =
+            std::static_pointer_cast<CompressibleNeoHookeanData<dim>>(data);
+          material_map.insert(
+            Pair(id,
+                 new CompressibleNeoHookean<dim, Number>(
+                   matrix_free, dof_index, quad_index, *data_CompressibleNeoHookean)));
           break;
         }
         default:

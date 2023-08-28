@@ -66,6 +66,15 @@ inline DEAL_II_ALWAYS_INLINE //
   return 0.5 * subtract_identity(transpose(F) * F);
 }
 
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  get_identity()
+{
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> I;
+  return add_identity(I);
+}
+
 } // namespace Structure
 } // namespace ExaDG
 
