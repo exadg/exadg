@@ -134,14 +134,12 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacemen
   scalar I_1 = trace(C);
 
   tensor F_inv = invert(deformation_gradient);
-  tensor C_inv = invert(C);
+  tensor C_inv = F_inv * transpose(F_inv);
 
   scalar one_over_J_times_Dd_J = trace(F_inv * gradient_increment);
-  tensor Dd_F_inv              = -F_inv * (gradient_increment * F_inv);
-  tensor Dd_C_inv              = Dd_F_inv * transpose(F_inv) + F_inv * transpose(Dd_F_inv);
-
-  scalar Dd_I_1 = trace(transpose(gradient_increment) * deformation_gradient +
-                        transpose(deformation_gradient) * gradient_increment);
+  scalar Dd_I_1                = 2.0 * trace(transpose(gradient_increment) * deformation_gradient);
+  tensor Dd_F_inv_times_transpose_F_inv = -F_inv * (gradient_increment * F_inv) * transpose(F_inv);
+  tensor Dd_C_inv = Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
 
   // S_vol, i.e., penalty term enforcing J = 1.
   Dd_S = data.bulk_modulus *
