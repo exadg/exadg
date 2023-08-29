@@ -102,7 +102,6 @@ public:
    * S = shear modulus * I - ( shear_modulus - lambda * ln(J) ) * C^(-1)
    *
    */
-
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
                                 unsigned int const cell,
@@ -113,6 +112,17 @@ public:
                                                         tensor const &     deformation_gradient,
                                                         unsigned int const cell,
                                                         unsigned int const q) const final;
+
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  kirchhoff_stress(tensor const & gradient_displacement,
+    unsigned int const                                              cell,
+    unsigned int const                                              q) const final;
+
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  contract_with_J_times_C(tensor const & gradient_increment,
+    tensor const & deformation_gradient,
+    unsigned int const                                              cell,
+    unsigned int const                                              q) const final;
 
 private:
   /*

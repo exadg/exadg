@@ -120,6 +120,9 @@ public:
   // the direction of the traction vector does not change by this pull-back operation.
   bool pull_back_traction;
 
+  // For finite strain problems, integrate the stress terms in the deformed configuration
+  bool spatial_integration;
+
   /**************************************************************************************/
   /*                                                                                    */
   /*                                 PHYSICAL QUANTITIES                                */

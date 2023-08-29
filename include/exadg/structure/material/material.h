@@ -42,27 +42,91 @@ public:
   }
 
   /*
-   * Evaluate 2nd Piola-Kirchhoff stress tensor given the gradient of the displacement field
-   * with respect to the reference configuration (not to be confused with the deformation gradient).
+   * Total Lagrangian Formulation: evaluate 2nd Piola-Kirchhoff stress tensor given
+   * the gradient of the displacement field with respect to the reference configuration
+   * (not to be confused with the deformation gradient).
    */
-  virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  virtual
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   second_piola_kirchhoff_stress(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
     unsigned int const                                              cell,
-    unsigned int const                                              q) const = 0;
+    unsigned int const                                              q) const
+  {
+    (void)gradient_displacement;
+    (void)cell;
+    (void)q;
+    AssertThrow(false,
+                dealii::ExcMessage("For a total Lagrangian formulation,"
+                                   "overwrite this method in derived class."));
+  }
 
   /*
-   * Evaluate the directional derivative with respect to the displacement of the 2nd Piola-Kirchhoff
-   * stress tensor given gradient of the displacment increment with respect to the reference
-   * configuration "gradient_increment" and deformation gradient at the current linearization point
+   * Total Lagrangian Formulation: evaluate the directional derivative with respect
+   * to the displacement of the 2nd Piola-Kirchhoff stress tensor given gradient of
+   * the displacement increment with respect to the reference configuration
+   * "gradient_increment" and deformation gradient at the current linearization point
    * "deformation_gradient".
    */
-  virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  virtual
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   second_piola_kirchhoff_stress_displacement_derivative(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_increment,
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & deformation_gradient,
     unsigned int const                                              cell,
-    unsigned int const                                              q) const = 0;
+    unsigned int const                                              q) const
+  {
+    (void)gradient_increment;
+    (void)deformation_gradient;
+    (void)cell;
+    (void)q;
+    AssertThrow(false,
+                dealii::ExcMessage("For a total Lagrangian formulation,"
+                                   "overwrite this method in derived class."));
+  }
+
+  /*
+   * Lagrangian formulation with integration in the spatial configuration: provide
+   * Kirchhoff stress tau = J * sigma = F * S * F^T given the gradient of the
+   * displacement field with respect to the reference configuration
+   * (not to be confused with the deformation gradient).
+   */
+  virtual
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  kirchhoff_stress(
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
+    unsigned int const                                              cell,
+    unsigned int const                                              q) const
+  {
+    (void)gradient_displacement;
+    (void)cell;
+    (void)q;
+    AssertThrow(false,
+                dealii::ExcMessage("For a Lagrangian formulation in spatial domain,"
+                                   "overwrite this method in derived class."));
+  }
+
+  /*
+   * Lagrangian formulation with integration in the spatial configuration: provide
+   * operation J*C:(X), where C is the spatial tangent tensor and X is a symmetric
+   * second order tensor.
+   */
+  virtual
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  contract_with_J_times_C(
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & symmetric_gradient_increment,
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & deformation_gradient,
+    unsigned int const                                              cell,
+    unsigned int const                                              q) const
+  {
+    (void)symmetric_gradient_increment;
+    (void)deformation_gradient;
+    (void)cell;
+    (void)q;
+    AssertThrow(false,
+                dealii::ExcMessage("For a Lagrangian formulation in spatial domain,"
+                                   "overwrite this method in derived class."));
+  }
 };
 
 } // namespace Structure

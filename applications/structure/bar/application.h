@@ -277,6 +277,7 @@ private:
     this->param.large_deformation    = true;
     this->param.pull_back_body_force = false;
     this->param.pull_back_traction   = false;
+    this->param.spatial_integration  = true;
 
     this->param.density = density;
     if(this->param.problem_type == ProblemType::Unsteady and weak_damping_coefficient > 0.0)

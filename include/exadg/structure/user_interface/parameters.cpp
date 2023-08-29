@@ -37,6 +37,7 @@ Parameters::Parameters()
     large_deformation(false),
     pull_back_body_force(false),
     pull_back_traction(false),
+	spatial_integration(false),
 
     // PHYSICAL QUANTITIES
     density(1.0),
@@ -104,6 +105,11 @@ Parameters::check() const
     }
   }
 
+  if(spatial_integration)
+  {
+    AssertThrow(large_deformation, dealii::ExcMessage("Spatial integration only different from material configuration for finite strain problems."));
+  }
+
   // SPATIAL DISCRETIZATION
   grid.check();
 
@@ -158,6 +164,7 @@ Parameters::print_parameters_mathematical_model(dealii::ConditionalOStream const
   {
     print_parameter(pcout, "Pull back body force", pull_back_body_force);
     print_parameter(pcout, "Pull back traction", pull_back_traction);
+    print_parameter(pcout, "Integrate over spatial configuration", spatial_integration);
   }
 }
 
