@@ -42,19 +42,27 @@ NonLinearOperator<dim, Number>::initialize(
   // it should not make a difference here whether we use dof_index or dof_index_inhomogeneous
   this->matrix_free->initialize_dof_vector(displacement_lin, this->operator_data.dof_index);
   displacement_lin.update_ghost_values();
+
+  // create second matrix_free object for spatial configuration
+  if(this->operator_data.spatial_integration)
+  {
+	std::cout << "setting up second matrix free, deep copy with zero mapping ## \n";
+	matrix_free_spatial.copy_from(*this->matrix_free);
+  }
 }
 
 template<int dim, typename Number>
 void
 NonLinearOperator<dim, Number>::evaluate_nonlinear(VectorType & dst, VectorType const & src) const
 {
+  // ignores spatial_integration, performs integral in reference configuration in any case ##+
   this->matrix_free->loop(&This::cell_loop_nonlinear,
-                          &This::face_loop_nonlinear,
-                          &This::boundary_face_loop_nonlinear,
-                          this,
-                          dst,
-                          src,
-                          true);
+						  &This::face_loop_nonlinear,
+						  &This::boundary_face_loop_nonlinear,
+						  this,
+						  dst,
+						  src,
+						  true);
 }
 
 template<int dim, typename Number>
@@ -89,6 +97,16 @@ NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & ve
   {
     displacement_lin = vector;
     displacement_lin.update_ghost_values();
+
+    // update spatial configuration mapping
+    if(this->operator_data.spatial_integration)
+    {
+//      std::cout << "updating spatial configuration on lvl " << this->get_level() << " ##+ \n";
+    }
+  }
+  else
+  {
+	std::cout << "the linearization vector does not correspond to an invertible mapping on lvl " << this->get_level() << "  ## \n";
   }
 }
 
@@ -223,7 +241,7 @@ NonLinearOperator<dim, Number>::boundary_face_loop_nonlinear(
     // the displacement gradient to obtain the surface area ratio da/dA.
     // We write the integrator flags explicitly in this case since they
     // depend on the parameter pull_back_traction.
-    if(this->operator_data.pull_back_traction)
+    if(this->operator_data.pull_back_traction and not this->operator_data.spatial_integration)
     {
       integrator_m_inhom.gather_evaluate(src, dealii::EvaluationFlags::gradients);
     }
@@ -246,28 +264,28 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
   // loop over all quadrature points
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
-    // material displacement gradient
-    tensor const Grad_d = integrator.get_gradient(q);
+	// material displacement gradient
+	tensor const Grad_d = integrator.get_gradient(q);
 
-    // material deformation gradient
-    tensor const F = get_F<dim, Number>(Grad_d);
+	// material deformation gradient
+	tensor const F = get_F<dim, Number>(Grad_d);
 
-    // 2nd Piola-Kirchhoff stresses
-    tensor const S =
-      material->second_piola_kirchhoff_stress(Grad_d, integrator.get_current_cell_index(), q);
+	// 2nd Piola-Kirchhoff stresses
+	tensor const S =
+	  material->second_piola_kirchhoff_stress(Grad_d, integrator.get_current_cell_index(), q);
 
-    // 1st Piola-Kirchhoff stresses P = F * S
-    tensor const P = F * S;
+	// 1st Piola-Kirchhoff stresses P = F * S
+	tensor const P = F * S;
 
-    // Grad_v : P
-    integrator.submit_gradient(P, q);
+	// Grad_v : P
+	integrator.submit_gradient(P, q);
 
-    if(this->operator_data.unsteady)
-    {
-      integrator.submit_value(this->scaling_factor_mass * this->operator_data.density *
-                                integrator.get_value(q),
-                              q);
-    }
+	if(this->operator_data.unsteady)
+	{
+	  integrator.submit_value(this->scaling_factor_mass * this->operator_data.density *
+								integrator.get_value(q),
+							  q);
+	}
   }
 }
 
@@ -284,7 +302,7 @@ NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
     auto traction = calculate_neumann_value<dim, Number>(
       q, integrator, boundary_type, boundary_id, this->operator_data.bc, this->time);
 
-    if(this->operator_data.pull_back_traction)
+    if(this->operator_data.pull_back_traction and not this->operator_data.spatial_integration)
     {
       tensor F = get_F<dim, Number>(integrator.get_gradient(q));
       vector N = integrator.get_normal_vector(q);

@@ -164,7 +164,7 @@ Parameters::print_parameters_mathematical_model(dealii::ConditionalOStream const
   {
     print_parameter(pcout, "Pull back body force", pull_back_body_force);
     print_parameter(pcout, "Pull back traction", pull_back_traction);
-    print_parameter(pcout, "Integrate over spatial configuration", spatial_integration);
+    print_parameter(pcout, "Perform cell integral in spatial configuration", spatial_integration);
   }
 }
 

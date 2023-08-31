@@ -202,6 +202,7 @@ private:
 
   mutable std::shared_ptr<IntegratorCell> integrator_lin;
   mutable VectorType                      displacement_lin;
+  mutable dealii::MatrixFree<dim, Number> matrix_free_spatial;
 };
 
 } // namespace Structure

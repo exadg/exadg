@@ -38,6 +38,7 @@ struct OperatorData : public OperatorBaseData
     : OperatorBaseData(),
       large_deformation(false),
       pull_back_traction(false),
+	  spatial_integration(false),
       unsteady(false),
       density(1.0),
       quad_index_gauss_lobatto(0)
@@ -50,10 +51,13 @@ struct OperatorData : public OperatorBaseData
   // Boolean parameter differentiating between linear elasticity and finite strain theory
   bool large_deformation;
 
-  // This parameter is only relevant for nonlinear operator
+  // These two parameters are only relevant for nonlinear operator
   // with large deformations. When set to true, the traction t
   // is pulled back to the reference configuration, t_0 = da/dA t.
+  // Spatial integration of the cell integral using an updated mapping
+  // is enabled via spatial_integration.
   bool pull_back_traction;
+  bool spatial_integration;
 
   // activates mass operator in operator evaluation for unsteady problems
   bool unsteady;

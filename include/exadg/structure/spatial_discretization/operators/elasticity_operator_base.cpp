@@ -201,7 +201,6 @@ ElasticityOperatorBase<dim, Number>::reinit_cell_derived(IntegratorCell &   inte
                                                          unsigned int const cell) const
 {
   (void)integrator;
-
   this->material_handler.reinit(*this->matrix_free, cell);
 }
 

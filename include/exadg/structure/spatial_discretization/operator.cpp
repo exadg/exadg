@@ -321,10 +321,12 @@ Operator<dim, Number>::setup_operators()
   if(param.large_deformation)
   {
     operator_data.pull_back_traction = param.pull_back_traction;
+    operator_data.spatial_integration = param.spatial_integration;
   }
   else
   {
     operator_data.pull_back_traction = false;
+    operator_data.spatial_integration = false;
   }
 
   if(param.large_deformation)

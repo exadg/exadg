@@ -367,6 +367,8 @@ void
 OperatorBase<dim, Number, n_components>::evaluate_add(VectorType &       dst,
                                                       VectorType const & src) const
 {
+  std::cout << "OperatorBase<dim, Number, n_components>::evaluate_add ##+ \n";
+
   if(is_dg)
   {
     if(evaluate_face_integrals())
@@ -420,6 +422,8 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) const
 {
+  std::cout << "OperatorBase<dim, Number, n_components>::add_diagonal ##+ \n";
+
   // compute diagonal
   if(is_dg and evaluate_face_integrals())
   {
@@ -831,6 +835,8 @@ void
 OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix(
   SparseMatrix & system_matrix) const
 {
+  std::cout << "OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix ##+ \n";
+
   // assemble matrix locally on each process
   if(evaluate_face_integrals() and is_dg)
   {
@@ -1128,6 +1134,8 @@ OperatorBase<dim, Number, n_components>::cell_loop(
   VectorType const &                      src,
   Range const &                           range) const
 {
+  std::cout << "OperatorBase<dim, Number, n_components>::cell_loop ##+ \n";
+
   IntegratorCell integrator =
     IntegratorCell(matrix_free, this->data.dof_index, this->data.quad_index);
 
@@ -1151,6 +1159,8 @@ OperatorBase<dim, Number, n_components>::face_loop(
   VectorType const &                      src,
   Range const &                           range) const
 {
+  std::cout << "OperatorBase<dim, Number, n_components>::face_loop ##+ \n";
+
   IntegratorFace integrator_m =
     IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
   IntegratorFace integrator_p =
@@ -1178,6 +1188,8 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_hom_operator(
   VectorType const &                      src,
   Range const &                           range) const
 {
+	  std::cout << "OperatorBase<dim, Number, n_components>::boundary_face_loop_hom_operator ##+ \n";
+
   IntegratorFace integrator_m =
     IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
 
@@ -1204,6 +1216,8 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_inhom_operator(
   Range const &                           range) const
 {
   (void)src;
+
+  std::cout << "OperatorBase<dim, Number, n_components>::boundary_face_loop_inhom_operator ##+ \n";
 
   if(is_dg)
   {
@@ -1319,6 +1333,8 @@ OperatorBase<dim, Number, n_components>::cell_loop_diagonal(
 {
   (void)src;
 
+  std::cout << "OperatorBase<dim, Number, n_components>::cell_loop_diagonal ##+ \n";
+
   IntegratorCell integrator =
     IntegratorCell(matrix_free, this->data.dof_index, this->data.quad_index);
 
@@ -1362,6 +1378,8 @@ OperatorBase<dim, Number, n_components>::face_loop_diagonal(
   Range const &                           range) const
 {
   (void)src;
+
+  std::cout << "OperatorBase<dim, Number, n_components>::face_loop_diagonal ##+ \n";
 
   IntegratorFace integrator_m =
     IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
@@ -1426,6 +1444,8 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_diagonal(
 {
   (void)src;
 
+  std::cout << "OperatorBase<dim, Number, n_components>::boundary_face_loop_diagonal ##+ \n";
+
   IntegratorFace integrator_m =
     IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
 
@@ -1469,6 +1489,8 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
   Range const &                           range) const
 {
   (void)src;
+
+  std::cout << "OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal ##+ \n";
 
   IntegratorCell integrator =
     IntegratorCell(matrix_free, this->data.dof_index, this->data.quad_index);
@@ -1847,6 +1869,8 @@ OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix(
   Range const &                           range) const
 {
   (void)src;
+
+  std::cout << "OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix ##+ \n";
 
   IntegratorCell integrator =
     IntegratorCell(matrix_free, this->data.dof_index, this->data.quad_index);
