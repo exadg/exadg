@@ -38,7 +38,7 @@ struct OperatorData : public OperatorBaseData
     : OperatorBaseData(),
       large_deformation(false),
       pull_back_traction(false),
-	  spatial_integration(false),
+      spatial_integration(false),
       unsteady(false),
       density(1.0),
       quad_index_gauss_lobatto(0)

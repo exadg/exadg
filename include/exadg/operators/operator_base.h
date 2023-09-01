@@ -228,13 +228,13 @@ public:
    * iterative solvers (as well as multigrid preconditioners and smoothers). Operations of this type
    * are called apply_...() and vmult_...() as required by deal.II interfaces.
    */
-  void
+  virtual void
   apply(VectorType & dst, VectorType const & src) const;
 
   /*
    * See function apply() for a description.
    */
-  void
+  virtual void
   apply_add(VectorType & dst, VectorType const & src) const;
 
   /*
@@ -288,7 +288,7 @@ public:
   void
   calculate_diagonal(VectorType & diagonal) const;
 
-  void
+  virtual void
   add_diagonal(VectorType & diagonal) const;
 
   /*
@@ -387,6 +387,22 @@ protected:
                                   IntegratorFace & integrator_p) const;
 
   /*
+   * This function loops over all cells and calculates cell integrals.
+   */
+  virtual void
+  cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType &                            dst,
+            VectorType const &                      src,
+            Range const &                           range) const;
+
+  /*
+   * Initialize sparse matrix.
+   */
+  template<typename SparseMatrix>
+  virtual void
+  internal_calculate_system_matrix(SparseMatrix & system_matrix) const;
+
+  /*
    * Matrix-free object.
    */
   lazy_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
@@ -483,15 +499,6 @@ private:
                           VectorType &                            dst,
                           VectorType const &                      src,
                           Range const &                           range) const;
-
-  /*
-   * This function loops over all cells and calculates cell integrals.
-   */
-  void
-  cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
-            VectorType &                            dst,
-            VectorType const &                      src,
-            Range const &                           range) const;
 
   /*
    * This function loops over all interior faces and calculates face integrals.
@@ -630,10 +637,6 @@ private:
   template<typename SparseMatrix>
   void
   internal_init_system_matrix(SparseMatrix & system_matrix, MPI_Comm const & mpi_comm) const;
-
-  template<typename SparseMatrix>
-  void
-  internal_calculate_system_matrix(SparseMatrix & system_matrix) const;
 
   /*
    * Calculate sparse matrix.

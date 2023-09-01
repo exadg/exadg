@@ -114,15 +114,15 @@ public:
                                                         unsigned int const q) const final;
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  kirchhoff_stress(tensor const & gradient_displacement,
-    unsigned int const                                              cell,
-    unsigned int const                                              q) const final;
+  kirchhoff_stress(tensor const &     gradient_displacement,
+                   unsigned int const cell,
+                   unsigned int const q) const final;
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  contract_with_J_times_C(tensor const & gradient_increment,
-    tensor const & deformation_gradient,
-    unsigned int const                                              cell,
-    unsigned int const                                              q) const final;
+  contract_with_J_times_C(tensor const &     gradient_increment,
+                          tensor const &     deformation_gradient,
+                          unsigned int const cell,
+                          unsigned int const q) const final;
 
 private:
   /*

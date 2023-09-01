@@ -239,6 +239,8 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::apply(VectorType & dst, VectorType const & src) const
 {
+  std::cout << "OperatorBase<dim, Number, n_components>::apply ##+ \n";
+
   if(is_dg)
   {
     if(evaluate_face_integrals())
@@ -279,6 +281,8 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::apply_add(VectorType & dst, VectorType const & src) const
 {
+  std::cout << "OperatorBase<dim, Number, n_components>::apply_add ##+ \n";
+
   if(is_dg)
   {
     if(evaluate_face_integrals())
@@ -317,6 +321,8 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
 {
+  std::cout << "OperatorBase<dim, Number, n_components>::rhs_add ##+ \n";
+
   if(is_dg)
   {
     if(evaluate_face_integrals())
@@ -1102,6 +1108,8 @@ OperatorBase<dim, Number, n_components>::cell_loop_full_operator(
   VectorType const &                      src,
   Range const &                           range) const
 {
+  std::cout << "OperatorBase<dim, Number, n_components>::cell_loop_full_operator ##++ \n";
+
   AssertThrow(not is_dg,
               dealii::ExcMessage("This function should not be called for is_dg = true."));
 
@@ -1188,7 +1196,7 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_hom_operator(
   VectorType const &                      src,
   Range const &                           range) const
 {
-	  std::cout << "OperatorBase<dim, Number, n_components>::boundary_face_loop_hom_operator ##+ \n";
+  std::cout << "OperatorBase<dim, Number, n_components>::boundary_face_loop_hom_operator ##+ \n";
 
   IntegratorFace integrator_m =
     IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
@@ -1777,7 +1785,6 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_block_diagonal(
     }
   }
 }
-
 
 template<int dim, typename Number, int n_components>
 void

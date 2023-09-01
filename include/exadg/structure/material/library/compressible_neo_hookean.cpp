@@ -157,23 +157,23 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacement_
 
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-CompressibleNeoHookean<dim, Number>::kirchhoff_stress(
-  tensor const & gradient_displacement,
-  unsigned int const                                              cell,
-  unsigned int const                                              q) const
+CompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradient_displacement,
+                                                      unsigned int const cell,
+                                                      unsigned int const q) const
 {
   tensor tau;
 
   if(parameters_are_variable)
   {
-	shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
-	lambda_stored        = lambda_coefficients.get_coefficient_cell(cell, q);
+    shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+    lambda_stored        = lambda_coefficients.get_coefficient_cell(cell, q);
   }
 
-  tensor I     = get_identity<dim, Number>();
-  tensor F     = get_F<dim, Number>(gradient_displacement);
-  scalar J     = determinant(F);
-  tau = shear_modulus_stored * (F * transpose(F)) - (shear_modulus_stored - lambda_stored * log(J)) * I;
+  tensor I = get_identity<dim, Number>();
+  tensor F = get_F<dim, Number>(gradient_displacement);
+  scalar J = determinant(F);
+  tau =
+    shear_modulus_stored * (F * transpose(F)) - (shear_modulus_stored - lambda_stored * log(J)) * I;
 
   return tau;
 }
@@ -181,23 +181,25 @@ CompressibleNeoHookean<dim, Number>::kirchhoff_stress(
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 CompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
-  tensor const & symmetric_gradient_increment,
-  tensor const & deformation_gradient,
-  unsigned int const                                              cell,
-  unsigned int const                                              q) const
+  tensor const &     symmetric_gradient_increment,
+  tensor const &     deformation_gradient,
+  unsigned int const cell,
+  unsigned int const q) const
 {
   tensor result;
 
   if(parameters_are_variable)
   {
-	shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
-	lambda_stored        = lambda_coefficients.get_coefficient_cell(cell, q);
+    shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+    lambda_stored        = lambda_coefficients.get_coefficient_cell(cell, q);
   }
 
-  tensor I     = get_identity<dim, Number>();
-  scalar J     = determinant(deformation_gradient);
+  tensor I = get_identity<dim, Number>();
+  scalar J = determinant(deformation_gradient);
 
-  result = (2.0 * (shear_modulus_stored - 2.0 * lambda_stored * log(J))) * symmetric_gradient_increment + (2.0 * lambda_stored * trace(symmetric_gradient_increment)) * I;
+  result =
+    (2.0 * (shear_modulus_stored - 2.0 * lambda_stored * log(J))) * symmetric_gradient_increment +
+    (2.0 * lambda_stored * trace(symmetric_gradient_increment)) * I;
 
   return result;
 }

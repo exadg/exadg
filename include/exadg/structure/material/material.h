@@ -46,8 +46,7 @@ public:
    * the gradient of the displacement field with respect to the reference configuration
    * (not to be confused with the deformation gradient).
    */
-  virtual
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   second_piola_kirchhoff_stress(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
     unsigned int const                                              cell,
@@ -68,8 +67,7 @@ public:
    * "gradient_increment" and deformation gradient at the current linearization point
    * "deformation_gradient".
    */
-  virtual
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   second_piola_kirchhoff_stress_displacement_derivative(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_increment,
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & deformation_gradient,
@@ -91,8 +89,7 @@ public:
    * displacement field with respect to the reference configuration
    * (not to be confused with the deformation gradient).
    */
-  virtual
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   kirchhoff_stress(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
     unsigned int const                                              cell,
@@ -111,8 +108,7 @@ public:
    * operation J*C:(X), where C is the spatial tangent tensor and X is a symmetric
    * second order tensor.
    */
-  virtual
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   contract_with_J_times_C(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & symmetric_gradient_increment,
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & deformation_gradient,

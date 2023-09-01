@@ -37,7 +37,7 @@ Parameters::Parameters()
     large_deformation(false),
     pull_back_body_force(false),
     pull_back_traction(false),
-	spatial_integration(false),
+    spatial_integration(false),
 
     // PHYSICAL QUANTITIES
     density(1.0),
@@ -107,7 +107,10 @@ Parameters::check() const
 
   if(spatial_integration)
   {
-    AssertThrow(large_deformation, dealii::ExcMessage("Spatial integration only different from material configuration for finite strain problems."));
+    AssertThrow(
+      large_deformation,
+      dealii::ExcMessage(
+        "Spatial integration only different from material configuration for finite strain problems."));
   }
 
   // SPATIAL DISCRETIZATION

@@ -85,6 +85,31 @@ public:
   VectorType const &
   get_solution_linearization() const;
 
+  /**
+   * Overwrite members in OperatorBase to optionally use spatial integration
+   * via matrix_free_spatial.
+   */
+  void
+  apply(VectorType & dst, VectorType const & src) const override;
+
+  void
+  apply_add(VectorType & dst, VectorType const & src) const override;
+
+  void
+  rhs(VectorType & dst) const override;
+
+  void
+  rhs_add(VectorType & dst) const override;
+
+  void
+  evaluate(VectorType & dst, VectorType const & src) const override;
+
+  void
+  evaluate_add(VectorType & dst, VectorType const & src) const override;
+
+  void
+  add_diagonal(VectorType & diagonal) const override;
+
 private:
   /*
    * Non-linear operator.
@@ -199,6 +224,23 @@ private:
    */
   void
   do_cell_integral(IntegratorCell & integrator) const override;
+
+  /**
+   * Overwrite members in OperatorBase to optionally use spatial integration
+   * via matrix_free_spatial.
+   */
+  void
+  cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType &                            dst,
+            VectorType const &                      src,
+            Range const &                           range) const override;
+
+  /*
+   * Initialize sparse matrix.
+   */
+  template<typename SparseMatrix>
+  void
+  internal_calculate_system_matrix(SparseMatrix & system_matrix) const override;
 
   mutable std::shared_ptr<IntegratorCell> integrator_lin;
   mutable VectorType                      displacement_lin;
