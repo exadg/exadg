@@ -206,7 +206,7 @@ public:
   init_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix,
                      MPI_Comm const &                         mpi_comm) const;
 
-  void
+  virtual void
   calculate_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix) const;
 #endif
 
@@ -218,7 +218,7 @@ public:
   init_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix,
                      MPI_Comm const &                           mpi_comm) const;
 
-  void
+  virtual void
   calculate_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const;
 #endif
 
@@ -399,8 +399,18 @@ protected:
    * Initialize sparse matrix.
    */
   template<typename SparseMatrix>
-  virtual void
+  void
   internal_calculate_system_matrix(SparseMatrix & system_matrix) const;
+
+  /*
+   * Calculate sparse matrix.
+   */
+  template<typename SparseMatrix>
+  void
+  cell_loop_calculate_system_matrix(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                    SparseMatrix &                          dst,
+                                    SparseMatrix const &                    src,
+                                    Range const &                           range) const;
 
   /*
    * Matrix-free object.
@@ -641,13 +651,6 @@ private:
   /*
    * Calculate sparse matrix.
    */
-  template<typename SparseMatrix>
-  void
-  cell_loop_calculate_system_matrix(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                    SparseMatrix &                          dst,
-                                    SparseMatrix const &                    src,
-                                    Range const &                           range) const;
-
   template<typename SparseMatrix>
   void
   face_loop_calculate_system_matrix(dealii::MatrixFree<dim, Number> const & matrix_free,

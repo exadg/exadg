@@ -120,7 +120,7 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
   tensor C     = transpose(F) * F;
   tensor C_inv = invert(C);
 
-  S = shear_modulus_stored * I - (shear_modulus_stored - lambda_stored * log(J)) * C_inv;
+  S = shear_modulus_stored * I - (shear_modulus_stored - 2.0 * lambda_stored * log(J)) * C_inv;
 
   return S;
 }
@@ -149,8 +149,8 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacement_
   tensor Dd_F_inv_times_transpose_F_inv = -F_inv * (gradient_increment * F_inv) * transpose(F_inv);
   tensor Dd_C_inv = Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
 
-  Dd_S = -(shear_modulus_stored - lambda_stored * log(J)) * Dd_C_inv +
-         (lambda_stored * one_over_J_times_Dd_J) * C_inv;
+  Dd_S = -(shear_modulus_stored - 2.0 * lambda_stored * log(J)) * Dd_C_inv +
+         (2.0 * lambda_stored * one_over_J_times_Dd_J) * C_inv;
 
   return Dd_S;
 }
@@ -173,7 +173,7 @@ CompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradien
   tensor F = get_F<dim, Number>(gradient_displacement);
   scalar J = determinant(F);
   tau =
-    shear_modulus_stored * (F * transpose(F)) - (shear_modulus_stored - lambda_stored * log(J)) * I;
+    shear_modulus_stored * (F * transpose(F)) - (shear_modulus_stored - 2.0 * lambda_stored * log(J)) * I;
 
   return tau;
 }

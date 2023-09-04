@@ -201,8 +201,8 @@ NonLinearOperator<dim, Number>::add_diagonal(VectorType & diagonal) const
   if(this->operator_data.spatial_integration)
   {
     dealii::MatrixFreeTools::
-      compute_diagonal<dim, -1, 0, n_components, Number, dealii::VectorizedArray<Number>>(
-        *matrix_free_spatial,
+      compute_diagonal<dim, -1, 0, dim /* n_components */, Number, dealii::VectorizedArray<Number>>(
+        matrix_free_spatial,
         diagonal,
         [&](auto & integrator) -> void {
           // TODO: this is currently done for every column, but would only be necessary
@@ -445,33 +445,25 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
 
   if(this->operator_data.spatial_integration)
   {
-    // #######++++++ this has to be adapted as soon as we have a mapping update.
-
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      // kinematics
-      tensor const Grad_delta = integrator.get_gradient(q);
+      // spatial gradient of the displacement increment
+      tensor const grad_delta = integrator.get_gradient(q);
 
+      // material gradient of the linearization vector
       tensor const Grad_d_lin = integrator_lin->get_gradient(q);
 
       tensor const F_lin = get_F<dim, Number>(Grad_d_lin);
 
-      // 2nd Piola-Kirchhoff stresses
-      tensor const S_lin =
-        material->second_piola_kirchhoff_stress(Grad_d_lin, integrator.get_current_cell_index(), q);
+      // Kirchhoff stresses
+      tensor const tau_lin = material->kirchhoff_stress(Grad_d_lin, integrator.get_current_cell_index(), q);
 
-      // directional derivative of 1st Piola-Kirchhoff stresses P
+      // material part of the directional derivative
+      tensor delta_tau = material->contract_with_J_times_C(0.5*(grad_delta+transpose(grad_delta)), F_lin, integrator.get_current_cell_index(), q);
 
-      // 1. elastic and initial displacement stiffness contributions
-      tensor delta_P = F_lin * material->second_piola_kirchhoff_stress_displacement_derivative(
-                                 Grad_delta, F_lin, integrator.get_current_cell_index(), q);
-
-      // 2. geometric (or initial stress) stiffness contribution
-      delta_P += Grad_delta * S_lin;
-
-      // Grad_v : delta_P
-      integrator.submit_gradient(delta_P, q);
+      // integral over spatial domain
+      integrator.submit_gradient((delta_tau + grad_delta * tau_lin) / determinant(F_lin), q);
 
       if(this->operator_data.unsteady)
       {
@@ -550,17 +542,14 @@ NonLinearOperator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const 
   }
 }
 
+#ifdef DEAL_II_WITH_TRILINOS
 template<int dim, typename Number>
-template<typename SparseMatrix>
 void
-NonLinearOperator<dim, Number>::internal_calculate_system_matrix(SparseMatrix & system_matrix) const
+NonLinearOperator<dim, Number>::calculate_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix) const
 {
   if(this->operator_data.spatial_integration)
   {
-    std::cout
-      << "NonLinearOperator<dim, Number>::internal_calculate_system_matrix ##+ \n";
-
-    matrix_free_spatial->cell_loop(
+    matrix_free_spatial.cell_loop(
       &OperatorBase<dim, Number, dim /* n_components */>::cell_loop_calculate_system_matrix,
       this,
       system_matrix,
@@ -575,6 +564,31 @@ NonLinearOperator<dim, Number>::internal_calculate_system_matrix(SparseMatrix & 
       system_matrix);
   }
 }
+#endif
+
+#ifdef DEAL_II_WITH_PETSC
+template<int dim, typename Number>
+void
+NonLinearOperator<dim, Number>::calculate_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const
+{
+  if(this->operator_data.spatial_integration)
+  {
+    matrix_free_spatial.cell_loop(
+      &OperatorBase<dim, Number, dim /* n_components */>::cell_loop_calculate_system_matrix,
+      this,
+      system_matrix,
+      system_matrix);
+
+    // communicate overlapping matrix parts
+    system_matrix.compress(dealii::VectorOperation::add);
+  }
+  else
+  {
+    OperatorBase<dim, Number, dim /* n_components */>::internal_calculate_system_matrix(
+      system_matrix);
+  }
+}
+#endif
 
 template class NonLinearOperator<2, float>;
 template class NonLinearOperator<2, double>;

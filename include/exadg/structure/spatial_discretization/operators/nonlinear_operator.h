@@ -23,6 +23,12 @@
 #define INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_NONLINEAR_OPERATOR_H_
 
 #include <exadg/structure/spatial_discretization/operators/elasticity_operator_base.h>
+#ifdef DEAL_II_WITH_TRILINOS
+#  include <deal.II/lac/trilinos_sparse_matrix.h>
+#endif
+#ifdef DEAL_II_WITH_PETSC
+#  include <deal.II/lac/petsc_sparse_matrix.h>
+#endif
 
 namespace ExaDG
 {
@@ -109,6 +115,19 @@ public:
 
   void
   add_diagonal(VectorType & diagonal) const override;
+
+  /*
+   * Initialize sparse matrix.
+   */
+#ifdef DEAL_II_WITH_TRILINOS
+  void
+  calculate_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix) const override;
+#endif
+
+#ifdef DEAL_II_WITH_PETSC
+  void
+  calculate_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const override;
+#endif
 
 private:
   /*
@@ -234,13 +253,6 @@ private:
             VectorType &                            dst,
             VectorType const &                      src,
             Range const &                           range) const override;
-
-  /*
-   * Initialize sparse matrix.
-   */
-  template<typename SparseMatrix>
-  void
-  internal_calculate_system_matrix(SparseMatrix & system_matrix) const override;
 
   mutable std::shared_ptr<IntegratorCell> integrator_lin;
   mutable VectorType                      displacement_lin;

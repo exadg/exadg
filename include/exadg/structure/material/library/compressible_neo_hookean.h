@@ -119,7 +119,7 @@ public:
                    unsigned int const q) const final;
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  contract_with_J_times_C(tensor const &     gradient_increment,
+  contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
                           tensor const &     deformation_gradient,
                           unsigned int const cell,
                           unsigned int const q) const final;
