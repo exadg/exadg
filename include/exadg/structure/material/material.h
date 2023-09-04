@@ -79,7 +79,7 @@ public:
     (void)cell;
     (void)q;
     AssertThrow(false,
-                dealii::ExcMessage("For a total Lagrangian formulation,"
+                dealii::ExcMessage("For a total Lagrangian formulation, "
                                    "overwrite this method in derived class."));
   }
 
@@ -99,7 +99,7 @@ public:
     (void)cell;
     (void)q;
     AssertThrow(false,
-                dealii::ExcMessage("For a Lagrangian formulation in spatial domain,"
+                dealii::ExcMessage("For a Lagrangian formulation in spatial domain, "
                                    "overwrite this method in derived class."));
   }
 
@@ -120,7 +120,7 @@ public:
     (void)cell;
     (void)q;
     AssertThrow(false,
-                dealii::ExcMessage("For a Lagrangian formulation in spatial domain,"
+                dealii::ExcMessage("For a Lagrangian formulation in spatial domain, "
                                    "overwrite this method in derived class."));
   }
 };

@@ -569,7 +569,7 @@ private:
 
       this->material_descriptor->insert(Pair(
         0,
-        new IncompressibleNeoHookeanData<dim>(material_type, shear_modulus, lambda, two_dim_type)));
+        new CompressibleNeoHookeanData<dim>(material_type, shear_modulus, lambda, two_dim_type)));
     }
     else
     {

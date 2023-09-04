@@ -99,7 +99,7 @@ public:
    *
    * such that we end up with
    *
-   * S = shear modulus * I - ( shear_modulus - lambda * ln(J) ) * C^(-1)
+   * S = shear modulus * I - ( shear_modulus - 2.0 * lambda * ln(J) ) * C^(-1)
    *
    */
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
