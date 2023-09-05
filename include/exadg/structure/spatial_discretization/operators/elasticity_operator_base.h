@@ -39,6 +39,7 @@ struct OperatorData : public OperatorBaseData
       large_deformation(false),
       pull_back_traction(false),
       spatial_integration(false),
+	  mapping_degree(1),
       unsteady(false),
       density(1.0),
       quad_index_gauss_lobatto(0)
@@ -58,6 +59,8 @@ struct OperatorData : public OperatorBaseData
   // is enabled via spatial_integration.
   bool pull_back_traction;
   bool spatial_integration;
+
+  unsigned int mapping_degree;
 
   // activates mass operator in operator evaluation for unsteady problems
   bool unsteady;

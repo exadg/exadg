@@ -318,6 +318,7 @@ Operator<dim, Number>::setup_operators()
   operator_data.unsteady            = (param.problem_type == ProblemType::Unsteady);
   operator_data.density             = param.density;
   operator_data.large_deformation   = param.large_deformation;
+  operator_data.mapping_degree      = param.mapping_degree;
   if(param.large_deformation)
   {
     operator_data.pull_back_traction  = param.pull_back_traction;
@@ -332,6 +333,7 @@ Operator<dim, Number>::setup_operators()
   if(param.large_deformation)
   {
     elasticity_operator_nonlinear.initialize(*matrix_free, affine_constraints, operator_data);
+    elasticity_operator_nonlinear.set_mapping_reference(mapping);
   }
   else
   {

@@ -48,8 +48,9 @@ NonLinearOperator<dim, Number>::initialize(
   // create second matrix_free object for spatial configuration
   if(this->operator_data.spatial_integration)
   {
-    std::cout << "setting up second matrix free, deep copy with zero mapping ## \n";
-    matrix_free_spatial.copy_from(*this->matrix_free);
+    this->matrix_free_spatial.copy_from(*this->matrix_free);
+
+    this->mapping_spatial   = std::make_shared<MappingDoFVector<dim, Number>>(this->operator_data.mapping_degree);
   }
 }
 
@@ -88,6 +89,13 @@ NonLinearOperator<dim, Number>::valid_deformation(VectorType const & displacemen
   return (valid == 0.0);
 }
 
+template<int dim, typename Number>
+void
+NonLinearOperator<dim, Number>::set_mapping_reference(std::shared_ptr<dealii::Mapping<dim> const> mapping) const
+{
+###+ has to be done per level, maybe give this at construction ?
+  this->mapping_reference = mapping;
+}
 
 template<int dim, typename Number>
 void
@@ -103,8 +111,15 @@ NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & ve
     // update spatial configuration mapping
     if(this->operator_data.spatial_integration)
     {
-      //      std::cout << "updating spatial configuration on lvl " << this->get_level() << " ##+
-      //      \n";
+    	std::cout << "displacement_lin.size() = " << displacement_lin.size() << "\n";
+
+    	if(displacement_lin.size() > 0)
+    	{
+			this->mapping_spatial->initialize_mapping_q_cache(this->mapping_reference,
+															  displacement_lin,
+															  this->matrix_free->get_dof_handler());
+			this->matrix_free_spatial.update_mapping(*mapping_spatial);
+    	}
     }
   }
   else
@@ -132,14 +147,14 @@ NonLinearOperator<dim, Number>::apply(VectorType & dst, VectorType const & src) 
     // Compute matrix-vector product. Constrained degrees of freedom in the src-vector will not be
     // used. The function read_dof_values() (or gather_evaluate()) uses the homogeneous boundary
     // data passed to MatrixFree via AffineConstraints with the standard "dof_index".
-    matrix_free_spatial.cell_loop(&This::cell_loop, this, dst, src, true);
+    this->matrix_free_spatial.cell_loop(&This::cell_loop, this, dst, src, true);
 
     // Constrained degree of freedom are not removed from the system of equations.
     // Instead, we set the diagonal entries of the matrix to 1 for these constrained
     // degrees of freedom. This means that we simply copy the constrained values to the
     // dst vector.
     for(unsigned int const constrained_index :
-        matrix_free_spatial.get_constrained_dofs(this->operator_data.dof_index))
+        this->matrix_free_spatial.get_constrained_dofs(this->operator_data.dof_index))
     {
       dst.local_element(constrained_index) = src.local_element(constrained_index);
     }
@@ -204,7 +219,7 @@ NonLinearOperator<dim, Number>::add_diagonal(VectorType & diagonal) const
   {
     dealii::MatrixFreeTools::
       compute_diagonal<dim, -1, 0, dim /* n_components */, Number, dealii::VectorizedArray<Number>>(
-        matrix_free_spatial,
+        this->matrix_free_spatial,
         diagonal,
         [&](auto & integrator) -> void {
           // TODO: this is currently done for every column, but would only be necessary
@@ -522,7 +537,7 @@ NonLinearOperator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const 
 {
   if(this->operator_data.spatial_integration)
   {
-    IntegratorCell integrator = IntegratorCell(matrix_free_spatial,
+    IntegratorCell integrator = IntegratorCell(this->matrix_free_spatial,
                                                this->operator_data.dof_index,
                                                this->operator_data.quad_index);
 
@@ -551,7 +566,7 @@ NonLinearOperator<dim, Number>::calculate_system_matrix(dealii::TrilinosWrappers
 {
   if(this->operator_data.spatial_integration)
   {
-    matrix_free_spatial.cell_loop(
+    this->matrix_free_spatial.cell_loop(
       &OperatorBase<dim, Number, dim /* n_components */>::cell_loop_calculate_system_matrix,
       this,
       system_matrix,
@@ -562,6 +577,7 @@ NonLinearOperator<dim, Number>::calculate_system_matrix(dealii::TrilinosWrappers
   }
   else
   {
+	std::cout << "OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix ## \n";
     OperatorBase<dim, Number, dim /* n_components */>::internal_calculate_system_matrix(
       system_matrix);
   }
@@ -575,7 +591,7 @@ NonLinearOperator<dim, Number>::calculate_system_matrix(dealii::PETScWrappers::M
 {
   if(this->operator_data.spatial_integration)
   {
-    matrix_free_spatial.cell_loop(
+    this->matrix_free_spatial.cell_loop(
       &OperatorBase<dim, Number, dim /* n_components */>::cell_loop_calculate_system_matrix,
       this,
       system_matrix,

@@ -1877,8 +1877,6 @@ OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix(
 {
   (void)src;
 
-  std::cout << "OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix ##+ \n";
-
   IntegratorCell integrator =
     IntegratorCell(matrix_free, this->data.dof_index, this->data.quad_index);
 

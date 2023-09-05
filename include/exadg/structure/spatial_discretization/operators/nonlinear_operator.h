@@ -23,6 +23,7 @@
 #define INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_NONLINEAR_OPERATOR_H_
 
 #include <exadg/structure/spatial_discretization/operators/elasticity_operator_base.h>
+#include <exadg/grid/mapping_dof_vector.h>
 #ifdef DEAL_II_WITH_TRILINOS
 #  include <deal.II/lac/trilinos_sparse_matrix.h>
 #endif
@@ -60,6 +61,12 @@ public:
   initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
              dealii::AffineConstraints<Number> const & affine_constraints,
              OperatorData<dim> const &                 data) override;
+
+  /**
+   * Set mapping reference for spatial integration.
+   */
+  void
+  set_mapping_reference(std::shared_ptr<dealii::Mapping<dim> const> mapping) const;
 
   /**
    * Evaluates the non-linear operator.
@@ -256,7 +263,10 @@ private:
 
   mutable std::shared_ptr<IntegratorCell> integrator_lin;
   mutable VectorType                      displacement_lin;
-  mutable dealii::MatrixFree<dim, Number> matrix_free_spatial;
+
+  mutable dealii::MatrixFree<dim, Number>                matrix_free_spatial;
+  mutable std::shared_ptr<MappingDoFVector<dim, Number>> mapping_spatial;
+  mutable std::shared_ptr<dealii::Mapping<dim> const>    mapping_reference;
 };
 
 } // namespace Structure

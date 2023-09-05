@@ -5,8 +5,8 @@
         "IsTest": "false"
     },
     "SpatialResolution": {
-        "DegreeMin": "2",
-        "DegreeMax": "2",
+        "DegreeMin": "1",
+        "DegreeMax": "1",
         "RefineSpaceMin": "1",
         "RefineSpaceMax": "1"
     },
@@ -23,7 +23,7 @@
         "WeakDamping": "0.0",
         "UseVolumeForce": "true",
         "VolumeForce": "1.0",
-        "SpatialIntegration": "false",
+        "SpatialIntegration": "true",
         "BoundaryType": "Dirichlet",
         "Displacement": "20.0",
         "Traction":	"10.0"
