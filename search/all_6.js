@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['generalizednewtonianmodel_0',['GeneralizedNewtonianModel',['../classExaDG_1_1IncNS_1_1GeneralizedNewtonianModel.html',1,'ExaDG::IncNS::GeneralizedNewtonianModel&lt; dim, Number &gt;'],['../classExaDG_1_1IncNS_1_1GeneralizedNewtonianModel.html#ad9b27ffd4ab826675232789fd3867be2',1,'ExaDG::IncNS::GeneralizedNewtonianModel::GeneralizedNewtonianModel()']]],
+  ['generalizednewtonianmodel_0',['generalizednewtonianmodel',['../classExaDG_1_1IncNS_1_1GeneralizedNewtonianModel.html',1,'ExaDG::IncNS::GeneralizedNewtonianModel&lt; dim, Number &gt;'],['../classExaDG_1_1IncNS_1_1GeneralizedNewtonianModel.html#ad9b27ffd4ab826675232789fd3867be2',1,'ExaDG::IncNS::GeneralizedNewtonianModel::GeneralizedNewtonianModel()']]],
   ['generalizednewtonianmodel_3c_20dim_2c_20double_20_3e_1',['GeneralizedNewtonianModel&lt; dim, double &gt;',['../classExaDG_1_1IncNS_1_1GeneralizedNewtonianModel.html',1,'ExaDG::IncNS']]],
   ['generalizednewtonianmodeldata_2',['GeneralizedNewtonianModelData',['../structExaDG_1_1IncNS_1_1GeneralizedNewtonianModelData.html',1,'ExaDG::IncNS']]],
   ['generalparameters_3',['GeneralParameters',['../structExaDG_1_1GeneralParameters.html',1,'ExaDG']]],
