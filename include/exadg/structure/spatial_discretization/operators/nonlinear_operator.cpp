@@ -50,7 +50,7 @@ NonLinearOperator<dim, Number>::initialize(
   {
     this->matrix_free_spatial.copy_from(*this->matrix_free);
 
-    this->mapping_spatial   = std::make_shared<MappingDoFVector<dim, Number>>(this->operator_data.mapping_degree);
+    this->mapping_spatial = std::make_shared<MappingDoFVector<dim, Number>>(this->operator_data.mapping_degree);
   }
 }
 
@@ -91,15 +91,14 @@ NonLinearOperator<dim, Number>::valid_deformation(VectorType const & displacemen
 
 template<int dim, typename Number>
 void
-NonLinearOperator<dim, Number>::set_mapping_reference(std::shared_ptr<dealii::Mapping<dim> const> mapping) const
+NonLinearOperator<dim, Number>::set_mapping_undeformed(std::shared_ptr<dealii::Mapping<dim> const> mapping) const
 {
-###+ has to be done per level, maybe give this at construction ?
-  this->mapping_reference = mapping;
+  this->mapping_undeformed = mapping;
 }
 
 template<int dim, typename Number>
 void
-NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & vector) const
+NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & vector, bool const update_mapping) const
 {
   // Only update linearized operator if deformation state is valid. It is better to continue
   // with an old deformation state in the linearized operator than with an invalid one.
@@ -109,17 +108,14 @@ NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & ve
     displacement_lin.update_ghost_values();
 
     // update spatial configuration mapping
-    if(this->operator_data.spatial_integration)
+    if(this->operator_data.spatial_integration && update_mapping)
     {
     	std::cout << "displacement_lin.size() = " << displacement_lin.size() << "\n";
 
-    	if(displacement_lin.size() > 0)
-    	{
-			this->mapping_spatial->initialize_mapping_q_cache(this->mapping_reference,
-															  displacement_lin,
-															  this->matrix_free->get_dof_handler());
-			this->matrix_free_spatial.update_mapping(*mapping_spatial);
-    	}
+		this->mapping_spatial->initialize_mapping_q_cache(this->mapping_undeformed,
+													      displacement_lin,
+														  this->matrix_free->get_dof_handler());
+		this->matrix_free_spatial.update_mapping(*mapping_spatial);
     }
   }
   else

@@ -104,8 +104,9 @@ MultigridPreconditioner<dim, Number>::update()
     }
 
     // copy velocity to finest level
+    std::cout << "MultigridPreconditioner<dim, Number>::update ##+ \n";
     this->get_operator_nonlinear(this->get_number_of_levels() - 1)
-      ->set_solution_linearization(*vector_multigrid_type_ptr);
+      ->set_solution_linearization(*vector_multigrid_type_ptr, true);
 
     // interpolate velocity from fine to coarse level
     this->transfer_from_fine_to_coarse_levels(
@@ -115,7 +116,7 @@ MultigridPreconditioner<dim, Number>::update()
         auto vector_coarse_level =
           this->get_operator_nonlinear(coarse_level)->get_solution_linearization();
         this->transfers->interpolate(fine_level, vector_coarse_level, vector_fine_level);
-        this->get_operator_nonlinear(coarse_level)->set_solution_linearization(vector_coarse_level);
+        this->get_operator_nonlinear(coarse_level)->set_solution_linearization(vector_coarse_level, false);
       });
   }
 

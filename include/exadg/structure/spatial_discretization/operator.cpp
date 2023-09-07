@@ -333,7 +333,7 @@ Operator<dim, Number>::setup_operators()
   if(param.large_deformation)
   {
     elasticity_operator_nonlinear.initialize(*matrix_free, affine_constraints, operator_data);
-    elasticity_operator_nonlinear.set_mapping_reference(mapping);
+    elasticity_operator_nonlinear.set_mapping_undeformed(mapping);
   }
   else
   {
@@ -830,7 +830,8 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::set_solution_linearization(VectorType const & vector) const
 {
-  elasticity_operator_nonlinear.set_solution_linearization(vector);
+  std::cout << "Operator<dim, Number>::set_solution_linearization ##+ \n";
+  elasticity_operator_nonlinear.set_solution_linearization(vector, true);
 }
 
 template<int dim, typename Number>

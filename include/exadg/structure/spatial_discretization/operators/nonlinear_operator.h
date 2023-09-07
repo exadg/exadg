@@ -63,12 +63,6 @@ public:
              OperatorData<dim> const &                 data) override;
 
   /**
-   * Set mapping reference for spatial integration.
-   */
-  void
-  set_mapping_reference(std::shared_ptr<dealii::Mapping<dim> const> mapping) const;
-
-  /**
    * Evaluates the non-linear operator.
    *
    * This function ensures that constrained degrees of freedom are set to zero
@@ -90,7 +84,13 @@ public:
    * Linearized operator: Sets the linearization vector.
    */
   void
-  set_solution_linearization(VectorType const & vector) const;
+  set_solution_linearization(VectorType const & vector, bool const update_mapping) const;
+
+  /**
+   * Set the mapping pointer for the undeformed mapping.
+   */
+  void
+  set_mapping_undeformed(std::shared_ptr<dealii::Mapping<dim> const> mapping) const;
 
   /**
    * Linearized operator: Returns the linearization vector.
@@ -266,7 +266,7 @@ private:
 
   mutable dealii::MatrixFree<dim, Number>                matrix_free_spatial;
   mutable std::shared_ptr<MappingDoFVector<dim, Number>> mapping_spatial;
-  mutable std::shared_ptr<dealii::Mapping<dim> const>    mapping_reference;
+  mutable std::shared_ptr<dealii::Mapping<dim> const> mapping_undeformed;
 };
 
 } // namespace Structure

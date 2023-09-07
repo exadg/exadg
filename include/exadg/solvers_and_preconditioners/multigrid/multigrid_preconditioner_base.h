@@ -247,6 +247,12 @@ protected:
       levelwise_transfer(fine_level, fine_level - 1);
   }
 
+  /*
+   * Returns the correct mapping depending on the multigrid transfer type and the current h-level.
+   */
+  dealii::Mapping<dim> const &
+  get_mapping(unsigned int const h_level) const;
+
   // Pointer to grid class.
   std::shared_ptr<Grid<dim> const> grid;
 
@@ -270,12 +276,6 @@ private:
    */
   void
   initialize_levels(unsigned int const degree, bool const is_dg);
-
-  /*
-   * Returns the correct mapping depending on the multigrid transfer type and the current h-level.
-   */
-  dealii::Mapping<dim> const &
-  get_mapping(unsigned int const h_level) const;
 
   /*
    * Data structures needed for matrix-free operator evaluation.
