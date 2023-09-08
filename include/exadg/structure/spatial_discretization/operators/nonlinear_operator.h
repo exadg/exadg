@@ -58,9 +58,10 @@ public:
    * Initialize function.
    */
   void
-  initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
-             dealii::AffineConstraints<Number> const & affine_constraints,
-             OperatorData<dim> const &                 data) override;
+  initialize(dealii::MatrixFree<dim, Number> const &     matrix_free,
+		     std::shared_ptr<dealii::Mapping<dim> const> mapping_undeformed,
+             dealii::AffineConstraints<Number> const &   affine_constraints,
+             OperatorData<dim> const &                   data) override;
 
   /**
    * Evaluates the non-linear operator.

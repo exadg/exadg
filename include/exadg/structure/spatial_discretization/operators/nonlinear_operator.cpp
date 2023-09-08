@@ -31,11 +31,12 @@ template<int dim, typename Number>
 void
 NonLinearOperator<dim, Number>::initialize(
   dealii::MatrixFree<dim, Number> const &   matrix_free,
+  std::shared_ptr<dealii::Mapping<dim> const> mapping_undeformed,
   dealii::AffineConstraints<Number> const & affine_constraints,
   OperatorData<dim> const &                 data)
 {
 
-  Base::initialize(matrix_free, affine_constraints, data);
+  Base::initialize(matrix_free, mapping_undeformed, affine_constraints, data);
 
   integrator_lin = std::make_shared<IntegratorCell>(*this->matrix_free,
                                                     this->operator_data.dof_index_inhomogeneous,
@@ -50,18 +51,19 @@ NonLinearOperator<dim, Number>::initialize(
   {
     this->matrix_free_spatial.copy_from(*this->matrix_free);
 
+    bool constexpr true_for_version_one = true;
+    if(true_for_version_one)
+      this->mapping_undeformed = mapping_undeformed;
+
     this->mapping_spatial = std::make_shared<MappingDoFVector<dim, Number>>(this->operator_data.mapping_degree);
 
-
-
-
-    VectorType const zero_displacement;
-    std::shared_ptr<MappingDoFVector<dim, Number>> empty_mapping = std::make_shared<MappingDoFVector<dim, Number>>(this->operator_data.mapping_degree);
-    empty_mapping = nullptr;
-	this->mapping_spatial->initialize_mapping_q_cache(empty_mapping,
-			                                          zero_displacement,
-													  this->matrix_free->get_dof_handler());
-	this->matrix_free_spatial.update_mapping(*mapping_spatial);
+    if(true_for_version_one)
+    {
+//		this->mapping_spatial->initialize_mapping_q_cache(this->mapping_undeformed,
+//														  displacement_lin,
+//														  this->matrix_free->get_dof_handler());
+//		this->matrix_free_spatial.update_mapping(*mapping_spatial);
+    }
   }
 }
 

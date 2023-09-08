@@ -243,6 +243,7 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
     }
 
     pde_operator_level->initialize(*this->matrix_free_objects[level],
+    		                       this->get_mapping_ptr_level(level),
                                    *this->constraints[level],
                                    data);
 
@@ -264,6 +265,7 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
     }
 
     pde_operator_level->initialize(*this->matrix_free_objects[level],
+    		                       this->get_mapping_ptr_level(level),
                                    *this->constraints[level],
                                    data);
 

@@ -332,14 +332,14 @@ Operator<dim, Number>::setup_operators()
 
   if(param.large_deformation)
   {
-    elasticity_operator_nonlinear.initialize(*matrix_free, affine_constraints, operator_data);
+    elasticity_operator_nonlinear.initialize(*matrix_free, mapping, affine_constraints, operator_data);
     std::cout << "set_mapping_undeformed in operator ##+ start \n";
-    elasticity_operator_nonlinear.set_mapping_undeformed(mapping);
+    elasticity_operator_nonlinear.set_mapping_undeformed(mapping); // this is not needed anymore
     std::cout << "set_mapping_undeformed in operator ##+ start \n";
   }
   else
   {
-    elasticity_operator_linear.initialize(*matrix_free, affine_constraints, operator_data);
+    elasticity_operator_linear.initialize(*matrix_free, mapping, affine_constraints, operator_data);
   }
 
   // mass operator and related solver for inversion
