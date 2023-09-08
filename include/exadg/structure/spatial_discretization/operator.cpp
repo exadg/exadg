@@ -333,7 +333,9 @@ Operator<dim, Number>::setup_operators()
   if(param.large_deformation)
   {
     elasticity_operator_nonlinear.initialize(*matrix_free, affine_constraints, operator_data);
+    std::cout << "set_mapping_undeformed in operator ##+ start \n";
     elasticity_operator_nonlinear.set_mapping_undeformed(mapping);
+    std::cout << "set_mapping_undeformed in operator ##+ start \n";
   }
   else
   {

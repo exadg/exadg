@@ -51,6 +51,17 @@ NonLinearOperator<dim, Number>::initialize(
     this->matrix_free_spatial.copy_from(*this->matrix_free);
 
     this->mapping_spatial = std::make_shared<MappingDoFVector<dim, Number>>(this->operator_data.mapping_degree);
+
+
+
+
+    VectorType const zero_displacement;
+    std::shared_ptr<MappingDoFVector<dim, Number>> empty_mapping = std::make_shared<MappingDoFVector<dim, Number>>(this->operator_data.mapping_degree);
+    empty_mapping = nullptr;
+	this->mapping_spatial->initialize_mapping_q_cache(empty_mapping,
+			                                          zero_displacement,
+													  this->matrix_free->get_dof_handler());
+	this->matrix_free_spatial.update_mapping(*mapping_spatial);
   }
 }
 
@@ -93,7 +104,9 @@ template<int dim, typename Number>
 void
 NonLinearOperator<dim, Number>::set_mapping_undeformed(std::shared_ptr<dealii::Mapping<dim> const> mapping) const
 {
+  std::cout << "setting mapping undeformed int nonlinear operator ##+ start\n";
   this->mapping_undeformed = mapping;
+  std::cout << "setting mapping undeformed int nonlinear operator ##+ end\n";
 }
 
 template<int dim, typename Number>
@@ -110,12 +123,26 @@ NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & ve
     // update spatial configuration mapping
     if(this->operator_data.spatial_integration && update_mapping)
     {
-    	std::cout << "displacement_lin.size() = " << displacement_lin.size() << "\n";
+    	std::cout << "displacement_lin.size() = " << displacement_lin.size() << " ##+ start\n";
+
+    	if(this->mapping_undeformed == nullptr)
+    	{
+    	  std::cout << "NO MAPPING TO GET HERE!?\n";
+    	}
+    	else
+    	{
+    	  std::cout << "HAVE MAP\n";
+    	}
 
 		this->mapping_spatial->initialize_mapping_q_cache(this->mapping_undeformed,
 													      displacement_lin,
 														  this->matrix_free->get_dof_handler());
+
+  	    std::cout << "->...<-\n";
+
 		this->matrix_free_spatial.update_mapping(*mapping_spatial);
+
+		std::cout << "displacement_lin.size() = " << displacement_lin.size() << " ##+ end\n";
     }
   }
   else

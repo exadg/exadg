@@ -253,6 +253,9 @@ protected:
   dealii::Mapping<dim> const &
   get_mapping(unsigned int const h_level) const;
 
+  std::shared_ptr<dealii::Mapping<dim> const>
+  get_mapping_ptr_level(unsigned int const level) const;
+
   // Pointer to grid class.
   std::shared_ptr<Grid<dim> const> grid;
 

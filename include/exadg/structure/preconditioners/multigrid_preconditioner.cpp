@@ -104,9 +104,11 @@ MultigridPreconditioner<dim, Number>::update()
     }
 
     // copy velocity to finest level
-    std::cout << "MultigridPreconditioner<dim, Number>::update ##+ \n";
+    std::cout << "MultigridPreconditioner<dim, Number>::update 1 ##+ \n";
     this->get_operator_nonlinear(this->get_number_of_levels() - 1)
       ->set_solution_linearization(*vector_multigrid_type_ptr, true);
+
+    std::cout << "MultigridPreconditioner<dim, Number>::update 2 ##+ \n";
 
     // interpolate velocity from fine to coarse level
     this->transfer_from_fine_to_coarse_levels(
@@ -118,6 +120,8 @@ MultigridPreconditioner<dim, Number>::update()
         this->transfers->interpolate(fine_level, vector_coarse_level, vector_fine_level);
         this->get_operator_nonlinear(coarse_level)->set_solution_linearization(vector_coarse_level, false);
       });
+
+    std::cout << "MultigridPreconditioner<dim, Number>::update 3 ##+ \n";
   }
 
   // In case that the operators have been updated, we also need to update the smoothers and the
@@ -241,6 +245,10 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
     pde_operator_level->initialize(*this->matrix_free_objects[level],
                                    *this->constraints[level],
                                    data);
+
+    std::cout << "set_mapping_undeformed in MG ##+ start \n";
+    pde_operator_level->set_mapping_undeformed(this->get_mapping_ptr_level(level)); // ##+
+    std::cout << "set_mapping_undeformed in MG ##+ end   \n";
 
     mg_operator_level = std::make_shared<MGOperatorNonlinear>(pde_operator_level);
   }
