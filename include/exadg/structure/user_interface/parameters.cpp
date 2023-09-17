@@ -110,7 +110,13 @@ Parameters::check() const
     AssertThrow(
       large_deformation,
       dealii::ExcMessage(
-        "Spatial integration only different from material configuration for finite strain problems."));
+        "Spatial integration only different from"
+    	"material configuration for finite strain problems."));
+
+    AssertThrow(mapping_degree == degree,
+      dealii::ExcMessage(
+    	"Mapping degree and approximation degree"
+    	"need to match for spatial integration."));
   }
 
   // SPATIAL DISCRETIZATION
