@@ -113,7 +113,7 @@ MultigridPreconditioner<dim, Number>::update()
     // interpolate velocity from fine to coarse level
     this->transfer_from_fine_to_coarse_levels(
       [&](unsigned int const fine_level, unsigned int const coarse_level) {
-        auto vector_fine_level =
+        auto const & vector_fine_level =
           this->get_operator_nonlinear(fine_level)->get_solution_linearization();
         auto vector_coarse_level =
           this->get_operator_nonlinear(coarse_level)->get_solution_linearization();
