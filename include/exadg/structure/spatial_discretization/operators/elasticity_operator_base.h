@@ -39,7 +39,7 @@ struct OperatorData : public OperatorBaseData
       large_deformation(false),
       pull_back_traction(false),
       spatial_integration(false),
-	  mapping_degree(1),
+      mapping_degree(1),
       unsteady(false),
       density(1.0),
       quad_index_gauss_lobatto(0)
@@ -100,7 +100,6 @@ public:
 
   virtual void
   initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
-		     std::shared_ptr<dealii::Mapping<dim> const> mapping_undeformed,
              dealii::AffineConstraints<Number> const & affine_constraints,
              OperatorData<dim> const &                 data);
 

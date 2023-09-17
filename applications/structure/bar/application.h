@@ -295,7 +295,7 @@ private:
     this->param.solver_info_data.interval_time_steps =
       problem_type == ProblemType::Unsteady ? 200 : 2;
 
-    this->param.mapping_degree    = 1;
+    this->param.mapping_degree    = spatial_integration ? this->param.degree : 1;
     this->param.grid.element_type = ElementType::Hypercube; // Simplex;
     if(this->param.grid.element_type == ElementType::Simplex)
     {
@@ -636,7 +636,7 @@ private:
 
   double length = 1.0, height = 1.0, width = 1.0;
 
-  bool use_volume_force = true;
+  bool use_volume_force    = true;
   bool spatial_integration = false;
 
   bool const clamp_at_right_boundary = false;

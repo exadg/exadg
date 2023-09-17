@@ -172,8 +172,8 @@ CompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradien
   tensor I = get_identity<dim, Number>();
   tensor F = get_F<dim, Number>(gradient_displacement);
   scalar J = determinant(F);
-  tau =
-    shear_modulus_stored * (F * transpose(F)) - (shear_modulus_stored - 2.0 * lambda_stored * log(J)) * I;
+  tau      = shear_modulus_stored * (F * transpose(F)) -
+        (shear_modulus_stored - 2.0 * lambda_stored * log(J)) * I;
 
   return tau;
 }

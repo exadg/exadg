@@ -31,12 +31,10 @@ template<int dim, typename Number>
 void
 NonLinearOperator<dim, Number>::initialize(
   dealii::MatrixFree<dim, Number> const &   matrix_free,
-  std::shared_ptr<dealii::Mapping<dim> const> mapping_undeformed,
   dealii::AffineConstraints<Number> const & affine_constraints,
   OperatorData<dim> const &                 data)
 {
-
-  Base::initialize(matrix_free, mapping_undeformed, affine_constraints, data);
+  Base::initialize(matrix_free, affine_constraints, data);
 
   integrator_lin = std::make_shared<IntegratorCell>(*this->matrix_free,
                                                     this->operator_data.dof_index_inhomogeneous,
@@ -46,24 +44,15 @@ NonLinearOperator<dim, Number>::initialize(
   this->matrix_free->initialize_dof_vector(displacement_lin, this->operator_data.dof_index);
   displacement_lin.update_ghost_values();
 
-  // create second matrix_free object for spatial configuration
   if(this->operator_data.spatial_integration)
   {
+    // Deep copy of matrix_free to use different mappings.
     this->matrix_free_spatial.copy_from(*this->matrix_free);
 
-    bool constexpr true_for_version_one = true;
-    if(true_for_version_one)
-      this->mapping_undeformed = mapping_undeformed;
-
-    this->mapping_spatial = std::make_shared<MappingDoFVector<dim, Number>>(this->operator_data.mapping_degree);
-
-    if(true_for_version_one)
-    {
-//		this->mapping_spatial->initialize_mapping_q_cache(this->mapping_undeformed,
-//														  displacement_lin,
-//														  this->matrix_free->get_dof_handler());
-//		this->matrix_free_spatial.update_mapping(*mapping_spatial);
-    }
+    // Setup spatial mapping based on linearization vector and undeformed mapping,
+    // where parameter check enforces mapping_degree == degree.
+    this->mapping_spatial =
+      std::make_shared<MappingDoFVector<dim, Number>>(this->operator_data.mapping_degree);
   }
 }
 
@@ -71,14 +60,30 @@ template<int dim, typename Number>
 void
 NonLinearOperator<dim, Number>::evaluate_nonlinear(VectorType & dst, VectorType const & src) const
 {
-  // ignores spatial_integration, performs integral in reference configuration in any case ##+
-  this->matrix_free->loop(&This::cell_loop_nonlinear,
-                          &This::face_loop_nonlinear,
-                          &This::boundary_face_loop_nonlinear,
-                          this,
-                          dst,
-                          src,
-                          true);
+  AssertThrow(this->operator_data.pull_back_traction == false,
+              dealii::ExcMessage("Neumann data expected in respective "
+                                 "configuration for comparison."));
+
+  if(this->operator_data.spatial_integration)
+  {
+	this->matrix_free_spatial.loop(&This::cell_loop_nonlinear,
+								   &This::face_loop_nonlinear,
+								   &This::boundary_face_loop_nonlinear,
+								   this,
+								   dst,
+								   src,
+								   true);
+  }
+  else
+  {
+    this->matrix_free->loop(&This::cell_loop_nonlinear,
+                            &This::face_loop_nonlinear,
+                            &This::boundary_face_loop_nonlinear,
+                            this,
+                            dst,
+                            src,
+                            true);
+  }
 }
 
 template<int dim, typename Number>
@@ -104,16 +109,16 @@ NonLinearOperator<dim, Number>::valid_deformation(VectorType const & displacemen
 
 template<int dim, typename Number>
 void
-NonLinearOperator<dim, Number>::set_mapping_undeformed(std::shared_ptr<dealii::Mapping<dim> const> mapping) const
+NonLinearOperator<dim, Number>::set_mapping_undeformed(
+  std::shared_ptr<dealii::Mapping<dim> const> mapping) const
 {
-  std::cout << "setting mapping undeformed int nonlinear operator ##+ start\n";
   this->mapping_undeformed = mapping;
-  std::cout << "setting mapping undeformed int nonlinear operator ##+ end\n";
 }
 
 template<int dim, typename Number>
 void
-NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & vector, bool const update_mapping) const
+NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & vector,
+                                                           bool const         update_mapping) const
 {
   // Only update linearized operator if deformation state is valid. It is better to continue
   // with an old deformation state in the linearized operator than with an invalid one.
@@ -122,29 +127,13 @@ NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & ve
     displacement_lin = vector;
     displacement_lin.update_ghost_values();
 
-    // update spatial configuration mapping
-    if(this->operator_data.spatial_integration && update_mapping)
+    // update mapping to spatial configuration
+    if(this->operator_data.spatial_integration and update_mapping)
     {
-    	std::cout << "displacement_lin.size() = " << displacement_lin.size() << " ##+ start\n";
-
-    	if(this->mapping_undeformed == nullptr)
-    	{
-    	  std::cout << "NO MAPPING TO GET HERE!?\n";
-    	}
-    	else
-    	{
-    	  std::cout << "HAVE MAP\n";
-    	}
-
-		this->mapping_spatial->initialize_mapping_q_cache(this->mapping_undeformed,
-													      displacement_lin,
-														  this->matrix_free->get_dof_handler());
-
-  	    std::cout << "->...<-\n";
-
-		this->matrix_free_spatial.update_mapping(*mapping_spatial);
-
-		std::cout << "displacement_lin.size() = " << displacement_lin.size() << " ##+ end\n";
+      this->mapping_spatial->initialize_mapping_q_cache(this->mapping_undeformed,
+                                                        displacement_lin,
+                                                        this->matrix_free->get_dof_handler());
+      this->matrix_free_spatial.update_mapping(*mapping_spatial);
     }
   }
   else
@@ -300,6 +289,13 @@ NonLinearOperator<dim, Number>::cell_loop_nonlinear(
     reinit_cell_nonlinear(integrator_inhom, cell);
     integrator.reinit(cell);
 
+    if(this->operator_data.spatial_integration)
+    {
+      integrator_lin->reinit(cell);
+      integrator_lin->read_dof_values(displacement_lin);
+      integrator_lin->evaluate(dealii::EvaluationFlags::gradients);
+    }
+
     integrator_inhom.gather_evaluate(src, unsteady_flag | dealii::EvaluationFlags::gradients);
 
     do_cell_integral_nonlinear(integrator_inhom);
@@ -410,30 +406,59 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
 {
   std::shared_ptr<Material<dim, Number>> material = this->material_handler.get_material();
 
-  // loop over all quadrature points
-  for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+  if(this->operator_data.spatial_integration)
   {
-    // material displacement gradient
-    tensor const Grad_d = integrator.get_gradient(q);
-
-    // material deformation gradient
-    tensor const F = get_F<dim, Number>(Grad_d);
-
-    // 2nd Piola-Kirchhoff stresses
-    tensor const S =
-      material->second_piola_kirchhoff_stress(Grad_d, integrator.get_current_cell_index(), q);
-
-    // 1st Piola-Kirchhoff stresses P = F * S
-    tensor const P = F * S;
-
-    // Grad_v : P
-    integrator.submit_gradient(P, q);
-
-    if(this->operator_data.unsteady)
+    // loop over all quadrature points
+    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      integrator.submit_value(this->scaling_factor_mass * this->operator_data.density *
-                                integrator.get_value(q),
-                              q);
+      // material gradient of the linearization vector
+      tensor const Grad_d = integrator_lin->get_gradient(q);
+
+      tensor const F = get_F<dim, Number>(Grad_d);
+
+      scalar const one_over_J = 1.0 / determinant(F);
+
+      // Kirchhoff stresses
+      tensor const tau = material->kirchhoff_stress(Grad_d, integrator.get_current_cell_index(), q);
+
+      // integral over spatial domain
+      integrator.submit_gradient(tau * one_over_J, q);
+
+      if(this->operator_data.unsteady)
+      {
+        integrator.submit_value(this->scaling_factor_mass * this->operator_data.density *
+                                  integrator.get_value(q) * one_over_J,
+                                q);
+      }
+    }
+  }
+  else
+  {
+    // loop over all quadrature points
+    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+    {
+      // material displacement gradient
+      tensor const Grad_d = integrator.get_gradient(q);
+
+      // material deformation gradient
+      tensor const F = get_F<dim, Number>(Grad_d);
+
+      // 2nd Piola-Kirchhoff stresses
+      tensor const S =
+        material->second_piola_kirchhoff_stress(Grad_d, integrator.get_current_cell_index(), q);
+
+      // 1st Piola-Kirchhoff stresses P = F * S
+      tensor const P = F * S;
+
+      // Grad_v : P
+      integrator.submit_gradient(P, q);
+
+      if(this->operator_data.unsteady)
+      {
+        integrator.submit_value(this->scaling_factor_mass * this->operator_data.density *
+                                  integrator.get_value(q),
+                                q);
+      }
     }
   }
 }
@@ -498,19 +523,23 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
 
       tensor const F_lin = get_F<dim, Number>(Grad_d_lin);
 
+      scalar const one_over_J = 1.0 / determinant(F_lin);
+
       // Kirchhoff stresses
-      tensor const tau_lin = material->kirchhoff_stress(Grad_d_lin, integrator.get_current_cell_index(), q);
+      tensor const tau_lin =
+        material->kirchhoff_stress(Grad_d_lin, integrator.get_current_cell_index(), q);
 
       // material part of the directional derivative
-      tensor delta_tau = material->contract_with_J_times_C(0.5*(grad_delta+transpose(grad_delta)), F_lin, integrator.get_current_cell_index(), q);
+      tensor delta_tau = material->contract_with_J_times_C(
+        0.5 * (grad_delta + transpose(grad_delta)), F_lin, integrator.get_current_cell_index(), q);
 
       // integral over spatial domain
-      integrator.submit_gradient((delta_tau + grad_delta * tau_lin) / determinant(F_lin), q);
+      integrator.submit_gradient((delta_tau + grad_delta * tau_lin) * one_over_J, q);
 
       if(this->operator_data.unsteady)
       {
         integrator.submit_value(this->scaling_factor_mass * this->operator_data.density *
-                                  integrator.get_value(q),
+                                  integrator.get_value(q) * one_over_J,
                                 q);
       }
     }
@@ -587,7 +616,8 @@ NonLinearOperator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const 
 #ifdef DEAL_II_WITH_TRILINOS
 template<int dim, typename Number>
 void
-NonLinearOperator<dim, Number>::calculate_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix) const
+NonLinearOperator<dim, Number>::calculate_system_matrix(
+  dealii::TrilinosWrappers::SparseMatrix & system_matrix) const
 {
   if(this->operator_data.spatial_integration)
   {
@@ -602,7 +632,7 @@ NonLinearOperator<dim, Number>::calculate_system_matrix(dealii::TrilinosWrappers
   }
   else
   {
-	std::cout << "OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix ## \n";
+    std::cout << "OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix ## \n";
     OperatorBase<dim, Number, dim /* n_components */>::internal_calculate_system_matrix(
       system_matrix);
   }
@@ -612,7 +642,8 @@ NonLinearOperator<dim, Number>::calculate_system_matrix(dealii::TrilinosWrappers
 #ifdef DEAL_II_WITH_PETSC
 template<int dim, typename Number>
 void
-NonLinearOperator<dim, Number>::calculate_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const
+NonLinearOperator<dim, Number>::calculate_system_matrix(
+  dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const
 {
   if(this->operator_data.spatial_integration)
   {

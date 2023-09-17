@@ -22,8 +22,8 @@
 #ifndef INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_NONLINEAR_OPERATOR_H_
 #define INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_NONLINEAR_OPERATOR_H_
 
-#include <exadg/structure/spatial_discretization/operators/elasticity_operator_base.h>
 #include <exadg/grid/mapping_dof_vector.h>
+#include <exadg/structure/spatial_discretization/operators/elasticity_operator_base.h>
 #ifdef DEAL_II_WITH_TRILINOS
 #  include <deal.II/lac/trilinos_sparse_matrix.h>
 #endif
@@ -58,10 +58,9 @@ public:
    * Initialize function.
    */
   void
-  initialize(dealii::MatrixFree<dim, Number> const &     matrix_free,
-		     std::shared_ptr<dealii::Mapping<dim> const> mapping_undeformed,
-             dealii::AffineConstraints<Number> const &   affine_constraints,
-             OperatorData<dim> const &                   data) override;
+  initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
+             dealii::AffineConstraints<Number> const & affine_constraints,
+             OperatorData<dim> const &                 data) override;
 
   /**
    * Evaluates the non-linear operator.
@@ -267,7 +266,7 @@ private:
 
   mutable dealii::MatrixFree<dim, Number>                matrix_free_spatial;
   mutable std::shared_ptr<MappingDoFVector<dim, Number>> mapping_spatial;
-  mutable std::shared_ptr<dealii::Mapping<dim> const> mapping_undeformed;
+  mutable std::shared_ptr<dealii::Mapping<dim> const>    mapping_undeformed;
 };
 
 } // namespace Structure

@@ -73,12 +73,9 @@ template<int dim, typename Number>
 void
 ElasticityOperatorBase<dim, Number>::initialize(
   dealii::MatrixFree<dim, Number> const &   matrix_free,
-  std::shared_ptr<dealii::Mapping<dim> const> mapping_undeformed,
   dealii::AffineConstraints<Number> const & affine_constraints,
   OperatorData<dim> const &                 data)
 {
-  (void)mapping_undeformed;
-
   operator_data = data;
 
   Base::reinit(matrix_free, affine_constraints, data);

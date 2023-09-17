@@ -332,14 +332,17 @@ Operator<dim, Number>::setup_operators()
 
   if(param.large_deformation)
   {
-    elasticity_operator_nonlinear.initialize(*matrix_free, mapping, affine_constraints, operator_data);
-    std::cout << "set_mapping_undeformed in operator ##+ start \n";
-    elasticity_operator_nonlinear.set_mapping_undeformed(mapping); // this is not needed anymore
-    std::cout << "set_mapping_undeformed in operator ##+ start \n";
+    elasticity_operator_nonlinear.initialize(*matrix_free, affine_constraints, operator_data);
+
+    // Set undeformed mapping to construct map for spatial integration
+    if(param.spatial_integration)
+    {
+      elasticity_operator_nonlinear.set_mapping_undeformed(mapping);
+    }
   }
   else
   {
-    elasticity_operator_linear.initialize(*matrix_free, mapping, affine_constraints, operator_data);
+    elasticity_operator_linear.initialize(*matrix_free, affine_constraints, operator_data);
   }
 
   // mass operator and related solver for inversion
@@ -804,6 +807,11 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
   // before evaluating the elasticity operator.
   elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
   elasticity_operator_nonlinear.set_time(time);
+  if(param.spatial_integration)
+  {
+	// update linearization vector for interpolation and update mapping
+	elasticity_operator_nonlinear.set_solution_linearization(src, true);
+  }
   elasticity_operator_nonlinear.evaluate_nonlinear(dst, src);
 
   // dynamic problems
@@ -832,7 +840,6 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::set_solution_linearization(VectorType const & vector) const
 {
-  std::cout << "Operator<dim, Number>::set_solution_linearization ##+ \n";
   elasticity_operator_nonlinear.set_solution_linearization(vector, true);
 }
 
