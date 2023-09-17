@@ -321,8 +321,9 @@ Operator<dim, Number>::setup_operators()
   operator_data.mapping_degree      = param.mapping_degree;
   if(param.large_deformation)
   {
-    operator_data.pull_back_traction  = param.pull_back_traction;
-    operator_data.spatial_integration = param.spatial_integration;
+    operator_data.pull_back_traction      = param.pull_back_traction;
+    operator_data.spatial_integration     = param.spatial_integration;
+    operator_data.force_material_residual = param.force_material_residual;
   }
   else
   {
@@ -807,10 +808,10 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
   // before evaluating the elasticity operator.
   elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
   elasticity_operator_nonlinear.set_time(time);
-  if(param.spatial_integration)
+  if(param.spatial_integration and (not param.force_material_residual))
   {
-	// update linearization vector for interpolation and update mapping
-	elasticity_operator_nonlinear.set_solution_linearization(src, true);
+    // update linearization vector for interpolation and update mapping
+    elasticity_operator_nonlinear.set_solution_linearization(src, true);
   }
   elasticity_operator_nonlinear.evaluate_nonlinear(dst, src);
 

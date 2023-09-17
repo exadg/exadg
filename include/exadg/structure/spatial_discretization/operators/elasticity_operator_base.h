@@ -39,6 +39,7 @@ struct OperatorData : public OperatorBaseData
       large_deformation(false),
       pull_back_traction(false),
       spatial_integration(false),
+      force_material_residual(false),
       mapping_degree(1),
       unsteady(false),
       density(1.0),
@@ -56,9 +57,11 @@ struct OperatorData : public OperatorBaseData
   // with large deformations. When set to true, the traction t
   // is pulled back to the reference configuration, t_0 = da/dA t.
   // Spatial integration of the cell integral using an updated mapping
-  // is enabled via spatial_integration.
+  // is enabled via spatial_integration, where the residual evaluation
+  // may be forced to be evalutated in the material configuration.
   bool pull_back_traction;
   bool spatial_integration;
+  bool force_material_residual;
 
   unsigned int mapping_degree;
 

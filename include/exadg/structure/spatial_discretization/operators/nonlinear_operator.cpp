@@ -64,15 +64,15 @@ NonLinearOperator<dim, Number>::evaluate_nonlinear(VectorType & dst, VectorType 
               dealii::ExcMessage("Neumann data expected in respective "
                                  "configuration for comparison."));
 
-  if(this->operator_data.spatial_integration)
+  if(this->operator_data.spatial_integration and (not this->operator_data.force_material_residual))
   {
-	this->matrix_free_spatial.loop(&This::cell_loop_nonlinear,
-								   &This::face_loop_nonlinear,
-								   &This::boundary_face_loop_nonlinear,
-								   this,
-								   dst,
-								   src,
-								   true);
+    this->matrix_free_spatial.loop(&This::cell_loop_nonlinear,
+                                   &This::face_loop_nonlinear,
+                                   &This::boundary_face_loop_nonlinear,
+                                   this,
+                                   dst,
+                                   src,
+                                   true);
   }
   else
   {
@@ -289,7 +289,8 @@ NonLinearOperator<dim, Number>::cell_loop_nonlinear(
     reinit_cell_nonlinear(integrator_inhom, cell);
     integrator.reinit(cell);
 
-    if(this->operator_data.spatial_integration)
+    if(this->operator_data.spatial_integration and
+       (not this->operator_data.force_material_residual))
     {
       integrator_lin->reinit(cell);
       integrator_lin->read_dof_values(displacement_lin);
@@ -406,7 +407,7 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
 {
   std::shared_ptr<Material<dim, Number>> material = this->material_handler.get_material();
 
-  if(this->operator_data.spatial_integration)
+  if(this->operator_data.spatial_integration and (not this->operator_data.force_material_residual))
   {
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)

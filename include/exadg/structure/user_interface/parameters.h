@@ -121,7 +121,9 @@ public:
   bool pull_back_traction;
 
   // For finite strain problems, integrate the stress terms in the deformed configuration
+  // and if so, possibly force the residual to be evaluated in the material configuration
   bool spatial_integration;
+  bool force_material_residual;
 
   /**************************************************************************************/
   /*                                                                                    */

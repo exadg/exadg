@@ -246,6 +246,9 @@ public:
       prm.add_parameter("Width", width, "Width of domain.");
       prm.add_parameter("UseVolumeForce", use_volume_force, "Use volume force.");
       prm.add_parameter("SpatialIntegration", spatial_integration, "Use spatial integration.");
+      prm.add_parameter("ForceMaterialResidual",
+                        force_material_residual,
+                        "Use undeformed configuration to evaluate the residual.");
       prm.add_parameter("VolumeForce", volume_force, "Volume force.");
       prm.add_parameter("BoundaryType",
                         boundary_type,
@@ -273,12 +276,13 @@ private:
   void
   set_parameters() final
   {
-    this->param.problem_type         = problem_type;
-    this->param.body_force           = use_volume_force;
-    this->param.large_deformation    = true;
-    this->param.pull_back_body_force = false;
-    this->param.pull_back_traction   = false;
-    this->param.spatial_integration  = spatial_integration;
+    this->param.problem_type            = problem_type;
+    this->param.body_force              = use_volume_force;
+    this->param.large_deformation       = true;
+    this->param.pull_back_body_force    = false;
+    this->param.pull_back_traction      = false;
+    this->param.spatial_integration     = spatial_integration;
+    this->param.force_material_residual = force_material_residual;
 
     this->param.density = density;
     if(this->param.problem_type == ProblemType::Unsteady and weak_damping_coefficient > 0.0)
@@ -636,8 +640,9 @@ private:
 
   double length = 1.0, height = 1.0, width = 1.0;
 
-  bool use_volume_force    = true;
-  bool spatial_integration = false;
+  bool use_volume_force        = true;
+  bool spatial_integration     = false;
+  bool force_material_residual = false;
 
   bool const clamp_at_right_boundary = false;
   bool const clamp_at_left_boundary  = false;
