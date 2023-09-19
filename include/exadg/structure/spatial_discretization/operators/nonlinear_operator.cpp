@@ -633,7 +633,6 @@ NonLinearOperator<dim, Number>::calculate_system_matrix(
   }
   else
   {
-    std::cout << "OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix ## \n";
     OperatorBase<dim, Number, dim /* n_components */>::internal_calculate_system_matrix(
       system_matrix);
   }

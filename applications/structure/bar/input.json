@@ -5,8 +5,8 @@
         "IsTest": "false"
     },
     "SpatialResolution": {
-        "DegreeMin": "2",
-        "DegreeMax": "2",
+        "DegreeMin": "4",
+        "DegreeMax": "4",
         "RefineSpaceMin": "1",
         "RefineSpaceMax": "1"
     },
