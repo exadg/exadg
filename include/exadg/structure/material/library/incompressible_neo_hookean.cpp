@@ -154,6 +154,66 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacemen
   return Dd_S;
 }
 
+template<int dim, typename Number>
+dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+IncompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradient_displacement,
+                                                        unsigned int const cell,
+                                                        unsigned int const q) const
+{
+  tensor tau;
+
+  if(shear_modulus_is_variable)
+  {
+    shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+  }
+
+  tensor I          = get_identity<dim, Number>();
+  tensor F          = get_F<dim, Number>(gradient_displacement);
+  scalar J          = determinant(F);
+  tensor F_times_Ft = F * transpose(F);
+
+  tau = shear_modulus_stored * pow(J, static_cast<Number>(-2.0 * one_third)) *
+          (F_times_Ft - (one_third * trace(F_times_Ft)) * I) +
+        (0.5 * data.bulk_modulus * (J * J - 1.0)) * I;
+
+  return tau;
+}
+
+template<int dim, typename Number>
+dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+IncompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
+  tensor const &     symmetric_gradient_increment,
+  tensor const &     deformation_gradient,
+  unsigned int const cell,
+  unsigned int const q) const
+{
+  tensor result;
+
+  if(shear_modulus_is_variable)
+  {
+    shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+  }
+
+  tensor I     = get_identity<dim, Number>();
+  scalar J     = determinant(deformation_gradient);
+  scalar J_pow = pow(J, static_cast<Number>(-2.0 * one_third));
+  tensor C     = transpose(deformation_gradient) * deformation_gradient;
+  scalar I_1   = trace(C);
+
+  result =
+    (-4.0 * one_third * shear_modulus_stored * J_pow *
+     scalar_product(C, symmetric_gradient_increment)) *
+      I +
+    (2.0 * one_third * shear_modulus_stored * J_pow * I_1 + data.bulk_modulus * (J * J - 1.0)) *
+      symmetric_gradient_increment +
+    ((2.0 * one_third * one_third * shear_modulus_stored * I_1 * J_pow +
+      data.bulk_modulus * J) *
+     trace(symmetric_gradient_increment)) *
+      I;
+
+  return result;
+}
+
 template class IncompressibleNeoHookean<2, float>;
 template class IncompressibleNeoHookean<2, double>;
 

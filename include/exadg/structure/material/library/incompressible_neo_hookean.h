@@ -118,6 +118,17 @@ public:
                                                         unsigned int const cell,
                                                         unsigned int const q) const final;
 
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  kirchhoff_stress(tensor const &     gradient_displacement,
+                   unsigned int const cell,
+                   unsigned int const q) const final;
+
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
+                          tensor const &     deformation_gradient,
+                          unsigned int const cell,
+                          unsigned int const q) const final;
+
 private:
   /*
    * Store factors involving (potentially variable) shear modulus.
