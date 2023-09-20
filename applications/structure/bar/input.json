@@ -25,7 +25,7 @@
         "VolumeForce": "1.0",
         "SpatialIntegration": "true",
         "ForceMaterialResidual": "true",
-        "CacheLevel": "2",
+        "CacheLevel": "1",
         "BoundaryType": "Dirichlet",
         "Displacement": "20.0",
         "Traction":	"0.0"

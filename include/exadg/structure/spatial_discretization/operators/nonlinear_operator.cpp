@@ -293,7 +293,7 @@ NonLinearOperator<dim, Number>::cell_loop_nonlinear(
     integrator.reinit(cell);
 
     if(this->operator_data.spatial_integration and
-       (not this->operator_data.force_material_residual))
+       (not this->operator_data.force_material_residual) and this->operator_data.cache_level == 0)
     {
       integrator_lin->reinit(cell);
       integrator_lin->read_dof_values(displacement_lin);
@@ -455,12 +455,20 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      // material gradient of the linearization vector
+
       tensor const Grad_d = integrator_lin->get_gradient(q);
 
-      tensor const F = get_F<dim, Number>(Grad_d);
-
-      scalar const one_over_J = 1.0 / determinant(F);
+      scalar one_over_J;
+      if(this->operator_data.cache_level == 0)
+      {
+        tensor const F      = get_F<dim, Number>(Grad_d);
+        one_over_J          = material->one_over_J(F, integrator.get_current_cell_index(), q);
+      }
+      else
+      {
+        tensor const dummy;
+        one_over_J = material->one_over_J(dummy, integrator.get_current_cell_index(), q);
+      }
 
       // Kirchhoff stresses
       tensor const tau = material->kirchhoff_stress(Grad_d, integrator.get_current_cell_index(), q);
@@ -567,7 +575,7 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
 
       tensor const F_lin = get_F<dim, Number>(Grad_d_lin);
 
-      scalar const one_over_J = 1.0 / determinant(F_lin);
+      scalar const one_over_J = material->one_over_J(F_lin, integrator.get_current_cell_index(), q);
 
       // Kirchhoff stresses
       tensor const tau_lin =

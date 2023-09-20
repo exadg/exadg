@@ -135,6 +135,11 @@ public:
     std::shared_ptr<CellIntegrator<dim, dim /* n_components */, Number>> const integrator_lin,
     unsigned int const                                                         cell) const final;
 
+  dealii::VectorizedArray<Number>
+  one_over_J(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & F,
+             unsigned int const                                              cell,
+             unsigned int const                                              q) const final;
+
 private:
   /*
    * Store factors involving (potentially variable) shear modulus.
@@ -159,12 +164,12 @@ private:
   mutable VariableCoefficients<scalar> lambda_coefficients;
 
   // cache linearization data depending on cache_level and spatial_integration
-  bool                                 spatial_integration;
-  bool                                 force_material_residual;
-  unsigned int                         cache_level;
+  bool         spatial_integration;
+  bool         force_material_residual;
+  unsigned int cache_level;
+
+  mutable VariableCoefficients<scalar> one_over_J_coefficients;
   mutable VariableCoefficients<scalar> log_J_coefficients;
-  mutable VariableCoefficients<tensor> F_times_Ft_coefficients;
-  mutable VariableCoefficients<tensor> F_inv_coefficients;
 };
 } // namespace Structure
 } // namespace ExaDG

@@ -75,29 +75,15 @@ CompressibleNeoHookean<dim, Number>::CompressibleNeoHookean(
     log_J_coefficients.initialize(matrix_free, quad_index, false, false);
     log_J_coefficients.set_coefficients(0.0);
 
+    if(spatial_integration)
+    {
+      one_over_J_coefficients.initialize(matrix_free, quad_index, false, false);
+      one_over_J_coefficients.set_coefficients(1.0);
+    }
+
     if(cache_level > 1)
     {
-      if(spatial_integration)
-      {
-        F_times_Ft_coefficients.initialize(matrix_free, quad_index, false, false);
-        F_times_Ft_coefficients.set_coefficients(get_identity<dim, Number>());
-
-        if(force_material_residual)
-        {
-          F_inv_coefficients.initialize(matrix_free, quad_index, false, false);
-          F_inv_coefficients.set_coefficients(get_identity<dim, Number>());
-        }
-      }
-      else
-      {
-        F_inv_coefficients.initialize(matrix_free, quad_index, false, false);
-        F_inv_coefficients.set_coefficients(get_identity<dim, Number>());
-      }
-
-      if(cache_level > 2)
-      {
-        AssertThrow(cache_level < 2, dealii::ExcMessage("Not implemented."));
-      }
+      AssertThrow(cache_level < 2, dealii::ExcMessage("Not implemented."));
     }
   }
 }
@@ -112,33 +98,19 @@ CompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
   {
     for(unsigned int q = 0; q < integrator_lin->n_q_points; ++q)
     {
-      tensor const F = get_F(integrator_lin->get_gradient(q));
+      scalar const J = determinant(get_F(integrator_lin->get_gradient(q)));
 
-      log_J_coefficients.set_coefficient_cell(cell, q, log(determinant(F)));
-
-      if(cache_level == 2)
-      {
-        F_times_Ft_coefficients.set_coefficient_cell(cell, q, F * transpose(F));
-
-        if(force_material_residual)
-        {
-          F_inv_coefficients.set_coefficient_cell(cell, q, invert(F));
-        }
-      }
+      log_J_coefficients.set_coefficient_cell(cell, q, log(J));
+      one_over_J_coefficients.set_coefficient_cell(cell, q, 1.0 / J);
     }
   }
   else
   {
     for(unsigned int q = 0; q < integrator_lin->n_q_points; ++q)
     {
-      tensor const F = add_identity(integrator_lin->get_gradient(q));
+      scalar const J = determinant(get_F(integrator_lin->get_gradient(q)));
 
-      log_J_coefficients.set_coefficient_cell(cell, q, log(determinant(F)));
-
-      if(cache_level == 2)
-      {
-        F_inv_coefficients.set_coefficient_cell(cell, q, invert(F));
-      }
+      log_J_coefficients.set_coefficient_cell(cell, q, log(J));
     }
   }
 }
@@ -194,30 +166,18 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
 
   // Access the stored coefficients precomputed using the last linearization vector.
   scalar log_J;
-  tensor F_inv;
   if(cache_level == 0)
   {
-    tensor const F = get_F<dim, Number>(gradient_displacement);
-    scalar const J = determinant(F);
-    log_J          = log(J);
-    F_inv          = invert(F);
+    log_J = log(determinant(gradient_displacement));
   }
   else
   {
     log_J = log_J_coefficients.get_coefficient_cell(cell, q);
-
-    if(cache_level == 1)
-    {
-      tensor const F = get_F<dim, Number>(gradient_displacement);
-      F_inv          = invert(F);
-    }
-    else
-    {
-      F_inv = F_inv_coefficients.get_coefficient_cell(cell, q);
-    }
   }
 
   tensor const I     = get_identity<dim, Number>();
+  tensor const F     = get_F<dim, Number>(gradient_displacement);
+  tensor const F_inv = invert(F);
   tensor const C_inv = F_inv * transpose(F_inv);
 
   return (shear_modulus_stored * I - (shear_modulus_stored - 2.0 * lambda_stored * log_J) * C_inv);
@@ -239,27 +199,16 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacement_
 
   // Access the stored coefficients precomputed using the last linearization vector.
   scalar log_J;
-  tensor F_inv;
   if(cache_level == 0)
   {
-    scalar J = determinant(deformation_gradient);
-    log_J    = log(J);
-    F_inv    = invert(deformation_gradient);
+    log_J = log(determinant(deformation_gradient));
   }
   else
   {
     log_J = log_J_coefficients.get_coefficient_cell(cell, q);
-
-    if(cache_level == 1)
-    {
-      F_inv = invert(deformation_gradient);
-    }
-    else
-    {
-      F_inv = F_inv_coefficients.get_coefficient_cell(cell, q);
-    }
   }
 
+  tensor const F_inv = invert(deformation_gradient);
   tensor const C_inv = F_inv * transpose(F_inv);
 
   scalar const one_over_J_times_Dd_J = trace(F_inv * gradient_increment);
@@ -285,32 +234,20 @@ CompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradien
   }
 
   // Access the stored coefficients precomputed using the last linearization vector.
-  tensor F_times_Ft;
   scalar log_J;
   if(cache_level == 0)
   {
-    tensor F   = get_F<dim, Number>(gradient_displacement);
-    F_times_Ft = F * transpose(F);
-    log_J      = log(determinant(F));
+    log_J = log(determinant(gradient_displacement));
   }
   else
   {
     log_J = log_J_coefficients.get_coefficient_cell(cell, q);
-
-    if(cache_level == 1)
-    {
-      tensor F   = get_F<dim, Number>(gradient_displacement);
-      F_times_Ft = F * transpose(F);
-    }
-    else
-    {
-      F_times_Ft = F_times_Ft_coefficients.get_coefficient_cell(cell, q);
-    }
   }
 
   tensor const I = get_identity<dim, Number>();
+  tensor const F = get_F<dim, Number>(gradient_displacement);
 
-  return (shear_modulus_stored * (F_times_Ft) -
+  return (shear_modulus_stored * (F * transpose(F)) -
           (shear_modulus_stored - 2.0 * lambda_stored * log_J) * I);
 }
 
@@ -344,6 +281,29 @@ CompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
   return ((2.0 * (shear_modulus_stored - 2.0 * lambda_stored * log_J)) *
             symmetric_gradient_increment +
           (2.0 * lambda_stored * trace(symmetric_gradient_increment)) * I);
+}
+
+template<int dim, typename Number>
+dealii::VectorizedArray<Number>
+CompressibleNeoHookean<dim, Number>::one_over_J(tensor const &     F,
+                                                unsigned int const cell,
+                                                unsigned int const q) const
+{
+  if(spatial_integration)
+  {
+    if(cache_level == 0)
+    {
+      return (1.0 / determinant(F));
+    }
+    else
+    {
+      return (one_over_J_coefficients.get_coefficient_cell(cell, q));
+    }
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("Use not intended."));
+  }
 }
 
 template class CompressibleNeoHookean<2, float>;

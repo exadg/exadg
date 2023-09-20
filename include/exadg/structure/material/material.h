@@ -137,6 +137,16 @@ public:
     (void)integrator_lin;
     (void)cell;
   }
+
+  virtual dealii::VectorizedArray<Number>
+  one_over_J(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & F,
+             unsigned int const                                              cell,
+             unsigned int const                                              q) const
+  {
+    (void)cell;
+    (void)q;
+    return (1.0 / determinant(F));
+  }
 };
 
 } // namespace Structure
