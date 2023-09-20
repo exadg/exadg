@@ -78,7 +78,10 @@ public:
   CompressibleNeoHookean(dealii::MatrixFree<dim, Number> const & matrix_free,
                          unsigned int const                      dof_index,
                          unsigned int const                      quad_index,
-                         CompressibleNeoHookeanData<dim> const & data);
+                         CompressibleNeoHookeanData<dim> const & data,
+                         bool const                              spatial_integration,
+                         bool const                              force_material_residual,
+                         unsigned int const                      cache_level);
 
   /*
    * The second Piola-Kirchhoff stress is defined as S = 2 d/dC (Psi),
@@ -124,6 +127,14 @@ public:
                           unsigned int const cell,
                           unsigned int const q) const final;
 
+  /*
+   * Store linearization data depending on cache level.
+   */
+  void
+  do_set_cell_linearization_data(
+    std::shared_ptr<CellIntegrator<dim, dim /* n_components */, Number>> const integrator_lin,
+    unsigned int const                                                         cell) const final;
+
 private:
   /*
    * Store factors involving (potentially variable) shear modulus.
@@ -146,6 +157,14 @@ private:
   bool                                 parameters_are_variable;
   mutable VariableCoefficients<scalar> shear_modulus_coefficients;
   mutable VariableCoefficients<scalar> lambda_coefficients;
+
+  // cache linearization data depending on cache_level and spatial_integration
+  bool                                 spatial_integration;
+  bool                                 force_material_residual;
+  unsigned int                         cache_level;
+  mutable VariableCoefficients<scalar> log_J_coefficients;
+  mutable VariableCoefficients<tensor> F_times_Ft_coefficients;
+  mutable VariableCoefficients<tensor> F_inv_coefficients;
 };
 } // namespace Structure
 } // namespace ExaDG

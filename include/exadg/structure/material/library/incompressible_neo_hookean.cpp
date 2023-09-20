@@ -32,11 +32,17 @@ IncompressibleNeoHookean<dim, Number>::IncompressibleNeoHookean(
   dealii::MatrixFree<dim, Number> const &   matrix_free,
   unsigned int const                        dof_index,
   unsigned int const                        quad_index,
-  IncompressibleNeoHookeanData<dim> const & data)
+  IncompressibleNeoHookeanData<dim> const & data,
+  bool const                                spatial_integration,
+  bool const                                force_material_residual,
+  unsigned int const                        cache_level)
   : dof_index(dof_index),
     quad_index(quad_index),
     data(data),
-    shear_modulus_is_variable(data.shear_modulus_function != nullptr)
+    shear_modulus_is_variable(data.shear_modulus_function != nullptr),
+    spatial_integration(spatial_integration),
+    force_material_residual(force_material_residual),
+    cache_level(cache_level)
 {
   // initialize (potentially variable) shear modulus
   Number const shear_modulus = data.shear_modulus;
@@ -53,6 +59,13 @@ IncompressibleNeoHookean<dim, Number>::IncompressibleNeoHookean(
                           this,
                           dummy,
                           dummy);
+  }
+
+  // Initialize linearization cache and fill with values corresponding to
+  // the initial linearization vector assumed to be a zero displacement vector.
+  if(cache_level > 0)
+  {
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 }
 
@@ -206,8 +219,7 @@ IncompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
       I +
     (2.0 * one_third * shear_modulus_stored * J_pow * I_1 + data.bulk_modulus * (J * J - 1.0)) *
       symmetric_gradient_increment +
-    ((2.0 * one_third * one_third * shear_modulus_stored * I_1 * J_pow +
-      data.bulk_modulus * J) *
+    ((2.0 * one_third * one_third * shear_modulus_stored * I_1 * J_pow + data.bulk_modulus * J) *
      trace(symmetric_gradient_increment)) *
       I;
 

@@ -249,6 +249,7 @@ public:
       prm.add_parameter("ForceMaterialResidual",
                         force_material_residual,
                         "Use undeformed configuration to evaluate the residual.");
+      prm.add_parameter("CacheLevel", cache_level, "Cache level: 0 none, 1 scalars, 2 tensors.");
       prm.add_parameter("VolumeForce", volume_force, "Volume force.");
       prm.add_parameter("BoundaryType",
                         boundary_type,
@@ -282,6 +283,7 @@ private:
     this->param.pull_back_body_force    = false;
     this->param.pull_back_traction      = false;
     this->param.spatial_integration     = spatial_integration;
+    this->param.cache_level             = cache_level;
     this->param.force_material_residual = force_material_residual;
 
     this->param.density = density;
@@ -643,6 +645,8 @@ private:
   bool use_volume_force        = true;
   bool spatial_integration     = false;
   bool force_material_residual = false;
+
+  unsigned int cache_level = 0;
 
   bool const clamp_at_right_boundary = false;
   bool const clamp_at_left_boundary  = false;

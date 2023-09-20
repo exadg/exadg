@@ -52,7 +52,10 @@ public:
              unsigned int const                        dof_index,
              unsigned int const                        quad_index,
              std::shared_ptr<MaterialDescriptor const> material_descriptor,
-             bool const                                large_deformation)
+             bool const                                large_deformation,
+             bool const                                spatial_integration,
+             bool const                                force_material_residual,
+             unsigned int const                        cache_level)
   {
     this->dof_index           = dof_index;
     this->material_descriptor = material_descriptor;
@@ -93,8 +96,13 @@ public:
             std::static_pointer_cast<IncompressibleNeoHookeanData<dim>>(data);
           material_map.insert(
             Pair(id,
-                 new IncompressibleNeoHookean<dim, Number>(
-                   matrix_free, dof_index, quad_index, *data_IncompressibleNeoHookean)));
+                 new IncompressibleNeoHookean<dim, Number>(matrix_free,
+                                                           dof_index,
+                                                           quad_index,
+                                                           *data_IncompressibleNeoHookean,
+                                                           spatial_integration,
+                                                           force_material_residual,
+                                                           cache_level)));
           break;
         }
         case MaterialType::CompressibleNeoHookean:
@@ -108,8 +116,13 @@ public:
             std::static_pointer_cast<CompressibleNeoHookeanData<dim>>(data);
           material_map.insert(
             Pair(id,
-                 new CompressibleNeoHookean<dim, Number>(
-                   matrix_free, dof_index, quad_index, *data_CompressibleNeoHookean)));
+                 new CompressibleNeoHookean<dim, Number>(matrix_free,
+                                                         dof_index,
+                                                         quad_index,
+                                                         *data_CompressibleNeoHookean,
+                                                         spatial_integration,
+                                                         force_material_residual,
+                                                         cache_level)));
           break;
         }
         default:

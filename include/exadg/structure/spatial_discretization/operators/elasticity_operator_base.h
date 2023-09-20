@@ -40,6 +40,7 @@ struct OperatorData : public OperatorBaseData
       pull_back_traction(false),
       spatial_integration(false),
       force_material_residual(false),
+      cache_level(0),
       mapping_degree(1),
       unsteady(false),
       density(1.0),
@@ -62,6 +63,10 @@ struct OperatorData : public OperatorBaseData
   bool pull_back_traction;
   bool spatial_integration;
   bool force_material_residual;
+
+  // This variable determines how much data is being precomputed
+  // and stored in the integration points.
+  unsigned int cache_level;
 
   unsigned int mapping_degree;
 

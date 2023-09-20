@@ -82,8 +82,14 @@ ElasticityOperatorBase<dim, Number>::initialize(
 
   this->integrator_flags = this->get_integrator_flags(data.unsteady);
 
-  material_handler.initialize(
-    matrix_free, data.dof_index, data.quad_index, data.material_descriptor, data.large_deformation);
+  material_handler.initialize(matrix_free,
+                              data.dof_index,
+                              data.quad_index,
+                              data.material_descriptor,
+                              data.large_deformation,
+                              data.spatial_integration,
+                              data.force_material_residual,
+                              data.cache_level);
 }
 
 template<int dim, typename Number>

@@ -99,6 +99,18 @@ public:
   get_solution_linearization() const;
 
   /**
+   * Set cell data given a linearization vector.
+   */
+  void
+  set_cell_linearization_data(VectorType const & linearization_vector) const;
+
+  void
+  cell_loop_set_linearization_data(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                   VectorType &                            dst,
+                                   VectorType const &                      src,
+                                   Range const &                           range) const;
+
+  /**
    * Overwrite members in OperatorBase to optionally use spatial integration
    * via matrix_free_spatial.
    */

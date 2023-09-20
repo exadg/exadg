@@ -127,6 +127,9 @@ NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & ve
     displacement_lin = vector;
     displacement_lin.update_ghost_values();
 
+    // update cached linearization data
+    this->set_cell_linearization_data(displacement_lin);
+
     // update mapping to spatial configuration
     if(this->operator_data.spatial_integration and update_mapping)
     {
@@ -305,6 +308,46 @@ NonLinearOperator<dim, Number>::cell_loop_nonlinear(
     integrator_inhom.integrate(unsteady_flag | dealii::EvaluationFlags::gradients,
                                integrator.begin_dof_values());
     integrator.distribute_local_to_global(dst);
+  }
+}
+
+template<int dim, typename Number>
+void
+NonLinearOperator<dim, Number>::set_cell_linearization_data(
+  VectorType const & linearization_vector) const
+{
+  if(this->operator_data.cache_level > 0)
+  {
+    VectorType dummy;
+    this->matrix_free->cell_loop(&This::cell_loop_set_linearization_data,
+                                 this,
+                                 dummy,
+                                 linearization_vector);
+  }
+}
+
+template<int dim, typename Number>
+void
+NonLinearOperator<dim, Number>::cell_loop_set_linearization_data(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
+{
+  (void)matrix_free;
+  (void)dst;
+
+  std::shared_ptr<Material<dim, Number>> material = this->material_handler.get_material();
+
+  for(auto cell = range.first; cell < range.second; ++cell)
+  {
+    integrator_lin->reinit(cell);
+    this->material_handler.reinit(*this->matrix_free, cell);
+
+    integrator_lin->read_dof_values(src);
+    integrator_lin->evaluate(dealii::EvaluationFlags::gradients);
+
+    material->do_set_cell_linearization_data(integrator_lin, cell);
   }
 }
 

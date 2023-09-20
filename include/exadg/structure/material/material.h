@@ -28,6 +28,7 @@
 
 // ExaDG
 #include <exadg/structure/material/material_data.h>
+#include <exadg/structure/spatial_discretization/operators/continuum_mechanics.h>
 
 namespace ExaDG
 {
@@ -122,6 +123,19 @@ public:
     AssertThrow(false,
                 dealii::ExcMessage("For a Lagrangian formulation in spatial domain, "
                                    "overwrite this method in derived class."));
+  }
+
+  /*
+   * Update the linearization data stored for in each integration point via VariableCoefficients
+   * given the current linearization vector.
+   */
+  virtual void
+  do_set_cell_linearization_data(
+    std::shared_ptr<CellIntegrator<dim, dim /* n_components */, Number>> const integrator_lin,
+    unsigned int const                                                         cell) const
+  {
+    (void)integrator_lin;
+    (void)cell;
   }
 };
 

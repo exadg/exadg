@@ -74,7 +74,10 @@ public:
   IncompressibleNeoHookean(dealii::MatrixFree<dim, Number> const &   matrix_free,
                            unsigned int const                        dof_index,
                            unsigned int const                        quad_index,
-                           IncompressibleNeoHookeanData<dim> const & data);
+                           IncompressibleNeoHookeanData<dim> const & data,
+                           bool const                                spatial_integration,
+                           bool const                                force_material_residual,
+                           unsigned int const                        cache_level);
 
   /*
    * The second Piola-Kirchhoff stress is defined as S = S_vol + S_iso (Flory split),
@@ -149,6 +152,11 @@ private:
   // cache coefficients for spatially varying material parameters
   bool                                 shear_modulus_is_variable;
   mutable VariableCoefficients<scalar> shear_modulus_coefficients;
+
+  // cache linearization data depending on cache_level and spatial_integration
+  bool         spatial_integration;
+  bool         force_material_residual;
+  unsigned int cache_level;
 
   Number const one_third = 1.0 / 3.0;
 };
