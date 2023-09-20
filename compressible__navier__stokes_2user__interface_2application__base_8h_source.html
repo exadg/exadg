@@ -132,12 +132,12 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>{</div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="keyword">public</span>:</div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  add_parameters(dealii::ParameterHandler &amp; prm)</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  add_parameters(dealii::ParameterHandler &amp; <a class="code hl_struct" href="structExaDG_1_1CompNS_1_1BoundaryDescriptorStd.html">prm</a>)</div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  {</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    output_parameters.add_parameters(prm);</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    output_parameters.add_parameters(<a class="code hl_struct" href="structExaDG_1_1CompNS_1_1BoundaryDescriptorStd.html">prm</a>);</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  }</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <a class="code hl_class" href="classExaDG_1_1CompNS_1_1ApplicationBase.html">ApplicationBase</a>(std::string parameter_file, MPI_Comm <span class="keyword">const</span> &amp; comm)</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <a class="code hl_class" href="classExaDG_1_1CompNS_1_1ApplicationBase.html">ApplicationBase</a>(std::string parameter_file, <a class="code hl_struct" href="structExaDG_1_1CompNS_1_1BoundaryDescriptorStd.html">MPI_Comm</a> <span class="keyword">const</span> &amp; comm)</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    : mpi_comm(comm),</div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>      pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),</div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>      parameter_file(parameter_file),</div>
@@ -163,11 +163,11 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  set_parameters_convergence_study(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> degree,</div>
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>                                   <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> refine_space,</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>                                   <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> refine_time)</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>                                   <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> <a class="code hl_struct" href="structExaDG_1_1CompNS_1_1BoundaryDescriptorStd.html">refine_time</a>)</div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  {</div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    this-&gt;param.degree               = degree;</div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    this-&gt;param.grid.n_refine_global = refine_space;</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>    this-&gt;param.n_refine_time        = refine_time;</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>    this-&gt;param.n_refine_time        = <a class="code hl_struct" href="structExaDG_1_1CompNS_1_1BoundaryDescriptorStd.html">refine_time</a>;</div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  }</div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span> </div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  <span class="keywordtype">void</span></div>
@@ -188,7 +188,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    <span class="comment">// boundary conditions</span></div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    boundary_descriptor = std::make_shared&lt;BoundaryDescriptor&lt;dim&gt;&gt;();</div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    set_boundary_descriptor();</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    verify_boundary_conditions&lt;dim&gt;(*boundary_descriptor, *grid);</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    <a class="code hl_struct" href="structExaDG_1_1CompNS_1_1BoundaryDescriptorStd.html">verify_boundary_conditions&lt;dim&gt;</a>(*boundary_descriptor, *grid);</div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span> </div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    <span class="comment">// field functions</span></div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    field_functions = std::make_shared&lt;FieldFunctions&lt;dim&gt;&gt;();</div>
@@ -232,12 +232,12 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  parse_parameters()</div>
 <div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  {</div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>    dealii::ParameterHandler prm;</div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>    this-&gt;add_parameters(prm);</div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>    prm.parse_input(parameter_file, <span class="stringliteral">&quot;&quot;</span>, <span class="keyword">true</span>, <span class="keyword">true</span>);</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>    dealii::ParameterHandler <a class="code hl_struct" href="structExaDG_1_1CompNS_1_1BoundaryDescriptorStd.html">prm</a>;</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>    this-&gt;add_parameters(<a class="code hl_struct" href="structExaDG_1_1CompNS_1_1BoundaryDescriptorStd.html">prm</a>);</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>    <a class="code hl_struct" href="structExaDG_1_1CompNS_1_1BoundaryDescriptorStd.html">prm</a>.parse_input(parameter_file, <span class="stringliteral">&quot;&quot;</span>, <span class="keyword">true</span>, <span class="keyword">true</span>);</div>
 <div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  }</div>
 <div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span> </div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  MPI_Comm <span class="keyword">const</span> &amp; mpi_comm;</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  <a class="code hl_struct" href="structExaDG_1_1CompNS_1_1BoundaryDescriptorStd.html">MPI_Comm</a> <span class="keyword">const</span> &amp; mpi_comm;</div>
 <div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span> </div>
 <div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  dealii::ConditionalOStream pcout;</div>
 <div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span> </div>
@@ -279,6 +279,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="ttc" id="aclassExaDG_1_1CompNS_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1ApplicationBase.html">ExaDG::CompNS::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:48</div></div>
 <div class="ttc" id="aclassExaDG_1_1CompNS_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1Parameters.html">ExaDG::CompNS::Parameters</a></div><div class="ttdef"><b>Definition</b> parameters.h:36</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
+<div class="ttc" id="astructExaDG_1_1CompNS_1_1BoundaryDescriptorStd_html"><div class="ttname"><a href="structExaDG_1_1CompNS_1_1BoundaryDescriptorStd.html">ExaDG::CompNS::BoundaryDescriptorStd</a></div><div class="ttdef"><b>Definition</b> boundary_descriptor.h:48</div></div>
 <div class="ttc" id="astructExaDG_1_1OutputParameters_html"><div class="ttname"><a href="structExaDG_1_1OutputParameters.html">ExaDG::OutputParameters</a></div><div class="ttdef"><b>Definition</b> output_parameters.h:32</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->

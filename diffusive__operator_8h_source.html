@@ -321,7 +321,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00231" name="l00231"></a><span class="lineno"><a class="line" href="classExaDG_1_1ConvDiff_1_1DiffusiveOperator.html">  231</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1DiffusiveOperator.html">DiffusiveOperator</a> : <span class="keyword">public</span> <a class="code hl_class" href="classExaDG_1_1OperatorBase.html">OperatorBase</a>&lt;dim, Number, 1&gt;</div>
 <div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>{</div>
 <div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>  <span class="keyword">typedef</span> OperatorBase&lt;dim, Number, 1&gt; <a class="code hl_class" href="classExaDG_1_1OperatorBase.html">Base</a>;</div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1OperatorBase.html">OperatorBase&lt;dim, Number, 1&gt;</a> <a class="code hl_class" href="classExaDG_1_1OperatorBase.html">Base</a>;</div>
 <div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span> </div>
 <div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>  <span class="keyword">typedef</span> <span class="keyword">typename</span> Base::IntegratorCell IntegratorCell;</div>
 <div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>  <span class="keyword">typedef</span> <span class="keyword">typename</span> Base::IntegratorFace IntegratorFace;</div>
@@ -333,7 +333,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  initialize(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp;                  matrix_free,</div>
 <div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>             dealii::AffineConstraints&lt;Number&gt; <span class="keyword">const</span> &amp;                affine_constraints,</div>
-<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>             DiffusiveOperatorData&lt;dim&gt; <span class="keyword">const</span> &amp;                       data,</div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>             <a class="code hl_struct" href="structExaDG_1_1ConvDiff_1_1DiffusiveOperatorData.html">DiffusiveOperatorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;                       data,</div>
 <div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>             std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1Operators_1_1DiffusiveKernel.html">Operators::DiffusiveKernel&lt;dim, Number&gt;</a>&gt; kernel);</div>
 <div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span> </div>
 <div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>  <span class="keywordtype">void</span></div>
@@ -372,7 +372,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>                       OperatorType <span class="keyword">const</span> &amp;               operator_type,</div>
 <div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>                       dealii::types::boundary_id <span class="keyword">const</span> &amp; boundary_id) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span> </div>
-<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>  DiffusiveOperatorData&lt;dim&gt; operator_data;</div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>  <a class="code hl_struct" href="structExaDG_1_1ConvDiff_1_1DiffusiveOperatorData.html">DiffusiveOperatorData&lt;dim&gt;</a> operator_data;</div>
 <div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span> </div>
 <div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>  std::shared_ptr&lt;Operators::DiffusiveKernel&lt;dim, Number&gt;&gt; kernel;</div>
 <div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>};</div>

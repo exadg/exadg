@@ -322,7 +322,7 @@ typedef <a class="el" href="classExaDG_1_1Poisson_1_1MultigridPreconditioner.htm
 typedef <a class="el" href="classExaDG_1_1IncNS_1_1ProjectionOperator.html">ProjectionOperator</a>&lt; dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ProjOperator</b></td></tr>
 <tr class="separator:a71e593acb5abfe1721f8177b86c989ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af5bfd1691c4af1c318cf086952cf8323" id="r_af5bfd1691c4af1c318cf086952cf8323"><td class="memItemLeft" align="right" valign="top"><a id="af5bfd1691c4af1c318cf086952cf8323" name="af5bfd1691c4af1c318cf086952cf8323"></a>
-typedef <a class="el" href="classExaDG_1_1Elementwise_1_1OperatorBase.html">Elementwise::OperatorBase</a>&lt; dim, Number, ProjOperator &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ELEMENTWISE_PROJ_OPERATOR</b></td></tr>
+typedef <a class="el" href="classExaDG_1_1Elementwise_1_1OperatorBase.html">Elementwise::OperatorBase</a>&lt; dim, Number, <a class="el" href="classExaDG_1_1IncNS_1_1ProjectionOperator.html">ProjOperator</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ELEMENTWISE_PROJ_OPERATOR</b></td></tr>
 <tr class="separator:af5bfd1691c4af1c318cf086952cf8323"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a863a3ecbf752b693bac5b94c572e921e" id="r_a863a3ecbf752b693bac5b94c572e921e"><td class="memItemLeft" align="right" valign="top"><a id="a863a3ecbf752b693bac5b94c572e921e" name="a863a3ecbf752b693bac5b94c572e921e"></a>
 typedef <a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerBase.html">Elementwise::PreconditionerBase</a>&lt; dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ELEMENTWISE_PRECONDITIONER</b></td></tr>
@@ -439,7 +439,7 @@ std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1Operators_1_1Cont
 <a class="el" href="classExaDG_1_1InverseMassOperatorHdiv.html">InverseMassOperatorHdiv</a>&lt; dim, dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>inverse_mass_hdiv</b></td></tr>
 <tr class="separator:a6630f616c9d7cb8b77ac82ab93c0ea04"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4108fd3f96fef6c7464b8131e0898449" id="r_a4108fd3f96fef6c7464b8131e0898449"><td class="memItemLeft" align="right" valign="top"><a id="a4108fd3f96fef6c7464b8131e0898449" name="a4108fd3f96fef6c7464b8131e0898449"></a>
-std::shared_ptr&lt; ProjOperator &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>projection_operator</b></td></tr>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1ProjectionOperator.html">ProjOperator</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>projection_operator</b></td></tr>
 <tr class="separator:a4108fd3f96fef6c7464b8131e0898449"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a27f6582b7d5e42430b73b44d2b0e1c03" id="r_a27f6582b7d5e42430b73b44d2b0e1c03"><td class="memItemLeft" align="right" valign="top"><a id="a27f6582b7d5e42430b73b44d2b0e1c03" name="a27f6582b7d5e42430b73b44d2b0e1c03"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Elementwise_1_1OperatorBase.html">ELEMENTWISE_PROJ_OPERATOR</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>elementwise_projection_operator</b></td></tr>

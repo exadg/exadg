@@ -149,7 +149,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno"><a class="line" href="classExaDG_1_1IncNS_1_1ProjectionOperator.html">   63</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1IncNS_1_1ProjectionOperator.html">ProjectionOperator</a> : <span class="keyword">public</span> <a class="code hl_class" href="classExaDG_1_1OperatorBase.html">OperatorBase</a>&lt;dim, Number, dim&gt;</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>{</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keyword">typedef</span> OperatorBase&lt;dim, Number, dim&gt; <a class="code hl_class" href="classExaDG_1_1OperatorBase.html">Base</a>;</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1OperatorBase.html">OperatorBase&lt;dim, Number, dim&gt;</a> <a class="code hl_class" href="classExaDG_1_1OperatorBase.html">Base</a>;</div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="keyword">typedef</span> dealii::Tensor&lt;1, dim, dealii::VectorizedArray&lt;Number&gt;&gt; vector;</div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
@@ -170,18 +170,18 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  initialize(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp;        matrix_free,</div>
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>             dealii::AffineConstraints&lt;Number&gt; <span class="keyword">const</span> &amp;      affine_constraints,</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>             ProjectionOperatorData&lt;dim&gt; <span class="keyword">const</span> &amp;            data,</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>             <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1ProjectionOperatorData.html">ProjectionOperatorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;            data,</div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>             <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1Operators_1_1DivergencePenaltyKernelData.html">Operators::DivergencePenaltyKernelData</a> <span class="keyword">const</span> &amp; div_kernel_data,</div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>             <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1Operators_1_1ContinuityPenaltyKernelData.html">Operators::ContinuityPenaltyKernelData</a> <span class="keyword">const</span> &amp; conti_kernel_data);</div>
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  initialize(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp;   matrix_free,</div>
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>             dealii::AffineConstraints&lt;Number&gt; <span class="keyword">const</span> &amp; affine_constraints,</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>             ProjectionOperatorData&lt;dim&gt; <span class="keyword">const</span> &amp;       data,</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>             <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1ProjectionOperatorData.html">ProjectionOperatorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;       data,</div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>             std::shared_ptr&lt;DivKernel&gt;                div_penalty_kernel,</div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>             std::shared_ptr&lt;ContiKernel&gt;              conti_penalty_kernel);</div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  ProjectionOperatorData&lt;dim&gt;</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1ProjectionOperatorData.html">ProjectionOperatorData&lt;dim&gt;</a></div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  get_data() <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span> </div>
 <div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1Operators_1_1DivergencePenaltyKernelData.html">Operators::DivergencePenaltyKernelData</a></div>
@@ -235,7 +235,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>                       OperatorType <span class="keyword">const</span> &amp;               operator_type,</div>
 <div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>                       dealii::types::boundary_id <span class="keyword">const</span> &amp; boundary_id) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span> </div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  ProjectionOperatorData&lt;dim&gt; operator_data;</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1ProjectionOperatorData.html">ProjectionOperatorData&lt;dim&gt;</a> operator_data;</div>
 <div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span> </div>
 <div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  VectorType <span class="keyword">const</span> * velocity;</div>
 <div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  <span class="keywordtype">double</span>             time_step_size;</div>

@@ -154,7 +154,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keyword">typedef</span> dealii::LinearAlgebra::distributed::Vector&lt;Number&gt;      VectorType;</div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  <span class="keyword">typedef</span> dealii::LinearAlgebra::distributed::BlockVector&lt;Number&gt; BlockVectorType;</div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  <span class="keyword">typedef</span> SpatialOperatorBase&lt;dim, Number&gt; This;</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">SpatialOperatorBase&lt;dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">This</a>;</div>
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span> </div>
 <div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keyword">typedef</span> dealii::VectorizedArray&lt;Number&gt;                         scalar;</div>
 <div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <span class="keyword">typedef</span> dealii::Tensor&lt;1, dim, dealii::VectorizedArray&lt;Number&gt;&gt; vector;</div>
@@ -171,10 +171,10 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span><span class="comment">   * Constructor.</span></div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">SpatialOperatorBase</a>(std::shared_ptr&lt;Grid&lt;dim&gt; <span class="keyword">const</span>&gt;               grid,</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">SpatialOperatorBase</a>(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Grid.html">Grid&lt;dim&gt;</a> <span class="keyword">const</span>&gt;               grid,</div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>                      std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;    mapping,</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>                      std::shared_ptr&lt;BoundaryDescriptor&lt;dim&gt; <span class="keyword">const</span>&gt; boundary_descriptor,</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>                      std::shared_ptr&lt;FieldFunctions&lt;dim&gt; <span class="keyword">const</span>&gt;     field_functions,</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>                      std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">BoundaryDescriptor&lt;dim&gt;</a> <span class="keyword">const</span>&gt; boundary_descriptor,</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>                      std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1IncNS_1_1FieldFunctions.html">FieldFunctions&lt;dim&gt;</a> <span class="keyword">const</span>&gt;     field_functions,</div>
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>                      <a class="code hl_class" href="classExaDG_1_1IncNS_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;                             parameters,</div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>                      std::string <span class="keyword">const</span> &amp;                            field,</div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>                      MPI_Comm <span class="keyword">const</span> &amp;                               mpi_comm);</div>
@@ -185,14 +185,14 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  <span class="keyword">virtual</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">~SpatialOperatorBase</a>(){};</div>
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span> </div>
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  fill_matrix_free_data(MatrixFreeData&lt;dim, Number&gt; &amp; matrix_free_data) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  fill_matrix_free_data(<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a> &amp; matrix_free_data) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span> </div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  <a class="code hl_function" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html#a746fffe45a58d19e2a59a596391ba804">setup</a>();</div>
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span> </div>
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <a class="code hl_function" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html#a746fffe45a58d19e2a59a596391ba804">setup</a>(std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span>&gt; matrix_free,</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>        std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt; <span class="keyword">const</span>&gt;     matrix_free_data,</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>        std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a> <span class="keyword">const</span>&gt;     matrix_free_data,</div>
 <div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>        std::string <span class="keyword">const</span> &amp;                                    dof_index_temperature = <span class="stringliteral">&quot;&quot;</span>);</div>
 <div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span> </div>
 <div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span><span class="keyword">private</span>:</div>
@@ -612,36 +612,36 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span><span class="comment">   * Basic operators.</span></div>
 <div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span>  MassOperator&lt;dim, dim, Number&gt;  mass_operator;</div>
-<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span>  ConvectiveOperator&lt;dim, Number&gt; convective_operator;</div>
-<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>  ViscousOperator&lt;dim, Number&gt;    viscous_operator;</div>
-<div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>  RHSOperator&lt;dim, Number&gt;        rhs_operator;</div>
-<div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>  GradientOperator&lt;dim, Number&gt;   gradient_operator;</div>
-<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span>  DivergenceOperator&lt;dim, Number&gt; divergence_operator;</div>
+<div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span>  <a class="code hl_class" href="classExaDG_1_1MassOperator.html">MassOperator&lt;dim, dim, Number&gt;</a>  mass_operator;</div>
+<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ConvectiveOperator.html">ConvectiveOperator&lt;dim, Number&gt;</a> convective_operator;</div>
+<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ViscousOperator.html">ViscousOperator&lt;dim, Number&gt;</a>    viscous_operator;</div>
+<div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1RHSOperator.html">RHSOperator&lt;dim, Number&gt;</a>        rhs_operator;</div>
+<div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1GradientOperator.html">GradientOperator&lt;dim, Number&gt;</a>   gradient_operator;</div>
+<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1DivergenceOperator.html">DivergenceOperator&lt;dim, Number&gt;</a> divergence_operator;</div>
 <div class="line"><a id="l00549" name="l00549"></a><span class="lineno">  549</span> </div>
-<div class="line"><a id="l00550" name="l00550"></a><span class="lineno">  550</span>  DivergencePenaltyOperator&lt;dim, Number&gt; div_penalty_operator;</div>
-<div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span>  ContinuityPenaltyOperator&lt;dim, Number&gt; conti_penalty_operator;</div>
+<div class="line"><a id="l00550" name="l00550"></a><span class="lineno">  550</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1DivergencePenaltyOperator.html">DivergencePenaltyOperator&lt;dim, Number&gt;</a> div_penalty_operator;</div>
+<div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ContinuityPenaltyOperator.html">ContinuityPenaltyOperator&lt;dim, Number&gt;</a> conti_penalty_operator;</div>
 <div class="line"><a id="l00552" name="l00552"></a><span class="lineno">  552</span> </div>
 <div class="line"><a id="l00553" name="l00553"></a><span class="lineno">  553</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span><span class="comment">   * Linear(ized) momentum operator.</span></div>
 <div class="line"><a id="l00555" name="l00555"></a><span class="lineno">  555</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span>  <span class="keyword">mutable</span> MomentumOperator&lt;dim, Number&gt; momentum_operator;</div>
+<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span>  <span class="keyword">mutable</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1MomentumOperator.html">MomentumOperator&lt;dim, Number&gt;</a> momentum_operator;</div>
 <div class="line"><a id="l00557" name="l00557"></a><span class="lineno">  557</span> </div>
 <div class="line"><a id="l00558" name="l00558"></a><span class="lineno">  558</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00559" name="l00559"></a><span class="lineno">  559</span><span class="comment">   * Inverse mass operator (for L2 spaces)</span></div>
 <div class="line"><a id="l00560" name="l00560"></a><span class="lineno">  560</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>  InverseMassOperator&lt;dim, dim, Number&gt; inverse_mass_velocity;</div>
-<div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span>  InverseMassOperator&lt;dim, 1, Number&gt;   inverse_mass_velocity_scalar;</div>
+<div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>  <a class="code hl_class" href="classExaDG_1_1InverseMassOperator.html">InverseMassOperator&lt;dim, dim, Number&gt;</a> inverse_mass_velocity;</div>
+<div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span>  <a class="code hl_class" href="classExaDG_1_1InverseMassOperator.html">InverseMassOperator&lt;dim, 1, Number&gt;</a>   inverse_mass_velocity_scalar;</div>
 <div class="line"><a id="l00563" name="l00563"></a><span class="lineno">  563</span> </div>
 <div class="line"><a id="l00564" name="l00564"></a><span class="lineno">  564</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span><span class="comment">   * Inverse mass operator used in case of H(div)-conforming space</span></div>
 <div class="line"><a id="l00566" name="l00566"></a><span class="lineno">  566</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00567" name="l00567"></a><span class="lineno">  567</span>  InverseMassOperatorHdiv&lt;dim, dim, Number&gt; inverse_mass_hdiv;</div>
+<div class="line"><a id="l00567" name="l00567"></a><span class="lineno">  567</span>  <a class="code hl_class" href="classExaDG_1_1InverseMassOperatorHdiv.html">InverseMassOperatorHdiv&lt;dim, dim, Number&gt;</a> inverse_mass_hdiv;</div>
 <div class="line"><a id="l00568" name="l00568"></a><span class="lineno">  568</span> </div>
 <div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span><span class="comment">   * Projection operator.</span></div>
 <div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>  <span class="keyword">typedef</span> ProjectionOperator&lt;dim, Number&gt; ProjOperator;</div>
+<div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ProjectionOperator.html">ProjectionOperator&lt;dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ProjectionOperator.html">ProjOperator</a>;</div>
 <div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>  std::shared_ptr&lt;ProjOperator&gt;           projection_operator;</div>
 <div class="line"><a id="l00574" name="l00574"></a><span class="lineno">  574</span> </div>
 <div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span>  <span class="comment">/*</span></div>
@@ -664,11 +664,11 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span><span class="comment">   * Calculators used to obtain derived quantities.</span></div>
 <div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>  VorticityCalculator&lt;dim, Number&gt;  vorticity_calculator;</div>
-<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>  DivergenceCalculator&lt;dim, Number&gt; divergence_calculator;</div>
-<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>  ShearRateCalculator&lt;dim, Number&gt;  shear_rate_calculator;</div>
-<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>  MagnitudeCalculator&lt;dim, Number&gt;  magnitude_calculator;</div>
-<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>  QCriterionCalculator&lt;dim, Number&gt; q_criterion_calculator;</div>
+<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>  <a class="code hl_class" href="classExaDG_1_1VorticityCalculator.html">VorticityCalculator&lt;dim, Number&gt;</a>  vorticity_calculator;</div>
+<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>  <a class="code hl_class" href="classExaDG_1_1DivergenceCalculator.html">DivergenceCalculator&lt;dim, Number&gt;</a> divergence_calculator;</div>
+<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>  <a class="code hl_class" href="classExaDG_1_1ShearRateCalculator.html">ShearRateCalculator&lt;dim, Number&gt;</a>  shear_rate_calculator;</div>
+<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>  <a class="code hl_class" href="classExaDG_1_1MagnitudeCalculator.html">MagnitudeCalculator&lt;dim, Number&gt;</a>  magnitude_calculator;</div>
+<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>  <a class="code hl_class" href="classExaDG_1_1QCriterionCalculator.html">QCriterionCalculator&lt;dim, Number&gt;</a> q_criterion_calculator;</div>
 <div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span> </div>
 <div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
 <div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span> </div>
@@ -731,8 +731,8 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00660" name="l00660"></a><span class="lineno">  660</span><span class="comment">   * Variable viscosity models.</span></div>
 <div class="line"><a id="l00661" name="l00661"></a><span class="lineno">  661</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00662" name="l00662"></a><span class="lineno">  662</span>  <span class="keyword">mutable</span> TurbulenceModel&lt;dim, Number&gt;           turbulence_model;</div>
-<div class="line"><a id="l00663" name="l00663"></a><span class="lineno">  663</span>  <span class="keyword">mutable</span> GeneralizedNewtonianModel&lt;dim, Number&gt; generalized_newtonian_model;</div>
+<div class="line"><a id="l00662" name="l00662"></a><span class="lineno">  662</span>  <span class="keyword">mutable</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1TurbulenceModel.html">TurbulenceModel&lt;dim, Number&gt;</a>           turbulence_model;</div>
+<div class="line"><a id="l00663" name="l00663"></a><span class="lineno">  663</span>  <span class="keyword">mutable</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1GeneralizedNewtonianModel.html">GeneralizedNewtonianModel&lt;dim, Number&gt;</a> generalized_newtonian_model;</div>
 <div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span>};</div>
 </div>
 <div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span> </div>
@@ -741,15 +741,38 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span> </div>
 <div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_ \</span></div>
 <div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span><span class="comment">        */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1DivergenceCalculator_html"><div class="ttname"><a href="classExaDG_1_1DivergenceCalculator.html">ExaDG::DivergenceCalculator</a></div><div class="ttdef"><b>Definition</b> navier_stokes_calculators.h:35</div></div>
 <div class="ttc" id="aclassExaDG_1_1Elementwise_1_1OperatorBase_html"><div class="ttname"><a href="classExaDG_1_1Elementwise_1_1OperatorBase.html">ExaDG::Elementwise::OperatorBase</a></div><div class="ttdef"><b>Definition</b> elementwise_operator.h:33</div></div>
 <div class="ttc" id="aclassExaDG_1_1Elementwise_1_1PreconditionerBase_html"><div class="ttname"><a href="classExaDG_1_1Elementwise_1_1PreconditionerBase.html">ExaDG::Elementwise::PreconditionerBase</a></div><div class="ttdef"><b>Definition</b> elementwise_preconditioners.h:41</div></div>
+<div class="ttc" id="aclassExaDG_1_1Grid_html"><div class="ttname"><a href="classExaDG_1_1Grid.html">ExaDG::Grid</a></div><div class="ttdef"><b>Definition</b> grid.h:40</div></div>
+<div class="ttc" id="aclassExaDG_1_1IncNS_1_1ContinuityPenaltyOperator_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1ContinuityPenaltyOperator.html">ExaDG::IncNS::ContinuityPenaltyOperator</a></div><div class="ttdef"><b>Definition</b> continuity_penalty_operator.h:284</div></div>
+<div class="ttc" id="aclassExaDG_1_1IncNS_1_1ConvectiveOperator_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1ConvectiveOperator.html">ExaDG::IncNS::ConvectiveOperator</a></div><div class="ttdef"><b>Definition</b> convective_operator.h:859</div></div>
+<div class="ttc" id="aclassExaDG_1_1IncNS_1_1DivergenceOperator_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1DivergenceOperator.html">ExaDG::IncNS::DivergenceOperator</a></div><div class="ttdef"><b>Definition</b> divergence_operator.h:109</div></div>
+<div class="ttc" id="aclassExaDG_1_1IncNS_1_1DivergencePenaltyOperator_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1DivergencePenaltyOperator.html">ExaDG::IncNS::DivergencePenaltyOperator</a></div><div class="ttdef"><b>Definition</b> divergence_penalty_operator.h:230</div></div>
+<div class="ttc" id="aclassExaDG_1_1IncNS_1_1GeneralizedNewtonianModel_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1GeneralizedNewtonianModel.html">ExaDG::IncNS::GeneralizedNewtonianModel</a></div><div class="ttdef"><b>Definition</b> generalized_newtonian_model.h:37</div></div>
+<div class="ttc" id="aclassExaDG_1_1IncNS_1_1GradientOperator_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1GradientOperator.html">ExaDG::IncNS::GradientOperator</a></div><div class="ttdef"><b>Definition</b> gradient_operator.h:108</div></div>
+<div class="ttc" id="aclassExaDG_1_1IncNS_1_1MomentumOperator_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1MomentumOperator.html">ExaDG::IncNS::MomentumOperator</a></div><div class="ttdef"><b>Definition</b> momentum_operator.h:40</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1Parameters.html">ExaDG::IncNS::Parameters</a></div><div class="ttdef"><b>Definition</b> parameters.h:46</div></div>
+<div class="ttc" id="aclassExaDG_1_1IncNS_1_1ProjectionOperator_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1ProjectionOperator.html">ExaDG::IncNS::ProjectionOperator</a></div><div class="ttdef"><b>Definition</b> projection_operator.h:64</div></div>
+<div class="ttc" id="aclassExaDG_1_1IncNS_1_1RHSOperator_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1RHSOperator.html">ExaDG::IncNS::RHSOperator</a></div><div class="ttdef"><b>Definition</b> rhs_operator.h:126</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1SpatialOperatorBase_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">ExaDG::IncNS::SpatialOperatorBase</a></div><div class="ttdef"><b>Definition</b> spatial_operator_base.h:68</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1SpatialOperatorBase_html_a746fffe45a58d19e2a59a596391ba804"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html#a746fffe45a58d19e2a59a596391ba804">ExaDG::IncNS::SpatialOperatorBase::setup</a></div><div class="ttdeci">void setup()</div><div class="ttdef"><b>Definition</b> spatial_operator_base.cpp:674</div></div>
+<div class="ttc" id="aclassExaDG_1_1IncNS_1_1TurbulenceModel_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1TurbulenceModel.html">ExaDG::IncNS::TurbulenceModel</a></div><div class="ttdef"><b>Definition</b> turbulence_model.h:37</div></div>
+<div class="ttc" id="aclassExaDG_1_1IncNS_1_1ViscousOperator_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1ViscousOperator.html">ExaDG::IncNS::ViscousOperator</a></div><div class="ttdef"><b>Definition</b> viscous_operator.h:550</div></div>
+<div class="ttc" id="aclassExaDG_1_1InverseMassOperatorHdiv_html"><div class="ttname"><a href="classExaDG_1_1InverseMassOperatorHdiv.html">ExaDG::InverseMassOperatorHdiv</a></div><div class="ttdef"><b>Definition</b> inverse_mass_operator.h:224</div></div>
+<div class="ttc" id="aclassExaDG_1_1InverseMassOperator_html"><div class="ttname"><a href="classExaDG_1_1InverseMassOperator.html">ExaDG::InverseMassOperator</a></div><div class="ttdef"><b>Definition</b> inverse_mass_operator.h:53</div></div>
+<div class="ttc" id="aclassExaDG_1_1MagnitudeCalculator_html"><div class="ttname"><a href="classExaDG_1_1MagnitudeCalculator.html">ExaDG::MagnitudeCalculator</a></div><div class="ttdef"><b>Definition</b> navier_stokes_calculators.h:150</div></div>
+<div class="ttc" id="aclassExaDG_1_1MassOperator_html"><div class="ttname"><a href="classExaDG_1_1MassOperator.html">ExaDG::MassOperator</a></div><div class="ttdef"><b>Definition</b> mass_operator.h:41</div></div>
 <div class="ttc" id="aclassExaDG_1_1Poisson_1_1MultigridPreconditioner_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1MultigridPreconditioner.html">ExaDG::Poisson::MultigridPreconditioner</a></div><div class="ttdef"><b>Definition</b> multigrid_preconditioner.h:38</div></div>
+<div class="ttc" id="aclassExaDG_1_1QCriterionCalculator_html"><div class="ttname"><a href="classExaDG_1_1QCriterionCalculator.html">ExaDG::QCriterionCalculator</a></div><div class="ttdef"><b>Definition</b> navier_stokes_calculators.h:191</div></div>
+<div class="ttc" id="aclassExaDG_1_1ShearRateCalculator_html"><div class="ttname"><a href="classExaDG_1_1ShearRateCalculator.html">ExaDG::ShearRateCalculator</a></div><div class="ttdef"><b>Definition</b> navier_stokes_calculators.h:72</div></div>
+<div class="ttc" id="aclassExaDG_1_1VorticityCalculator_html"><div class="ttname"><a href="classExaDG_1_1VorticityCalculator.html">ExaDG::VorticityCalculator</a></div><div class="ttdef"><b>Definition</b> navier_stokes_calculators.h:114</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
+<div class="ttc" id="astructExaDG_1_1IncNS_1_1BoundaryDescriptor_html"><div class="ttname"><a href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">ExaDG::IncNS::BoundaryDescriptor</a></div><div class="ttdef"><b>Definition</b> boundary_descriptor.h:240</div></div>
+<div class="ttc" id="astructExaDG_1_1IncNS_1_1FieldFunctions_html"><div class="ttname"><a href="structExaDG_1_1IncNS_1_1FieldFunctions.html">ExaDG::IncNS::FieldFunctions</a></div><div class="ttdef"><b>Definition</b> field_functions.h:31</div></div>
 <div class="ttc" id="astructExaDG_1_1IncNS_1_1Operators_1_1ConvectiveKernelData_html"><div class="ttname"><a href="structExaDG_1_1IncNS_1_1Operators_1_1ConvectiveKernelData.html">ExaDG::IncNS::Operators::ConvectiveKernelData</a></div><div class="ttdef"><b>Definition</b> convective_operator.h:23</div></div>
 <div class="ttc" id="astructExaDG_1_1IncNS_1_1Operators_1_1ViscousKernelData_html"><div class="ttname"><a href="structExaDG_1_1IncNS_1_1Operators_1_1ViscousKernelData.html">ExaDG::IncNS::Operators::ViscousKernelData</a></div><div class="ttdef"><b>Definition</b> viscous_operator.h:26</div></div>
+<div class="ttc" id="astructExaDG_1_1MatrixFreeData_html"><div class="ttname"><a href="structExaDG_1_1MatrixFreeData.html">ExaDG::MatrixFreeData</a></div><div class="ttdef"><b>Definition</b> matrix_free_data.h:40</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
