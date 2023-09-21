@@ -164,11 +164,13 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
     lambda_stored        = lambda_coefficients.get_coefficient_cell(cell, q);
   }
 
+  tensor const F = get_F<dim, Number>(gradient_displacement);
+
   // Access the stored coefficients precomputed using the last linearization vector.
   scalar log_J;
   if(cache_level == 0)
   {
-    log_J = log(determinant(gradient_displacement));
+    log_J = log(determinant(F));
   }
   else
   {
@@ -176,7 +178,6 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
   }
 
   tensor const I     = get_identity<dim, Number>();
-  tensor const F     = get_F<dim, Number>(gradient_displacement);
   tensor const F_inv = invert(F);
   tensor const C_inv = F_inv * transpose(F_inv);
 
@@ -233,11 +234,13 @@ CompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradien
     lambda_stored        = lambda_coefficients.get_coefficient_cell(cell, q);
   }
 
+  tensor const F = get_F<dim, Number>(gradient_displacement);
+
   // Access the stored coefficients precomputed using the last linearization vector.
   scalar log_J;
   if(cache_level == 0)
   {
-    log_J = log(determinant(gradient_displacement));
+    log_J = log(determinant(F));
   }
   else
   {
@@ -245,7 +248,6 @@ CompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradien
   }
 
   tensor const I = get_identity<dim, Number>();
-  tensor const F = get_F<dim, Number>(gradient_displacement);
 
   return (shear_modulus_stored * (F * transpose(F)) -
           (shear_modulus_stored - 2.0 * lambda_stored * log_J) * I);
@@ -285,25 +287,11 @@ CompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
 
 template<int dim, typename Number>
 dealii::VectorizedArray<Number>
-CompressibleNeoHookean<dim, Number>::one_over_J(tensor const &     F,
-                                                unsigned int const cell,
-                                                unsigned int const q) const
+CompressibleNeoHookean<dim, Number>::one_over_J(unsigned int const cell, unsigned int const q) const
 {
-  if(spatial_integration)
-  {
-    if(cache_level == 0)
-    {
-      return (1.0 / determinant(F));
-    }
-    else
-    {
-      return (one_over_J_coefficients.get_coefficient_cell(cell, q));
-    }
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("Use not intended."));
-  }
+  AssertThrow(spatial_integration and cache_level > 0,
+              dealii::ExcMessage("Cannot access precomputed one_over_J."));
+  return (one_over_J_coefficients.get_coefficient_cell(cell, q));
 }
 
 template class CompressibleNeoHookean<2, float>;

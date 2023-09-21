@@ -139,13 +139,15 @@ public:
   }
 
   virtual dealii::VectorizedArray<Number>
-  one_over_J(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & F,
-             unsigned int const                                              cell,
-             unsigned int const                                              q) const
+  one_over_J(unsigned int const cell, unsigned int const q) const
   {
     (void)cell;
     (void)q;
-    return (1.0 / determinant(F));
+    AssertThrow(false,
+                dealii::ExcMessage(
+                  "Overwrite this method in derived class to access stored one_over_J."));
+    dealii::VectorizedArray<Number> one_over_J;
+    return one_over_J;
   }
 };
 

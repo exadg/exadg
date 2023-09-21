@@ -136,9 +136,7 @@ public:
     unsigned int const                                                         cell) const final;
 
   dealii::VectorizedArray<Number>
-  one_over_J(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & F,
-             unsigned int const                                              cell,
-             unsigned int const                                              q) const final;
+  one_over_J(unsigned int const cell, unsigned int const q) const final;
 
 private:
   /*
