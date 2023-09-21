@@ -293,7 +293,7 @@ NonLinearOperator<dim, Number>::cell_loop_nonlinear(
     integrator.reinit(cell);
 
     if(this->operator_data.spatial_integration and
-       (not this->operator_data.force_material_residual) and this->operator_data.cache_level == 0)
+       (not this->operator_data.force_material_residual))
     {
       integrator_lin->reinit(cell);
       integrator_lin->read_dof_values(displacement_lin);
