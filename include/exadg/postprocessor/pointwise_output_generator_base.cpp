@@ -83,7 +83,7 @@ PointwiseOutputGeneratorBase<dim, VectorType>::evaluate(VectorType const & solut
 
 template<int dim, typename VectorType>
 PointwiseOutputGeneratorBase<dim, VectorType>::PointwiseOutputGeneratorBase(MPI_Comm const & comm)
-  : mpi_comm(comm), first_evaluation(true)
+  : mpi_comm(comm), n_out_samples(dealii::numbers::invalid_unsigned_int), first_evaluation(true)
 {
 }
 
