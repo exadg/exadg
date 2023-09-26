@@ -425,6 +425,11 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
   {
     if(data.use_cell_based_loops)
     {
+      AssertThrow(
+        not evaluate_face_integrals() ||
+          not matrix_free->get_dof_handler(data.dof_index).get_triangulation().has_hanging_nodes(),
+        dealii::ExcMessage("Cell based face loops do not support locally refined meshes."));
+
       matrix_free->cell_loop(&This::cell_based_loop_diagonal, this, diagonal, diagonal);
     }
     else
@@ -496,6 +501,11 @@ OperatorBase<dim, Number, n_components>::add_block_diagonal_matrices(BlockMatrix
   {
     if(data.use_cell_based_loops)
     {
+      AssertThrow(
+        not evaluate_face_integrals() ||
+          not matrix_free->get_dof_handler(data.dof_index).get_triangulation().has_hanging_nodes(),
+        dealii::ExcMessage("Cell based face loops do not support locally refined meshes."));
+
       matrix_free->cell_loop(&This::cell_based_loop_block_diagonal, this, matrices, matrices);
     }
     else
@@ -547,6 +557,9 @@ OperatorBase<dim, Number, n_components>::apply_inverse_block_diagonal(VectorType
                   dealii::ExcMessage("Cell based face loops have to be activated for matrix-free "
                                      "implementation of block diagonal preconditioner, if face "
                                      "integrals need to be evaluated."));
+      AssertThrow(
+        not matrix_free->get_dof_handler(data.dof_index).get_triangulation().has_hanging_nodes(),
+        dealii::ExcMessage("Cell based face loops do not support locally refined meshes."));
       AssertThrow(matrix_free->get_dof_handler(data.dof_index)
                     .get_triangulation()
                     .all_reference_cells_are_hyper_cube(),
@@ -1499,42 +1512,45 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
     }
 
     // loop over all faces and gather results into local diagonal local_diag
-    unsigned int const n_faces = dealii::ReferenceCells::template get_hypercube<dim>().n_faces();
-    for(unsigned int face = 0; face < n_faces; ++face)
+    if(evaluate_face_integrals())
     {
-      auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
-      auto bid  = bids[0];
+      unsigned int const n_faces = dealii::ReferenceCells::template get_hypercube<dim>().n_faces();
+      for(unsigned int face = 0; face < n_faces; ++face)
+      {
+        auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
+        auto bid  = bids[0];
 
-      this->reinit_face_cell_based(integrator_m, integrator_p, cell, face, bid);
+        this->reinit_face_cell_based(integrator_m, integrator_p, cell, face, bid);
 
 #ifdef DEBUG
-      unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_cell_batch(cell);
-      for(unsigned int v = 0; v < n_filled_lanes; v++)
-        Assert(bid == bids[v],
-               dealii::ExcMessage(
-                 "Cell-based face loop encountered face batch with different bids."));
+        unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_cell_batch(cell);
+        for(unsigned int v = 0; v < n_filled_lanes; v++)
+          Assert(bid == bids[v],
+                 dealii::ExcMessage(
+                   "Cell-based face loop encountered face batch with different bids."));
 #endif
 
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      {
-        this->create_standard_basis(j, integrator_m);
-
-        integrator_m.evaluate(integrator_flags.face_evaluate);
-
-        if(bid == dealii::numbers::internal_face_boundary_id) // internal face
+        for(unsigned int j = 0; j < dofs_per_cell; ++j)
         {
-          this->do_face_int_integral_cell_based(integrator_m, integrator_p);
-        }
-        else // boundary face
-        {
-          this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
-        }
+          this->create_standard_basis(j, integrator_m);
 
-        integrator_m.integrate(integrator_flags.face_integrate);
+          integrator_m.evaluate(integrator_flags.face_evaluate);
 
-        // note: += for accumulation of all contributions of this (macro) cell
-        //          including: cell-, face-, boundary-stiffness matrix
-        local_diag[j] += integrator_m.begin_dof_values()[j];
+          if(bid == dealii::numbers::internal_face_boundary_id) // internal face
+          {
+            this->do_face_int_integral_cell_based(integrator_m, integrator_p);
+          }
+          else // boundary face
+          {
+            this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
+          }
+
+          integrator_m.integrate(integrator_flags.face_integrate);
+
+          // note: += for accumulation of all contributions of this (macro) cell
+          //          including: cell-, face-, boundary-stiffness matrix
+          local_diag[j] += integrator_m.begin_dof_values()[j];
+        }
       }
     }
 
@@ -1795,43 +1811,46 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_block_diagonal(
           matrices[cell * vectorization_length + v](i, j) += integrator.begin_dof_values()[i][v];
     }
 
-    // loop over all faces
-    unsigned int const n_faces = dealii::ReferenceCells::template get_hypercube<dim>().n_faces();
-    for(unsigned int face = 0; face < n_faces; ++face)
+    if(evaluate_face_integrals())
     {
-      auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
-      auto bid  = bids[0];
+      // loop over all faces
+      unsigned int const n_faces = dealii::ReferenceCells::template get_hypercube<dim>().n_faces();
+      for(unsigned int face = 0; face < n_faces; ++face)
+      {
+        auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
+        auto bid  = bids[0];
 
-      this->reinit_face_cell_based(integrator_m, integrator_p, cell, face, bid);
+        this->reinit_face_cell_based(integrator_m, integrator_p, cell, face, bid);
 
 #ifdef DEBUG
-      for(unsigned int v = 0; v < n_filled_lanes; v++)
-        Assert(bid == bids[v],
-               dealii::ExcMessage(
-                 "Cell-based face loop encountered face batch with different bids."));
+        for(unsigned int v = 0; v < n_filled_lanes; v++)
+          Assert(bid == bids[v],
+                 dealii::ExcMessage(
+                   "Cell-based face loop encountered face batch with different bids."));
 #endif
 
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      {
-        this->create_standard_basis(j, integrator_m);
-
-        integrator_m.evaluate(integrator_flags.face_evaluate);
-
-        if(bid == dealii::numbers::internal_face_boundary_id) // internal face
+        for(unsigned int j = 0; j < dofs_per_cell; ++j)
         {
-          this->do_face_int_integral_cell_based(integrator_m, integrator_p);
-        }
-        else // boundary face
-        {
-          this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
-        }
+          this->create_standard_basis(j, integrator_m);
 
-        integrator_m.integrate(integrator_flags.face_integrate);
+          integrator_m.evaluate(integrator_flags.face_evaluate);
 
-        for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          for(unsigned int v = 0; v < n_filled_lanes; ++v)
-            matrices[cell * vectorization_length + v](i, j) +=
-              integrator_m.begin_dof_values()[i][v];
+          if(bid == dealii::numbers::internal_face_boundary_id) // internal face
+          {
+            this->do_face_int_integral_cell_based(integrator_m, integrator_p);
+          }
+          else // boundary face
+          {
+            this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
+          }
+
+          integrator_m.integrate(integrator_flags.face_integrate);
+
+          for(unsigned int i = 0; i < dofs_per_cell; ++i)
+            for(unsigned int v = 0; v < n_filled_lanes; ++v)
+              matrices[cell * vectorization_length + v](i, j) +=
+                integrator_m.begin_dof_values()[i][v];
+        }
       }
     }
   }
