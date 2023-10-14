@@ -34,11 +34,11 @@ template<int dim, typename Number = double>
 inline DEAL_II_ALWAYS_INLINE //
   void
   add_scaled_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> & tmp,
-		              dealii::VectorizedArray<Number> const &                   factor)
+                      dealii::VectorizedArray<Number> const &                   factor)
 {
   for(unsigned int i = 0; i < dim; i++)
   {
-	tmp[i][i] = tmp[i][i] + factor;
+    tmp[i][i] = tmp[i][i] + factor;
   }
 }
 
@@ -49,7 +49,7 @@ inline DEAL_II_ALWAYS_INLINE //
 {
   for(unsigned int i = 0; i < dim; i++)
   {
-	tmp[i][i] = tmp[i][i] + 1.0;
+    tmp[i][i] = tmp[i][i] + 1.0;
   }
   return tmp;
 }
@@ -61,7 +61,7 @@ inline DEAL_II_ALWAYS_INLINE //
 {
   for(unsigned int i = 0; i < dim; i++)
   {
-	tmp[i][i] = tmp[i][i] - 1.0;
+    tmp[i][i] = tmp[i][i] - 1.0;
   }
   return tmp;
 }

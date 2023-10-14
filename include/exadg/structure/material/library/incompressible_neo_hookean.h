@@ -113,7 +113,7 @@ public:
   second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
                                 unsigned int const cell,
                                 unsigned int const q,
-							    bool const         force_evaluation = false) const final;
+                                bool const         force_evaluation = false) const final;
 
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
@@ -126,27 +126,13 @@ public:
   kirchhoff_stress(tensor const &     gradient_displacement,
                    unsigned int const cell,
                    unsigned int const q,
-				   bool const         force_evaluation = false) const final;
+                   bool const         force_evaluation = false) const final;
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
                           tensor const &     deformation_gradient,
                           unsigned int const cell,
                           unsigned int const q) const final;
-
-//  /*
-//   * Store linearization data depending on cache level.
-//   */
-//  void
-//  do_set_cell_linearization_data(
-//    std::shared_ptr<CellIntegrator<dim, dim /* n_components */, Number>> const integrator_lin,
-//    unsigned int const                                                         cell) const final;
-//
-//  dealii::VectorizedArray<Number>
-//  one_over_J(unsigned int const cell, unsigned int const q) const final;
-//
-//  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-//  deformation_gradient(unsigned int const cell, unsigned int const q) const final;
 
 private:
   /*

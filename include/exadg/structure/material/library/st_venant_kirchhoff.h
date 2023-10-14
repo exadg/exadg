@@ -74,7 +74,7 @@ public:
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
     unsigned int const                                              cell,
     unsigned int const                                              q,
-	bool const                                                      force_evaluation) const final;
+    bool const                                                      force_evaluation) const final;
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   second_piola_kirchhoff_stress_displacement_derivative(

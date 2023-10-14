@@ -52,7 +52,7 @@ public:
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
     unsigned int const                                              cell,
     unsigned int const                                              q,
-	bool const                                                      force_evaluation = false) const
+    bool const                                                      force_evaluation = false) const
   {
     (void)gradient_displacement;
     (void)cell;
@@ -97,7 +97,7 @@ public:
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
     unsigned int const                                              cell,
     unsigned int const                                              q,
-	bool const                                                      force_evalution = false) const
+    bool const                                                      force_evalution = false) const
   {
     (void)gradient_displacement;
     (void)cell;

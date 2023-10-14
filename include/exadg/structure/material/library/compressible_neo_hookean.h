@@ -109,7 +109,7 @@ public:
   second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
                                 unsigned int const cell,
                                 unsigned int const q,
-								bool const         force_evaluation = false) const final;
+                                bool const         force_evaluation = false) const final;
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   second_piola_kirchhoff_stress_displacement_derivative(tensor const &     gradient_increment,
@@ -121,7 +121,7 @@ public:
   kirchhoff_stress(tensor const &     gradient_displacement,
                    unsigned int const cell,
                    unsigned int const q,
-				   bool const         force_evaluation = false) const final;
+                   bool const         force_evaluation = false) const final;
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
