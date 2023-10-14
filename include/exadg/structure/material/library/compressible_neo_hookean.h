@@ -171,10 +171,14 @@ private:
   bool         force_material_residual;
   unsigned int cache_level;
 
+  // required for nonlinear operator
   mutable VariableCoefficients<scalar> one_over_J_coefficients;
+  mutable VariableCoefficients<tensor> deformation_gradient_coefficients;
+
+  // scalar cache level
   mutable VariableCoefficients<scalar> log_J_coefficients;
 
-  mutable VariableCoefficients<tensor> deformation_gradient_coefficients;
+  // tensor cache level
   mutable VariableCoefficients<tensor> kirchhoff_stress_coefficients;
   mutable VariableCoefficients<tensor> second_piola_kirchhoff_stress_coefficients;
 };
