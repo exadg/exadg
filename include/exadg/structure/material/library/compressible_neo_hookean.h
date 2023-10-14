@@ -108,7 +108,8 @@ public:
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
                                 unsigned int const cell,
-                                unsigned int const q) const final;
+                                unsigned int const q,
+								bool const         force_evaluation = false) const final;
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   second_piola_kirchhoff_stress_displacement_derivative(tensor const &     gradient_increment,
@@ -119,7 +120,8 @@ public:
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   kirchhoff_stress(tensor const &     gradient_displacement,
                    unsigned int const cell,
-                   unsigned int const q) const final;
+                   unsigned int const q,
+				   bool const         force_evaluation = false) const final;
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
@@ -137,6 +139,9 @@ public:
 
   dealii::VectorizedArray<Number>
   one_over_J(unsigned int const cell, unsigned int const q) const final;
+
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  deformation_gradient(unsigned int const cell, unsigned int const q) const final;
 
 private:
   /*
@@ -168,6 +173,10 @@ private:
 
   mutable VariableCoefficients<scalar> one_over_J_coefficients;
   mutable VariableCoefficients<scalar> log_J_coefficients;
+
+  mutable VariableCoefficients<tensor> deformation_gradient_coefficients;
+  mutable VariableCoefficients<tensor> kirchhoff_stress_coefficients;
+  mutable VariableCoefficients<tensor> second_piola_kirchhoff_stress_coefficients;
 };
 } // namespace Structure
 } // namespace ExaDG

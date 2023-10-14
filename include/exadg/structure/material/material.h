@@ -51,11 +51,13 @@ public:
   second_piola_kirchhoff_stress(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
     unsigned int const                                              cell,
-    unsigned int const                                              q) const
+    unsigned int const                                              q,
+	bool const                                                      force_evaluation = false) const
   {
     (void)gradient_displacement;
     (void)cell;
     (void)q;
+    (void)force_evaluation;
     AssertThrow(false,
                 dealii::ExcMessage("For a total Lagrangian formulation,"
                                    "overwrite this method in derived class."));
@@ -94,11 +96,13 @@ public:
   kirchhoff_stress(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
     unsigned int const                                              cell,
-    unsigned int const                                              q) const
+    unsigned int const                                              q,
+	bool const                                                      force_evalution = false) const
   {
     (void)gradient_displacement;
     (void)cell;
     (void)q;
+    (void)force_evalution;
     AssertThrow(false,
                 dealii::ExcMessage("For a Lagrangian formulation in spatial domain, "
                                    "overwrite this method in derived class."));
@@ -148,6 +152,18 @@ public:
                   "Overwrite this method in derived class to access stored one_over_J."));
     dealii::VectorizedArray<Number> one_over_J;
     return one_over_J;
+  }
+
+  virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  deformation_gradient(unsigned int const cell, unsigned int const q) const
+  {
+    (void)cell;
+    (void)q;
+    AssertThrow(false,
+                dealii::ExcMessage(
+                  "Overwrite this method in derived class to access stored deformation gradient."));
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> F;
+    return F;
   }
 };
 

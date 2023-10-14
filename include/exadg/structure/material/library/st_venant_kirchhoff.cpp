@@ -183,8 +183,11 @@ dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
   unsigned int const                                              cell,
-  unsigned int const                                              q) const
+  unsigned int const                                              q,
+  bool const                                                      force_evaluation) const
 {
+  (void)force_evaluation;
+
   if(large_deformation)
   {
     return (this->second_piola_kirchhoff_stress_symmetrize(

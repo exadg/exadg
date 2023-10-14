@@ -83,7 +83,23 @@ CompressibleNeoHookean<dim, Number>::CompressibleNeoHookean(
 
     if(cache_level > 1)
     {
-      AssertThrow(cache_level < 2, dealii::ExcMessage("Not implemented."));
+      deformation_gradient_coefficients.initialize(matrix_free, quad_index, false, false);
+      deformation_gradient_coefficients.set_coefficients(get_identity<dim,Number>());
+
+      tensor const zero_tensor;
+      if(spatial_integration)
+	  {
+    	kirchhoff_stress_coefficients.initialize(matrix_free, quad_index, false, false);
+    	kirchhoff_stress_coefficients.set_coefficients(zero_tensor);
+	  }
+
+      if(force_material_residual or not spatial_integration)
+      {
+        second_piola_kirchhoff_stress_coefficients.initialize(matrix_free, quad_index, false, false);
+        second_piola_kirchhoff_stress_coefficients.set_coefficients(zero_tensor);
+      }
+
+	  AssertThrow(cache_level < 3, dealii::ExcMessage("Cache level > 2 not implemented."));
     }
   }
 }
@@ -94,23 +110,51 @@ CompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
   std::shared_ptr<CellIntegrator<dim, dim /* n_components */, Number>> const integrator_lin,
   unsigned int const                                                         cell) const
 {
+  AssertThrow(cache_level < 3, dealii::ExcMessage("Cache level > 2 not implemented."));
+
   if(spatial_integration)
   {
     for(unsigned int q = 0; q < integrator_lin->n_q_points; ++q)
     {
-      scalar const J = determinant(get_F(integrator_lin->get_gradient(q)));
+      tensor const F = get_F(integrator_lin->get_gradient(q));
+      scalar const J = determinant(F);
 
       log_J_coefficients.set_coefficient_cell(cell, q, log(J));
       one_over_J_coefficients.set_coefficient_cell(cell, q, 1.0 / J);
+
+      if(cache_level > 1)
+	  {
+        deformation_gradient_coefficients.set_coefficient_cell(cell, q, F);
+
+        tensor const Grad_d_lin = subtract_identity<dim,Number>(F);
+        tensor const tau_lin = this->kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
+        kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau_lin);
+
+        if(force_material_residual)
+        {
+		  tensor const S_lin = this->second_piola_kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
+		  second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S_lin);
+        }
+	  }
     }
   }
   else
   {
     for(unsigned int q = 0; q < integrator_lin->n_q_points; ++q)
     {
-      scalar const J = determinant(get_F(integrator_lin->get_gradient(q)));
+      tensor const F = get_F(integrator_lin->get_gradient(q));
+      scalar const J = determinant(F);
 
       log_J_coefficients.set_coefficient_cell(cell, q, log(J));
+
+      if(cache_level > 1)
+	  {
+        deformation_gradient_coefficients.set_coefficient_cell(cell, q, F);
+
+        tensor const Grad_d_lin = subtract_identity<dim,Number>(F);
+        tensor const S_lin = this->second_piola_kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
+        second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S_lin);
+	  }
     }
   }
 }
@@ -156,32 +200,43 @@ dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
   tensor const &     gradient_displacement,
   unsigned int const cell,
-  unsigned int const q) const
+  unsigned int const q,
+  bool const         force_evaluation) const
 {
-  if(parameters_are_variable)
+  tensor S;
+  if(cache_level < 2 or force_evaluation)
   {
-    shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
-    lambda_stored        = lambda_coefficients.get_coefficient_cell(cell, q);
-  }
+	  if(parameters_are_variable)
+	  {
+		shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+		lambda_stored        = lambda_coefficients.get_coefficient_cell(cell, q);
+	  }
 
-  tensor const F = get_F<dim, Number>(gradient_displacement);
+	  tensor const F = get_F<dim, Number>(gradient_displacement);
 
-  // Access the stored coefficients precomputed using the last linearization vector.
-  scalar log_J;
-  if(cache_level == 0)
-  {
-    log_J = log(determinant(F));
+	  // Access the stored coefficients precomputed using the last linearization vector.
+	  scalar log_J;
+	  if(cache_level == 0)
+	  {
+		log_J = log(determinant(F));
+	  }
+	  else
+	  {
+		log_J = log_J_coefficients.get_coefficient_cell(cell, q);
+	  }
+
+	  tensor const I     = get_identity<dim, Number>();
+	  tensor const F_inv = invert(F);
+	  tensor const C_inv = F_inv * transpose(F_inv);
+
+	  S = (shear_modulus_stored * I - (shear_modulus_stored - 2.0 * lambda_stored * log_J) * C_inv);
   }
   else
   {
-    log_J = log_J_coefficients.get_coefficient_cell(cell, q);
+      S = second_piola_kirchhoff_stress_coefficients.get_coefficient_cell(cell, q);
   }
 
-  tensor const I     = get_identity<dim, Number>();
-  tensor const F_inv = invert(F);
-  tensor const C_inv = F_inv * transpose(F_inv);
-
-  return (shear_modulus_stored * I - (shear_modulus_stored - 2.0 * lambda_stored * log_J) * C_inv);
+  return S;
 }
 
 template<int dim, typename Number>
@@ -226,31 +281,42 @@ template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 CompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradient_displacement,
                                                       unsigned int const cell,
-                                                      unsigned int const q) const
+                                                      unsigned int const q,
+													  bool const         force_evaluation) const
 {
-  if(parameters_are_variable)
+  tensor tau;
+  if(cache_level < 2 or force_evaluation)
   {
-    shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
-    lambda_stored        = lambda_coefficients.get_coefficient_cell(cell, q);
-  }
+	  if(parameters_are_variable)
+	  {
+		shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+		lambda_stored        = lambda_coefficients.get_coefficient_cell(cell, q);
+	  }
 
-  tensor const F = get_F<dim, Number>(gradient_displacement);
+	  tensor const F = get_F<dim, Number>(gradient_displacement);
 
-  // Access the stored coefficients precomputed using the last linearization vector.
-  scalar log_J;
-  if(cache_level == 0)
-  {
-    log_J = log(determinant(F));
+	  // Access the stored coefficients precomputed using the last linearization vector.
+	  scalar log_J;
+	  if(cache_level == 0)
+	  {
+		log_J = log(determinant(F));
+	  }
+	  else
+	  {
+		log_J = log_J_coefficients.get_coefficient_cell(cell, q);
+	  }
+
+	  tensor const I = get_identity<dim, Number>();
+
+	  tau = shear_modulus_stored * (F * transpose(F)) - (shear_modulus_stored - 2.0 * lambda_stored * log_J) * I;
+
   }
   else
   {
-    log_J = log_J_coefficients.get_coefficient_cell(cell, q);
+    tau = kirchhoff_stress_coefficients.get_coefficient_cell(cell, q);
   }
 
-  tensor const I = get_identity<dim, Number>();
-
-  return (shear_modulus_stored * (F * transpose(F)) -
-          (shear_modulus_stored - 2.0 * lambda_stored * log_J) * I);
+  return tau;
 }
 
 template<int dim, typename Number>
@@ -292,6 +358,15 @@ CompressibleNeoHookean<dim, Number>::one_over_J(unsigned int const cell, unsigne
   AssertThrow(spatial_integration and cache_level > 0,
               dealii::ExcMessage("Cannot access precomputed one_over_J."));
   return (one_over_J_coefficients.get_coefficient_cell(cell, q));
+}
+
+template<int dim, typename Number>
+dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+CompressibleNeoHookean<dim, Number>::deformation_gradient(unsigned int const cell, unsigned int const q) const
+{
+  AssertThrow(cache_level > 1,
+              dealii::ExcMessage("Cannot access precomputed deformation gradient."));
+  return (deformation_gradient_coefficients.get_coefficient_cell(cell, q));
 }
 
 template class CompressibleNeoHookean<2, float>;

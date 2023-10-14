@@ -103,8 +103,11 @@ dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
   tensor const &     gradient_displacement,
   unsigned int const cell,
-  unsigned int const q) const
+  unsigned int const q,
+  bool const         force_evaluation) const
 {
+  (void)force_evaluation;
+
   tensor S;
 
   if(shear_modulus_is_variable)
@@ -171,8 +174,11 @@ template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradient_displacement,
                                                         unsigned int const cell,
-                                                        unsigned int const q) const
+                                                        unsigned int const q,
+														bool const         force_evaluation) const
 {
+  (void)force_evaluation;
+
   tensor tau;
 
   if(shear_modulus_is_variable)

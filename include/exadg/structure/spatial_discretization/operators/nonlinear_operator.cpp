@@ -455,20 +455,30 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      tensor const Grad_d = integrator_lin->get_gradient(q);
 
-      scalar one_over_J;
-      if(this->operator_data.cache_level == 0)
-      {
-        one_over_J = 1.0 / determinant(get_F<dim, Number>(Grad_d));
-      }
-      else
-      {
-        one_over_J = material->one_over_J(integrator.get_current_cell_index(), q);
-      }
+      // material gradient of the linearization vector
+	  tensor Grad_d_lin;
+	  if(this->operator_data.cache_level < 2)
+	  {
+		Grad_d_lin = integrator_lin->get_gradient(q);
+	  }
+	  else
+	  {
+		// Grad_d_lin : dummy tensor sufficient for function call.
+	  }
 
-      // Kirchhoff stresses
-      tensor const tau = material->kirchhoff_stress(Grad_d, integrator.get_current_cell_index(), q);
+	  scalar one_over_J;
+	  if(this->operator_data.cache_level == 0)
+	  {
+		one_over_J = 1.0 / determinant(get_F<dim, Number>(Grad_d_lin));
+	  }
+	  else
+	  {
+		one_over_J = material->one_over_J(integrator.get_current_cell_index(), q);
+	  }
+
+	  // Kirchhoff stresses
+	  tensor const tau = material->kirchhoff_stress(Grad_d_lin, integrator.get_current_cell_index(), q);
 
       // integral over spatial domain
       integrator.submit_gradient(tau * one_over_J, q);
@@ -486,11 +496,18 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      // material displacement gradient
-      tensor const Grad_d = integrator.get_gradient(q);
-
-      // material deformation gradient
-      tensor const F = get_F<dim, Number>(Grad_d);
+      // material gradient of the linearization vector and deformation gradient
+      tensor Grad_d, F;
+      if(this->operator_data.cache_level < 2)
+      {
+    	Grad_d = integrator.get_gradient(q);
+        F = get_F<dim, Number>(Grad_d);
+      }
+  	  else
+  	  {
+  		// Grad_d : dummy tensor sufficient for function call.
+  		F = material->deformation_gradient(integrator.get_current_cell_index(), q);
+  	  }
 
       // 2nd Piola-Kirchhoff stresses
       tensor const S =
@@ -567,10 +584,18 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       // spatial gradient of the displacement increment
       tensor const grad_delta = integrator.get_gradient(q);
 
-      // material gradient of the linearization vector
-      tensor const Grad_d_lin = integrator_lin->get_gradient(q);
-
-      tensor const F_lin = get_F<dim, Number>(Grad_d_lin);
+      // material gradient of the linearization vector and displacement gradient
+      tensor Grad_d_lin, F_lin;
+      if(this->operator_data.cache_level < 2)
+      {
+        Grad_d_lin = integrator_lin->get_gradient(q);
+        F_lin = get_F<dim, Number>(Grad_d_lin);
+      }
+      else
+      {
+    	// Grad_d_lin : dummy tensor sufficient for function call.
+    	F_lin = material->deformation_gradient(integrator.get_current_cell_index(), q);
+      }
 
       scalar one_over_J;
       if(this->operator_data.cache_level == 0)
@@ -606,12 +631,21 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      // kinematics
+      // material gradient of the displacement increment
       tensor const Grad_delta = integrator.get_gradient(q);
 
-      tensor const Grad_d_lin = integrator_lin->get_gradient(q);
-
-      tensor const F_lin = get_F<dim, Number>(Grad_d_lin);
+      // material gradient of the linearization vector and displacement gradient
+      tensor Grad_d_lin, F_lin;
+      if(this->operator_data.cache_level < 2)
+      {
+        Grad_d_lin = integrator_lin->get_gradient(q);
+        F_lin = get_F<dim, Number>(Grad_d_lin);
+      }
+      else
+      {
+    	// Grad_d_lin : dummy tensor sufficient for function call.
+    	F_lin = material->deformation_gradient(integrator.get_current_cell_index(), q);
+      }
 
       // 2nd Piola-Kirchhoff stresses
       tensor const S_lin =
