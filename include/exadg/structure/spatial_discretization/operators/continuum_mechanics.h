@@ -32,30 +32,46 @@ namespace Structure
 {
 template<int dim, typename Number = double>
 inline DEAL_II_ALWAYS_INLINE //
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  add_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> gradient)
+  void
+  add_scaled_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> & tmp,
+		              dealii::VectorizedArray<Number> const &                   factor)
 {
   for(unsigned int i = 0; i < dim; i++)
-    gradient[i][i] = gradient[i][i] + 1.0;
-  return gradient;
+  {
+	tmp[i][i] = tmp[i][i] + factor;
+  }
 }
 
 template<int dim, typename Number = double>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  subtract_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> gradient)
+  add_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tmp)
 {
   for(unsigned int i = 0; i < dim; i++)
-    gradient[i][i] = gradient[i][i] - 1.0;
-  return gradient;
+  {
+	tmp[i][i] = tmp[i][i] + 1.0;
+  }
+  return tmp;
+}
+
+template<int dim, typename Number = double>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  subtract_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tmp)
+{
+  for(unsigned int i = 0; i < dim; i++)
+  {
+	tmp[i][i] = tmp[i][i] - 1.0;
+  }
+  return tmp;
 }
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  get_F(const dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> & H)
+  get_F(const dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> & gradient_displacement)
 {
-  return add_identity(H);
+  return add_identity(gradient_displacement);
 }
 
 template<int dim, typename Number>

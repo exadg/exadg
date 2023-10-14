@@ -118,14 +118,11 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
   tensor F     = get_F<dim, Number>(gradient_displacement);
   scalar J     = determinant(F);
   tensor C     = transpose(F) * F;
-  tensor C_inv = invert(C);
 
-  // S_vol, i.e., penalty term enforcing J = 1.
-  S = (data.bulk_modulus * 0.5 * (J * J - 1.0)) * C_inv;
+  scalar J_pow = pow(J, static_cast<Number>(-2.0 * one_third));
 
-  // S_iso, isochoric term.
-  S += (shear_modulus_stored * pow(J, static_cast<Number>(-2.0 * one_third))) *
-       add_identity<dim, Number>((-one_third * trace(C)) * C_inv);
+  S = invert(C) * (- shear_modulus_stored * J_pow * one_third * trace(C) + data.bulk_modulus * 0.5 * (J * J - 1.0));
+  add_scaled_identity(S, shear_modulus_stored * J_pow);
 
   return S;
 }

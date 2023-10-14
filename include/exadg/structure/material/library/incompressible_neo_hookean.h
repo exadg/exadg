@@ -134,6 +134,20 @@ public:
                           unsigned int const cell,
                           unsigned int const q) const final;
 
+//  /*
+//   * Store linearization data depending on cache level.
+//   */
+//  void
+//  do_set_cell_linearization_data(
+//    std::shared_ptr<CellIntegrator<dim, dim /* n_components */, Number>> const integrator_lin,
+//    unsigned int const                                                         cell) const final;
+//
+//  dealii::VectorizedArray<Number>
+//  one_over_J(unsigned int const cell, unsigned int const q) const final;
+//
+//  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+//  deformation_gradient(unsigned int const cell, unsigned int const q) const final;
+
 private:
   /*
    * Store factors involving (potentially variable) shear modulus.

@@ -225,11 +225,11 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
 		log_J = log_J_coefficients.get_coefficient_cell(cell, q);
 	  }
 
-	  tensor const I     = get_identity<dim, Number>();
 	  tensor const F_inv = invert(F);
 	  tensor const C_inv = F_inv * transpose(F_inv);
 
-	  S = (shear_modulus_stored * I - (shear_modulus_stored - 2.0 * lambda_stored * log_J) * C_inv);
+	  S = (2.0 * lambda_stored * log_J - shear_modulus_stored) * C_inv;
+	  add_scaled_identity(S, shear_modulus_stored);
   }
   else
   {
@@ -306,10 +306,8 @@ CompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradien
 		log_J = log_J_coefficients.get_coefficient_cell(cell, q);
 	  }
 
-	  tensor const I = get_identity<dim, Number>();
-
-	  tau = shear_modulus_stored * (F * transpose(F)) - (shear_modulus_stored - 2.0 * lambda_stored * log_J) * I;
-
+	  tau = shear_modulus_stored * (F * transpose(F));
+	  add_scaled_identity(tau, 2.0 * lambda_stored * log_J - shear_modulus_stored);
   }
   else
   {
@@ -344,11 +342,10 @@ CompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
     log_J = log_J_coefficients.get_coefficient_cell(cell, q);
   }
 
-  tensor const I = get_identity<dim, Number>();
+  tensor result = (2.0 * (shear_modulus_stored - 2.0 * lambda_stored * log_J)) * symmetric_gradient_increment;
+  add_scaled_identity(result, (2.0 * lambda_stored * trace(symmetric_gradient_increment)));
 
-  return ((2.0 * (shear_modulus_stored - 2.0 * lambda_stored * log_J)) *
-            symmetric_gradient_increment +
-          (2.0 * lambda_stored * trace(symmetric_gradient_increment)) * I);
+  return result;
 }
 
 template<int dim, typename Number>
