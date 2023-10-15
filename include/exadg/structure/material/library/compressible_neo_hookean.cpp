@@ -98,12 +98,15 @@ CompressibleNeoHookean<dim, Number>::CompressibleNeoHookean(
         F_inv_coefficients.set_coefficients(get_identity<dim, Number>());
 
         C_inv_coefficients.initialize(matrix_free, quad_index, false, false);
-  		C_inv_coefficients.set_coefficients(get_identity<dim, Number>());
+        C_inv_coefficients.set_coefficients(get_identity<dim, Number>());
       }
 
       if(force_material_residual or not spatial_integration)
       {
-        second_piola_kirchhoff_stress_coefficients.initialize(matrix_free, quad_index, false, false);
+        second_piola_kirchhoff_stress_coefficients.initialize(matrix_free,
+                                                              quad_index,
+                                                              false,
+                                                              false);
         second_piola_kirchhoff_stress_coefficients.set_coefficients(zero_tensor);
       }
 
@@ -120,47 +123,47 @@ CompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
 {
   AssertThrow(cache_level < 3, dealii::ExcMessage("Cache level > 2 not implemented."));
 
-	for(unsigned int q = 0; q < integrator_lin->n_q_points; ++q)
-	{
-	  tensor const F = get_F(integrator_lin->get_gradient(q));
-	  scalar const J = determinant(F);
+  for(unsigned int q = 0; q < integrator_lin->n_q_points; ++q)
+  {
+    tensor const F = get_F(integrator_lin->get_gradient(q));
+    scalar const J = determinant(F);
 
-	  log_J_coefficients.set_coefficient_cell(cell, q, log(J));
+    log_J_coefficients.set_coefficient_cell(cell, q, log(J));
 
-	  if(spatial_integration)
-	  {
-		one_over_J_coefficients.set_coefficient_cell(cell, q, 1.0 / J);
-	  }
+    if(spatial_integration)
+    {
+      one_over_J_coefficients.set_coefficient_cell(cell, q, 1.0 / J);
+    }
 
-	  if(cache_level > 1)
-	  {
-		deformation_gradient_coefficients.set_coefficient_cell(cell, q, F);
+    if(cache_level > 1)
+    {
+      deformation_gradient_coefficients.set_coefficient_cell(cell, q, F);
 
-		tensor const Grad_d_lin = subtract_identity<dim, Number>(F);
+      tensor const Grad_d_lin = subtract_identity<dim, Number>(F);
 
-		if(spatial_integration)
-		{
-			tensor const tau_lin =
-			  this->kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
-			kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau_lin);
-		}
-		else
-		{
-			tensor const F_inv = invert(F);
-			F_inv_coefficients.set_coefficient_cell(cell, q, F_inv);
+      if(spatial_integration)
+      {
+        tensor const tau_lin =
+          this->kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
+        kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau_lin);
+      }
+      else
+      {
+        tensor const F_inv = invert(F);
+        F_inv_coefficients.set_coefficient_cell(cell, q, F_inv);
 
-			tensor const C_inv = F_inv * transpose(F_inv);
-			C_inv_coefficients.set_coefficient_cell(cell, q, C_inv);
-		}
+        tensor const C_inv = F_inv * transpose(F_inv);
+        C_inv_coefficients.set_coefficient_cell(cell, q, C_inv);
+      }
 
-		if(force_material_residual or not spatial_integration)
-		{
-		  tensor const S_lin =
-			this->second_piola_kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
-		  second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S_lin);
-		}
-	  }
-	}
+      if(force_material_residual or not spatial_integration)
+      {
+        tensor const S_lin =
+          this->second_piola_kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
+        second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S_lin);
+      }
+    }
+  }
 }
 
 template<int dim, typename Number>
@@ -268,29 +271,20 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacement_
     log_J = log_J_coefficients.get_coefficient_cell(cell, q);
   }
 
-  tensor F_inv;
+  tensor F_inv, C_inv;
   if(cache_level < 2)
   {
-	F_inv = invert(deformation_gradient);
+    F_inv = invert(deformation_gradient);
+    C_inv = F_inv * transpose(F_inv);
   }
   else
   {
-	F_inv = F_inv_coefficients.get_coefficient_cell(cell, q);
+    F_inv = F_inv_coefficients.get_coefficient_cell(cell, q);
+    C_inv = C_inv_coefficients.get_coefficient_cell(cell, q);
   }
 
-  tensor C_inv;
-  if(cache_level < 2)
-  {
-	C_inv = F_inv * transpose(F_inv);
-  }
-  else
-  {
-	C_inv = C_inv_coefficients.get_coefficient_cell(cell, q);
-  }
-
-  scalar const one_over_J_times_Dd_J = trace(F_inv * gradient_increment);
-  tensor const Dd_F_inv_times_transpose_F_inv =
-    -F_inv * gradient_increment * C_inv;
+  scalar const one_over_J_times_Dd_J          = trace(F_inv * gradient_increment);
+  tensor const Dd_F_inv_times_transpose_F_inv = -F_inv * gradient_increment * C_inv;
   tensor const Dd_C_inv =
     Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
 

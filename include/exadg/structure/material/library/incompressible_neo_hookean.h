@@ -134,6 +134,20 @@ public:
                           unsigned int const cell,
                           unsigned int const q) const final;
 
+  /*
+   * Store linearization data depending on cache level.
+   */
+  void
+  do_set_cell_linearization_data(
+    std::shared_ptr<CellIntegrator<dim, dim /* n_components */, Number>> const integrator_lin,
+    unsigned int const                                                         cell) const final;
+
+  dealii::VectorizedArray<Number>
+  one_over_J(unsigned int const cell, unsigned int const q) const final;
+
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  deformation_gradient(unsigned int const cell, unsigned int const q) const final;
+
 private:
   /*
    * Store factors involving (potentially variable) shear modulus.
@@ -150,6 +164,7 @@ private:
   IncompressibleNeoHookeanData<dim> const & data;
 
   mutable scalar shear_modulus_stored;
+  Number bulk_modulus; // penalty term; kept constant
 
   // cache coefficients for spatially varying material parameters
   bool                                 shear_modulus_is_variable;
@@ -159,6 +174,23 @@ private:
   bool         spatial_integration;
   bool         force_material_residual;
   unsigned int cache_level;
+
+  // required for nonlinear operator
+  mutable VariableCoefficients<scalar> one_over_J_coefficients;
+  mutable VariableCoefficients<tensor> deformation_gradient_coefficients;
+
+  // scalar cache level
+  mutable VariableCoefficients<scalar> J_pow_coefficients;
+  mutable VariableCoefficients<scalar> c1_coefficients;
+  mutable VariableCoefficients<scalar> c2_coefficients;
+
+  // tensor cache level
+  mutable VariableCoefficients<tensor> kirchhoff_stress_coefficients;
+  mutable VariableCoefficients<tensor> C_coefficients;
+
+  mutable VariableCoefficients<tensor> second_piola_kirchhoff_stress_coefficients;
+  mutable VariableCoefficients<tensor> F_inv_coefficients;
+  mutable VariableCoefficients<tensor> C_inv_coefficients;
 
   Number const one_third = 1.0 / 3.0;
 };
