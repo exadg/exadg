@@ -181,6 +181,8 @@ private:
   // tensor cache level
   mutable VariableCoefficients<tensor> kirchhoff_stress_coefficients;
   mutable VariableCoefficients<tensor> second_piola_kirchhoff_stress_coefficients;
+  mutable VariableCoefficients<tensor> F_inv_coefficients;
+  mutable VariableCoefficients<tensor> C_inv_coefficients;
 };
 } // namespace Structure
 } // namespace ExaDG

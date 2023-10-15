@@ -100,6 +100,18 @@ CompressibleNeoHookean<dim, Number>::CompressibleNeoHookean(
                                                               false,
                                                               false);
         second_piola_kirchhoff_stress_coefficients.set_coefficients(zero_tensor);
+
+        F_inv_coefficients.initialize(matrix_free,
+                                      quad_index,
+                                      false,
+                                      false);
+        F_inv_coefficients.set_coefficients(get_identity<dim, Number>());
+
+        C_inv_coefficients.initialize(matrix_free,
+                                      quad_index,
+                                      false,
+                                      false);
+		C_inv_coefficients.set_coefficients(get_identity<dim, Number>());
       }
 
       AssertThrow(cache_level < 3, dealii::ExcMessage("Cache level > 2 not implemented."));
@@ -160,6 +172,12 @@ CompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
         tensor const S_lin =
           this->second_piola_kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
         second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S_lin);
+
+        tensor const F_inv = invert(F);
+        F_inv_coefficients.set_coefficient_cell(cell, q, F_inv);
+
+        tensor const C_inv = F_inv * transpose(F_inv);
+        C_inv_coefficients.set_coefficient_cell(cell, q, C_inv);
       }
     }
   }
@@ -270,12 +288,29 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacement_
     log_J = log_J_coefficients.get_coefficient_cell(cell, q);
   }
 
-  tensor const F_inv = invert(deformation_gradient);
-  tensor const C_inv = F_inv * transpose(F_inv);
+  tensor F_inv;
+  if(cache_level < 2)
+  {
+	F_inv = invert(deformation_gradient);
+  }
+  else
+  {
+	F_inv = F_inv_coefficients.get_coefficient_cell(cell, q);
+  }
+
+  tensor C_inv;
+  if(cache_level < 2)
+  {
+	C_inv = F_inv * transpose(F_inv);
+  }
+  else
+  {
+	C_inv = C_inv_coefficients.get_coefficient_cell(cell, q);
+  }
 
   scalar const one_over_J_times_Dd_J = trace(F_inv * gradient_increment);
   tensor const Dd_F_inv_times_transpose_F_inv =
-    -F_inv * (gradient_increment * F_inv) * transpose(F_inv);
+    -F_inv * gradient_increment * C_inv;
   tensor const Dd_C_inv =
     Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
 
