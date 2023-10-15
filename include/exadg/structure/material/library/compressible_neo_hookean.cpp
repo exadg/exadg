@@ -219,7 +219,7 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
       lambda_stored        = lambda_coefficients.get_coefficient_cell(cell, q);
     }
 
-    tensor const F = get_F<dim, Number>(gradient_displacement);
+    tensor const F = get_F(gradient_displacement);
 
     // Access the stored coefficients precomputed using the last linearization vector.
     scalar log_J;
@@ -308,7 +308,7 @@ CompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradien
       lambda_stored        = lambda_coefficients.get_coefficient_cell(cell, q);
     }
 
-    tensor const F = get_F<dim, Number>(gradient_displacement);
+    tensor const F = get_F(gradient_displacement);
 
     // Access the stored coefficients precomputed using the last linearization vector.
     scalar log_J;

@@ -376,7 +376,7 @@ NonLinearOperator<dim, Number>::cell_loop_valid_deformation(
       tensor const Grad_d = integrator.get_gradient(q);
 
       // material deformation gradient
-      tensor const F     = get_F<dim, Number>(Grad_d);
+      tensor const F     = get_F(Grad_d);
       scalar const det_F = determinant(F);
       for(unsigned int v = 0; v < det_F.size(); ++v)
       {
@@ -469,7 +469,7 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
       scalar one_over_J;
       if(this->operator_data.cache_level == 0)
       {
-        one_over_J = 1.0 / determinant(get_F<dim, Number>(Grad_d_lin));
+        one_over_J = 1.0 / determinant(get_F(Grad_d_lin));
       }
       else
       {
@@ -501,7 +501,7 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
       if(this->operator_data.cache_level < 2)
       {
         Grad_d = integrator.get_gradient(q);
-        F      = get_F<dim, Number>(Grad_d);
+        F      = get_F(Grad_d);
       }
       else
       {
@@ -544,11 +544,11 @@ NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
 
     if(this->operator_data.pull_back_traction)
     {
-      tensor F = get_F<dim, Number>(integrator.get_gradient(q));
-      vector N = integrator.get_normal_vector(q);
+      tensor const F = get_F(integrator.get_gradient(q));
+      vector const N = integrator.get_normal_vector(q);
       // da/dA * n = det F F^{-T} * N := n_star
       // -> da/dA = n_star.norm()
-      vector n_star = determinant(F) * transpose(invert(F)) * N;
+      vector const n_star = determinant(F) * transpose(invert(F)) * N;
       // t_0 = da/dA * t
       traction *= n_star.norm();
     }
@@ -589,7 +589,7 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       if(this->operator_data.cache_level < 2)
       {
         Grad_d_lin = integrator_lin->get_gradient(q);
-        F_lin      = get_F<dim, Number>(Grad_d_lin);
+        F_lin      = get_F(Grad_d_lin);
       }
       else
       {
@@ -639,7 +639,7 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       if(this->operator_data.cache_level < 2)
       {
         Grad_d_lin = integrator_lin->get_gradient(q);
-        F_lin      = get_F<dim, Number>(Grad_d_lin);
+        F_lin      = get_F(Grad_d_lin);
       }
       else
       {

@@ -231,7 +231,7 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
 		shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
 	  }
 
-	  tensor const F = get_F<dim, Number>(gradient_displacement);
+	  tensor const F = get_F(gradient_displacement);
 	  tensor const C = transpose(F) * F;
 
 	  scalar J_pow, c1;
@@ -334,7 +334,7 @@ IncompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradi
 		shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
 	  }
 
-	  tensor const F = get_F<dim, Number>(gradient_displacement);
+	  tensor const F = get_F(gradient_displacement);
 	  tensor const F_times_F_transposed = F * transpose(F);
 
 	  scalar J_pow, c1;
