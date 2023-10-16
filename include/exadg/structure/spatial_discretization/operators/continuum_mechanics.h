@@ -81,7 +81,7 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   get_E(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & F)
 {
-  return 0.5 * subtract_identity(transpose(F) * F);
+  return (0.5 * subtract_identity(transpose(F) * F));
 }
 
 template<int dim, typename Number>

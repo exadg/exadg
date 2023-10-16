@@ -135,9 +135,11 @@ IncompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
       shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
     }
 
+    tensor const Grad_d_lin = integrator_lin->get_gradient(q);
+
     scalar J;
     tensor F;
-    get_modified_F_J(F, J, integrator_lin->get_gradient(q), check_type, true /* compute_J */);
+    get_modified_F_J(F, J, Grad_d_lin, check_type, true /* compute_J */);
 
     scalar const J_pow = pow(J, static_cast<Number>(-2.0 * one_third));
     J_pow_coefficients.set_coefficient_cell(cell, q, J_pow);
@@ -160,8 +162,6 @@ IncompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
     if(cache_level > 1)
     {
       deformation_gradient_coefficients.set_coefficient_cell(cell, q, F);
-
-      tensor const Grad_d_lin = subtract_identity<dim, Number>(F);
 
       if(spatial_integration)
       {

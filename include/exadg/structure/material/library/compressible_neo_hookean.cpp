@@ -126,9 +126,11 @@ CompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
 
   for(unsigned int q = 0; q < integrator_lin->n_q_points; ++q)
   {
+	tensor const Grad_d_lin = integrator_lin->get_gradient(q);
+
     scalar J;
     tensor F;
-    get_modified_F_J(F, J, integrator_lin->get_gradient(q), check_type, true /* compute_J */);
+    get_modified_F_J(F, J, Grad_d_lin, check_type, true /* compute_J */);
 
     log_J_coefficients.set_coefficient_cell(cell, q, log(J));
 
@@ -140,8 +142,6 @@ CompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
     if(cache_level > 1)
     {
       deformation_gradient_coefficients.set_coefficient_cell(cell, q, F);
-
-      tensor const Grad_d_lin = subtract_identity<dim, Number>(F);
 
       if(spatial_integration)
       {
