@@ -43,6 +43,7 @@ CompressibleNeoHookean<dim, Number>::CompressibleNeoHookean(
                             data.lambda_function != nullptr),
     spatial_integration(spatial_integration),
     force_material_residual(force_material_residual),
+	check_type(0),
     cache_level(cache_level)
 {
   // initialize (potentially variable) parameters
@@ -125,8 +126,9 @@ CompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
 
   for(unsigned int q = 0; q < integrator_lin->n_q_points; ++q)
   {
-    tensor const F = get_F(integrator_lin->get_gradient(q));
-    scalar const J = determinant(F);
+	scalar J;
+	tensor F;
+	get_modified_F_J(F, J, integrator_lin->get_gradient(q), check_type, true /* compute_J */);
 
     log_J_coefficients.set_coefficient_cell(cell, q, log(J));
 
@@ -219,13 +221,16 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
       lambda_stored        = lambda_coefficients.get_coefficient_cell(cell, q);
     }
 
-    tensor const F = get_F(gradient_displacement);
+    scalar J;
+    tensor F;
+    get_modified_F_J(F, J, gradient_displacement, check_type, false /* compute_J */);
 
     // Access the stored coefficients precomputed using the last linearization vector.
     scalar log_J;
     if(cache_level == 0)
     {
-      log_J = log(determinant(F));
+      J = determinant(F);
+      log_J = log(J);
     }
     else
     {
@@ -308,13 +313,16 @@ CompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradien
       lambda_stored        = lambda_coefficients.get_coefficient_cell(cell, q);
     }
 
-    tensor const F = get_F(gradient_displacement);
+    scalar J;
+    tensor F;
+    get_modified_F_J(F, J, gradient_displacement, check_type, false /* compute_J */);
 
     // Access the stored coefficients precomputed using the last linearization vector.
     scalar log_J;
     if(cache_level == 0)
     {
-      log_J = log(determinant(F));
+      J = determinant(F);
+      log_J = log(J);
     }
     else
     {

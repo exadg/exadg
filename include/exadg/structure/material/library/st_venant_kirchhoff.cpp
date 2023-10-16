@@ -38,6 +38,7 @@ StVenantKirchhoff<dim, Number>::StVenantKirchhoff(
     quad_index(quad_index),
     data(data),
     large_deformation(large_deformation),
+	check_type(0),
     E_is_variable(data.E_function != nullptr)
 {
   // initialize (potentially variable) factors
@@ -190,8 +191,11 @@ StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(
 
   if(large_deformation)
   {
-    return (this->second_piola_kirchhoff_stress_symmetrize(
-      get_E<dim, Number>(get_F<dim, Number>(gradient_displacement)), cell, q));
+	scalar J;
+	tensor F;
+	get_modified_F_J(F, J, gradient_displacement, check_type, false /* compute_J */);
+
+    return (this->second_piola_kirchhoff_stress_symmetrize(get_E<dim, Number>(F), cell, q));
   }
   else
   {

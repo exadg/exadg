@@ -169,6 +169,7 @@ private:
   // cache linearization data depending on cache_level and spatial_integration
   bool         spatial_integration;
   bool         force_material_residual;
+  int          check_type;
   unsigned int cache_level;
 
   // required for nonlinear operator

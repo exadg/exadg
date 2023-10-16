@@ -93,7 +93,30 @@ inline DEAL_II_ALWAYS_INLINE //
   return add_identity(I);
 }
 
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  void
+  get_modified_F_J(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> &       F,
+		           dealii::VectorizedArray<Number> &                               J,
+			       dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
+				   int const                                                       check_type,
+				   bool const                                                      compute_J)
+{
+  F = add_identity(gradient_displacement);
 
+  if(compute_J)
+  {
+	J = determinant(F);
+  }
+
+  if(check_type == 0)
+  {
+  }
+  else
+  {
+	AssertThrow(false, dealii::ExcMessage("This check_type is not defined."));
+  }
+}
 
 } // namespace Structure
 } // namespace ExaDG

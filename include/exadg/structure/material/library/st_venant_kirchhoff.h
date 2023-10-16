@@ -125,6 +125,7 @@ private:
   StVenantKirchhoffData<dim> const & data;
 
   bool large_deformation;
+  int  check_type;
 
   mutable dealii::VectorizedArray<Number> f0;
   mutable dealii::VectorizedArray<Number> f1;
