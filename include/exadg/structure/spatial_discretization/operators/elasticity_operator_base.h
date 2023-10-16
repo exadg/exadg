@@ -64,7 +64,10 @@ struct OperatorData : public OperatorBaseData
   bool pull_back_traction;
   bool spatial_integration;
   bool force_material_residual;
-  int  check_type;
+
+  // For nonlinear mateiral models, check the determinant of the Jacobian
+  // and potentially modify it for J <= 0 and check_type > 0.
+  int check_type;
 
   // This variable determines how much data is being precomputed
   // and stored in the integration points.

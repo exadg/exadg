@@ -81,6 +81,7 @@ public:
                          CompressibleNeoHookeanData<dim> const & data,
                          bool const                              spatial_integration,
                          bool const                              force_material_residual,
+						 unsigned int const                      check_type,
                          unsigned int const                      cache_level);
 
   /*
@@ -169,7 +170,7 @@ private:
   // cache linearization data depending on cache_level and spatial_integration
   bool         spatial_integration;
   bool         force_material_residual;
-  int          check_type;
+  unsigned int check_type;
   unsigned int cache_level;
 
   // required for nonlinear operator

@@ -35,6 +35,7 @@ IncompressibleNeoHookean<dim, Number>::IncompressibleNeoHookean(
   IncompressibleNeoHookeanData<dim> const & data,
   bool const                                spatial_integration,
   bool const                                force_material_residual,
+  unsigned int const                        check_type,
   unsigned int const                        cache_level)
   : dof_index(dof_index),
     quad_index(quad_index),
@@ -42,7 +43,7 @@ IncompressibleNeoHookean<dim, Number>::IncompressibleNeoHookean(
     shear_modulus_is_variable(data.shear_modulus_function != nullptr),
     spatial_integration(spatial_integration),
     force_material_residual(force_material_residual),
-    check_type(0),
+    check_type(check_type),
     cache_level(cache_level)
 {
   // initialize (potentially variable) shear modulus

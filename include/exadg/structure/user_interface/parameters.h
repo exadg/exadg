@@ -125,6 +125,10 @@ public:
   bool spatial_integration;
   bool force_material_residual;
 
+  // For nonlinear mateiral models, check the determinant of the Jacobian
+  // and potentially modify it for J <= 0 and check_type > 0.
+  unsigned int check_type;
+
   // For nonlinear problems, precompute some data in the integration points
   // if cache_level > 0. The implementation depends on the material model applied.
   unsigned int cache_level;

@@ -100,7 +100,7 @@ inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> &       F,
     dealii::VectorizedArray<Number> &                               J,
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
-    int const                                                       check_type,
+    unsigned int const                                              check_type,
     bool const                                                      compute_J)
 {
   F = add_identity(gradient_displacement);
@@ -110,12 +110,16 @@ inline DEAL_II_ALWAYS_INLINE //
     J = determinant(F);
   }
 
-  if(check_type == 0)
+  if(check_type > 0)
   {
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("This check_type is not defined."));
+    if(checktype == 1)
+    {
+  	  AssertThrow(false, dealii::ExcMessage("This check_type is not defined."));
+    }
+	else
+    {
+	  AssertThrow(false, dealii::ExcMessage("This check_type is not defined."));
+    }
   }
 }
 

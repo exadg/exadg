@@ -89,6 +89,7 @@ ElasticityOperatorBase<dim, Number>::initialize(
                               data.large_deformation,
                               data.spatial_integration,
                               data.force_material_residual,
+							  data.check_type,
                               data.cache_level);
 }
 

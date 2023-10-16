@@ -325,6 +325,7 @@ Operator<dim, Number>::setup_operators()
     operator_data.spatial_integration     = param.spatial_integration;
     operator_data.cache_level             = param.cache_level;
     operator_data.force_material_residual = param.force_material_residual;
+    operator_data.check_type              = param.check_type;
   }
   else
   {
