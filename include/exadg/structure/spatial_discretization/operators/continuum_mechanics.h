@@ -45,31 +45,33 @@ inline DEAL_II_ALWAYS_INLINE //
 template<int dim, typename Number = double>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  add_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tmp)
+  add_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & tmp)
 {
+  auto result = tmp;
   for(unsigned int i = 0; i < dim; i++)
   {
-    tmp[i][i] = tmp[i][i] + 1.0;
+    result[i][i] = result[i][i] + 1.0;
   }
-  return tmp;
+  return result;
 }
 
 template<int dim, typename Number = double>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  subtract_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tmp)
+  subtract_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & tmp)
 {
+  auto result = tmp;
   for(unsigned int i = 0; i < dim; i++)
   {
-    tmp[i][i] = tmp[i][i] - 1.0;
+	result[i][i] = result[i][i] - 1.0;
   }
-  return tmp;
+  return result;
 }
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  get_F(const dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> & gradient_displacement)
+  get_F(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement)
 {
   return add_identity(gradient_displacement);
 }
@@ -77,7 +79,7 @@ inline DEAL_II_ALWAYS_INLINE //
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  get_E(const dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> & F)
+  get_E(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & F)
 {
   return 0.5 * subtract_identity(transpose(F) * F);
 }
@@ -90,6 +92,8 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> I;
   return add_identity(I);
 }
+
+
 
 } // namespace Structure
 } // namespace ExaDG
