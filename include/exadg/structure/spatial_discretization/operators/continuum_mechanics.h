@@ -63,7 +63,7 @@ inline DEAL_II_ALWAYS_INLINE //
   auto result = tmp;
   for(unsigned int i = 0; i < dim; i++)
   {
-	result[i][i] = result[i][i] - 1.0;
+    result[i][i] = result[i][i] - 1.0;
   }
   return result;
 }
@@ -96,17 +96,18 @@ inline DEAL_II_ALWAYS_INLINE //
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   void
-  get_modified_F_J(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> &       F,
-		           dealii::VectorizedArray<Number> &                               J,
-			       dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
-				   int const                                                       check_type,
-				   bool const                                                      compute_J)
+  get_modified_F_J(
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> &       F,
+    dealii::VectorizedArray<Number> &                               J,
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
+    int const                                                       check_type,
+    bool const                                                      compute_J)
 {
   F = add_identity(gradient_displacement);
 
   if(compute_J)
   {
-	J = determinant(F);
+    J = determinant(F);
   }
 
   if(check_type == 0)
@@ -114,7 +115,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else
   {
-	AssertThrow(false, dealii::ExcMessage("This check_type is not defined."));
+    AssertThrow(false, dealii::ExcMessage("This check_type is not defined."));
   }
 }
 

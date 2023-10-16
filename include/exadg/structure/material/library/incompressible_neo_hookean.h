@@ -164,7 +164,7 @@ private:
   IncompressibleNeoHookeanData<dim> const & data;
 
   mutable scalar shear_modulus_stored;
-  Number bulk_modulus; // penalty term; kept constant
+  Number         bulk_modulus; // penalty term; kept constant
 
   // cache coefficients for spatially varying material parameters
   bool                                 shear_modulus_is_variable;
@@ -173,6 +173,7 @@ private:
   // cache linearization data depending on cache_level and spatial_integration
   bool         spatial_integration;
   bool         force_material_residual;
+  int          check_type;
   unsigned int cache_level;
 
   // required for nonlinear operator
