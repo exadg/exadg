@@ -7,8 +7,8 @@
     "SpatialResolution": {
         "DegreeMin": "4",
         "DegreeMax": "4",
-        "RefineSpaceMin": "0",
-        "RefineSpaceMax": "0"
+        "RefineSpaceMin": "1",
+        "RefineSpaceMax": "1"
     },
     "TemporalResolution": {
         "RefineTimeMin": "0",
@@ -26,10 +26,10 @@
         "SpatialIntegration": "false",
         "ForceMaterialResidual": "false",
         "CacheLevel": "0",
-        "CheckType": "0",
-        "MappingStrength": "0.2",
+        "CheckType": "1",
+        "MappingStrength": "0.15",
         "BoundaryType": "Dirichlet",
-        "Displacement": "-0.5",
+        "Displacement": "-0.85",
         "Traction":	"0.0"
     },
     "Output": {

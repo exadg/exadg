@@ -119,12 +119,19 @@ inline DEAL_II_ALWAYS_INLINE //
   // otherwise keep the old values which are initialized with a zero displacement field at
   // simulation start
 
-  // check_type 3 : always update, but enforce J > 0 by ...
+  // check_type 3 : only return J = tol
+
+  // check_type 4 : always update, but enforce J > 0 by adding a scaled unit matrix
+
+  // check_type 5 : always update, but enforce J > 0 by eigenvalue decomposition
   if(check_type > 2)
   {
+	Number constexpr tol = 0.001;
+
     if(check_type == 3)
     {
-      AssertThrow(false, dealii::ExcMessage("This check_type is not defined."));
+      // F not modified.
+      J = tol;
     }
     else
     {
