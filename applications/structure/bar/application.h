@@ -251,6 +251,7 @@ public:
                         "Use undeformed configuration to evaluate the residual.");
       prm.add_parameter("CacheLevel", cache_level, "Cache level: 0 none, 1 scalars, 2 tensors.");
       prm.add_parameter("CheckType", check_type, "Check type for deformation gradient.");
+      prm.add_parameter("MappingStrength", mapping_strength, "Strength of the mapping applied.");
       prm.add_parameter("VolumeForce", volume_force, "Volume force.");
       prm.add_parameter("BoundaryType",
                         boundary_type,
@@ -431,6 +432,22 @@ private:
 
         if(global_refinements > 0)
           tria.refine_global(global_refinements);
+
+        // Apply lower-order mapping to vertices only.
+        std::vector<bool> vertex_touched(tria.n_vertices(), false);
+
+        for(auto const & cell : tria.cell_iterators())
+          {
+            for(unsigned int const v : cell->vertex_indices())
+            {
+              if(vertex_touched[cell->vertex_index(v)] == false)
+              {
+                dealii::Point<dim> & p = cell->vertex(v);
+                p[0] = p[0] * (1.0 + (1.0-(2.0*std::pow(p[0] - 0.5, 2))) * mapping_strength);
+                vertex_touched[cell->vertex_index(v)] = true;
+              }
+            }
+          }
       };
 
     GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
@@ -670,7 +687,7 @@ private:
   double area_force   = 1.0; // "Neumann"
 
   // mesh parameters
-  unsigned int const repetitions0 = 4, repetitions1 = 1, repetitions2 = 1;
+  unsigned int const repetitions0 = 1, repetitions1 = 1, repetitions2 = 1;
 
   MaterialType material_type = MaterialType::Undefined;
   double const E_modul       = 200.0;
@@ -679,6 +696,8 @@ private:
   double const end_time   = 100.0;
 
   double const density = 0.001;
+
+  double mapping_strength = 0.0;
 };
 
 } // namespace Structure
