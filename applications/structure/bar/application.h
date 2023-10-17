@@ -22,6 +22,8 @@
 #ifndef STRUCTURE_BAR
 #define STRUCTURE_BAR
 
+#include <exadg/grid/deformed_cube_manifold.h>
+
 namespace ExaDG
 {
 namespace Structure
@@ -304,7 +306,7 @@ private:
     this->param.solver_info_data.interval_time_steps =
       problem_type == ProblemType::Unsteady ? 200 : 2;
 
-    this->param.mapping_degree    = spatial_integration ? this->param.degree : 1;
+    this->param.mapping_degree    = this->param.degree; // spatial_integration ? this->param.degree : 1;
     this->param.grid.element_type = ElementType::Hypercube; // Simplex;
     if(this->param.grid.element_type == ElementType::Simplex)
     {
@@ -433,21 +435,11 @@ private:
         if(global_refinements > 0)
           tria.refine_global(global_refinements);
 
-        // Apply lower-order mapping to vertices only.
-        std::vector<bool> vertex_touched(tria.n_vertices(), false);
-
-        for(auto const & cell : tria.cell_iterators())
-          {
-            for(unsigned int const v : cell->vertex_indices())
-            {
-              if(vertex_touched[cell->vertex_index(v)] == false)
-              {
-                dealii::Point<dim> & p = cell->vertex(v);
-                p[0] = p[0] * (1.0 + (1.0-(2.0*std::pow(p[0] - 0.5, 2))) * mapping_strength);
-                vertex_touched[cell->vertex_index(v)] = true;
-              }
-            }
-          }
+        // Apply manifold map on a uniform cube
+        unsigned int const frequency = 1;
+        if(std::abs(this->length - this->height) < 1e-12)
+          if(dim == 2 or std::abs(this->length - this->width) < 1e-12)
+            apply_deformed_cube_manifold(tria, 0.0, this->length, mapping_strength, frequency);
       };
 
     GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,

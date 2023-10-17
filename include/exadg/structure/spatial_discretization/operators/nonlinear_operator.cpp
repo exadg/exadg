@@ -120,9 +120,15 @@ void
 NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & vector,
                                                            bool const         update_mapping) const
 {
-  // Only update linearized operator if deformation state is valid. It is better to continue
-  // with an old deformation state in the linearized operator than with an invalid one.
-  if(valid_deformation(vector) || this->operator_data.check_type != 1)
+  // Check for valid deformation state.
+  bool const valid_deformation_field = valid_deformation(vector);
+  if(not valid_deformation_field)
+  {
+	std::cout << "the linearization vector does not correspond to an invertible mapping on lvl "
+			  << this->get_level() << "  ## \n";
+  }
+
+  if(valid_deformation_field || this->operator_data.check_type != 1)
   {
     displacement_lin = vector;
     displacement_lin.update_ghost_values();
@@ -138,11 +144,6 @@ NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & ve
                                                         this->matrix_free->get_dof_handler());
       this->matrix_free_spatial.update_mapping(*mapping_spatial);
     }
-  }
-  else
-  {
-    std::cout << "the linearization vector does not correspond to an invertible mapping on lvl "
-              << this->get_level() << "  ## \n";
   }
 }
 
