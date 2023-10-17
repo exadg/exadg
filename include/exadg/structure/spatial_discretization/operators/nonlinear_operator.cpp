@@ -122,7 +122,7 @@ NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & ve
 {
   // Only update linearized operator if deformation state is valid. It is better to continue
   // with an old deformation state in the linearized operator than with an invalid one.
-  if(valid_deformation(vector))
+  if(valid_deformation(vector) || this->operator_data.check_type != 1)
   {
     displacement_lin = vector;
     displacement_lin.update_ghost_values();
@@ -382,7 +382,9 @@ NonLinearOperator<dim, Number>::cell_loop_valid_deformation(
       {
         // if deformation is invalid, add a positive value to dst
         if(J[v] <= 0.0)
+        {
           dst += 1.0;
+        }
       }
     }
   }
@@ -469,9 +471,9 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
       scalar one_over_J;
       if(this->operator_data.cache_level == 0)
       {
-    	scalar J;
-    	tensor F;
-    	get_modified_F_J(F, J, Grad_d_lin, this->operator_data.check_type, true /* compute_J */);
+        scalar J;
+        tensor F;
+        get_modified_F_J(F, J, Grad_d_lin, this->operator_data.check_type, true /* compute_J */);
         one_over_J = 1.0 / J;
       }
       else
@@ -594,7 +596,8 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       if(this->operator_data.cache_level < 2)
       {
         Grad_d_lin = integrator_lin->get_gradient(q);
-        get_modified_F_J(F_lin, J_lin, Grad_d_lin, this->operator_data.check_type, false /* compute_J */);
+        get_modified_F_J(
+          F_lin, J_lin, Grad_d_lin, this->operator_data.check_type, false /* compute_J */);
       }
       else
       {
@@ -605,7 +608,7 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       scalar one_over_J;
       if(this->operator_data.cache_level == 0)
       {
-    	J_lin = determinant(F_lin);
+        J_lin      = determinant(F_lin);
         one_over_J = 1.0 / J_lin;
       }
       else
@@ -646,7 +649,8 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       {
         Grad_d_lin = integrator_lin->get_gradient(q);
         scalar J_lin;
-        get_modified_F_J(F_lin, J_lin,Grad_d_lin, this->operator_data.check_type, false /* compute_J */);
+        get_modified_F_J(
+          F_lin, J_lin, Grad_d_lin, this->operator_data.check_type, false /* compute_J */);
       }
       else
       {

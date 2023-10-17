@@ -44,7 +44,7 @@ CompressibleNeoHookean<dim, Number>::CompressibleNeoHookean(
                             data.lambda_function != nullptr),
     spatial_integration(spatial_integration),
     force_material_residual(force_material_residual),
-	check_type(check_type),
+    check_type(check_type),
     cache_level(cache_level)
 {
   // initialize (potentially variable) parameters
@@ -127,11 +127,31 @@ CompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
 
   for(unsigned int q = 0; q < integrator_lin->n_q_points; ++q)
   {
-	tensor const Grad_d_lin = integrator_lin->get_gradient(q);
+    tensor const Grad_d_lin = integrator_lin->get_gradient(q);
 
     scalar J;
     tensor F;
     get_modified_F_J(F, J, Grad_d_lin, check_type, true /* compute_J */);
+
+    // Overwrite computed values with admissible stored ones
+    if(check_type == 2)
+    {
+      tensor const F_old    = deformation_gradient_coefficients.get_coefficient_cell(cell, q);
+      bool         update_J = false;
+      for(unsigned int i = 0; i < J.size(); ++i)
+      {
+        if(J[i] <= 0.0)
+        {
+          std::cout << "REPLACING A BAD BOY ##+ \n";
+          update_J = true;
+          F[i]     = F_old[i];
+        }
+      }
+      if(update_J)
+      {
+        J = determinant(F);
+      }
+    }
 
     log_J_coefficients.set_coefficient_cell(cell, q, log(J));
 

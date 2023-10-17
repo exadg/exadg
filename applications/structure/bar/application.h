@@ -648,7 +648,7 @@ private:
   bool spatial_integration     = false;
   bool force_material_residual = false;
 
-  unsigned int check_type = 0;
+  unsigned int check_type  = 0;
   unsigned int cache_level = 0;
 
   bool const clamp_at_right_boundary = false;

@@ -55,7 +55,7 @@ public:
              bool const                                large_deformation,
              bool const                                spatial_integration,
              bool const                                force_material_residual,
-			 unsigned int const                        check_type,
+             unsigned int const                        check_type,
              unsigned int const                        cache_level)
   {
     this->dof_index           = dof_index;
@@ -84,7 +84,7 @@ public:
                                                                       quad_index,
                                                                       *data_StVenantKirchhoff,
                                                                       large_deformation,
-																	  check_type)));
+                                                                      check_type)));
           break;
         }
         case MaterialType::IncompressibleNeoHookean:
@@ -104,7 +104,7 @@ public:
                                                            *data_IncompressibleNeoHookean,
                                                            spatial_integration,
                                                            force_material_residual,
-														   check_type,
+                                                           check_type,
                                                            cache_level)));
           break;
         }
@@ -125,7 +125,7 @@ public:
                                                          *data_CompressibleNeoHookean,
                                                          spatial_integration,
                                                          force_material_residual,
-														 check_type,
+                                                         check_type,
                                                          cache_level)));
           break;
         }

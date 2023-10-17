@@ -40,7 +40,7 @@ struct OperatorData : public OperatorBaseData
       pull_back_traction(false),
       spatial_integration(false),
       force_material_residual(false),
-	  check_type(0),
+      check_type(0),
       cache_level(0),
       mapping_degree(1),
       unsteady(false),

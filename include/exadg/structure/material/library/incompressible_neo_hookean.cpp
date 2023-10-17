@@ -142,6 +142,26 @@ IncompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
     tensor F;
     get_modified_F_J(F, J, Grad_d_lin, check_type, true /* compute_J */);
 
+    // Overwrite computed values with admissible stored ones
+    if(check_type == 2)
+    {
+      tensor const F_old    = deformation_gradient_coefficients.get_coefficient_cell(cell, q);
+      bool         update_J = false;
+      for(unsigned int i = 0; i < J.size(); ++i)
+      {
+        if(J[i] <= 0.0)
+        {
+          std::cout << "REPLACING A BAD BOY ##+ \n";
+          update_J = true;
+          F[i]     = F_old[i];
+        }
+      }
+      if(update_J)
+      {
+        J = determinant(F);
+      }
+    }
+
     scalar const J_pow = pow(J, static_cast<Number>(-2.0 * one_third));
     J_pow_coefficients.set_coefficient_cell(cell, q, J_pow);
 

@@ -71,7 +71,7 @@ public:
                     unsigned int const                      quad_index,
                     StVenantKirchhoffData<dim> const &      data,
                     bool const                              large_deformation,
-					unsigned int const                      check_type);
+                    unsigned int const                      check_type);
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   second_piola_kirchhoff_stress(

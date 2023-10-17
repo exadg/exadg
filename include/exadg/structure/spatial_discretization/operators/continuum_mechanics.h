@@ -110,15 +110,25 @@ inline DEAL_II_ALWAYS_INLINE //
     J = determinant(F);
   }
 
-  if(check_type > 0)
+  // check_type 0 : do not modify
+
+  // check_type 1 : global quasi-Newton, update linearization vector only if the complete field is
+  // valid everywhere (see nonlinear_operator: set_solution_linearization)
+
+  // check_type 2 : just update F and J values, if J > 0 (see do_set_cell_linearization_data),
+  // otherwise keep the old values which are initialized with a zero displacement field at
+  // simulation start
+
+  // check_type 3 : always update, but enforce J > 0 by ...
+  if(check_type > 2)
   {
-    if(checktype == 1)
+    if(check_type == 3)
     {
-  	  AssertThrow(false, dealii::ExcMessage("This check_type is not defined."));
+      AssertThrow(false, dealii::ExcMessage("This check_type is not defined."));
     }
-	else
+    else
     {
-	  AssertThrow(false, dealii::ExcMessage("This check_type is not defined."));
+      AssertThrow(false, dealii::ExcMessage("This check_type is not defined."));
     }
   }
 }
