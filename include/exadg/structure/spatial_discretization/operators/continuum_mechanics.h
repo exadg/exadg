@@ -121,22 +121,33 @@ inline DEAL_II_ALWAYS_INLINE //
 
   // check_type 3 : only return J = tol
 
-  // check_type 4 : always update, but enforce J > 0 by adding a scaled unit matrix
+  // check_type 4 : always update, but enforce J = tol by adding a scaled unit matrix
 
-  // check_type 5 : always update, but enforce J > 0 by eigenvalue decomposition
+  // check_type 5 : always update, but enforce J = tol by eigenvalue decomposition
   if(check_type > 2)
   {
 	Number constexpr tol = 0.001;
 
-    if(check_type == 3)
-    {
-      // F not modified.
-      J = tol;
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("This check_type is not defined."));
-    }
+	for(unsigned int i = 0; i < J.size(); ++i)
+	{
+	  if(J[i] <= tol)
+	  {
+        if(check_type == 3)
+        {
+          // F not modified.
+          J[i] = tol;
+        }
+        else if(check_type == 4)
+        {
+          tensor F_mod
+##+ how much should I add to get tol = J
+        }
+        else
+        {
+          AssertThrow(false, dealii::ExcMessage("This check_type is not defined."));
+        }
+	  }
+	}
   }
 }
 

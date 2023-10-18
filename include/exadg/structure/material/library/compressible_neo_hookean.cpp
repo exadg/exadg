@@ -127,7 +127,7 @@ CompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
 
   for(unsigned int q = 0; q < integrator_lin->n_q_points; ++q)
   {
-    tensor const Grad_d_lin = integrator_lin->get_gradient(q);
+    tensor Grad_d_lin = integrator_lin->get_gradient(q);
 
     scalar J;
     tensor F;
@@ -140,16 +140,25 @@ CompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
       bool         update_J = false;
       for(unsigned int i = 0; i < J.size(); ++i)
       {
-        if(J[i] <= 0.0)
+        if(J[i] <= 0.001)
         {
-          std::cout << "REPLACING A BAD BOY ##+ \n";
           update_J = true;
-          F[i]     = F_old[i];
+
+          for(unsigned int j = 0; j < dim; ++j)
+          {
+        	for(unsigned int k = 0; k < dim; ++k)
+        	{
+        		F[j][k][i]          = F_old[j][k][i];
+        		Grad_d_lin[j][k][i] = F_old[j][k][i];
+        	}
+        	Grad_d_lin[j][j][i] -= 1.0;
+          }
         }
       }
+
       if(update_J)
       {
-        J = determinant(F);
+    	J = determinant(F);
       }
     }
 

@@ -25,9 +25,9 @@
         "VolumeForce": "1.0",
         "SpatialIntegration": "false",
         "ForceMaterialResidual": "false",
-        "CacheLevel": "0",
-        "CheckType": "1",
-        "MappingStrength": "0.15",
+        "CacheLevel": "2",
+        "CheckType": "3",
+        "MappingStrength": "0.25",
         "BoundaryType": "Dirichlet",
         "Displacement": "-0.85",
         "Traction":	"0.0"

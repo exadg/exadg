@@ -128,7 +128,7 @@ NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & ve
 			  << this->get_level() << "  ## \n";
   }
 
-  if(valid_deformation_field || this->operator_data.check_type != 1)
+  if(valid_deformation_field or this->operator_data.check_type != 1)
   {
     displacement_lin = vector;
     displacement_lin.update_ghost_values();
