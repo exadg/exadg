@@ -323,11 +323,17 @@ private:
 
     this->param.load_increment = load_increment;
 
-    this->param.newton_solver_data                   = Newton::SolverData(1e2, 1.e-9, 1.e-9);
-    this->param.solver                               = Solver::FGMRES;
-    this->param.solver_data                          = SolverData(1e3, 1.e-12, 1.e-8, 100);
-    this->param.preconditioner                       = Preconditioner::Multigrid;
-    this->param.multigrid_data.type                  = MultigridType::phMG;
+    this->param.newton_solver_data                    = Newton::SolverData(1e2, 1.e-9, 1.e-9);
+    this->param.solver                                = Solver::FGMRES;
+    this->param.solver_data                           = SolverData(1e3, 1.e-12, 1.e-8, 100);
+    this->param.preconditioner                        = Preconditioner::Multigrid;
+    this->param.multigrid_data.type                   = MultigridType::phMG;
+
+    this->param.multigrid_data.p_sequence                   = PSequenceType::DecreaseByOne; // Bisect;
+    this->param.multigrid_data.smoother_data.smoother       = MultigridSmoother::Chebyshev;
+    this->param.multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
+	this->param.multigrid_data.smoother_data.iterations     = 5;
+
     this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
     this->param.multigrid_data.coarse_problem.preconditioner =
       MultigridCoarseGridPreconditioner::AMG;
