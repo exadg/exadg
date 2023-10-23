@@ -124,8 +124,8 @@ NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & ve
   bool const valid_deformation_field = valid_deformation(vector);
   if(not valid_deformation_field)
   {
-	std::cout << "the linearization vector does not correspond to an invertible mapping on lvl "
-			  << this->get_level() << "  ## \n";
+    std::cout << "the linearization vector does not correspond to an invertible mapping on lvl "
+              << this->get_level() << "  ## \n";
   }
 
   if(valid_deformation_field or this->operator_data.check_type != 1)

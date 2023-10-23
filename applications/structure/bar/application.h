@@ -251,6 +251,7 @@ public:
       prm.add_parameter("ForceMaterialResidual",
                         force_material_residual,
                         "Use undeformed configuration to evaluate the residual.");
+      prm.add_parameter("LoadIncrement", load_increment, "Load increment used in QuasiStatic solver.");
       prm.add_parameter("CacheLevel", cache_level, "Cache level: 0 none, 1 scalars, 2 tensors.");
       prm.add_parameter("CheckType", check_type, "Check type for deformation gradient.");
       prm.add_parameter("MappingStrength", mapping_strength, "Strength of the mapping applied.");
@@ -306,7 +307,8 @@ private:
     this->param.solver_info_data.interval_time_steps =
       problem_type == ProblemType::Unsteady ? 200 : 2;
 
-    this->param.mapping_degree    = this->param.degree; // spatial_integration ? this->param.degree : 1;
+    this->param.mapping_degree =
+      this->param.degree; // spatial_integration ? this->param.degree : 1;
     this->param.grid.element_type = ElementType::Hypercube; // Simplex;
     if(this->param.grid.element_type == ElementType::Simplex)
     {
@@ -319,7 +321,7 @@ private:
       this->param.grid.create_coarse_triangulations = false; // can also be set to true if desired
     }
 
-    this->param.load_increment = 0.1;
+    this->param.load_increment = load_increment;
 
     this->param.newton_solver_data                   = Newton::SolverData(1e2, 1.e-9, 1.e-9);
     this->param.solver                               = Solver::FGMRES;
@@ -677,6 +679,8 @@ private:
 
   double displacement = 1.0; // "Dirichlet"
   double area_force   = 1.0; // "Neumann"
+
+  double load_increment = 0.1;
 
   // mesh parameters
   unsigned int const repetitions0 = 1, repetitions1 = 1, repetitions2 = 1;

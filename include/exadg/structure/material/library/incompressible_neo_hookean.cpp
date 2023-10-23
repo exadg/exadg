@@ -155,19 +155,19 @@ IncompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
 
           for(unsigned int j = 0; j < dim; ++j)
           {
-        	for(unsigned int k = 0; k < dim; ++k)
-        	{
-        		F[j][k][i]          = F_old[j][k][i];
-        		Grad_d_lin[j][k][i] = F_old[j][k][i];
-        	}
-        	Grad_d_lin[j][j][i] -= 1.0;
+            for(unsigned int k = 0; k < dim; ++k)
+            {
+              F[j][k][i]          = F_old[j][k][i];
+              Grad_d_lin[j][k][i] = F_old[j][k][i];
+            }
+            Grad_d_lin[j][j][i] -= 1.0;
           }
         }
       }
 
       if(update_J)
       {
-    	J = determinant(F);
+        J = determinant(F);
       }
     }
 
