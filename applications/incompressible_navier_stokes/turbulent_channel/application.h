@@ -499,6 +499,24 @@ private:
     pp_data.mass_data.filename               = this->output_parameters.filename;
     pp_data.mass_data.reference_length_scale = 1.0;
 
+    // pointwise output
+    pp_data.pointwise_output_data.time_control_data.is_active  = false;
+    pp_data.pointwise_output_data.time_control_data.start_time = START_TIME;
+    pp_data.pointwise_output_data.time_control_data.end_time   = END_TIME;
+    pp_data.pointwise_output_data.time_control_data.trigger_interval =
+      (END_TIME - START_TIME) / 1000.0;
+    pp_data.pointwise_output_data.directory =
+      this->output_parameters.directory + "pointwise_output/";
+    pp_data.pointwise_output_data.filename       = this->output_parameters.filename;
+    pp_data.pointwise_output_data.write_velocity = true;
+    pp_data.pointwise_output_data.write_pressure = true;
+    pp_data.pointwise_output_data.update_points_before_evaluation = false;
+
+    dealii::Point<dim> evaluation_point;
+    evaluation_point[0] = 0.5 * DIMENSIONS_X1;
+    evaluation_point[1] = 0.5 * DIMENSIONS_X2;
+    pp_data.pointwise_output_data.evaluation_points.push_back(evaluation_point);
+
     MyPostProcessorData<dim> pp_data_turb_ch;
     pp_data_turb_ch.pp_data = pp_data;
 
