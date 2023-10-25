@@ -48,7 +48,7 @@ TimeIntMultistepBase::TimeIntMultistepBase(double const        start_time_,
 void
 TimeIntMultistepBase::setup(bool const do_restart)
 {
-  this->pcout << std::endl << "Setup BDF time integrator ..." << std::endl << std::flush;
+  this->pcout << std::endl << "Setup Multistep time integrator ..." << std::endl << std::flush;
 
   // allocate global solution vectors
   allocate_vectors();
@@ -89,14 +89,14 @@ TimeIntMultistepBase::initialize_solution_and_time_step_size(bool do_restart)
     // t - dt[1], t - dt[1] - dt[2], etc.
     time_steps[0] = calculate_time_step_size();
 
-    // initialize time_steps array as a preparation for initialize_former_solutions()
+    // initialize time_steps array as a preparation for initialize_former_multistep_dof_vectors()
     for(unsigned int i = 1; i < order; ++i)
       time_steps[i] = time_steps[0];
 
     // Finally, prescribe initial conditions at former instants of time. This is only necessary if
     // the time integrator starts with a high-order scheme in the first time step.
     if(start_with_low_order == false)
-      initialize_former_solutions();
+      initialize_former_multistep_dof_vectors();
   }
 }
 

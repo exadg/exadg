@@ -147,7 +147,7 @@ TimeIntBDF<dim, Number>::initialize_current_solution()
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::initialize_former_solutions()
+TimeIntBDF<dim, Number>::initialize_former_multistep_dof_vectors()
 {
   // Start with i=1 since we only want to initialize the solution at former instants of time.
   for(unsigned int i = 1; i < solution.size(); ++i)

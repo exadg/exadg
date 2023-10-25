@@ -169,10 +169,11 @@ private:
   initialize_current_solution() = 0;
 
   /*
-   * Initializes the solution vectors at time t - dt[1], t - dt[1] - dt[2], etc.
+   * Initializes solutions (BDF) or evaluated operators (Adams) at time t - dt[1], t - dt[1] -
+   * dt[2], etc.
    */
   virtual void
-  initialize_former_solutions() = 0;
+  initialize_former_multistep_dof_vectors() = 0;
 
   /*
    * Setup of derived classes.
