@@ -66,19 +66,22 @@ PointwiseOutputGeneratorBase<dim, VectorType>::evaluate(VectorType const & solut
 {
   AssertThrow(unsteady, dealii::ExcMessage("Only implemented for the unsteady case."));
 
-  if(first_evaluation)
+  if(pointwise_output_data.evaluation_points.size() > 0)
   {
-    first_evaluation = false;
-    AssertThrow(time_control.get_counter() == 0,
-                dealii::ExcMessage(
-                  "Only implemented in the case that the simulation is not restarted"));
+    if(first_evaluation)
+    {
+      first_evaluation = false;
+      AssertThrow(time_control.get_counter() == 0,
+                  dealii::ExcMessage(
+                    "Only implemented in the case that the simulation is not restarted"));
+    }
+
+    if(pointwise_output_data.update_points_before_evaluation)
+      reinit_remote_evaluator();
+
+    write_time(time);
+    do_evaluate(solution);
   }
-
-  if(pointwise_output_data.update_points_before_evaluation)
-    reinit_remote_evaluator();
-
-  write_time(time);
-  do_evaluate(solution);
 }
 
 template<int dim, typename VectorType>

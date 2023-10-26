@@ -20,9 +20,6 @@
  */
 
 
-// deal.II
-#include <deal.II/numerics/vector_tools.h>
-
 // ExaDG
 #include <exadg/compressible_navier_stokes/postprocessor/pointwise_output_generator.h>
 #include <exadg/utilities/print_functions.h>
@@ -72,12 +69,16 @@ PointwiseOutputGenerator<dim, Number>::setup(
   dof_handler           = &dof_handler_in;
   pointwise_output_data = pointwise_output_data_in;
 
-  if(pointwise_output_data.write_rho)
-    this->add_quantity("Rho", 1);
-  if(pointwise_output_data.write_rho_u)
-    this->add_quantity("Rho_U", dim);
-  if(pointwise_output_data.write_rho_E)
-    this->add_quantity("Rho_E", 1);
+  if(pointwise_output_data.time_control_data.is_active and
+     pointwise_output_data.evaluation_points.size() > 0)
+  {
+    if(pointwise_output_data.write_rho)
+      this->add_quantity("Rho", 1);
+    if(pointwise_output_data.write_rho_u)
+      this->add_quantity("Rho_U", dim);
+    if(pointwise_output_data.write_rho_E)
+      this->add_quantity("Rho_E", 1);
+  }
 }
 
 template<int dim, typename Number>

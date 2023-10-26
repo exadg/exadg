@@ -436,7 +436,7 @@ private:
     pp_data.output_data.write_higher_order = false;
 
     // write data to hdf5
-    pp_data.pointwise_output_data.time_control_data.is_active  = true;
+    pp_data.pointwise_output_data.time_control_data.is_active  = false;
     pp_data.pointwise_output_data.time_control_data.start_time = START_TIME;
     pp_data.pointwise_output_data.time_control_data.end_time   = END_TIME;
     pp_data.pointwise_output_data.time_control_data.trigger_interval =
@@ -449,12 +449,11 @@ private:
     pp_data.pointwise_output_data.write_rho_u = true; // vector
     pp_data.pointwise_output_data.write_rho_E = true; // scalar
     pp_data.pointwise_output_data.update_points_before_evaluation = false;
-    if constexpr(dim == 2)
-      pp_data.pointwise_output_data.evaluation_points.emplace_back(
-        dealii::Point<dim>{0.5 * DIMENSIONS_X1, 0.5 * DIMENSIONS_X2});
-    if constexpr(dim == 3)
-      pp_data.pointwise_output_data.evaluation_points.emplace_back(
-        dealii::Point<dim>{0.5 * DIMENSIONS_X1, 0.5 * DIMENSIONS_X2, 0.0});
+
+    dealii::Point<dim> evaluation_point;
+    evaluation_point[0] = 0.5 * DIMENSIONS_X1;
+    evaluation_point[1] = 0.5 * DIMENSIONS_X2;
+    pp_data.pointwise_output_data.evaluation_points.push_back(evaluation_point);
 
     MyPostProcessorData<dim> pp_data_turb_ch;
     pp_data_turb_ch.pp_data = pp_data;
