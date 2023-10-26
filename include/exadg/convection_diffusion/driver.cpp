@@ -24,6 +24,10 @@
 #  include <likwid.h>
 #endif
 
+// dealii
+#include <deal.II/distributed/grid_refinement.h>
+#include <deal.II/numerics/error_estimator.h>
+
 // ExaDG
 #include <exadg/convection_diffusion/driver.h>
 #include <exadg/convection_diffusion/time_integration/create_time_integrator.h>
@@ -126,9 +130,8 @@ Driver<dim, Number>::setup()
     }
 
     // setup solvers in case of BDF time integration or steady problems
-    typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
-    VectorType const *                                         velocity_ptr = nullptr;
-    VectorType                                                 velocity;
+    VectorType const * velocity_ptr = nullptr;
+    VectorType         velocity;
 
     if(application->get_parameters().problem_type == ProblemType::Unsteady)
     {
@@ -189,18 +192,144 @@ Driver<dim, Number>::ale_update() const
 }
 
 template<int dim, typename Number>
+bool
+Driver<dim, Number>::mark_cells_coarsening_and_refinement(dealii::Triangulation<dim> & tria,
+                                                          VectorType const & solution) const
+{
+  dealii::Vector<float> estimated_error_per_cell(tria.n_active_cells());
+
+  VectorType   locally_relevant_solution;
+  auto const & dof_handler = pde_operator->get_dof_handler();
+  locally_relevant_solution.reinit(dof_handler.locally_owned_dofs(),
+                                   dealii::DoFTools::extract_locally_relevant_dofs(dof_handler),
+                                   dof_handler.get_communicator());
+  locally_relevant_solution.copy_locally_owned_data_from(solution);
+  auto const & constraints = pde_operator->get_constraints();
+  constraints.distribute(locally_relevant_solution);
+  locally_relevant_solution.update_ghost_values();
+
+  dealii::QGauss<dim - 1> face_quadrature(application->get_parameters().degree + 1);
+
+  dealii::KellyErrorEstimator<dim>::estimate(*pde_operator->get_mapping(),
+                                             pde_operator->get_dof_handler(),
+                                             face_quadrature,
+                                             {}, // Neumann BC
+                                             locally_relevant_solution,
+                                             estimated_error_per_cell);
+
+  dealii::parallel::distributed::GridRefinement::refine_and_coarsen_fixed_number(
+    tria,
+    estimated_error_per_cell,
+    application->get_parameters().amr_data.upper_perc_to_refine,
+    application->get_parameters().amr_data.lower_perc_to_coarsen);
+
+  return true;
+}
+
+template<int dim, typename Number>
+void
+Driver<dim, Number>::setup_after_coarsening_and_refinement()
+{
+  pde_operator->initialize_dof_handler_and_constraints();
+  pde_operator->setup();
+
+  postprocessor->setup(*pde_operator);
+
+  VectorType const * velocity_ptr = nullptr;
+  VectorType         velocity;
+
+  if(application->get_parameters().problem_type == ProblemType::Unsteady)
+  {
+    if(application->get_parameters().temporal_discretization == TemporalDiscretization::BDF)
+    {
+      std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator_bdf =
+        std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
+
+      if(application->get_parameters().get_type_velocity_field() == TypeVelocityField::DoFVector)
+      {
+        Assert(false, dealii::ExcMessage("ALE and AMR combination not implemented."));
+        pde_operator->initialize_dof_vector_velocity(velocity);
+        pde_operator->interpolate_velocity(velocity, time_integrator->get_time());
+        velocity_ptr = &velocity;
+      }
+
+      auto & grid = *application->get_grid_non_const();
+      grid.coarse_triangulations =
+        dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
+          *application->get_grid_non_const()->triangulation);
+
+      pde_operator->setup_solver(time_integrator_bdf->get_scaling_factor_time_derivative_term(),
+                                 velocity_ptr);
+    }
+    else
+    {
+      AssertThrow(application->get_parameters().temporal_discretization ==
+                    TemporalDiscretization::ExplRK,
+                  dealii::ExcMessage("Not implemented."));
+    }
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("Not implemented"));
+  }
+}
+
+
+template<int dim, typename Number>
+void
+Driver<dim, Number>::do_adaptive_refinement(unsigned int const time_step_number)
+{
+  dealii::Triangulation<dim> & tria = *application->get_grid_non_const()->triangulation;
+
+  // AMR is only implemented for implicit timestepping.
+  if(application->get_parameters().temporal_discretization != TemporalDiscretization::BDF)
+  {
+    AssertThrow(false, dealii::ExcNotImplemented());
+  }
+  else
+  {
+    std::shared_ptr<TimeIntBDF<dim, Number>> bdf_time_integrator =
+      std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
+
+    if(trigger_coarsening_and_refinement_now(application->get_parameters().amr_data,
+                                             time_step_number))
+    {
+      bool const amr_flags_set =
+        mark_cells_coarsening_and_refinement(tria, bdf_time_integrator->get_solution_np());
+      if(amr_flags_set)
+      {
+        limit_coarsening_and_refinement(tria, application->get_parameters().amr_data);
+
+        tria.prepare_coarsening_and_refinement();
+
+        time_integrator->prepare_coarsening_and_refinement();
+
+        tria.execute_coarsening_and_refinement();
+
+        setup_after_coarsening_and_refinement();
+
+        time_integrator->interpolate_after_coarsening_and_refinement();
+      }
+    }
+  }
+}
+
+template<int dim, typename Number>
 void
 Driver<dim, Number>::solve()
 {
   if(application->get_parameters().problem_type == ProblemType::Unsteady)
   {
-    if(application->get_parameters().ale_formulation == true)
+    if(application->get_parameters().enable_adaptivity)
     {
       do
       {
         time_integrator->advance_one_timestep_pre_solve(true);
 
-        ale_update();
+        if(time_integrator->get_number_of_time_steps() > 0)
+        {
+          do_adaptive_refinement(time_integrator->get_number_of_time_steps() + 1);
+        }
 
         time_integrator->advance_one_timestep_solve();
 
@@ -209,7 +338,23 @@ Driver<dim, Number>::solve()
     }
     else
     {
-      time_integrator->timeloop();
+      if(application->get_parameters().ale_formulation == true)
+      {
+        do
+        {
+          time_integrator->advance_one_timestep_pre_solve(true);
+
+          ale_update();
+
+          time_integrator->advance_one_timestep_solve();
+
+          time_integrator->advance_one_timestep_post_solve();
+        } while(not(time_integrator->finished()));
+      }
+      else
+      {
+        time_integrator->timeloop();
+      }
     }
   }
   else if(application->get_parameters().problem_type == ProblemType::Steady)

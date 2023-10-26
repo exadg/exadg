@@ -318,6 +318,8 @@ Operator<dim, Number>::setup()
 
   if(param.use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*grid->triangulation, mf_data->data);
+
+  mf->clear();
   mf->reinit(*get_mapping(),
              mf_data->get_dof_handler_vector(),
              mf_data->get_constraint_vector(),
@@ -817,6 +819,23 @@ Operator<dim, Number>::fill_grid_coordinates_vector(VectorType & vector) const
 }
 
 template<int dim, typename Number>
+void
+Operator<dim, Number>::prepare_coarsening_and_refinement(std::vector<VectorType *> & vectors)
+{
+  solution_transfer = std::make_shared<ExaDG::SolutionTransfer<dim, VectorType>>(dof_handler);
+
+  solution_transfer->prepare_coarsening_and_refinement(vectors);
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::interpolate_after_coarsening_and_refinement(
+  std::vector<VectorType *> & vectors)
+{
+  solution_transfer->interpolate_after_coarsening_and_refinement(vectors);
+}
+
+template<int dim, typename Number>
 unsigned int
 Operator<dim, Number>::solve(VectorType &       sol,
                              VectorType const & rhs,
@@ -1038,6 +1057,13 @@ std::shared_ptr<dealii::Mapping<dim> const>
 Operator<dim, Number>::get_mapping() const
 {
   return mapping;
+}
+
+template<int dim, typename Number>
+dealii::AffineConstraints<Number> const &
+Operator<dim, Number>::get_constraints() const
+{
+  return affine_constraints;
 }
 
 template class Operator<2, float>;

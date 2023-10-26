@@ -82,6 +82,21 @@ public:
   {
   }
 
+  void
+  add_parameters(dealii::ParameterHandler & prm) final
+  {
+    ApplicationBase<dim, Number>::add_parameters(prm);
+
+    prm.enter_subsection("Application");
+    {
+      prm.add_parameter("EnableAdaptivity",
+                        enable_adaptivity,
+                        "Enable adaptive mesh refinement.",
+                        dealii::Patterns::Bool());
+    }
+    prm.leave_subsection();
+  }
+
 private:
   void
   set_parameters() final
@@ -121,6 +136,14 @@ private:
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type = TriangulationType::Distributed;
     this->param.mapping_degree          = 1;
+    this->param.enable_adaptivity       = enable_adaptivity;
+
+    this->param.amr_data.every_n_step                 = 30;
+    this->param.amr_data.upper_perc_to_refine         = 0.025;
+    this->param.amr_data.lower_perc_to_coarsen        = 0.4;
+    this->param.amr_data.refine_space_max             = 4;
+    this->param.amr_data.refine_space_min             = 0;
+    this->param.amr_data.do_not_modify_boundary_cells = false;
 
     // convective term
     this->param.numerical_flux_convective_operator =
@@ -133,8 +156,8 @@ private:
     this->param.solver      = Solver::GMRES;
     this->param.solver_data = SolverData(1e3, 1.e-20, 1.e-8, 100);
     this->param.preconditioner =
-      Preconditioner::Multigrid; // None; //InverseMassMatrix; //PointJacobi;
-                                 // //BlockJacobi; //Multigrid;
+      Preconditioner::Multigrid; // None; //InverseMassMatrix; //PointJacobi; // BlockJacobi;
+                                 // //Multigrid;
     this->param.update_preconditioner = true;
 
     // BlockJacobi (these parameters are also relevant if used as a smoother in multigrid)
@@ -149,7 +172,7 @@ private:
 
     // MG smoother
     this->param.multigrid_data.smoother_data.smoother       = MultigridSmoother::Jacobi;
-    this->param.multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+    this->param.multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
     this->param.multigrid_data.smoother_data.iterations     = 5;
     this->param.multigrid_data.smoother_data.relaxation_factor = 0.8;
 
@@ -160,7 +183,7 @@ private:
     this->param.solver_info_data.interval_time = (end_time - start_time) / 20;
 
     // NUMERICAL PARAMETERS
-    this->param.use_cell_based_face_loops               = true;
+    this->param.use_cell_based_face_loops               = false;
     this->param.store_analytical_velocity_in_dof_vector = false;
   }
 
@@ -236,6 +259,8 @@ private:
 
   double const left  = -1.0;
   double const right = +1.0;
+
+  bool enable_adaptivity = false;
 };
 
 } // namespace ConvDiff

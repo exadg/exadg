@@ -2,11 +2,11 @@
     "General": {
         "Precision": "double",
         "Dim": "2",
-        "IsTest": "false"
+        "IsTest": "true"
     },
     "SpatialResolution": {
-        "DegreeMin": "5",
-        "DegreeMax": "5",
+        "DegreeMin": "4",
+        "DegreeMax": "4",
         "RefineSpaceMin": "3",
         "RefineSpaceMax": "3"
     },
@@ -15,7 +15,7 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-        "EnableAdaptivity": "false"
+        "EnableAdaptivity": "true"
     },
     "Output": {
         "OutputDirectory": "output/rotating_hill/",

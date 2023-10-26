@@ -131,6 +131,12 @@ public:
     return grid;
   }
 
+  std::shared_ptr<Grid<dim>>
+  get_grid_non_const()
+  {
+    return grid;
+  }
+
   std::shared_ptr<dealii::Mapping<dim> const>
   get_mapping() const
   {

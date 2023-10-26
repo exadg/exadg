@@ -68,6 +68,7 @@ Parameters::Parameters()
     grid(GridData()),
     mapping_degree(1),
     degree(1),
+    enable_adaptivity(false),
     numerical_flux_convective_operator(NumericalFluxConvectiveOperator::Undefined),
     IP_factor(1.0),
 
@@ -255,6 +256,29 @@ Parameters::check() const
 
   // SPATIAL DISCRETIZATION
   grid.check();
+
+  if(enable_adaptivity)
+  {
+    AssertThrow(not ale_formulation,
+                dealii::ExcMessage("Combination of adaptive mesh refinement "
+                                   "and ALE formulation not implemented."));
+
+    AssertThrow(temporal_discretization == TemporalDiscretization::BDF,
+                dealii::ExcMessage("Combination of adaptive mesh refinement "
+                                   "and explicit time integration not implemented."));
+
+    AssertThrow(preconditioner != Preconditioner::BlockJacobi,
+                dealii::ExcMessage("Preconditioner::BlockJacobi not supported "
+                                   "for adaptively refined meshes."));
+
+    AssertThrow(multigrid_data.smoother_data.preconditioner != PreconditionerSmoother::BlockJacobi,
+                dealii::ExcMessage("PreconditionerSmoother::BlockJacobi not supported "
+                                   "for adaptively refined meshes."));
+
+    AssertThrow(use_cell_based_face_loops == false,
+                dealii::ExcMessage("Cell-based face loops not supported for "
+                                   "adaptively refined meshes."));
+  }
 
   AssertThrow(degree > 0, dealii::ExcMessage("Polynomial degree must be larger than zero."));
 
@@ -507,6 +531,8 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
   print_parameter(pcout, "Mapping degree", mapping_degree);
 
   print_parameter(pcout, "Polynomial degree", degree);
+
+  print_parameter(pcout, "Enable adaptivity", enable_adaptivity);
 
   if(equation_type == EquationType::Convection or
      equation_type == EquationType::ConvectionDiffusion)

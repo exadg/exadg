@@ -37,6 +37,7 @@
 #include <exadg/operators/inverse_mass_operator.h>
 #include <exadg/operators/mass_operator.h>
 #include <exadg/operators/rhs_operator.h>
+#include <exadg/operators/solution_transfer.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 
 namespace ExaDG
@@ -88,6 +89,12 @@ public:
    */
   void
   setup_solver(double const scaling_factor_mass = -1.0, VectorType const * velocity = nullptr);
+
+  /**
+   * Initializes dealii::DoFHandlers and dealii::AffineConstraints.
+   */
+  void
+  initialize_dof_handler_and_constraints();
 
   /*
    * Initialization of dof-vector.
@@ -214,6 +221,15 @@ public:
   fill_grid_coordinates_vector(VectorType & vector) const final;
 
   /*
+   * Prepare and interpolation in adaptive mesh refinement.
+   */
+  void
+  prepare_coarsening_and_refinement(std::vector<VectorType *> & vectors);
+
+  void
+  interpolate_after_coarsening_and_refinement(std::vector<VectorType *> & vectors);
+
+  /*
    * This function solves the linear system of equations in case of implicit time integration or
    * steady-state problems (potentially involving the mass, convective, and diffusive
    * operators).
@@ -282,13 +298,10 @@ public:
   std::shared_ptr<dealii::Mapping<dim> const>
   get_mapping() const;
 
-private:
-  /**
-   * Initializes dealii::DoFHandlers and dealii::AffineConstraints.
-   */
-  void
-  initialize_dof_handler_and_constraints();
+  dealii::AffineConstraints<Number> const &
+  get_constraints() const;
 
+private:
   /**
    * Performs setup of operators.
    */
@@ -344,6 +357,11 @@ private:
    * Grid
    */
   std::shared_ptr<Grid<dim> const> grid;
+
+  /*
+   * SolutionTransfer for adaptive mesh refinement.
+   */
+  std::shared_ptr<ExaDG::SolutionTransfer<dim, VectorType>> solution_transfer;
 
   /*
    * Grid motion for ALE formulations
