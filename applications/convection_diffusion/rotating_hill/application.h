@@ -138,12 +138,12 @@ private:
     this->param.mapping_degree          = 1;
     this->param.enable_adaptivity       = enable_adaptivity;
 
-    this->param.amr_data.every_n_step                 = 30;
-    this->param.amr_data.upper_perc_to_refine         = 0.025;
-    this->param.amr_data.lower_perc_to_coarsen        = 0.4;
-    this->param.amr_data.refine_space_max             = 4;
-    this->param.amr_data.refine_space_min             = 0;
-    this->param.amr_data.do_not_modify_boundary_cells = false;
+    this->param.amr_data.trigger_every_n_time_steps        = 30;
+    this->param.amr_data.maximum_refinement_level          = 4;
+    this->param.amr_data.minimum_refinement_level          = 0;
+    this->param.amr_data.preserve_boundary_cells           = false;
+    this->param.amr_data.fraction_of_cells_to_be_refined   = 0.025;
+    this->param.amr_data.fraction_of_cells_to_be_coarsened = 0.4;
 
     // convective term
     this->param.numerical_flux_convective_operator =

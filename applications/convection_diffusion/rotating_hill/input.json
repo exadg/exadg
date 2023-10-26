@@ -15,7 +15,7 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-        "EnableAdaptivity": "false"
+        "EnableAdaptivity": "true"
     },
     "Output": {
         "OutputDirectory": "output/rotating_hill/",

@@ -149,7 +149,7 @@ Setup solver ...
 ... done!
 
 Calculate error for all fields at time t = 5.0201e-02:
-  Relative error (L2-norm): 7.30202e-03
+  Relative error (L2-norm): 7.18828e-03
 
 ________________________________________________________________________________
 
@@ -185,7 +185,7 @@ Setup solver ...
 ... done!
 
 Calculate error for all fields at time t = 1.0040e-01:
-  Relative error (L2-norm): 8.09698e-03
+  Relative error (L2-norm): 8.16901e-03
 
 ________________________________________________________________________________
 
@@ -206,6 +206,14 @@ Setup solver ...
 
 ... done!
 
+Calculate error for all fields at time t = 1.5060e-01:
+  Relative error (L2-norm): 7.95425e-03
+
+________________________________________________________________________________
+
+ Time step number = 151     t = 1.50602e-01 -> t + dt = 1.51606e-01
+________________________________________________________________________________
+
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -219,14 +227,6 @@ Setup convection-diffusion operator ...
 Setup solver ...
 
 ... done!
-
-Calculate error for all fields at time t = 1.5060e-01:
-  Relative error (L2-norm): 7.89176e-03
-
-________________________________________________________________________________
-
- Time step number = 151     t = 1.50602e-01 -> t + dt = 1.51606e-01
-________________________________________________________________________________
 
 Discontinuous Galerkin finite element discretization:
 
@@ -243,7 +243,7 @@ Setup solver ...
 ... done!
 
 Calculate error for all fields at time t = 2.0080e-01:
-  Relative error (L2-norm): 7.85248e-03
+  Relative error (L2-norm): 7.94280e-03
 
 ________________________________________________________________________________
 
@@ -279,7 +279,7 @@ Setup solver ...
 ... done!
 
 Calculate error for all fields at time t = 2.5000e-01:
-  Relative error (L2-norm): 7.90608e-03
+  Relative error (L2-norm): 7.92343e-03
 
 ________________________________________________________________________________
 
@@ -301,7 +301,7 @@ Setup solver ...
 ... done!
 
 Calculate error for all fields at time t = 3.0020e-01:
-  Relative error (L2-norm): 8.31423e-03
+  Relative error (L2-norm): 8.31892e-03
 
 ________________________________________________________________________________
 
@@ -337,7 +337,7 @@ Setup solver ...
 ... done!
 
 Calculate error for all fields at time t = 3.5040e-01:
-  Relative error (L2-norm): 8.50363e-03
+  Relative error (L2-norm): 8.55346e-03
 
 ________________________________________________________________________________
 
@@ -373,7 +373,7 @@ Setup solver ...
 ... done!
 
 Calculate error for all fields at time t = 4.0060e-01:
-  Relative error (L2-norm): 9.09694e-03
+  Relative error (L2-norm): 9.17437e-03
 
 ________________________________________________________________________________
 
@@ -384,7 +384,7 @@ Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
   number of dofs per cell:                   25
-  number of dofs (total):                    1675
+  number of dofs (total):                    1900
 
 Setup convection-diffusion operator ...
 
@@ -395,7 +395,7 @@ Setup solver ...
 ... done!
 
 Calculate error for all fields at time t = 4.5080e-01:
-  Relative error (L2-norm): 9.61430e-03
+  Relative error (L2-norm): 9.71215e-03
 
 ________________________________________________________________________________
 
@@ -406,7 +406,7 @@ Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
   number of dofs per cell:                   25
-  number of dofs (total):                    1600
+  number of dofs (total):                    1675
 
 Setup convection-diffusion operator ...
 
@@ -431,7 +431,7 @@ Setup solver ...
 ... done!
 
 Calculate error for all fields at time t = 5.0000e-01:
-  Relative error (L2-norm): 1.02166e-02
+  Relative error (L2-norm): 1.02908e-02
 
 ________________________________________________________________________________
 
@@ -467,7 +467,7 @@ Setup solver ...
 ... done!
 
 Calculate error for all fields at time t = 5.5020e-01:
-  Relative error (L2-norm): 1.07726e-02
+  Relative error (L2-norm): 1.08531e-02
 
 ________________________________________________________________________________
 
@@ -489,7 +489,7 @@ Setup solver ...
 ... done!
 
 Calculate error for all fields at time t = 6.0040e-01:
-  Relative error (L2-norm): 1.12913e-02
+  Relative error (L2-norm): 1.13639e-02
 
 ________________________________________________________________________________
 
@@ -525,7 +525,7 @@ Setup solver ...
 ... done!
 
 Calculate error for all fields at time t = 6.5060e-01:
-  Relative error (L2-norm): 1.19165e-02
+  Relative error (L2-norm): 1.19985e-02
 
 ________________________________________________________________________________
 
@@ -550,7 +550,7 @@ Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
   number of dofs per cell:                   25
-  number of dofs (total):                    1600
+  number of dofs (total):                    1675
 
 Setup convection-diffusion operator ...
 
@@ -561,7 +561,7 @@ Setup solver ...
 ... done!
 
 Calculate error for all fields at time t = 7.0080e-01:
-  Relative error (L2-norm): 1.25284e-02
+  Relative error (L2-norm): 1.26149e-02
 
 ________________________________________________________________________________
 
@@ -583,7 +583,7 @@ Setup solver ...
 ... done!
 
 Calculate error for all fields at time t = 7.5000e-01:
-  Relative error (L2-norm): 1.32104e-02
+  Relative error (L2-norm): 1.33054e-02
 
 ________________________________________________________________________________
 
@@ -619,7 +619,7 @@ Setup solver ...
 ... done!
 
 Calculate error for all fields at time t = 8.0020e-01:
-  Relative error (L2-norm): 1.38571e-02
+  Relative error (L2-norm): 1.39442e-02
 
 ________________________________________________________________________________
 
@@ -644,7 +644,7 @@ Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
   number of dofs per cell:                   25
-  number of dofs (total):                    1825
+  number of dofs (total):                    1975
 
 Setup convection-diffusion operator ...
 
@@ -655,7 +655,7 @@ Setup solver ...
 ... done!
 
 Calculate error for all fields at time t = 8.5040e-01:
-  Relative error (L2-norm): 1.44898e-02
+  Relative error (L2-norm): 1.45657e-02
 
 ________________________________________________________________________________
 
@@ -666,7 +666,7 @@ Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
   number of dofs per cell:                   25
-  number of dofs (total):                    1825
+  number of dofs (total):                    2050
 
 Setup convection-diffusion operator ...
 
@@ -677,12 +677,26 @@ Setup solver ...
 ... done!
 
 Calculate error for all fields at time t = 9.0060e-01:
-  Relative error (L2-norm): 1.55142e-02
+  Relative error (L2-norm): 1.52285e-02
 
 ________________________________________________________________________________
 
  Time step number = 898     t = 9.00602e-01 -> t + dt = 9.01606e-01
 ________________________________________________________________________________
+
+Discontinuous Galerkin finite element discretization:
+
+  degree of 1D polynomials:                  4
+  number of dofs per cell:                   25
+  number of dofs (total):                    1975
+
+Setup convection-diffusion operator ...
+
+... done!
+
+Setup solver ...
+
+... done!
 
 Discontinuous Galerkin finite element discretization:
 
@@ -698,22 +712,8 @@ Setup solver ...
 
 ... done!
 
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
-  number of dofs (total):                    1675
-
-Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
-
-... done!
-
 Calculate error for all fields at time t = 9.5080e-01:
-  Relative error (L2-norm): 1.62574e-02
+  Relative error (L2-norm): 1.58713e-02
 
 ________________________________________________________________________________
 
@@ -724,7 +724,7 @@ Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
   number of dofs per cell:                   25
-  number of dofs (total):                    1600
+  number of dofs (total):                    1750
 
 Setup convection-diffusion operator ...
 
@@ -749,4 +749,4 @@ Setup solver ...
 ... done!
 
 Calculate error for all fields at time t = 1.0000e+00:
-  Relative error (L2-norm): 1.69290e-02
+  Relative error (L2-norm): 1.65426e-02

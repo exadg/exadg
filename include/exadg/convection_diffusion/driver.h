@@ -93,7 +93,7 @@ private:
   void
   ale_update() const;
 
-  bool
+  void
   mark_cells_coarsening_and_refinement(dealii::Triangulation<dim> & tria,
                                        VectorType const &           solution) const;
 

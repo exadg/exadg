@@ -147,20 +147,30 @@ TimeIntBDF<dim, Number>::get_vectors()
     vectors->emplace_back(&solution[i]);
   }
 
+  vectors->emplace_back(&solution_np);
+
+  vectors->emplace_back(&rhs_vector);
+
   if(param.convective_problem() and
      param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
-    if(this->param.ale_formulation == false)
+    for(unsigned int i = 0; i < this->order; i++)
     {
-      for(unsigned int i = 0; i < this->order; i++)
-      {
-        vectors->emplace_back(&vec_convective_term[i]);
-      }
+      vectors->emplace_back(&vec_convective_term[i]);
+    }
+
+    if(param.ale_formulation == false)
+    {
+      vectors->emplace_back(&convective_term_np);
     }
   }
 
   if(this->param.ale_formulation)
   {
+    vectors->emplace_back(&grid_velocity);
+
+    vectors->emplace_back(&grid_coordinates_np);
+
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
       vectors->emplace_back(&vec_grid_coordinates[i]);

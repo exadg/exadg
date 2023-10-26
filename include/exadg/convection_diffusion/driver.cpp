@@ -24,10 +24,6 @@
 #  include <likwid.h>
 #endif
 
-// dealii
-#include <deal.II/distributed/grid_refinement.h>
-#include <deal.II/numerics/error_estimator.h>
-
 // ExaDG
 #include <exadg/convection_diffusion/driver.h>
 #include <exadg/convection_diffusion/time_integration/create_time_integrator.h>
@@ -192,38 +188,18 @@ Driver<dim, Number>::ale_update() const
 }
 
 template<int dim, typename Number>
-bool
+void
 Driver<dim, Number>::mark_cells_coarsening_and_refinement(dealii::Triangulation<dim> & tria,
                                                           VectorType const & solution) const
 {
-  dealii::Vector<float> estimated_error_per_cell(tria.n_active_cells());
-
-  VectorType   locally_relevant_solution;
-  auto const & dof_handler = pde_operator->get_dof_handler();
-  locally_relevant_solution.reinit(dof_handler.locally_owned_dofs(),
-                                   dealii::DoFTools::extract_locally_relevant_dofs(dof_handler),
-                                   dof_handler.get_communicator());
-  locally_relevant_solution.copy_locally_owned_data_from(solution);
-  auto const & constraints = pde_operator->get_constraints();
-  constraints.distribute(locally_relevant_solution);
-  locally_relevant_solution.update_ghost_values();
-
-  dealii::QGauss<dim - 1> face_quadrature(application->get_parameters().degree + 1);
-
-  dealii::KellyErrorEstimator<dim>::estimate(*pde_operator->get_mapping(),
-                                             pde_operator->get_dof_handler(),
-                                             face_quadrature,
-                                             {}, // Neumann BC
-                                             locally_relevant_solution,
-                                             estimated_error_per_cell);
-
-  dealii::parallel::distributed::GridRefinement::refine_and_coarsen_fixed_number(
-    tria,
-    estimated_error_per_cell,
-    application->get_parameters().amr_data.upper_perc_to_refine,
-    application->get_parameters().amr_data.lower_perc_to_coarsen);
-
-  return true;
+  mark_cells_kelly_error_estimator(tria,
+                                   pde_operator->get_dof_handler(),
+                                   pde_operator->get_constraints(),
+                                   *pde_operator->get_mapping(),
+                                   solution,
+                                   application->get_parameters().degree +
+                                     1 /* n_face_quadrature_points */,
+                                   application->get_parameters().amr_data);
 }
 
 template<int dim, typename Number>
@@ -294,12 +270,12 @@ Driver<dim, Number>::do_adaptive_refinement(unsigned int const time_step_number)
     if(trigger_coarsening_and_refinement_now(application->get_parameters().amr_data,
                                              time_step_number))
     {
-      bool const amr_flags_set =
-        mark_cells_coarsening_and_refinement(tria, bdf_time_integrator->get_solution_np());
-      if(amr_flags_set)
-      {
-        limit_coarsening_and_refinement(tria, application->get_parameters().amr_data);
+      mark_cells_coarsening_and_refinement(tria, bdf_time_integrator->get_solution_np());
 
+      limit_coarsening_and_refinement(tria, application->get_parameters().amr_data);
+
+      if(any_cells_flagged_for_coarsening_or_refinement(tria))
+      {
         tria.prepare_coarsening_and_refinement();
 
         time_integrator->prepare_coarsening_and_refinement();
@@ -326,12 +302,14 @@ Driver<dim, Number>::solve()
       {
         time_integrator->advance_one_timestep_pre_solve(true);
 
+        time_integrator->advance_one_timestep_solve();
+
+        // Adapt the mesh before post_solve(), in order to recalculate the
+        // time step size based on the new mesh.
         if(time_integrator->get_number_of_time_steps() > 0)
         {
-          do_adaptive_refinement(time_integrator->get_number_of_time_steps() + 1);
+          do_adaptive_refinement(time_integrator->get_number_of_time_steps());
         }
-
-        time_integrator->advance_one_timestep_solve();
 
         time_integrator->advance_one_timestep_post_solve();
       } while(not(time_integrator->finished()));
