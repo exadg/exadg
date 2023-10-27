@@ -51,6 +51,7 @@ Spatial Discretization:
   Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         5
+  Enable adaptivity:                         false
   IP factor viscous term:                    1.0000e+00
 
 Solver:
@@ -112,7 +113,7 @@ Setup solver ...
 Starting time loop ...
 
 Calculate error for all fields at time t = 0.0000e+00:
-  Relative error (L2-norm): 5.28050e-11
+  Relative error (L2-norm): 5.28051e-11
 
 ________________________________________________________________________________
 
@@ -123,16 +124,16 @@ Calculate error for all fields at time t = 5.0000e-02:
   Relative error (L2-norm): 5.27723e-11
 
 Calculate error for all fields at time t = 1.0000e-01:
-  Relative error (L2-norm): 5.27879e-11
+  Relative error (L2-norm): 5.27880e-11
 
 Calculate error for all fields at time t = 1.5000e-01:
   Relative error (L2-norm): 5.28141e-11
 
 Calculate error for all fields at time t = 2.0000e-01:
-  Relative error (L2-norm): 5.28507e-11
+  Relative error (L2-norm): 5.28508e-11
 
 Calculate error for all fields at time t = 2.5000e-01:
-  Relative error (L2-norm): 5.28977e-11
+  Relative error (L2-norm): 5.28978e-11
 
 Calculate error for all fields at time t = 3.0000e-01:
   Relative error (L2-norm): 5.29553e-11
@@ -141,40 +142,40 @@ Calculate error for all fields at time t = 3.5000e-01:
   Relative error (L2-norm): 5.30232e-11
 
 Calculate error for all fields at time t = 4.0000e-01:
-  Relative error (L2-norm): 5.31014e-11
+  Relative error (L2-norm): 5.31015e-11
 
 Calculate error for all fields at time t = 4.5000e-01:
-  Relative error (L2-norm): 5.31900e-11
+  Relative error (L2-norm): 5.31901e-11
 
 Calculate error for all fields at time t = 5.0000e-01:
-  Relative error (L2-norm): 5.32888e-11
+  Relative error (L2-norm): 5.32889e-11
 
 Calculate error for all fields at time t = 5.5000e-01:
   Relative error (L2-norm): 5.33979e-11
 
 Calculate error for all fields at time t = 6.0000e-01:
-  Relative error (L2-norm): 5.35170e-11
+  Relative error (L2-norm): 5.35171e-11
 
 Calculate error for all fields at time t = 6.5000e-01:
-  Relative error (L2-norm): 5.36462e-11
+  Relative error (L2-norm): 5.36463e-11
 
 Calculate error for all fields at time t = 7.0000e-01:
-  Relative error (L2-norm): 5.37855e-11
+  Relative error (L2-norm): 5.37856e-11
 
 Calculate error for all fields at time t = 7.5000e-01:
-  Relative error (L2-norm): 5.39347e-11
+  Relative error (L2-norm): 5.39348e-11
 
 Calculate error for all fields at time t = 8.0000e-01:
-  Relative error (L2-norm): 5.40936e-11
+  Relative error (L2-norm): 5.40938e-11
 
 Calculate error for all fields at time t = 8.5000e-01:
-  Relative error (L2-norm): 5.42624e-11
+  Relative error (L2-norm): 5.42625e-11
 
 Calculate error for all fields at time t = 9.0000e-01:
-  Relative error (L2-norm): 5.44408e-11
+  Relative error (L2-norm): 5.44409e-11
 
 Calculate error for all fields at time t = 9.5000e-01:
-  Relative error (L2-norm): 5.46288e-11
+  Relative error (L2-norm): 5.46289e-11
 
 Calculate error for all fields at time t = 1.0000e+00:
-  Relative error (L2-norm): 5.48262e-11
+  Relative error (L2-norm): 5.48264e-11

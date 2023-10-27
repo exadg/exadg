@@ -51,6 +51,7 @@ Spatial Discretization:
   Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         15
+  Enable adaptivity:                         false
   Numerical flux convective term:            LaxFriedrichsFlux
 
 Numerical parameters:
@@ -93,7 +94,7 @@ Adjust time step size to hit end time:
 Starting time loop ...
 
 Calculate error for all fields at time t = 0.0000e+00:
-  Relative error (L2-norm): 2.92826e-11
+  Relative error (L2-norm): 2.92827e-11
 
 ________________________________________________________________________________
 
