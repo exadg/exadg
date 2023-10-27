@@ -140,7 +140,7 @@ CompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
       bool         update_J = false;
       for(unsigned int i = 0; i < J.size(); ++i)
       {
-        if(J[i] <= 0.001)
+        if(J[i] <= get_J_tol<Number>())
         {
           update_J = true;
 

@@ -157,6 +157,14 @@ inline DEAL_II_ALWAYS_INLINE //
   return std::make_pair(xnp, converged);
 }
 
+template<typename Number>
+inline
+Number
+get_J_tol()
+{
+  return 0.001;
+}
+
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   void
@@ -185,7 +193,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if(compute_J and check_type > 2)
   {
-    Number constexpr tol = 0.001;
+    Number tol = get_J_tol<Number>();
 
     for(unsigned int n = 0; n < dealii::VectorizedArray<Number>::size(); ++n)
     {
