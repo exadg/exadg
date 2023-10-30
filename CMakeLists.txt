@@ -146,6 +146,7 @@ SET(TARGET_SRC
      include/exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.cpp
      include/exadg/incompressible_navier_stokes/time_integration/driver_steady_problems.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/output_generator.cpp
+     include/exadg/incompressible_navier_stokes/postprocessor/pointwise_output_generator.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/divergence_and_mass_error.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/inflow_data_calculator.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/kinetic_energy_dissipation_detailed.cpp
