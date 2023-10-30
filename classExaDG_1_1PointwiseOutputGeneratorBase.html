@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::PointwiseOutputGeneratorBase&lt; dim, VectorType &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::PointwiseOutputGeneratorBase&lt; dim, Number &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -75,57 +75,60 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
-<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pro-methods">Protected Member Functions</a> &#124;
 <a href="classExaDG_1_1PointwiseOutputGeneratorBase-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::PointwiseOutputGeneratorBase&lt; dim, VectorType &gt; Class Template Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div></div>
+  <div class="headertitle"><div class="title">ExaDG::PointwiseOutputGeneratorBase&lt; dim, Number &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
+<div class="dynheader">
+Inheritance diagram for ExaDG::PointwiseOutputGeneratorBase&lt; dim, Number &gt;:</div>
+<div class="dyncontent">
+ <div class="center">
+  <img src="classExaDG_1_1PointwiseOutputGeneratorBase.png" usemap="#ExaDG::PointwiseOutputGeneratorBase_3C_20dim_2C_20Number_20_3E_map" alt=""/>
+  <map id="ExaDG::PointwiseOutputGeneratorBase_3C_20dim_2C_20Number_20_3E_map" name="ExaDG::PointwiseOutputGeneratorBase_3C_20dim_2C_20Number_20_3E_map">
+<area href="classExaDG_1_1CompNS_1_1PointwiseOutputGenerator.html" alt="ExaDG::CompNS::PointwiseOutputGenerator&lt; dim, Number &gt;" shape="rect" coords="0,56,355,80"/>
+<area href="classExaDG_1_1IncNS_1_1PointwiseOutputGenerator.html" alt="ExaDG::IncNS::PointwiseOutputGenerator&lt; dim, Number &gt;" shape="rect" coords="365,56,720,80"/>
+  </map>
+</div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a10e33e9e43f05e77a6f406a48f43f69f" id="r_a10e33e9e43f05e77a6f406a48f43f69f"><td class="memItemLeft" align="right" valign="top"><a id="a10e33e9e43f05e77a6f406a48f43f69f" name="a10e33e9e43f05e77a6f406a48f43f69f"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>Number</b> = typename VectorType::value_type</td></tr>
-<tr class="separator:a10e33e9e43f05e77a6f406a48f43f69f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad6f23ff05e4a5c151193a17872d1a944" id="r_ad6f23ff05e4a5c151193a17872d1a944"><td class="memItemLeft" align="right" valign="top"><a id="ad6f23ff05e4a5c151193a17872d1a944" name="ad6f23ff05e4a5c151193a17872d1a944"></a>
+<tr class="memitem:ae281900bd386fdfe533ad84360e054b6" id="r_ae281900bd386fdfe533ad84360e054b6"><td class="memItemLeft" align="right" valign="top"><a id="ae281900bd386fdfe533ad84360e054b6" name="ae281900bd386fdfe533ad84360e054b6"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>point_value_type</b> = typename <a class="el" href="structExaDG_1_1PointwiseOutputDataBase.html">PointwiseOutputDataBase</a>&lt; dim &gt;::point_value_type</td></tr>
-<tr class="separator:ad6f23ff05e4a5c151193a17872d1a944"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
-Public Member Functions</h2></td></tr>
-<tr class="memitem:a0c44dd0e8b07de78abe970b2606673cc" id="r_a0c44dd0e8b07de78abe970b2606673cc"><td class="memItemLeft" align="right" valign="top"><a id="a0c44dd0e8b07de78abe970b2606673cc" name="a0c44dd0e8b07de78abe970b2606673cc"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;solution, double const time, bool const unsteady)</td></tr>
-<tr class="separator:a0c44dd0e8b07de78abe970b2606673cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:ae281900bd386fdfe533ad84360e054b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a5f3da016d4bbc121c03f1bf7a17a1069" id="r_a5f3da016d4bbc121c03f1bf7a17a1069"><td class="memItemLeft" align="right" valign="top"><a id="a5f3da016d4bbc121c03f1bf7a17a1069" name="a5f3da016d4bbc121c03f1bf7a17a1069"></a>
+<tr class="memitem:adc0a2aaa4d80ad5350882a1e46b5cf6f" id="r_adc0a2aaa4d80ad5350882a1e46b5cf6f"><td class="memItemLeft" align="right" valign="top"><a id="adc0a2aaa4d80ad5350882a1e46b5cf6f" name="adc0a2aaa4d80ad5350882a1e46b5cf6f"></a>
 <a class="el" href="classExaDG_1_1TimeControl.html">TimeControl</a>&#160;</td><td class="memItemRight" valign="bottom"><b>time_control</b></td></tr>
-<tr class="separator:a5f3da016d4bbc121c03f1bf7a17a1069"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:adc0a2aaa4d80ad5350882a1e46b5cf6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
-<tr class="memitem:a5b7460fdb5917b453cd13c5f664707d0" id="r_a5b7460fdb5917b453cd13c5f664707d0"><td class="memItemLeft" align="right" valign="top"><a id="a5b7460fdb5917b453cd13c5f664707d0" name="a5b7460fdb5917b453cd13c5f664707d0"></a>
+<tr class="memitem:af809eb29558f978bb23169fbc876cc4e" id="r_af809eb29558f978bb23169fbc876cc4e"><td class="memItemLeft" align="right" valign="top"><a id="af809eb29558f978bb23169fbc876cc4e" name="af809eb29558f978bb23169fbc876cc4e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>do_evaluate</b> (std::function&lt; void()&gt; const &amp;write_solution, double const time, bool const unsteady)</td></tr>
+<tr class="separator:af809eb29558f978bb23169fbc876cc4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa2695add369b942d5d73a4bdb1d7944b" id="r_aa2695add369b942d5d73a4bdb1d7944b"><td class="memItemLeft" align="right" valign="top"><a id="aa2695add369b942d5d73a4bdb1d7944b" name="aa2695add369b942d5d73a4bdb1d7944b"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>PointwiseOutputGeneratorBase</b> (MPI_Comm const &amp;comm)</td></tr>
-<tr class="separator:a5b7460fdb5917b453cd13c5f664707d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af3c460a9a016765b2502082a6f607637" id="r_af3c460a9a016765b2502082a6f607637"><td class="memItemLeft" align="right" valign="top"><a id="af3c460a9a016765b2502082a6f607637" name="af3c460a9a016765b2502082a6f607637"></a>
+<tr class="separator:aa2695add369b942d5d73a4bdb1d7944b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a62176629aa22a7fba485cee4b33a15e2" id="r_a62176629aa22a7fba485cee4b33a15e2"><td class="memItemLeft" align="right" valign="top"><a id="a62176629aa22a7fba485cee4b33a15e2" name="a62176629aa22a7fba485cee4b33a15e2"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_base</b> (dealii::Triangulation&lt; dim &gt; const &amp;triangulation_in, dealii::Mapping&lt; dim &gt; const &amp;mapping_in, <a class="el" href="structExaDG_1_1PointwiseOutputDataBase.html">PointwiseOutputDataBase</a>&lt; dim &gt; const &amp;pointwise_output_data_in)</td></tr>
-<tr class="separator:af3c460a9a016765b2502082a6f607637"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a237c08990bc5049f5c61c1a9c5aaa712" id="r_a237c08990bc5049f5c61c1a9c5aaa712"><td class="memItemLeft" align="right" valign="top"><a id="a237c08990bc5049f5c61c1a9c5aaa712" name="a237c08990bc5049f5c61c1a9c5aaa712"></a>
+<tr class="separator:a62176629aa22a7fba485cee4b33a15e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2547eeac57c806589a731cc955eb15ad" id="r_a2547eeac57c806589a731cc955eb15ad"><td class="memItemLeft" align="right" valign="top"><a id="a2547eeac57c806589a731cc955eb15ad" name="a2547eeac57c806589a731cc955eb15ad"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>add_quantity</b> (std::string const &amp;name, unsigned int const n_components)</td></tr>
-<tr class="separator:a237c08990bc5049f5c61c1a9c5aaa712"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7ae5cb702b47c609a27c9fba2dc51a84" id="r_a7ae5cb702b47c609a27c9fba2dc51a84"><td class="memTemplParams" colspan="2"><a id="a7ae5cb702b47c609a27c9fba2dc51a84" name="a7ae5cb702b47c609a27c9fba2dc51a84"></a>
+<tr class="separator:a2547eeac57c806589a731cc955eb15ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4f02394998c108210e73a3109f7c9713" id="r_a4f02394998c108210e73a3109f7c9713"><td class="memTemplParams" colspan="2"><a id="a4f02394998c108210e73a3109f7c9713" name="a4f02394998c108210e73a3109f7c9713"></a>
 template&lt;int n_components&gt; </td></tr>
-<tr class="memitem:a7ae5cb702b47c609a27c9fba2dc51a84"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>write_quantity</b> (std::string const &amp;name, std::vector&lt; dealii::Tensor&lt; 1, n_components, Number &gt; &gt; const &amp;values, unsigned int const first_component)</td></tr>
-<tr class="separator:a7ae5cb702b47c609a27c9fba2dc51a84"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a405158ba64d11defca711569ad262b63" id="r_a405158ba64d11defca711569ad262b63"><td class="memItemLeft" align="right" valign="top"><a id="a405158ba64d11defca711569ad262b63" name="a405158ba64d11defca711569ad262b63"></a>
+<tr class="memitem:a4f02394998c108210e73a3109f7c9713"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>write_quantity</b> (std::string const &amp;name, std::vector&lt; dealii::Tensor&lt; 1, n_components, Number &gt; &gt; const &amp;values, unsigned int const first_component)</td></tr>
+<tr class="separator:a4f02394998c108210e73a3109f7c9713"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab8d83469e3e4a3d5eba3140601c768e8" id="r_ab8d83469e3e4a3d5eba3140601c768e8"><td class="memItemLeft" align="right" valign="top"><a id="ab8d83469e3e4a3d5eba3140601c768e8" name="ab8d83469e3e4a3d5eba3140601c768e8"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>write_quantity</b> (std::string const &amp;name, std::vector&lt; Number &gt; const &amp;values)</td></tr>
-<tr class="separator:a405158ba64d11defca711569ad262b63"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae3b8a64642afab460f5c0a29405660b3" id="r_ae3b8a64642afab460f5c0a29405660b3"><td class="memTemplParams" colspan="2"><a id="ae3b8a64642afab460f5c0a29405660b3" name="ae3b8a64642afab460f5c0a29405660b3"></a>
+<tr class="separator:ab8d83469e3e4a3d5eba3140601c768e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a80fc0f8f5b79b72999eb03bfe1977a40" id="r_a80fc0f8f5b79b72999eb03bfe1977a40"><td class="memTemplParams" colspan="2"><a id="a80fc0f8f5b79b72999eb03bfe1977a40" name="a80fc0f8f5b79b72999eb03bfe1977a40"></a>
 template&lt;int n_components&gt; </td></tr>
-<tr class="memitem:ae3b8a64642afab460f5c0a29405660b3"><td class="memTemplItemLeft" align="right" valign="top">std::vector&lt; typename dealii::FEPointEvaluation&lt; n_components, dim, dim, Number &gt;::value_type &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><b>compute_point_values</b> (dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; const &amp;solution, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler) const</td></tr>
-<tr class="separator:ae3b8a64642afab460f5c0a29405660b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a80fc0f8f5b79b72999eb03bfe1977a40"><td class="memTemplItemLeft" align="right" valign="top">std::vector&lt; typename dealii::FEPointEvaluation&lt; n_components, dim, dim, Number &gt;::value_type &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><b>compute_point_values</b> (dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; const &amp;solution, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler) const</td></tr>
+<tr class="separator:a80fc0f8f5b79b72999eb03bfe1977a40"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/exadg/postprocessor/<a class="el" href="pointwise__output__generator__base_8h_source.html">pointwise_output_generator_base.h</a></li>
