@@ -19,40 +19,42 @@
  *  ______________________________________________________________________
  */
 
-#ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_ENUM_TYPES_H_
-#define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_ENUM_TYPES_H_
-#include <exadg/utilities/enum_utilities.h>
+#ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_INTERFACE_H_
+#define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_INTERFACE_H_
+
+// deal.II
+#include <deal.II/lac/la_parallel_block_vector.h>
 
 namespace ExaDG
 {
 namespace Acoustics
 {
-enum class Formulation
+namespace Interface
 {
-  Undefined,
-  /** Weak form of pressure gradient and velocity divergence terms. */
-  Weak,
-  /** Strong form of pressure gradient and velocity divergence terms. */
-  Strong,
-  /** Strong form of the pressure gradient term and weak form of the velocity divergence term.
-   *  This way, the gradient is only used on scalar variables which reduces the number of sum
-   *  factorization sweeps in the cell loop. Additionally, only the skew-symmetric formulation
-   *  mathematically guarantees that energy will be non-increasing if the numerical quadrature
-   *  is not exact (non-affine cells).
-   */
-  SkewSymmetric
+template<typename Number>
+class SpatialOperator
+{
+public:
+  using BlockVectorType = dealii::LinearAlgebra::distributed::BlockVector<Number>;
+
+  virtual ~SpatialOperator() = default;
+
+
+  // time integration: initialize dof vector
+  virtual void
+  initialize_dof_vector(BlockVectorType & dst) const = 0;
+
+  // time integration: prescribe initial conditions
+  virtual void
+  prescribe_initial_conditions(BlockVectorType & src, double const evaluation_time) const = 0;
+
+  // time integration: evaluate
+  virtual void
+  evaluate(BlockVectorType & dst, BlockVectorType const & src, double const time) const = 0;
 };
 
-/*
- * calculation of time step size
- */
-enum class TimeStepCalculation
-{
-  Undefined,
-  UserSpecified
-};
-
+} // namespace Interface
 } // namespace Acoustics
 } // namespace ExaDG
 
-#endif /*EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_ENUM_TYPES_H_*/
+#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_INTERFACE_H_ */

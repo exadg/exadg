@@ -19,40 +19,35 @@
  *  ______________________________________________________________________
  */
 
-#ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_ENUM_TYPES_H_
-#define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_ENUM_TYPES_H_
-#include <exadg/utilities/enum_utilities.h>
+#ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_INTERFACE_H_
+#define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_INTERFACE_H_
+
+#include <deal.II/lac/la_parallel_block_vector.h>
+#include <exadg/utilities/numbers.h>
 
 namespace ExaDG
 {
 namespace Acoustics
 {
-enum class Formulation
+template<typename Number>
+class PostProcessorInterface
 {
-  Undefined,
-  /** Weak form of pressure gradient and velocity divergence terms. */
-  Weak,
-  /** Strong form of pressure gradient and velocity divergence terms. */
-  Strong,
-  /** Strong form of the pressure gradient term and weak form of the velocity divergence term.
-   *  This way, the gradient is only used on scalar variables which reduces the number of sum
-   *  factorization sweeps in the cell loop. Additionally, only the skew-symmetric formulation
-   *  mathematically guarantees that energy will be non-increasing if the numerical quadrature
-   *  is not exact (non-affine cells).
-   */
-  SkewSymmetric
-};
+protected:
+  using BlockVectorType = dealii::LinearAlgebra::distributed::BlockVector<Number>;
 
-/*
- * calculation of time step size
- */
-enum class TimeStepCalculation
-{
-  Undefined,
-  UserSpecified
+public:
+  virtual ~PostProcessorInterface() = default;
+
+  /*
+   * This function has to be called to apply the postprocessing tools.
+   */
+  virtual void
+  do_postprocessing(BlockVectorType const & solution,
+                    double const            time             = 0.0,
+                    types::time_step const  time_step_number = numbers::steady_timestep) = 0;
 };
 
 } // namespace Acoustics
 } // namespace ExaDG
 
-#endif /*EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_ENUM_TYPES_H_*/
+#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_INTERFACE_H_ */
