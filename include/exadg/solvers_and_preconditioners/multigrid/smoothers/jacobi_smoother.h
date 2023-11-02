@@ -24,9 +24,9 @@
 
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/smoother_base.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/additive_schwarz_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
-#include <exadg/solvers_and_preconditioners/preconditioners/additive_schwarz_preconditioner.h>
 
 namespace ExaDG
 {
