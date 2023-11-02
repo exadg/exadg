@@ -2199,6 +2199,7 @@ OperatorBase<dim, Number, n_components>::internal_compute_factorized_additive_sc
   std::vector<std::vector<dealii::types::global_dof_index>> all_dof_indices(
     n_cells, std::vector<dealii::types::global_dof_index>(dofs_per_cell));
 
+  // compute weights by counting the contributions to a DoF
   initialize_dof_vector(weights);
   for(unsigned int cell_batch_index = 0; cell_batch_index < matrix_free->n_cell_batches();
       ++cell_batch_index)
@@ -2222,6 +2223,7 @@ OperatorBase<dim, Number, n_components>::internal_compute_factorized_additive_sc
   }
   weights.compress(dealii::VectorOperation::add);
 
+  // prepare the weights vector for symmetric weighting
   for(unsigned int i = 0; i < weights.size(); ++i)
   {
     if(weights.in_local_range(i))
