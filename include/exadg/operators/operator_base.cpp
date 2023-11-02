@@ -2194,14 +2194,10 @@ OperatorBase<dim, Number, n_components>::internal_compute_factorized_additive_sc
   internal_init_system_matrix(tmp_matrix, dsp, dof_handler.get_communicator());
   internal_calculate_system_matrix(tmp_matrix);
 
-  // cut out overlapped block matrices
-  std::vector<dealii::FullMatrix<Number>> overlapped_block_matrix(
-    n_cells, dealii::FullMatrix<Number>(dofs_per_cell));
-
-  std::vector<std::vector<dealii::types::global_dof_index>> all_dof_indices(
+  // collect the DoF indices of all cells
+  std::vector<std::vector<dealii::types::global_dof_index>> dof_indices_all_cells(
     n_cells, std::vector<dealii::types::global_dof_index>(dofs_per_cell));
-
-  // compute weights by counting the contributions to a DoF
+  // and compute weights by counting the contributions to a DoF
   initialize_dof_vector(weights);
   for(unsigned int cell_batch_index = 0; cell_batch_index < matrix_free->n_cell_batches();
       ++cell_batch_index)
@@ -2213,13 +2209,13 @@ OperatorBase<dim, Number, n_components>::internal_compute_factorized_additive_sc
     {
       auto const & cell = matrix_free->get_cell_iterator(cell_batch_index, v);
 
-      auto & local_dof_indices = all_dof_indices[cell_batch_index * vectorization_length + v];
+      auto & dof_indices = dof_indices_all_cells[cell_batch_index * vectorization_length + v];
       if(is_mg)
-        cell->get_mg_dof_indices(local_dof_indices);
+        cell->get_mg_dof_indices(dof_indices);
       else
-        cell->get_dof_indices(local_dof_indices);
+        cell->get_dof_indices(dof_indices);
 
-      for(auto const & i : local_dof_indices)
+      for(auto const & i : dof_indices)
         weights[i] += 1.;
     }
   }
@@ -2233,12 +2229,16 @@ OperatorBase<dim, Number, n_components>::internal_compute_factorized_additive_sc
   }
   weights.update_ghost_values();
 
+  // cut out overlapped block matrices
+  std::vector<dealii::FullMatrix<Number>> overlapped_cell_matrices(
+    n_cells, dealii::FullMatrix<Number>(dofs_per_cell));
+
   dealii::SparseMatrixTools::restrict_to_full_matrices<SparseMatrix,
                                                        dealii::DynamicSparsityPattern,
                                                        Number>(tmp_matrix,
                                                                dsp,
-                                                               all_dof_indices,
-                                                               overlapped_block_matrix);
+                                                               dof_indices_all_cells,
+                                                               overlapped_cell_matrices);
 
   // factorize and store cell matrices
   matrices.resize(n_cells, LAPACKMatrix(dofs_per_cell));
@@ -2252,7 +2252,7 @@ OperatorBase<dim, Number, n_components>::internal_compute_factorized_additive_sc
     {
       // get overlapped cell matrix
       auto const & overlapped_cell_matrix =
-        overlapped_block_matrix[cell_batch_index * vectorization_length + v];
+        overlapped_cell_matrices[cell_batch_index * vectorization_length + v];
 
       // store the cell matrix and renumber lexicographic if necessary
       auto & lapack_matrix = matrices[cell_batch_index * vectorization_length + v];
