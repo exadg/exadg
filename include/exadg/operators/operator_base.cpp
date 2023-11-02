@@ -473,7 +473,7 @@ OperatorBase<dim, Number, n_components>::calculate_block_diagonal_matrices() con
     auto dofs =
       matrix_free->get_shape_info(this->data.dof_index).dofs_per_component_on_cell * n_components;
 
-    matrices.resize(matrix_free->n_cell_batches() * vectorization_length, CellMatrix(dofs, dofs));
+    matrices.resize(matrix_free->n_cell_batches() * vectorization_length, LAPACKMatrix(dofs, dofs));
 
     block_diagonal_preconditioner_is_initialized = true;
   }
@@ -488,7 +488,8 @@ OperatorBase<dim, Number, n_components>::calculate_block_diagonal_matrices() con
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::add_block_diagonal_matrices(BlockMatrix & matrices) const
+OperatorBase<dim, Number, n_components>::add_block_diagonal_matrices(
+  std::vector<LAPACKMatrix> & matrices) const
 {
   AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
 
@@ -714,7 +715,8 @@ OperatorBase<dim, Number, n_components>::update_block_diagonal_preconditioner() 
       // allocate memory only the first time
       auto dofs =
         matrix_free->get_shape_info(this->data.dof_index).dofs_per_component_on_cell * n_components;
-      matrices.resize(matrix_free->n_cell_batches() * vectorization_length, CellMatrix(dofs, dofs));
+      matrices.resize(matrix_free->n_cell_batches() * vectorization_length,
+                      LAPACKMatrix(dofs, dofs));
     }
 
     block_diagonal_preconditioner_is_initialized = true;
@@ -1624,8 +1626,8 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::cell_loop_block_diagonal(
   dealii::MatrixFree<dim, Number> const & matrix_free,
-  BlockMatrix &                           matrices,
-  BlockMatrix const &,
+  std::vector<LAPACKMatrix> &             matrices,
+  std::vector<LAPACKMatrix> const &,
   Range const & range) const
 {
   IntegratorCell integrator =
@@ -1660,8 +1662,8 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::face_loop_block_diagonal(
   dealii::MatrixFree<dim, Number> const & matrix_free,
-  BlockMatrix &                           matrices,
-  BlockMatrix const &,
+  std::vector<LAPACKMatrix> &             matrices,
+  std::vector<LAPACKMatrix> const &,
   Range const & range) const
 {
   IntegratorFace integrator_m =
@@ -1721,8 +1723,8 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::boundary_face_loop_block_diagonal(
   dealii::MatrixFree<dim, Number> const & matrix_free,
-  BlockMatrix &                           matrices,
-  BlockMatrix const &,
+  std::vector<LAPACKMatrix> &             matrices,
+  std::vector<LAPACKMatrix> const &,
   Range const & range) const
 {
   IntegratorFace integrator_m =
@@ -1763,8 +1765,8 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::cell_based_loop_block_diagonal(
   dealii::MatrixFree<dim, Number> const & matrix_free,
-  BlockMatrix &                           matrices,
-  BlockMatrix const &,
+  std::vector<LAPACKMatrix> &             matrices,
+  std::vector<LAPACKMatrix> const &,
   Range const & range) const
 {
   IntegratorCell integrator =
@@ -2239,7 +2241,7 @@ OperatorBase<dim, Number, n_components>::internal_compute_factorized_additive_sc
                                                                overlapped_block_matrix);
 
   // factorize and store cell matrices
-  matrices.resize(n_cells, CellMatrix(dofs_per_cell));
+  matrices.resize(n_cells, LAPACKMatrix(dofs_per_cell));
   for(unsigned int cell_batch_index = 0; cell_batch_index < matrix_free->n_cell_batches();
       ++cell_batch_index)
   {

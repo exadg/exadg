@@ -106,8 +106,7 @@ public:
 
   static unsigned int const vectorization_length = dealii::VectorizedArray<Number>::size();
 
-  typedef dealii::LAPACKFullMatrix<Number> CellMatrix;
-  typedef std::vector<CellMatrix>          BlockMatrix;
+  typedef dealii::LAPACKFullMatrix<Number> LAPACKMatrix;
 
   typedef dealii::FullMatrix<dealii::TrilinosScalar> FullMatrix_;
 
@@ -305,7 +304,7 @@ public:
   calculate_block_diagonal_matrices() const;
 
   void
-  add_block_diagonal_matrices(BlockMatrix & matrices) const;
+  add_block_diagonal_matrices(std::vector<LAPACKMatrix> & matrices) const;
 
   void
   apply_block_diagonal_matrix_based(VectorType & dst, VectorType const & src) const;
@@ -592,27 +591,27 @@ private:
    */
   void
   cell_loop_block_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
-                           BlockMatrix &                           matrices,
-                           BlockMatrix const &                     src,
+                           std::vector<LAPACKMatrix> &             matrices,
+                           std::vector<LAPACKMatrix> const &       src,
                            Range const &                           range) const;
 
   void
   face_loop_block_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
-                           BlockMatrix &                           matrices,
-                           BlockMatrix const &                     src,
+                           std::vector<LAPACKMatrix> &             matrices,
+                           std::vector<LAPACKMatrix> const &       src,
                            Range const &                           range) const;
 
   void
   boundary_face_loop_block_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                    BlockMatrix &                           matrices,
-                                    BlockMatrix const &                     src,
+                                    std::vector<LAPACKMatrix> &             matrices,
+                                    std::vector<LAPACKMatrix> const &       src,
                                     Range const &                           range) const;
 
   // cell-based variant for computation of both cell and face integrals
   void
   cell_based_loop_block_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                 BlockMatrix &                           matrices,
-                                 BlockMatrix const &                     src,
+                                 std::vector<LAPACKMatrix> &             matrices,
+                                 std::vector<LAPACKMatrix> const &       src,
                                  Range const &                           range) const;
 
   /*
@@ -709,7 +708,7 @@ private:
   /*
    * Vector of matrices for block-diagonal preconditioners.
    */
-  mutable BlockMatrix matrices;
+  mutable std::vector<LAPACKMatrix> matrices;
 
   /*
    * Vector with weights for additive Schwarz preconditioner.
