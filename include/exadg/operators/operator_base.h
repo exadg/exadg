@@ -331,10 +331,10 @@ public:
    * additive Schwarz preconditioner (cellwise block-diagonal)
    */
   virtual void
-  compute_factorized_as_matrices() const;
+  compute_factorized_additive_schwarz_matrices() const;
 
   void
-  apply_inverse_as_matrices(VectorType & dst, VectorType const & src) const;
+  apply_inverse_additive_schwarz_matrices(VectorType & dst, VectorType const & src) const;
 
 protected:
   void
@@ -693,7 +693,7 @@ private:
    */
   template<typename SparseMatrix>
   void
-  internal_compute_factorized_as_matrices() const;
+  internal_compute_factorized_additive_schwarz_matrices() const;
 
   /*
    * Data structure containing all operator-specific data.

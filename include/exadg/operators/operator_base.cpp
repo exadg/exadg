@@ -2157,24 +2157,25 @@ OperatorBase<dim, Number, n_components>::evaluate_face_integrals() const
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::compute_factorized_as_matrices() const
+OperatorBase<dim, Number, n_components>::compute_factorized_additive_schwarz_matrices() const
 {
 #ifdef DEAL_II_WITH_TRILINOS
-  internal_compute_factorized_as_matrices<dealii::TrilinosWrappers::SparseMatrix>();
+  internal_compute_factorized_additive_schwarz_matrices<dealii::TrilinosWrappers::SparseMatrix>();
 #elif DEAL_II_WITH_PETSC
-  internal_compute_factorized_as_matrices<dealii::PETScWrappers::MPI::SparseMatrix>();
+  internal_compute_factorized_additive_schwarz_matrices<dealii::PETScWrappers::MPI::SparseMatrix>();
 #else
   AssertThrow(n_mpi_processes == 1,
               ExcMessage(
                 "Use Trilinos or Petsc for distributed sparse matrices needed for this function!"));
-  internal_compute_factorized_as_matrices<dealii::SparseMatrix>();
+  internal_compute_factorized_additive_schwarz_matrices<dealii::SparseMatrix>();
 #endif
 }
 
 template<int dim, typename Number, int n_components>
 template<typename SparseMatrix>
 void
-OperatorBase<dim, Number, n_components>::internal_compute_factorized_as_matrices() const
+OperatorBase<dim, Number, n_components>::internal_compute_factorized_additive_schwarz_matrices()
+  const
 {
   dealii::DoFHandler<dim> const & dof_handler =
     this->matrix_free->get_dof_handler(this->data.dof_index);
@@ -2269,8 +2270,9 @@ OperatorBase<dim, Number, n_components>::internal_compute_factorized_as_matrices
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::apply_inverse_as_matrices(VectorType &       dst,
-                                                                   VectorType const & src) const
+OperatorBase<dim, Number, n_components>::apply_inverse_additive_schwarz_matrices(
+  VectorType &       dst,
+  VectorType const & src) const
 {
   if(is_dg)
     matrix_free->cell_loop(&This::cell_loop_apply_inverse_block_diagonal_matrix_based,

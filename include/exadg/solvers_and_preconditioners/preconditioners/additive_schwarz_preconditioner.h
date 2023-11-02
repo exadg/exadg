@@ -37,7 +37,7 @@ public:
   AdditiveSchwarzPreconditioner(Operator const & underlying_operator_in)
     : underlying_operator(underlying_operator_in)
   {
-    underlying_operator.compute_factorized_as_matrices();
+    underlying_operator.compute_factorized_additive_schwarz_matrices();
   }
 
   /*
@@ -48,7 +48,7 @@ public:
   void
   update() final
   {
-    underlying_operator.compute_factorized_as_matrices();
+    underlying_operator.compute_factorized_additive_schwarz_matrices();
   }
 
   /*
@@ -59,7 +59,7 @@ public:
   void
   vmult(VectorType & dst, VectorType const & src) const final
   {
-    underlying_operator.apply_inverse_as_matrices(dst, src);
+    underlying_operator.apply_inverse_additive_schwarz_matrices(dst, src);
   }
 
 private:
