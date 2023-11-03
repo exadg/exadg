@@ -129,6 +129,12 @@ protected:
   calculate_time_step_size() = 0;
 
   /*
+   * returns whether solver info has to be written in the current time step.
+   */
+  virtual bool
+  print_solver_info() const = 0;
+
+  /*
    * Order of time integration scheme.
    */
   unsigned int const order;
@@ -230,12 +236,6 @@ private:
    */
   virtual double
   recalculate_time_step_size() const = 0;
-
-  /*
-   * returns whether solver info has to be written in the current time step.
-   */
-  virtual bool
-  print_solver_info() const = 0;
 };
 
 } // namespace ExaDG

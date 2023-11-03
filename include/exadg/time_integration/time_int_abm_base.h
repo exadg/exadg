@@ -27,6 +27,7 @@
 #include <exadg/time_integration/am_constants.h>
 #include <exadg/time_integration/push_back_vectors.h>
 #include <exadg/time_integration/time_int_multistep_base.h>
+#include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
 {
@@ -75,9 +76,6 @@ public:
     print_list_of_iterations(pcout, {"Adams-Bashforth-Moulton"}, {0});
   }
 
-  virtual bool
-  print_solver_info() const = 0;
-
   void
   ale_update()
   {
@@ -121,7 +119,7 @@ private:
     if(start_with_low_order)
     {
       if(vec_evaluated_operators.size() > 0)
-        evaluate_operator(vec_evaluated_operators[0], solution, get_time());
+        pde_operator->evaluate(vec_evaluated_operators[0], solution, get_time());
     }
     else // start with high order
     {
@@ -131,7 +129,7 @@ private:
       for(unsigned int i = 0; i < vec_evaluated_operators.size(); ++i)
       {
         pde_operator->prescribe_initial_conditions(temp_sol, get_previous_time(i));
-        evaluate_operator(vec_evaluated_operators[i], temp_sol, get_previous_time(i));
+        pde_operator->evaluate(vec_evaluated_operators[i], temp_sol, get_previous_time(i));
       }
     }
   }
@@ -140,12 +138,6 @@ private:
   setup_derived() final
   {
   }
-
-  virtual double
-  calculate_time_step_size() = 0;
-
-  virtual double
-  recalculate_time_step_size() const = 0;
 
   void
   do_timestep_predict()
@@ -165,14 +157,14 @@ private:
     timer.restart();
 
     // evaluate operator given the predicted solution
-    evaluate_operator(evaluated_operator_np, prediction, get_next_time());
+    pde_operator->evaluate(evaluated_operator_np, prediction, get_next_time());
     // correct solution
     correct_solution(solution, evaluated_operator_np, vec_evaluated_operators);
     // correct operator by evaluating operator with correct solution
-    evaluate_operator(evaluated_operator_np, solution, get_next_time());
+    pde_operator->evaluate(evaluated_operator_np, solution, get_next_time());
 
     // write output
-    if(print_solver_info() && !is_test)
+    if(this->print_solver_info() and not(this->is_test))
     {
       pcout << std::endl << "Adams-Bashforth-Moulton:";
       print_wall_time(pcout, timer.wall_time());
@@ -186,13 +178,6 @@ private:
   {
     do_timestep_predict();
     do_timestep_correct();
-  }
-
-  void
-  evaluate_operator(VectorType & dst, VectorType const & src, double const t) const
-  {
-    pde_operator->evaluate(dst, src, static_cast<Number>(t));
-    pde_operator->apply_inverse_mass(dst, dst);
   }
 
   void
@@ -238,9 +223,6 @@ private:
     oa << solution;
     oa << prediction;
   }
-
-  virtual void
-  postprocessing() const = 0;
 
   void
   solve_steady_problem() final
