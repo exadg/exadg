@@ -76,7 +76,7 @@ $(function() {
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classExaDG_1_1TimeIntAdamsBashforthMoultonBase-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::TimeIntAdamsBashforthMoultonBase&lt; Operator, VectorType &gt; Class Template Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div></div>
+  <div class="headertitle"><div class="title">ExaDG::TimeIntAdamsBashforthMoultonBase&lt; Operator, VectorType &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
 
@@ -100,8 +100,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ad14f4c48a4fef6ec89c4d7b75d1420ff" id="r_ad14f4c48a4fef6ec89c4d7b75d1420ff"><td class="memItemLeft" align="right" valign="top"><a id="ad14f4c48a4fef6ec89c4d7b75d1420ff" name="ad14f4c48a4fef6ec89c4d7b75d1420ff"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>print_iterations</b> () const</td></tr>
 <tr class="separator:ad14f4c48a4fef6ec89c4d7b75d1420ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6c12ecad3bb83714422e43f985f6681d" id="r_a6c12ecad3bb83714422e43f985f6681d"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1TimeIntAdamsBashforthMoultonBase.html#a6c12ecad3bb83714422e43f985f6681d">print_solver_info</a> () const =0</td></tr>
-<tr class="separator:a6c12ecad3bb83714422e43f985f6681d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6dff258f0d2a9b85f06233035fce307e" id="r_a6dff258f0d2a9b85f06233035fce307e"><td class="memItemLeft" align="right" valign="top"><a id="a6dff258f0d2a9b85f06233035fce307e" name="a6dff258f0d2a9b85f06233035fce307e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ale_update</b> ()</td></tr>
 <tr class="separator:a6dff258f0d2a9b85f06233035fce307e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -184,10 +182,19 @@ std::vector&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><
 <tr class="memitem:ac59d23db10d262535efa2423caf614b5 inherit pro_methods_classExaDG_1_1TimeIntMultistepBase" id="r_ac59d23db10d262535efa2423caf614b5"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>push_back_time_step_sizes</b> ()</td></tr>
 <tr class="separator:ac59d23db10d262535efa2423caf614b5 inherit pro_methods_classExaDG_1_1TimeIntMultistepBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a715f03e413c1efd68f9984788ffee324 inherit pro_methods_classExaDG_1_1TimeIntMultistepBase" id="r_a715f03e413c1efd68f9984788ffee324"><td class="memItemLeft" align="right" valign="top">
+virtual double&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_time_step_size</b> ()=0</td></tr>
+<tr class="separator:a715f03e413c1efd68f9984788ffee324 inherit pro_methods_classExaDG_1_1TimeIntMultistepBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a680ab0c96cdbb946e0c29da5cc031bc3 inherit pro_methods_classExaDG_1_1TimeIntMultistepBase" id="r_a680ab0c96cdbb946e0c29da5cc031bc3"><td class="memItemLeft" align="right" valign="top">
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>print_solver_info</b> () const =0</td></tr>
+<tr class="separator:a680ab0c96cdbb946e0c29da5cc031bc3 inherit pro_methods_classExaDG_1_1TimeIntMultistepBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classExaDG_1_1TimeIntBase"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classExaDG_1_1TimeIntBase')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classExaDG_1_1TimeIntBase.html">ExaDG::TimeIntBase</a></td></tr>
 <tr class="memitem:ac2177503910a3bf6367cab21d20561ea inherit pro_methods_classExaDG_1_1TimeIntBase" id="r_ac2177503910a3bf6367cab21d20561ea"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>do_timestep</b> ()</td></tr>
 <tr class="separator:ac2177503910a3bf6367cab21d20561ea inherit pro_methods_classExaDG_1_1TimeIntBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aba45e7b9dfa068c5cfe320f450ac1169 inherit pro_methods_classExaDG_1_1TimeIntBase" id="r_aba45e7b9dfa068c5cfe320f450ac1169"><td class="memItemLeft" align="right" valign="top">
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>postprocessing</b> () const =0</td></tr>
+<tr class="separator:aba45e7b9dfa068c5cfe320f450ac1169 inherit pro_methods_classExaDG_1_1TimeIntBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0050e884d9d8104a68499eb209fa0df0 inherit pro_methods_classExaDG_1_1TimeIntBase" id="r_a0050e884d9d8104a68499eb209fa0df0"><td class="memItemLeft" align="right" valign="top">
 types::time_step&#160;</td><td class="memItemRight" valign="bottom"><b>get_time_step_number</b> () const</td></tr>
 <tr class="separator:a0050e884d9d8104a68499eb209fa0df0 inherit pro_methods_classExaDG_1_1TimeIntBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -257,37 +264,7 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>is_test</b></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename Operator, typename VectorType&gt;<br />
 class ExaDG::TimeIntAdamsBashforthMoultonBase&lt; Operator, VectorType &gt;</div><p>This class implements the purely explicit Adams&ndash;Bashforth&ndash;Moulton predictor corrector method. </p>
-</div><h2 class="groupheader">Member Function Documentation</h2>
-<a id="a6c12ecad3bb83714422e43f985f6681d" name="a6c12ecad3bb83714422e43f985f6681d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6c12ecad3bb83714422e43f985f6681d">&#9670;&#160;</a></span>print_solver_info()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename Operator , typename VectorType &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">virtual bool <a class="el" href="classExaDG_1_1TimeIntAdamsBashforthMoultonBase.html">ExaDG::TimeIntAdamsBashforthMoultonBase</a>&lt; Operator, VectorType &gt;::print_solver_info </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td> const</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classExaDG_1_1TimeIntMultistepBase.html">ExaDG::TimeIntMultistepBase</a>.</p>
-
-</div>
-</div>
-<hr/>The documentation for this class was generated from the following file:<ul>
+</div><hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/time_integration/<a class="el" href="time__int__abm__base_8h_source.html">time_int_abm_base.h</a></li>
 </ul>
 </div><!-- contents -->
