@@ -2181,95 +2181,94 @@ void
 OperatorBase<dim, Number, n_components>::internal_compute_factorized_additive_schwarz_matrices()
   const
 {
-  dealii::DoFHandler<dim> const & dof_handler =
-    this->matrix_free->get_dof_handler(this->data.dof_index);
-
-  unsigned int const dofs_per_cell = matrix_free->get_dofs_per_cell(this->data.dof_index);
-
-  unsigned int const n_cells = matrix_free->n_cell_batches() * vectorization_length;
-
-  // assemble a temporary sparse matrix to cut out the blocks
-  SparseMatrix                   tmp_matrix;
-  dealii::DynamicSparsityPattern dsp;
-  internal_init_system_matrix(tmp_matrix, dsp, dof_handler.get_communicator());
-  internal_calculate_system_matrix(tmp_matrix);
-
-  // collect the DoF indices of all cells
-  std::vector<std::vector<dealii::types::global_dof_index>> dof_indices_all_cells(
-    n_cells, std::vector<dealii::types::global_dof_index>(dofs_per_cell));
-  // and compute weights by counting the contributions to a DoF
-  initialize_dof_vector(weights);
-  for(unsigned int cell_batch_index = 0; cell_batch_index < matrix_free->n_cell_batches();
-      ++cell_batch_index)
+  if(is_dg)
+    update_block_diagonal_preconditioner();
+  else
   {
-    unsigned int const n_filled_lanes =
-      matrix_free->n_active_entries_per_cell_batch(cell_batch_index);
+    dealii::DoFHandler<dim> const & dof_handler =
+      this->matrix_free->get_dof_handler(this->data.dof_index);
 
-    for(unsigned int v = 0; v < n_filled_lanes; ++v)
+    unsigned int const dofs_per_cell = matrix_free->get_dofs_per_cell(this->data.dof_index);
+
+    unsigned int const n_cells = matrix_free->n_cell_batches() * vectorization_length;
+
+    // assemble a temporary sparse matrix to cut out the blocks
+    SparseMatrix                   tmp_matrix;
+    dealii::DynamicSparsityPattern dsp;
+    internal_init_system_matrix(tmp_matrix, dsp, dof_handler.get_communicator());
+    internal_calculate_system_matrix(tmp_matrix);
+
+    // collect the DoF indices of all cells
+    std::vector<std::vector<dealii::types::global_dof_index>> dof_indices_all_cells(
+      n_cells, std::vector<dealii::types::global_dof_index>(dofs_per_cell));
+    // and compute weights by counting the contributions to a DoF
+    initialize_dof_vector(weights);
+    for(unsigned int cell_batch_index = 0; cell_batch_index < matrix_free->n_cell_batches();
+        ++cell_batch_index)
     {
-      auto const & cell = matrix_free->get_cell_iterator(cell_batch_index, v);
+      unsigned int const n_filled_lanes =
+        matrix_free->n_active_entries_per_cell_batch(cell_batch_index);
 
-      auto & dof_indices = dof_indices_all_cells[cell_batch_index * vectorization_length + v];
-      if(is_mg)
-        cell->get_mg_dof_indices(dof_indices);
-      else
-        cell->get_dof_indices(dof_indices);
-
-      for(auto const & i : dof_indices)
-        weights[i] += 1.;
-    }
-  }
-  weights.compress(dealii::VectorOperation::add);
-
-  // prepare the weights vector for symmetric weighting
-  for(unsigned int i = 0; i < weights.size(); ++i)
-  {
-    if(weights.in_local_range(i))
-      weights[i] = 1. / std::sqrt(weights[i]);
-  }
-  weights.update_ghost_values();
-
-  // cut out overlapped block matrices
-  std::vector<dealii::FullMatrix<Number>> overlapped_cell_matrices(
-    n_cells, dealii::FullMatrix<Number>(dofs_per_cell));
-
-  dealii::SparseMatrixTools::restrict_to_full_matrices<SparseMatrix,
-                                                       dealii::DynamicSparsityPattern,
-                                                       Number>(tmp_matrix,
-                                                               dsp,
-                                                               dof_indices_all_cells,
-                                                               overlapped_cell_matrices);
-
-  // factorize and store cell matrices
-  matrices.resize(n_cells, LAPACKMatrix(dofs_per_cell));
-  for(unsigned int cell_batch_index = 0; cell_batch_index < matrix_free->n_cell_batches();
-      ++cell_batch_index)
-  {
-    unsigned int const n_filled_lanes =
-      matrix_free->n_active_entries_per_cell_batch(cell_batch_index);
-
-    for(unsigned int v = 0; v < n_filled_lanes; ++v)
-    {
-      // get overlapped cell matrix
-      auto const & overlapped_cell_matrix =
-        overlapped_cell_matrices[cell_batch_index * vectorization_length + v];
-
-      // store the cell matrix and renumber lexicographic if necessary
-      auto & lapack_matrix = matrices[cell_batch_index * vectorization_length + v];
-      if(is_dg)
+      for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
-        lapack_matrix = overlapped_cell_matrix;
+        auto const & cell = matrix_free->get_cell_iterator(cell_batch_index, v);
+
+        auto & dof_indices = dof_indices_all_cells[cell_batch_index * vectorization_length + v];
+        if(is_mg)
+          cell->get_mg_dof_indices(dof_indices);
+        else
+          cell->get_dof_indices(dof_indices);
+
+        for(auto const & i : dof_indices)
+          weights[i] += 1.;
       }
-      else
+    }
+    weights.compress(dealii::VectorOperation::add);
+
+    // prepare the weights vector for symmetric weighting
+    for(unsigned int i = 0; i < weights.size(); ++i)
+    {
+      if(weights.in_local_range(i))
+        weights[i] = 1. / std::sqrt(weights[i]);
+    }
+    weights.update_ghost_values();
+
+    // cut out overlapped block matrices
+    std::vector<dealii::FullMatrix<Number>> overlapped_cell_matrices(
+      n_cells, dealii::FullMatrix<Number>(dofs_per_cell));
+
+    dealii::SparseMatrixTools::restrict_to_full_matrices<SparseMatrix,
+                                                         dealii::DynamicSparsityPattern,
+                                                         Number>(tmp_matrix,
+                                                                 dsp,
+                                                                 dof_indices_all_cells,
+                                                                 overlapped_cell_matrices);
+
+    // factorize and store cell matrices
+    matrices.resize(n_cells, LAPACKMatrix(dofs_per_cell));
+    for(unsigned int cell_batch_index = 0; cell_batch_index < matrix_free->n_cell_batches();
+        ++cell_batch_index)
+    {
+      unsigned int const n_filled_lanes =
+        matrix_free->n_active_entries_per_cell_batch(cell_batch_index);
+
+      for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
+        // get overlapped cell matrix
+        auto const & overlapped_cell_matrix =
+          overlapped_cell_matrices[cell_batch_index * vectorization_length + v];
+
+        // store the cell matrix and renumber lexicographic
+        auto & lapack_matrix = matrices[cell_batch_index * vectorization_length + v];
+
         auto const & lex = matrix_free->get_shape_info().lexicographic_numbering;
         for(unsigned int i = 0; i < dofs_per_cell; i++)
           for(unsigned int j = 0; j < dofs_per_cell; j++)
             lapack_matrix.set(i, j, overlapped_cell_matrix[lex[i]][lex[j]]);
-      }
 
-      // factorize the cell matrix
-      lapack_matrix.compute_lu_factorization();
+        // factorize the cell matrix
+        lapack_matrix.compute_lu_factorization();
+      }
     }
   }
 }
@@ -2281,10 +2280,7 @@ OperatorBase<dim, Number, n_components>::apply_inverse_additive_schwarz_matrices
   VectorType const & src) const
 {
   if(is_dg)
-    matrix_free->cell_loop(&This::cell_loop_apply_inverse_block_diagonal_matrix_based,
-                           this,
-                           dst,
-                           src);
+    apply_inverse_block_diagonal(dst, src);
   else
   {
     src.update_ghost_values();
