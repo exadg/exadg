@@ -2302,7 +2302,9 @@ OperatorBase<dim, Number, n_components>::apply_inverse_additive_schwarz_matrices
 
           integrator.read_dof_values(src);
 
-          for(unsigned int v = 0; v < vectorization_length; ++v)
+          unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_cell_batch(cell);
+
+          for(unsigned int v = 0; v < n_filled_lanes; ++v)
           {
             // apply symmetric weighting, first before applying the inverse
             for(unsigned int i = 0; i < dofs_per_cell; ++i)
