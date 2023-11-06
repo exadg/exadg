@@ -1902,7 +1902,8 @@ OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix(
         // so we have to fix the order
         auto temp = dof_indices;
         for(unsigned int j = 0; j < dof_indices.size(); j++)
-          dof_indices[j] = temp[matrix_free.get_shape_info().lexicographic_numbering[j]];
+          dof_indices[j] =
+            temp[matrix_free.get_shape_info(this->data.dof_index).lexicographic_numbering[j]];
       }
 
       // choose the version of distribute_local_to_global with a single
@@ -2257,7 +2258,8 @@ OperatorBase<dim, Number, n_components>::internal_compute_factorized_additive_sc
         // store the cell matrix and renumber lexicographic
         auto & lapack_matrix = matrices[cell * vectorization_length + v];
 
-        auto const & lex = matrix_free->get_shape_info().lexicographic_numbering;
+        auto const & lex =
+          matrix_free->get_shape_info(this->data.dof_index).lexicographic_numbering;
         for(unsigned int i = 0; i < dofs_per_cell; i++)
           for(unsigned int j = 0; j < dofs_per_cell; j++)
             lapack_matrix.set(i, j, overlapped_cell_matrix[lex[i]][lex[j]]);
