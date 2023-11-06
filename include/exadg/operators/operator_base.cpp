@@ -2203,21 +2203,19 @@ OperatorBase<dim, Number, n_components>::internal_compute_factorized_additive_sc
       n_cells, std::vector<dealii::types::global_dof_index>(dofs_per_cell));
     // and compute weights by counting the contributions to a DoF
     initialize_dof_vector(weights);
-    for(unsigned int cell_batch_index = 0; cell_batch_index < matrix_free->n_cell_batches();
-        ++cell_batch_index)
+    for(unsigned int cell = 0; cell < matrix_free->n_cell_batches(); ++cell)
     {
-      unsigned int const n_filled_lanes =
-        matrix_free->n_active_entries_per_cell_batch(cell_batch_index);
+      unsigned int const n_filled_lanes = matrix_free->n_active_entries_per_cell_batch(cell);
 
       for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
-        auto const & cell = matrix_free->get_cell_iterator(cell_batch_index, v);
+        auto const & cell_v = matrix_free->get_cell_iterator(cell, v);
 
-        auto & dof_indices = dof_indices_all_cells[cell_batch_index * vectorization_length + v];
+        auto & dof_indices = dof_indices_all_cells[cell * vectorization_length + v];
         if(is_mg)
-          cell->get_mg_dof_indices(dof_indices);
+          cell_v->get_mg_dof_indices(dof_indices);
         else
-          cell->get_dof_indices(dof_indices);
+          cell_v->get_dof_indices(dof_indices);
 
         for(auto const & i : dof_indices)
           weights[i] += 1.;
@@ -2246,20 +2244,18 @@ OperatorBase<dim, Number, n_components>::internal_compute_factorized_additive_sc
 
     // factorize and store cell matrices
     matrices.resize(n_cells, LAPACKMatrix(dofs_per_cell));
-    for(unsigned int cell_batch_index = 0; cell_batch_index < matrix_free->n_cell_batches();
-        ++cell_batch_index)
+    for(unsigned int cell = 0; cell < matrix_free->n_cell_batches(); ++cell)
     {
-      unsigned int const n_filled_lanes =
-        matrix_free->n_active_entries_per_cell_batch(cell_batch_index);
+      unsigned int const n_filled_lanes = matrix_free->n_active_entries_per_cell_batch(cell);
 
       for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
         // get overlapped cell matrix
         auto const & overlapped_cell_matrix =
-          overlapped_cell_matrices[cell_batch_index * vectorization_length + v];
+          overlapped_cell_matrices[cell * vectorization_length + v];
 
         // store the cell matrix and renumber lexicographic
-        auto & lapack_matrix = matrices[cell_batch_index * vectorization_length + v];
+        auto & lapack_matrix = matrices[cell * vectorization_length + v];
 
         auto const & lex = matrix_free->get_shape_info().lexicographic_numbering;
         for(unsigned int i = 0; i < dofs_per_cell; i++)
