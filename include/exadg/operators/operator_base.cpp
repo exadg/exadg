@@ -2258,11 +2258,11 @@ OperatorBase<dim, Number, n_components>::internal_compute_factorized_additive_sc
         // store the cell matrix and renumber lexicographic
         auto & lapack_matrix = matrices[cell * vectorization_length + v];
 
-        auto const & lex =
+        auto const & lex_to_hier =
           matrix_free->get_shape_info(this->data.dof_index).lexicographic_numbering;
         for(unsigned int i = 0; i < dofs_per_cell; i++)
           for(unsigned int j = 0; j < dofs_per_cell; j++)
-            lapack_matrix.set(i, j, overlapped_cell_matrix[lex[i]][lex[j]]);
+            lapack_matrix.set(i, j, overlapped_cell_matrix[lex_to_hier[i]][lex_to_hier[j]]);
 
         // factorize the cell matrix
         lapack_matrix.compute_lu_factorization();
