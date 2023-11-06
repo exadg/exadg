@@ -2306,11 +2306,13 @@ OperatorBase<dim, Number, n_components>::apply_inverse_additive_schwarz_matrices
 
           for(unsigned int v = 0; v < vectorization_length; ++v)
           {
+            // apply symmetric weighting, first before applying the inverse
             for(unsigned int i = 0; i < dofs_per_cell; ++i)
               local_vector[i] = integrator.begin_dof_values()[i][v] * local_weights_vector[i][v];
 
             matrices[cell * vectorization_length + v].solve(local_vector);
 
+            // and after applying the inverse
             for(unsigned int i = 0; i < dofs_per_cell; ++i)
               integrator.begin_dof_values()[i][v] = local_vector[i] * local_weights_vector[i][v];
           }
