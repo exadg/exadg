@@ -145,8 +145,52 @@ std::shared_ptr&lt; Operator &gt;&#160;</td><td class="memItemRight" valign="bot
 <tr class="separator:a14dee6ca649cd51095bd404ab39a5183"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a007d493aef4b47e3060bd2cb1b4a481c" id="r_a007d493aef4b47e3060bd2cb1b4a481c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a007d493aef4b47e3060bd2cb1b4a481c">apply_inverse_block_diagonal</a> (VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
 <tr class="separator:a007d493aef4b47e3060bd2cb1b4a481c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2ea98fca8b23bb125ab2db4e8f00eb53" id="r_a2ea98fca8b23bb125ab2db4e8f00eb53"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a2ea98fca8b23bb125ab2db4e8f00eb53">apply_inverse_additive_schwarz_matrices</a> (VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:a2ea98fca8b23bb125ab2db4e8f00eb53"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe56fb6aa956a58a43ebbde164a61313" id="r_abe56fb6aa956a58a43ebbde164a61313"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#abe56fb6aa956a58a43ebbde164a61313">compute_factorized_additive_schwarz_matrices</a> () const final</td></tr>
+<tr class="separator:abe56fb6aa956a58a43ebbde164a61313"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a2ea98fca8b23bb125ab2db4e8f00eb53" name="a2ea98fca8b23bb125ab2db4e8f00eb53"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2ea98fca8b23bb125ab2db4e8f00eb53">&#9670;&#160;</a></span>apply_inverse_additive_schwarz_matrices()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number , typename Operator &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::apply_inverse_additive_schwarz_matrices </td>
+          <td>(</td>
+          <td class="paramtype">VectorType &amp;&#160;</td>
+          <td class="paramname"><em>dst</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">VectorType const &amp;&#160;</td>
+          <td class="paramname"><em>src</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1MultigridOperatorBase.html">ExaDG::MultigridOperatorBase&lt; dim, Number &gt;</a>.</p>
+
+</div>
+</div>
 <a id="a007d493aef4b47e3060bd2cb1b4a481c" name="a007d493aef4b47e3060bd2cb1b4a481c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a007d493aef4b47e3060bd2cb1b4a481c">&#9670;&#160;</a></span>apply_inverse_block_diagonal()</h2>
 
@@ -203,6 +247,35 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
           <td>(</td>
           <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>inverse_diagonal_entries</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1MultigridOperatorBase.html">ExaDG::MultigridOperatorBase&lt; dim, Number &gt;</a>.</p>
+
+</div>
+</div>
+<a id="abe56fb6aa956a58a43ebbde164a61313" name="abe56fb6aa956a58a43ebbde164a61313"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abe56fb6aa956a58a43ebbde164a61313">&#9670;&#160;</a></span>compute_factorized_additive_schwarz_matrices()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number , typename Operator &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::compute_factorized_additive_schwarz_matrices </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
           <td> const</td>
         </tr>
       </table>
