@@ -104,7 +104,7 @@ private:
   initialize_current_solution() final;
 
   void
-  initialize_former_solutions() final;
+  initialize_former_multistep_dof_vectors() final;
 
   void
   initialize_velocity_dbc();

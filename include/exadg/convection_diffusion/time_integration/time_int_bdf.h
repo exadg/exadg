@@ -27,7 +27,7 @@
 
 // ExaDG
 #include <exadg/time_integration/lambda_functions_ale.h>
-#include <exadg/time_integration/time_int_multistep_base.h>
+#include <exadg/time_integration/time_int_bdf_base.h>
 
 namespace ExaDG
 {
@@ -91,7 +91,7 @@ private:
   initialize_current_solution() final;
 
   void
-  initialize_former_solutions() final;
+  initialize_former_multistep_dof_vectors() final;
 
   void
   initialize_vec_convective_term();

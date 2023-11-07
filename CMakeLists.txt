@@ -72,6 +72,7 @@ SET(TARGET_SRC
      include/exadg/time_integration/extrapolation_constants.cpp
      include/exadg/time_integration/time_int_base.cpp
      include/exadg/time_integration/time_int_multistep_base.cpp
+     include/exadg/time_integration/time_int_bdf_base.cpp
      include/exadg/time_integration/time_int_explicit_runge_kutta_base.cpp
      include/exadg/time_integration/time_int_gen_alpha_base.cpp
      include/exadg/functions_and_boundary_conditions/container_interface_data.cpp
@@ -145,6 +146,7 @@ SET(TARGET_SRC
      include/exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.cpp
      include/exadg/incompressible_navier_stokes/time_integration/driver_steady_problems.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/output_generator.cpp
+     include/exadg/incompressible_navier_stokes/postprocessor/pointwise_output_generator.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/divergence_and_mass_error.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/inflow_data_calculator.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/kinetic_energy_dissipation_detailed.cpp
