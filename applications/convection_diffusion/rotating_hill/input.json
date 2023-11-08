@@ -19,6 +19,6 @@
     "Output": {
         "OutputDirectory": "output/rotating_hill/",
         "OutputName": "test",
-        "WriteOutput": "true"
+        "WriteOutput": "false"
     }
 }

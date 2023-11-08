@@ -82,8 +82,7 @@ public:
   }
 
   void
-  setup(Grid<dim> & grid,
-		std::shared_ptr<dealii::Mapping<dim>> mapping)
+  setup(Grid<dim> & grid, std::shared_ptr<dealii::Mapping<dim>> & mapping)
   {
     parse_parameters();
 
@@ -166,8 +165,7 @@ private:
   set_parameters() = 0;
 
   virtual void
-  create_grid(Grid<dim> & grid,
-			  std::shared_ptr<dealii::Mapping<dim>> mapping) = 0;
+  create_grid(Grid<dim> & grid, std::shared_ptr<dealii::Mapping<dim>> & mapping) = 0;
 
   virtual void
   set_boundary_descriptor() = 0;

@@ -165,10 +165,9 @@ private:
   }
 
   void
-  create_grid(Grid<dim> & grid,
-			  std::shared_ptr<dealii::Mapping<dim>> mapping) final
+  create_grid(Grid<dim> & grid, std::shared_ptr<dealii::Mapping<dim>> & mapping) final
   {
-	(void)mapping;
+    (void)mapping;
 
     auto const lambda_create_triangulation =
       [&](dealii::Triangulation<dim, dim> &                        tria,

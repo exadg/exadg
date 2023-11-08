@@ -99,7 +99,7 @@ Driver<dim, Number>::setup()
 
   // setup convection-diffusion operator
   pde_operator->setup();
-std::cout << "##+1 here\n";
+
   if(not is_throughput_study)
   {
     // initialize postprocessor
