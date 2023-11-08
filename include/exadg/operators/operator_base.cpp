@@ -1499,8 +1499,6 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
     }
 
     // loop over all faces and gather results into local diagonal local_diag
-    if(evaluate_face_integrals())
-    {
       unsigned int const n_faces = dealii::ReferenceCells::template get_hypercube<dim>().n_faces();
       for(unsigned int face = 0; face < n_faces; ++face)
       {
@@ -1539,7 +1537,6 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
           local_diag[j] += integrator_m.begin_dof_values()[j];
         }
       }
-    }
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
       integrator.begin_dof_values()[j] = local_diag[j];
@@ -1799,8 +1796,6 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_block_diagonal(
     }
 
     // loop over all faces
-    if(evaluate_face_integrals())
-    {
       unsigned int const n_faces = dealii::ReferenceCells::template get_hypercube<dim>().n_faces();
       for(unsigned int face = 0; face < n_faces; ++face)
       {
@@ -1839,7 +1834,6 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_block_diagonal(
                 integrator_m.begin_dof_values()[i][v];
         }
       }
-    }
   }
 }
 
