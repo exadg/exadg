@@ -146,7 +146,7 @@ TimeIntBDFDualSplitting<dim, Number>::initialize_current_solution()
 
 template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::initialize_former_solutions()
+TimeIntBDFDualSplitting<dim, Number>::initialize_former_multistep_dof_vectors()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < velocity.size(); ++i)
