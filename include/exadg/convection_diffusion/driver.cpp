@@ -226,11 +226,6 @@ Driver<dim, Number>::setup_after_coarsening_and_refinement()
         velocity_ptr = &velocity;
       }
 
-      auto & grid = *application->get_grid_non_const();
-      grid.coarse_triangulations =
-        dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
-          *application->get_grid_non_const()->triangulation);
-
       std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator_bdf =
         std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
 
@@ -278,11 +273,20 @@ Driver<dim, Number>::do_adaptive_refinement(unsigned int const time_step_number)
 
       time_integrator->prepare_coarsening_and_refinement();
 
-      tria.execute_coarsening_and_refinement();
+      tria.execute_coarsening_and_refinement(); // append mapping vector from grid?
+
+      // TODO: update mapping (ALE or static mapping)
+
+      // TODO: move to a member function of grid?
+      auto & grid = *application->get_grid_non_const();
+      grid.coarse_triangulations =
+        dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
+          *application->get_grid_non_const()->triangulation);
 
       setup_after_coarsening_and_refinement();
 
-      time_integrator->interpolate_after_coarsening_and_refinement();
+      time_integrator
+        ->interpolate_after_coarsening_and_refinement(); // interpolate mapping vector from grid?
     }
   }
 }
