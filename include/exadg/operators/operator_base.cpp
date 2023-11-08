@@ -425,10 +425,6 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
   {
     if(data.use_cell_based_loops)
     {
-      AssertThrow(
-        not matrix_free->get_dof_handler(data.dof_index).get_triangulation().has_hanging_nodes(),
-        dealii::ExcMessage("Cell based face loops do not support locally refined meshes."));
-
       matrix_free->cell_loop(&This::cell_based_loop_diagonal, this, diagonal, diagonal);
     }
     else
@@ -500,10 +496,6 @@ OperatorBase<dim, Number, n_components>::add_block_diagonal_matrices(BlockMatrix
   {
     if(data.use_cell_based_loops)
     {
-      AssertThrow(
-        not matrix_free->get_dof_handler(data.dof_index).get_triangulation().has_hanging_nodes(),
-        dealii::ExcMessage("Cell based face loops do not support locally refined meshes."));
-
       matrix_free->cell_loop(&This::cell_based_loop_block_diagonal, this, matrices, matrices);
     }
     else
@@ -555,9 +547,6 @@ OperatorBase<dim, Number, n_components>::apply_inverse_block_diagonal(VectorType
                   dealii::ExcMessage("Cell based face loops have to be activated for matrix-free "
                                      "implementation of block diagonal preconditioner, if face "
                                      "integrals need to be evaluated."));
-      AssertThrow(
-        not matrix_free->get_dof_handler(data.dof_index).get_triangulation().has_hanging_nodes(),
-        dealii::ExcMessage("Cell based face loops do not support locally refined meshes."));
       AssertThrow(matrix_free->get_dof_handler(data.dof_index)
                     .get_triangulation()
                     .all_reference_cells_are_hyper_cube(),
