@@ -51,7 +51,6 @@ Spatial Discretization:
   Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         15
-  Enable adaptivity:                         false
   Numerical flux convective term:            LaxFriedrichsFlux
 
 Numerical parameters:

@@ -53,7 +53,6 @@ Spatial Discretization:
   Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         4
-  Enable adaptivity:                         false
   Numerical flux convective term:            LaxFriedrichsFlux
 
 Solver:

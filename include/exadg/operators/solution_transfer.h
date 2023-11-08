@@ -46,7 +46,7 @@ public:
   prepare_coarsening_and_refinement(std::vector<VectorType *> & vectors)
   {
     // Container vectors_old_grid hold vectors for interpolation *REQUIRED* for
-    // interpolate_after_coarsening_and_refinement. Thus makes an actual copy.
+    // interpolate_after_coarsening_and_refinement(). Thus makes an actual copy.
     // In the case of parallel::distributed::Triangulation, pointers are sufficient.
     vectors_old_grid.resize(vectors.size());
     std::vector<VectorType const *> vectors_old_grid_ptr(vectors.size());
@@ -91,7 +91,7 @@ public:
   interpolate_after_coarsening_and_refinement(std::vector<VectorType *> & vectors)
   {
     // Note that the sequence of vectors per DofHandler/SolutionTransfer
-    // defined in Operator<dim, Number>::prepare_coarsening_and_refinement
+    // defined in Operator<dim, Number>::prepare_coarsening_and_refinement()
     // and solution transfer calls here *need to match*.
     if(is_parallel_distributed_triangulation())
     {
@@ -122,7 +122,7 @@ public:
 
     // Clear the containers holding actual copies or pointers depending
     // on the SolutionTransfer type. In both cases, the containers need
-    // to be in scope when execute_coarsening_and_refinement is called.
+    // to be in scope when execute_coarsening_and_refinement() is called.
     vectors_old_grid.clear();
   }
 

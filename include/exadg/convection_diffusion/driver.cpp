@@ -218,9 +218,6 @@ Driver<dim, Number>::setup_after_coarsening_and_refinement()
   {
     if(application->get_parameters().temporal_discretization == TemporalDiscretization::BDF)
     {
-      std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator_bdf =
-        std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
-
       if(application->get_parameters().get_type_velocity_field() == TypeVelocityField::DoFVector)
       {
         Assert(false, dealii::ExcMessage("ALE and AMR combination not implemented."));
@@ -233,6 +230,9 @@ Driver<dim, Number>::setup_after_coarsening_and_refinement()
       grid.coarse_triangulations =
         dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
           *application->get_grid_non_const()->triangulation);
+
+      std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator_bdf =
+        std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
 
       pde_operator->setup_solver(time_integrator_bdf->get_scaling_factor_time_derivative_term(),
                                  velocity_ptr);
@@ -258,34 +258,31 @@ Driver<dim, Number>::do_adaptive_refinement(unsigned int const time_step_number)
   dealii::Triangulation<dim> & tria = *application->get_grid_non_const()->triangulation;
 
   // AMR is only implemented for implicit timestepping.
-  if(application->get_parameters().temporal_discretization != TemporalDiscretization::BDF)
-  {
-    AssertThrow(false, dealii::ExcNotImplemented());
-  }
-  else
+  if(trigger_coarsening_and_refinement_now(
+       application->get_parameters().amr_data.trigger_every_n_time_steps, time_step_number))
   {
     std::shared_ptr<TimeIntBDF<dim, Number>> bdf_time_integrator =
       std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
 
-    if(trigger_coarsening_and_refinement_now(application->get_parameters().amr_data,
-                                             time_step_number))
+    AssertThrow(bdf_time_integrator.get(),
+                dealii::ExcMessage("Combination of adaptive mesh refinement "
+                                   "and explicit time integration not implemented."));
+
+    mark_cells_coarsening_and_refinement(tria, bdf_time_integrator->get_solution_np());
+
+    limit_coarsening_and_refinement(tria, application->get_parameters().amr_data);
+
+    if(any_cells_flagged_for_coarsening_or_refinement(tria))
     {
-      mark_cells_coarsening_and_refinement(tria, bdf_time_integrator->get_solution_np());
+      tria.prepare_coarsening_and_refinement();
 
-      limit_coarsening_and_refinement(tria, application->get_parameters().amr_data);
+      time_integrator->prepare_coarsening_and_refinement();
 
-      if(any_cells_flagged_for_coarsening_or_refinement(tria))
-      {
-        tria.prepare_coarsening_and_refinement();
+      tria.execute_coarsening_and_refinement();
 
-        time_integrator->prepare_coarsening_and_refinement();
+      setup_after_coarsening_and_refinement();
 
-        tria.execute_coarsening_and_refinement();
-
-        setup_after_coarsening_and_refinement();
-
-        time_integrator->interpolate_after_coarsening_and_refinement();
-      }
+      time_integrator->interpolate_after_coarsening_and_refinement();
     }
   }
 }
@@ -306,10 +303,7 @@ Driver<dim, Number>::solve()
 
         // Adapt the mesh before post_solve(), in order to recalculate the
         // time step size based on the new mesh.
-        if(time_integrator->get_number_of_time_steps() > 0)
-        {
-          do_adaptive_refinement(time_integrator->get_number_of_time_steps());
-        }
+        do_adaptive_refinement(time_integrator->get_number_of_time_steps());
 
         time_integrator->advance_one_timestep_post_solve();
       } while(not(time_integrator->finished()));

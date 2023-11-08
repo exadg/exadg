@@ -34,29 +34,54 @@
 #include <deal.II/numerics/error_estimator.h>
 #include <deal.II/numerics/solution_transfer.h>
 
+// ExaDG
+#include <exadg/utilities/print_functions.h>
+
 
 namespace ExaDG
 {
 struct AdaptiveMeshRefinementData
 {
-  unsigned int trigger_every_n_time_steps = 1;
+  AdaptiveMeshRefinementData()
+    : trigger_every_n_time_steps(1),
+      maximum_refinement_level(10),
+      minimum_refinement_level(0),
+      preserve_boundary_cells(false),
+      fraction_of_cells_to_be_refined(0.0),
+      fraction_of_cells_to_be_coarsened(0.0)
+  {
+  }
 
-  int  maximum_refinement_level = 10;
-  int  minimum_refinement_level = 0;
-  bool preserve_boundary_cells  = false;
+  void
+  print(dealii::ConditionalOStream const & pcout) const
+  {
+    print_parameter(pcout, "Enable adaptivity", true);
+    print_parameter(pcout, "Triggered every n time steps", trigger_every_n_time_steps);
+    print_parameter(pcout, "Maximum refinement level", maximum_refinement_level);
+    print_parameter(pcout, "Minimum refinement level", minimum_refinement_level);
+    print_parameter(pcout, "Preserve boundary cells", preserve_boundary_cells);
+    print_parameter(pcout, "Fraction of cells to be refined", fraction_of_cells_to_be_refined);
+    print_parameter(pcout, "Fraction of cells to be coarsened", fraction_of_cells_to_be_coarsened);
+  }
 
-  double fraction_of_cells_to_be_refined   = 0.0;
-  double fraction_of_cells_to_be_coarsened = 0.0;
+  unsigned int trigger_every_n_time_steps;
+
+  int  maximum_refinement_level;
+  int  minimum_refinement_level;
+  bool preserve_boundary_cells;
+
+  double fraction_of_cells_to_be_refined;
+  double fraction_of_cells_to_be_coarsened;
 };
 
 /**
  * Check if adaptive mesh refinement should be triggered depending on the time_step_number.
  */
 inline bool
-trigger_coarsening_and_refinement_now(const AdaptiveMeshRefinementData & amr_data,
-                                      const unsigned int                 time_step_number)
+trigger_coarsening_and_refinement_now(unsigned int const trigger_every_n_time_steps,
+                                      unsigned int const time_step_number)
 {
-  return ((time_step_number == 0) or not(time_step_number % amr_data.trigger_every_n_time_steps));
+  return ((time_step_number == 0) or not(time_step_number % trigger_every_n_time_steps));
 }
 
 /**
@@ -96,7 +121,7 @@ limit_coarsening_and_refinement(dealii::Triangulation<dim> &       tria,
 }
 
 /**
- * Loop over the locally owned cells and check for refinement/coarsening flags set.
+ * Loop over cells and check for refinement/coarsening flags set.
  */
 template<int dim>
 bool

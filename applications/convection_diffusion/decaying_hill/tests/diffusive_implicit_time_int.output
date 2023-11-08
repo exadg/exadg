@@ -51,7 +51,6 @@ Spatial Discretization:
   Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         5
-  Enable adaptivity:                         false
   IP factor viscous term:                    1.0000e+00
 
 Solver:

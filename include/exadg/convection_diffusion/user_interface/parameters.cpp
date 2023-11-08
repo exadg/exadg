@@ -267,14 +267,6 @@ Parameters::check() const
                 dealii::ExcMessage("Combination of adaptive mesh refinement "
                                    "and explicit time integration not implemented."));
 
-    AssertThrow(preconditioner != Preconditioner::BlockJacobi,
-                dealii::ExcMessage("Preconditioner::BlockJacobi not supported "
-                                   "for adaptively refined meshes."));
-
-    AssertThrow(multigrid_data.smoother_data.preconditioner != PreconditionerSmoother::BlockJacobi,
-                dealii::ExcMessage("PreconditionerSmoother::BlockJacobi not supported "
-                                   "for adaptively refined meshes."));
-
     AssertThrow(use_cell_based_face_loops == false,
                 dealii::ExcMessage("Cell-based face loops not supported for "
                                    "adaptively refined meshes."));
@@ -532,7 +524,10 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
 
   print_parameter(pcout, "Polynomial degree", degree);
 
-  print_parameter(pcout, "Enable adaptivity", enable_adaptivity);
+  if(enable_adaptivity)
+  {
+    amr_data.print(pcout);
+  }
 
   if(equation_type == EquationType::Convection or
      equation_type == EquationType::ConvectionDiffusion)

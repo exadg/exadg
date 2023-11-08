@@ -52,7 +52,6 @@ Spatial Discretization:
   Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         1
-  Enable adaptivity:                         false
   Numerical flux convective term:            LaxFriedrichsFlux
   IP factor viscous term:                    1.0000e+00
 
@@ -174,7 +173,6 @@ Spatial Discretization:
   Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         2
-  Enable adaptivity:                         false
   Numerical flux convective term:            LaxFriedrichsFlux
   IP factor viscous term:                    1.0000e+00
 
@@ -296,7 +294,6 @@ Spatial Discretization:
   Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         3
-  Enable adaptivity:                         false
   Numerical flux convective term:            LaxFriedrichsFlux
   IP factor viscous term:                    1.0000e+00
 
@@ -418,7 +415,6 @@ Spatial Discretization:
   Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         4
-  Enable adaptivity:                         false
   Numerical flux convective term:            LaxFriedrichsFlux
   IP factor viscous term:                    1.0000e+00
 
@@ -540,7 +536,6 @@ Spatial Discretization:
   Create coarse triangulations:              false
   Mapping degree:                            1
   Polynomial degree:                         5
-  Enable adaptivity:                         false
   Numerical flux convective term:            LaxFriedrichsFlux
   IP factor viscous term:                    1.0000e+00
 
