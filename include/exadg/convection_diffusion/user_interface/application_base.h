@@ -55,7 +55,6 @@ public:
       parameter_file(parameter_file),
       n_subdivisions_1d_hypercube(1)
   {
-    grid = std::make_shared<Grid<dim>>();
   }
 
   virtual ~ApplicationBase()
@@ -83,7 +82,7 @@ public:
   }
 
   void
-  setup()
+  setup(std::shared_ptr<Grid<dim>> & grid, std::shared_ptr<dealii::Mapping<dim>> & mapping)
   {
     parse_parameters();
 
@@ -94,7 +93,8 @@ public:
 
     // grid
     GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
-    create_grid();
+    grid = std::make_shared<Grid<dim>>();
+    create_grid(*grid, mapping);
     print_grid_info(pcout, *grid);
 
     // boundary conditions
@@ -125,18 +125,6 @@ public:
     return param;
   }
 
-  std::shared_ptr<Grid<dim> const>
-  get_grid() const
-  {
-    return grid;
-  }
-
-  std::shared_ptr<dealii::Mapping<dim> const>
-  get_mapping() const
-  {
-    return mapping;
-  }
-
   std::shared_ptr<BoundaryDescriptor<dim> const>
   get_boundary_descriptor() const
   {
@@ -164,10 +152,6 @@ protected:
 
   Parameters param;
 
-  std::shared_ptr<Grid<dim>> grid;
-
-  std::shared_ptr<dealii::Mapping<dim>> mapping;
-
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
 
@@ -182,7 +166,7 @@ private:
   set_parameters() = 0;
 
   virtual void
-  create_grid() = 0;
+  create_grid(Grid<dim> & grid, std::shared_ptr<dealii::Mapping<dim>> & mapping) = 0;
 
   virtual void
   set_boundary_descriptor() = 0;
