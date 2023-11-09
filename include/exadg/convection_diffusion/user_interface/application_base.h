@@ -82,7 +82,7 @@ public:
   }
 
   void
-  setup(Grid<dim> & grid, std::shared_ptr<dealii::Mapping<dim>> & mapping)
+  setup(std::shared_ptr<Grid<dim>> & grid, std::shared_ptr<dealii::Mapping<dim>> & mapping)
   {
     parse_parameters();
 
@@ -91,15 +91,16 @@ public:
     param.check();
     param.print(pcout, "List of parameters:");
 
-    // create grid and mapping owned by driver
+    // grid
     GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
-    create_grid(grid, mapping);
-    print_grid_info(pcout, grid);
+    grid = std::make_shared<Grid<dim>>();
+    create_grid(*grid, mapping);
+    print_grid_info(pcout, *grid);
 
     // boundary conditions
     boundary_descriptor = std::make_shared<BoundaryDescriptor<dim>>();
     set_boundary_descriptor();
-    verify_boundary_conditions(*boundary_descriptor, grid);
+    verify_boundary_conditions(*boundary_descriptor, *grid);
 
     // field functions
     field_functions = std::make_shared<FieldFunctions<dim>>();

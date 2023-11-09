@@ -58,8 +58,7 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up scalar convection-diffusion solver:" << std::endl;
 
-  grid = std::make_shared<Grid<dim>>();
-  application->setup(*grid, mapping);
+  application->setup(grid, mapping);
 
   if(application->get_parameters().ale_formulation) // moving mesh
   {
