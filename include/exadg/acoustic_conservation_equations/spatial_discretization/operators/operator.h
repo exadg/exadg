@@ -270,19 +270,19 @@ private:
                       dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values);
   }
 
-  template<bool weight_neighbor, typename ExteriorFaceIntegratorP, typename ExteriorFaceIntegratorU>
+  template<bool weight_neighbor>
   inline DEAL_II_ALWAYS_INLINE //
-  void
-  face_kernel(FaceIntegratorP &         pressure_m,
-              ExteriorFaceIntegratorP & pressure_p,
-              FaceIntegratorU &         velocity_m,
-              ExteriorFaceIntegratorU & velocity_p,
-              scalar const &            pm,
-              scalar const &            pp,
-              vector const &            um,
-              vector const &            up,
-              vector const &            n,
-              unsigned int const        q) const
+    void
+    face_kernel(FaceIntegratorP &  pressure_m,
+                FaceIntegratorP &  pressure_p,
+                FaceIntegratorU &  velocity_m,
+                FaceIntegratorU &  velocity_p,
+                scalar const &     pm,
+                scalar const &     pp,
+                vector const &     um,
+                vector const &     up,
+                vector const &     n,
+                unsigned int const q) const
   {
     vector const flux_momentum =
       kernel.calculate_lax_friedrichs_flux_momentum(um, up, gamma, pm, pp, n);
@@ -333,28 +333,6 @@ private:
     else
     {
       AssertThrow(false, dealii::ExcMessage("Not implemented."));
-    }
-  }
-
-  template<bool weight_neighbor, // = false for cell centric loops and boundary loops
-           typename ExteriorFaceIntegratorP,
-           typename ExteriorFaceIntegratorU>
-  void
-  do_face_integral(FaceIntegratorP &         pressure_m,
-                   ExteriorFaceIntegratorP & pressure_p,
-                   FaceIntegratorU &         velocity_m,
-                   ExteriorFaceIntegratorU & velocity_p) const
-  {
-    for(unsigned int q : pressure_m.quadrature_point_indices())
-    {
-      scalar const pm = pressure_m.get_value(q);
-      scalar const pp = pressure_p.get_value(q);
-      vector const um = velocity_m.get_value(q);
-      vector const up = velocity_p.get_value(q);
-      vector const n  = pressure_m.normal_vector(q);
-
-      face_kernel<weight_neighbor, ExteriorFaceIntegratorP, ExteriorFaceIntegratorU>(
-        pressure_m, pressure_p, velocity_m, velocity_p, pm, pp, um, up, n, q);
     }
   }
 
@@ -442,7 +420,16 @@ private:
       velocity_p.reinit(face);
       velocity_p.gather_evaluate(src.block(1), integrator_flags_u.face_evaluate);
 
-      do_face_integral<true>(pressure_m, pressure_p, velocity_m, velocity_p);
+      for(unsigned int q : pressure_m.quadrature_point_indices())
+      {
+        scalar const pm = pressure_m.get_value(q);
+        scalar const pp = pressure_p.get_value(q);
+        vector const um = velocity_m.get_value(q);
+        vector const up = velocity_p.get_value(q);
+        vector const n  = pressure_m.normal_vector(q);
+
+        face_kernel<true>(pressure_m, pressure_p, velocity_m, velocity_p, pm, pp, um, up, n, q);
+      }
 
       pressure_m.integrate_scatter(integrator_flags_p.face_integrate, dst.block(0));
       pressure_p.integrate_scatter(integrator_flags_p.face_integrate, dst.block(0));
@@ -474,7 +461,25 @@ private:
       velocity_m.gather_evaluate(src.block(1), integrator_flags_u.face_evaluate);
       velocity_p.reinit(face, evaluation_time);
 
-      do_face_integral<false>(pressure_m, pressure_p, velocity_m, velocity_p);
+      for(unsigned int q : pressure_m.quadrature_point_indices())
+      {
+        scalar const pm = pressure_m.get_value(q);
+        scalar const pp = pressure_p.get_value(q);
+        vector const um = velocity_m.get_value(q);
+        vector const up = velocity_p.get_value(q);
+        vector const n  = pressure_m.normal_vector(q);
+
+        face_kernel<false>(pressure_m,
+                           pressure_m /* unused */,
+                           velocity_m,
+                           velocity_m /* unused */,
+                           pm,
+                           pp,
+                           um,
+                           up,
+                           n,
+                           q);
+      }
 
       pressure_m.integrate_scatter(integrator_flags_p.face_integrate, dst.block(0));
       velocity_m.integrate_scatter(integrator_flags_u.face_integrate, dst.block(1));
