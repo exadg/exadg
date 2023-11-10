@@ -31,6 +31,7 @@
 #include <exadg/operators/quadrature.h>
 #include <exadg/poisson/preconditioners/multigrid_preconditioner.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/additive_schwarz_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
@@ -312,6 +313,10 @@ Operator<dim, n_components, Number>::setup_solver()
   else if(param.preconditioner == Poisson::Preconditioner::BlockJacobi)
   {
     preconditioner = std::make_shared<BlockJacobiPreconditioner<Laplace>>(laplace_operator);
+  }
+  else if(param.preconditioner == Poisson::Preconditioner::AdditiveSchwarz)
+  {
+    preconditioner = std::make_shared<AdditiveSchwarzPreconditioner<Laplace>>(laplace_operator);
   }
   else if(param.preconditioner == Poisson::Preconditioner::AMG)
   {

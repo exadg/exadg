@@ -52,6 +52,10 @@ do_cell_based_loops(dealii::Triangulation<dim> const & tria,
 
   AssertThrow(tria.get_reference_cells().size() == 1,
               dealii::ExcMessage("No mixed meshes allowed."));
+
+  AssertThrow(not tria.has_hanging_nodes(),
+              dealii::ExcMessage("Cell based face loops do not support locally refined meshes."));
+
   unsigned int const n_faces_per_cell = tria.get_reference_cells()[0].n_faces();
 
   // ... setup scaling factor

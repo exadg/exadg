@@ -2,7 +2,7 @@
  *
  *  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
  *
- *  Copyright (C) 2021 by the ExaDG authors
+ *  Copyright (C) 2023 by the ExaDG authors
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,18 +19,15 @@
  *  ______________________________________________________________________
  */
 
-
-// ExaDG
-#include <exadg/compressible_navier_stokes/postprocessor/pointwise_output_generator.h>
+#include <exadg/incompressible_navier_stokes/postprocessor/pointwise_output_generator.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
 {
-namespace CompNS
+namespace IncNS
 {
 template<int dim>
-PointwiseOutputData<dim>::PointwiseOutputData()
-  : write_rho(false), write_rho_u(false), write_rho_E(false)
+PointwiseOutputData<dim>::PointwiseOutputData() : write_velocity(false), write_pressure(false)
 {
 }
 
@@ -40,11 +37,10 @@ PointwiseOutputData<dim>::print(dealii::ConditionalOStream & pcout) const
 {
   PointwiseOutputDataBase<dim>::print(pcout);
 
-  if(this->time_control_data.is_active and this->evaluation_points.size() > 0)
+  if(this->time_control_data.is_active && this->evaluation_points.size() > 0)
   {
-    print_parameter(pcout, "Write rho", write_rho);
-    print_parameter(pcout, "Write rho_u", write_rho_u);
-    print_parameter(pcout, "Write rho_E", write_rho_E);
+    print_parameter(pcout, "Write velocity", write_velocity);
+    print_parameter(pcout, "Write pressure", write_pressure);
   }
 }
 
@@ -60,51 +56,54 @@ PointwiseOutputGenerator<dim, Number>::PointwiseOutputGenerator(MPI_Comm const &
 template<int dim, typename Number>
 void
 PointwiseOutputGenerator<dim, Number>::setup(
-  dealii::DoFHandler<dim> const &  dof_handler_in,
+  dealii::DoFHandler<dim> const &  dof_handler_velocity_in,
+  dealii::DoFHandler<dim> const &  dof_handler_pressure_in,
   dealii::Mapping<dim> const &     mapping_in,
   PointwiseOutputData<dim> const & pointwise_output_data_in)
 {
-  this->setup_base(dof_handler_in.get_triangulation(), mapping_in, pointwise_output_data_in);
+  this->setup_base(dof_handler_pressure_in.get_triangulation(),
+                   mapping_in,
+                   pointwise_output_data_in);
 
-  dof_handler           = &dof_handler_in;
+  dof_handler_velocity = &dof_handler_velocity_in;
+  dof_handler_pressure = &dof_handler_pressure_in;
+
   pointwise_output_data = pointwise_output_data_in;
 
   if(pointwise_output_data.time_control_data.is_active and
      pointwise_output_data.evaluation_points.size() > 0)
   {
-    if(pointwise_output_data.write_rho)
-      this->add_quantity("Rho", 1);
-    if(pointwise_output_data.write_rho_u)
-      this->add_quantity("Rho_U", dim);
-    if(pointwise_output_data.write_rho_E)
-      this->add_quantity("Rho_E", 1);
+    if(pointwise_output_data.write_velocity)
+      this->add_quantity("Velocity", dim);
+    if(pointwise_output_data.write_pressure)
+      this->add_quantity("Pressure", 1);
   }
 }
 
 template<int dim, typename Number>
 void
-PointwiseOutputGenerator<dim, Number>::evaluate(VectorType const & solution,
+PointwiseOutputGenerator<dim, Number>::evaluate(VectorType const & velocity,
+                                                VectorType const & pressure,
                                                 double const       time,
                                                 bool const         unsteady)
 {
   this->do_evaluate(
     [&]() {
-      if(pointwise_output_data.write_rho or pointwise_output_data.write_rho_u or
-         pointwise_output_data.write_rho_E)
+      if(pointwise_output_data.write_velocity)
       {
-        auto const values = this->template compute_point_values<dim + 2>(solution, *dof_handler);
-        if(pointwise_output_data.write_rho)
-          this->write_quantity("Rho", values, 0);
-        if(pointwise_output_data.write_rho_u)
-          this->write_quantity("Rho_U", values, 1);
-        if(pointwise_output_data.write_rho_E)
-          this->write_quantity("Rho_E", values, dim + 1);
+        auto const values =
+          this->template compute_point_values<dim>(velocity, *dof_handler_velocity);
+        this->write_quantity("Velocity", values, 0 /*first_selected_component*/);
+      }
+      if(pointwise_output_data.write_pressure)
+      {
+        auto const values = this->template compute_point_values<1>(pressure, *dof_handler_pressure);
+        this->write_quantity("Pressure", values);
       }
     },
     time,
     unsteady);
 }
-
 
 template class PointwiseOutputGenerator<2, float>;
 template class PointwiseOutputGenerator<2, double>;
@@ -112,5 +111,5 @@ template class PointwiseOutputGenerator<2, double>;
 template class PointwiseOutputGenerator<3, float>;
 template class PointwiseOutputGenerator<3, double>;
 
-} // namespace CompNS
+} // namespace IncNS
 } // namespace ExaDG

@@ -21,6 +21,7 @@
 
 // deal.II
 #include <deal.II/dofs/dof_tools.h>
+#include <deal.II/lac/sparse_matrix_tools.h>
 #include <deal.II/lac/sparsity_tools.h>
 #include <deal.II/matrix_free/tools.h>
 
@@ -510,8 +511,7 @@ OperatorBase<dim, Number, n_components>::calculate_block_diagonal_matrices() con
     auto dofs =
       matrix_free->get_shape_info(this->data.dof_index).dofs_per_component_on_cell * n_components;
 
-    matrices.resize(matrix_free->n_cell_batches() * vectorization_length,
-                    dealii::LAPACKFullMatrix<Number>(dofs, dofs));
+    matrices.resize(matrix_free->n_cell_batches() * vectorization_length, LAPACKMatrix(dofs, dofs));
 
     block_diagonal_preconditioner_is_initialized = true;
   }
@@ -526,7 +526,8 @@ OperatorBase<dim, Number, n_components>::calculate_block_diagonal_matrices() con
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::add_block_diagonal_matrices(BlockMatrix & matrices) const
+OperatorBase<dim, Number, n_components>::add_block_diagonal_matrices(
+  std::vector<LAPACKMatrix> & matrices) const
 {
   AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
 
@@ -753,7 +754,7 @@ OperatorBase<dim, Number, n_components>::update_block_diagonal_preconditioner() 
       auto dofs =
         matrix_free->get_shape_info(this->data.dof_index).dofs_per_component_on_cell * n_components;
       matrices.resize(matrix_free->n_cell_batches() * vectorization_length,
-                      dealii::LAPACKFullMatrix<Number>(dofs, dofs));
+                      LAPACKMatrix(dofs, dofs));
     }
 
     block_diagonal_preconditioner_is_initialized = true;
@@ -782,7 +783,8 @@ OperatorBase<dim, Number, n_components>::init_system_matrix(
   dealii::TrilinosWrappers::SparseMatrix & system_matrix,
   MPI_Comm const &                         mpi_comm) const
 {
-  internal_init_system_matrix(system_matrix, mpi_comm);
+  dealii::DynamicSparsityPattern dsp;
+  internal_init_system_matrix(system_matrix, dsp, mpi_comm);
 }
 
 template<int dim, typename Number, int n_components>
@@ -801,7 +803,8 @@ OperatorBase<dim, Number, n_components>::init_system_matrix(
   dealii::PETScWrappers::MPI::SparseMatrix & system_matrix,
   MPI_Comm const &                           mpi_comm) const
 {
-  internal_init_system_matrix(system_matrix, mpi_comm);
+  dealii::DynamicSparsityPattern dsp;
+  internal_init_system_matrix(system_matrix, dsp, mpi_comm);
 }
 
 template<int dim, typename Number, int n_components>
@@ -817,8 +820,9 @@ template<int dim, typename Number, int n_components>
 template<typename SparseMatrix>
 void
 OperatorBase<dim, Number, n_components>::internal_init_system_matrix(
-  SparseMatrix &   system_matrix,
-  MPI_Comm const & mpi_comm) const
+  SparseMatrix &                   system_matrix,
+  dealii::DynamicSparsityPattern & dsp,
+  MPI_Comm const &                 mpi_comm) const
 {
   dealii::DoFHandler<dim> const & dof_handler =
     this->matrix_free->get_dof_handler(this->data.dof_index);
@@ -845,7 +849,7 @@ OperatorBase<dim, Number, n_components>::internal_init_system_matrix(
     dealii::DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);
   else
     dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs);
-  dealii::DynamicSparsityPattern dsp(relevant_dofs);
+  dsp.reinit(relevant_dofs.size(), relevant_dofs.size(), relevant_dofs);
 
   if(is_dg and is_mg)
     dealii::MGTools::make_flux_sparsity_pattern(dof_handler, dsp, this->level);
@@ -1574,42 +1578,45 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
     }
 
     // loop over all faces and gather results into local diagonal local_diag
-    unsigned int const n_faces = dealii::ReferenceCells::template get_hypercube<dim>().n_faces();
-    for(unsigned int face = 0; face < n_faces; ++face)
+    if(evaluate_face_integrals())
     {
-      auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
-      auto bid  = bids[0];
+      unsigned int const n_faces = dealii::ReferenceCells::template get_hypercube<dim>().n_faces();
+      for(unsigned int face = 0; face < n_faces; ++face)
+      {
+        auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
+        auto bid  = bids[0];
 
-      this->reinit_face_cell_based(integrator_m, integrator_p, cell, face, bid);
+        this->reinit_face_cell_based(integrator_m, integrator_p, cell, face, bid);
 
 #ifdef DEBUG
-      unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_cell_batch(cell);
-      for(unsigned int v = 0; v < n_filled_lanes; v++)
-        Assert(bid == bids[v],
-               dealii::ExcMessage(
-                 "Cell-based face loop encountered face batch with different bids."));
+        unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_cell_batch(cell);
+        for(unsigned int v = 0; v < n_filled_lanes; v++)
+          Assert(bid == bids[v],
+                 dealii::ExcMessage(
+                   "Cell-based face loop encountered face batch with different bids."));
 #endif
 
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      {
-        this->create_standard_basis(j, integrator_m);
-
-        integrator_m.evaluate(integrator_flags.face_evaluate);
-
-        if(bid == dealii::numbers::internal_face_boundary_id) // internal face
+        for(unsigned int j = 0; j < dofs_per_cell; ++j)
         {
-          this->do_face_int_integral_cell_based(integrator_m, integrator_p);
-        }
-        else // boundary face
-        {
-          this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
-        }
+          this->create_standard_basis(j, integrator_m);
 
-        integrator_m.integrate(integrator_flags.face_integrate);
+          integrator_m.evaluate(integrator_flags.face_evaluate);
 
-        // note: += for accumulation of all contributions of this (macro) cell
-        //          including: cell-, face-, boundary-stiffness matrix
-        local_diag[j] += integrator_m.begin_dof_values()[j];
+          if(bid == dealii::numbers::internal_face_boundary_id) // internal face
+          {
+            this->do_face_int_integral_cell_based(integrator_m, integrator_p);
+          }
+          else // boundary face
+          {
+            this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
+          }
+
+          integrator_m.integrate(integrator_flags.face_integrate);
+
+          // note: += for accumulation of all contributions of this (macro) cell
+          //          including: cell-, face-, boundary-stiffness matrix
+          local_diag[j] += integrator_m.begin_dof_values()[j];
+        }
       }
     }
 
@@ -1697,8 +1704,8 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::cell_loop_block_diagonal(
   dealii::MatrixFree<dim, Number> const & matrix_free,
-  BlockMatrix &                           matrices,
-  BlockMatrix const &,
+  std::vector<LAPACKMatrix> &             matrices,
+  std::vector<LAPACKMatrix> const &,
   Range const & range) const
 {
   IntegratorCell integrator =
@@ -1733,8 +1740,8 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::face_loop_block_diagonal(
   dealii::MatrixFree<dim, Number> const & matrix_free,
-  BlockMatrix &                           matrices,
-  BlockMatrix const &,
+  std::vector<LAPACKMatrix> &             matrices,
+  std::vector<LAPACKMatrix> const &,
   Range const & range) const
 {
   IntegratorFace integrator_m =
@@ -1794,8 +1801,8 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::boundary_face_loop_block_diagonal(
   dealii::MatrixFree<dim, Number> const & matrix_free,
-  BlockMatrix &                           matrices,
-  BlockMatrix const &,
+  std::vector<LAPACKMatrix> &             matrices,
+  std::vector<LAPACKMatrix> const &,
   Range const & range) const
 {
   IntegratorFace integrator_m =
@@ -1836,8 +1843,8 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::cell_based_loop_block_diagonal(
   dealii::MatrixFree<dim, Number> const & matrix_free,
-  BlockMatrix &                           matrices,
-  BlockMatrix const &,
+  std::vector<LAPACKMatrix> &             matrices,
+  std::vector<LAPACKMatrix> const &,
   Range const & range) const
 {
   IntegratorCell integrator =
@@ -1870,43 +1877,46 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_block_diagonal(
           matrices[cell * vectorization_length + v](i, j) += integrator.begin_dof_values()[i][v];
     }
 
-    // loop over all faces
-    unsigned int const n_faces = dealii::ReferenceCells::template get_hypercube<dim>().n_faces();
-    for(unsigned int face = 0; face < n_faces; ++face)
+    if(evaluate_face_integrals())
     {
-      auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
-      auto bid  = bids[0];
+      // loop over all faces
+      unsigned int const n_faces = dealii::ReferenceCells::template get_hypercube<dim>().n_faces();
+      for(unsigned int face = 0; face < n_faces; ++face)
+      {
+        auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
+        auto bid  = bids[0];
 
-      this->reinit_face_cell_based(integrator_m, integrator_p, cell, face, bid);
+        this->reinit_face_cell_based(integrator_m, integrator_p, cell, face, bid);
 
 #ifdef DEBUG
-      for(unsigned int v = 0; v < n_filled_lanes; v++)
-        Assert(bid == bids[v],
-               dealii::ExcMessage(
-                 "Cell-based face loop encountered face batch with different bids."));
+        for(unsigned int v = 0; v < n_filled_lanes; v++)
+          Assert(bid == bids[v],
+                 dealii::ExcMessage(
+                   "Cell-based face loop encountered face batch with different bids."));
 #endif
 
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      {
-        this->create_standard_basis(j, integrator_m);
-
-        integrator_m.evaluate(integrator_flags.face_evaluate);
-
-        if(bid == dealii::numbers::internal_face_boundary_id) // internal face
+        for(unsigned int j = 0; j < dofs_per_cell; ++j)
         {
-          this->do_face_int_integral_cell_based(integrator_m, integrator_p);
-        }
-        else // boundary face
-        {
-          this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
-        }
+          this->create_standard_basis(j, integrator_m);
 
-        integrator_m.integrate(integrator_flags.face_integrate);
+          integrator_m.evaluate(integrator_flags.face_evaluate);
 
-        for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          for(unsigned int v = 0; v < n_filled_lanes; ++v)
-            matrices[cell * vectorization_length + v](i, j) +=
-              integrator_m.begin_dof_values()[i][v];
+          if(bid == dealii::numbers::internal_face_boundary_id) // internal face
+          {
+            this->do_face_int_integral_cell_based(integrator_m, integrator_p);
+          }
+          else // boundary face
+          {
+            this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
+          }
+
+          integrator_m.integrate(integrator_flags.face_integrate);
+
+          for(unsigned int i = 0; i < dofs_per_cell; ++i)
+            for(unsigned int v = 0; v < n_filled_lanes; ++v)
+              matrices[cell * vectorization_length + v](i, j) +=
+                integrator_m.begin_dof_values()[i][v];
+        }
       }
     }
   }
@@ -1973,7 +1983,8 @@ OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix(
         // so we have to fix the order
         auto temp = dof_indices;
         for(unsigned int j = 0; j < dof_indices.size(); j++)
-          dof_indices[j] = temp[matrix_free.get_shape_info().lexicographic_numbering[j]];
+          dof_indices[j] =
+            temp[matrix_free.get_shape_info(this->data.dof_index).lexicographic_numbering[j]];
       }
 
       // choose the version of distribute_local_to_global with a single
@@ -2250,6 +2261,176 @@ OperatorBase<dim, Number, n_components>::evaluate_face_integrals() const
 {
   return (integrator_flags.face_evaluate != dealii::EvaluationFlags::nothing) or
          (integrator_flags.face_integrate != dealii::EvaluationFlags::nothing);
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::compute_factorized_additive_schwarz_matrices() const
+{
+#ifdef DEAL_II_WITH_TRILINOS
+  internal_compute_factorized_additive_schwarz_matrices<dealii::TrilinosWrappers::SparseMatrix>();
+#elif DEAL_II_WITH_PETSC
+  internal_compute_factorized_additive_schwarz_matrices<dealii::PETScWrappers::MPI::SparseMatrix>();
+#else
+  AssertThrow(
+    n_mpi_processes == 1,
+    ExcMessage(
+      "If you want to use this function in parallel you have to compile deal.II with either "
+      "Trilinos or Petsc support for distributed sparse matrices."));
+  internal_compute_factorized_additive_schwarz_matrices<dealii::SparseMatrix>();
+#endif
+}
+
+template<int dim, typename Number, int n_components>
+template<typename SparseMatrix>
+void
+OperatorBase<dim, Number, n_components>::internal_compute_factorized_additive_schwarz_matrices()
+  const
+{
+  if(is_dg)
+    update_block_diagonal_preconditioner();
+  else
+  {
+    dealii::DoFHandler<dim> const & dof_handler =
+      this->matrix_free->get_dof_handler(this->data.dof_index);
+
+    unsigned int const dofs_per_cell = matrix_free->get_dofs_per_cell(this->data.dof_index);
+
+    unsigned int const n_cells = matrix_free->n_cell_batches() * vectorization_length;
+
+    // assemble a temporary sparse matrix to cut out the blocks
+    SparseMatrix                   tmp_matrix;
+    dealii::DynamicSparsityPattern dsp;
+    internal_init_system_matrix(tmp_matrix, dsp, dof_handler.get_communicator());
+    internal_calculate_system_matrix(tmp_matrix);
+
+    // collect the DoF indices of all cells
+    std::vector<std::vector<dealii::types::global_dof_index>> dof_indices_all_cells(
+      n_cells, std::vector<dealii::types::global_dof_index>(dofs_per_cell));
+    // and compute weights by counting the contributions to a DoF
+    initialize_dof_vector(weights);
+    for(unsigned int cell = 0; cell < matrix_free->n_cell_batches(); ++cell)
+    {
+      unsigned int const n_filled_lanes = matrix_free->n_active_entries_per_cell_batch(cell);
+
+      for(unsigned int v = 0; v < n_filled_lanes; ++v)
+      {
+        auto const & cell_v = matrix_free->get_cell_iterator(cell, v);
+
+        auto & dof_indices = dof_indices_all_cells[cell * vectorization_length + v];
+        if(is_mg)
+          cell_v->get_mg_dof_indices(dof_indices);
+        else
+          cell_v->get_dof_indices(dof_indices);
+
+        for(auto const & i : dof_indices)
+          weights[i] += 1.;
+      }
+    }
+    weights.compress(dealii::VectorOperation::add);
+
+    // prepare the weights vector for symmetric weighting
+    for(unsigned int i = 0; i < weights.size(); ++i)
+    {
+      if(weights.in_local_range(i))
+        weights[i] = 1. / std::sqrt(weights[i]);
+    }
+    weights.update_ghost_values();
+
+    // cut out overlapped block matrices
+    std::vector<dealii::FullMatrix<Number>> overlapped_cell_matrices(
+      n_cells, dealii::FullMatrix<Number>(dofs_per_cell));
+
+    dealii::SparseMatrixTools::restrict_to_full_matrices<SparseMatrix,
+                                                         dealii::DynamicSparsityPattern,
+                                                         Number>(tmp_matrix,
+                                                                 dsp,
+                                                                 dof_indices_all_cells,
+                                                                 overlapped_cell_matrices);
+
+    // factorize and store cell matrices
+    matrices.resize(n_cells, LAPACKMatrix(dofs_per_cell));
+    for(unsigned int cell = 0; cell < matrix_free->n_cell_batches(); ++cell)
+    {
+      unsigned int const n_filled_lanes = matrix_free->n_active_entries_per_cell_batch(cell);
+
+      for(unsigned int v = 0; v < n_filled_lanes; ++v)
+      {
+        // get overlapped cell matrix
+        auto const & overlapped_cell_matrix =
+          overlapped_cell_matrices[cell * vectorization_length + v];
+
+        // store the cell matrix and renumber lexicographic
+        auto & lapack_matrix = matrices[cell * vectorization_length + v];
+
+        auto const & lex_to_hier =
+          matrix_free->get_shape_info(this->data.dof_index).lexicographic_numbering;
+        for(unsigned int i = 0; i < dofs_per_cell; i++)
+          for(unsigned int j = 0; j < dofs_per_cell; j++)
+            lapack_matrix.set(i, j, overlapped_cell_matrix[lex_to_hier[i]][lex_to_hier[j]]);
+
+        // factorize the cell matrix
+        lapack_matrix.compute_lu_factorization();
+      }
+    }
+  }
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::apply_inverse_additive_schwarz_matrices(
+  VectorType &       dst,
+  VectorType const & src) const
+{
+  if(is_dg)
+    apply_inverse_block_diagonal(dst, src);
+  else
+  {
+    src.update_ghost_values();
+
+    matrix_free->template cell_loop<VectorType, VectorType>(
+      [&](auto const & matrix_free, auto & dst, auto const & src, auto const & cell_range) {
+        auto const dofs_per_cell = matrix_free.get_dofs_per_cell(this->data.dof_index);
+
+        IntegratorCell integrator =
+          IntegratorCell(matrix_free, this->data.dof_index, this->data.quad_index);
+
+        dealii::Vector<Number>                                 local_vector(dofs_per_cell);
+        dealii::AlignedVector<dealii::VectorizedArray<Number>> local_weights_vector(dofs_per_cell);
+        for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
+        {
+          this->reinit_cell(integrator, cell);
+
+          integrator.read_dof_values(weights);
+          for(unsigned int i = 0; i < dofs_per_cell; ++i)
+            local_weights_vector[i] = integrator.begin_dof_values()[i];
+
+          integrator.read_dof_values(src);
+
+          unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_cell_batch(cell);
+
+          for(unsigned int v = 0; v < n_filled_lanes; ++v)
+          {
+            // apply symmetric weighting, first before applying the inverse
+            for(unsigned int i = 0; i < dofs_per_cell; ++i)
+              local_vector[i] = integrator.begin_dof_values()[i][v] * local_weights_vector[i][v];
+
+            matrices[cell * vectorization_length + v].solve(local_vector);
+
+            // and after applying the inverse
+            for(unsigned int i = 0; i < dofs_per_cell; ++i)
+              integrator.begin_dof_values()[i][v] = local_vector[i] * local_weights_vector[i][v];
+          }
+
+          integrator.distribute_local_to_global(dst);
+        }
+      },
+      dst,
+      src,
+      true);
+
+    src.zero_out_ghost_values();
+  }
 }
 
 

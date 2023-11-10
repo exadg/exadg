@@ -106,7 +106,7 @@ public:
 
   static unsigned int const vectorization_length = dealii::VectorizedArray<Number>::size();
 
-  typedef std::vector<dealii::LAPACKFullMatrix<Number>> BlockMatrix;
+  typedef dealii::LAPACKFullMatrix<Number> LAPACKMatrix;
 
   typedef dealii::FullMatrix<dealii::TrilinosScalar> FullMatrix_;
 
@@ -304,7 +304,7 @@ public:
   calculate_block_diagonal_matrices() const;
 
   void
-  add_block_diagonal_matrices(BlockMatrix & matrices) const;
+  add_block_diagonal_matrices(std::vector<LAPACKMatrix> & matrices) const;
 
   void
   apply_block_diagonal_matrix_based(VectorType & dst, VectorType const & src) const;
@@ -325,6 +325,15 @@ public:
                                        dealii::VectorizedArray<Number> * const       dst,
                                        dealii::VectorizedArray<Number> const * const src,
                                        unsigned int const problem_size) const;
+
+  /*
+   * additive Schwarz preconditioner (cellwise block-diagonal)
+   */
+  virtual void
+  compute_factorized_additive_schwarz_matrices() const;
+
+  void
+  apply_inverse_additive_schwarz_matrices(VectorType & dst, VectorType const & src) const;
 
 protected:
   void
@@ -583,27 +592,27 @@ private:
    */
   void
   cell_loop_block_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
-                           BlockMatrix &                           matrices,
-                           BlockMatrix const &                     src,
+                           std::vector<LAPACKMatrix> &             matrices,
+                           std::vector<LAPACKMatrix> const &       src,
                            Range const &                           range) const;
 
   void
   face_loop_block_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
-                           BlockMatrix &                           matrices,
-                           BlockMatrix const &                     src,
+                           std::vector<LAPACKMatrix> &             matrices,
+                           std::vector<LAPACKMatrix> const &       src,
                            Range const &                           range) const;
 
   void
   boundary_face_loop_block_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                    BlockMatrix &                           matrices,
-                                    BlockMatrix const &                     src,
+                                    std::vector<LAPACKMatrix> &             matrices,
+                                    std::vector<LAPACKMatrix> const &       src,
                                     Range const &                           range) const;
 
   // cell-based variant for computation of both cell and face integrals
   void
   cell_based_loop_block_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                 BlockMatrix &                           matrices,
-                                 BlockMatrix const &                     src,
+                                 std::vector<LAPACKMatrix> &             matrices,
+                                 std::vector<LAPACKMatrix> const &       src,
                                  Range const &                           range) const;
 
   /*
@@ -634,7 +643,9 @@ private:
    */
   template<typename SparseMatrix>
   void
-  internal_init_system_matrix(SparseMatrix & system_matrix, MPI_Comm const & mpi_comm) const;
+  internal_init_system_matrix(SparseMatrix &                   system_matrix,
+                              dealii::DynamicSparsityPattern & dsp,
+                              MPI_Comm const &                 mpi_comm) const;
 
   template<typename SparseMatrix>
   void
@@ -678,6 +689,13 @@ private:
   evaluate_face_integrals() const;
 
   /*
+   * Compute factorized additive Schwarz matrices.
+   */
+  template<typename SparseMatrix>
+  void
+  internal_compute_factorized_additive_schwarz_matrices() const;
+
+  /*
    * Data structure containing all operator-specific data.
    */
   OperatorBaseData data;
@@ -691,7 +709,12 @@ private:
   /*
    * Vector of matrices for block-diagonal preconditioners.
    */
-  mutable std::vector<dealii::LAPACKFullMatrix<Number>> matrices;
+  mutable std::vector<LAPACKMatrix> matrices;
+
+  /*
+   * Vector with weights for additive Schwarz preconditioner.
+   */
+  mutable VectorType weights;
 
   /*
    * We want to initialize the block diagonal preconditioner (block diagonal matrices or elementwise

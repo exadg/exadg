@@ -134,6 +134,18 @@ public:
     pde_operator->apply_inverse_block_diagonal(dst, src);
   }
 
+  virtual void
+  apply_inverse_additive_schwarz_matrices(VectorType & dst, VectorType const & src) const final
+  {
+    pde_operator->apply_inverse_additive_schwarz_matrices(dst, src);
+  }
+
+  virtual void
+  compute_factorized_additive_schwarz_matrices() const final
+  {
+    pde_operator->compute_factorized_additive_schwarz_matrices();
+  }
+
 #ifdef DEAL_II_WITH_TRILINOS
   void
   init_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix,

@@ -28,6 +28,7 @@
 // ExaDG
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/smoother_base.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/additive_schwarz_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 
 namespace ExaDG
@@ -40,6 +41,9 @@ public:
     ChebyshevPointJacobi;
   typedef dealii::PreconditionChebyshev<Operator, VectorType, BlockJacobiPreconditioner<Operator>>
     ChebyshevBlockJacobi;
+  typedef dealii::
+    PreconditionChebyshev<Operator, VectorType, AdditiveSchwarzPreconditioner<Operator>>
+      ChebyshevAdditiveSchwarz;
 
   ChebyshevSmoother() : underlying_operator(nullptr)
   {
@@ -82,6 +86,10 @@ public:
     {
       smoother_block_jacobi->vmult(dst, src);
     }
+    else if(data.preconditioner == PreconditionerSmoother::AdditiveSchwarz)
+    {
+      smoother_additive_schwarz->vmult(dst, src);
+    }
     else
     {
       AssertThrow(false, dealii::ExcNotImplemented());
@@ -98,6 +106,10 @@ public:
     else if(data.preconditioner == PreconditionerSmoother::BlockJacobi)
     {
       smoother_block_jacobi->step(dst, src);
+    }
+    else if(data.preconditioner == PreconditionerSmoother::AdditiveSchwarz)
+    {
+      smoother_additive_schwarz->step(dst, src);
     }
     else
     {
@@ -152,6 +164,19 @@ public:
       smoother_block_jacobi = std::make_shared<ChebyshevBlockJacobi>();
       smoother_block_jacobi->initialize(*underlying_operator, additional_data_dealii);
     }
+    else if(data.preconditioner == PreconditionerSmoother::AdditiveSchwarz)
+    {
+      typename ChebyshevAdditiveSchwarz::AdditionalData additional_data_dealii;
+
+      additional_data_dealii.preconditioner =
+        std::make_shared<AdditiveSchwarzPreconditioner<Operator>>(*underlying_operator);
+      additional_data_dealii.smoothing_range     = data.smoothing_range;
+      additional_data_dealii.degree              = data.degree;
+      additional_data_dealii.eig_cg_n_iterations = data.iterations_eigenvalue_estimation;
+
+      smoother_additive_schwarz = std::make_shared<ChebyshevAdditiveSchwarz>();
+      smoother_additive_schwarz->initialize(*underlying_operator, additional_data_dealii);
+    }
     else
     {
       AssertThrow(false, dealii::ExcNotImplemented());
@@ -162,8 +187,9 @@ private:
   Operator const * underlying_operator;
   AdditionalData   data;
 
-  std::shared_ptr<ChebyshevPointJacobi> smoother_point_jacobi;
-  std::shared_ptr<ChebyshevBlockJacobi> smoother_block_jacobi;
+  std::shared_ptr<ChebyshevPointJacobi>     smoother_point_jacobi;
+  std::shared_ptr<ChebyshevBlockJacobi>     smoother_block_jacobi;
+  std::shared_ptr<ChebyshevAdditiveSchwarz> smoother_additive_schwarz;
 };
 
 } // namespace ExaDG
