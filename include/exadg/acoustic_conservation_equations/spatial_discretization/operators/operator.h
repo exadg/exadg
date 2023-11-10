@@ -270,40 +270,64 @@ private:
                       dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values);
   }
 
+  template<bool weight_neighbor, typename ExteriorFaceIntegratorP, typename ExteriorFaceIntegratorU>
+  inline DEAL_II_ALWAYS_INLINE //
   void
-  do_cell_integral(CellIntegratorP & pressure, CellIntegratorU & velocity) const
+  face_kernel(FaceIntegratorP &         pressure_m,
+              ExteriorFaceIntegratorP & pressure_p,
+              FaceIntegratorU &         velocity_m,
+              ExteriorFaceIntegratorU & velocity_p,
+              scalar const &            pm,
+              scalar const &            pp,
+              vector const &            um,
+              vector const &            up,
+              vector const &            n,
+              unsigned int const        q) const
   {
+    vector const flux_momentum =
+      kernel.calculate_lax_friedrichs_flux_momentum(um, up, gamma, pm, pp, n);
+
+    scalar const flux_mass = kernel.calculate_lax_friedrichs_flux_mass(pm, pp, tau, um, up, n);
+
     if(data.formulation == Formulation::Weak)
     {
-      for(unsigned int q : pressure.quadrature_point_indices())
-      {
-        vector const flux_momentum = kernel.get_volume_flux_weak_momentum(velocity, q);
-        scalar const flux_mass     = kernel.get_volume_flux_weak_mass(pressure, q);
+      scalar const flux_momentum_weak = rhocc * flux_momentum * n;
+      vector const flux_mass_weak     = rho_inv * flux_mass * n;
 
-        pressure.submit_gradient(rhocc * flux_momentum, q);
-        velocity.submit_divergence(rho_inv * flux_mass, q);
+      pressure_m.submit_value(flux_momentum_weak, q);
+      velocity_m.submit_value(flux_mass_weak, q);
+
+      if constexpr(weight_neighbor)
+      {
+        // minus signs since n⁺ = - n⁻
+        pressure_p.submit_value(-flux_momentum_weak, q);
+        velocity_p.submit_value(-flux_mass_weak, q);
       }
     }
     else if(data.formulation == Formulation::Strong)
     {
-      for(unsigned int q : pressure.quadrature_point_indices())
-      {
-        scalar const flux_momentum = kernel.get_volume_flux_strong_momentum(velocity, q);
-        vector const flux_mass     = kernel.get_volume_flux_strong_mass(pressure, q);
+      pressure_m.submit_value(rhocc * (flux_momentum - um) * n, q);
+      velocity_m.submit_value(rho_inv * (flux_mass - pm) * n, q);
 
-        pressure.submit_value(rhocc * flux_momentum, q);
-        velocity.submit_value(rho_inv * flux_mass, q);
+      if constexpr(weight_neighbor)
+      {
+        // minus signs since n⁺ = - n⁻
+        pressure_p.submit_value(-rhocc * (flux_momentum - up) * n, q);
+        velocity_p.submit_value(-rho_inv * (flux_mass - pp) * n, q);
       }
     }
     else if(data.formulation == Formulation::SkewSymmetric)
     {
-      for(unsigned int q : pressure.quadrature_point_indices())
-      {
-        vector const flux_momentum = kernel.get_volume_flux_weak_momentum(velocity, q);
-        vector const flux_mass     = kernel.get_volume_flux_strong_mass(pressure, q);
+      scalar const flux_momentum_weak = rhocc * flux_momentum * n;
 
-        pressure.submit_gradient(rhocc * flux_momentum, q);
-        velocity.submit_value(rho_inv * flux_mass, q);
+      pressure_m.submit_value(flux_momentum_weak, q);
+      velocity_m.submit_value(rho_inv * (flux_mass - pm) * n, q);
+
+      if constexpr(weight_neighbor)
+      {
+        // minus signs since n⁺ = - n⁻
+        pressure_p.submit_value(-flux_momentum_weak, q);
+        velocity_p.submit_value(-rho_inv * (flux_mass - pp) * n, q);
       }
     }
     else
@@ -311,7 +335,6 @@ private:
       AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
-
 
   template<bool weight_neighbor, // = false for cell centric loops and boundary loops
            typename ExteriorFaceIntegratorP,
@@ -330,56 +353,8 @@ private:
       vector const up = velocity_p.get_value(q);
       vector const n  = pressure_m.normal_vector(q);
 
-      vector const flux_momentum =
-        kernel.calculate_lax_friedrichs_flux_momentum(um, up, gamma, pm, pp, n);
-
-      scalar const flux_mass = kernel.calculate_lax_friedrichs_flux_mass(pm, pp, tau, um, up, n);
-
-      if(data.formulation == Formulation::Weak)
-      {
-        scalar const flux_momentum_weak = rhocc * flux_momentum * n;
-        vector const flux_mass_weak     = rho_inv * flux_mass * n;
-
-        pressure_m.submit_value(flux_momentum_weak, q);
-        velocity_m.submit_value(flux_mass_weak, q);
-
-        if constexpr(weight_neighbor)
-        {
-          // minus signs since n⁺ = - n⁻
-          pressure_p.submit_value(-flux_momentum_weak, q);
-          velocity_p.submit_value(-flux_mass_weak, q);
-        }
-      }
-      else if(data.formulation == Formulation::Strong)
-      {
-        pressure_m.submit_value(rhocc * (flux_momentum - um) * n, q);
-        velocity_m.submit_value(rho_inv * (flux_mass - pm) * n, q);
-
-        if constexpr(weight_neighbor)
-        {
-          // minus signs since n⁺ = - n⁻
-          pressure_p.submit_value(-rhocc * (flux_momentum - up) * n, q);
-          velocity_p.submit_value(-rho_inv * (flux_mass - pp) * n, q);
-        }
-      }
-      else if(data.formulation == Formulation::SkewSymmetric)
-      {
-        scalar const flux_momentum_weak = rhocc * flux_momentum * n;
-
-        pressure_m.submit_value(flux_momentum_weak, q);
-        velocity_m.submit_value(rho_inv * (flux_mass - pm) * n, q);
-
-        if constexpr(weight_neighbor)
-        {
-          // minus signs since n⁺ = - n⁻
-          pressure_p.submit_value(-flux_momentum_weak, q);
-          velocity_p.submit_value(-rho_inv * (flux_mass - pp) * n, q);
-        }
-      }
-      else
-      {
-        AssertThrow(false, dealii::ExcMessage("Not implemented."));
-      }
+      face_kernel<weight_neighbor, ExteriorFaceIntegratorP, ExteriorFaceIntegratorU>(
+        pressure_m, pressure_p, velocity_m, velocity_p, pm, pp, um, up, n, q);
     }
   }
 
@@ -400,7 +375,43 @@ private:
       velocity.reinit(cell);
       velocity.gather_evaluate(src.block(1), integrator_flags_u.cell_evaluate);
 
-      do_cell_integral(pressure, velocity);
+      if(data.formulation == Formulation::Weak)
+      {
+        for(unsigned int q : pressure.quadrature_point_indices())
+        {
+          vector const flux_momentum = kernel.get_volume_flux_weak_momentum(velocity, q);
+          scalar const flux_mass     = kernel.get_volume_flux_weak_mass(pressure, q);
+
+          pressure.submit_gradient(rhocc * flux_momentum, q);
+          velocity.submit_divergence(rho_inv * flux_mass, q);
+        }
+      }
+      else if(data.formulation == Formulation::Strong)
+      {
+        for(unsigned int q : pressure.quadrature_point_indices())
+        {
+          scalar const flux_momentum = kernel.get_volume_flux_strong_momentum(velocity, q);
+          vector const flux_mass     = kernel.get_volume_flux_strong_mass(pressure, q);
+
+          pressure.submit_value(rhocc * flux_momentum, q);
+          velocity.submit_value(rho_inv * flux_mass, q);
+        }
+      }
+      else if(data.formulation == Formulation::SkewSymmetric)
+      {
+        for(unsigned int q : pressure.quadrature_point_indices())
+        {
+          vector const flux_momentum = kernel.get_volume_flux_weak_momentum(velocity, q);
+          vector const flux_mass     = kernel.get_volume_flux_strong_mass(pressure, q);
+
+          pressure.submit_gradient(rhocc * flux_momentum, q);
+          velocity.submit_value(rho_inv * flux_mass, q);
+        }
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      }
 
       pressure.integrate_scatter(integrator_flags_p.cell_integrate, dst.block(0));
       velocity.integrate_scatter(integrator_flags_u.cell_integrate, dst.block(1));
