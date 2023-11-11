@@ -22,6 +22,9 @@
 #ifndef APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_ROTATING_HILL_H_
 #define APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_ROTATING_HILL_H_
 
+// ExaDG
+#include <exadg/grid/deformed_cube_manifold.h>
+
 namespace ExaDG
 {
 namespace ConvDiff
@@ -135,7 +138,7 @@ private:
 
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.mapping_degree          = 1;
+    this->param.mapping_degree          = this->param.degree;
     this->param.enable_adaptivity       = enable_adaptivity;
 
     this->param.amr_data.trigger_every_n_time_steps        = 30;
@@ -203,6 +206,11 @@ private:
 
         // hypercube volume is [left,right]^dim
         dealii::GridGenerator::hyper_cube(tria, left, right);
+
+        unsigned int const frequency   = 1;
+        double const       deformation = (right - left) * 0.1;
+        apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
+
         tria.refine_global(global_refinements);
       };
 
@@ -213,7 +221,6 @@ private:
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
   }
-
 
   void
   set_boundary_descriptor() final

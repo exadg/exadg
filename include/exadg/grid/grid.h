@@ -39,6 +39,13 @@ template<int dim>
 class Grid
 {
 public:
+  void
+  setup_after_coarsening_and_refinement()
+  {
+    this->coarse_triangulations =
+      dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(*triangulation);
+  }
+
   typedef typename std::vector<
     dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>>
     PeriodicFacePairs;
