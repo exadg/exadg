@@ -39,16 +39,23 @@ template<int dim>
 class Grid
 {
 public:
+  typedef typename std::vector<
+    dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>>
+    PeriodicFacePairs;
+
+  /**
+   * Function to update the Grid's members after adaptive mesh refinement.
+   */
   void
   setup_after_coarsening_and_refinement()
   {
     this->coarse_triangulations =
       dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(*triangulation);
-  }
 
-  typedef typename std::vector<
-    dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>>
-    PeriodicFacePairs;
+    AssertThrow(periodic_face_pairs.size() == 0,
+                dealii::ExcMessage("Combination of adaptive mesh refinement and"
+                                   "periodic face pairs not implemented."));
+  }
 
   /**
    * dealii::Triangulation.
