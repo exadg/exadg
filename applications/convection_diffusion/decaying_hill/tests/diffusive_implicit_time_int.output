@@ -178,3 +178,4 @@ Calculate error for all fields at time t = 9.5000e-01:
 
 Calculate error for all fields at time t = 1.0000e+00:
   Relative error (L2-norm): 5.48262e-11
+  
