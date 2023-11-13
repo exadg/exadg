@@ -270,19 +270,19 @@ private:
                       dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values);
   }
 
-  template<bool weight_neighbor>
   inline DEAL_II_ALWAYS_INLINE //
     void
     face_kernel(FaceIntegratorP &  pressure_m,
-                FaceIntegratorP &  pressure_p,
                 FaceIntegratorU &  velocity_m,
-                FaceIntegratorU &  velocity_p,
                 scalar const &     pm,
                 scalar const &     pp,
                 vector const &     um,
                 vector const &     up,
                 vector const &     n,
-                unsigned int const q) const
+                unsigned int const q,
+                bool const         weight_on_neighbor,
+                FaceIntegratorP &  pressure_p,
+                FaceIntegratorU &  velocity_p) const
   {
     vector const flux_momentum =
       kernel.calculate_lax_friedrichs_flux_momentum(um, up, gamma, pm, pp, n);
@@ -297,7 +297,7 @@ private:
       pressure_m.submit_value(flux_momentum_weak, q);
       velocity_m.submit_value(flux_mass_weak, q);
 
-      if constexpr(weight_neighbor)
+      if(weight_on_neighbor)
       {
         // minus signs since n⁺ = - n⁻
         pressure_p.submit_value(-flux_momentum_weak, q);
@@ -309,7 +309,7 @@ private:
       pressure_m.submit_value(rhocc * (flux_momentum - um) * n, q);
       velocity_m.submit_value(rho_inv * (flux_mass - pm) * n, q);
 
-      if constexpr(weight_neighbor)
+      if(weight_on_neighbor)
       {
         // minus signs since n⁺ = - n⁻
         pressure_p.submit_value(-rhocc * (flux_momentum - up) * n, q);
@@ -323,7 +323,7 @@ private:
       pressure_m.submit_value(flux_momentum_weak, q);
       velocity_m.submit_value(rho_inv * (flux_mass - pm) * n, q);
 
-      if constexpr(weight_neighbor)
+      if(weight_on_neighbor)
       {
         // minus signs since n⁺ = - n⁻
         pressure_p.submit_value(-flux_momentum_weak, q);
@@ -428,7 +428,7 @@ private:
         vector const up = velocity_p.get_value(q);
         vector const n  = pressure_m.normal_vector(q);
 
-        face_kernel<true>(pressure_m, pressure_p, velocity_m, velocity_p, pm, pp, um, up, n, q);
+        face_kernel(pressure_m, velocity_m, pm, pp, um, up, n, q, true, pressure_p, velocity_p);
       }
 
       pressure_m.integrate_scatter(integrator_flags_p.face_integrate, dst.block(0));
@@ -469,16 +469,7 @@ private:
         vector const up = velocity_p.get_value(q);
         vector const n  = pressure_m.normal_vector(q);
 
-        face_kernel<false>(pressure_m,
-                           pressure_m /* unused */,
-                           velocity_m,
-                           velocity_m /* unused */,
-                           pm,
-                           pp,
-                           um,
-                           up,
-                           n,
-                           q);
+        face_kernel(pressure_m, velocity_m, pm, pp, um, up, n, q, false, pressure_m, velocity_m);
       }
 
       pressure_m.integrate_scatter(integrator_flags_p.face_integrate, dst.block(0));
