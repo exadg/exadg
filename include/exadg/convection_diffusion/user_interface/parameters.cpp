@@ -270,6 +270,13 @@ Parameters::check() const
     AssertThrow(use_cell_based_face_loops == false,
                 dealii::ExcMessage("Cell-based face loops not supported for "
                                    "adaptively refined meshes."));
+
+    if(involves_h_multigrid())
+    {
+      AssertThrow(grid.create_coarse_triangulations,
+                  dealii::ExcMessage("Coarse triangulations required for locally refined meshes"
+                                     "and h-multigrid."));
+    }
   }
 
   AssertThrow(degree > 0, dealii::ExcMessage("Polynomial degree must be larger than zero."));

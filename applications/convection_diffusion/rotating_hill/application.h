@@ -141,6 +141,8 @@ private:
     this->param.mapping_degree          = this->param.degree;
     this->param.enable_adaptivity       = enable_adaptivity;
 
+    this->param.grid.create_coarse_triangulations = enable_adaptivity;
+
     this->param.amr_data.trigger_every_n_time_steps        = 30;
     this->param.amr_data.maximum_refinement_level          = 4;
     this->param.amr_data.minimum_refinement_level          = 0;

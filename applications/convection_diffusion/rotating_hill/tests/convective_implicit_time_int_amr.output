@@ -50,7 +50,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              3
-  Create coarse triangulations:              false
+  Create coarse triangulations:              true
   Mapping degree:                            4
   Polynomial degree:                         4
   Enable adaptivity:                         true

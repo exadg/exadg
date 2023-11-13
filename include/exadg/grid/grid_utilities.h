@@ -468,6 +468,104 @@ create_triangulation_with_multigrid(
 }
 
 /**
+ * Function to update the coarse_triangulations and coarse_periodic_face_pairs given the
+ * fine_triangulation and fine_periodic_face_pairs.
+ */
+template<int dim>
+inline void
+setup_coarse_triangulations_and_periodic_face_pairs(
+  dealii::Triangulation<dim> const &                               fine_triangulation,
+  PeriodicFacePairs<dim> const &                                   fine_periodic_face_pairs,
+  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> & coarse_triangulations_const,
+  std::vector<PeriodicFacePairs<dim>> &                            coarse_periodic_face_pairs,
+  GridData const &                                                 data,
+  bool const                                                       amr_preserves_boundary_cells)
+{
+  // For serial or distributed triangulations, deal.II can automatically generate the coarse
+  // triangulations.
+  if(data.triangulation_type == TriangulationType::Serial or
+     data.triangulation_type == TriangulationType::Distributed)
+  {
+    if(data.triangulation_type == TriangulationType::Serial)
+    {
+      AssertThrow(
+        data.element_type == ElementType::Hypercube,
+        dealii::ExcMessage(
+          "The create_geometric_coarsening_sequence function of dealii does currently not support "
+          "simplicial elements."));
+
+      coarse_triangulations_const =
+        dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
+          fine_triangulation);
+    }
+    else if(data.triangulation_type == TriangulationType::Distributed)
+    {
+      coarse_triangulations_const =
+        dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
+          fine_triangulation,
+          BalancedGranularityPartitionPolicy<dim>(
+            dealii::Utilities::MPI::n_mpi_processes(fine_triangulation.get_communicator())));
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Invalid parameter triangulation_type."));
+    }
+
+    // deal.II adds the fine triangulation as the last entry of the vector. According to our
+    // convention in ExaDG, we only include the triangulations coarser than the fine level. Hence,
+    // we remove the last entry of the vector.
+    coarse_triangulations_const.pop_back();
+
+    // Update periodic face pairs if existent.
+    if(fine_periodic_face_pairs.size() > 0)
+    {
+      AssertThrow(amr_preserves_boundary_cells,
+                  dealii::ExcMessage(
+                    "Combination of adaptive mesh refinement and periodic face pairs"
+                    " requires boundary cells to be preserved."));
+      coarse_periodic_face_pairs.resize(coarse_triangulations_const.size());
+      for(unsigned int level = 0; level < coarse_periodic_face_pairs.size(); ++level)
+      {
+        coarse_periodic_face_pairs[level] = fine_periodic_face_pairs;
+      }
+    }
+  }
+  else if(data.triangulation_type == TriangulationType::FullyDistributed)
+  {
+    AssertThrow(false,
+                dealii::ExcMessage("Combination of adaptive mesh refinement and "
+                                   "TriangulationType::FullyDistributed not implemented."));
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("Invalid parameter triangulation_type."));
+  }
+}
+
+/**
+ * Function to update the grid members after adaptive mesh refinement with Grid interface.
+ */
+template<int dim>
+inline void
+setup_after_coarsening_and_refinement(Grid<dim> &      grid,
+                                      GridData const & data,
+                                      bool const       involves_h_multigrid,
+                                      bool const       amr_preserves_boundary_cells)
+{
+  if(involves_h_multigrid)
+  {
+    // Depending on the type of multigrid implementation, the coarse triangulations need to be
+    // updated.
+    setup_coarse_triangulations_and_periodic_face_pairs(*grid.triangulation,
+                                                        grid.periodic_face_pairs,
+                                                        grid.coarse_triangulations,
+                                                        grid.coarse_periodic_face_pairs,
+                                                        data,
+                                                        amr_preserves_boundary_cells);
+  }
+}
+
+/**
  * This function reads an external triangulation. The function takes GridData as an argument
  * and stores the external triangulation in "tria".
  */

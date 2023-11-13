@@ -28,6 +28,7 @@
 #include <exadg/convection_diffusion/driver.h>
 #include <exadg/convection_diffusion/time_integration/create_time_integrator.h>
 #include <exadg/grid/get_dynamic_mapping.h>
+#include <exadg/grid/grid_utilities.h>
 #include <exadg/operators/throughput_parameters.h>
 #include <exadg/utilities/print_solver_results.h>
 
@@ -286,7 +287,11 @@ Driver<dim, Number>::do_adaptive_refinement(unsigned int const time_step_number)
 
       grid->triangulation->execute_coarsening_and_refinement();
 
-      grid->setup_after_coarsening_and_refinement();
+      GridUtilities::setup_after_coarsening_and_refinement(
+        *grid,
+        application->get_parameters().grid,
+        application->get_parameters().involves_h_multigrid(),
+        application->get_parameters().amr_data.preserve_boundary_cells);
 
       setup_after_coarsening_and_refinement();
 
