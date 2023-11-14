@@ -1,0 +1,630 @@
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up acoustic conservation equations solver:
+
+List of parameters:
+
+Mathematical model:
+  Formulation:                               SkewSymmetric
+
+Physical quantities:
+  Start time:                                0.0000e+00
+  End time:                                  2.5254e-02
+  Speed of sound:                            7.0000e+00
+  Density:                                   3.0000e+00
+
+Temporal discretization:
+  Calculation of time step size:             UserSpecified
+  Maximum number of time steps:              4294967295
+  Temporal refinements:                      0
+  Order of time integration scheme:          2
+  Start with low order method:               false
+  Restarted simulation:                      false
+  Restart:
+  Write restart:                             false
+
+Spatial discretization:
+  Triangulation type:                        Distributed
+  Element type:                              Hypercube
+  Number of global refinements:              2
+  Create coarse triangulations:              false
+  Mapping degree:                            1
+  Polynomial degree pressure:                1
+  Polynomial degree velocity:                1
+
+Generating grid for 2-dimensional problem:
+
+  Max. number of refinements:                2
+  Number of cells:                           16
+
+Construct acoustic conservation equations operator ...
+
+... done!
+
+Setup acoustic conservation equations operator ...
+
+... done!
+
+Setup Multistep time integrator ...
+
+Calculation of time step size:
+
+  time step size:                            1.0000e-04
+
+... done!
+
+Starting time loop ...
+
+Calculate error for pressure at time t = 0.0000e+00:
+  Absolute error (L2-norm): 1.80554e-01
+
+Calculate error for velocity at time t = 0.0000e+00:
+  Absolute error (L2-norm): 0.00000e+00
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 1.00000e-04
+________________________________________________________________________________
+
+Calculate error for pressure at time t = 2.5300e-02:
+  Absolute error (L2-norm): 1.56490e-02
+
+Calculate error for velocity at time t = 2.5300e-02:
+  Absolute error (L2-norm): 9.44139e-03
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up acoustic conservation equations solver:
+
+List of parameters:
+
+Mathematical model:
+  Formulation:                               SkewSymmetric
+
+Physical quantities:
+  Start time:                                0.0000e+00
+  End time:                                  2.5254e-02
+  Speed of sound:                            7.0000e+00
+  Density:                                   3.0000e+00
+
+Temporal discretization:
+  Calculation of time step size:             UserSpecified
+  Maximum number of time steps:              4294967295
+  Temporal refinements:                      0
+  Order of time integration scheme:          2
+  Start with low order method:               false
+  Restarted simulation:                      false
+  Restart:
+  Write restart:                             false
+
+Spatial discretization:
+  Triangulation type:                        Distributed
+  Element type:                              Hypercube
+  Number of global refinements:              2
+  Create coarse triangulations:              false
+  Mapping degree:                            1
+  Polynomial degree pressure:                2
+  Polynomial degree velocity:                2
+
+Generating grid for 2-dimensional problem:
+
+  Max. number of refinements:                2
+  Number of cells:                           16
+
+Construct acoustic conservation equations operator ...
+
+... done!
+
+Setup acoustic conservation equations operator ...
+
+... done!
+
+Setup Multistep time integrator ...
+
+Calculation of time step size:
+
+  time step size:                            1.0000e-04
+
+... done!
+
+Starting time loop ...
+
+Calculate error for pressure at time t = 0.0000e+00:
+  Absolute error (L2-norm): 1.57067e-02
+
+Calculate error for velocity at time t = 0.0000e+00:
+  Absolute error (L2-norm): 0.00000e+00
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 1.00000e-04
+________________________________________________________________________________
+
+Calculate error for pressure at time t = 2.5300e-02:
+  Absolute error (L2-norm): 8.03504e-03
+
+Calculate error for velocity at time t = 2.5300e-02:
+  Absolute error (L2-norm): 5.61975e-04
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up acoustic conservation equations solver:
+
+List of parameters:
+
+Mathematical model:
+  Formulation:                               SkewSymmetric
+
+Physical quantities:
+  Start time:                                0.0000e+00
+  End time:                                  2.5254e-02
+  Speed of sound:                            7.0000e+00
+  Density:                                   3.0000e+00
+
+Temporal discretization:
+  Calculation of time step size:             UserSpecified
+  Maximum number of time steps:              4294967295
+  Temporal refinements:                      0
+  Order of time integration scheme:          2
+  Start with low order method:               false
+  Restarted simulation:                      false
+  Restart:
+  Write restart:                             false
+
+Spatial discretization:
+  Triangulation type:                        Distributed
+  Element type:                              Hypercube
+  Number of global refinements:              2
+  Create coarse triangulations:              false
+  Mapping degree:                            1
+  Polynomial degree pressure:                3
+  Polynomial degree velocity:                3
+
+Generating grid for 2-dimensional problem:
+
+  Max. number of refinements:                2
+  Number of cells:                           16
+
+Construct acoustic conservation equations operator ...
+
+... done!
+
+Setup acoustic conservation equations operator ...
+
+... done!
+
+Setup Multistep time integrator ...
+
+Calculation of time step size:
+
+  time step size:                            1.0000e-04
+
+... done!
+
+Starting time loop ...
+
+Calculate error for pressure at time t = 0.0000e+00:
+  Absolute error (L2-norm): 1.39272e-03
+
+Calculate error for velocity at time t = 0.0000e+00:
+  Absolute error (L2-norm): 0.00000e+00
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 1.00000e-04
+________________________________________________________________________________
+
+Calculate error for pressure at time t = 2.5300e-02:
+  Absolute error (L2-norm): 7.77314e-04
+
+Calculate error for velocity at time t = 2.5300e-02:
+  Absolute error (L2-norm): 4.40859e-05
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up acoustic conservation equations solver:
+
+List of parameters:
+
+Mathematical model:
+  Formulation:                               SkewSymmetric
+
+Physical quantities:
+  Start time:                                0.0000e+00
+  End time:                                  2.5254e-02
+  Speed of sound:                            7.0000e+00
+  Density:                                   3.0000e+00
+
+Temporal discretization:
+  Calculation of time step size:             UserSpecified
+  Maximum number of time steps:              4294967295
+  Temporal refinements:                      0
+  Order of time integration scheme:          2
+  Start with low order method:               false
+  Restarted simulation:                      false
+  Restart:
+  Write restart:                             false
+
+Spatial discretization:
+  Triangulation type:                        Distributed
+  Element type:                              Hypercube
+  Number of global refinements:              2
+  Create coarse triangulations:              false
+  Mapping degree:                            1
+  Polynomial degree pressure:                4
+  Polynomial degree velocity:                4
+
+Generating grid for 2-dimensional problem:
+
+  Max. number of refinements:                2
+  Number of cells:                           16
+
+Construct acoustic conservation equations operator ...
+
+... done!
+
+Setup acoustic conservation equations operator ...
+
+... done!
+
+Setup Multistep time integrator ...
+
+Calculation of time step size:
+
+  time step size:                            1.0000e-04
+
+... done!
+
+Starting time loop ...
+
+Calculate error for pressure at time t = 0.0000e+00:
+  Absolute error (L2-norm): 1.05702e-04
+
+Calculate error for velocity at time t = 0.0000e+00:
+  Absolute error (L2-norm): 0.00000e+00
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 1.00000e-04
+________________________________________________________________________________
+
+Calculate error for pressure at time t = 2.5300e-02:
+  Absolute error (L2-norm): 5.18740e-05
+
+Calculate error for velocity at time t = 2.5300e-02:
+  Absolute error (L2-norm): 3.66325e-06
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up acoustic conservation equations solver:
+
+List of parameters:
+
+Mathematical model:
+  Formulation:                               SkewSymmetric
+
+Physical quantities:
+  Start time:                                0.0000e+00
+  End time:                                  2.5254e-02
+  Speed of sound:                            7.0000e+00
+  Density:                                   3.0000e+00
+
+Temporal discretization:
+  Calculation of time step size:             UserSpecified
+  Maximum number of time steps:              4294967295
+  Temporal refinements:                      0
+  Order of time integration scheme:          2
+  Start with low order method:               false
+  Restarted simulation:                      false
+  Restart:
+  Write restart:                             false
+
+Spatial discretization:
+  Triangulation type:                        Distributed
+  Element type:                              Hypercube
+  Number of global refinements:              2
+  Create coarse triangulations:              false
+  Mapping degree:                            1
+  Polynomial degree pressure:                5
+  Polynomial degree velocity:                5
+
+Generating grid for 2-dimensional problem:
+
+  Max. number of refinements:                2
+  Number of cells:                           16
+
+Construct acoustic conservation equations operator ...
+
+... done!
+
+Setup acoustic conservation equations operator ...
+
+... done!
+
+Setup Multistep time integrator ...
+
+Calculation of time step size:
+
+  time step size:                            1.0000e-04
+
+... done!
+
+Starting time loop ...
+
+Calculate error for pressure at time t = 0.0000e+00:
+  Absolute error (L2-norm): 6.78907e-06
+
+Calculate error for velocity at time t = 0.0000e+00:
+  Absolute error (L2-norm): 0.00000e+00
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 1.00000e-04
+________________________________________________________________________________
+
+Calculate error for pressure at time t = 2.5300e-02:
+  Absolute error (L2-norm): 6.14288e-06
+
+Calculate error for velocity at time t = 2.5300e-02:
+  Absolute error (L2-norm): 2.55887e-07
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up acoustic conservation equations solver:
+
+List of parameters:
+
+Mathematical model:
+  Formulation:                               SkewSymmetric
+
+Physical quantities:
+  Start time:                                0.0000e+00
+  End time:                                  2.5254e-02
+  Speed of sound:                            7.0000e+00
+  Density:                                   3.0000e+00
+
+Temporal discretization:
+  Calculation of time step size:             UserSpecified
+  Maximum number of time steps:              4294967295
+  Temporal refinements:                      0
+  Order of time integration scheme:          2
+  Start with low order method:               false
+  Restarted simulation:                      false
+  Restart:
+  Write restart:                             false
+
+Spatial discretization:
+  Triangulation type:                        Distributed
+  Element type:                              Hypercube
+  Number of global refinements:              2
+  Create coarse triangulations:              false
+  Mapping degree:                            1
+  Polynomial degree pressure:                6
+  Polynomial degree velocity:                6
+
+Generating grid for 2-dimensional problem:
+
+  Max. number of refinements:                2
+  Number of cells:                           16
+
+Construct acoustic conservation equations operator ...
+
+... done!
+
+Setup acoustic conservation equations operator ...
+
+... done!
+
+Setup Multistep time integrator ...
+
+Calculation of time step size:
+
+  time step size:                            1.0000e-04
+
+... done!
+
+Starting time loop ...
+
+Calculate error for pressure at time t = 0.0000e+00:
+  Absolute error (L2-norm): 3.76329e-07
+
+Calculate error for velocity at time t = 0.0000e+00:
+  Absolute error (L2-norm): 0.00000e+00
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 1.00000e-04
+________________________________________________________________________________
+
+Calculate error for pressure at time t = 2.5300e-02:
+  Absolute error (L2-norm): 5.07805e-06
+
+Calculate error for velocity at time t = 2.5300e-02:
+  Absolute error (L2-norm): 1.41295e-08
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up acoustic conservation equations solver:
+
+List of parameters:
+
+Mathematical model:
+  Formulation:                               SkewSymmetric
+
+Physical quantities:
+  Start time:                                0.0000e+00
+  End time:                                  2.5254e-02
+  Speed of sound:                            7.0000e+00
+  Density:                                   3.0000e+00
+
+Temporal discretization:
+  Calculation of time step size:             UserSpecified
+  Maximum number of time steps:              4294967295
+  Temporal refinements:                      0
+  Order of time integration scheme:          2
+  Start with low order method:               false
+  Restarted simulation:                      false
+  Restart:
+  Write restart:                             false
+
+Spatial discretization:
+  Triangulation type:                        Distributed
+  Element type:                              Hypercube
+  Number of global refinements:              2
+  Create coarse triangulations:              false
+  Mapping degree:                            1
+  Polynomial degree pressure:                7
+  Polynomial degree velocity:                7
+
+Generating grid for 2-dimensional problem:
+
+  Max. number of refinements:                2
+  Number of cells:                           16
+
+Construct acoustic conservation equations operator ...
+
+... done!
+
+Setup acoustic conservation equations operator ...
+
+... done!
+
+Setup Multistep time integrator ...
+
+Calculation of time step size:
+
+  time step size:                            1.0000e-04
+
+... done!
+
+Starting time loop ...
+
+Calculate error for pressure at time t = 0.0000e+00:
+  Absolute error (L2-norm): 1.83214e-08
+
+Calculate error for velocity at time t = 0.0000e+00:
+  Absolute error (L2-norm): 0.00000e+00
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 1.00000e-04
+________________________________________________________________________________
+
+Calculate error for pressure at time t = 2.5300e-02:
+  Absolute error (L2-norm): 5.07362e-06
+
+Calculate error for velocity at time t = 2.5300e-02:
+  Absolute error (L2-norm): 7.92203e-10
