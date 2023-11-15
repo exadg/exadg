@@ -129,7 +129,7 @@ public:
   }
 
   unsigned int
-  solve(VectorType & dst, VectorType const & rhs) const override
+  solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const override
   {
     dealii::Timer timer;
 
@@ -145,6 +145,11 @@ public:
     }
     else
     {
+      if(not preconditioner.is_initialized())
+        preconditioner.initialize();
+      else if(update_preconditioner)
+        preconditioner.update();
+
       solver.solve(underlying_operator, dst, rhs, preconditioner);
     }
 
@@ -244,7 +249,7 @@ public:
   }
 
   unsigned int
-  solve(VectorType & dst, VectorType const & rhs) const override
+  solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const override
   {
     dealii::Timer timer;
 
@@ -272,6 +277,11 @@ public:
     }
     else
     {
+      if(not preconditioner.is_initialized())
+        preconditioner.initialize();
+      else if(update_preconditioner)
+        preconditioner.update();
+
       solver.solve(this->underlying_operator, dst, rhs, this->preconditioner);
     }
 
@@ -352,7 +362,7 @@ public:
   }
 
   unsigned int
-  solve(VectorType & dst, VectorType const & rhs) const override
+  solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const override
   {
     dealii::Timer timer;
 
@@ -372,6 +382,11 @@ public:
     }
     else
     {
+      if(not preconditioner.is_initialized())
+        preconditioner.initialize();
+      else if(update_preconditioner)
+        preconditioner.update();
+
       solver.solve(underlying_operator, dst, rhs, preconditioner);
     }
 

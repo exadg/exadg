@@ -36,8 +36,26 @@ class PreconditionerBase
 public:
   typedef dealii::LinearAlgebra::distributed::Vector<value_type> VectorType;
 
+  PreconditionerBase() : has_been_initialized(false)
+  {
+  }
+
   virtual ~PreconditionerBase()
   {
+  }
+
+  void
+  initialize()
+  {
+    do_initialize();
+
+    has_been_initialized = true;
+  }
+
+  bool
+  is_initialized() const
+  {
+    return has_been_initialized;
   }
 
   virtual void
@@ -51,6 +69,12 @@ public:
   {
     return std::make_shared<TimerTree>();
   }
+
+private:
+  virtual void
+  do_initialize() = 0;
+
+  bool has_been_initialized;
 };
 
 } // namespace ExaDG
