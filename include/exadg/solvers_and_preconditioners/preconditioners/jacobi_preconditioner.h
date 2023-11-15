@@ -53,7 +53,7 @@ public:
     }
     else
     {
-      for(unsigned int i = 0; i < dst.local_size(); ++i)
+      for(unsigned int i = 0; i < dst.locally_owned_size(); ++i)
         dst.local_element(i) = inverse_diagonal.local_element(i) * src.local_element(i);
     }
   }
