@@ -94,18 +94,17 @@ private:
   dealii::TrilinosWrappers::PreconditionAMG amg;
 
 public:
-  PreconditionerML(Operator const & op, MLData ml_data = MLData())
+  PreconditionerML(Operator const & op, bool const initialize, MLData ml_data = MLData())
     : pde_operator(op), ml_data(ml_data)
   {
     // initialize system matrix
     pde_operator.init_system_matrix(system_matrix,
                                     op.get_matrix_free().get_dof_handler().get_communicator());
 
-    // calculate_matrix
-    pde_operator.calculate_system_matrix(system_matrix);
-
-    // initialize Trilinos' AMG
-    amg.initialize(system_matrix, ml_data);
+    if(initialize)
+    {
+      this->update();
+    }
   }
 
   dealii::TrilinosWrappers::SparseMatrix const &
@@ -115,9 +114,16 @@ public:
   }
 
   void
-  update() override
+  vmult(VectorType & dst, VectorType const & src) const override
   {
-    // clear content of matrix since the next calculate_system_matrix-commands add their result
+    amg.vmult(dst, src);
+  }
+
+private:
+  void
+  do_update() override
+  {
+    // clear content of matrix since calculate_system_matrix() adds the result
     system_matrix *= 0.0;
 
     // re-calculate matrix
@@ -127,13 +133,6 @@ public:
     amg.initialize(system_matrix, ml_data);
   }
 
-  void
-  vmult(VectorType & dst, VectorType const & src) const override
-  {
-    amg.vmult(dst, src);
-  }
-
-private:
   // reference to matrix-free operator
   Operator const & pde_operator;
 
@@ -164,7 +163,9 @@ public:
   // amg preconditioner for access by PETSc solver
   dealii::PETScWrappers::PreconditionBoomerAMG amg;
 
-  PreconditionerBoomerAMG(Operator const & op, BoomerData boomer_data = BoomerData())
+  PreconditionerBoomerAMG(Operator const & op,
+                          bool const       initialize,
+                          BoomerData       boomer_data = BoomerData())
     : subcommunicator(
         create_subcommunicator(op.get_matrix_free().get_dof_handler(op.get_dof_index()))),
       pde_operator(op),
@@ -173,7 +174,10 @@ public:
     // initialize system matrix
     pde_operator.init_system_matrix(system_matrix, *subcommunicator);
 
-    calculate_preconditioner();
+    if(initialize)
+    {
+      this->update();
+    }
   }
 
   ~PreconditionerBoomerAMG()
@@ -194,19 +198,6 @@ public:
   }
 
   void
-  update() override
-  {
-    // clear content of matrix since the next calculate_system_matrix calls
-    // add their result; since we might run this on a sub-communicator, we
-    // skip the processes that do not participate in the matrix and have size
-    // zero
-    if(system_matrix.m() > 0)
-      system_matrix = 0.0;
-
-    calculate_preconditioner();
-  }
-
-  void
   vmult(VectorType & dst, VectorType const & src) const override
   {
     if(system_matrix.m() > 0)
@@ -221,6 +212,19 @@ public:
   }
 
 private:
+  void
+  do_update() override
+  {
+    // clear content of matrix since the next calculate_system_matrix calls
+    // add their result; since we might run this on a sub-communicator, we
+    // skip the processes that do not participate in the matrix and have size
+    // zero
+    if(system_matrix.m() > 0)
+      system_matrix = 0.0;
+
+    calculate_preconditioner();
+  }
+
   void
   calculate_preconditioner()
   {
@@ -268,16 +272,19 @@ private:
   typedef dealii::LinearAlgebra::distributed::Vector<NumberAMG> VectorTypeAMG;
 
 public:
-  PreconditionerAMG(Operator const & pde_operator, AMGData const & data)
+  PreconditionerAMG(Operator const & pde_operator, bool const initialize, AMGData const & data)
   {
     (void)pde_operator;
+    (void)initialize;
     (void)data;
 
     if(data.amg_type == AMGType::BoomerAMG)
     {
 #ifdef DEAL_II_WITH_PETSC
       preconditioner_amg =
-        std::make_shared<PreconditionerBoomerAMG<Operator, double>>(pde_operator, data.boomer_data);
+        std::make_shared<PreconditionerBoomerAMG<Operator, double>>(pde_operator,
+                                                                    initialize,
+                                                                    data.boomer_data);
 #else
       AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with PETSc!"));
 #endif
@@ -285,8 +292,9 @@ public:
     else if(data.amg_type == AMGType::ML)
     {
 #ifdef DEAL_II_WITH_TRILINOS
-      preconditioner_amg =
-        std::make_shared<PreconditionerML<Operator, double>>(pde_operator, data.ml_data);
+      preconditioner_amg = std::make_shared<PreconditionerML<Operator, double>>(pde_operator,
+                                                                                initialize,
+                                                                                data.ml_data);
 #else
       AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
@@ -313,13 +321,13 @@ public:
     dst.copy_locally_owned_data_from(dst_amg);
   }
 
+private:
   void
-  update() final
+  do_update() final
   {
     preconditioner_amg->update();
   }
 
-private:
   std::shared_ptr<PreconditionerBase<NumberAMG>> preconditioner_amg;
 };
 

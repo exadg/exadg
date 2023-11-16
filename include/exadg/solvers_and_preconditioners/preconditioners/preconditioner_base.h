@@ -36,7 +36,7 @@ class PreconditionerBase
 public:
   typedef dealii::LinearAlgebra::distributed::Vector<value_type> VectorType;
 
-  PreconditionerBase() : has_been_initialized(false)
+  PreconditionerBase() : update_needed(true)
   {
   }
 
@@ -45,24 +45,27 @@ public:
   }
 
   void
-  initialize()
+  set_update_flag()
   {
-    do_initialize();
-
-    has_been_initialized = true;
+    update_needed = true;
   }
 
   bool
-  is_initialized() const
+  needs_update() const
   {
-    return has_been_initialized;
+    return update_needed;
   }
 
   virtual void
   vmult(VectorType & dst, VectorType const & src) const = 0;
 
-  virtual void
-  update() = 0;
+  void
+  update()
+  {
+    this->do_update();
+
+    update_needed = false;
+  }
 
   virtual std::shared_ptr<TimerTree>
   get_timings() const
@@ -70,11 +73,11 @@ public:
     return std::make_shared<TimerTree>();
   }
 
-private:
+protected:
   virtual void
-  do_initialize() = 0;
+  do_update() = 0;
 
-  bool has_been_initialized;
+  bool update_needed;
 };
 
 } // namespace ExaDG

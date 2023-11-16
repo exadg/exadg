@@ -36,12 +36,15 @@ class JacobiPreconditioner : public PreconditionerBase<typename Operator::value_
 public:
   typedef typename PreconditionerBase<typename Operator::value_type>::VectorType VectorType;
 
-  JacobiPreconditioner(Operator const & underlying_operator_in)
+  JacobiPreconditioner(Operator const & underlying_operator_in, bool const initialize)
     : underlying_operator(underlying_operator_in)
   {
     underlying_operator.initialize_dof_vector(inverse_diagonal);
 
-    underlying_operator.calculate_inverse_diagonal(inverse_diagonal);
+    if(initialize)
+    {
+      this->update();
+    }
   }
 
   void
@@ -58,12 +61,6 @@ public:
     }
   }
 
-  void
-  update() final
-  {
-    underlying_operator.calculate_inverse_diagonal(inverse_diagonal);
-  }
-
   unsigned int
   get_size_of_diagonal()
   {
@@ -71,6 +68,12 @@ public:
   }
 
 private:
+  void
+  do_update() final
+  {
+    underlying_operator.calculate_inverse_diagonal(inverse_diagonal);
+  }
+
   Operator const & underlying_operator;
 
   VectorType inverse_diagonal;

@@ -34,21 +34,13 @@ class AdditiveSchwarzPreconditioner : public PreconditionerBase<typename Operato
 public:
   typedef typename PreconditionerBase<typename Operator::value_type>::VectorType VectorType;
 
-  AdditiveSchwarzPreconditioner(Operator const & underlying_operator_in)
+  AdditiveSchwarzPreconditioner(Operator const & underlying_operator_in, bool const initialize)
     : underlying_operator(underlying_operator_in)
   {
-    underlying_operator.compute_factorized_additive_schwarz_matrices();
-  }
-
-  /*
-   *  This function updates the additive Schwarz preconditioner.
-   *  Make sure that the underlying operator has been updated
-   *  when calling this function.
-   */
-  void
-  update() final
-  {
-    underlying_operator.compute_factorized_additive_schwarz_matrices();
+    if(initialize)
+    {
+      this->update();
+    }
   }
 
   /*
@@ -63,6 +55,17 @@ public:
   }
 
 private:
+  /*
+   *  This function updates the additive Schwarz preconditioner.
+   *  Make sure that the underlying operator has been updated
+   *  when calling this function.
+   */
+  void
+  do_update() final
+  {
+    underlying_operator.compute_factorized_additive_schwarz_matrices();
+  }
+
   Operator const & underlying_operator;
 };
 

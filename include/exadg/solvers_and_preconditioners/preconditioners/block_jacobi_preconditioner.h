@@ -32,9 +32,10 @@ class BlockJacobiPreconditioner : public PreconditionerBase<typename Operator::v
 public:
   typedef typename PreconditionerBase<typename Operator::value_type>::VectorType VectorType;
 
-  BlockJacobiPreconditioner(Operator const & underlying_operator_in)
+  BlockJacobiPreconditioner(Operator const & underlying_operator_in, bool const initialize)
     : underlying_operator(underlying_operator_in)
   {
+<<<<<<< HEAD
     // initialize block Jacobi
     underlying_operator.initialize_block_diagonal_preconditioner();
   }
@@ -48,6 +49,12 @@ public:
   update() final
   {
     underlying_operator.update_block_diagonal_preconditioner();
+=======
+    if(initialize)
+    {
+      this->update();
+    }
+>>>>>>> 614c430a1 (apply changes to simple preconditioners)
   }
 
   /*
@@ -62,6 +69,17 @@ public:
   }
 
 private:
+  /*
+   *  This function updates the block Jacobi preconditioner.
+   *  Make sure that the underlying operator has been updated
+   *  when calling this function.
+   */
+  void
+  do_update() final
+  {
+    underlying_operator.update_block_diagonal_preconditioner();
+  }
+
   Operator const & underlying_operator;
 };
 

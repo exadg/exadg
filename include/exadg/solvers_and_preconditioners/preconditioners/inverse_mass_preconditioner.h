@@ -55,13 +55,13 @@ public:
     inverse_mass_operator.apply(dst, src);
   }
 
+private:
   void
-  update() final
+  do_update() final
   {
     inverse_mass_operator.update();
   }
 
-private:
   InverseMassOperator<dim, n_components, Number> inverse_mass_operator;
 };
 } // namespace ExaDG
