@@ -47,6 +47,8 @@ public:
                             InverseMassOperatorData const           inverse_mass_operator_data)
   {
     inverse_mass_operator.initialize(matrix_free, inverse_mass_operator_data);
+
+    this->update_needed = false;
   }
 
   void
@@ -55,13 +57,15 @@ public:
     inverse_mass_operator.apply(dst, src);
   }
 
-private:
   void
-  do_update() final
+  update() final
   {
     inverse_mass_operator.update();
+
+    this->update_needed = false;
   }
 
+private:
   InverseMassOperator<dim, n_components, Number> inverse_mass_operator;
 };
 } // namespace ExaDG

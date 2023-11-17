@@ -67,13 +67,15 @@ public:
     return inverse_diagonal.size();
   }
 
-private:
   void
-  do_update() final
+  update() final
   {
     underlying_operator.calculate_inverse_diagonal(inverse_diagonal);
+
+    this->update_needed = false;
   }
 
+private:
   Operator const & underlying_operator;
 
   VectorType inverse_diagonal;

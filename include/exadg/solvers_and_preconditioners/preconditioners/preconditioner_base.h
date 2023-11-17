@@ -59,13 +59,8 @@ public:
   virtual void
   vmult(VectorType & dst, VectorType const & src) const = 0;
 
-  void
-  update()
-  {
-    this->do_update();
-
-    update_needed = false;
-  }
+  virtual void
+  update() = 0;
 
   virtual std::shared_ptr<TimerTree>
   get_timings() const
@@ -74,9 +69,6 @@ public:
   }
 
 protected:
-  virtual void
-  do_update() = 0;
-
   bool update_needed;
 };
 

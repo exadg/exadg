@@ -52,13 +52,17 @@ MultigridPreconditioner<dim, Number, n_components>::initialize(
 
   this->mesh_is_moving = mesh_is_moving;
 
+  bool const initialize_preconditioners = true;
   Base::initialize(mg_data,
                    grid,
                    mapping,
                    fe,
                    data.operator_is_singular,
                    dirichlet_bc,
-                   dirichlet_bc_component_mask);
+                   dirichlet_bc_component_mask,
+                   initialize_preconditioners);
+
+  this->update_needed = false;
 }
 
 template<int dim, typename Number, int n_components>

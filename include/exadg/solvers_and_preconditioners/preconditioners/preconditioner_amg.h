@@ -119,9 +119,8 @@ public:
     amg.vmult(dst, src);
   }
 
-private:
   void
-  do_update() override
+  update() override
   {
     // clear content of matrix since calculate_system_matrix() adds the result
     system_matrix *= 0.0;
@@ -131,8 +130,11 @@ private:
 
     // initialize Trilinos' AMG
     amg.initialize(system_matrix, ml_data);
+
+    this->update_needed = false;
   }
 
+private:
   // reference to matrix-free operator
   Operator const & pde_operator;
 
@@ -211,9 +213,8 @@ public:
                             });
   }
 
-private:
   void
-  do_update() override
+  update() override
   {
     // clear content of matrix since the next calculate_system_matrix calls
     // add their result; since we might run this on a sub-communicator, we
@@ -223,8 +224,11 @@ private:
       system_matrix = 0.0;
 
     calculate_preconditioner();
+
+    this->update_needed = false;
   }
 
+private:
   void
   calculate_preconditioner()
   {
@@ -323,9 +327,11 @@ public:
 
 private:
   void
-  do_update() final
+  update() final
   {
     preconditioner_amg->update();
+
+    this->update_needed = false;
   }
 
   std::shared_ptr<PreconditionerBase<NumberAMG>> preconditioner_amg;

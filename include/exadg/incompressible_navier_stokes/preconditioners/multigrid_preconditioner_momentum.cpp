@@ -208,6 +208,10 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
                                  *this->constraints[level],
                                  data);
 
+  // The operator also depends on the time. This is due to the fact that the linearized
+  // convective term does not only depend on the linearized velocity field but also on Dirichlet
+  // boundary data which itself depends on the current time.
+  pde_operator_level->set_time(pde_operator->get_time());
   // make sure that scaling factor of time derivative term has been set before the smoothers are
   // initialized
   pde_operator_level->set_scaling_factor_mass_operator(

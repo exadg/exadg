@@ -54,18 +54,19 @@ public:
     underlying_operator.apply_inverse_additive_schwarz_matrices(dst, src);
   }
 
-private:
   /*
    *  This function updates the additive Schwarz preconditioner.
    *  Make sure that the underlying operator has been updated
    *  when calling this function.
    */
   void
-  do_update() final
+  update() final
   {
     underlying_operator.compute_factorized_additive_schwarz_matrices();
+    this->update_needed = false;
   }
 
+private:
   Operator const & underlying_operator;
 };
 

@@ -61,7 +61,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   dealii::FiniteElement<dim> const &          fe,
   bool const                                  operator_is_singular,
   Map_DBC const &                             dirichlet_bc,
-  Map_DBC_ComponentMask const &               dirichlet_bc_component_mask)
+  Map_DBC_ComponentMask const &               dirichlet_bc_component_mask,
+  bool const                                  initialize_preconditioners)
 {
   this->data = data;
 
@@ -82,13 +83,14 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
 
   this->initialize_matrix_free_objects();
 
+  this->initialize_transfer_operators();
+
   this->initialize_operators();
 
-  this->initialize_smoothers();
+  this->initialize_smoothers(initialize_preconditioners);
 
-  this->initialize_coarse_solver(operator_is_singular);
-
-  this->initialize_transfer_operators();
+  // TODO
+  this->initialize_coarse_solver(operator_is_singular /* , initialize_preconditioners */);
 
   this->initialize_multigrid_algorithm();
 }
@@ -634,13 +636,15 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_operator(
 
 template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_smoothers()
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_smoothers(
+  bool const initialize_preconditioner)
 {
   if(get_number_of_levels() >= 2)
     this->smoothers.resize(1, get_number_of_levels() - 1);
 
-  for_all_smoothing_levels(
-    [&](unsigned int const level) { this->initialize_smoother(*this->operators[level], level); });
+  for_all_smoothing_levels([&](unsigned int const level) {
+    this->initialize_smoother(*this->operators[level], level, initialize_preconditioner);
+  });
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -686,7 +690,8 @@ template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_smoother(
   Operator &   mg_operator,
-  unsigned int level)
+  unsigned int level,
+  bool const   initialize_preconditioner)
 {
   AssertThrow(level > 0 and level < this->get_number_of_levels(),
               dealii::ExcMessage(
@@ -707,7 +712,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_smoother(
         data.smoother_data.iterations_eigenvalue_estimation;
 
       std::shared_ptr<Chebyshev> smoother = std::dynamic_pointer_cast<Chebyshev>(smoothers[level]);
-      smoother->initialize(mg_operator, smoother_data);
+      smoother->setup(mg_operator, initialize_preconditioner, smoother_data);
       break;
     }
     case MultigridSmoother::GMRES:
@@ -720,7 +725,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_smoother(
       smoother_data.number_of_iterations = data.smoother_data.iterations;
 
       std::shared_ptr<GMRES> smoother = std::dynamic_pointer_cast<GMRES>(smoothers[level]);
-      smoother->initialize(mg_operator, smoother_data);
+      smoother->setup(mg_operator, initialize_preconditioner, smoother_data);
       break;
     }
     case MultigridSmoother::CG:
@@ -733,7 +738,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_smoother(
       smoother_data.number_of_iterations = data.smoother_data.iterations;
 
       std::shared_ptr<CG> smoother = std::dynamic_pointer_cast<CG>(smoothers[level]);
-      smoother->initialize(mg_operator, smoother_data);
+      smoother->setup(mg_operator, initialize_preconditioner, smoother_data);
       break;
     }
     case MultigridSmoother::Jacobi:
@@ -747,7 +752,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_smoother(
       smoother_data.damping_factor            = data.smoother_data.relaxation_factor;
 
       std::shared_ptr<Jacobi> smoother = std::dynamic_pointer_cast<Jacobi>(smoothers[level]);
-      smoother->initialize(mg_operator, smoother_data);
+      smoother->setup(mg_operator, initialize_preconditioner, smoother_data);
       break;
     }
     default:
