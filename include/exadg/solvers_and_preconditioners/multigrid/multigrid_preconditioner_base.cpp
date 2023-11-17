@@ -89,8 +89,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
 
   this->initialize_smoothers(initialize_preconditioners);
 
-  // TODO
-  this->initialize_coarse_solver(operator_is_singular /* , initialize_preconditioners */);
+  this->initialize_coarse_solver(operator_is_singular, initialize_preconditioners);
 
   this->initialize_multigrid_algorithm();
 }
@@ -779,7 +778,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_coarse_solver(
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_solver(
-  bool const operator_is_singular)
+  bool const operator_is_singular,
+  bool const initialize_preconditioners)
 {
   Operator & coarse_operator = *operators[0];
 
@@ -789,7 +789,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_sol
     {
       coarse_grid_solver =
         std::make_shared<MGCoarseChebyshev<Operator>>(coarse_operator,
-                                                      data.coarse_problem.solver_data,
+                                                      initialize_preconditioners,
+                                                      data.coarse_problem.solver_data.rel_tol,
                                                       data.coarse_problem.preconditioner,
                                                       operator_is_singular);
       break;
@@ -811,21 +812,20 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_sol
       additional_data.preconditioner       = data.coarse_problem.preconditioner;
       additional_data.amg_data             = data.coarse_problem.amg_data;
 
-      coarse_grid_solver =
-        std::make_shared<MGCoarseKrylov<Operator>>(coarse_operator, additional_data, mpi_comm);
+      coarse_grid_solver = std::make_shared<MGCoarseKrylov<Operator>>(coarse_operator,
+                                                                      initialize_preconditioners,
+                                                                      additional_data,
+                                                                      mpi_comm);
       break;
     }
     case MultigridCoarseGridSolver::AMG:
     {
-      if(data.coarse_problem.amg_data.amg_type == AMGType::ML)
+      if(data.coarse_problem.amg_data.amg_type == AMGType::ML or
+         data.coarse_problem.amg_data.amg_type == AMGType::BoomerAMG)
       {
-        coarse_grid_solver =
-          std::make_shared<MGCoarseAMG<Operator>>(coarse_operator, data.coarse_problem.amg_data);
-      }
-      else if(data.coarse_problem.amg_data.amg_type == AMGType::BoomerAMG)
-      {
-        coarse_grid_solver =
-          std::make_shared<MGCoarseAMG<Operator>>(coarse_operator, data.coarse_problem.amg_data);
+        coarse_grid_solver = std::make_shared<MGCoarseAMG<Operator>>(coarse_operator,
+                                                                     initialize_preconditioners,
+                                                                     data.coarse_problem.amg_data);
       }
       else
       {

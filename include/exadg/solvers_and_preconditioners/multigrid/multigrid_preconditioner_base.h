@@ -312,7 +312,7 @@ private:
    * Coarse grid solver.
    */
   void
-  initialize_coarse_solver(bool const operator_is_singular);
+  initialize_coarse_solver(bool const operator_is_singular, bool const initialize_preconditioners);
 
   /*
    * Initialization of actual multigrid algorithm.
