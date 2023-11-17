@@ -800,6 +800,10 @@ Operator<dim, Number>::update_after_grid_motion(bool const update_matrix_free)
   {
     diffusive_kernel->calculate_penalty_parameter(*matrix_free, get_dof_index());
   }
+
+  // The inverse mass operator might contain matrix-based components, in which cases it needs to be
+  // updated after the grid has been deformed.
+  inverse_mass_operator.update();
 }
 
 template<int dim, typename Number>

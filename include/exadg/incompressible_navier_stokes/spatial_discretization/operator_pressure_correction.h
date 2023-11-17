@@ -126,6 +126,9 @@ public:
   void
   setup_solvers(double const & scaling_factor_mass, VectorType const & velocity) final;
 
+  void
+  update_after_grid_motion(bool const update_matrix_free) final;
+
   /*
    * Momentum step:
    */

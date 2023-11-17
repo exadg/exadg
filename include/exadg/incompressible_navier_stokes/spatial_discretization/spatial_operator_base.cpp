@@ -1518,6 +1518,11 @@ SpatialOperatorBase<dim, Number>::update_after_grid_motion(bool const update_mat
     viscous_kernel->calculate_penalty_parameter(*matrix_free, get_dof_index_velocity());
   }
 
+  // The inverse mass operator might contain matrix-based components, in which cases it needs to be
+  // updated after the grid has been deformed.
+  inverse_mass_velocity.update();
+  inverse_mass_velocity_scalar.update();
+
   // note that the update of div-div and continuity penalty terms is done separately
 }
 

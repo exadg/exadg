@@ -58,7 +58,7 @@ public:
   void
   update() final
   {
-    // do nothing
+    inverse_mass_operator.update();
   }
 
 private:
