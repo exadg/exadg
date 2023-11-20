@@ -85,10 +85,41 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a89f21495b58e7526ce1358de939a52a0" id="r_a89f21495b58e7526ce1358de939a52a0"><td class="memItemLeft" align="right" valign="top"><a id="a89f21495b58e7526ce1358de939a52a0" name="a89f21495b58e7526ce1358de939a52a0"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, <a class="el" href="structExaDG_1_1InverseMassOperatorData.html">InverseMassOperatorData</a> const inverse_mass_operator_data)</td></tr>
 <tr class="separator:a89f21495b58e7526ce1358de939a52a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa35d967ce6cd305af7d5e22f93db2c97" id="r_aa35d967ce6cd305af7d5e22f93db2c97"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1InverseMassOperator.html#aa35d967ce6cd305af7d5e22f93db2c97">update</a> ()</td></tr>
+<tr class="separator:aa35d967ce6cd305af7d5e22f93db2c97"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2f0e10cc5968135c4b6c87bd0cef5aad" id="r_a2f0e10cc5968135c4b6c87bd0cef5aad"><td class="memItemLeft" align="right" valign="top"><a id="a2f0e10cc5968135c4b6c87bd0cef5aad" name="a2f0e10cc5968135c4b6c87bd0cef5aad"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>apply</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:a2f0e10cc5968135c4b6c87bd0cef5aad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="aa35d967ce6cd305af7d5e22f93db2c97" name="aa35d967ce6cd305af7d5e22f93db2c97"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa35d967ce6cd305af7d5e22f93db2c97">&#9670;&#160;</a></span>update()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, int n_components, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1InverseMassOperator.html">ExaDG::InverseMassOperator</a>&lt; dim, n_components, Number &gt;::update </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Updates the inverse mass operator. This function recomputes the diagonal/block-diagonal in case the geometry has changed (e.g. the mesh has been deformed). </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/operators/<a class="el" href="inverse__mass__operator_8h_source.html">inverse_mass_operator.h</a></li>
 </ul>

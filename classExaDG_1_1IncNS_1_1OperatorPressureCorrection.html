@@ -99,6 +99,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a1455df76e3815dca82c2879944717dd8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8ca8a4ba5318dae25bddec4c2d8f9c78" id="r_a8ca8a4ba5318dae25bddec4c2d8f9c78"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorPressureCorrection.html#a8ca8a4ba5318dae25bddec4c2d8f9c78">setup_solvers</a> (double const &amp;scaling_factor_mass, VectorType const &amp;velocity) final</td></tr>
 <tr class="separator:a8ca8a4ba5318dae25bddec4c2d8f9c78"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afac83100083a3f3f305daf45c84ce813" id="r_afac83100083a3f3f305daf45c84ce813"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorPressureCorrection.html#afac83100083a3f3f305daf45c84ce813">update_after_grid_motion</a> (bool const update_matrix_free) final</td></tr>
+<tr class="separator:afac83100083a3f3f305daf45c84ce813"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7be767557399ba504c31114204884ea8" id="r_a7be767557399ba504c31114204884ea8"><td class="memItemLeft" align="right" valign="top"><a id="a7be767557399ba504c31114204884ea8" name="a7be767557399ba504c31114204884ea8"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve_linear_momentum_equation</b> (VectorType &amp;solution, VectorType const &amp;rhs, bool const &amp;update_preconditioner, double const &amp;scaling_factor_mass)</td></tr>
 <tr class="separator:a7be767557399ba504c31114204884ea8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -142,8 +144,8 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>interpolate_pressure_
 <tr class="memitem:a3079c7ccfa6c2d40ef2395f58a90ae10 inherit pub_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods" id="r_a3079c7ccfa6c2d40ef2395f58a90ae10"><td class="memItemLeft" align="right" valign="top">
 &#160;</td><td class="memItemRight" valign="bottom"><b>OperatorProjectionMethods</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, <a class="el" href="classExaDG_1_1IncNS_1_1Parameters.html">Parameters</a> const &amp;parameters, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
 <tr class="separator:a3079c7ccfa6c2d40ef2395f58a90ae10 inherit pub_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6f9855f982733d51efa2861c53b9090c inherit pub_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods" id="r_a6f9855f982733d51efa2861c53b9090c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorProjectionMethods.html#a6f9855f982733d51efa2861c53b9090c">update_after_grid_motion</a> (bool const update_matrix_free) final</td></tr>
-<tr class="separator:a6f9855f982733d51efa2861c53b9090c inherit pub_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a044f1c8424ed0a9bae1f054048fe526b inherit pub_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods" id="r_a044f1c8424ed0a9bae1f054048fe526b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorProjectionMethods.html#a044f1c8424ed0a9bae1f054048fe526b">update_after_grid_motion</a> (bool const update_matrix_free) override</td></tr>
+<tr class="separator:a044f1c8424ed0a9bae1f054048fe526b inherit pub_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab58479c4a1bc2af20f23445fce31d5ec inherit pub_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods" id="r_ab58479c4a1bc2af20f23445fce31d5ec"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>do_rhs_add_viscous_term</b> (VectorType &amp;dst, double const time) const</td></tr>
 <tr class="separator:ab58479c4a1bc2af20f23445fce31d5ec inherit pub_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -612,6 +614,36 @@ template&lt;int dim, typename Number &gt; </div>
           <td></td>
           <td>)</td>
           <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reimplemented from <a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">ExaDG::IncNS::SpatialOperatorBase&lt; dim, Number &gt;</a>.</p>
+
+</div>
+</div>
+<a id="afac83100083a3f3f305daf45c84ce813" name="afac83100083a3f3f305daf45c84ce813"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afac83100083a3f3f305daf45c84ce813">&#9670;&#160;</a></span>update_after_grid_motion()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1IncNS_1_1OperatorPressureCorrection.html">ExaDG::IncNS::OperatorPressureCorrection</a>&lt; dim, Number &gt;::update_after_grid_motion </td>
+          <td>(</td>
+          <td class="paramtype">bool const&#160;</td>
+          <td class="paramname"><em>update_matrix_free</em></td><td>)</td>
+          <td></td>
         </tr>
       </table>
   </td>

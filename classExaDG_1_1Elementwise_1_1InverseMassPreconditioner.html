@@ -108,6 +108,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:ab3e9342103db0bbb484b419cf9d9b18d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a979d578d6be232374a37c0f8c6162518" id="r_a979d578d6be232374a37c0f8c6162518"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Elementwise_1_1InverseMassPreconditioner.html#a979d578d6be232374a37c0f8c6162518">setup</a> (unsigned int const cell) final</td></tr>
 <tr class="separator:a979d578d6be232374a37c0f8c6162518"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0796f76dd58e62733c304f4538efe599" id="r_a0796f76dd58e62733c304f4538efe599"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Elementwise_1_1InverseMassPreconditioner.html#a0796f76dd58e62733c304f4538efe599">update</a> () final</td></tr>
+<tr class="separator:a0796f76dd58e62733c304f4538efe599"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1f480ae1482708fd0fe5d377fe24e102" id="r_a1f480ae1482708fd0fe5d377fe24e102"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Elementwise_1_1InverseMassPreconditioner.html#a1f480ae1482708fd0fe5d377fe24e102">vmult</a> (dealii::VectorizedArray&lt; Number &gt; *dst, dealii::VectorizedArray&lt; Number &gt; const *src) const final</td></tr>
 <tr class="separator:a1f480ae1482708fd0fe5d377fe24e102"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -131,6 +133,35 @@ template&lt;int dim, int n_components, typename Number &gt; </div>
           <td>(</td>
           <td class="paramtype">unsigned int const&#160;</td>
           <td class="paramname"><em>cell</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerBase.html">ExaDG::Elementwise::PreconditionerBase&lt; dealii::VectorizedArray&lt; Number &gt; &gt;</a>.</p>
+
+</div>
+</div>
+<a id="a0796f76dd58e62733c304f4538efe599" name="a0796f76dd58e62733c304f4538efe599"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0796f76dd58e62733c304f4538efe599">&#9670;&#160;</a></span>update()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, int n_components, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1Elementwise_1_1InverseMassPreconditioner.html">ExaDG::Elementwise::InverseMassPreconditioner</a>&lt; dim, n_components, Number &gt;::update </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>

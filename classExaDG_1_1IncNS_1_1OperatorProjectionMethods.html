@@ -99,8 +99,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3079c7ccfa6c2d40ef2395f58a90ae10" id="r_a3079c7ccfa6c2d40ef2395f58a90ae10"><td class="memItemLeft" align="right" valign="top"><a id="a3079c7ccfa6c2d40ef2395f58a90ae10" name="a3079c7ccfa6c2d40ef2395f58a90ae10"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>OperatorProjectionMethods</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, <a class="el" href="classExaDG_1_1IncNS_1_1Parameters.html">Parameters</a> const &amp;parameters, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
 <tr class="separator:a3079c7ccfa6c2d40ef2395f58a90ae10"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6f9855f982733d51efa2861c53b9090c" id="r_a6f9855f982733d51efa2861c53b9090c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorProjectionMethods.html#a6f9855f982733d51efa2861c53b9090c">update_after_grid_motion</a> (bool const update_matrix_free) final</td></tr>
-<tr class="separator:a6f9855f982733d51efa2861c53b9090c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a044f1c8424ed0a9bae1f054048fe526b" id="r_a044f1c8424ed0a9bae1f054048fe526b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorProjectionMethods.html#a044f1c8424ed0a9bae1f054048fe526b">update_after_grid_motion</a> (bool const update_matrix_free) override</td></tr>
+<tr class="separator:a044f1c8424ed0a9bae1f054048fe526b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab58479c4a1bc2af20f23445fce31d5ec" id="r_ab58479c4a1bc2af20f23445fce31d5ec"><td class="memItemLeft" align="right" valign="top"><a id="ab58479c4a1bc2af20f23445fce31d5ec" name="ab58479c4a1bc2af20f23445fce31d5ec"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>do_rhs_add_viscous_term</b> (VectorType &amp;dst, double const time) const</td></tr>
 <tr class="separator:ab58479c4a1bc2af20f23445fce31d5ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -548,8 +548,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a6f9855f982733d51efa2861c53b9090c" name="a6f9855f982733d51efa2861c53b9090c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6f9855f982733d51efa2861c53b9090c">&#9670;&#160;</a></span>update_after_grid_motion()</h2>
+<a id="a044f1c8424ed0a9bae1f054048fe526b" name="a044f1c8424ed0a9bae1f054048fe526b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a044f1c8424ed0a9bae1f054048fe526b">&#9670;&#160;</a></span>update_after_grid_motion()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -569,7 +569,7 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

@@ -196,6 +196,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>set_constrained_dofs_
 <tr class="memitem:a3988f4e7c8b1135453b3851887d8ca7e inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a3988f4e7c8b1135453b3851887d8ca7e"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_inverse_diagonal</b> (VectorType &amp;diagonal) const</td></tr>
 <tr class="separator:a3988f4e7c8b1135453b3851887d8ca7e inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f553423e9d6a6cd0dc1bded06857ead inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a3f553423e9d6a6cd0dc1bded06857ead"><td class="memItemLeft" align="right" valign="top">
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_block_diagonal_preconditioner</b> () const</td></tr>
+<tr class="separator:a3f553423e9d6a6cd0dc1bded06857ead inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae08e30ac18aec92a0ca15edfadf1502a inherit pub_methods_classExaDG_1_1OperatorBase" id="r_ae08e30ac18aec92a0ca15edfadf1502a"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update_block_diagonal_preconditioner</b> () const</td></tr>
 <tr class="separator:ae08e30ac18aec92a0ca15edfadf1502a inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -225,21 +228,24 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_diagonal</b
 <tr class="memitem:a11c66277ccfea80912b079639e25895a inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a11c66277ccfea80912b079639e25895a"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>add_diagonal</b> (VectorType &amp;diagonal) const</td></tr>
 <tr class="separator:a11c66277ccfea80912b079639e25895a inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a529d544f71498954fe5745f88a66c924 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a529d544f71498954fe5745f88a66c924"><td class="memItemLeft" align="right" valign="top">
-void&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_block_diagonal_matrices</b> () const</td></tr>
-<tr class="separator:a529d544f71498954fe5745f88a66c924 inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7b9c7bd1cb327ccc31b867bac88114b6 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a7b9c7bd1cb327ccc31b867bac88114b6"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>add_block_diagonal_matrices</b> (std::vector&lt; LAPACKMatrix &gt; &amp;matrices) const</td></tr>
 <tr class="separator:a7b9c7bd1cb327ccc31b867bac88114b6 inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a39ff990127ebb781a79c3d4918cc109a inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a39ff990127ebb781a79c3d4918cc109a"><td class="memItemLeft" align="right" valign="top">
-void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_block_diagonal_matrix_based</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:a39ff990127ebb781a79c3d4918cc109a inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5641830f945a27a57992e818def4b682 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a5641830f945a27a57992e818def4b682"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_inverse_block_diagonal_matrix_based</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:a5641830f945a27a57992e818def4b682 inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac8feb45e2e7f341bcd9283ede36cbfd9 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_ac8feb45e2e7f341bcd9283ede36cbfd9"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_block_diagonal_preconditioner_matrix_free</b> () const</td></tr>
 <tr class="separator:ac8feb45e2e7f341bcd9283ede36cbfd9 inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04829bed6fa1affd2b2c1f574904649e inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a04829bed6fa1affd2b2c1f574904649e"><td class="memItemLeft" align="right" valign="top">
+void&#160;</td><td class="memItemRight" valign="bottom"><b>update_block_diagonal_preconditioner_matrix_free</b> () const</td></tr>
+<tr class="separator:a04829bed6fa1affd2b2c1f574904649e inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa26669de3825ccc2bed03f0525d2df25 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_aa26669de3825ccc2bed03f0525d2df25"><td class="memItemLeft" align="right" valign="top">
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_block_diagonal_preconditioner_matrix_based</b> () const</td></tr>
+<tr class="separator:aa26669de3825ccc2bed03f0525d2df25 inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9894c761729dac93e157acab4a23a649 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a9894c761729dac93e157acab4a23a649"><td class="memItemLeft" align="right" valign="top">
+void&#160;</td><td class="memItemRight" valign="bottom"><b>update_block_diagonal_preconditioner_matrix_based</b> () const</td></tr>
+<tr class="separator:a9894c761729dac93e157acab4a23a649 inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a463ac8d1bcaf7ba3e12c64d1178d1276 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a463ac8d1bcaf7ba3e12c64d1178d1276"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_add_block_diagonal_elementwise</b> (unsigned int const cell, dealii::VectorizedArray&lt; Number &gt; *const dst, dealii::VectorizedArray&lt; Number &gt; const *const src, unsigned int const problem_size) const</td></tr>
 <tr class="separator:a463ac8d1bcaf7ba3e12c64d1178d1276 inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
