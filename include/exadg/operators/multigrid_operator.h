@@ -123,6 +123,12 @@ public:
   }
 
   void
+  initialize_block_diagonal_preconditioner() const final
+  {
+    pde_operator->initialize_block_diagonal_preconditioner();
+  }
+
+  void
   update_block_diagonal_preconditioner() const final
   {
     pde_operator->update_block_diagonal_preconditioner();

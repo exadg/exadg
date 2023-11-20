@@ -36,7 +36,7 @@ public:
     : underlying_operator(underlying_operator_in)
   {
     // initialize block Jacobi
-    underlying_operator.update_block_diagonal_preconditioner();
+    underlying_operator.initialize_block_diagonal_preconditioner();
   }
 
   /*

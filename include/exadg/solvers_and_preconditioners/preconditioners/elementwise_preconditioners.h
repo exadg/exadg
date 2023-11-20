@@ -52,6 +52,9 @@ public:
   setup(unsigned int const cell) = 0;
 
   virtual void
+  update() = 0;
+
+  virtual void
   vmult(Number * dst, Number const * src) const = 0;
 
 private:
@@ -74,6 +77,12 @@ public:
 
   void
   setup(unsigned int const /* cell */) final
+  {
+    // nothing to do
+  }
+
+  void
+  update() final
   {
     // nothing to do
   }
@@ -109,7 +118,7 @@ public:
 
     underlying_operator.initialize_dof_vector(global_inverse_diagonal);
 
-    underlying_operator.calculate_inverse_diagonal(global_inverse_diagonal);
+    this->update();
   }
 
   void
@@ -117,6 +126,12 @@ public:
   {
     integrator->reinit(cell);
     integrator->read_dof_values(global_inverse_diagonal, 0);
+  }
+
+  void
+  update() final
+  {
+    underlying_operator.calculate_inverse_diagonal(global_inverse_diagonal);
   }
 
   /**
@@ -190,6 +205,13 @@ public:
   setup(unsigned int const cell) final
   {
     integrator->reinit(cell);
+  }
+
+  void
+  update() final
+  {
+    // no updates needed as long as the MatrixFree/Integrator object is up-to-date (which is not the
+    // responsibility of the present class).
   }
 
   /**

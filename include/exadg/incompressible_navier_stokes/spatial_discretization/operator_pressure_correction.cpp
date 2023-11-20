@@ -82,6 +82,17 @@ OperatorPressureCorrection<dim, Number>::setup_solvers(double const &     scalin
 
 template<int dim, typename Number>
 void
+OperatorPressureCorrection<dim, Number>::update_after_grid_motion(bool const update_matrix_free)
+{
+  ProjectionBase::update_after_grid_motion(update_matrix_free);
+
+  // The inverse mass operator might contain matrix-based components, in which cases it needs to be
+  // updated after the grid has been deformed.
+  inverse_mass_pressure.update();
+}
+
+template<int dim, typename Number>
+void
 OperatorPressureCorrection<dim, Number>::setup_momentum_solver()
 {
   initialize_momentum_preconditioner();

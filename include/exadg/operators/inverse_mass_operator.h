@@ -144,6 +144,33 @@ public:
     }
   }
 
+  /**
+   * Updates the inverse mass operator. This function recomputes the diagonal/block-diagonal in case
+   * the geometry has changed (e.g. the mesh has been deformed).
+   */
+  void
+  update()
+  {
+    if(data.implementation_type == InverseMassType::MatrixfreeOperator)
+    {
+      // no updates needed as long as the MatrixFree object is up-to-date (which is not the
+      // responsibility of the present class).
+    }
+    else if(data.implementation_type == InverseMassType::ElementwiseKrylovSolver or
+            data.implementation_type == InverseMassType::BlockMatrices)
+    {
+      // the mass operator does not need to be updated as long as the MatrixFree object is
+      // up-to-date (which is not the responsibility of the present class).
+
+      // update the matrix-based components of the block-Jacobi preconditioner
+      block_jacobi_preconditioner->update();
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("The specified InverseMassType is not implemented."));
+    }
+  }
+
   void
   apply(VectorType & dst, VectorType const & src) const
   {
