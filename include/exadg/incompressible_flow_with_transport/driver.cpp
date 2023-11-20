@@ -197,6 +197,14 @@ Driver<dim, Number>::setup()
                               fluid_operator->get_dof_name_velocity());
   }
 
+  // Initialize DoF-vector temperature in case of transport->fluid coupling with Boussinesq term:
+  if(application->fluid->get_parameters().boussinesq_term)
+  {
+    // assume that the first scalar quantity with index 0 is the active scalar coupled to the
+    // incompressible Navier-Stokes equations via the Boussinesq term
+    scalar_operator[0]->initialize_dof_vector(temperature);
+  }
+
   // setup postprocessor
   fluid_postprocessor = application->fluid->create_postprocessor();
   fluid_postprocessor->setup(*fluid_operator);
@@ -207,9 +215,6 @@ Driver<dim, Number>::setup()
     scalar_postprocessor[i]->setup(*scalar_operator[i]);
   }
 
-  // setup time integrator before calling setup_solvers
-  // (this is necessary since the setup of the solvers
-  // depends on quantities such as the time_step_size or gamma0!)
   if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
     fluid_time_integrator =
@@ -219,26 +224,7 @@ Driver<dim, Number>::setup()
                                                  application->fluid->get_parameters(),
                                                  mpi_comm,
                                                  is_test);
-  }
-  else if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Steady)
-  {
-    std::shared_ptr<IncNS::OperatorCoupled<dim, Number>> fluid_operator_coupled =
-      std::dynamic_pointer_cast<IncNS::OperatorCoupled<dim, Number>>(fluid_operator);
 
-    // initialize driver for steady state problem that depends on fluid_operator
-    fluid_driver_steady = std::make_shared<DriverSteady>(fluid_operator_coupled,
-                                                         fluid_postprocessor,
-                                                         application->fluid->get_parameters(),
-                                                         mpi_comm,
-                                                         is_test);
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("Not implemented."));
-  }
-
-  if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady)
-  {
     if(application->fluid->get_parameters().restarted_simulation == false)
     {
       // The parameter start_with_low_order for BDF time integration has to be true.
@@ -257,6 +243,8 @@ Driver<dim, Number>::setup()
                   dealii::ExcMessage("start_with_low_order has to be true for this solver."));
     }
 
+    // setup time integrator before calling setup_solvers (this is necessary since the setup of the
+    // solvers depends on quantities such as the time_step_size or gamma0!)
     fluid_time_integrator->setup(application->fluid->get_parameters().restarted_simulation);
 
     // setup solvers once the time integrator has been initialized
@@ -265,6 +253,16 @@ Driver<dim, Number>::setup()
   }
   else if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Steady)
   {
+    std::shared_ptr<IncNS::OperatorCoupled<dim, Number>> fluid_operator_coupled =
+      std::dynamic_pointer_cast<IncNS::OperatorCoupled<dim, Number>>(fluid_operator);
+
+    // initialize driver for steady state problem that depends on fluid_operator
+    fluid_driver_steady = std::make_shared<DriverSteady>(fluid_operator_coupled,
+                                                         fluid_postprocessor,
+                                                         application->fluid->get_parameters(),
+                                                         mpi_comm,
+                                                         is_test);
+
     fluid_driver_steady->setup();
 
     // setup solvers once the driver for steady problems has been initialized
@@ -298,20 +296,11 @@ Driver<dim, Number>::setup()
     scalar_time_integrator[i]->setup(
       application->scalars[i]->get_parameters().restarted_simulation);
 
-    // adaptive time stepping
-    if(application->fluid->get_parameters().adaptive_time_stepping == true)
-    {
-      use_adaptive_time_stepping = true;
-    }
-  }
-
-  // setup solvers in case of BDF time integration (solution of linear systems of equations)
-  for(unsigned int i = 0; i < n_scalars; ++i)
-  {
     AssertThrow(application->scalars[i]->get_parameters().analytical_velocity_field == false,
                 dealii::ExcMessage(
                   "An analytical velocity field can not be used for this coupled solver."));
 
+    // setup solvers in case of BDF time integration (solution of linear systems of equations)
     if(application->scalars[i]->get_parameters().temporal_discretization ==
        ConvDiff::TemporalDiscretization::BDF)
     {
@@ -334,11 +323,11 @@ Driver<dim, Number>::setup()
     }
   }
 
-  // Boussinesq term
-  // assume that the first scalar quantity with index 0 is the active scalar coupled to
-  // the incompressible Navier-Stokes equations via the Boussinesq term
-  if(application->fluid->get_parameters().boussinesq_term)
-    scalar_operator[0]->initialize_dof_vector(temperature);
+  // Initialize member variable use_adaptive_time_stepping
+  if(application->fluid->get_parameters().adaptive_time_stepping == true)
+  {
+    use_adaptive_time_stepping = true;
+  }
 
   timer_tree.insert({"Flow + transport", "Setup"}, timer.wall_time());
 }
