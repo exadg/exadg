@@ -187,6 +187,8 @@ SET(TARGET_SRC
      include/exadg/structure/driver.cpp
      # fluid-structure-interaction
      include/exadg/fluid_structure_interaction/driver.cpp
+     # acoustics
+     include/exadg/acoustic_conservation_equations/spatial_discretization/operators/operator.cpp
      )
 
 SET(DEAL_II_HAVE_TESTS_DIRECTORY TRUE)
