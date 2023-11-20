@@ -72,11 +72,12 @@ OperatorProjectionMethods<dim, Number>::update_after_grid_motion(bool const upda
 
 template<int dim, typename Number>
 void
-OperatorProjectionMethods<dim, Number>::setup_pressure_poisson_solver()
+OperatorProjectionMethods<dim, Number>::setup_preconditioners_and_solvers()
 {
-  initialize_preconditioner_pressure_poisson();
+  setup_preconditioner_pressure_poisson();
+  setup_solver_pressure_poisson();
 
-  initialize_solver_pressure_poisson();
+  Base::setup_projection_solver();
 }
 
 template<int dim, typename Number>
@@ -142,7 +143,7 @@ OperatorProjectionMethods<dim, Number>::initialize_laplace_operator()
 
 template<int dim, typename Number>
 void
-OperatorProjectionMethods<dim, Number>::initialize_preconditioner_pressure_poisson()
+OperatorProjectionMethods<dim, Number>::setup_preconditioner_pressure_poisson()
 {
   // setup preconditioner
   if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::None)
@@ -193,7 +194,7 @@ OperatorProjectionMethods<dim, Number>::initialize_preconditioner_pressure_poiss
 
 template<int dim, typename Number>
 void
-OperatorProjectionMethods<dim, Number>::initialize_solver_pressure_poisson()
+OperatorProjectionMethods<dim, Number>::setup_solver_pressure_poisson()
 {
   if(this->param.solver_pressure_poisson == SolverPressurePoisson::CG)
   {

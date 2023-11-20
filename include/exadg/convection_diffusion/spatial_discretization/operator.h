@@ -83,13 +83,6 @@ public:
         std::string const &                                    dof_index_velocity_external_in = "");
 
   /*
-   * This function initializes operators, preconditioners, and solvers related to the solution of
-   * linear systems of equation required for implicit formulations.
-   */
-  void
-  setup_solver(double const scaling_factor_mass = -1.0, VectorType const * velocity = nullptr);
-
-  /*
    * Initialization of dof-vector.
    */
   void
@@ -332,13 +325,13 @@ private:
    * Initializes the preconditioner.
    */
   void
-  initialize_preconditioner();
+  setup_preconditioner();
 
   /*
    * Initializes the solver.
    */
   void
-  initialize_solver();
+  setup_solver();
 
   /*
    * Grid

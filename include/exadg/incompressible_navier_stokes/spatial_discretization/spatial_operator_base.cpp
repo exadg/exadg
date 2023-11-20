@@ -723,18 +723,9 @@ SpatialOperatorBase<dim, Number>::setup(
   // Finally, do set up of derived classes
   setup_derived();
 
+  setup_preconditioners_and_solvers();
+
   pcout << std::endl << "... done!" << std::endl << std::flush;
-}
-
-template<int dim, typename Number>
-void
-SpatialOperatorBase<dim, Number>::setup_solvers(double const &     scaling_factor_mass,
-                                                VectorType const & velocity)
-{
-  momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
-  momentum_operator.set_velocity_ptr(velocity);
-
-  // remaining setup of preconditioners and solvers is done in derived classes
 }
 
 template<int dim, typename Number>

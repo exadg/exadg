@@ -347,35 +347,11 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> con
 
   setup_operators();
 
-  pcout << std::endl << "... done!" << std::endl;
-}
-
-template<int dim, typename Number>
-void
-Operator<dim, Number>::setup_solver(double const scaling_factor_mass, VectorType const * velocity)
-{
-  pcout << std::endl << "Setup solver ..." << std::endl;
-
   if(param.linear_system_has_to_be_solved())
   {
-    combined_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
+    setup_preconditioner();
 
-    // The velocity vector needs to be set in case the velocity field is stored in DoF vector.
-    // Otherwise, certain preconditioners requiring the velocity field during initialization can not
-    // be initialized.
-    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
-    {
-      AssertThrow(
-        velocity != nullptr,
-        dealii::ExcMessage(
-          "In case of a numerical velocity field, a velocity vector has to be provided."));
-
-      combined_operator.set_velocity_ptr(*velocity);
-    }
-
-    initialize_preconditioner();
-
-    initialize_solver();
+    setup_solver();
   }
 
   pcout << std::endl << "... done!" << std::endl;
@@ -383,7 +359,7 @@ Operator<dim, Number>::setup_solver(double const scaling_factor_mass, VectorType
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::initialize_preconditioner()
+Operator<dim, Number>::setup_preconditioner()
 {
   if(param.preconditioner == Preconditioner::InverseMassMatrix)
   {
@@ -472,7 +448,7 @@ Operator<dim, Number>::initialize_preconditioner()
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::initialize_solver()
+Operator<dim, Number>::setup_solver()
 {
   if(param.solver == Solver::CG)
   {

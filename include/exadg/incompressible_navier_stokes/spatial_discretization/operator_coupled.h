@@ -224,11 +224,10 @@ private:
   void
   setup_derived() final;
 
-public:
   void
-  setup_solvers(double const &     scaling_factor_time_derivative_term,
-                VectorType const & velocity) final;
+  setup_preconditioners_and_solvers() final;
 
+public:
   /*
    *  Update divergence penalty operator by recalculating the penalty parameter
    *  which depends on the current velocity field
@@ -336,13 +335,13 @@ public:
 
 private:
   void
-  initialize_solver_coupled();
+  setup_solver_coupled();
 
   /*
    * Block preconditioner
    */
   void
-  initialize_block_preconditioner();
+  setup_block_preconditioner();
 
   void
   initialize_vectors();

@@ -66,6 +66,9 @@ protected:
   void
   setup_derived() override;
 
+  void
+  setup_preconditioners_and_solvers() override;
+
 public:
   void
   update_after_grid_motion(bool const update_matrix_free) override;
@@ -105,15 +108,6 @@ public:
   apply_laplace_operator(VectorType & dst, VectorType const & src) const;
 
 protected:
-  /*
-   * Initializes the preconditioner and solver for the pressure Poisson equation. Can be done in
-   * this base class since it is the same for dual-splitting and pressure-correction. The function
-   * is declared virtual so that individual initializations required for derived class can be added
-   * where needed.
-   */
-  virtual void
-  setup_pressure_poisson_solver();
-
   // Pressure Poisson equation (operator, preconditioner, solver).
   Poisson::LaplaceOperator<dim, Number, 1> laplace_operator;
 
@@ -122,17 +116,17 @@ protected:
   std::shared_ptr<Krylov::SolverBase<VectorType>> pressure_poisson_solver;
 
 private:
-  /*
-   * Initialization functions called during setup of pressure Poisson solver.
-   */
   void
   initialize_laplace_operator();
 
+  /*
+   * Setup functions called during setup of pressure Poisson solver.
+   */
   void
-  initialize_preconditioner_pressure_poisson();
+  setup_preconditioner_pressure_poisson();
 
   void
-  initialize_solver_pressure_poisson();
+  setup_solver_pressure_poisson();
 };
 
 } // namespace IncNS

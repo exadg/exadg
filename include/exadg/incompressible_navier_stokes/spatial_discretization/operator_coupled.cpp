@@ -68,26 +68,24 @@ OperatorCoupled<dim, Number>::setup_derived()
 
 template<int dim, typename Number>
 void
-OperatorCoupled<dim, Number>::setup_solvers(double const &     scaling_factor_time_derivative_term,
-                                            VectorType const & velocity)
+OperatorCoupled<dim, Number>::setup_preconditioners_and_solvers()
 {
   this->pcout << std::endl << "Setup incompressible Navier-Stokes solver ..." << std::endl;
 
-  Base::setup_solvers(scaling_factor_time_derivative_term, velocity);
-
-  initialize_block_preconditioner();
-
-  initialize_solver_coupled();
+  Base::setup_preconditioners_and_solvers();
 
   if(this->param.apply_penalty_terms_in_postprocessing_step)
-    this->setup_projection_solver();
+    Base::setup_projection_solver();
+
+  setup_block_preconditioner();
+  setup_solver_coupled();
 
   this->pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, typename Number>
 void
-OperatorCoupled<dim, Number>::initialize_solver_coupled()
+OperatorCoupled<dim, Number>::setup_solver_coupled()
 {
   linear_operator.initialize(*this);
 
@@ -391,7 +389,7 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVectorType
 
 template<int dim, typename Number>
 void
-OperatorCoupled<dim, Number>::initialize_block_preconditioner()
+OperatorCoupled<dim, Number>::setup_block_preconditioner()
 {
   block_preconditioner.initialize(this);
 

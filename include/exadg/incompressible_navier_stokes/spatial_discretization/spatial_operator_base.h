@@ -120,6 +120,17 @@ public:
         std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
         std::string const &                                    dof_index_temperature = "");
 
+protected:
+  /*
+   * This function initializes operators, preconditioners, and solvers related to the solution of
+   * (non-)linear systems of equation required for implicit formulations. It has to be extended
+   * by derived classes if necessary.
+   */
+  virtual void
+  setup_preconditioners_and_solvers()
+  {
+  }
+
 private:
   /**
    * Additional setup to be done by derived classes.
@@ -128,14 +139,6 @@ private:
   setup_derived() = 0;
 
 public:
-  /*
-   * This function initializes operators, preconditioners, and solvers related to the solution of
-   * (non-)linear systems of equation required for implicit formulations. It has to be extended
-   * by derived classes if necessary.
-   */
-  virtual void
-  setup_solvers(double const & scaling_factor_mass, VectorType const & velocity);
-
   /*
    * Getters and setters.
    */

@@ -64,18 +64,14 @@ OperatorPressureCorrection<dim, Number>::setup_derived()
 
 template<int dim, typename Number>
 void
-OperatorPressureCorrection<dim, Number>::setup_solvers(double const &     scaling_factor_mass,
-                                                       VectorType const & velocity)
+OperatorPressureCorrection<dim, Number>::setup_preconditioners_and_solvers()
 {
   this->pcout << std::endl << "Setup incompressible Navier-Stokes solver ..." << std::endl;
 
-  ProjectionBase::setup_solvers(scaling_factor_mass, velocity);
+  ProjectionBase::setup_preconditioners_and_solvers();
 
+  setup_momentum_preconditioner();
   setup_momentum_solver();
-
-  ProjectionBase::setup_pressure_poisson_solver();
-
-  ProjectionBase::setup_projection_solver();
 
   this->pcout << std::endl << "... done!" << std::endl;
 }
@@ -93,16 +89,7 @@ OperatorPressureCorrection<dim, Number>::update_after_grid_motion(bool const upd
 
 template<int dim, typename Number>
 void
-OperatorPressureCorrection<dim, Number>::setup_momentum_solver()
-{
-  initialize_momentum_preconditioner();
-
-  initialize_momentum_solver();
-}
-
-template<int dim, typename Number>
-void
-OperatorPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
+OperatorPressureCorrection<dim, Number>::setup_momentum_preconditioner()
 {
   if(this->param.preconditioner_momentum == MomentumPreconditioner::InverseMassMatrix)
   {
@@ -175,7 +162,7 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
 
 template<int dim, typename Number>
 void
-OperatorPressureCorrection<dim, Number>::initialize_momentum_solver()
+OperatorPressureCorrection<dim, Number>::setup_momentum_solver()
 {
   if(this->param.solver_momentum == SolverMomentum::CG)
   {

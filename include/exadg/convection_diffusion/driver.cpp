@@ -124,51 +124,6 @@ Driver<dim, Number>::setup()
     {
       AssertThrow(false, dealii::ExcMessage("Not implemented"));
     }
-
-    // setup solvers in case of BDF time integration or steady problems
-    typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
-    VectorType const *                                         velocity_ptr = nullptr;
-    VectorType                                                 velocity;
-
-    if(application->get_parameters().problem_type == ProblemType::Unsteady)
-    {
-      if(application->get_parameters().temporal_discretization == TemporalDiscretization::BDF)
-      {
-        std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator_bdf =
-          std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
-
-        if(application->get_parameters().get_type_velocity_field() == TypeVelocityField::DoFVector)
-        {
-          pde_operator->initialize_dof_vector_velocity(velocity);
-          pde_operator->interpolate_velocity(velocity, time_integrator->get_time());
-          velocity_ptr = &velocity;
-        }
-
-        pde_operator->setup_solver(time_integrator_bdf->get_scaling_factor_time_derivative_term(),
-                                   velocity_ptr);
-      }
-      else
-      {
-        AssertThrow(application->get_parameters().temporal_discretization ==
-                      TemporalDiscretization::ExplRK,
-                    dealii::ExcMessage("Not implemented."));
-      }
-    }
-    else if(application->get_parameters().problem_type == ProblemType::Steady)
-    {
-      if(application->get_parameters().get_type_velocity_field() == TypeVelocityField::DoFVector)
-      {
-        pde_operator->initialize_dof_vector_velocity(velocity);
-        pde_operator->interpolate_velocity(velocity, 0.0 /* time */);
-        velocity_ptr = &velocity;
-      }
-
-      pde_operator->setup_solver(1.0 /* scaling_factor_time_derivative_term */, velocity_ptr);
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Not implemented"));
-    }
   }
 
   timer_tree.insert({"Convection-diffusion", "Setup"}, timer.wall_time());

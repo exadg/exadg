@@ -162,9 +162,6 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
     pde_operator, helpers_ale, postprocessor, application->get_parameters(), mpi_comm, is_test);
 
   time_integrator->setup(application->get_parameters().restarted_simulation);
-
-  pde_operator->setup_solvers(time_integrator->get_scaling_factor_time_derivative_term(),
-                              time_integrator->get_velocity());
 }
 
 template<int dim, typename Number>

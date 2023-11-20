@@ -55,17 +55,13 @@ OperatorDualSplitting<dim, Number>::~OperatorDualSplitting()
 
 template<int dim, typename Number>
 void
-OperatorDualSplitting<dim, Number>::setup_solvers(double const &     scaling_factor_mass,
-                                                  VectorType const & velocity)
+OperatorDualSplitting<dim, Number>::setup_preconditioners_and_solvers()
 {
   this->pcout << std::endl << "Setup incompressible Navier-Stokes solver ..." << std::endl;
 
-  ProjectionBase::setup_solvers(scaling_factor_mass, velocity);
+  ProjectionBase::setup_preconditioners_and_solvers();
 
-  ProjectionBase::setup_pressure_poisson_solver();
-
-  ProjectionBase::setup_projection_solver();
-
+  setup_helmholtz_preconditioner();
   setup_helmholtz_solver();
 
   this->pcout << std::endl << "... done!" << std::endl;
@@ -73,16 +69,7 @@ OperatorDualSplitting<dim, Number>::setup_solvers(double const &     scaling_fac
 
 template<int dim, typename Number>
 void
-OperatorDualSplitting<dim, Number>::setup_helmholtz_solver()
-{
-  initialize_helmholtz_preconditioner();
-
-  initialize_helmholtz_solver();
-}
-
-template<int dim, typename Number>
-void
-OperatorDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
+OperatorDualSplitting<dim, Number>::setup_helmholtz_preconditioner()
 {
   if(this->param.preconditioner_viscous == PreconditionerViscous::None)
   {
@@ -159,7 +146,7 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
 
 template<int dim, typename Number>
 void
-OperatorDualSplitting<dim, Number>::initialize_helmholtz_solver()
+OperatorDualSplitting<dim, Number>::setup_helmholtz_solver()
 {
   if(this->param.solver_viscous == SolverViscous::CG)
   {
