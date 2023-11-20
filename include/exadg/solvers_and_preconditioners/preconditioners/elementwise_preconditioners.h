@@ -56,8 +56,6 @@ public:
 
   virtual void
   vmult(Number * dst, Number const * src) const = 0;
-
-private:
 };
 
 /**
@@ -111,14 +109,16 @@ public:
   JacobiPreconditioner(dealii::MatrixFree<dim, Number> const & matrix_free,
                        unsigned int const                      dof_index,
                        unsigned int const                      quad_index,
-                       Operator const &                        underlying_operator_in)
+                       Operator const &                        underlying_operator_in,
+                       bool const                              initialize)
     : underlying_operator(underlying_operator_in)
   {
     integrator = std::make_shared<Integrator>(matrix_free, dof_index, quad_index);
 
     underlying_operator.initialize_dof_vector(global_inverse_diagonal);
 
-    this->update();
+    if(initialize)
+      this->update();
   }
 
   void

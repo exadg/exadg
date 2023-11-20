@@ -82,7 +82,7 @@ public:
   calculate_inverse_diagonal(VectorType & inverse_diagonal_entries) const = 0;
 
   virtual void
-  initialize_block_diagonal_preconditioner() const = 0;
+  initialize_block_diagonal_preconditioner(bool const initialize) const = 0;
 
   virtual void
   update_block_diagonal_preconditioner() const = 0;
