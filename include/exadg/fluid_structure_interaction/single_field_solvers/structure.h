@@ -96,9 +96,6 @@ SolverStructure<dim, Number>::setup(
     pde_operator, postprocessor, application->get_parameters(), mpi_comm, is_test);
 
   time_integrator->setup(application->get_parameters().restarted_simulation);
-
-  pde_operator->setup_solver(time_integrator->get_scaling_factor_acceleration(),
-                             time_integrator->get_scaling_factor_velocity());
 }
 
 } // namespace FSI

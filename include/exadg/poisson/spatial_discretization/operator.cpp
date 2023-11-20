@@ -292,12 +292,14 @@ Operator<dim, n_components, Number>::setup(
 
   setup_operators();
 
+  setup_preconditioner_and_solver();
+
   pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, int n_components, typename Number>
 void
-Operator<dim, n_components, Number>::setup_solver()
+Operator<dim, n_components, Number>::setup_preconditioner_and_solver()
 {
   pcout << std::endl << "Setup Poisson solver ..." << std::endl;
 

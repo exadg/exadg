@@ -52,8 +52,6 @@ public:
 
     pde_operator->setup();
 
-    pde_operator->setup_solver();
-
     postprocessor = domain->create_postprocessor();
     postprocessor->setup(*pde_operator);
   }

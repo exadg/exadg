@@ -338,33 +338,16 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> con
 
   setup_operators();
 
-  pcout << std::endl << "... done!" << std::endl;
-}
+  setup_preconditioner();
 
-template<int dim, typename Number>
-void
-Operator<dim, Number>::setup_solver(double const & scaling_factor_acceleration,
-                                    double const & scaling_factor_velocity)
-{
-  pcout << std::endl << "Setup elasticity solver ..." << std::endl;
-
-  double const scaling_factor_mass =
-    compute_scaling_factor_mass(scaling_factor_acceleration, scaling_factor_velocity);
-  if(param.large_deformation)
-    elasticity_operator_nonlinear.set_scaling_factor_mass_operator(scaling_factor_mass);
-  else
-    elasticity_operator_linear.set_scaling_factor_mass_operator(scaling_factor_mass);
-
-  initialize_preconditioner();
-
-  initialize_solver();
+  setup_solver();
 
   pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::initialize_preconditioner()
+Operator<dim, Number>::setup_preconditioner()
 {
   if(param.preconditioner == Preconditioner::None)
   {
@@ -499,7 +482,7 @@ Operator<dim, Number>::initialize_preconditioner()
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::initialize_solver()
+Operator<dim, Number>::setup_solver()
 {
   // initialize linear solver
   if(param.solver == Solver::CG)
