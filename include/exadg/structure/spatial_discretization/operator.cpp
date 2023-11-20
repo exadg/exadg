@@ -256,13 +256,15 @@ Operator<dim, Number>::setup_operators()
 
     mass_operator.set_scaling_factor(param.density);
 
+    // TODO: this comment can be removed once we merge setup() and setup_solvers()
     // preconditioner and solver for mass operator have to be initialized in
     // setup_operators() since the mass solver is already needed in
     // setup() function of time integration scheme.
 
     // preconditioner
     mass_preconditioner =
-      std::make_shared<JacobiPreconditioner<Structure::MassOperator<dim, Number>>>(mass_operator);
+      std::make_shared<JacobiPreconditioner<Structure::MassOperator<dim, Number>>>(mass_operator,
+                                                                                   true);
 
     // initialize solver
     Krylov::SolverDataCG solver_data;
@@ -373,12 +375,12 @@ Operator<dim, Number>::initialize_preconditioner()
     if(param.large_deformation)
     {
       preconditioner = std::make_shared<JacobiPreconditioner<NonLinearOperator<dim, Number>>>(
-        elasticity_operator_nonlinear);
+        elasticity_operator_nonlinear, false);
     }
     else
     {
       preconditioner = std::make_shared<JacobiPreconditioner<LinearOperator<dim, Number>>>(
-        elasticity_operator_linear);
+        elasticity_operator_linear, false);
     }
   }
   else if(param.preconditioner == Preconditioner::Multigrid)
@@ -478,12 +480,14 @@ Operator<dim, Number>::initialize_preconditioner()
     {
       typedef PreconditionerAMG<NonLinearOperator<dim, Number>, Number> AMG;
       preconditioner = std::make_shared<AMG>(elasticity_operator_nonlinear,
+                                             false,
                                              param.multigrid_data.coarse_problem.amg_data);
     }
     else
     {
       typedef PreconditionerAMG<LinearOperator<dim, Number>, Number> AMG;
       preconditioner = std::make_shared<AMG>(elasticity_operator_linear,
+                                             false,
                                              param.multigrid_data.coarse_problem.amg_data);
     }
   }

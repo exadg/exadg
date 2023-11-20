@@ -38,11 +38,6 @@ template<typename Operator, typename VectorType>
 class ChebyshevSmoother : public SmootherBase<VectorType>
 {
 public:
-  // TODO
-  //  typedef dealii::PreconditionChebyshev<Operator, VectorType,
-  //  dealii::DiagonalMatrix<VectorType>>
-  //    ChebyshevPointJacobi;
-
   typedef dealii::PreconditionChebyshev<Operator, VectorType, JacobiPreconditioner<Operator>>
     ChebyshevPointJacobi;
   typedef dealii::PreconditionChebyshev<Operator, VectorType, BlockJacobiPreconditioner<Operator>>

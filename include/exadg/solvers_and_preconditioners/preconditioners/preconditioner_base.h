@@ -44,12 +44,6 @@ public:
   {
   }
 
-  void
-  set_update_flag()
-  {
-    update_needed = true;
-  }
-
   bool
   needs_update() const
   {

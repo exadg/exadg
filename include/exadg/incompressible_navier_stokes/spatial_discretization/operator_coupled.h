@@ -144,7 +144,7 @@ private:
   typedef OperatorCoupled<dim, Number> PDEOperator;
 
 public:
-  BlockPreconditioner() : pde_operator(nullptr)
+  BlockPreconditioner() : update_needed(true), pde_operator(nullptr)
   {
   }
 
@@ -158,6 +158,14 @@ public:
   update()
   {
     pde_operator->update_block_preconditioner();
+
+    this->update_needed = false;
+  }
+
+  bool
+  needs_update() const
+  {
+    return update_needed;
   }
 
   void
@@ -175,6 +183,9 @@ public:
 
     return std::make_shared<TimerTree>();
   }
+
+private:
+  bool update_needed;
 
   PDEOperator * pde_operator;
 };

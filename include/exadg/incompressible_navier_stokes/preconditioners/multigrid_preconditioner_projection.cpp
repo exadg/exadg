@@ -59,7 +59,8 @@ MultigridPreconditionerProjection<dim, Number>::initialize(
                    fe,
                    false /*operator_is_singular*/,
                    dirichlet_bc,
-                   dirichlet_bc_component_mask);
+                   dirichlet_bc_component_mask,
+                   false /* initialize_preconditioners */);
 }
 
 template<int dim, typename Number>
@@ -118,6 +119,8 @@ MultigridPreconditionerProjection<dim, Number>::update()
   // functionality implemented in the base class.
   this->update_smoothers();
   this->update_coarse_solver();
+
+  this->update_needed = false;
 }
 
 template<int dim, typename Number>

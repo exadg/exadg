@@ -102,14 +102,14 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
   else if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi)
   {
     helmholtz_preconditioner =
-      std::make_shared<JacobiPreconditioner<MomentumOperator<dim, Number>>>(
-        this->momentum_operator);
+      std::make_shared<JacobiPreconditioner<MomentumOperator<dim, Number>>>(this->momentum_operator,
+                                                                            false);
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi)
   {
     helmholtz_preconditioner =
       std::make_shared<BlockJacobiPreconditioner<MomentumOperator<dim, Number>>>(
-        this->momentum_operator);
+        this->momentum_operator, false);
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
   {

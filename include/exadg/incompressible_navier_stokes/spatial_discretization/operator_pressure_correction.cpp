@@ -117,14 +117,15 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::PointJacobi)
   {
-    momentum_preconditioner = std::make_shared<JacobiPreconditioner<MomentumOperator<dim, Number>>>(
-      this->momentum_operator);
+    momentum_preconditioner =
+      std::make_shared<JacobiPreconditioner<MomentumOperator<dim, Number>>>(this->momentum_operator,
+                                                                            false);
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::BlockJacobi)
   {
     momentum_preconditioner =
       std::make_shared<BlockJacobiPreconditioner<MomentumOperator<dim, Number>>>(
-        this->momentum_operator);
+        this->momentum_operator, false);
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::Multigrid)
   {

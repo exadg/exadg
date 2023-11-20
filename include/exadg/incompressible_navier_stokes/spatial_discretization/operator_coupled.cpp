@@ -428,14 +428,15 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_velocity_block()
 
   if(type == MomentumPreconditioner::PointJacobi)
   {
-    preconditioner_momentum = std::make_shared<JacobiPreconditioner<MomentumOperator<dim, Number>>>(
-      this->momentum_operator);
+    preconditioner_momentum =
+      std::make_shared<JacobiPreconditioner<MomentumOperator<dim, Number>>>(this->momentum_operator,
+                                                                            false);
   }
   else if(type == MomentumPreconditioner::BlockJacobi)
   {
     preconditioner_momentum =
       std::make_shared<BlockJacobiPreconditioner<MomentumOperator<dim, Number>>>(
-        this->momentum_operator);
+        this->momentum_operator, false);
   }
   else if(type == MomentumPreconditioner::InverseMassMatrix)
   {

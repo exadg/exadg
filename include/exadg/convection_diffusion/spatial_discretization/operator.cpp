@@ -399,12 +399,14 @@ Operator<dim, Number>::initialize_preconditioner()
   else if(param.preconditioner == Preconditioner::PointJacobi)
   {
     preconditioner =
-      std::make_shared<JacobiPreconditioner<CombinedOperator<dim, Number>>>(combined_operator);
+      std::make_shared<JacobiPreconditioner<CombinedOperator<dim, Number>>>(combined_operator,
+                                                                            false);
   }
   else if(param.preconditioner == Preconditioner::BlockJacobi)
   {
     preconditioner =
-      std::make_shared<BlockJacobiPreconditioner<CombinedOperator<dim, Number>>>(combined_operator);
+      std::make_shared<BlockJacobiPreconditioner<CombinedOperator<dim, Number>>>(combined_operator,
+                                                                                 false);
   }
   else if(param.preconditioner == Preconditioner::Multigrid)
   {

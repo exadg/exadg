@@ -153,7 +153,7 @@ OperatorProjectionMethods<dim, Number>::initialize_preconditioner_pressure_poiss
   {
     preconditioner_pressure_poisson =
       std::make_shared<JacobiPreconditioner<Poisson::LaplaceOperator<dim, Number, 1>>>(
-        laplace_operator);
+        laplace_operator, true);
   }
   else if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Multigrid)
   {
