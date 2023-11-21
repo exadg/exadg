@@ -448,7 +448,7 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
       if(operator_type == OperatorType::CoupledNonlinearResidual)
         operator_coupled->evaluate_nonlinear_residual(dst1,src1,&src1.block(0), 0.0, 1.0);
       else if(operator_type == OperatorType::CoupledLinearized)
-        operator_coupled->apply_linearized_problem(dst1,src1, 0.0, 1.0);
+        operator_coupled->apply_linearized_problem(dst1,src1);
       else if(operator_type == OperatorType::ConvectiveOperator)
         operator_coupled->evaluate_convective_term(dst2,src2,0.0);
       else if(operator_type == OperatorType::InverseMassOperator)

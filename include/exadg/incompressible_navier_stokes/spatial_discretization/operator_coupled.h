@@ -90,8 +90,7 @@ private:
   typedef OperatorCoupled<dim, Number> PDEOperator;
 
 public:
-  LinearOperatorCoupled()
-    : dealii::Subscriptor(), pde_operator(nullptr), time(0.0), scaling_factor_mass(1.0)
+  LinearOperatorCoupled() : dealii::Subscriptor(), pde_operator(nullptr)
   {
   }
 
@@ -111,12 +110,6 @@ public:
     pde_operator->set_velocity_ptr(solution_linearization.block(0));
   }
 
-  void
-  update(double const & time, double const & scaling_factor)
-  {
-    this->time                = time;
-    this->scaling_factor_mass = scaling_factor;
-  }
 
   /*
    * The implementation of linear solvers in deal.ii requires that a function called 'vmult' is
@@ -125,14 +118,11 @@ public:
   void
   vmult(BlockVectorType & dst, BlockVectorType const & src) const
   {
-    pde_operator->apply_linearized_problem(dst, src, time, scaling_factor_mass);
+    pde_operator->apply_linearized_problem(dst, src);
   }
 
 private:
   PDEOperator const * pde_operator;
-
-  double time;
-  double scaling_factor_mass;
 };
 
 template<int dim, typename Number>
@@ -171,6 +161,10 @@ public:
   void
   vmult(BlockVectorType & dst, BlockVectorType const & src) const
   {
+    AssertThrow(this->update_needed == false,
+                dealii::ExcMessage(
+                  "BlockPreconditioner can not be applied because it is not up-to-date."));
+
     pde_operator->apply_block_preconditioner(dst, src);
   }
 
@@ -267,7 +261,6 @@ public:
   solve_linear_stokes_problem(BlockVectorType &       dst,
                               BlockVectorType const & src,
                               bool const &            update_preconditioner,
-                              double const &          time                = 0.0,
                               double const &          scaling_factor_mass = 1.0);
 
   /*
@@ -310,10 +303,7 @@ public:
    * This function calculates the matrix-vector product for the linear(ized) problem.
    */
   void
-  apply_linearized_problem(BlockVectorType &       dst,
-                           BlockVectorType const & src,
-                           double const &          time,
-                           double const &          scaling_factor_mass) const;
+  apply_linearized_problem(BlockVectorType & dst, BlockVectorType const & src) const;
 
   /*
    * This function calculates the right-hand side of the steady Stokes problem, or unsteady Stokes

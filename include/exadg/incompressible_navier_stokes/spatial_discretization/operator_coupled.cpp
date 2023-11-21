@@ -171,11 +171,13 @@ unsigned int
 OperatorCoupled<dim, Number>::solve_linear_stokes_problem(BlockVectorType &       dst,
                                                           BlockVectorType const & src,
                                                           bool const &   update_preconditioner,
-                                                          double const & time,
                                                           double const & scaling_factor_mass)
 {
-  // Update linear operator
-  linear_operator.update(time, scaling_factor_mass);
+  // Update momentum operator
+  // We do not need to set the time here, because time affects the operator only in the form of
+  // boundary conditions. The result of such boundary condition evaluations is handed over to this
+  // function via the vector src.
+  this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
 
   linear_solver->update_preconditioner(update_preconditioner);
 
@@ -213,13 +215,9 @@ OperatorCoupled<dim, Number>::rhs_stokes_problem(BlockVectorType & dst, double c
 template<int dim, typename Number>
 void
 OperatorCoupled<dim, Number>::apply_linearized_problem(BlockVectorType &       dst,
-                                                       BlockVectorType const & src,
-                                                       double const &          time,
-                                                       double const & scaling_factor_mass) const
+                                                       BlockVectorType const & src) const
 {
   // (1,1) block of saddle point matrix
-  this->momentum_operator.set_time(time);
-  this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
   this->momentum_operator.vmult(dst.block(0), src.block(0));
 
   // Divergence and continuity penalty operators
@@ -256,8 +254,9 @@ OperatorCoupled<dim, Number>::solve_nonlinear_problem(BlockVectorType &  dst,
   // Update nonlinear operator
   nonlinear_operator.update(rhs_vector, time, scaling_factor_mass);
 
-  // Update linear operator
-  linear_operator.update(time, scaling_factor_mass);
+  // Update linearized momentum operator
+  this->momentum_operator.set_time(time);
+  this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
 
   // Solve nonlinear problem
   Newton::UpdateData update;

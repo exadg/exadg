@@ -257,6 +257,9 @@ OperatorPressureCorrection<dim, Number>::solve_linear_momentum_equation(
   bool const &       update_preconditioner,
   double const &     scaling_factor_mass)
 {
+  // We do not need to set the time here, because time affects the operator only in the form of
+  // boundary conditions. The result of such boundary condition evaluations is handed over to this
+  // function via the vector rhs.
   this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
 
   // Note that there is no need to set the evaluation time for the momentum_operator
