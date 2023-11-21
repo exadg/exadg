@@ -23,7 +23,6 @@
 #define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_OPERATORS_WEAK_BOUNDARY_CONDITIONS_H_
 
 #include <exadg/acoustic_conservation_equations/user_interface/boundary_descriptor.h>
-#include <exadg/functions_and_boundary_conditions/boundary_face_integrator_base.h>
 #include <exadg/functions_and_boundary_conditions/evaluate_functions.h>
 #include <exadg/matrix_free/integrators.h>
 
@@ -80,75 +79,6 @@ inline DEAL_II_ALWAYS_INLINE //
     AssertThrow(false, dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
   }
 }
-
-
-/**
- * Class to access values of pressure at boundaries similar to FaceIntegrators.
- */
-template<int dim, typename Number>
-class BoundaryFaceIntegratorP : public BoundaryFaceIntegratorBase<BoundaryDescriptorP<dim>, Number>
-{
-  using FaceIntegratorP = FaceIntegrator<dim, 1, Number>;
-
-public:
-  BoundaryFaceIntegratorP(FaceIntegratorP const &          integrator_m_in,
-                          BoundaryDescriptorP<dim> const & boundary_descriptor_in)
-    : BoundaryFaceIntegratorBase<BoundaryDescriptorP<dim>, Number>(
-        integrator_m_in.get_matrix_free(),
-        boundary_descriptor_in),
-      integrator_m(integrator_m_in)
-  {
-  }
-
-  inline DEAL_II_ALWAYS_INLINE //
-    typename FaceIntegratorP::value_type
-    get_value(unsigned int const q) const
-  {
-    return calculate_exterior_value_pressure(q,
-                                             integrator_m,
-                                             this->boundary_type,
-                                             this->boundary_id,
-                                             this->boundary_descriptor,
-                                             this->evaluation_time);
-  }
-
-private:
-  FaceIntegratorP const & integrator_m;
-};
-
-/**
- * Same as above for the velocity.
- */
-template<int dim, typename Number>
-class BoundaryFaceIntegratorU : public BoundaryFaceIntegratorBase<BoundaryDescriptorU<dim>, Number>
-{
-  using FaceIntegratorU = FaceIntegrator<dim, dim, Number>;
-
-public:
-  BoundaryFaceIntegratorU(FaceIntegratorU const &          integrator_m_in,
-                          BoundaryDescriptorU<dim> const & boundary_descriptor_in)
-    : BoundaryFaceIntegratorBase<BoundaryDescriptorU<dim>, Number>(
-        integrator_m_in.get_matrix_free(),
-        boundary_descriptor_in),
-      integrator_m(integrator_m_in)
-  {
-  }
-
-  inline DEAL_II_ALWAYS_INLINE //
-    typename FaceIntegratorU::value_type
-    get_value(unsigned int const q) const
-  {
-    return calculate_exterior_value_velocity(q,
-                                             integrator_m,
-                                             this->boundary_type,
-                                             this->boundary_id,
-                                             this->boundary_descriptor,
-                                             this->evaluation_time);
-  }
-
-private:
-  FaceIntegratorU const & integrator_m;
-};
 
 } // namespace Acoustics
 } // namespace ExaDG

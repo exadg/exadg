@@ -446,28 +446,31 @@ private:
                      Range const &                           face_range) const
   {
     FaceIntegratorP pressure_m(matrix_free_in, true, data.dof_index_pressure, data.quad_index);
-    BoundaryFaceIntegratorP<dim, Number> pressure_p(pressure_m, *data.bc->pressure);
-
     FaceIntegratorU velocity_m(matrix_free_in, true, data.dof_index_velocity, data.quad_index);
-    BoundaryFaceIntegratorU<dim, Number> velocity_p(velocity_m, *data.bc->velocity);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
       pressure_m.reinit(face);
       pressure_m.gather_evaluate(src.block(0), integrator_flags_p.face_evaluate);
-      pressure_p.reinit(face, evaluation_time);
 
       velocity_m.reinit(face);
       velocity_m.gather_evaluate(src.block(1), integrator_flags_u.face_evaluate);
-      velocity_p.reinit(face, evaluation_time);
+
+      auto const          boundary_id     = matrix_free_in.get_boundary_id(face);
+      BoundaryTypeP const boundary_type_p = data.bc->pressure->get_boundary_type(boundary_id);
+      BoundaryTypeU const boundary_type_u = data.bc->velocity->get_boundary_type(boundary_id);
 
       for(unsigned int q : pressure_m.quadrature_point_indices())
       {
         scalar const pm = pressure_m.get_value(q);
-        scalar const pp = pressure_p.get_value(q);
         vector const um = velocity_m.get_value(q);
-        vector const up = velocity_p.get_value(q);
         vector const n  = pressure_m.normal_vector(q);
+
+        scalar const pp = calculate_exterior_value_pressure(
+          q, pressure_m, boundary_type_p, boundary_id, *data.bc->pressure, evaluation_time);
+
+        vector const up = calculate_exterior_value_velocity(
+          q, velocity_m, boundary_type_u, boundary_id, *data.bc->velocity, evaluation_time);
 
         face_kernel(pressure_m, velocity_m, pm, pp, um, up, n, q, false, pressure_m, velocity_m);
       }
