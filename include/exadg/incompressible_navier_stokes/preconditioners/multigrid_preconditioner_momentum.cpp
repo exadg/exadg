@@ -153,7 +153,8 @@ MultigridPreconditioner<dim, Number>::update()
   // In case the operators have been updated, we also need to update the smoothers and the coarse
   // grid solver. This is generic functionality implemented in the base class.
   if(mesh_is_moving or data.unsteady_problem or
-     (mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion))
+     (mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion) or
+     this->update_needed)
   {
     this->update_smoothers();
     this->update_coarse_solver();
