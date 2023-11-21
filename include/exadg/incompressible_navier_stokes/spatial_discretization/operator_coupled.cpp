@@ -70,8 +70,6 @@ template<int dim, typename Number>
 void
 OperatorCoupled<dim, Number>::setup_preconditioners_and_solvers()
 {
-  this->pcout << std::endl << "Setup incompressible Navier-Stokes solver ..." << std::endl;
-
   Base::setup_preconditioners_and_solvers();
 
   if(this->param.apply_penalty_terms_in_postprocessing_step)
@@ -79,8 +77,6 @@ OperatorCoupled<dim, Number>::setup_preconditioners_and_solvers()
 
   setup_block_preconditioner();
   setup_solver_coupled();
-
-  this->pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, typename Number>

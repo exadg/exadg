@@ -66,14 +66,10 @@ template<int dim, typename Number>
 void
 OperatorPressureCorrection<dim, Number>::setup_preconditioners_and_solvers()
 {
-  this->pcout << std::endl << "Setup incompressible Navier-Stokes solver ..." << std::endl;
-
   ProjectionBase::setup_preconditioners_and_solvers();
 
   setup_momentum_preconditioner();
   setup_momentum_solver();
-
-  this->pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, typename Number>
