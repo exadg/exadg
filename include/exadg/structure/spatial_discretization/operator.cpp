@@ -366,6 +366,20 @@ Operator<dim, Number>::setup_preconditioner()
         elasticity_operator_linear, false);
     }
   }
+  else if(param.preconditioner == Preconditioner::AdditiveSchwarz)
+  {
+    if(param.large_deformation)
+    {
+      preconditioner =
+        std::make_shared<AdditiveSchwarzPreconditioner<NonLinearOperator<dim, Number>>>(
+          elasticity_operator_nonlinear, false);
+    }
+    else
+    {
+      preconditioner = std::make_shared<AdditiveSchwarzPreconditioner<LinearOperator<dim, Number>>>(
+        elasticity_operator_linear, false);
+    }
+  }
   else if(param.preconditioner == Preconditioner::Multigrid)
   {
     if(param.large_deformation)

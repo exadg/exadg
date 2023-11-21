@@ -156,6 +156,12 @@ OperatorProjectionMethods<dim, Number>::setup_preconditioner_pressure_poisson()
       std::make_shared<JacobiPreconditioner<Poisson::LaplaceOperator<dim, Number, 1>>>(
         laplace_operator, true);
   }
+  else if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::BlockJacobi)
+  {
+    preconditioner_pressure_poisson =
+      std::make_shared<BlockJacobiPreconditioner<Poisson::LaplaceOperator<dim, Number, 1>>>(
+        laplace_operator, true);
+  }
   else if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Multigrid)
   {
     MultigridData mg_data;

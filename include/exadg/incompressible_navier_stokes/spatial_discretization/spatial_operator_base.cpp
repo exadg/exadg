@@ -1568,6 +1568,17 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
                                        projection_operator->get_dof_index(),
                                        projection_operator->get_quad_index());
     }
+    else if(param.preconditioner_projection == PreconditionerProjection::PointJacobi)
+    {
+      typedef Elementwise::JacobiPreconditioner<dim, dim, Number, ProjOperator> JACOBI;
+
+      elementwise_preconditioner_projection =
+        std::make_shared<JACOBI>(projection_operator->get_matrix_free(),
+                                 projection_operator->get_dof_index(),
+                                 projection_operator->get_quad_index(),
+                                 *projection_operator,
+                                 false);
+    }
     else
     {
       AssertThrow(false, dealii::ExcMessage("The specified preconditioner is not implemented."));

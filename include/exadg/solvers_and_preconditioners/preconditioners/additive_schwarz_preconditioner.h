@@ -44,13 +44,18 @@ public:
   }
 
   /*
-   *  This function applies additive Schwarz preconditioner.
+   *  This function applies the additive Schwarz preconditioner.
    *  Make sure that the additive Schwarz preconditioner has been
    *  updated when calling this function.
    */
   void
   vmult(VectorType & dst, VectorType const & src) const final
   {
+    AssertThrow(
+      not this->update_needed,
+      dealii::ExcMessage(
+        "Additive Schwarz preconditioner can not be applied because it needs to be updated."));
+
     underlying_operator.apply_inverse_additive_schwarz_matrices(dst, src);
   }
 

@@ -40,7 +40,7 @@ template<typename Number>
 class PreconditionerBase
 {
 public:
-  PreconditionerBase()
+  PreconditionerBase() : update_needed(true)
   {
   }
 
@@ -54,8 +54,17 @@ public:
   virtual void
   update() = 0;
 
+  bool
+  needs_update()
+  {
+    return update_needed;
+  }
+
   virtual void
   vmult(Number * dst, Number const * src) const = 0;
+
+protected:
+  bool update_needed;
 };
 
 /**
@@ -67,6 +76,7 @@ class PreconditionerIdentity : public PreconditionerBase<Number>
 public:
   PreconditionerIdentity(unsigned int const size) : M(size)
   {
+    this->update_needed = false;
   }
 
   virtual ~PreconditionerIdentity()
@@ -118,7 +128,9 @@ public:
     underlying_operator.initialize_dof_vector(global_inverse_diagonal);
 
     if(initialize)
+    {
       this->update();
+    }
   }
 
   void
@@ -132,6 +144,8 @@ public:
   update() final
   {
     underlying_operator.calculate_inverse_diagonal(global_inverse_diagonal);
+
+    this->update_needed = false;
   }
 
   /**
@@ -199,6 +213,8 @@ public:
       matrix_free.get_shape_info(0, quad_index).data[0].n_q_points_1d == fe.degree + 1,
       dealii::ExcMessage(
         "The elementwise inverse mass preconditioner is only available if n_q_points_1d = n_nodes_1d."));
+
+    this->update_needed = false;
   }
 
   void
