@@ -151,10 +151,6 @@ Setup incompressible Navier-Stokes operator ...
 
 ... done!
 
-Setup incompressible Navier-Stokes solver ...
-
-... done!
-
 Calculate error for velocity for initial data:
   Absolute error (L2-norm): 1.15470e+00
 
@@ -164,10 +160,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 7.79651e-13
+  Absolute error (L2-norm): 7.80921e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 2.10835e-11
+  Absolute error (L2-norm): 2.10768e-11
 
 
 
@@ -321,10 +317,6 @@ Setup incompressible Navier-Stokes operator ...
 
 ... done!
 
-Setup incompressible Navier-Stokes solver ...
-
-... done!
-
 Calculate error for velocity for initial data:
   Absolute error (L2-norm): 1.15470e+00
 
@@ -334,10 +326,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 7.37921e-13
+  Absolute error (L2-norm): 4.17721e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 1.41420e-11
+  Absolute error (L2-norm): 6.95824e-12
 
 
 
@@ -491,10 +483,6 @@ Setup incompressible Navier-Stokes operator ...
 
 ... done!
 
-Setup incompressible Navier-Stokes solver ...
-
-... done!
-
 Calculate error for velocity for initial data:
   Absolute error (L2-norm): 1.15470e+00
 
@@ -504,10 +492,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 3.04448e-14
+  Absolute error (L2-norm): 2.96422e-14
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 8.26406e-13
+  Absolute error (L2-norm): 8.08894e-13
 
 
 
@@ -661,10 +649,6 @@ Setup incompressible Navier-Stokes operator ...
 
 ... done!
 
-Setup incompressible Navier-Stokes solver ...
-
-... done!
-
 Calculate error for velocity for initial data:
   Absolute error (L2-norm): 1.15470e+00
 
@@ -674,7 +658,7 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 8.94271e-12
+  Absolute error (L2-norm): 9.09819e-12
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 2.25122e-10
+  Absolute error (L2-norm): 2.27289e-10

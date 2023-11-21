@@ -119,10 +119,6 @@ Adjust time step size to hit end time:
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Starting time loop ...
 
 Calculate error for all fields at time t = 0.0000e+00:

@@ -107,10 +107,6 @@ Setup elasticity time integrator ...
 
 ... done!
 
-Setup elasticity solver ...
-
-... done!
-
 Starting time loop ...
 
 Calculate error for all fields at time t = 0.0000e+00:
