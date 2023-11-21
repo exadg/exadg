@@ -301,8 +301,6 @@ template<int dim, int n_components, typename Number>
 void
 Operator<dim, n_components, Number>::setup_preconditioner_and_solver()
 {
-  pcout << std::endl << "Setup Poisson solver ..." << std::endl;
-
   // initialize preconditioner
   if(param.preconditioner == Poisson::Preconditioner::None)
   {
@@ -417,8 +415,6 @@ Operator<dim, n_components, Number>::setup_preconditioner_and_solver()
   {
     AssertThrow(false, dealii::ExcMessage("Specified solver is not implemented!"));
   }
-
-  pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, int n_components, typename Number>
