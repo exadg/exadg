@@ -22,9 +22,9 @@
 #ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_H_
 #define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_H_
 
+#include <exadg/acoustic_conservation_equations/postprocessor/output_generator.h>
 #include <exadg/acoustic_conservation_equations/postprocessor/postprocessor_base.h>
 #include <exadg/postprocessor/error_calculation.h>
-#include <exadg/postprocessor/kinetic_energy_spectrum.h>
 
 
 namespace ExaDG
@@ -36,6 +36,7 @@ struct PostProcessorData
 {
   PostProcessorData() = default;
 
+  OutputData                output_data;
   ErrorCalculationData<dim> error_data_p;
   ErrorCalculationData<dim> error_data_u;
 };
@@ -68,6 +69,9 @@ protected:
 
 private:
   PostProcessorData<dim> pp_data;
+
+  // write output for visualization of results (e.g., using paraview)
+  OutputGenerator<dim, Number> output_generator;
 
   // calculate errors for verification purposes for problems with known analytical solution
   ErrorCalculator<dim, Number> error_calculator_p;

@@ -28,7 +28,11 @@ namespace Acoustics
 template<int dim, typename Number>
 PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & postprocessor_data,
                                           MPI_Comm const &               comm)
-  : mpi_comm(comm), pp_data(postprocessor_data), error_calculator_p(comm), error_calculator_u(comm)
+  : mpi_comm(comm),
+    pp_data(postprocessor_data),
+    output_generator(comm),
+    error_calculator_p(comm),
+    error_calculator_u(comm)
 
 {
 }
@@ -37,6 +41,11 @@ template<int dim, typename Number>
 void
 PostProcessor<dim, Number>::setup(AcousticsOperator const & pde_operator)
 {
+  output_generator.setup(pde_operator.get_dof_handler_p(),
+                         pde_operator.get_dof_handler_u(),
+                         *pde_operator.get_mapping(),
+                         pp_data.output_data);
+
   error_calculator_p.setup(pde_operator.get_dof_handler_p(),
                            *pde_operator.get_mapping(),
                            pp_data.error_data_p);
@@ -52,6 +61,17 @@ PostProcessor<dim, Number>::do_postprocessing(BlockVectorType const & solution,
                                               double const            time,
                                               types::time_step const  time_step_number)
 {
+  /*
+   *  write output
+   */
+  if(output_generator.time_control.needs_evaluation(time, time_step_number))
+  {
+    output_generator.evaluate(solution.block(block_index_pressure),
+                              solution.block(block_index_velocity),
+                              time,
+                              Utilities::is_unsteady_timestep(time_step_number));
+  }
+
   /*
    *  calculate error
    */
