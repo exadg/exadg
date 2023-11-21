@@ -29,6 +29,7 @@
 #include <exadg/acoustic_conservation_equations/user_interface/enum_types.h>
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/integrator_flags.h>
+#include <exadg/operators/mapping_flags.h>
 
 namespace ExaDG
 {
@@ -46,6 +47,19 @@ class Kernel
   using CellIntegratorU = CellIntegrator<dim, dim, Number>;
 
 public:
+  static MappingFlags
+  get_mapping_flags()
+  {
+    MappingFlags flags;
+
+    flags.cells       = dealii::update_JxW_values | dealii::update_gradients;
+    flags.inner_faces = dealii::update_JxW_values | dealii::update_normal_vectors;
+    flags.boundary_faces =
+      dealii::update_JxW_values | dealii::update_quadrature_points | dealii::update_normal_vectors;
+
+    return flags;
+  }
+
   /*
    * Volume flux for the momentum equation, i.e., the term occurring in the volume integral for
    * weak formulation (performing integration-by-parts)
@@ -133,6 +147,8 @@ struct OperatorData
     : dof_index_pressure(0),
       dof_index_velocity(1),
       quad_index(0),
+      block_index_pressure(0),
+      block_index_velocity(1),
       formulation(Formulation::SkewSymmetric),
       bc(nullptr),
       density(-1.0),
@@ -144,6 +160,9 @@ struct OperatorData
   unsigned int dof_index_velocity;
 
   unsigned int quad_index;
+
+  unsigned int block_index_pressure;
+  unsigned int block_index_velocity;
 
   Formulation formulation;
 
@@ -395,15 +414,19 @@ private:
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
       pressure.reinit(cell);
-      pressure.gather_evaluate(src.block(0), integrator_flags_p.cell_evaluate);
+      pressure.gather_evaluate(src.block(data.block_index_pressure),
+                               integrator_flags_p.cell_evaluate);
 
       velocity.reinit(cell);
-      velocity.gather_evaluate(src.block(1), integrator_flags_u.cell_evaluate);
+      velocity.gather_evaluate(src.block(data.block_index_velocity),
+                               integrator_flags_u.cell_evaluate);
 
       do_cell_integral(pressure, velocity);
 
-      pressure.integrate_scatter(integrator_flags_p.cell_integrate, dst.block(0));
-      velocity.integrate_scatter(integrator_flags_u.cell_integrate, dst.block(1));
+      pressure.integrate_scatter(integrator_flags_p.cell_integrate,
+                                 dst.block(data.block_index_pressure));
+      velocity.integrate_scatter(integrator_flags_u.cell_integrate,
+                                 dst.block(data.block_index_velocity));
     }
   }
 
@@ -422,22 +445,30 @@ private:
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
       pressure_m.reinit(face);
-      pressure_m.gather_evaluate(src.block(0), integrator_flags_p.face_evaluate);
+      pressure_m.gather_evaluate(src.block(data.block_index_pressure),
+                                 integrator_flags_p.face_evaluate);
       pressure_p.reinit(face);
-      pressure_p.gather_evaluate(src.block(0), integrator_flags_p.face_evaluate);
+      pressure_p.gather_evaluate(src.block(data.block_index_pressure),
+                                 integrator_flags_p.face_evaluate);
 
       velocity_m.reinit(face);
-      velocity_m.gather_evaluate(src.block(1), integrator_flags_u.face_evaluate);
+      velocity_m.gather_evaluate(src.block(data.block_index_velocity),
+                                 integrator_flags_u.face_evaluate);
       velocity_p.reinit(face);
-      velocity_p.gather_evaluate(src.block(1), integrator_flags_u.face_evaluate);
+      velocity_p.gather_evaluate(src.block(data.block_index_velocity),
+                                 integrator_flags_u.face_evaluate);
 
       do_face_integral<true>(pressure_m, pressure_p, velocity_m, velocity_p);
 
-      pressure_m.integrate_scatter(integrator_flags_p.face_integrate, dst.block(0));
-      pressure_p.integrate_scatter(integrator_flags_p.face_integrate, dst.block(0));
+      pressure_m.integrate_scatter(integrator_flags_p.face_integrate,
+                                   dst.block(data.block_index_pressure));
+      pressure_p.integrate_scatter(integrator_flags_p.face_integrate,
+                                   dst.block(data.block_index_pressure));
 
-      velocity_m.integrate_scatter(integrator_flags_u.face_integrate, dst.block(1));
-      velocity_p.integrate_scatter(integrator_flags_u.face_integrate, dst.block(1));
+      velocity_m.integrate_scatter(integrator_flags_u.face_integrate,
+                                   dst.block(data.block_index_velocity));
+      velocity_p.integrate_scatter(integrator_flags_u.face_integrate,
+                                   dst.block(data.block_index_velocity));
     }
   }
 
@@ -456,17 +487,21 @@ private:
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
       pressure_m.reinit(face);
-      pressure_m.gather_evaluate(src.block(0), integrator_flags_p.face_evaluate);
+      pressure_m.gather_evaluate(src.block(data.block_index_pressure),
+                                 integrator_flags_p.face_evaluate);
       pressure_p.reinit(face, evaluation_time);
 
       velocity_m.reinit(face);
-      velocity_m.gather_evaluate(src.block(1), integrator_flags_u.face_evaluate);
+      velocity_m.gather_evaluate(src.block(data.block_index_velocity),
+                                 integrator_flags_u.face_evaluate);
       velocity_p.reinit(face, evaluation_time);
 
       do_face_integral<false>(pressure_m, pressure_p, velocity_m, velocity_p);
 
-      pressure_m.integrate_scatter(integrator_flags_p.face_integrate, dst.block(0));
-      velocity_m.integrate_scatter(integrator_flags_u.face_integrate, dst.block(1));
+      pressure_m.integrate_scatter(integrator_flags_p.face_integrate,
+                                   dst.block(data.block_index_pressure));
+      velocity_m.integrate_scatter(integrator_flags_u.face_integrate,
+                                   dst.block(data.block_index_velocity));
     }
   }
 

@@ -19,40 +19,41 @@
  *  ______________________________________________________________________
  */
 
-#ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_ENUM_TYPES_H_
-#define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_ENUM_TYPES_H_
-#include <exadg/utilities/enum_utilities.h>
+#ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_BASE_H_
+#define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_BASE_H_
+
+#include <exadg/acoustic_conservation_equations/postprocessor/postprocessor_interface.h>
+#include <exadg/acoustic_conservation_equations/spatial_discretization/spatial_operator.h>
 
 namespace ExaDG
 {
 namespace Acoustics
 {
-enum class Formulation
-{
-  Undefined,
-  /** Weak form of pressure gradient and velocity divergence terms. */
-  Weak,
-  /** Strong form of pressure gradient and velocity divergence terms. */
-  Strong,
-  /** Strong form of the pressure gradient term and weak form of the velocity divergence term.
-   *  This way, the gradient is only used on scalar variables which reduces the number of sum
-   *  factorization sweeps in the cell loop. Additionally, only the skew-symmetric formulation
-   *  mathematically guarantees that energy will be non-increasing if the numerical quadrature
-   *  is not exact (non-affine cells).
-   */
-  SkewSymmetric
-};
+template<int dim, typename Number>
+class SpatialOperatorBase;
 
 /*
- * calculation of time step size
+ *  Base class for postprocessor of the acoustic conservation equations.
  */
-enum class TimeStepCalculation
+template<int dim, typename Number>
+class PostProcessorBase : public PostProcessorInterface<Number>
 {
-  Undefined,
-  UserSpecified
+protected:
+  using VectorType = typename PostProcessorInterface<Number>::BlockVectorType;
+
+  using AcousticsOperator = SpatialOperator<dim, Number>;
+
+public:
+  virtual ~PostProcessorBase() = default;
+  /*
+   * Setup function.
+   */
+  virtual void
+  setup(AcousticsOperator const & pde_operator) = 0;
 };
+
 
 } // namespace Acoustics
 } // namespace ExaDG
 
-#endif /*EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_ENUM_TYPES_H_*/
+#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_BASE_H_ */

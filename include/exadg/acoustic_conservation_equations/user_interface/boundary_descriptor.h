@@ -27,6 +27,8 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
 
+#include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
+
 namespace ExaDG
 {
 namespace Acoustics
@@ -64,6 +66,23 @@ struct BoundaryDescriptorP
 
     return BoundaryTypeP::Undefined;
   }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    void
+    verify_boundary_conditions(
+      dealii::types::boundary_id const             boundary_id,
+      std::set<dealii::types::boundary_id> const & periodic_boundary_ids) const
+  {
+    unsigned int counter = 0;
+    if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
+      counter++;
+
+    if(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())
+      counter++;
+
+    AssertThrow(counter == 1,
+                dealii::ExcMessage("Boundary face with non-unique boundary type found."));
+  }
 };
 
 template<int dim>
@@ -88,14 +107,46 @@ struct BoundaryDescriptorU
 
     return BoundaryTypeU::Undefined;
   }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    void
+    verify_boundary_conditions(
+      dealii::types::boundary_id const             boundary_id,
+      std::set<dealii::types::boundary_id> const & periodic_boundary_ids) const
+  {
+    unsigned int counter = 0;
+    if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
+      counter++;
+
+    if(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())
+      counter++;
+
+    AssertThrow(counter == 1,
+                dealii::ExcMessage("Boundary face with non-unique boundary type found."));
+  }
 };
 
 template<int dim>
 struct BoundaryDescriptor
 {
+  BoundaryDescriptor()
+  {
+    pressure = std::make_shared<BoundaryDescriptorP<dim>>();
+    velocity = std::make_shared<BoundaryDescriptorU<dim>>();
+  }
+
   std::shared_ptr<BoundaryDescriptorP<dim>> pressure;
   std::shared_ptr<BoundaryDescriptorU<dim>> velocity;
 };
+
+template<int dim>
+inline void
+verify_boundary_conditions(BoundaryDescriptor<dim> const & boundary_descriptor,
+                           Grid<dim> const &               grid)
+{
+  ExaDG::verify_boundary_conditions(*boundary_descriptor.pressure, grid);
+  ExaDG::verify_boundary_conditions(*boundary_descriptor.velocity, grid);
+}
 
 } // namespace Acoustics
 } // namespace ExaDG
