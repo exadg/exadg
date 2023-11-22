@@ -243,7 +243,7 @@ Operator<dim, Number>::setup_operators()
     elasticity_operator_linear.initialize(*matrix_free, affine_constraints, operator_data);
   }
 
-  // mass operator and related solver for inversion
+  // mass operator
   if(param.problem_type == ProblemType::Unsteady)
   {
     Structure::MassOperatorData<dim> mass_data;
@@ -255,38 +255,6 @@ Operator<dim, Number>::setup_operators()
     mass_operator.initialize(*matrix_free, affine_constraints, mass_data);
 
     mass_operator.set_scaling_factor(param.density);
-
-    // TODO: this comment can be removed once we merge setup() and setup_solvers()
-    // preconditioner and solver for mass operator have to be initialized in
-    // setup_operators() since the mass solver is already needed in
-    // setup() function of time integration scheme.
-
-    // preconditioner
-    mass_preconditioner =
-      std::make_shared<JacobiPreconditioner<Structure::MassOperator<dim, Number>>>(mass_operator,
-                                                                                   true);
-
-    // initialize solver
-    Krylov::SolverDataCG solver_data;
-    solver_data.use_preconditioner = true;
-    // use the same solver tolerances as for solving the momentum equation
-    if(param.large_deformation)
-    {
-      solver_data.solver_tolerance_abs = param.newton_solver_data.abs_tol;
-      solver_data.solver_tolerance_rel = param.newton_solver_data.rel_tol;
-      solver_data.max_iter             = param.newton_solver_data.max_iter;
-    }
-    else
-    {
-      solver_data.solver_tolerance_abs = param.solver_data.abs_tol;
-      solver_data.solver_tolerance_rel = param.solver_data.rel_tol;
-      solver_data.max_iter             = param.solver_data.max_iter;
-    }
-
-    typedef Krylov::
-      SolverCG<Structure::MassOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
-        CG;
-    mass_solver = std::make_shared<CG>(mass_operator, *mass_preconditioner, solver_data);
   }
 
   // setup rhs operator
@@ -349,6 +317,13 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::setup_preconditioner()
 {
+  if(param.problem_type == ProblemType::Unsteady)
+  {
+    mass_preconditioner =
+      std::make_shared<JacobiPreconditioner<Structure::MassOperator<dim, Number>>>(mass_operator,
+                                                                                   true);
+  }
+
   if(param.preconditioner == Preconditioner::None)
   {
     // do nothing
@@ -498,6 +473,31 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::setup_solver()
 {
+  if(param.problem_type == ProblemType::Unsteady)
+  {
+    // initialize solver
+    Krylov::SolverDataCG solver_data;
+    solver_data.use_preconditioner = true;
+    // use the same solver tolerances as for solving the momentum equation
+    if(param.large_deformation)
+    {
+      solver_data.solver_tolerance_abs = param.newton_solver_data.abs_tol;
+      solver_data.solver_tolerance_rel = param.newton_solver_data.rel_tol;
+      solver_data.max_iter             = param.newton_solver_data.max_iter;
+    }
+    else
+    {
+      solver_data.solver_tolerance_abs = param.solver_data.abs_tol;
+      solver_data.solver_tolerance_rel = param.solver_data.rel_tol;
+      solver_data.max_iter             = param.solver_data.max_iter;
+    }
+
+    typedef Krylov::
+      SolverCG<Structure::MassOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
+        CG;
+    mass_solver = std::make_shared<CG>(mass_operator, *mass_preconditioner, solver_data);
+  }
+
   // initialize linear solver
   if(param.solver == Solver::CG)
   {
