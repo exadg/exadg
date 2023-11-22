@@ -134,6 +134,10 @@ generic_cell_integral(std::vector<ConfigurationData> const &    config_data,
   unsigned int const n_cells = 10;
   for(unsigned int cell = 0; cell < n_cells; ++cell)
   {
+    integrators.reinit(cell);
+
+    // TODO: evaluate (generic functionality)
+
     unsigned int const n_q_points = 10;
     for(unsigned int q = 0; q < n_q_points; ++q)
     {
@@ -145,6 +149,8 @@ generic_cell_integral(std::vector<ConfigurationData> const &    config_data,
 
       integrators.submit(data, q);
     }
+
+    // TODO: integrate (generic functionality)
   }
 }
 
