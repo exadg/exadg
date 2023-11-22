@@ -2,26 +2,26 @@
     "General": {
         "Precision": "double",
         "Dim": "2",
-        "IsTest": "false"
+        "IsTest": "true"
     },
     "SpatialResolution": {
-        "DegreeMin": "7",
+        "DegreeMin": "1",
         "DegreeMax": "7",
-        "RefineSpaceMin": "3",
-        "RefineSpaceMax": "3"
+        "RefineSpaceMin": "2",
+        "RefineSpaceMax": "2"
     },
     "TemporalResolution": {
         "RefineTimeMin": "0",
         "RefineTimeMax": "0"
     },
     "Application": {
-        "Formulation": "SkewSymmetric",
-        "SpeedOfSound": "1.0",
-        "Density": "1.0",
+        "Formulation": "Weak",
+        "SpeedOfSound": "7.0",
+        "Density": "3.0",
         "TimeIntegrationScheme": "UserSpecified",
-        "UserSpecifiedTimeStepSize": "1.0e-3",
+        "UserSpecifiedTimeStepSize": "1.0e-4",
         "OrderTimeIntegrator": "2",
-        "RuntimeInNumberOfPeriods": "1.0",
+        "RuntimeInNumberOfPeriods": "0.25",
         "Modes": "2.0"
     },
     "Output": {

@@ -120,6 +120,40 @@ public:
 
     prm.enter_subsection("Application");
     {
+      // MATHEMATICAL MODEL
+      prm.add_parameter("Formulation", this->param.formulation, "Formulation.");
+
+      // PHYSICAL QUANTITIES
+      prm.add_parameter("SpeedOfSound",
+                        this->param.speed_of_sound,
+                        "Speed of sound.",
+                        dealii::Patterns::Double());
+
+      prm.add_parameter("Density", this->param.density, "Density.", dealii::Patterns::Double());
+
+
+      // TEMPORAL DISCRETIZATION
+      prm.add_parameter("TimeIntegrationScheme",
+                        this->param.calculation_of_time_step_size,
+                        "How to calculate time step size.");
+
+      prm.add_parameter("UserSpecifiedTimeStepSize",
+                        this->param.time_step_size,
+                        "UserSpecified Timestep size.",
+                        dealii::Patterns::Double());
+
+      prm.add_parameter("OrderTimeIntegrator",
+                        this->param.order_time_integrator,
+                        "Order of time integration.",
+                        dealii::Patterns::Integer(1));
+
+      // APPLICATION SPECIFIC
+      prm.add_parameter("RuntimeInNumberOfPeriods",
+                        number_of_periods,
+                        "Number of temporal oscillations during runtime.",
+                        dealii::Patterns::Double(1.0e-12));
+
+      prm.add_parameter("Modes", modes, "Number of Modes.", dealii::Patterns::Double(1.0e-12));
     }
     prm.leave_subsection();
   }
@@ -132,20 +166,14 @@ private:
     this->param.formulation = Formulation::SkewSymmetric;
 
     // PHYSICAL QUANTITIES
-    this->param.start_time     = start_time;
-    this->param.end_time       = number_of_periods * compute_period_duration();
-    this->param.speed_of_sound = speed_of_sound;
-    this->param.density        = density;
+    this->param.start_time = start_time;
+    this->param.end_time   = number_of_periods * compute_period_duration();
 
     // TEMPORAL DISCRETIZATION
-    this->param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
-    this->param.time_step_size                = 1e-03;
-    this->param.order_time_integrator         = 2;
-    this->param.start_with_low_order          = false;
+    this->param.start_with_low_order = false;
 
     // output of solver information
-    this->param.solver_info_data.interval_time =
-      (this->param.end_time - this->param.start_time) / 100.0;
+    this->param.solver_info_data.interval_time = (this->param.end_time - this->param.start_time);
 
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type = TriangulationType::Distributed;
@@ -179,8 +207,8 @@ private:
   void
   set_boundary_descriptor() final
   {
-    this->boundary_descriptor->pressure->dirichlet_bc.insert(
-      std::make_pair(1, std::make_shared<AnalyticalSolutionPressure<dim>>(modes, speed_of_sound)));
+    this->boundary_descriptor->pressure->dirichlet_bc.insert(std::make_pair(
+      1, std::make_shared<AnalyticalSolutionPressure<dim>>(modes, this->param.speed_of_sound)));
     this->boundary_descriptor->velocity->neumann_bc.insert(1);
   }
 
@@ -188,10 +216,12 @@ private:
   set_field_functions() final
   {
     this->field_functions->initial_solution_pressure =
-      std::make_shared<AnalyticalSolutionPressure<dim>>(modes, speed_of_sound);
+      std::make_shared<AnalyticalSolutionPressure<dim>>(modes, this->param.speed_of_sound);
 
     this->field_functions->initial_solution_velocity =
-      std::make_shared<AnalyticalSolutionVelocity<dim>>(modes, speed_of_sound, density);
+      std::make_shared<AnalyticalSolutionVelocity<dim>>(modes,
+                                                        this->param.speed_of_sound,
+                                                        this->param.density);
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
@@ -204,7 +234,7 @@ private:
     pp_data.error_data_p.time_control_data.start_time       = start_time;
     pp_data.error_data_p.time_control_data.trigger_interval = (this->param.end_time - start_time);
     pp_data.error_data_p.analytical_solution =
-      std::make_shared<AnalyticalSolutionPressure<dim>>(modes, speed_of_sound);
+      std::make_shared<AnalyticalSolutionPressure<dim>>(modes, this->param.speed_of_sound);
     pp_data.error_data_p.calculate_relative_errors = false; // at some times the solution is 0
     pp_data.error_data_p.name                      = "pressure";
 
@@ -213,7 +243,9 @@ private:
     pp_data.error_data_u.time_control_data.start_time       = start_time;
     pp_data.error_data_u.time_control_data.trigger_interval = (this->param.end_time - start_time);
     pp_data.error_data_u.analytical_solution =
-      std::make_shared<AnalyticalSolutionVelocity<dim>>(modes, speed_of_sound, density);
+      std::make_shared<AnalyticalSolutionVelocity<dim>>(modes,
+                                                        this->param.speed_of_sound,
+                                                        this->param.density);
     pp_data.error_data_u.calculate_relative_errors = false; // at some times the solution is 0
     pp_data.error_data_u.name                      = "velocity";
 
@@ -223,16 +255,15 @@ private:
     return pp;
   }
 
-  // set problem specific parameters like physical dimensions, etc.
+  // problem specific parameters like physical dimensions, etc.
   double modes             = 2.0;
-  double speed_of_sound    = 1.0;
-  double density           = 1.0;
   double number_of_periods = 1.0;
 
   double
   compute_period_duration()
   {
-    return 2.0 / (modes * std::sqrt(dim) * speed_of_sound);
+    AssertThrow(this->param.speed_of_sound > 0.0, dealii::ExcMessage("speed_of_sound not set."));
+    return 2.0 / (modes * std::sqrt(dim) * this->param.speed_of_sound);
   }
 
   double const left  = 0.0;
