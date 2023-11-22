@@ -665,6 +665,10 @@ void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::vmult(VectorType &       dst,
                                                                  VectorType const & src) const
 {
+  AssertThrow(not this->update_needed,
+              dealii::ExcMessage(
+                "Multigrid preconditioner can not be applied because it needs to be updated."));
+
   multigrid_algorithm->vmult(dst, src);
 }
 
@@ -673,6 +677,10 @@ unsigned int
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::solve(VectorType &       dst,
                                                                  VectorType const & src) const
 {
+  AssertThrow(not this->update_needed,
+              dealii::ExcMessage(
+                "Multigrid preconditioner can not be applied because it needs to be updated."));
+
   return multigrid_algorithm->solve(dst, src);
 }
 
