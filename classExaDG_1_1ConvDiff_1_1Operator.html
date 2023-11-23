@@ -660,7 +660,7 @@ template&lt;int dim, typename Number &gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Call this <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a15f533352d75d8183fc50222043adf4b">setup()</a> function if the dealii::MatrixFree object needs to be created outside this class. The typical use case would be multiphysics-coupling with one MatrixFree object handed over to several single-field solvers. Another typical use case is the use of an ALE formulation. </p>
+<p>Call this <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a15f533352d75d8183fc50222043adf4b">setup()</a> function if the dealii::MatrixFree object needs to be created outside this class. The typical use case would be multiphysics-coupling with one MatrixFree object handed over to several single-field solvers. Another typical use case is the use of an ALE formulation. Note that you need to call the function fill_matrix_free_data() beforehand in order to correctly initialize dealii::MatrixFree, which is then handed over to this <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a15f533352d75d8183fc50222043adf4b">setup()</a> function. </p>
 
 </div>
 </div>
