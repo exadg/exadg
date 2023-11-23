@@ -336,6 +336,29 @@ SpatialOperator<dim, Number>::initialize_dof_handler_and_constraints()
   // enumerate degrees of freedom
   dof_handler_p.distribute_dofs(*fe_p);
   dof_handler_u.distribute_dofs(*fe_u);
+
+  // close constraints
+  constraint_u.close();
+  constraint_p.close();
+
+  // Output DoF information
+  pcout << "Pressure:" << std::endl;
+  print_parameter(pcout, "degree of 1D polynomials", param.degree_p);
+  print_parameter(pcout, "number of dofs per cell", fe_p->n_dofs_per_cell());
+  print_parameter(pcout, "number of dofs (total)", dof_handler_p.n_dofs());
+
+  pcout << "Velocity:" << std::endl;
+  print_parameter(pcout, "degree of 1D polynomials", param.degree_u);
+  print_parameter(pcout, "number of dofs per cell", fe_u->n_dofs_per_cell());
+  print_parameter(pcout, "number of dofs (total)", dof_handler_u.n_dofs());
+
+  pcout << "Pressure and velocity:" << std::endl;
+  print_parameter(pcout,
+                  "number of dofs per cell",
+                  fe_p->n_dofs_per_cell() + fe_u->n_dofs_per_cell());
+  print_parameter(pcout, "number of dofs (total)", get_number_of_dofs());
+
+  pcout << std::flush;
 }
 
 template<int dim, typename Number>

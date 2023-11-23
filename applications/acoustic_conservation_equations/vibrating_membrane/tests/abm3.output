@@ -55,6 +55,17 @@ Generating grid for 2-dimensional problem:
   Number of cells:                           64
 
 Construct acoustic conservation equations operator ...
+Pressure:
+  degree of 1D polynomials:                  7
+  number of dofs per cell:                   64
+  number of dofs (total):                    4096
+Velocity:
+  degree of 1D polynomials:                  7
+  number of dofs per cell:                   128
+  number of dofs (total):                    8192
+Pressure and velocity:
+  number of dofs per cell:                   192
+  number of dofs (total):                    12288
 
 ... done!
 
@@ -145,6 +156,17 @@ Generating grid for 2-dimensional problem:
   Number of cells:                           64
 
 Construct acoustic conservation equations operator ...
+Pressure:
+  degree of 1D polynomials:                  7
+  number of dofs per cell:                   64
+  number of dofs (total):                    4096
+Velocity:
+  degree of 1D polynomials:                  7
+  number of dofs per cell:                   128
+  number of dofs (total):                    8192
+Pressure and velocity:
+  number of dofs per cell:                   192
+  number of dofs (total):                    12288
 
 ... done!
 

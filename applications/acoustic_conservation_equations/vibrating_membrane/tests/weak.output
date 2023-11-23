@@ -55,6 +55,17 @@ Generating grid for 2-dimensional problem:
   Number of cells:                           16
 
 Construct acoustic conservation equations operator ...
+Pressure:
+  degree of 1D polynomials:                  1
+  number of dofs per cell:                   4
+  number of dofs (total):                    64
+Velocity:
+  degree of 1D polynomials:                  1
+  number of dofs per cell:                   8
+  number of dofs (total):                    128
+Pressure and velocity:
+  number of dofs per cell:                   12
+  number of dofs (total):                    192
 
 ... done!
 
@@ -145,6 +156,17 @@ Generating grid for 2-dimensional problem:
   Number of cells:                           16
 
 Construct acoustic conservation equations operator ...
+Pressure:
+  degree of 1D polynomials:                  2
+  number of dofs per cell:                   9
+  number of dofs (total):                    144
+Velocity:
+  degree of 1D polynomials:                  2
+  number of dofs per cell:                   18
+  number of dofs (total):                    288
+Pressure and velocity:
+  number of dofs per cell:                   27
+  number of dofs (total):                    432
 
 ... done!
 
@@ -235,6 +257,17 @@ Generating grid for 2-dimensional problem:
   Number of cells:                           16
 
 Construct acoustic conservation equations operator ...
+Pressure:
+  degree of 1D polynomials:                  3
+  number of dofs per cell:                   16
+  number of dofs (total):                    256
+Velocity:
+  degree of 1D polynomials:                  3
+  number of dofs per cell:                   32
+  number of dofs (total):                    512
+Pressure and velocity:
+  number of dofs per cell:                   48
+  number of dofs (total):                    768
 
 ... done!
 
@@ -325,6 +358,17 @@ Generating grid for 2-dimensional problem:
   Number of cells:                           16
 
 Construct acoustic conservation equations operator ...
+Pressure:
+  degree of 1D polynomials:                  4
+  number of dofs per cell:                   25
+  number of dofs (total):                    400
+Velocity:
+  degree of 1D polynomials:                  4
+  number of dofs per cell:                   50
+  number of dofs (total):                    800
+Pressure and velocity:
+  number of dofs per cell:                   75
+  number of dofs (total):                    1200
 
 ... done!
 
@@ -415,6 +459,17 @@ Generating grid for 2-dimensional problem:
   Number of cells:                           16
 
 Construct acoustic conservation equations operator ...
+Pressure:
+  degree of 1D polynomials:                  5
+  number of dofs per cell:                   36
+  number of dofs (total):                    576
+Velocity:
+  degree of 1D polynomials:                  5
+  number of dofs per cell:                   72
+  number of dofs (total):                    1152
+Pressure and velocity:
+  number of dofs per cell:                   108
+  number of dofs (total):                    1728
 
 ... done!
 
@@ -505,6 +560,17 @@ Generating grid for 2-dimensional problem:
   Number of cells:                           16
 
 Construct acoustic conservation equations operator ...
+Pressure:
+  degree of 1D polynomials:                  6
+  number of dofs per cell:                   49
+  number of dofs (total):                    784
+Velocity:
+  degree of 1D polynomials:                  6
+  number of dofs per cell:                   98
+  number of dofs (total):                    1568
+Pressure and velocity:
+  number of dofs per cell:                   147
+  number of dofs (total):                    2352
 
 ... done!
 
@@ -595,6 +661,17 @@ Generating grid for 2-dimensional problem:
   Number of cells:                           16
 
 Construct acoustic conservation equations operator ...
+Pressure:
+  degree of 1D polynomials:                  7
+  number of dofs per cell:                   64
+  number of dofs (total):                    1024
+Velocity:
+  degree of 1D polynomials:                  7
+  number of dofs per cell:                   128
+  number of dofs (total):                    2048
+Pressure and velocity:
+  number of dofs per cell:                   192
+  number of dofs (total):                    3072
 
 ... done!
 
