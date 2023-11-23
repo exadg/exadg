@@ -58,17 +58,15 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up scalar convection-diffusion solver:" << std::endl;
 
-  application->setup(grid, grid->mapping);
+  grid = std::make_shared<Grid<dim>>();
+  application->setup(grid);
 
   if(application->get_parameters().ale_formulation) // moving mesh
   {
-    // store static mapping
-    static_mapping = grid->mapping;
-
     std::shared_ptr<dealii::Function<dim>> mesh_motion =
       application->create_mesh_movement_function();
     ale_mapping = std::make_shared<DeformedMappingFunction<dim, Number>>(
-      static_mapping,
+      grid->mapping,
       application->get_parameters().degree,
       *grid->triangulation,
       mesh_motion,
@@ -92,7 +90,6 @@ Driver<dim, Number>::setup()
 
   // initialize convection-diffusion operator
   pde_operator = std::make_shared<Operator<dim, Number>>(grid,
-                                                         grid->mapping,
                                                          application->get_boundary_descriptor(),
                                                          application->get_field_functions(),
                                                          application->get_parameters(),

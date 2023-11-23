@@ -143,7 +143,6 @@ Driver<dim, Number>::setup()
   {
     scalar_operator[i] = std::make_shared<ConvDiff::Operator<dim, Number>>(
       application->fluid->get_grid(),
-      dynamic_mapping,
       application->scalars[i]->get_boundary_descriptor(),
       application->scalars[i]->get_field_functions(),
       application->scalars[i]->get_parameters(),
