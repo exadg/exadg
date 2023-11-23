@@ -75,7 +75,9 @@ public:
    * Call this setup() function if the dealii::MatrixFree object needs to be created outside this
    * class. The typical use case would be multiphysics-coupling with one MatrixFree object handed
    * over to several single-field solvers. Another typical use case is the use of an ALE
-   * formulation.
+   * formulation. Note that you need to call the function fill_matrix_free_data() beforehand in
+   * order to correctly initialize dealii::MatrixFree, which is then handed over to this setup()
+   * function.
    */
   void
   setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
