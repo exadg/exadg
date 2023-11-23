@@ -243,13 +243,7 @@ Driver<dim, Number>::setup()
                   dealii::ExcMessage("start_with_low_order has to be true for this solver."));
     }
 
-    // setup time integrator before calling setup_solvers (this is necessary since the setup of the
-    // solvers depends on quantities such as the time_step_size or gamma0!)
     fluid_time_integrator->setup(application->fluid->get_parameters().restarted_simulation);
-
-    // setup solvers once the time integrator has been initialized
-    fluid_operator->setup_solvers(fluid_time_integrator->get_scaling_factor_time_derivative_term(),
-                                  fluid_time_integrator->get_velocity());
   }
   else if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Steady)
   {
@@ -264,9 +258,6 @@ Driver<dim, Number>::setup()
                                                          is_test);
 
     fluid_driver_steady->setup();
-
-    // setup solvers once the driver for steady problems has been initialized
-    fluid_operator->setup_solvers(1.0 /* dummy */, fluid_driver_steady->get_velocity());
   }
   else
   {
@@ -299,28 +290,6 @@ Driver<dim, Number>::setup()
     AssertThrow(application->scalars[i]->get_parameters().analytical_velocity_field == false,
                 dealii::ExcMessage(
                   "An analytical velocity field can not be used for this coupled solver."));
-
-    // setup solvers in case of BDF time integration (solution of linear systems of equations)
-    if(application->scalars[i]->get_parameters().temporal_discretization ==
-       ConvDiff::TemporalDiscretization::BDF)
-    {
-      std::shared_ptr<ConvDiff::TimeIntBDF<dim, Number>> scalar_time_integrator_BDF =
-        std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<dim, Number>>(scalar_time_integrator[i]);
-      double const scaling_factor =
-        scalar_time_integrator_BDF->get_scaling_factor_time_derivative_term();
-
-      dealii::LinearAlgebra::distributed::Vector<Number> vector;
-      fluid_operator->initialize_vector_velocity(vector);
-      dealii::LinearAlgebra::distributed::Vector<Number> const * velocity = &vector;
-
-      scalar_operator[i]->setup_solver(scaling_factor, velocity);
-    }
-    else
-    {
-      AssertThrow(application->scalars[i]->get_parameters().temporal_discretization ==
-                    ConvDiff::TemporalDiscretization::ExplRK,
-                  dealii::ExcMessage("Not implemented."));
-    }
   }
 
   // Initialize member variable use_adaptive_time_stepping

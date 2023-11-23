@@ -200,13 +200,6 @@ public:
         std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data);
 
   /*
-   * This function initializes operators, preconditioners, and solvers related to the solution of
-   * (non-)linear systems of equations.
-   */
-  void
-  setup_solver(double const & scaling_factor_acceleration, double const & scaling_factor_velocity);
-
-  /*
    * Initialization of dof-vector.
    */
   void
@@ -382,13 +375,13 @@ private:
    * Initializes preconditioner.
    */
   void
-  initialize_preconditioner();
+  setup_preconditioner();
 
   /**
    * Initializes solver.
    */
   void
-  initialize_solver();
+  setup_solver();
 
   /*
    * Grid

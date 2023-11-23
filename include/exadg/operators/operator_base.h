@@ -192,7 +192,7 @@ public:
    * preconditioner.
    */
   void
-  initialize_block_diagonal_preconditioner() const;
+  initialize_block_diagonal_preconditioner(bool const initialize) const;
 
   /*
    * Update block diagonal preconditioner: Recompute block matrices in case of matrix-based
@@ -316,7 +316,7 @@ public:
   // using the matrix-free variant with elementwise iterative solvers and matrix-free operator
   // evaluation.
   void
-  initialize_block_diagonal_preconditioner_matrix_free() const;
+  initialize_block_diagonal_preconditioner_matrix_free(bool const initialize) const;
 
   // updates block diagonal preconditioner when using the matrix-free variant with elementwise
   // iterative solvers and matrix-free operator evaluation.
@@ -325,7 +325,7 @@ public:
 
   // initializes block diagonal preconditioner for matrix-based variant
   void
-  initialize_block_diagonal_preconditioner_matrix_based() const;
+  initialize_block_diagonal_preconditioner_matrix_based(bool const initialize) const;
 
   // updates block diagonal preconditioner for matrix-based variant
   void

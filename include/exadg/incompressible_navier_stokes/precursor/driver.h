@@ -89,13 +89,7 @@ public:
     time_integrator = create_time_integrator<dim, Number>(
       pde_operator, helpers_ale_dummy, postprocessor, domain->get_parameters(), mpi_comm, is_test);
 
-    // setup time integrator before calling setup_solvers (this is necessary since the setup of the
-    // solvers depends on quantities such as the time_step_size or gamma0!)
     time_integrator->setup(domain->get_parameters().restarted_simulation);
-
-    // setup solvers
-    pde_operator->setup_solvers(time_integrator->get_scaling_factor_time_derivative_term(),
-                                time_integrator->get_velocity());
   }
 
   /*

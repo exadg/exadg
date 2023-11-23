@@ -145,13 +145,12 @@ Driver<dim, Number>::setup()
     postprocessor = application->create_postprocessor();
     postprocessor->setup(*pde_operator);
 
-    // setup time integrator before calling setup_solvers
-    // (this is necessary since the setup of the solvers
-    // depends on quantities such as the time_step_size or gamma0!)
     if(application->get_parameters().solver_type == SolverType::Unsteady)
     {
       time_integrator = create_time_integrator<dim, Number>(
         pde_operator, helpers_ale, postprocessor, application->get_parameters(), mpi_comm, is_test);
+
+      time_integrator->setup(application->get_parameters().restarted_simulation);
     }
     else if(application->get_parameters().solver_type == SolverType::Steady)
     {
@@ -161,24 +160,8 @@ Driver<dim, Number>::setup()
       // initialize driver for steady state problem that depends on pde_operator
       driver_steady = std::make_shared<DriverSteadyProblems<dim, Number>>(
         operator_coupled, postprocessor, application->get_parameters(), mpi_comm, is_test);
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
-    }
 
-    if(application->get_parameters().solver_type == SolverType::Unsteady)
-    {
-      time_integrator->setup(application->get_parameters().restarted_simulation);
-
-      pde_operator->setup_solvers(time_integrator->get_scaling_factor_time_derivative_term(),
-                                  time_integrator->get_velocity());
-    }
-    else if(application->get_parameters().solver_type == SolverType::Steady)
-    {
       driver_steady->setup();
-
-      pde_operator->setup_solvers(1.0 /* dummy */, driver_steady->get_velocity());
     }
     else
     {
@@ -465,7 +448,7 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
       if(operator_type == OperatorType::CoupledNonlinearResidual)
         operator_coupled->evaluate_nonlinear_residual(dst1,src1,&src1.block(0), 0.0, 1.0);
       else if(operator_type == OperatorType::CoupledLinearized)
-        operator_coupled->apply_linearized_problem(dst1,src1, 0.0, 1.0);
+        operator_coupled->apply_linearized_problem(dst1,src1);
       else if(operator_type == OperatorType::ConvectiveOperator)
         operator_coupled->evaluate_convective_term(dst2,src2,0.0);
       else if(operator_type == OperatorType::InverseMassOperator)

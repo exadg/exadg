@@ -73,7 +73,6 @@ public:
 
     // setup PDE operator and solver
     pde_operator->setup();
-    pde_operator->setup_solver(0.0 /* no acceleration term */, 0.0 /* no damping term */);
 
     // finally, initialize dof vector
     pde_operator->initialize_dof_vector(displacement);

@@ -136,7 +136,7 @@ public:
 
       block_jacobi_preconditioner =
         std::make_shared<BlockJacobiPreconditioner<MassOperator<dim, n_components, Number>>>(
-          mass_operator);
+          mass_operator, true /* initialize_preconditioner */);
     }
     else
     {
@@ -277,7 +277,8 @@ public:
     {
       preconditioner =
         std::make_shared<JacobiPreconditioner<MassOperator<dim, n_components, Number>>>(
-          mass_operator);
+          mass_operator, true /* initialize_preconditioner */);
+
       solver_data.use_preconditioner = true;
     }
     else

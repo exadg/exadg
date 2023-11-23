@@ -66,9 +66,6 @@ public:
    */
   virtual ~OperatorDualSplitting();
 
-  void
-  setup_solvers(double const & scaling_factor_mass, VectorType const & velocity) final;
-
   /*
    * Pressure Poisson equation.
    */
@@ -139,17 +136,17 @@ public:
   interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time) const;
 
 private:
+  void
+  setup_preconditioners_and_solvers() final;
+
   /*
-   * Setup of Helmholtz solver (operator, preconditioner, solver).
+   * Setup of Helmholtz solver.
    */
   void
+  setup_helmholtz_preconditioner();
+
+  void
   setup_helmholtz_solver();
-
-  void
-  initialize_helmholtz_preconditioner();
-
-  void
-  initialize_helmholtz_solver();
 
   /*
    * rhs pressure Poisson equation

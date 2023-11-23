@@ -123,9 +123,9 @@ public:
   }
 
   void
-  initialize_block_diagonal_preconditioner() const final
+  initialize_block_diagonal_preconditioner(bool const initialize) const final
   {
-    pde_operator->initialize_block_diagonal_preconditioner();
+    pde_operator->initialize_block_diagonal_preconditioner(initialize);
   }
 
   void

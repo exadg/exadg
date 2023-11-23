@@ -316,7 +316,6 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
       pde_operator->solve_linear_stokes_problem(solution_np,
                                                 rhs_vector,
                                                 update_preconditioner,
-                                                this->get_next_time(),
                                                 this->get_scaling_factor_time_derivative_term());
 
     iterations.first += 1;

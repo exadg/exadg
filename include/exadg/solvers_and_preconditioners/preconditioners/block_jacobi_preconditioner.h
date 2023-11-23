@@ -32,11 +32,14 @@ class BlockJacobiPreconditioner : public PreconditionerBase<typename Operator::v
 public:
   typedef typename PreconditionerBase<typename Operator::value_type>::VectorType VectorType;
 
-  BlockJacobiPreconditioner(Operator const & underlying_operator_in)
+  BlockJacobiPreconditioner(Operator const & underlying_operator_in, bool const initialize)
     : underlying_operator(underlying_operator_in)
   {
     // initialize block Jacobi
-    underlying_operator.initialize_block_diagonal_preconditioner();
+    underlying_operator.initialize_block_diagonal_preconditioner(initialize);
+
+    if(initialize)
+      this->update_needed = false;
   }
 
   /*
@@ -48,6 +51,8 @@ public:
   update() final
   {
     underlying_operator.update_block_diagonal_preconditioner();
+
+    this->update_needed = false;
   }
 
   /*
@@ -58,6 +63,11 @@ public:
   void
   vmult(VectorType & dst, VectorType const & src) const final
   {
+    AssertThrow(
+      not this->update_needed,
+      dealii::ExcMessage(
+        "Block Jacobi preconditioner can not be applied because it needs to be updated."));
+
     underlying_operator.apply_inverse_block_diagonal(dst, src);
   }
 

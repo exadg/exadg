@@ -542,8 +542,8 @@ OperatorBase<dim, Number, n_components>::apply_inverse_block_diagonal_matrix_bas
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditioner_matrix_free()
-  const
+OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditioner_matrix_free(
+  bool const initialize) const
 {
   elementwise_operator = std::make_shared<ELEMENTWISE_OPERATOR>(*this);
 
@@ -560,8 +560,8 @@ OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditione
   {
     typedef Elementwise::JacobiPreconditioner<dim, n_components, Number, This> POINT_JACOBI;
 
-    elementwise_preconditioner =
-      std::make_shared<POINT_JACOBI>(get_matrix_free(), get_dof_index(), get_quad_index(), *this);
+    elementwise_preconditioner = std::make_shared<POINT_JACOBI>(
+      get_matrix_free(), get_dof_index(), get_quad_index(), *this, initialize);
   }
   else if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::InverseMassMatrix)
   {
@@ -594,8 +594,8 @@ OperatorBase<dim, Number, n_components>::update_block_diagonal_preconditioner_ma
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditioner_matrix_based()
-  const
+OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditioner_matrix_based(
+  bool const initialize) const
 {
   // allocate memory
   auto dofs =
@@ -603,7 +603,8 @@ OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditione
   matrices.resize(matrix_free->n_cell_batches() * vectorization_length, LAPACKMatrix(dofs, dofs));
 
   // compute and factorize matrices
-  update_block_diagonal_preconditioner_matrix_based();
+  if(initialize)
+    update_block_diagonal_preconditioner_matrix_based();
 }
 
 template<int dim, typename Number, int n_components>
@@ -690,17 +691,18 @@ OperatorBase<dim, Number, n_components>::apply_add_block_diagonal_elementwise(
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditioner() const
+OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditioner(
+  bool const initialize) const
 {
   AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
 
   if(data.implement_block_diagonal_preconditioner_matrix_free)
   {
-    initialize_block_diagonal_preconditioner_matrix_free();
+    initialize_block_diagonal_preconditioner_matrix_free(initialize);
   }
   else // matrix-based variant
   {
-    initialize_block_diagonal_preconditioner_matrix_based();
+    initialize_block_diagonal_preconditioner_matrix_based(initialize);
   }
 }
 

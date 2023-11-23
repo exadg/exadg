@@ -723,18 +723,9 @@ SpatialOperatorBase<dim, Number>::setup(
   // Finally, do set up of derived classes
   setup_derived();
 
+  setup_preconditioners_and_solvers();
+
   pcout << std::endl << "... done!" << std::endl << std::flush;
-}
-
-template<int dim, typename Number>
-void
-SpatialOperatorBase<dim, Number>::setup_solvers(double const &     scaling_factor_mass,
-                                                VectorType const & velocity)
-{
-  momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
-  momentum_operator.set_velocity_ptr(velocity);
-
-  // remaining setup of preconditioners and solvers is done in derived classes
 }
 
 template<int dim, typename Number>
@@ -1577,6 +1568,17 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
                                        projection_operator->get_dof_index(),
                                        projection_operator->get_quad_index());
     }
+    else if(param.preconditioner_projection == PreconditionerProjection::PointJacobi)
+    {
+      typedef Elementwise::JacobiPreconditioner<dim, dim, Number, ProjOperator> JACOBI;
+
+      elementwise_preconditioner_projection =
+        std::make_shared<JACOBI>(projection_operator->get_matrix_free(),
+                                 projection_operator->get_dof_index(),
+                                 projection_operator->get_quad_index(),
+                                 *projection_operator,
+                                 false);
+    }
     else
     {
       AssertThrow(false, dealii::ExcMessage("The specified preconditioner is not implemented."));
@@ -1633,7 +1635,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       // time step size has not been set. Hence, 'update_preconditioner = true' should be used for
       // the Jacobi preconditioner in order to use to correct diagonal for preconditioning.
       preconditioner_projection =
-        std::make_shared<JacobiPreconditioner<ProjOperator>>(*projection_operator);
+        std::make_shared<JacobiPreconditioner<ProjOperator>>(*projection_operator, false);
     }
     else if(param.preconditioner_projection == PreconditionerProjection::BlockJacobi)
     {
@@ -1642,7 +1644,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       // size has not been set. Hence, 'update_preconditioner = true' should be used for the Jacobi
       // preconditioner in order to use to correct diagonal blocks for preconditioning.
       preconditioner_projection =
-        std::make_shared<BlockJacobiPreconditioner<ProjOperator>>(*projection_operator);
+        std::make_shared<BlockJacobiPreconditioner<ProjOperator>>(*projection_operator, false);
     }
     else if(param.preconditioner_projection == PreconditionerProjection::Multigrid)
     {
