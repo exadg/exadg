@@ -108,7 +108,7 @@ private:
   // Grid and mapping
   std::shared_ptr<Grid<dim>> grid;
 
-  std::shared_ptr<dealii::Mapping<dim>> mapping;
+  std::shared_ptr<dealii::Mapping<dim>> static_mapping;
 
   // ALE mapping
   std::shared_ptr<DeformedMappingFunction<dim, Number>> ale_mapping;

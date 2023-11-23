@@ -49,6 +49,11 @@ public:
   std::shared_ptr<dealii::Triangulation<dim>> triangulation;
 
   /**
+   * dealii::Mapping
+   */
+  std::shared_ptr<dealii::Mapping<dim>> mapping;
+
+  /**
    * dealii::GridTools::PeriodicFacePair's.
    */
   PeriodicFacePairs periodic_face_pairs;
