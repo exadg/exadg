@@ -479,10 +479,10 @@ private:
                      Range const &                           face_range) const
   {
     FaceIntegratorP pressure_m(matrix_free_in, true, data.dof_index_pressure, data.quad_index);
-    BoundaryFaceIntegratorP<dim, Number> pressure_p(pressure_m, *data.bc->pressure);
+    BoundaryFaceIntegratorP<dim, Number> pressure_p(pressure_m, *data.bc);
 
     FaceIntegratorU velocity_m(matrix_free_in, true, data.dof_index_velocity, data.quad_index);
-    BoundaryFaceIntegratorU<dim, Number> velocity_p(velocity_m, *data.bc->velocity);
+    BoundaryFaceIntegratorU<dim, Number> velocity_p(velocity_m, *data.bc);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {

@@ -209,9 +209,8 @@ private:
   void
   set_boundary_descriptor() final
   {
-    this->boundary_descriptor->pressure->dirichlet_bc.insert(std::make_pair(
+    this->boundary_descriptor->pressure_dbc.insert(std::make_pair(
       1, std::make_shared<AnalyticalSolutionPressure<dim>>(modes, this->param.speed_of_sound)));
-    this->boundary_descriptor->velocity->neumann_bc.insert(1);
   }
 
   void
