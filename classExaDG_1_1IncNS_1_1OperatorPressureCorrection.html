@@ -97,8 +97,6 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aeda4a1c96bab69696ddcc4077615cff7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1455df76e3815dca82c2879944717dd8" id="r_a1455df76e3815dca82c2879944717dd8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorPressureCorrection.html#a1455df76e3815dca82c2879944717dd8">setup_derived</a> () final</td></tr>
 <tr class="separator:a1455df76e3815dca82c2879944717dd8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8ca8a4ba5318dae25bddec4c2d8f9c78" id="r_a8ca8a4ba5318dae25bddec4c2d8f9c78"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorPressureCorrection.html#a8ca8a4ba5318dae25bddec4c2d8f9c78">setup_solvers</a> (double const &amp;scaling_factor_mass, VectorType const &amp;velocity) final</td></tr>
-<tr class="separator:a8ca8a4ba5318dae25bddec4c2d8f9c78"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afac83100083a3f3f305daf45c84ce813" id="r_afac83100083a3f3f305daf45c84ce813"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorPressureCorrection.html#afac83100083a3f3f305daf45c84ce813">update_after_grid_motion</a> (bool const update_matrix_free) final</td></tr>
 <tr class="separator:afac83100083a3f3f305daf45c84ce813"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7be767557399ba504c31114204884ea8" id="r_a7be767557399ba504c31114204884ea8"><td class="memItemLeft" align="right" valign="top"><a id="a7be767557399ba504c31114204884ea8" name="a7be767557399ba504c31114204884ea8"></a>
@@ -399,9 +397,8 @@ typedef <a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerBase.html
 <tr class="inherit_header pro_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classExaDG_1_1IncNS_1_1OperatorProjectionMethods.html">ExaDG::IncNS::OperatorProjectionMethods&lt; dim, Number &gt;</a></td></tr>
 <tr class="memitem:ae32393337367d502dc374da8895f9618 inherit pro_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods" id="r_ae32393337367d502dc374da8895f9618"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorProjectionMethods.html#ae32393337367d502dc374da8895f9618">setup_derived</a> () override</td></tr>
 <tr class="separator:ae32393337367d502dc374da8895f9618 inherit pro_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af24524b451a0a923c0ba2e1e7c9810d4 inherit pro_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods" id="r_af24524b451a0a923c0ba2e1e7c9810d4"><td class="memItemLeft" align="right" valign="top">
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_pressure_poisson_solver</b> ()</td></tr>
-<tr class="separator:af24524b451a0a923c0ba2e1e7c9810d4 inherit pro_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae2a598195a7f734643d7dc22d3537ccf inherit pro_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods" id="r_ae2a598195a7f734643d7dc22d3537ccf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorProjectionMethods.html#ae2a598195a7f734643d7dc22d3537ccf">setup_preconditioners_and_solvers</a> () override</td></tr>
+<tr class="separator:ae2a598195a7f734643d7dc22d3537ccf inherit pro_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">ExaDG::IncNS::SpatialOperatorBase&lt; dim, Number &gt;</a></td></tr>
 <tr class="memitem:ab402f6bca1de3a5e075550ccf50c5472 inherit pro_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase" id="r_ab402f6bca1de3a5e075550ccf50c5472"><td class="memItemLeft" align="right" valign="top">
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index_velocity_scalar</b> () const</td></tr>
@@ -584,46 +581,6 @@ template&lt;int dim, typename Number &gt; </div>
 <p>Additional setup to be done by derived classes. </p>
 
 <p>Implements <a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">ExaDG::IncNS::SpatialOperatorBase&lt; dim, Number &gt;</a>.</p>
-
-</div>
-</div>
-<a id="a8ca8a4ba5318dae25bddec4c2d8f9c78" name="a8ca8a4ba5318dae25bddec4c2d8f9c78"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8ca8a4ba5318dae25bddec4c2d8f9c78">&#9670;&#160;</a></span>setup_solvers()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1IncNS_1_1OperatorPressureCorrection.html">ExaDG::IncNS::OperatorPressureCorrection</a>&lt; dim, Number &gt;::setup_solvers </td>
-          <td>(</td>
-          <td class="paramtype">double const &amp;&#160;</td>
-          <td class="paramname"><em>scaling_factor_mass</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">VectorType const &amp;&#160;</td>
-          <td class="paramname"><em>velocity</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Reimplemented from <a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">ExaDG::IncNS::SpatialOperatorBase&lt; dim, Number &gt;</a>.</p>
 
 </div>
 </div>

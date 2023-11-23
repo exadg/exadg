@@ -76,6 +76,7 @@ $(function() {
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pro-attribs">Protected Attributes</a> &#124;
 <a href="classExaDG_1_1PreconditionerBase-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">ExaDG::PreconditionerBase&lt; value_type &gt; Class Template Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div></div>
 </div><!--header-->
@@ -89,6 +90,9 @@ typedef dealii::LinearAlgebra::distributed::Vector&lt; value_type &gt;&#160;</td
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a152ee8dcf791a393178fa5bbc97aa15e" id="r_a152ee8dcf791a393178fa5bbc97aa15e"><td class="memItemLeft" align="right" valign="top"><a id="a152ee8dcf791a393178fa5bbc97aa15e" name="a152ee8dcf791a393178fa5bbc97aa15e"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>needs_update</b> () const</td></tr>
+<tr class="separator:a152ee8dcf791a393178fa5bbc97aa15e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a74358c9117ee01847ccc3a368dfadf05" id="r_a74358c9117ee01847ccc3a368dfadf05"><td class="memItemLeft" align="right" valign="top"><a id="a74358c9117ee01847ccc3a368dfadf05" name="a74358c9117ee01847ccc3a368dfadf05"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (VectorType &amp;dst, VectorType const &amp;src) const =0</td></tr>
 <tr class="separator:a74358c9117ee01847ccc3a368dfadf05"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -97,6 +101,12 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (Ve
 <tr class="memitem:abe7ccce9fd4fcea2f022aa64d174ba36" id="r_abe7ccce9fd4fcea2f022aa64d174ba36"><td class="memItemLeft" align="right" valign="top"><a id="abe7ccce9fd4fcea2f022aa64d174ba36" name="abe7ccce9fd4fcea2f022aa64d174ba36"></a>
 virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_timings</b> () const</td></tr>
 <tr class="separator:abe7ccce9fd4fcea2f022aa64d174ba36"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
+Protected Attributes</h2></td></tr>
+<tr class="memitem:a62351ea8d0c3aa1c6c3870c9e37158ac" id="r_a62351ea8d0c3aa1c6c3870c9e37158ac"><td class="memItemLeft" align="right" valign="top"><a id="a62351ea8d0c3aa1c6c3870c9e37158ac" name="a62351ea8d0c3aa1c6c3870c9e37158ac"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>update_needed</b></td></tr>
+<tr class="separator:a62351ea8d0c3aa1c6c3870c9e37158ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a id="a0a70b943910b95ea3ead0f9f80aa0df4" name="a0a70b943910b95ea3ead0f9f80aa0df4"></a>

@@ -95,8 +95,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a122c2e9806dd7cbe137f89001f481fcc" id="r_a122c2e9806dd7cbe137f89001f481fcc"><td class="memItemLeft" align="right" valign="top"><a id="a122c2e9806dd7cbe137f89001f481fcc" name="a122c2e9806dd7cbe137f89001f481fcc"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>OperatorDualSplitting</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, <a class="el" href="classExaDG_1_1IncNS_1_1Parameters.html">Parameters</a> const &amp;parameters, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
 <tr class="separator:a122c2e9806dd7cbe137f89001f481fcc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3d1e85308746650356d3bbcc1bd4a4d5" id="r_a3d1e85308746650356d3bbcc1bd4a4d5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorDualSplitting.html#a3d1e85308746650356d3bbcc1bd4a4d5">setup_solvers</a> (double const &amp;scaling_factor_mass, VectorType const &amp;velocity) final</td></tr>
-<tr class="separator:a3d1e85308746650356d3bbcc1bd4a4d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a106f0d2d1715a121bd7ecbb739ca603a" id="r_a106f0d2d1715a121bd7ecbb739ca603a"><td class="memItemLeft" align="right" valign="top"><a id="a106f0d2d1715a121bd7ecbb739ca603a" name="a106f0d2d1715a121bd7ecbb739ca603a"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_velocity_divergence_term</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:a106f0d2d1715a121bd7ecbb739ca603a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -398,9 +396,8 @@ typedef <a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerBase.html
 <tr class="inherit_header pro_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classExaDG_1_1IncNS_1_1OperatorProjectionMethods.html">ExaDG::IncNS::OperatorProjectionMethods&lt; dim, Number &gt;</a></td></tr>
 <tr class="memitem:ae32393337367d502dc374da8895f9618 inherit pro_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods" id="r_ae32393337367d502dc374da8895f9618"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorProjectionMethods.html#ae32393337367d502dc374da8895f9618">setup_derived</a> () override</td></tr>
 <tr class="separator:ae32393337367d502dc374da8895f9618 inherit pro_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af24524b451a0a923c0ba2e1e7c9810d4 inherit pro_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods" id="r_af24524b451a0a923c0ba2e1e7c9810d4"><td class="memItemLeft" align="right" valign="top">
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_pressure_poisson_solver</b> ()</td></tr>
-<tr class="separator:af24524b451a0a923c0ba2e1e7c9810d4 inherit pro_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae2a598195a7f734643d7dc22d3537ccf inherit pro_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods" id="r_ae2a598195a7f734643d7dc22d3537ccf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorProjectionMethods.html#ae2a598195a7f734643d7dc22d3537ccf">setup_preconditioners_and_solvers</a> () override</td></tr>
+<tr class="separator:ae2a598195a7f734643d7dc22d3537ccf inherit pro_methods_classExaDG_1_1IncNS_1_1OperatorProjectionMethods"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">ExaDG::IncNS::SpatialOperatorBase&lt; dim, Number &gt;</a></td></tr>
 <tr class="memitem:ab402f6bca1de3a5e075550ccf50c5472 inherit pro_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase" id="r_ab402f6bca1de3a5e075550ccf50c5472"><td class="memItemLeft" align="right" valign="top">
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index_velocity_scalar</b> () const</td></tr>
@@ -555,47 +552,6 @@ MPI_Comm const&#160;</td><td class="memItemRight" valign="bottom"><b>mpi_comm</b
 dealii::ConditionalOStream&#160;</td><td class="memItemRight" valign="bottom"><b>pcout</b></td></tr>
 <tr class="separator:af8703888801515fcfbd89a71a7c8ed8f inherit pro_attribs_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a3d1e85308746650356d3bbcc1bd4a4d5" name="a3d1e85308746650356d3bbcc1bd4a4d5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3d1e85308746650356d3bbcc1bd4a4d5">&#9670;&#160;</a></span>setup_solvers()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1IncNS_1_1OperatorDualSplitting.html">ExaDG::IncNS::OperatorDualSplitting</a>&lt; dim, Number &gt;::setup_solvers </td>
-          <td>(</td>
-          <td class="paramtype">double const &amp;&#160;</td>
-          <td class="paramname"><em>scaling_factor_mass</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">VectorType const &amp;&#160;</td>
-          <td class="paramname"><em>velocity</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Reimplemented from <a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">ExaDG::IncNS::SpatialOperatorBase&lt; dim, Number &gt;</a>.</p>
-
-</div>
-</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/exadg/incompressible_navier_stokes/spatial_discretization/<a class="el" href="operator__dual__splitting_8h_source.html">operator_dual_splitting.h</a></li>
 <li>include/exadg/incompressible_navier_stokes/spatial_discretization/<b>operator_dual_splitting.cpp</b></li>

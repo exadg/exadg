@@ -75,6 +75,7 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pro-attribs">Protected Attributes</a> &#124;
 <a href="classExaDG_1_1Elementwise_1_1PreconditionerBase-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">ExaDG::Elementwise::PreconditionerBase&lt; Number &gt; Class Template Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div></div>
 </div><!--header-->
@@ -97,8 +98,17 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (un
 <tr class="memitem:ab01eef12b7ff1abe85013dc71af293b6" id="r_ab01eef12b7ff1abe85013dc71af293b6"><td class="memItemLeft" align="right" valign="top"><a id="ab01eef12b7ff1abe85013dc71af293b6" name="ab01eef12b7ff1abe85013dc71af293b6"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update</b> ()=0</td></tr>
 <tr class="separator:ab01eef12b7ff1abe85013dc71af293b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a606ffe80fa64a324130424c1bb44865d" id="r_a606ffe80fa64a324130424c1bb44865d"><td class="memItemLeft" align="right" valign="top"><a id="a606ffe80fa64a324130424c1bb44865d" name="a606ffe80fa64a324130424c1bb44865d"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>needs_update</b> ()</td></tr>
+<tr class="separator:a606ffe80fa64a324130424c1bb44865d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9a69021b941a0e9dffe99d0be27d6b70" id="r_a9a69021b941a0e9dffe99d0be27d6b70"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerBase.html#a9a69021b941a0e9dffe99d0be27d6b70">vmult</a> (Number *dst, Number const *src) const =0</td></tr>
 <tr class="separator:a9a69021b941a0e9dffe99d0be27d6b70"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
+Protected Attributes</h2></td></tr>
+<tr class="memitem:a5041230e2eedb276618d00f3951ac4f8" id="r_a5041230e2eedb276618d00f3951ac4f8"><td class="memItemLeft" align="right" valign="top"><a id="a5041230e2eedb276618d00f3951ac4f8" name="a5041230e2eedb276618d00f3951ac4f8"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>update_needed</b></td></tr>
+<tr class="separator:a5041230e2eedb276618d00f3951ac4f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a id="a9a69021b941a0e9dffe99d0be27d6b70" name="a9a69021b941a0e9dffe99d0be27d6b70"></a>

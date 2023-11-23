@@ -102,21 +102,31 @@ typedef dealii::LinearAlgebra::distributed::Vector&lt; Operator::value_type &gt;
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ac31c44a6608300e559afe004a9d2be44" id="r_ac31c44a6608300e559afe004a9d2be44"><td class="memItemLeft" align="right" valign="top"><a id="ac31c44a6608300e559afe004a9d2be44" name="ac31c44a6608300e559afe004a9d2be44"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>AdditiveSchwarzPreconditioner</b> (Operator const &amp;underlying_operator_in)</td></tr>
-<tr class="separator:ac31c44a6608300e559afe004a9d2be44"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab31fbc72493dea54eb5b8a649ea70a83" id="r_ab31fbc72493dea54eb5b8a649ea70a83"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1AdditiveSchwarzPreconditioner.html#ab31fbc72493dea54eb5b8a649ea70a83">update</a> () final</td></tr>
-<tr class="separator:ab31fbc72493dea54eb5b8a649ea70a83"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac692b6996ad8b1d62bd6edcb2d42cc58" id="r_ac692b6996ad8b1d62bd6edcb2d42cc58"><td class="memItemLeft" align="right" valign="top"><a id="ac692b6996ad8b1d62bd6edcb2d42cc58" name="ac692b6996ad8b1d62bd6edcb2d42cc58"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>AdditiveSchwarzPreconditioner</b> (Operator const &amp;underlying_operator_in, bool const initialize)</td></tr>
+<tr class="separator:ac692b6996ad8b1d62bd6edcb2d42cc58"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abb69cd1894c5ddde12a9b0c9d2c03b4a" id="r_abb69cd1894c5ddde12a9b0c9d2c03b4a"><td class="memItemLeft" align="right" valign="top"><a id="abb69cd1894c5ddde12a9b0c9d2c03b4a" name="abb69cd1894c5ddde12a9b0c9d2c03b4a"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
 <tr class="separator:abb69cd1894c5ddde12a9b0c9d2c03b4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab31fbc72493dea54eb5b8a649ea70a83" id="r_ab31fbc72493dea54eb5b8a649ea70a83"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1AdditiveSchwarzPreconditioner.html#ab31fbc72493dea54eb5b8a649ea70a83">update</a> () final</td></tr>
+<tr class="separator:ab31fbc72493dea54eb5b8a649ea70a83"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1PreconditionerBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1PreconditionerBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1PreconditionerBase.html">ExaDG::PreconditionerBase&lt; Operator::value_type &gt;</a></td></tr>
+<tr class="memitem:a152ee8dcf791a393178fa5bbc97aa15e inherit pub_methods_classExaDG_1_1PreconditionerBase" id="r_a152ee8dcf791a393178fa5bbc97aa15e"><td class="memItemLeft" align="right" valign="top">
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>needs_update</b> () const</td></tr>
+<tr class="separator:a152ee8dcf791a393178fa5bbc97aa15e inherit pub_methods_classExaDG_1_1PreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a74358c9117ee01847ccc3a368dfadf05 inherit pub_methods_classExaDG_1_1PreconditionerBase" id="r_a74358c9117ee01847ccc3a368dfadf05"><td class="memItemLeft" align="right" valign="top">
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (VectorType &amp;dst, VectorType const &amp;src) const=0</td></tr>
 <tr class="separator:a74358c9117ee01847ccc3a368dfadf05 inherit pub_methods_classExaDG_1_1PreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abe7ccce9fd4fcea2f022aa64d174ba36 inherit pub_methods_classExaDG_1_1PreconditionerBase" id="r_abe7ccce9fd4fcea2f022aa64d174ba36"><td class="memItemLeft" align="right" valign="top">
 virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_timings</b> () const</td></tr>
 <tr class="separator:abe7ccce9fd4fcea2f022aa64d174ba36 inherit pub_methods_classExaDG_1_1PreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
+Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pro_attribs_classExaDG_1_1PreconditionerBase"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classExaDG_1_1PreconditionerBase')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classExaDG_1_1PreconditionerBase.html">ExaDG::PreconditionerBase&lt; Operator::value_type &gt;</a></td></tr>
+<tr class="memitem:a62351ea8d0c3aa1c6c3870c9e37158ac inherit pro_attribs_classExaDG_1_1PreconditionerBase" id="r_a62351ea8d0c3aa1c6c3870c9e37158ac"><td class="memItemLeft" align="right" valign="top">
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>update_needed</b></td></tr>
+<tr class="separator:a62351ea8d0c3aa1c6c3870c9e37158ac inherit pro_attribs_classExaDG_1_1PreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a id="ab31fbc72493dea54eb5b8a649ea70a83" name="ab31fbc72493dea54eb5b8a649ea70a83"></a>

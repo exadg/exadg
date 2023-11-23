@@ -278,7 +278,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span><span class="comment">   * preconditioner.</span></div>
 <div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>  initialize_block_diagonal_preconditioner() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>  initialize_block_diagonal_preconditioner(<span class="keywordtype">bool</span> <span class="keyword">const</span> initialize) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span> </div>
 <div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span><span class="comment">   * Update block diagonal preconditioner: Recompute block matrices in case of matrix-based</span></div>
@@ -398,7 +398,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>  <span class="comment">// using the matrix-free variant with elementwise iterative solvers and matrix-free operator</span></div>
 <div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>  <span class="comment">// evaluation.</span></div>
 <div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>  initialize_block_diagonal_preconditioner_matrix_free() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>  initialize_block_diagonal_preconditioner_matrix_free(<span class="keywordtype">bool</span> <span class="keyword">const</span> initialize) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span> </div>
 <div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>  <span class="comment">// updates block diagonal preconditioner when using the matrix-free variant with elementwise</span></div>
 <div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>  <span class="comment">// iterative solvers and matrix-free operator evaluation.</span></div>
@@ -407,7 +407,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span> </div>
 <div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>  <span class="comment">// initializes block diagonal preconditioner for matrix-based variant</span></div>
 <div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>  initialize_block_diagonal_preconditioner_matrix_based() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>  initialize_block_diagonal_preconditioner_matrix_based(<span class="keywordtype">bool</span> <span class="keyword">const</span> initialize) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span> </div>
 <div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span>  <span class="comment">// updates block diagonal preconditioner for matrix-based variant</span></div>
 <div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>  <span class="keywordtype">void</span></div>

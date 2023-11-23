@@ -94,8 +94,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a527174e8286359beb4ea36d243e37a4a" id="r_a527174e8286359beb4ea36d243e37a4a"><td class="memItemLeft" align="right" valign="top"><a id="a527174e8286359beb4ea36d243e37a4a" name="a527174e8286359beb4ea36d243e37a4a"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>OperatorCoupled</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, <a class="el" href="classExaDG_1_1IncNS_1_1Parameters.html">Parameters</a> const &amp;parameters, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
 <tr class="separator:a527174e8286359beb4ea36d243e37a4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a01f4a09545f0a9611bf43efe7f473c40" id="r_a01f4a09545f0a9611bf43efe7f473c40"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1OperatorCoupled.html#a01f4a09545f0a9611bf43efe7f473c40">setup_solvers</a> (double const &amp;scaling_factor_time_derivative_term, VectorType const &amp;velocity) final</td></tr>
-<tr class="separator:a01f4a09545f0a9611bf43efe7f473c40"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1e7a5b3e919ab9192f0d464d2138189d" id="r_a1e7a5b3e919ab9192f0d464d2138189d"><td class="memItemLeft" align="right" valign="top"><a id="a1e7a5b3e919ab9192f0d464d2138189d" name="a1e7a5b3e919ab9192f0d464d2138189d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update_divergence_penalty_operator</b> (VectorType const &amp;velocity)</td></tr>
 <tr class="separator:a1e7a5b3e919ab9192f0d464d2138189d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -105,9 +103,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>update_continuity_pen
 <tr class="memitem:ac596f660568af28d51479fa53003f11a" id="r_ac596f660568af28d51479fa53003f11a"><td class="memItemLeft" align="right" valign="top"><a id="ac596f660568af28d51479fa53003f11a" name="ac596f660568af28d51479fa53003f11a"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_scaling_factor_continuity</b> (double const scaling_factor)</td></tr>
 <tr class="separator:ac596f660568af28d51479fa53003f11a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af9b3a22c39820cc51ddb237a2f79e511" id="r_af9b3a22c39820cc51ddb237a2f79e511"><td class="memItemLeft" align="right" valign="top"><a id="af9b3a22c39820cc51ddb237a2f79e511" name="af9b3a22c39820cc51ddb237a2f79e511"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve_linear_stokes_problem</b> (BlockVectorType &amp;dst, BlockVectorType const &amp;src, bool const &amp;update_preconditioner, double const &amp;time=0.0, double const &amp;scaling_factor_mass=1.0)</td></tr>
-<tr class="separator:af9b3a22c39820cc51ddb237a2f79e511"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8994826b2cdee0525717ac40b4e01b05" id="r_a8994826b2cdee0525717ac40b4e01b05"><td class="memItemLeft" align="right" valign="top"><a id="a8994826b2cdee0525717ac40b4e01b05" name="a8994826b2cdee0525717ac40b4e01b05"></a>
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve_linear_stokes_problem</b> (BlockVectorType &amp;dst, BlockVectorType const &amp;src, bool const &amp;update_preconditioner, double const &amp;scaling_factor_mass=1.0)</td></tr>
+<tr class="separator:a8994826b2cdee0525717ac40b4e01b05"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab7d1c956c77f509b3cbdc15a59dde373" id="r_ab7d1c956c77f509b3cbdc15a59dde373"><td class="memItemLeft" align="right" valign="top"><a id="ab7d1c956c77f509b3cbdc15a59dde373" name="ab7d1c956c77f509b3cbdc15a59dde373"></a>
 std::tuple&lt; unsigned int, unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>solve_nonlinear_problem</b> (BlockVectorType &amp;dst, VectorType const &amp;rhs_vector, bool const &amp;update_preconditioner, double const &amp;time=0.0, double const &amp;scaling_factor_mass=1.0)</td></tr>
 <tr class="separator:ab7d1c956c77f509b3cbdc15a59dde373"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -117,9 +115,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_nonlinear_re
 <tr class="memitem:a727b35a7024ae0ec5bad8b10d4b30aea" id="r_a727b35a7024ae0ec5bad8b10d4b30aea"><td class="memItemLeft" align="right" valign="top"><a id="a727b35a7024ae0ec5bad8b10d4b30aea" name="a727b35a7024ae0ec5bad8b10d4b30aea"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_nonlinear_residual_steady</b> (BlockVectorType &amp;dst, BlockVectorType const &amp;src, double const &amp;time) const</td></tr>
 <tr class="separator:a727b35a7024ae0ec5bad8b10d4b30aea"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a34ff9a733360cc0d0c98e46c77c1e315" id="r_a34ff9a733360cc0d0c98e46c77c1e315"><td class="memItemLeft" align="right" valign="top"><a id="a34ff9a733360cc0d0c98e46c77c1e315" name="a34ff9a733360cc0d0c98e46c77c1e315"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_linearized_problem</b> (BlockVectorType &amp;dst, BlockVectorType const &amp;src, double const &amp;time, double const &amp;scaling_factor_mass) const</td></tr>
-<tr class="separator:a34ff9a733360cc0d0c98e46c77c1e315"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acc668feeef036cb52bf8d92c5713ebcb" id="r_acc668feeef036cb52bf8d92c5713ebcb"><td class="memItemLeft" align="right" valign="top"><a id="acc668feeef036cb52bf8d92c5713ebcb" name="acc668feeef036cb52bf8d92c5713ebcb"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_linearized_problem</b> (BlockVectorType &amp;dst, BlockVectorType const &amp;src) const</td></tr>
+<tr class="separator:acc668feeef036cb52bf8d92c5713ebcb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaa97064dbc8c806e9d46f158da0e8cee" id="r_aaa97064dbc8c806e9d46f158da0e8cee"><td class="memItemLeft" align="right" valign="top"><a id="aaa97064dbc8c806e9d46f158da0e8cee" name="aaa97064dbc8c806e9d46f158da0e8cee"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>rhs_stokes_problem</b> (BlockVectorType &amp;dst, double const &amp;time=0.0) const</td></tr>
 <tr class="separator:aaa97064dbc8c806e9d46f158da0e8cee"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -501,47 +499,6 @@ MPI_Comm const&#160;</td><td class="memItemRight" valign="bottom"><b>mpi_comm</b
 dealii::ConditionalOStream&#160;</td><td class="memItemRight" valign="bottom"><b>pcout</b></td></tr>
 <tr class="separator:af8703888801515fcfbd89a71a7c8ed8f inherit pro_attribs_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a01f4a09545f0a9611bf43efe7f473c40" name="a01f4a09545f0a9611bf43efe7f473c40"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a01f4a09545f0a9611bf43efe7f473c40">&#9670;&#160;</a></span>setup_solvers()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1IncNS_1_1OperatorCoupled.html">ExaDG::IncNS::OperatorCoupled</a>&lt; dim, Number &gt;::setup_solvers </td>
-          <td>(</td>
-          <td class="paramtype">double const &amp;&#160;</td>
-          <td class="paramname"><em>scaling_factor_time_derivative_term</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">VectorType const &amp;&#160;</td>
-          <td class="paramname"><em>velocity</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Reimplemented from <a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">ExaDG::IncNS::SpatialOperatorBase&lt; dim, Number &gt;</a>.</p>
-
-</div>
-</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/exadg/incompressible_navier_stokes/spatial_discretization/<a class="el" href="operator__coupled_8h_source.html">operator_coupled.h</a></li>
 <li>include/exadg/incompressible_navier_stokes/spatial_discretization/<b>operator_coupled.cpp</b></li>

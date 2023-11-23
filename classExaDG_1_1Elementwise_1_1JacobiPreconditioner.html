@@ -93,15 +93,26 @@ Inheritance diagram for ExaDG::Elementwise::JacobiPreconditioner&lt; dim, n_comp
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ae08e47ac6c70e41b56463af19fa4847b" id="r_ae08e47ac6c70e41b56463af19fa4847b"><td class="memItemLeft" align="right" valign="top"><a id="ae08e47ac6c70e41b56463af19fa4847b" name="ae08e47ac6c70e41b56463af19fa4847b"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>JacobiPreconditioner</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, unsigned int const dof_index, unsigned int const quad_index, Operator const &amp;underlying_operator_in)</td></tr>
-<tr class="separator:ae08e47ac6c70e41b56463af19fa4847b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a154dcace89106deba2e67f026c40bb35" id="r_a154dcace89106deba2e67f026c40bb35"><td class="memItemLeft" align="right" valign="top"><a id="a154dcace89106deba2e67f026c40bb35" name="a154dcace89106deba2e67f026c40bb35"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>JacobiPreconditioner</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, unsigned int const dof_index, unsigned int const quad_index, Operator const &amp;underlying_operator_in, bool const initialize)</td></tr>
+<tr class="separator:a154dcace89106deba2e67f026c40bb35"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a232efd57ebd99f1f6ef765bbc39679cf" id="r_a232efd57ebd99f1f6ef765bbc39679cf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Elementwise_1_1JacobiPreconditioner.html#a232efd57ebd99f1f6ef765bbc39679cf">setup</a> (unsigned int cell) final</td></tr>
 <tr class="separator:a232efd57ebd99f1f6ef765bbc39679cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad6611dc2ab8b8ff56bf0bf91f538a859" id="r_ad6611dc2ab8b8ff56bf0bf91f538a859"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Elementwise_1_1JacobiPreconditioner.html#ad6611dc2ab8b8ff56bf0bf91f538a859">update</a> () final</td></tr>
 <tr class="separator:ad6611dc2ab8b8ff56bf0bf91f538a859"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3388ed26e11f59571d3e8ab6e45d7bce" id="r_a3388ed26e11f59571d3e8ab6e45d7bce"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Elementwise_1_1JacobiPreconditioner.html#a3388ed26e11f59571d3e8ab6e45d7bce">vmult</a> (dealii::VectorizedArray&lt; Number &gt; *dst, dealii::VectorizedArray&lt; Number &gt; const *src) const final</td></tr>
 <tr class="separator:a3388ed26e11f59571d3e8ab6e45d7bce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classExaDG_1_1Elementwise_1_1PreconditionerBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1Elementwise_1_1PreconditionerBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerBase.html">ExaDG::Elementwise::PreconditionerBase&lt; dealii::VectorizedArray&lt; Number &gt; &gt;</a></td></tr>
+<tr class="memitem:a606ffe80fa64a324130424c1bb44865d inherit pub_methods_classExaDG_1_1Elementwise_1_1PreconditionerBase" id="r_a606ffe80fa64a324130424c1bb44865d"><td class="memItemLeft" align="right" valign="top">
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>needs_update</b> ()</td></tr>
+<tr class="separator:a606ffe80fa64a324130424c1bb44865d inherit pub_methods_classExaDG_1_1Elementwise_1_1PreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
+Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pro_attribs_classExaDG_1_1Elementwise_1_1PreconditionerBase"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classExaDG_1_1Elementwise_1_1PreconditionerBase')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerBase.html">ExaDG::Elementwise::PreconditionerBase&lt; dealii::VectorizedArray&lt; Number &gt; &gt;</a></td></tr>
+<tr class="memitem:a5041230e2eedb276618d00f3951ac4f8 inherit pro_attribs_classExaDG_1_1Elementwise_1_1PreconditionerBase" id="r_a5041230e2eedb276618d00f3951ac4f8"><td class="memItemLeft" align="right" valign="top">
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>update_needed</b></td></tr>
+<tr class="separator:a5041230e2eedb276618d00f3951ac4f8 inherit pro_attribs_classExaDG_1_1Elementwise_1_1PreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;int dim, int n_components, typename Number, typename Operator&gt;<br />

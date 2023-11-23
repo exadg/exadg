@@ -141,8 +141,8 @@ std::shared_ptr&lt; Operator &gt;&#160;</td><td class="memItemRight" valign="bot
 <tr class="separator:a1f43baffc21c8cf23d122a6b5186ec3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a34bb3598f8b3e1ac1870346a90a8a452" id="r_a34bb3598f8b3e1ac1870346a90a8a452"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a34bb3598f8b3e1ac1870346a90a8a452">calculate_inverse_diagonal</a> (VectorType &amp;inverse_diagonal_entries) const final</td></tr>
 <tr class="separator:a34bb3598f8b3e1ac1870346a90a8a452"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a59357bc1261df77e4f51ee986c4731e8" id="r_a59357bc1261df77e4f51ee986c4731e8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a59357bc1261df77e4f51ee986c4731e8">initialize_block_diagonal_preconditioner</a> () const final</td></tr>
-<tr class="separator:a59357bc1261df77e4f51ee986c4731e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aacccef42198680afa6154d260a2e3bcb" id="r_aacccef42198680afa6154d260a2e3bcb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#aacccef42198680afa6154d260a2e3bcb">initialize_block_diagonal_preconditioner</a> (bool const initialize) const final</td></tr>
+<tr class="separator:aacccef42198680afa6154d260a2e3bcb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a14dee6ca649cd51095bd404ab39a5183" id="r_a14dee6ca649cd51095bd404ab39a5183"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a14dee6ca649cd51095bd404ab39a5183">update_block_diagonal_preconditioner</a> () const final</td></tr>
 <tr class="separator:a14dee6ca649cd51095bd404ab39a5183"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a007d493aef4b47e3060bd2cb1b4a481c" id="r_a007d493aef4b47e3060bd2cb1b4a481c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a007d493aef4b47e3060bd2cb1b4a481c">apply_inverse_block_diagonal</a> (VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
@@ -419,8 +419,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
 
 </div>
 </div>
-<a id="a59357bc1261df77e4f51ee986c4731e8" name="a59357bc1261df77e4f51ee986c4731e8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a59357bc1261df77e4f51ee986c4731e8">&#9670;&#160;</a></span>initialize_block_diagonal_preconditioner()</h2>
+<a id="aacccef42198680afa6154d260a2e3bcb" name="aacccef42198680afa6154d260a2e3bcb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aacccef42198680afa6154d260a2e3bcb">&#9670;&#160;</a></span>initialize_block_diagonal_preconditioner()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -433,7 +433,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
         <tr>
           <td class="memname">void <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::initialize_block_diagonal_preconditioner </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">bool const&#160;</td>
+          <td class="paramname"><em>initialize</em></td><td>)</td>
           <td> const</td>
         </tr>
       </table>

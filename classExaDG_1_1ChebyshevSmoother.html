@@ -98,9 +98,9 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a93fc84e00b045055a3a1bc6dd010f531" id="r_a93fc84e00b045055a3a1bc6dd010f531"><td class="memItemLeft" align="right" valign="top"><a id="a93fc84e00b045055a3a1bc6dd010f531" name="a93fc84e00b045055a3a1bc6dd010f531"></a>
-typedef dealii::PreconditionChebyshev&lt; Operator, VectorType, dealii::DiagonalMatrix&lt; VectorType &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ChebyshevPointJacobi</b></td></tr>
-<tr class="separator:a93fc84e00b045055a3a1bc6dd010f531"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6e94d4a27732ca5749f1cbb039e51644" id="r_a6e94d4a27732ca5749f1cbb039e51644"><td class="memItemLeft" align="right" valign="top"><a id="a6e94d4a27732ca5749f1cbb039e51644" name="a6e94d4a27732ca5749f1cbb039e51644"></a>
+typedef dealii::PreconditionChebyshev&lt; Operator, VectorType, <a class="el" href="classExaDG_1_1JacobiPreconditioner.html">JacobiPreconditioner</a>&lt; Operator &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ChebyshevPointJacobi</b></td></tr>
+<tr class="separator:a6e94d4a27732ca5749f1cbb039e51644"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4d8774e7d6dc450cc5a9b757431333ba" id="r_a4d8774e7d6dc450cc5a9b757431333ba"><td class="memItemLeft" align="right" valign="top"><a id="a4d8774e7d6dc450cc5a9b757431333ba" name="a4d8774e7d6dc450cc5a9b757431333ba"></a>
 typedef dealii::PreconditionChebyshev&lt; Operator, VectorType, <a class="el" href="classExaDG_1_1BlockJacobiPreconditioner.html">BlockJacobiPreconditioner</a>&lt; Operator &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ChebyshevBlockJacobi</b></td></tr>
 <tr class="separator:a4d8774e7d6dc450cc5a9b757431333ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -116,9 +116,9 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a176cd5b9c49469063ba714710b81af8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ace961922ddfddcd48bdc335b08da4d2d" id="r_ace961922ddfddcd48bdc335b08da4d2d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ChebyshevSmoother.html#ace961922ddfddcd48bdc335b08da4d2d">update</a> () final</td></tr>
 <tr class="separator:ace961922ddfddcd48bdc335b08da4d2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3b7a9ccead28020443255db4c63df657" id="r_a3b7a9ccead28020443255db4c63df657"><td class="memItemLeft" align="right" valign="top"><a id="a3b7a9ccead28020443255db4c63df657" name="a3b7a9ccead28020443255db4c63df657"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (Operator const &amp;operator_in, <a class="el" href="structExaDG_1_1ChebyshevSmoother_1_1AdditionalData.html">AdditionalData</a> const &amp;additional_data)</td></tr>
-<tr class="separator:a3b7a9ccead28020443255db4c63df657"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29964b643bf7c4921c8f4b5d73998329" id="r_a29964b643bf7c4921c8f4b5d73998329"><td class="memItemLeft" align="right" valign="top"><a id="a29964b643bf7c4921c8f4b5d73998329" name="a29964b643bf7c4921c8f4b5d73998329"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (Operator const &amp;operator_in, bool const initialize_preconditioner, <a class="el" href="structExaDG_1_1ChebyshevSmoother_1_1AdditionalData.html">AdditionalData</a> const &amp;additional_data)</td></tr>
+<tr class="separator:a29964b643bf7c4921c8f4b5d73998329"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a id="a176cd5b9c49469063ba714710b81af8a" name="a176cd5b9c49469063ba714710b81af8a"></a>
