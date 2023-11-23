@@ -124,7 +124,7 @@ public:
   setup_derived() final;
 
   void
-  setup_solvers(double const & scaling_factor_mass, VectorType const & velocity) final;
+  update_after_grid_motion(bool const update_matrix_free) final;
 
   /*
    * Momentum step:
@@ -222,17 +222,17 @@ public:
   interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time) const;
 
 private:
+  void
+  setup_preconditioners_and_solvers() final;
+
   /*
    * Setup of momentum solver (operator, preconditioner, solver).
    */
   void
+  setup_momentum_preconditioner();
+
+  void
   setup_momentum_solver();
-
-  void
-  initialize_momentum_preconditioner();
-
-  void
-  initialize_momentum_solver();
 
   /*
    * Setup of inverse mass operator for pressure.

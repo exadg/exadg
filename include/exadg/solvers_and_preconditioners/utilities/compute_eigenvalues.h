@@ -55,7 +55,7 @@ compute_eigenvalues(Operator const &   op,
               &eigenvalue_tracker,
               std::placeholders::_1));
 
-  JacobiPreconditioner<Operator> preconditioner(op);
+  JacobiPreconditioner<Operator> preconditioner(op, true /* initialize */);
 
   try
   {

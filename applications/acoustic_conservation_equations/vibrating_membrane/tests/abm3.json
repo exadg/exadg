@@ -1,0 +1,32 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "true"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "7",
+        "DegreeMax": "7",
+        "RefineSpaceMin": "3",
+        "RefineSpaceMax": "3"
+    },
+    "TemporalResolution": {
+        "RefineTimeMin": "2",
+        "RefineTimeMax": "3"
+    },
+    "Application": {
+        "Formulation": "SkewSymmetric",
+        "SpeedOfSound": "7.0",
+        "Density": "3.0",
+        "TimeIntegrationScheme": "UserSpecified",
+        "UserSpecifiedTimeStepSize": "1.0e-3",
+        "OrderTimeIntegrator": "3",
+        "RuntimeInNumberOfPeriods": "0.25",
+        "Modes": "2.0"
+    },
+    "Output": {
+        "OutputDirectory": "output/vibrating_membrane/",
+        "OutputName": "vibrating_membrane",
+        "WriteOutput": "false"
+    }
+}

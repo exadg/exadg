@@ -178,14 +178,10 @@ Calculation of time step size according to CFL condition:
 
 ... done!
 
-Setup incompressible Navier-Stokes solver ...
-
-... done!
-
 Starting time loop ...
 
 Calculate error for velocity at time t = 0.0000e+00:
-  Relative error (L2-norm): 1.82429e-16
+  Relative error (L2-norm): 1.77897e-16
 
 Calculate error for pressure at time t = 0.0000e+00:
   Relative error (L2-norm): 1.28188e-16
@@ -196,61 +192,61 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for velocity at time t = 1.0036e+00:
-  Relative error (L2-norm): 1.82429e-16
+  Relative error (L2-norm): 1.77897e-16
 
 Calculate error for pressure at time t = 1.0036e+00:
   Relative error (L2-norm): 1.28188e-16
 
 Calculate error for velocity at time t = 2.0072e+00:
-  Relative error (L2-norm): 1.82429e-16
+  Relative error (L2-norm): 1.77897e-16
 
 Calculate error for pressure at time t = 2.0072e+00:
   Relative error (L2-norm): 1.28188e-16
 
 Calculate error for velocity at time t = 3.0023e+00:
-  Relative error (L2-norm): 1.82429e-16
+  Relative error (L2-norm): 1.77897e-16
 
 Calculate error for pressure at time t = 3.0023e+00:
   Relative error (L2-norm): 1.28188e-16
 
 Calculate error for velocity at time t = 4.0059e+00:
-  Relative error (L2-norm): 1.82429e-16
+  Relative error (L2-norm): 1.77897e-16
 
 Calculate error for pressure at time t = 4.0059e+00:
   Relative error (L2-norm): 1.28188e-16
 
 Calculate error for velocity at time t = 5.0009e+00:
-  Relative error (L2-norm): 1.82429e-16
+  Relative error (L2-norm): 1.77897e-16
 
 Calculate error for pressure at time t = 5.0009e+00:
   Relative error (L2-norm): 1.28188e-16
 
 Calculate error for velocity at time t = 6.0045e+00:
-  Relative error (L2-norm): 1.82429e-16
+  Relative error (L2-norm): 1.77897e-16
 
 Calculate error for pressure at time t = 6.0045e+00:
   Relative error (L2-norm): 1.28188e-16
 
 Calculate error for velocity at time t = 7.0081e+00:
-  Relative error (L2-norm): 1.82429e-16
+  Relative error (L2-norm): 1.77897e-16
 
 Calculate error for pressure at time t = 7.0081e+00:
   Relative error (L2-norm): 1.28188e-16
 
 Calculate error for velocity at time t = 8.0032e+00:
-  Relative error (L2-norm): 1.82429e-16
+  Relative error (L2-norm): 1.77897e-16
 
 Calculate error for pressure at time t = 8.0032e+00:
   Relative error (L2-norm): 1.28188e-16
 
 Calculate error for velocity at time t = 9.0068e+00:
-  Relative error (L2-norm): 1.82429e-16
+  Relative error (L2-norm): 1.77897e-16
 
 Calculate error for pressure at time t = 9.0068e+00:
   Relative error (L2-norm): 1.28188e-16
 
 Calculate error for velocity at time t = 1.0002e+01:
-  Relative error (L2-norm): 1.82429e-16
+  Relative error (L2-norm): 1.77897e-16
 
 Calculate error for pressure at time t = 1.0002e+01:
   Relative error (L2-norm): 1.28188e-16

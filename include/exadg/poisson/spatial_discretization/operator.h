@@ -77,9 +77,6 @@ public:
         std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data);
 
   void
-  setup_solver();
-
-  void
   initialize_dof_vector(VectorType & src) const;
 
   /*
@@ -163,6 +160,9 @@ private:
 
   void
   setup_operators();
+
+  void
+  setup_preconditioner_and_solver();
 
   /*
    * Grid

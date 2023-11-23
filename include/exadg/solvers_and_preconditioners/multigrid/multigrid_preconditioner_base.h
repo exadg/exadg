@@ -104,7 +104,15 @@ public:
              dealii::FiniteElement<dim> const &          fe,
              bool const                                  operator_is_singular,
              Map_DBC const &                             dirichlet_bc,
-             Map_DBC_ComponentMask const &               dirichlet_bc_component_mask);
+             Map_DBC_ComponentMask const &               dirichlet_bc_component_mask,
+             bool const                                  initialize_preconditioners);
+
+  /*
+   * Update of multigrid preconditioner including operators, smoothers, etc. (e.g. for problems
+   * with time-dependent coefficients).
+   */
+  void
+  update() override;
 
   /*
    * This function applies the multigrid preconditioner dst = P^{-1} src.
@@ -124,13 +132,6 @@ public:
    */
   virtual void
   apply_smoother_on_fine_level(VectorTypeMG & dst, VectorTypeMG const & src) const;
-
-  /*
-   * Update of multigrid preconditioner including operators, smoothers, etc. (e.g. for problems
-   * with time-dependent coefficients).
-   */
-  void
-  update() override;
 
   std::shared_ptr<TimerTree>
   get_timings() const override;
@@ -302,16 +303,16 @@ private:
    * Smoother.
    */
   void
-  initialize_smoothers();
+  initialize_smoothers(bool const initialize_preconditioner);
 
   void
-  initialize_smoother(Operator & matrix, unsigned int level);
+  initialize_smoother(Operator & matrix, unsigned int level, bool const initialize_preconditioner);
 
   /*
    * Coarse grid solver.
    */
   void
-  initialize_coarse_solver(bool const operator_is_singular);
+  initialize_coarse_solver(bool const operator_is_singular, bool const initialize_preconditioners);
 
   /*
    * Initialization of actual multigrid algorithm.

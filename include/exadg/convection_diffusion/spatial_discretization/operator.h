@@ -76,7 +76,9 @@ public:
    * Call this setup() function if the dealii::MatrixFree object needs to be created outside this
    * class. The typical use case would be multiphysics-coupling with one MatrixFree object handed
    * over to several single-field solvers. Another typical use case is the use of an ALE
-   * formulation.
+   * formulation. Note that you need to call the function fill_matrix_free_data() beforehand in
+   * order to correctly initialize dealii::MatrixFree, which is then handed over to this setup()
+   * function.
    */
   void
   setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
@@ -84,17 +86,10 @@ public:
         std::string const &                                    dof_index_velocity_external_in = "");
 
   /*
-   * This function initializes operators, preconditioners, and solvers related to the solution of
-   * linear systems of equation required for implicit formulations.
+   * Call this setup() function for setup after adaptive mesh refinement.
    */
   void
-  setup_solver(double const scaling_factor_mass = -1.0, VectorType const * velocity = nullptr);
-
-  /**
-   * Initializes dealii::DoFHandlers and dealii::AffineConstraints.
-   */
-  void
-  initialize_dof_handler_and_constraints();
+  setup_after_coarsening_and_refinement();
 
   /*
    * Initialization of dof-vector.
@@ -303,6 +298,12 @@ public:
 
 private:
   /**
+   * Initializes dealii::DoFHandlers and dealii::AffineConstraints.
+   */
+  void
+  initialize_dof_handler_and_constraints();
+
+  /**
    * Performs setup of operators.
    */
   void
@@ -345,13 +346,13 @@ private:
    * Initializes the preconditioner.
    */
   void
-  initialize_preconditioner();
+  setup_preconditioner();
 
   /*
    * Initializes the solver.
    */
   void
-  initialize_solver();
+  setup_solver();
 
   /*
    * Grid

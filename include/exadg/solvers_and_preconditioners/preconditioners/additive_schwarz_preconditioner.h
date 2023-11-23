@@ -34,10 +34,29 @@ class AdditiveSchwarzPreconditioner : public PreconditionerBase<typename Operato
 public:
   typedef typename PreconditionerBase<typename Operator::value_type>::VectorType VectorType;
 
-  AdditiveSchwarzPreconditioner(Operator const & underlying_operator_in)
+  AdditiveSchwarzPreconditioner(Operator const & underlying_operator_in, bool const initialize)
     : underlying_operator(underlying_operator_in)
   {
-    underlying_operator.compute_factorized_additive_schwarz_matrices();
+    if(initialize)
+    {
+      this->update();
+    }
+  }
+
+  /*
+   *  This function applies the additive Schwarz preconditioner.
+   *  Make sure that the additive Schwarz preconditioner has been
+   *  updated when calling this function.
+   */
+  void
+  vmult(VectorType & dst, VectorType const & src) const final
+  {
+    AssertThrow(
+      not this->update_needed,
+      dealii::ExcMessage(
+        "Additive Schwarz preconditioner can not be applied because it needs to be updated."));
+
+    underlying_operator.apply_inverse_additive_schwarz_matrices(dst, src);
   }
 
   /*
@@ -49,17 +68,7 @@ public:
   update() final
   {
     underlying_operator.compute_factorized_additive_schwarz_matrices();
-  }
-
-  /*
-   *  This function applies additive Schwarz preconditioner.
-   *  Make sure that the additive Schwarz preconditioner has been
-   *  updated when calling this function.
-   */
-  void
-  vmult(VectorType & dst, VectorType const & src) const final
-  {
-    underlying_operator.apply_inverse_additive_schwarz_matrices(dst, src);
+    this->update_needed = false;
   }
 
 private:

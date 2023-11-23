@@ -63,6 +63,14 @@ Operator<dim, Number>::Operator(
 {
   pcout << std::endl << "Construct convection-diffusion operator ..." << std::endl;
 
+  fe = create_finite_element<dim>(ElementType::Hypercube, true, 1, param.degree);
+
+  if(needs_own_dof_handler_velocity())
+  {
+    fe_velocity = create_finite_element<dim>(ElementType::Hypercube, true, dim, param.degree);
+    dof_handler_velocity = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
+  }
+
   initialize_dof_handler_and_constraints();
 
   pcout << std::endl << "... done!" << std::endl;
@@ -72,13 +80,10 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::initialize_dof_handler_and_constraints()
 {
-  fe = create_finite_element<dim>(ElementType::Hypercube, true, 1, param.degree);
   dof_handler.distribute_dofs(*fe);
 
   if(needs_own_dof_handler_velocity())
   {
-    fe_velocity = create_finite_element<dim>(ElementType::Hypercube, true, dim, param.degree);
-    dof_handler_velocity = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
     dof_handler_velocity->distribute_dofs(*fe_velocity);
   }
 
@@ -349,35 +354,11 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> con
 
   setup_operators();
 
-  pcout << std::endl << "... done!" << std::endl;
-}
-
-template<int dim, typename Number>
-void
-Operator<dim, Number>::setup_solver(double const scaling_factor_mass, VectorType const * velocity)
-{
-  pcout << std::endl << "Setup solver ..." << std::endl;
-
   if(param.linear_system_has_to_be_solved())
   {
-    combined_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
+    setup_preconditioner();
 
-    // The velocity vector needs to be set in case the velocity field is stored in DoF vector.
-    // Otherwise, certain preconditioners requiring the velocity field during initialization can not
-    // be initialized.
-    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
-    {
-      AssertThrow(
-        velocity != nullptr,
-        dealii::ExcMessage(
-          "In case of a numerical velocity field, a velocity vector has to be provided."));
-
-      combined_operator.set_velocity_ptr(*velocity);
-    }
-
-    initialize_preconditioner();
-
-    initialize_solver();
+    setup_solver();
   }
 
   pcout << std::endl << "... done!" << std::endl;
@@ -385,7 +366,15 @@ Operator<dim, Number>::setup_solver(double const scaling_factor_mass, VectorType
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::initialize_preconditioner()
+Operator<dim, Number>::setup_after_coarsening_and_refinement()
+{
+  this->initialize_dof_handler_and_constraints();
+  this->setup();
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::setup_preconditioner()
 {
   if(param.preconditioner == Preconditioner::InverseMassMatrix)
   {
@@ -401,12 +390,14 @@ Operator<dim, Number>::initialize_preconditioner()
   else if(param.preconditioner == Preconditioner::PointJacobi)
   {
     preconditioner =
-      std::make_shared<JacobiPreconditioner<CombinedOperator<dim, Number>>>(combined_operator);
+      std::make_shared<JacobiPreconditioner<CombinedOperator<dim, Number>>>(combined_operator,
+                                                                            false);
   }
   else if(param.preconditioner == Preconditioner::BlockJacobi)
   {
     preconditioner =
-      std::make_shared<BlockJacobiPreconditioner<CombinedOperator<dim, Number>>>(combined_operator);
+      std::make_shared<BlockJacobiPreconditioner<CombinedOperator<dim, Number>>>(combined_operator,
+                                                                                 false);
   }
   else if(param.preconditioner == Preconditioner::Multigrid)
   {
@@ -472,7 +463,7 @@ Operator<dim, Number>::initialize_preconditioner()
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::initialize_solver()
+Operator<dim, Number>::setup_solver()
 {
   if(param.solver == Solver::CG)
   {
@@ -802,6 +793,10 @@ Operator<dim, Number>::update_after_grid_motion(bool const update_matrix_free)
   {
     diffusive_kernel->calculate_penalty_parameter(*matrix_free, get_dof_index());
   }
+
+  // The inverse mass operator might contain matrix-based components, in which cases it needs to be
+  // updated after the grid has been deformed.
+  inverse_mass_operator.update();
 }
 
 template<int dim, typename Number>

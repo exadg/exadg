@@ -122,9 +122,12 @@ public:
   void
   update_preconditioner(bool const update_preconditioner) const override
   {
-    if(solver_data.use_preconditioner and update_preconditioner)
+    if(solver_data.use_preconditioner)
     {
-      preconditioner.update();
+      if(preconditioner.needs_update() or update_preconditioner)
+      {
+        preconditioner.update();
+      }
     }
   }
 
@@ -237,9 +240,12 @@ public:
   void
   update_preconditioner(bool const update_preconditioner) const override
   {
-    if(solver_data.use_preconditioner and update_preconditioner)
+    if(solver_data.use_preconditioner)
     {
-      preconditioner.update();
+      if(preconditioner.needs_update() or update_preconditioner)
+      {
+        preconditioner.update();
+      }
     }
   }
 
@@ -345,9 +351,12 @@ public:
   void
   update_preconditioner(bool const update_preconditioner) const override
   {
-    if(solver_data.use_preconditioner and update_preconditioner)
+    if(solver_data.use_preconditioner)
     {
-      preconditioner.update();
+      if(preconditioner.needs_update() or update_preconditioner)
+      {
+        preconditioner.update();
+      }
     }
   }
 

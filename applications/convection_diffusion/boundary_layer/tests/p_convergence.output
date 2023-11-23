@@ -106,10 +106,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
@@ -224,10 +220,6 @@ Discontinuous Galerkin finite element discretization:
 ... done!
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -348,10 +340,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
@@ -469,10 +457,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
@@ -587,10 +571,6 @@ Discontinuous Galerkin finite element discretization:
 ... done!
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 

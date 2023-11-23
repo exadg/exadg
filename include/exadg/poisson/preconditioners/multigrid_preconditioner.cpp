@@ -58,7 +58,10 @@ MultigridPreconditioner<dim, Number, n_components>::initialize(
                    fe,
                    data.operator_is_singular,
                    dirichlet_bc,
-                   dirichlet_bc_component_mask);
+                   dirichlet_bc_component_mask,
+                   true /* initialize_preconditioners */);
+
+  this->update_needed = false;
 }
 
 template<int dim, typename Number, int n_components>
@@ -81,6 +84,8 @@ MultigridPreconditioner<dim, Number, n_components>::update()
     this->update_smoothers();
     this->update_coarse_solver();
   }
+
+  this->update_needed = false;
 }
 
 template<int dim, typename Number, int n_components>

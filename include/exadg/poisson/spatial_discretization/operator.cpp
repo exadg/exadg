@@ -292,15 +292,15 @@ Operator<dim, n_components, Number>::setup(
 
   setup_operators();
 
+  setup_preconditioner_and_solver();
+
   pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, int n_components, typename Number>
 void
-Operator<dim, n_components, Number>::setup_solver()
+Operator<dim, n_components, Number>::setup_preconditioner_and_solver()
 {
-  pcout << std::endl << "Setup Poisson solver ..." << std::endl;
-
   // initialize preconditioner
   if(param.preconditioner == Poisson::Preconditioner::None)
   {
@@ -308,20 +308,21 @@ Operator<dim, n_components, Number>::setup_solver()
   }
   else if(param.preconditioner == Poisson::Preconditioner::PointJacobi)
   {
-    preconditioner = std::make_shared<JacobiPreconditioner<Laplace>>(laplace_operator);
+    preconditioner = std::make_shared<JacobiPreconditioner<Laplace>>(laplace_operator, true);
   }
   else if(param.preconditioner == Poisson::Preconditioner::BlockJacobi)
   {
-    preconditioner = std::make_shared<BlockJacobiPreconditioner<Laplace>>(laplace_operator);
+    preconditioner = std::make_shared<BlockJacobiPreconditioner<Laplace>>(laplace_operator, true);
   }
   else if(param.preconditioner == Poisson::Preconditioner::AdditiveSchwarz)
   {
-    preconditioner = std::make_shared<AdditiveSchwarzPreconditioner<Laplace>>(laplace_operator);
+    preconditioner =
+      std::make_shared<AdditiveSchwarzPreconditioner<Laplace>>(laplace_operator, true);
   }
   else if(param.preconditioner == Poisson::Preconditioner::AMG)
   {
     preconditioner = std::make_shared<PreconditionerAMG<Laplace, Number>>(
-      laplace_operator, param.multigrid_data.coarse_problem.amg_data);
+      laplace_operator, true, param.multigrid_data.coarse_problem.amg_data);
   }
   else if(param.preconditioner == Poisson::Preconditioner::Multigrid)
   {
@@ -414,8 +415,6 @@ Operator<dim, n_components, Number>::setup_solver()
   {
     AssertThrow(false, dealii::ExcMessage("Specified solver is not implemented!"));
   }
-
-  pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, int n_components, typename Number>

@@ -126,10 +126,6 @@ Adjust time step size to hit end time:
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Starting time loop ...
 
 Calculate error for all fields at time t = 0.0000e+00:
@@ -150,10 +146,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -164,10 +156,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -175,10 +163,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    1300
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -200,10 +184,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -211,10 +191,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    1450
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -236,10 +212,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -250,10 +222,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -261,10 +229,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    1525
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -286,10 +250,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -297,10 +257,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    1675
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -322,10 +278,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -336,10 +288,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -347,10 +295,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    1750
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -372,10 +316,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -383,10 +323,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    1900
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -408,10 +344,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -422,10 +354,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -433,10 +361,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    1525
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -458,10 +382,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -469,10 +389,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    1375
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -494,10 +410,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -505,10 +417,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    1450
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -530,10 +438,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -544,10 +448,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -555,10 +455,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    1600
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -580,10 +476,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -591,10 +483,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    1450
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -616,10 +504,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -630,10 +514,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -641,10 +521,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    1825
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -666,10 +542,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -677,10 +549,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    1750
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -702,10 +570,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -716,10 +580,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -727,10 +587,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    1975
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -752,10 +608,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -763,10 +615,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    1900
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -788,10 +636,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -802,10 +646,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -813,10 +653,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    1975
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -838,10 +674,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -849,10 +681,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    2200
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -874,10 +702,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -885,10 +709,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    2275
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -910,10 +730,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -924,10 +740,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -935,10 +747,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    2275
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 
@@ -960,10 +768,6 @@ Setup convection-diffusion operator ...
 
 ... done!
 
-Setup solver ...
-
-... done!
-
 Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
@@ -971,10 +775,6 @@ Discontinuous Galerkin finite element discretization:
   number of dofs (total):                    2500
 
 Setup convection-diffusion operator ...
-
-... done!
-
-Setup solver ...
 
 ... done!
 

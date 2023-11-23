@@ -65,8 +65,6 @@ public:
 
     if(not(is_throughput_study))
     {
-      pde_operator->setup_solver();
-
       postprocessor = application->create_postprocessor();
       postprocessor->setup(*pde_operator);
     }

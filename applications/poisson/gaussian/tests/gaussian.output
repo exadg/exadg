@@ -82,10 +82,6 @@ Setup Poisson operator ...
 
 ... done!
 
-Setup Poisson solver ...
-
-... done!
-
 Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
@@ -172,10 +168,6 @@ Discontinuous Galerkin finite element discretization:
 ... done!
 
 Setup Poisson operator ...
-
-... done!
-
-Setup Poisson solver ...
 
 ... done!
 
@@ -268,10 +260,6 @@ Setup Poisson operator ...
 
 ... done!
 
-Setup Poisson solver ...
-
-... done!
-
 Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
@@ -358,10 +346,6 @@ Discontinuous Galerkin finite element discretization:
 ... done!
 
 Setup Poisson operator ...
-
-... done!
-
-Setup Poisson solver ...
 
 ... done!
 
@@ -454,10 +438,6 @@ Setup Poisson operator ...
 
 ... done!
 
-Setup Poisson solver ...
-
-... done!
-
 Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
@@ -544,10 +524,6 @@ Discontinuous Galerkin finite element discretization:
 ... done!
 
 Setup Poisson operator ...
-
-... done!
-
-Setup Poisson solver ...
 
 ... done!
 
@@ -640,10 +616,6 @@ Setup Poisson operator ...
 
 ... done!
 
-Setup Poisson solver ...
-
-... done!
-
 Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
@@ -730,10 +702,6 @@ Discontinuous Galerkin finite element discretization:
 ... done!
 
 Setup Poisson operator ...
-
-... done!
-
-Setup Poisson solver ...
 
 ... done!
 
@@ -826,10 +794,6 @@ Setup Poisson operator ...
 
 ... done!
 
-Setup Poisson solver ...
-
-... done!
-
 Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
@@ -916,10 +880,6 @@ Discontinuous Galerkin finite element discretization:
 ... done!
 
 Setup Poisson operator ...
-
-... done!
-
-Setup Poisson solver ...
 
 ... done!
 
@@ -1012,10 +972,6 @@ Setup Poisson operator ...
 
 ... done!
 
-Setup Poisson solver ...
-
-... done!
-
 Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
@@ -1105,15 +1061,11 @@ Setup Poisson operator ...
 
 ... done!
 
-Setup Poisson solver ...
-
-... done!
-
 Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 4.58639e-11
+  Relative error (L2-norm): 4.58640e-11
 
 
 
@@ -1198,15 +1150,11 @@ Setup Poisson operator ...
 
 ... done!
 
-Setup Poisson solver ...
-
-... done!
-
 Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 4.25198e-11
+  Relative error (L2-norm): 4.25200e-11
 
 
 
@@ -1291,15 +1239,11 @@ Setup Poisson operator ...
 
 ... done!
 
-Setup Poisson solver ...
-
-... done!
-
 Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 2.43692e-12
+  Relative error (L2-norm): 2.43664e-12
 
 
 
@@ -1384,12 +1328,8 @@ Setup Poisson operator ...
 
 ... done!
 
-Setup Poisson solver ...
-
-... done!
-
 Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 1.54749e-12
+  Relative error (L2-norm): 1.54768e-12

@@ -43,10 +43,10 @@ public:
                  MPI_Comm const &    mpi_comm_,
                  bool const          is_test_);
 
+protected:
   double
   get_scaling_factor_time_derivative_term() const;
 
-protected:
   void
   update_time_integrator_constants() override;
 

@@ -40,7 +40,7 @@ template<typename Number>
 class PreconditionerBase
 {
 public:
-  PreconditionerBase()
+  PreconditionerBase() : update_needed(true)
   {
   }
 
@@ -52,9 +52,19 @@ public:
   setup(unsigned int const cell) = 0;
 
   virtual void
+  update() = 0;
+
+  bool
+  needs_update()
+  {
+    return update_needed;
+  }
+
+  virtual void
   vmult(Number * dst, Number const * src) const = 0;
 
-private:
+protected:
+  bool update_needed;
 };
 
 /**
@@ -66,6 +76,7 @@ class PreconditionerIdentity : public PreconditionerBase<Number>
 public:
   PreconditionerIdentity(unsigned int const size) : M(size)
   {
+    this->update_needed = false;
   }
 
   virtual ~PreconditionerIdentity()
@@ -74,6 +85,12 @@ public:
 
   void
   setup(unsigned int const /* cell */) final
+  {
+    // nothing to do
+  }
+
+  void
+  update() final
   {
     // nothing to do
   }
@@ -102,14 +119,18 @@ public:
   JacobiPreconditioner(dealii::MatrixFree<dim, Number> const & matrix_free,
                        unsigned int const                      dof_index,
                        unsigned int const                      quad_index,
-                       Operator const &                        underlying_operator_in)
+                       Operator const &                        underlying_operator_in,
+                       bool const                              initialize)
     : underlying_operator(underlying_operator_in)
   {
     integrator = std::make_shared<Integrator>(matrix_free, dof_index, quad_index);
 
     underlying_operator.initialize_dof_vector(global_inverse_diagonal);
 
-    underlying_operator.calculate_inverse_diagonal(global_inverse_diagonal);
+    if(initialize)
+    {
+      this->update();
+    }
   }
 
   void
@@ -117,6 +138,14 @@ public:
   {
     integrator->reinit(cell);
     integrator->read_dof_values(global_inverse_diagonal, 0);
+  }
+
+  void
+  update() final
+  {
+    underlying_operator.calculate_inverse_diagonal(global_inverse_diagonal);
+
+    this->update_needed = false;
   }
 
   /**
@@ -184,12 +213,21 @@ public:
       matrix_free.get_shape_info(0, quad_index).data[0].n_q_points_1d == fe.degree + 1,
       dealii::ExcMessage(
         "The elementwise inverse mass preconditioner is only available if n_q_points_1d = n_nodes_1d."));
+
+    this->update_needed = false;
   }
 
   void
   setup(unsigned int const cell) final
   {
     integrator->reinit(cell);
+  }
+
+  void
+  update() final
+  {
+    // no updates needed as long as the MatrixFree/Integrator object is up-to-date (which is not the
+    // responsibility of the present class).
   }
 
   /**

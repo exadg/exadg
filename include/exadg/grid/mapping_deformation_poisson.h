@@ -59,13 +59,11 @@ public:
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       iterations({0, 0})
   {
-    // initialize PDE operator
+    // create and setup PDE operator
     pde_operator = std::make_shared<Poisson::Operator<dim, dim, Number>>(
       grid, mapping_undeformed, boundary_descriptor, field_functions, param, field, mpi_comm);
 
-    // setup PDE operator and solver
     pde_operator->setup();
-    pde_operator->setup_solver();
 
     // finally, initialize dof vector
     pde_operator->initialize_dof_vector(displacement);

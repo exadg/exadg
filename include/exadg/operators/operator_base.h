@@ -188,9 +188,15 @@ public:
   calculate_inverse_diagonal(VectorType & diagonal) const;
 
   /*
-   * Update block diagonal preconditioner: initialize everything related to block diagonal
-   * preconditioner when this function is called the first time. Recompute block matrices in case of
-   * matrix-based implementation.
+   * Initialize block diagonal preconditioner: initialize everything related to block diagonal
+   * preconditioner.
+   */
+  void
+  initialize_block_diagonal_preconditioner(bool const initialize) const;
+
+  /*
+   * Update block diagonal preconditioner: Recompute block matrices in case of matrix-based
+   * implementation.
    */
   void
   update_block_diagonal_preconditioner() const;
@@ -298,16 +304,8 @@ public:
   /*
    * block Jacobi preconditioner (block-diagonal)
    */
-
-  // matrix-based implementation
-  void
-  calculate_block_diagonal_matrices() const;
-
   void
   add_block_diagonal_matrices(std::vector<LAPACKMatrix> & matrices) const;
-
-  void
-  apply_block_diagonal_matrix_based(VectorType & dst, VectorType const & src) const;
 
   void
   apply_inverse_block_diagonal_matrix_based(VectorType & dst, VectorType const & src) const;
@@ -318,7 +316,20 @@ public:
   // using the matrix-free variant with elementwise iterative solvers and matrix-free operator
   // evaluation.
   void
-  initialize_block_diagonal_preconditioner_matrix_free() const;
+  initialize_block_diagonal_preconditioner_matrix_free(bool const initialize) const;
+
+  // updates block diagonal preconditioner when using the matrix-free variant with elementwise
+  // iterative solvers and matrix-free operator evaluation.
+  void
+  update_block_diagonal_preconditioner_matrix_free() const;
+
+  // initializes block diagonal preconditioner for matrix-based variant
+  void
+  initialize_block_diagonal_preconditioner_matrix_based(bool const initialize) const;
+
+  // updates block diagonal preconditioner for matrix-based variant
+  void
+  update_block_diagonal_preconditioner_matrix_based() const;
 
   void
   apply_add_block_diagonal_elementwise(unsigned int const                            cell,
@@ -615,19 +626,9 @@ private:
                                  Range const &                           range) const;
 
   /*
-   * Apply block diagonal.
-   */
-  void
-  cell_loop_apply_block_diagonal_matrix_based(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                              VectorType &                            dst,
-                                              VectorType const &                      src,
-                                              Range const &                           range) const;
-
-  /*
    * Apply inverse block diagonal:
    *
-   * instead of applying the block matrix B we compute dst = B^{-1} * src (LU factorization
-   * should have already been performed with the method update_inverse_block_diagonal())
+   *  we compute dst = B^{-1} * src
    */
   void
   cell_loop_apply_inverse_block_diagonal_matrix_based(
@@ -714,13 +715,6 @@ private:
    * Vector with weights for additive Schwarz preconditioner.
    */
   mutable VectorType weights;
-
-  /*
-   * We want to initialize the block diagonal preconditioner (block diagonal matrices or elementwise
-   * iterative solvers in case of matrix-free implementation) only once, so we store the status of
-   * initialization in a variable.
-   */
-  mutable bool block_diagonal_preconditioner_is_initialized;
 
   unsigned int n_mpi_processes;
 };
