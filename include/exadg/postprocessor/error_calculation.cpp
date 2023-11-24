@@ -136,6 +136,16 @@ ErrorCalculator<dim, Number>::setup(dealii::DoFHandler<dim> const &   dof_handle
 
 template<int dim, typename Number>
 void
+ErrorCalculator<dim, Number>::setup_after_coarsening_and_refinement(
+  dealii::DoFHandler<dim> const & dof_handler_in,
+  dealii::Mapping<dim> const &    mapping_in)
+{
+  dof_handler = &dof_handler_in;
+  mapping     = &mapping_in;
+}
+
+template<int dim, typename Number>
+void
 ErrorCalculator<dim, Number>::evaluate(VectorType const & solution,
                                        double const       time,
                                        bool const         unsteady)

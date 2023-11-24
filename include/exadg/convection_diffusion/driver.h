@@ -101,7 +101,7 @@ private:
   setup_after_coarsening_and_refinement();
 
   void
-  do_adaptive_refinement(unsigned int const time_step_number);
+  do_adaptive_refinement();
 
   // MPI communicator
   MPI_Comm const mpi_comm;

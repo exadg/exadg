@@ -177,47 +177,46 @@ Driver<dim, Number>::setup_after_coarsening_and_refinement()
 
   pde_operator->setup_after_coarsening_and_refinement();
 
-  postprocessor->setup(*pde_operator);
+  postprocessor->setup_after_coarsening_and_refinement(*pde_operator);
 }
 
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::do_adaptive_refinement(unsigned int const time_step_number)
+Driver<dim, Number>::do_adaptive_refinement()
 {
-  // AMR is only implemented for implicit timestepping.
-  if(trigger_coarsening_and_refinement_now(
-       application->get_parameters().amr_data.trigger_every_n_time_steps, time_step_number))
+  limit_coarsening_and_refinement(*grid->triangulation, application->get_parameters().amr_data);
+
+  if(any_cells_flagged_for_coarsening_or_refinement(*grid->triangulation))
   {
-    std::shared_ptr<TimeIntBDF<dim, Number>> bdf_time_integrator =
-      std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
+    grid->triangulation->prepare_coarsening_and_refinement();
 
-    AssertThrow(bdf_time_integrator.get(),
-                dealii::ExcMessage("Combination of adaptive mesh refinement "
-                                   "and explicit time integration not implemented."));
-
-    mark_cells_coarsening_and_refinement(*grid->triangulation,
-                                         bdf_time_integrator->get_solution_np());
-
-    limit_coarsening_and_refinement(*grid->triangulation, application->get_parameters().amr_data);
-
-    if(any_cells_flagged_for_coarsening_or_refinement(*grid->triangulation))
+    if(application->get_parameters().problem_type == ProblemType::Unsteady)
     {
-      grid->triangulation->prepare_coarsening_and_refinement();
-
       time_integrator->prepare_coarsening_and_refinement();
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcNotImplemented());
+    }
 
-      grid->triangulation->execute_coarsening_and_refinement();
+    grid->triangulation->execute_coarsening_and_refinement();
 
-      GridUtilities::setup_after_coarsening_and_refinement(
-        *grid,
-        application->get_parameters().grid,
-        application->get_parameters().involves_h_multigrid(),
-        application->get_parameters().amr_data.preserve_boundary_cells);
+    GridUtilities::setup_after_coarsening_and_refinement(
+      *grid,
+      application->get_parameters().grid,
+      application->get_parameters().involves_h_multigrid(),
+      application->get_parameters().amr_data.preserve_boundary_cells);
 
-      setup_after_coarsening_and_refinement();
+    setup_after_coarsening_and_refinement();
 
+    if(application->get_parameters().problem_type == ProblemType::Unsteady)
+    {
       time_integrator->interpolate_after_coarsening_and_refinement();
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcNotImplemented());
     }
   }
 }
@@ -238,7 +237,23 @@ Driver<dim, Number>::solve()
 
         // Adapt the mesh before post_solve(), in order to recalculate the
         // time step size based on the new mesh.
-        do_adaptive_refinement(time_integrator->get_number_of_time_steps());
+        if(trigger_coarsening_and_refinement_now(
+             application->get_parameters().amr_data.trigger_every_n_time_steps,
+             time_integrator->get_number_of_time_steps()))
+        {
+          // AMR is only implemented for implicit timestepping.
+          std::shared_ptr<TimeIntBDF<dim, Number>> bdf_time_integrator =
+            std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
+
+          AssertThrow(bdf_time_integrator.get(),
+                      dealii::ExcMessage("Combination of adaptive mesh refinement "
+                                         "and explicit time integration not implemented."));
+
+          mark_cells_coarsening_and_refinement(*grid->triangulation,
+                                               bdf_time_integrator->get_solution_np());
+
+          do_adaptive_refinement();
+        }
 
         time_integrator->advance_one_timestep_post_solve();
       } while(not(time_integrator->finished()));

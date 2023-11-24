@@ -115,6 +115,16 @@ OutputGenerator<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler_
 
 template<int dim, typename Number>
 void
+OutputGenerator<dim, Number>::setup_after_coarsening_and_refinement(
+  dealii::DoFHandler<dim> const & dof_handler_in,
+  dealii::Mapping<dim> const &    mapping_in)
+{
+  dof_handler = &dof_handler_in;
+  mapping     = &mapping_in;
+}
+
+template<int dim, typename Number>
+void
 OutputGenerator<dim, Number>::evaluate(VectorType const & solution,
                                        double const       time,
                                        bool const         unsteady)
