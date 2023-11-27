@@ -104,10 +104,6 @@ public:
         ErrorCalculationData<dim> const & error_data);
 
   void
-  setup_after_coarsening_and_refinement(dealii::DoFHandler<dim> const & dof_handler,
-                                        dealii::Mapping<dim> const &    mapping);
-
-  void
   evaluate(VectorType const & solution, double const time, bool const unsteady);
 
   TimeControl time_control;

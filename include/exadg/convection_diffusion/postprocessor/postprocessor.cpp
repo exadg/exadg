@@ -51,14 +51,10 @@ PostProcessor<dim, Number>::setup(Operator<dim, Number> const & pde_operator)
 
 template<int dim, typename Number>
 void
-PostProcessor<dim, Number>::setup_after_coarsening_and_refinement(
-  Operator<dim, Number> const & pde_operator)
+PostProcessor<dim, Number>::setup_after_coarsening_and_refinement()
 {
-  error_calculator.setup_after_coarsening_and_refinement(pde_operator.get_dof_handler(),
-                                                         *pde_operator.get_mapping());
-
-  output_generator.setup_after_coarsening_and_refinement(pde_operator.get_dof_handler(),
-                                                         *pde_operator.get_mapping());
+  // The `error_calculator` and `output_generator` do not require any additional setup after
+  // coarsening and refinement.
 }
 
 template<int dim, typename Number>

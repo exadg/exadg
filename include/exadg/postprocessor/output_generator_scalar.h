@@ -47,10 +47,6 @@ public:
         OutputDataBase const &          output_data_in);
 
   void
-  setup_after_coarsening_and_refinement(dealii::DoFHandler<dim> const & dof_handler_in,
-                                        dealii::Mapping<dim> const &    mapping_in);
-
-  void
   evaluate(VectorType const & solution, double const time, bool const unsteady);
 
   TimeControl time_control;

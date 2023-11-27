@@ -62,7 +62,7 @@ public:
   setup(Operator<dim, Number> const & pde_operator) override;
 
   void
-  setup_after_coarsening_and_refinement(Operator<dim, Number> const & pde_operator) override;
+  setup_after_coarsening_and_refinement() override;
 
   void
   do_postprocessing(VectorType const &     solution,
