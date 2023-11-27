@@ -251,6 +251,8 @@ protected:
   // Pointer to grid class.
   std::shared_ptr<Grid<dim> const> grid;
 
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
+
   dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>>              dof_handlers;
   dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> constraints;
 
@@ -330,10 +332,6 @@ private:
 
   // The mapping associated to the fine triangulation.
   std::shared_ptr<dealii::Mapping<dim> const> mapping;
-
-  // In case of h-multigrid with more than one h-level, this vector contains the mappings for all
-  // levels coarser than the fine level.
-  std::vector<std::shared_ptr<dealii::Mapping<dim> const>> coarse_mappings;
 
   dealii::MGLevelObject<std::shared_ptr<Smoother>> smoothers;
 

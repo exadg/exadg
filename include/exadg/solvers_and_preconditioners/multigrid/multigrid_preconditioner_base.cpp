@@ -326,13 +326,19 @@ template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mapping()
 {
-  unsigned int const n_h_levels = level_info.back().h_level() - level_info.front().h_level() + 1;
-
-  if(n_h_levels > 1)
+  // we need to initialize mappings for coarse levels only if we have a mapping of type
+  // MappingDoFVector
+  if(multigrid_mappings->mapping_dof_vector_fine_level.get())
   {
-    coarse_mappings.resize(n_h_levels - 1);
+    unsigned int const n_h_levels = level_info.back().h_level() - level_info.front().h_level() + 1;
 
-    grid->initialize_coarse_mappings(coarse_mappings, mapping);
+    if(n_h_levels > 1)
+    {
+      multigrid_mappings->mapping_dof_vector_coarse_levels.resize(n_h_levels - 1);
+
+      multigrid_mappings->initialize_coarse_mappings(grid->triangulation,
+                                                     grid->coarse_triangulations);
+    }
   }
 }
 
@@ -341,9 +347,22 @@ dealii::Mapping<dim> const &
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::get_mapping(
   unsigned int const h_level) const
 {
-  if(h_level < coarse_mappings.size())
+  if(multigrid_mappings->mapping_dof_vector_fine_level.get())
   {
-    return *(coarse_mappings[h_level]);
+    unsigned int const n_h_levels = level_info.back().h_level() - level_info.front().h_level() + 1;
+
+    // fine level
+    if(h_level == n_h_levels - 1)
+    {
+      return *(multigrid_mappings->mapping_dof_vector_fine_level->get_mapping());
+    }
+    else // coarse levels
+    {
+      AssertThrow(h_level < multigrid_mappings->mapping_dof_vector_coarse_levels.size(),
+                  dealii::ExcMessage("Vector of coarse mappings seems to have incorrect size."));
+
+      return *(multigrid_mappings->mapping_dof_vector_coarse_levels[h_level]->get_mapping());
+    }
   }
   else
   {

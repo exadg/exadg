@@ -93,7 +93,7 @@ Driver<dim, Number>::setup()
     helpers_ale->update_pde_operator_after_grid_motion = [&]() {
       // Since we use the same MatrixFree object for the fluid field and the scalar transport field,
       // we need to update MatrixFree here in the Driver.
-      matrix_free->update_mapping(*ale_mapping);
+      matrix_free->update_mapping(*ale_mapping->get_mapping());
 
       fluid_operator->update_after_grid_motion(false /* update_matrix_free */);
       for(unsigned int i = 0; i < application->scalars.size(); ++i)

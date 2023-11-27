@@ -39,7 +39,7 @@ get_dynamic_mapping(std::shared_ptr<dealii::Mapping<dim> const>             stat
 {
   if(dynamic_mapping.get() != 0)
   {
-    return dynamic_mapping;
+    return dynamic_mapping->get_mapping();
   }
   else
   {

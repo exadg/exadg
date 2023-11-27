@@ -70,27 +70,52 @@ public:
    * corresponds to the coarsest triangulation.
    */
   std::vector<PeriodicFacePairs> coarse_periodic_face_pairs;
+};
 
+/**
+ * This class stores pointers to fine and coarse mappings of type MappingDoFVector for use in
+ * multigrid with h-transfer.
+ *
+ * The lambda function initialize_coarse_mappings() can be overwritten in order to realize a
+ * user-specific construction of the mapping on coarser grids.
+ *
+ */
+template<int dim, typename Number>
+class MultigridMappings
+{
+public:
   /**
-   * This function creates coarse mappings for use in multigrid with h-transfer.
+   * This function stores pointers to fine and coarse mappings of type MappingDoFVector for use in
+   * multigrid with h-transfer.
    *
    * The default implementation uses an interpolation of the fine-level mapping to coarser grids.
    * You can overwrite this function in order to realize a user-specific construction of the mapping
    * on coarser grids.
    *
-   * The vector of coarse_mappings includes mapping objects for all h-multigrid levels coarser than
-   * the fine triangulation. The first entry corresponds to the coarsest triangulation.
    */
-  std::function<void(std::vector<std::shared_ptr<dealii::Mapping<dim> const>> & coarse_mappings,
-                     std::shared_ptr<dealii::Mapping<dim> const> const &        fine_mapping)>
+  std::function<void(
+    std::shared_ptr<dealii::Triangulation<dim> const> const &              fine_triangulation,
+    std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations)>
     initialize_coarse_mappings =
-      [&](std::vector<std::shared_ptr<dealii::Mapping<dim> const>> & coarse_mappings,
-          std::shared_ptr<dealii::Mapping<dim> const> const &        fine_mapping) {
-        MappingTools::initialize_coarse_mappings<dim, double>(coarse_mappings,
-                                                              fine_mapping,
-                                                              triangulation,
+      [&](std::shared_ptr<dealii::Triangulation<dim> const> const & fine_triangulation,
+          std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const &
+            coarse_triangulations) {
+        MappingTools::initialize_coarse_mappings<dim, Number>(mapping_dof_vector_coarse_levels,
+                                                              mapping_dof_vector_fine_level,
+                                                              fine_triangulation,
                                                               coarse_triangulations);
       };
+
+  /**
+   * MappingDoFVector object on fine triangulation level.
+   */
+  std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector_fine_level;
+
+  /**
+   * Vector of coarse mappings of type MappingDoFVector for all h-multigrid levels coarser than
+   * the fine triangulation. The first entry corresponds to the coarsest triangulation.
+   */
+  std::vector<std::shared_ptr<MappingDoFVector<dim, Number>>> mapping_dof_vector_coarse_levels;
 };
 
 } // namespace ExaDG
