@@ -50,11 +50,31 @@ Driver<dim, n_components, Number>::setup()
 {
   pcout << std::endl << "Setting up Poisson solver for overset grids:" << std::endl;
 
-  application->setup();
+  // setup application
+  AssertThrow(application->domain1.get(), dealii::ExcMessage("Domain 1 is uninitialized."));
+  AssertThrow(application->domain2.get(), dealii::ExcMessage("Domain 2 is uninitialized."));
+
+  application->domain1->setup_pre(grid1, mapping1, {"Domain1"});
+  application->domain2->setup_pre(grid2, mapping2, {"Domain2"});
+
+  // set boundary IDs for domain 1
+  set_boundary_ids_overlap_region(*grid1->triangulation,
+                                  application->boundary_id_overlap,
+                                  *mapping2,
+                                  *grid2->triangulation);
+
+  // set boundary IDs for domain 2
+  set_boundary_ids_overlap_region(*grid2->triangulation,
+                                  application->boundary_id_overlap,
+                                  *mapping1,
+                                  *grid1->triangulation);
+
+  application->domain1->setup_post(grid1);
+  application->domain2->setup_post(grid2);
 
   // setup Poisson solvers
-  poisson1->setup(application->domain1, mpi_comm);
-  poisson2->setup(application->domain2, mpi_comm);
+  poisson1->setup(application->domain1, grid1, mapping1, mpi_comm);
+  poisson2->setup(application->domain2, grid2, mapping2, mpi_comm);
 
   // setup interface coupling
   {
@@ -67,7 +87,7 @@ Driver<dim, n_components, Number>::setup()
     // resolve this, the implementation of InterfaceCoupling needs to be generalized.
     first_to_second->setup(poisson2->pde_operator->get_container_interface_data(),
                            poisson1->pde_operator->get_dof_handler(),
-                           *application->domain1->get_mapping(),
+                           *mapping1,
                            {} /* marked_vertices */,
                            1.e-8 /* geometric tolerance */);
 
@@ -79,7 +99,7 @@ Driver<dim, n_components, Number>::setup()
     second_to_first = std::make_shared<InterfaceCoupling<rank, dim, Number>>();
     second_to_first->setup(poisson1->pde_operator->get_container_interface_data(),
                            poisson2->pde_operator->get_dof_handler(),
-                           *application->domain2->get_mapping(),
+                           *mapping2,
                            {} /* marked_vertices */,
                            1.e-8 /* geometric tolerance */);
 
