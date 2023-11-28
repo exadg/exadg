@@ -57,12 +57,10 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up acoustic conservation equations solver:" << std::endl;
 
-  application->setup();
-
-  std::shared_ptr<dealii::Mapping<dim> const> mapping = application->get_mapping();
+  application->setup(grid, mapping);
 
   pde_operator =
-    std::make_shared<SpatialOperator<dim, Number>>(application->get_grid(),
+    std::make_shared<SpatialOperator<dim, Number>>(grid,
                                                    mapping,
                                                    application->get_boundary_descriptor(),
                                                    application->get_field_functions(),
