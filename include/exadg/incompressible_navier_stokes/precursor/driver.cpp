@@ -54,8 +54,8 @@ Driver<dim, Number>::set_start_time() const
                                      application->main->get_parameters().start_time);
 
   // Set the same time step size for both time integrators
-  precursor.time_integrator->reset_time(start_time);
-  main.time_integrator->reset_time(start_time);
+  solver_precursor.time_integrator->reset_time(start_time);
+  solver_main.time_integrator->reset_time(start_time);
 }
 
 template<int dim, typename Number>
@@ -74,21 +74,22 @@ Driver<dim, Number>::synchronize_time_step_size() const
   // get time step sizes
   if(use_adaptive_time_stepping == true)
   {
-    if(precursor.time_integrator->get_time() >
+    if(solver_precursor.time_integrator->get_time() >
        application->precursor->get_parameters().start_time - EPSILON)
     {
-      time_step_size_pre = precursor.time_integrator->get_time_step_size();
+      time_step_size_pre = solver_precursor.time_integrator->get_time_step_size();
     }
 
-    if(main.time_integrator->get_time() > application->main->get_parameters().start_time - EPSILON)
+    if(solver_main.time_integrator->get_time() >
+       application->main->get_parameters().start_time - EPSILON)
     {
-      time_step_size = main.time_integrator->get_time_step_size();
+      time_step_size = solver_main.time_integrator->get_time_step_size();
     }
   }
   else
   {
-    time_step_size_pre = precursor.time_integrator->get_time_step_size();
-    time_step_size     = main.time_integrator->get_time_step_size();
+    time_step_size_pre = solver_precursor.time_integrator->get_time_step_size();
+    time_step_size     = solver_main.time_integrator->get_time_step_size();
   }
 
   // take the minimum
@@ -108,8 +109,44 @@ Driver<dim, Number>::synchronize_time_step_size() const
   }
 
   // set the time step size
-  precursor.time_integrator->set_current_time_step_size(time_step_size);
-  main.time_integrator->set_current_time_step_size(time_step_size);
+  solver_precursor.time_integrator->set_current_time_step_size(time_step_size);
+  solver_main.time_integrator->set_current_time_step_size(time_step_size);
+}
+
+// performs some additional parameter checks
+template<int dim, typename Number>
+void
+Driver<dim, Number>::consistency_checks() const
+{
+  AssertThrow(application->precursor->get_parameters().ale_formulation == false,
+              dealii::ExcMessage("not implemented."));
+  AssertThrow(application->main->get_parameters().ale_formulation == false,
+              dealii::ExcMessage("not implemented."));
+
+  AssertThrow(application->precursor->get_parameters().calculation_of_time_step_size ==
+                application->main->get_parameters().calculation_of_time_step_size,
+              dealii::ExcMessage(
+                "Type of time step calculation has to be the same for both domains."));
+
+  AssertThrow(application->precursor->get_parameters().adaptive_time_stepping ==
+                application->main->get_parameters().adaptive_time_stepping,
+              dealii::ExcMessage(
+                "Type of time step calculation has to be the same for both domains."));
+
+  AssertThrow(application->precursor->get_parameters().solver_type == SolverType::Unsteady and
+                application->main->get_parameters().solver_type == SolverType::Unsteady,
+              dealii::ExcMessage("This is an unsteady solver. Check parameters."));
+
+  // For the two-domain solver the parameter start_with_low_order has to be true.
+  // This is due to the fact that the setup function of the time integrator initializes
+  // the solution at previous time instants t_0 - dt, t_0 - 2*dt, ... in case of
+  // start_with_low_order == false. However, the combined time step size
+  // is not known at this point since the two domains have to first communicate with each other
+  // in order to find the minimum time step size. Hence, the easiest way to avoid these kind of
+  // inconsistencies is to preclude the case start_with_low_order == false.
+  AssertThrow(application->precursor->get_parameters().start_with_low_order == true and
+                application->main->get_parameters().start_with_low_order == true,
+              dealii::ExcMessage("start_with_low_order has to be true for two-domain solver."));
 }
 
 template<int dim, typename Number>
@@ -121,22 +158,33 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up incompressible Navier-Stokes solver:" << std::endl;
 
-  application->setup();
+  AssertThrow(application->main.get(), dealii::ExcMessage("Domain main is uninitialized."));
+  AssertThrow(application->precursor.get(),
+              dealii::ExcMessage("Domain precursor is uninitialized."));
+
+  // main domain
+  application->main->setup(grid_main, mapping_main, {"Main"});
+
+  // precursor domain
+  if(application->precursor_is_active())
+  {
+    application->precursor->setup(grid_precursor, mapping_precursor, {"Precursor"});
+
+    // make some additional checks (i.e. enforce constraints between main and precursor
+    // parameters)
+    consistency_checks();
+  }
 
   // constant vs. adaptive time stepping
   use_adaptive_time_stepping = application->main->get_parameters().adaptive_time_stepping;
 
-  /*
-   * main domain
-   */
-  main.setup(application->main, "main", mpi_comm, is_test);
+  // setup "solvers"
+  solver_main.setup(application->main, grid_main, mapping_main, "main", mpi_comm, is_test);
 
-  /*
-   * precursor domain
-   */
   if(application->precursor_is_active())
   {
-    precursor.setup(application->precursor, "precursor", mpi_comm, is_test);
+    solver_precursor.setup(
+      application->precursor, grid_precursor, mapping_precursor, "precursor", mpi_comm, is_test);
   }
 
   timer_tree.insert({"Incompressible flow", "Setup"}, timer.wall_time());
@@ -156,7 +204,7 @@ Driver<dim, Number>::solve() const
     do
     {
       // advance one time step for precursor domain
-      precursor.time_integrator->advance_one_timestep();
+      solver_precursor.time_integrator->advance_one_timestep();
 
       // Note that the coupling of both solvers via the inflow boundary conditions is
       // performed in the postprocessing step of the solver for the precursor domain,
@@ -164,7 +212,7 @@ Driver<dim, Number>::solve() const
       // solver for the actual domain to evaluate the boundary conditions.
 
       // advance one time step for actual domain
-      main.time_integrator->advance_one_timestep();
+      solver_main.time_integrator->advance_one_timestep();
 
       // Both domains have already calculated the new, adaptive time step size individually in
       // function advance_one_timestep(). Here, we have to synchronize the time step size for
@@ -173,11 +221,12 @@ Driver<dim, Number>::solve() const
       {
         synchronize_time_step_size();
       }
-    } while(not(precursor.time_integrator->finished()) or not(main.time_integrator->finished()));
+    } while(not(solver_precursor.time_integrator->finished()) or
+            not(solver_main.time_integrator->finished()));
   }
   else
   {
-    main.time_integrator->timeloop();
+    solver_main.time_integrator->timeloop();
   }
 }
 
@@ -196,11 +245,11 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 
   pcout << std::endl << "Precursor:" << std::endl;
 
-  precursor.time_integrator->print_iterations();
+  solver_precursor.time_integrator->print_iterations();
 
   pcout << std::endl << "Main:" << std::endl;
 
-  main.time_integrator->print_iterations();
+  solver_main.time_integrator->print_iterations();
 
   // Wall times
   pcout << std::endl << "Wall times for incompressible Navier-Stokes solver:" << std::endl;
@@ -208,10 +257,12 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   timer_tree.insert({"Incompressible flow"}, total_time);
 
   timer_tree.insert({"Incompressible flow"},
-                    precursor.time_integrator->get_timings(),
+                    solver_precursor.time_integrator->get_timings(),
                     "Timeloop precursor");
 
-  timer_tree.insert({"Incompressible flow"}, main.time_integrator->get_timings(), "Timeloop main");
+  timer_tree.insert({"Incompressible flow"},
+                    solver_main.time_integrator->get_timings(),
+                    "Timeloop main");
 
   pcout << std::endl << "Timings for level 1:" << std::endl;
   timer_tree.print_level(pcout, 1);

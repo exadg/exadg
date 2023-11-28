@@ -73,7 +73,6 @@ public:
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       parameter_file(parameter_file)
   {
-    grid = std::make_shared<Grid<dim>>();
   }
 
   virtual ~Domain()
@@ -81,7 +80,9 @@ public:
   }
 
   void
-  setup(std::vector<std::string> const & subsection_names)
+  setup(std::shared_ptr<Grid<dim>> &            grid,
+        std::shared_ptr<dealii::Mapping<dim>> & mapping,
+        std::vector<std::string> const &        subsection_names)
   {
     parse_parameters(subsection_names);
 
@@ -95,7 +96,8 @@ public:
 
     // grid
     GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
-    create_grid();
+    grid = std::make_shared<Grid<dim>>();
+    create_grid(*grid, mapping);
     print_grid_info(pcout, *grid);
 
     // boundary conditions
@@ -115,18 +117,6 @@ public:
   get_parameters() const
   {
     return param;
-  }
-
-  std::shared_ptr<Grid<dim> const>
-  get_grid() const
-  {
-    return grid;
-  }
-
-  std::shared_ptr<dealii::Mapping<dim> const>
-  get_mapping() const
-  {
-    return mapping;
   }
 
   std::shared_ptr<BoundaryDescriptor<dim> const>
@@ -158,10 +148,6 @@ protected:
 
   Parameters param;
 
-  std::shared_ptr<Grid<dim>> grid;
-
-  std::shared_ptr<dealii::Mapping<dim>> mapping;
-
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
 
@@ -173,7 +159,7 @@ private:
   set_parameters() = 0;
 
   virtual void
-  create_grid() = 0;
+  create_grid(Grid<dim> & grid, std::shared_ptr<dealii::Mapping<dim>> & mapping) = 0;
 
   virtual void
   set_boundary_descriptor() = 0;
@@ -210,26 +196,6 @@ public:
       precursor->add_parameters(prm, {"Precursor"});
   }
 
-  void
-  setup()
-  {
-    AssertThrow(main.get(), dealii::ExcMessage("Domain main is uninitialized."));
-    AssertThrow(precursor.get(), dealii::ExcMessage("Domain precursor is uninitialized."));
-
-    // main domain
-    main->setup({"Main"});
-
-    // precursor domain
-    if(precursor_is_active())
-    {
-      precursor->setup({"Precursor"});
-
-      // make some additional checks (i.e. enforce constraints between main and precursor
-      // parameters)
-      consistency_checks();
-    }
-  }
-
   bool
   precursor_is_active() const
   {
@@ -255,42 +221,6 @@ protected:
   // to simulate with precursor. Set this variable to true in a derived class in order to switch off
   // the precursor.
   bool switch_off_precursor;
-
-private:
-  // performs some additional parameter checks
-  void
-  consistency_checks() const
-  {
-    AssertThrow(precursor->get_parameters().ale_formulation == false,
-                dealii::ExcMessage("not implemented."));
-    AssertThrow(main->get_parameters().ale_formulation == false,
-                dealii::ExcMessage("not implemented."));
-
-    AssertThrow(precursor->get_parameters().calculation_of_time_step_size ==
-                  main->get_parameters().calculation_of_time_step_size,
-                dealii::ExcMessage(
-                  "Type of time step calculation has to be the same for both domains."));
-
-    AssertThrow(precursor->get_parameters().adaptive_time_stepping ==
-                  main->get_parameters().adaptive_time_stepping,
-                dealii::ExcMessage(
-                  "Type of time step calculation has to be the same for both domains."));
-
-    AssertThrow(precursor->get_parameters().solver_type == SolverType::Unsteady and
-                  main->get_parameters().solver_type == SolverType::Unsteady,
-                dealii::ExcMessage("This is an unsteady solver. Check parameters."));
-
-    // For the two-domain solver the parameter start_with_low_order has to be true.
-    // This is due to the fact that the setup function of the time integrator initializes
-    // the solution at previous time instants t_0 - dt, t_0 - 2*dt, ... in case of
-    // start_with_low_order == false. However, the combined time step size
-    // is not known at this point since the two domains have to first communicate with each other
-    // in order to find the minimum time step size. Hence, the easiest way to avoid these kind of
-    // inconsistencies is to preclude the case start_with_low_order == false.
-    AssertThrow(precursor->get_parameters().start_with_low_order == true and
-                  main->get_parameters().start_with_low_order == true,
-                dealii::ExcMessage("start_with_low_order has to be true for two-domain solver."));
-  }
 };
 
 } // namespace Precursor

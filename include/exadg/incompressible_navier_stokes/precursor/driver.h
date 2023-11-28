@@ -47,17 +47,19 @@ class Solver
 {
 public:
   void
-  setup(std::shared_ptr<Domain<dim, Number>> & domain,
-        std::string const &                    field,
-        MPI_Comm const &                       mpi_comm,
-        bool const                             is_test)
+  setup(std::shared_ptr<Domain<dim, Number>> &              domain,
+        std::shared_ptr<Grid<dim> const> const &            grid,
+        std::shared_ptr<dealii::Mapping<dim> const> const & mapping,
+        std::string const &                                 field,
+        MPI_Comm const &                                    mpi_comm,
+        bool const                                          is_test)
   {
     // ALE is not used for this solver
     std::shared_ptr<HelpersALE<Number>> helpers_ale_dummy;
 
     // initialize pde_operator
-    pde_operator = create_operator<dim, Number>(domain->get_grid(),
-                                                domain->get_mapping(),
+    pde_operator = create_operator<dim, Number>(grid,
+                                                mapping,
                                                 domain->get_boundary_descriptor(),
                                                 domain->get_field_functions(),
                                                 domain->get_parameters(),
@@ -70,9 +72,8 @@ public:
 
     matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
     if(domain->get_parameters().use_cell_based_face_loops)
-      Categorization::do_cell_based_loops(*domain->get_grid()->triangulation,
-                                          matrix_free_data->data);
-    matrix_free->reinit(*domain->get_mapping(),
+      Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
+    matrix_free->reinit(*mapping,
                         matrix_free_data->get_dof_handler_vector(),
                         matrix_free_data->get_constraint_vector(),
                         matrix_free_data->get_quadrature_vector(),
@@ -141,6 +142,9 @@ private:
   void
   synchronize_time_step_size() const;
 
+  void
+  consistency_checks() const;
+
   // MPI communicator
   MPI_Comm const mpi_comm;
 
@@ -153,7 +157,11 @@ private:
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
-  Solver<dim, Number> main, precursor;
+  std::shared_ptr<Grid<dim>> grid_main, grid_precursor;
+
+  std::shared_ptr<dealii::Mapping<dim>> mapping_main, mapping_precursor;
+
+  Solver<dim, Number> solver_main, solver_precursor;
 
   bool use_adaptive_time_stepping;
 

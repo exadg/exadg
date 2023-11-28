@@ -161,6 +161,11 @@ private:
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
+  // Grid and mapping
+  std::shared_ptr<Grid<dim>> grid;
+
+  std::shared_ptr<dealii::Mapping<dim>> mapping;
+
   // moving mapping (ALE)
   std::shared_ptr<DeformedMappingBase<dim, Number>> grid_motion;
 
