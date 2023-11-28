@@ -62,9 +62,9 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up Poisson solver:" << std::endl;
 
-  application->setup();
+  application->setup(grid, mapping);
 
-  poisson->setup(application, mpi_comm, is_throughput_study);
+  poisson->setup(application, grid, mapping, mpi_comm, is_throughput_study);
 
   timer_tree.insert({"Poisson", "Setup"}, timer.wall_time());
 }
