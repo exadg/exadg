@@ -158,17 +158,17 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up incompressible Navier-Stokes solver:" << std::endl;
 
-  AssertThrow(application->main.get(), dealii::ExcMessage("Domain main is uninitialized."));
-  AssertThrow(application->precursor.get(),
-              dealii::ExcMessage("Domain precursor is uninitialized."));
-
   // main domain
-  application->main->setup(grid_main, mapping_main, {"Main"});
+  AssertThrow(application->main.get(), dealii::ExcMessage("Domain main is uninitialized."));
+  solver_main.setup(application->main, {"Main"}, "main", mpi_comm, is_test);
 
   // precursor domain
   if(application->precursor_is_active())
   {
-    application->precursor->setup(grid_precursor, mapping_precursor, {"Precursor"});
+    AssertThrow(application->precursor.get(),
+                dealii::ExcMessage("Domain precursor is uninitialized."));
+
+    solver_precursor.setup(application->precursor, {"Precursor"}, "precursor", mpi_comm, is_test);
 
     // make some additional checks (i.e. enforce constraints between main and precursor
     // parameters)
@@ -177,15 +177,6 @@ Driver<dim, Number>::setup()
 
   // constant vs. adaptive time stepping
   use_adaptive_time_stepping = application->main->get_parameters().adaptive_time_stepping;
-
-  // setup "solvers"
-  solver_main.setup(application->main, grid_main, mapping_main, "main", mpi_comm, is_test);
-
-  if(application->precursor_is_active())
-  {
-    solver_precursor.setup(
-      application->precursor, grid_precursor, mapping_precursor, "precursor", mpi_comm, is_test);
-  }
 
   timer_tree.insert({"Incompressible flow", "Setup"}, timer.wall_time());
 }

@@ -47,13 +47,15 @@ class Solver
 {
 public:
   void
-  setup(std::shared_ptr<Domain<dim, Number>> &              domain,
-        std::shared_ptr<Grid<dim> const> const &            grid,
-        std::shared_ptr<dealii::Mapping<dim> const> const & mapping,
-        std::string const &                                 field,
-        MPI_Comm const &                                    mpi_comm,
-        bool const                                          is_test)
+  setup(std::shared_ptr<Domain<dim, Number>> & domain,
+        std::vector<std::string> const &       subsection_names_parameters,
+        std::string const &                    field,
+        MPI_Comm const &                       mpi_comm,
+        bool const                             is_test)
   {
+    // setup application
+    domain->setup(grid, mapping, subsection_names_parameters);
+
     // ALE is not used for this solver
     std::shared_ptr<HelpersALE<Number>> helpers_ale_dummy;
 
@@ -92,6 +94,12 @@ public:
 
     time_integrator->setup(domain->get_parameters().restarted_simulation);
   }
+
+  /*
+   * Grid and mapping
+   */
+  std::shared_ptr<Grid<dim>>            grid;
+  std::shared_ptr<dealii::Mapping<dim>> mapping;
 
   /*
    * Spatial discretization
@@ -156,10 +164,6 @@ private:
 
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
-
-  std::shared_ptr<Grid<dim>> grid_main, grid_precursor;
-
-  std::shared_ptr<dealii::Mapping<dim>> mapping_main, mapping_precursor;
 
   Solver<dim, Number> solver_main, solver_precursor;
 
