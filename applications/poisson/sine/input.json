@@ -1,17 +1,17 @@
 {
     "General": {
         "Precision": "double",
-        "Dim": "3",
+        "Dim": "2",
         "IsTest": "false"
     },
     "SpatialResolution": {
-        "DegreeMin": "1",
-        "DegreeMax": "15",
+        "DegreeMin": "3",
+        "DegreeMax": "3",
         "RefineSpaceMin": "2",
         "RefineSpaceMax": "2"
     },
     "Application": {
-        "MeshType": "Cartesian"
+        "MeshType": "Curvilinear"
     },
     "Grid": {
         "FileName": "applications/poisson/sine/external_grids/hypercube.e"
@@ -19,6 +19,6 @@
     "Output": {
         "OutputDirectory": "output/poisson/sine/",
         "OutputName": "test",
-        "WriteOutput": "false"
+        "WriteOutput": "true"
     }
 }

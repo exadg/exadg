@@ -145,9 +145,8 @@ private:
     }
     else if(this->param.grid.element_type == ElementType::Hypercube)
     {
-      this->param.grid.triangulation_type =
-        TriangulationType::FullyDistributed; // TODO //Distributed;
-      this->param.mapping_degree                    = 3;
+      this->param.grid.triangulation_type = TriangulationType::Distributed; // TODO //Distributed;
+      this->param.mapping_degree          = 2;
       this->param.grid.create_coarse_triangulations = false; // can also be set to true if desired
     }
     this->param.grid.file_name = this->grid_parameters.file_name;
@@ -162,7 +161,7 @@ private:
     this->param.solver_data.max_iter        = 1e4;
     this->param.compute_performance_metrics = true;
     this->param.preconditioner              = Preconditioner::Multigrid;
-    this->param.multigrid_data.type         = MultigridType::cphMG;
+    this->param.multigrid_data.type         = MultigridType::hMG; // cphMG;
     this->param.multigrid_data.p_sequence   = PSequenceType::Bisect;
     // MG smoother
     this->param.multigrid_data.smoother_data.smoother        = MultigridSmoother::Chebyshev;
@@ -255,12 +254,6 @@ private:
           tria.add_periodicity(periodic_face_pairs);
         }
 
-        if(vector_local_refinements.size() > 0)
-          refine_local(tria, vector_local_refinements);
-
-        if(global_refinements > 0)
-          tria.refine_global(global_refinements);
-
         if(mesh_type == MeshType::Cartesian)
         {
           // do nothing
@@ -268,17 +261,31 @@ private:
         else if(mesh_type == MeshType::Curvilinear)
         {
           // TODO
-          double const       deformation = 0.15;
-          unsigned int const frequency   = 2;
-          apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
+          //          double const       deformation = 0.15;
+          //          unsigned int const frequency   = 2;
+          //          apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
 
           // TODO boundary layer manifold
-          //          apply_boundary_layer_manifold(tria, left, right, deformation_factor);
+          //		  apply_boundary_layer_manifold(tria, left, right, deformation_factor);
+
+          dealii::Tensor<1, dim> dimensions;
+          for(unsigned int d = 0; d < dim; ++d)
+          {
+            dimensions[d] = right - left;
+          }
+
+          apply_boundary_layer_manifold(tria, dimensions);
         }
         else
         {
           AssertThrow(false, dealii::ExcMessage("not implemented."));
         }
+
+        if(vector_local_refinements.size() > 0)
+          refine_local(tria, vector_local_refinements);
+
+        if(global_refinements > 0)
+          tria.refine_global(global_refinements);
       };
 
     GridUtilities::create_triangulation_with_multigrid<dim>(grid,
@@ -289,7 +296,7 @@ private:
                                                             {} /* no local refinements */);
 
     // TODO
-    apply_boundary_layer_manifold(*grid.triangulation, left, right, deformation_factor);
+    //    apply_boundary_layer_manifold(*grid.triangulation, left, right, deformation_factor);
 
     // TODO
     //    // use MappingDoFVector
@@ -360,7 +367,7 @@ private:
   MeshType mesh_type = MeshType::Cartesian;
 
   // for boundary layer manifold / mesh deformation
-  double const deformation_factor = 1.5;
+  double const deformation_factor = 2.0;
 
   std::shared_ptr<DeformedMappingFunction<dim, Number>> mapping_dof_vector;
 };
