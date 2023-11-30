@@ -268,9 +268,9 @@ private:
         else if(mesh_type == MeshType::Curvilinear)
         {
           // TODO
-          //          double const       deformation = 0.15;
-          //          unsigned int const frequency   = 2;
-          //          apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
+          double const       deformation = 0.15;
+          unsigned int const frequency   = 2;
+          apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
 
           // TODO boundary layer manifold
           //          apply_boundary_layer_manifold(tria, left, right, deformation_factor);
@@ -288,22 +288,20 @@ private:
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
 
-    apply_boundary_layer_manifold(*this->grid->triangulation, left, right, deformation_factor);
+    // TODO
+    apply_boundary_layer_manifold(*grid.triangulation, left, right, deformation_factor);
 
     // TODO
     //    // use MappingDoFVector
     //    std::shared_ptr<dealii::Function<dim>> mesh_deformation;
-    //    mesh_deformation.reset(new BoundaryLayerMeshMovementFunction<dim>(left, right,
-    //    deformation_factor)); mapping_dof_vector = std::make_shared<DeformedMappingFunction<dim,
-    //    Number>>(
-    //      this->mapping,
-    //      this->param.mapping_degree,
-    //      *this->grid->triangulation,
-    //	  mesh_deformation,
-    //      0.0 /* time */);
+    //    mesh_deformation.reset(
+    //      new BoundaryLayerMeshMovementFunction<dim>(left, right, deformation_factor));
+    //    mapping_dof_vector = std::make_shared<DeformedMappingFunction<dim, Number>>(
+    //      mapping, this->param.mapping_degree, *grid.triangulation, mesh_deformation, 0.0 /* time
+    //      */);
     //
     //    // reset the mapping object to mapping_dof_vector
-    //    this->mapping = mapping_dof_vector;
+    //    mapping = mapping_dof_vector;
   }
 
   void
