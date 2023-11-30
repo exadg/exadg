@@ -48,6 +48,7 @@ public:
     dealii::Point<dim> space_point;
     for(unsigned int d = 0; d < dim; ++d)
       space_point(d) = chart_point(d) + sinval;
+
     return space_point;
   }
 
@@ -60,15 +61,16 @@ public:
       one(d) = 1.;
 
     // Newton iteration to solve the nonlinear equation given by the point
-    dealii::Tensor<1, dim> sinvals;
+    dealii::Tensor<1, dim> sinvals, residual;
+
     for(unsigned int d = 0; d < dim; ++d)
       sinvals[d] = std::sin(frequency * dealii::numbers::PI * (x(d) - left) / (right - left));
-
     double sinval = deformation;
     for(unsigned int d = 0; d < dim; ++d)
       sinval *= sinvals[d];
-    dealii::Tensor<1, dim> residual = space_point - x - sinval * one;
-    unsigned int           its      = 0;
+    residual = space_point - (x + sinval * one);
+
+    unsigned int its = 0;
     while(residual.norm() > 1e-12 and its < 100)
     {
       dealii::Tensor<2, dim> jacobian;
@@ -90,14 +92,16 @@ public:
 
       for(unsigned int d = 0; d < dim; ++d)
         sinvals[d] = std::sin(frequency * dealii::numbers::PI * (x(d) - left) / (right - left));
-
       sinval = deformation;
       for(unsigned int d = 0; d < dim; ++d)
         sinval *= sinvals[d];
-      residual = space_point - x - sinval * one;
+      residual = space_point - (x + sinval * one);
+
       ++its;
     }
+
     AssertThrow(residual.norm() < 1e-12, dealii::ExcMessage("Newton for point did not converge."));
+
     return x;
   }
 
@@ -123,6 +127,123 @@ apply_deformed_cube_manifold(dealii::Triangulation<dim> & triangulation,
                              unsigned int const           frequency)
 {
   static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
+  triangulation.set_all_manifold_ids(1);
+  triangulation.set_manifold(1, manifold);
+
+  // the vertices need to be placed correctly according to the manifold description such that mesh
+  // refinements and high-order mappings are done correctly (which invoke pull-back and push-forward
+  // operations)
+  std::vector<bool> vertex_touched(triangulation.n_vertices(), false);
+
+  for(auto const & cell : triangulation.cell_iterators())
+  {
+    for(unsigned int const v : cell->vertex_indices())
+    {
+      if(vertex_touched[cell->vertex_index(v)] == false)
+      {
+        dealii::Point<dim> & vertex           = cell->vertex(v);
+        dealii::Point<dim>   new_point        = manifold.push_forward(vertex);
+        vertex                                = new_point;
+        vertex_touched[cell->vertex_index(v)] = true;
+      }
+    }
+  }
+}
+
+template<int dim>
+class BoundaryLayerManifold : public dealii::ChartManifold<dim, dim, dim>
+{
+public:
+  BoundaryLayerManifold(double const left, double const right, double const deformation_factor)
+    : left(left), right(right), deformation_factor(deformation_factor)
+  {
+  }
+
+  dealii::Point<dim>
+  push_forward(dealii::Point<dim> const & chart_point) const override
+  {
+    dealii::Tensor<1, dim> deformation;
+    for(unsigned int d = 0; d < dim; ++d)
+    {
+      if(d == 0)
+        deformation[d] =
+          std::exp(deformation_factor * (chart_point(d) - left) / (right - left)) - 1.0;
+      else
+        deformation[d] = 0;
+    }
+
+    dealii::Point<dim> space_point = chart_point + deformation;
+
+    return space_point;
+  }
+
+  dealii::Point<dim>
+  pull_back(dealii::Point<dim> const & space_point) const override
+  {
+    std::cout << "pull back" << std::endl;
+
+    dealii::Point<dim> x = space_point;
+
+    // Newton iteration to solve the nonlinear equation given by the point
+    dealii::Tensor<1, dim> deformation, residual;
+    for(unsigned int d = 0; d < dim; ++d)
+    {
+      if(d == 0)
+        deformation[d] = std::exp(deformation_factor * (x(d) - left) / (right - left)) - 1.0;
+      else
+        deformation[d] = 0;
+    }
+    residual = space_point - (x + deformation);
+
+    unsigned int its = 0;
+    while(residual.norm() > 1e-12 and its < 100)
+    {
+      dealii::Tensor<2, dim> jacobian;
+      for(unsigned int d = 0; d < dim; ++d)
+      {
+        if(d == 0)
+          jacobian[d][d] = 1. + (deformation_factor / (right - left)) * deformation[d];
+        else
+          jacobian[d][d] = 1.;
+      }
+
+      x += invert(jacobian) * residual;
+
+      for(unsigned int d = 0; d < dim; ++d)
+      {
+        if(d == 0)
+          deformation[d] = std::exp(deformation_factor * (x(d) - left) / (right - left)) - 1.0;
+        else
+          deformation[d] = 0;
+      }
+      residual = space_point - (x + deformation);
+
+      ++its;
+    }
+    AssertThrow(residual.norm() < 1e-12, dealii::ExcMessage("Newton for point did not converge."));
+    return x;
+  }
+
+  std::unique_ptr<dealii::Manifold<dim>>
+  clone() const override
+  {
+    return std::make_unique<BoundaryLayerManifold<dim>>(left, right, deformation_factor);
+  }
+
+private:
+  double const left;
+  double const right;
+  double const deformation_factor;
+};
+
+template<int dim>
+void
+apply_boundary_layer_manifold(dealii::Triangulation<dim> & triangulation,
+                              double const                 left,
+                              double const                 right,
+                              double const                 deformation_factor)
+{
+  static BoundaryLayerManifold<dim> manifold(left, right, deformation_factor);
   triangulation.set_all_manifold_ids(1);
   triangulation.set_manifold(1, manifold);
 
