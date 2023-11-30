@@ -429,6 +429,7 @@ create_triangulation_with_multigrid(
 {
   if(involves_h_multigrid)
   {
+    // Make sure that we create coarse triangulations in case of simplex meshes.
     if(data.element_type == ElementType::Simplex)
     {
       AssertThrow(data.create_coarse_triangulations == true,
@@ -437,6 +438,7 @@ create_triangulation_with_multigrid(
                     "in order to use h-multigrid for simplex meshes."));
     }
 
+    // create fine triangulation
     GridUtilities::create_triangulation(grid.triangulation,
                                         grid.periodic_face_pairs,
                                         mpi_comm,
@@ -446,8 +448,16 @@ create_triangulation_with_multigrid(
                                         data.n_refine_global,
                                         vector_local_refinements);
 
-    // Depending on the type of multigrid implementation, the coarse triangulations need to be
-    // created explicitly.
+    // Make sure that we create coarse triangulations in case of meshes with hanging nodes.
+    if(grid.triangulation->has_hanging_nodes())
+    {
+      AssertThrow(data.create_coarse_triangulations == true,
+                  dealii::ExcMessage(
+                    "You need to set GridData::create_coarse_triangulations = true "
+                    "in order to use h-multigrid for meshes with hanging nodes."));
+    }
+
+    // create coarse triangulations
     if(data.create_coarse_triangulations)
     {
       GridUtilities::create_coarse_triangulations(*grid.triangulation,
@@ -461,7 +471,8 @@ create_triangulation_with_multigrid(
   }
   else
   {
-    // If no h-multigrid is involved, simply re-direct to the other function above.
+    // If no h-multigrid is involved, simply re-direct to the other function that creates the fine
+    // triangulation only.
     GridUtilities::create_triangulation<dim>(
       grid, mpi_comm, data, lambda_create_triangulation, vector_local_refinements);
   }
