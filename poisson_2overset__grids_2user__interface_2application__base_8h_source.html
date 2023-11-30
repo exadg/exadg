@@ -225,197 +225,153 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>      pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),</div>
 <div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>      parameter_file(parameter_file)</div>
 <div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>  {</div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>    grid = std::make_shared&lt;Grid&lt;dim&gt;&gt;();</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  }</div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span> </div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  <span class="keyword">virtual</span> <a class="code hl_class" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1Domain.html">~Domain</a>()</div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  {</div>
-<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  }</div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span> </div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>  setup_pre(std::vector&lt;std::string&gt; <span class="keyword">const</span> &amp; subsection_names)</div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  {</div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>    <span class="comment">// parameters</span></div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>    parse_parameters(subsection_names);</div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span> </div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>    <span class="comment">// set resolution parameters</span></div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>    param.grid.n_refine_global = this-&gt;resolution.refine_space;</div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>    param.degree               = this-&gt;resolution.degree;</div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span> </div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>    set_parameters();</div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>    param.check();</div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>    param.print(pcout, <span class="stringliteral">&quot;List of parameters:&quot;</span>);</div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span> </div>
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>    <span class="comment">// grid</span></div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>    GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);</div>
-<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>    create_grid();</div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>    print_grid_info(pcout, *grid);</div>
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>  }</div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span> </div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  setup_post()</div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>  {</div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>    <span class="comment">// boundary conditions</span></div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>    boundary_descriptor = std::make_shared&lt;BoundaryDescriptor&lt;rank, dim&gt;&gt;();</div>
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>    set_boundary_descriptor();</div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>    verify_boundary_conditions(*boundary_descriptor, *grid);</div>
-<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span> </div>
-<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>    <span class="comment">// field functions</span></div>
-<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>    field_functions = std::make_shared&lt;FieldFunctions&lt;dim&gt;&gt;();</div>
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>    set_field_functions();</div>
-<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>  }</div>
-<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span> </div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>  <span class="keyword">virtual</span> std::shared_ptr&lt;Poisson::PostProcessorBase&lt;dim, n_components, Number&gt;&gt;</div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  create_postprocessor() = 0;</div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span> </div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>  <a class="code hl_class" href="classExaDG_1_1Poisson_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;</div>
-<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>  get_parameters()<span class="keyword"> const</span></div>
-<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>    <span class="keywordflow">return</span> param;</div>
-<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>  }</div>
-<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span> </div>
-<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>  std::shared_ptr&lt;Grid&lt;dim&gt; <span class="keyword">const</span>&gt;</div>
-<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  get_grid()<span class="keyword"> const</span></div>
-<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>    <span class="keywordflow">return</span> grid;</div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  }</div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span> </div>
-<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;</div>
-<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>  get_mapping()<span class="keyword"> const</span></div>
-<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>    <span class="keywordflow">return</span> mapping;</div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>  }</div>
-<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span> </div>
-<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>  std::shared_ptr&lt;BoundaryDescriptor&lt;rank, dim&gt; <span class="keyword">const</span>&gt;</div>
-<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>  get_boundary_descriptor()<span class="keyword"> const</span></div>
-<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>    <span class="keywordflow">return</span> boundary_descriptor;</div>
-<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>  }</div>
-<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span> </div>
-<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>  std::shared_ptr&lt;FieldFunctions&lt;dim&gt; <span class="keyword">const</span>&gt;</div>
-<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>  get_field_functions()<span class="keyword"> const</span></div>
-<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>    <span class="keywordflow">return</span> field_functions;</div>
-<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>  }</div>
-<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span> </div>
-<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span><span class="keyword">protected</span>:</div>
-<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>  parse_parameters(std::vector&lt;std::string&gt; <span class="keyword">const</span> &amp; subsection_names)</div>
-<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>  {</div>
-<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>    dealii::ParameterHandler prm;</div>
-<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>    this-&gt;add_parameters(prm, subsection_names);</div>
-<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>    prm.parse_input(parameter_file, <span class="stringliteral">&quot;&quot;</span>, <span class="keyword">true</span>, <span class="keyword">true</span>);</div>
-<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>  }</div>
-<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span> </div>
-<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>  MPI_Comm <span class="keyword">const</span> &amp; mpi_comm;</div>
-<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span> </div>
-<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>  dealii::ConditionalOStream pcout;</div>
-<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span> </div>
-<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>  <a class="code hl_class" href="classExaDG_1_1Poisson_1_1Parameters.html">Parameters</a> param;</div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span> </div>
-<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>  std::shared_ptr&lt;Grid&lt;dim&gt;&gt; grid;</div>
-<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span> </div>
-<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt;&gt; mapping;</div>
-<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span> </div>
-<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>  std::shared_ptr&lt;BoundaryDescriptor&lt;rank, dim&gt;&gt; boundary_descriptor;</div>
-<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>  std::shared_ptr&lt;FieldFunctions&lt;dim&gt;&gt;           field_functions;</div>
-<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span> </div>
-<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  std::string parameter_file;</div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  }</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span> </div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>  <span class="keyword">virtual</span> <a class="code hl_class" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1Domain.html">~Domain</a>()</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  {</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  }</div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span> </div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  setup_pre(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Grid.html">Grid&lt;dim&gt;</a>&gt; &amp;            grid,</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>            std::shared_ptr&lt;dealii::Mapping&lt;dim&gt;&gt; &amp; mapping,</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>            std::vector&lt;std::string&gt; <span class="keyword">const</span> &amp;        subsection_names)</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>  {</div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>    <span class="comment">// parameters</span></div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>    parse_parameters(subsection_names);</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span> </div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>    <span class="comment">// set resolution parameters</span></div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>    param.grid.n_refine_global = this-&gt;resolution.refine_space;</div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>    param.degree               = this-&gt;resolution.degree;</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span> </div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>    set_parameters();</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>    param.check();</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>    param.print(pcout, <span class="stringliteral">&quot;List of parameters:&quot;</span>);</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span> </div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>    <span class="comment">// grid</span></div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>    GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>    grid = std::make_shared&lt;Grid&lt;dim&gt;&gt;();</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>    create_grid(*grid, mapping);</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>    print_grid_info(pcout, *grid);</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  }</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span> </div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>  setup_post(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Grid.html">Grid&lt;dim&gt;</a> <span class="keyword">const</span>&gt; <span class="keyword">const</span> &amp; grid)</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>  {</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>    <span class="comment">// boundary conditions</span></div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>    boundary_descriptor = std::make_shared&lt;BoundaryDescriptor&lt;rank, dim&gt;&gt;();</div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>    set_boundary_descriptor();</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>    verify_boundary_conditions(*boundary_descriptor, *grid);</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span> </div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>    <span class="comment">// field functions</span></div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>    field_functions = std::make_shared&lt;FieldFunctions&lt;dim&gt;&gt;();</div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>    set_field_functions();</div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>  }</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span> </div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>  <span class="keyword">virtual</span> std::shared_ptr&lt;Poisson::PostProcessorBase&lt;dim, n_components, Number&gt;&gt;</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>  create_postprocessor() <span class="keyword">const</span> = 0;</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span> </div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>  <a class="code hl_class" href="classExaDG_1_1Poisson_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>  get_parameters()<span class="keyword"> const</span></div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>    <span class="keywordflow">return</span> param;</div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>  }</div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span> </div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>  std::shared_ptr&lt;BoundaryDescriptor&lt;rank, dim&gt; <span class="keyword">const</span>&gt;</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>  get_boundary_descriptor()<span class="keyword"> const</span></div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>    <span class="keywordflow">return</span> boundary_descriptor;</div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>  }</div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span> </div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>  std::shared_ptr&lt;FieldFunctions&lt;dim&gt; <span class="keyword">const</span>&gt;</div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>  get_field_functions()<span class="keyword"> const</span></div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>    <span class="keywordflow">return</span> field_functions;</div>
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>  }</div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span> </div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span><span class="keyword">protected</span>:</div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>  parse_parameters(std::vector&lt;std::string&gt; <span class="keyword">const</span> &amp; subsection_names)</div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>  {</div>
+<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>    dealii::ParameterHandler prm;</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>    this-&gt;add_parameters(prm, subsection_names);</div>
+<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>    prm.parse_input(parameter_file, <span class="stringliteral">&quot;&quot;</span>, <span class="keyword">true</span>, <span class="keyword">true</span>);</div>
+<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>  }</div>
+<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span> </div>
+<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>  MPI_Comm <span class="keyword">const</span> &amp; mpi_comm;</div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span> </div>
+<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>  dealii::ConditionalOStream pcout;</div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span> </div>
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>  <a class="code hl_class" href="classExaDG_1_1Poisson_1_1Parameters.html">Parameters</a> param;</div>
+<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span> </div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>  std::shared_ptr&lt;BoundaryDescriptor&lt;rank, dim&gt;&gt; boundary_descriptor;</div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>  std::shared_ptr&lt;FieldFunctions&lt;dim&gt;&gt;           field_functions;</div>
+<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span> </div>
+<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>  std::string parameter_file;</div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span> </div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>  <a class="code hl_struct" href="structExaDG_1_1SpatialResolutionParameters.html">SpatialResolutionParameters</a> resolution;</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span> </div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>  <a class="code hl_struct" href="structExaDG_1_1OutputParameters.html">OutputParameters</a> output_parameters;</div>
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span> </div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>  set_parameters() = 0;</div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span> </div>
+<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>  create_grid(<a class="code hl_class" href="classExaDG_1_1Grid.html">Grid&lt;dim&gt;</a> &amp; grid, std::shared_ptr&lt;dealii::Mapping&lt;dim&gt;&gt; &amp; mapping) = 0;</div>
+<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span> </div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  set_boundary_descriptor() = 0;</div>
 <div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span> </div>
-<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>  <a class="code hl_struct" href="structExaDG_1_1SpatialResolutionParameters.html">SpatialResolutionParameters</a> resolution;</div>
-<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span> </div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>  <a class="code hl_struct" href="structExaDG_1_1OutputParameters.html">OutputParameters</a> output_parameters;</div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span> </div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>  set_parameters() = 0;</div>
-<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span> </div>
-<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>  create_grid() = 0;</div>
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span> </div>
-<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>  set_boundary_descriptor() = 0;</div>
-<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span> </div>
-<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>  set_field_functions() = 0;</div>
-<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>};</div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  set_field_functions() = 0;</div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>};</div>
 </div>
-<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span> </div>
-<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keywordtype">int</span> n_components, <span class="keyword">typename</span> Number&gt;</div>
-<div class="foldopen" id="foldopen00265" data-start="{" data-end="};">
-<div class="line"><a id="l00265" name="l00265"></a><span class="lineno"><a class="line" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">  265</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">ApplicationBase</a></div>
-<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>{</div>
-<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>  <a class="code hl_class" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">ApplicationBase</a>(std::string parameter_file, MPI_Comm <span class="keyword">const</span> &amp; comm)</div>
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>    : mpi_comm(comm), parameter_file(parameter_file)</div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span> </div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keywordtype">int</span> n_components, <span class="keyword">typename</span> Number&gt;</div>
+<div class="foldopen" id="foldopen00251" data-start="{" data-end="};">
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno"><a class="line" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">  251</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">ApplicationBase</a></div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>{</div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>  <a class="code hl_class" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">ApplicationBase</a>(std::string parameter_file, MPI_Comm <span class="keyword">const</span> &amp; comm)</div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>    : mpi_comm(comm), parameter_file(parameter_file)</div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>  {</div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>  }</div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span> </div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>  add_parameters(dealii::ParameterHandler &amp; prm)</div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>  {</div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>    AssertThrow(domain1.get(), dealii::ExcMessage(<span class="stringliteral">&quot;Domain 1 is uninitialized.&quot;</span>));</div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>    AssertThrow(domain2.get(), dealii::ExcMessage(<span class="stringliteral">&quot;Domain 2 is uninitialized.&quot;</span>));</div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span> </div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>    domain1-&gt;add_parameters(prm, {<span class="stringliteral">&quot;Domain1&quot;</span>});</div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>    domain2-&gt;add_parameters(prm, {<span class="stringliteral">&quot;Domain2&quot;</span>});</div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>  }</div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span> </div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>  <span class="keyword">virtual</span> <a class="code hl_class" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">~ApplicationBase</a>()</div>
 <div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>  {</div>
 <div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>  }</div>
 <div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span> </div>
-<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>  add_parameters(dealii::ParameterHandler &amp; prm)</div>
-<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>  {</div>
-<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>    AssertThrow(domain1.get(), dealii::ExcMessage(<span class="stringliteral">&quot;Domain 1 is uninitialized.&quot;</span>));</div>
-<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>    AssertThrow(domain2.get(), dealii::ExcMessage(<span class="stringliteral">&quot;Domain 2 is uninitialized.&quot;</span>));</div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>  std::shared_ptr&lt;Domain&lt;dim, n_components, Number&gt;&gt; domain1, domain2;</div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span> </div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>  <span class="comment">// use &quot;-1&quot; since max() is defined invalid by deal.II</span></div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>  dealii::types::boundary_id boundary_id_overlap =</div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>    std::numeric_limits&lt;dealii::types::boundary_id&gt;::max() - 1;</div>
 <div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span> </div>
-<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>    domain1-&gt;add_parameters(prm, {<span class="stringliteral">&quot;Domain1&quot;</span>});</div>
-<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>    domain2-&gt;add_parameters(prm, {<span class="stringliteral">&quot;Domain1&quot;</span>});</div>
-<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>  }</div>
-<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span> </div>
-<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>  <span class="keyword">virtual</span> <a class="code hl_class" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">~ApplicationBase</a>()</div>
-<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>  {</div>
-<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>  }</div>
-<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span> </div>
-<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>  setup()</div>
-<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>  {</div>
-<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span>    AssertThrow(domain1.get(), dealii::ExcMessage(<span class="stringliteral">&quot;Domain 1 is uninitialized.&quot;</span>));</div>
-<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>    AssertThrow(domain2.get(), dealii::ExcMessage(<span class="stringliteral">&quot;Domain 2 is uninitialized.&quot;</span>));</div>
-<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span> </div>
-<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>    domain1-&gt;setup_pre({<span class="stringliteral">&quot;Domain1&quot;</span>});</div>
-<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>    domain2-&gt;setup_pre({<span class="stringliteral">&quot;Domain2&quot;</span>});</div>
-<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span> </div>
-<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>    set_boundary_ids();</div>
-<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span> </div>
-<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>    domain1-&gt;setup_post();</div>
-<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>    domain2-&gt;setup_post();</div>
-<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>  }</div>
-<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span> </div>
-<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span>  std::shared_ptr&lt;Domain&lt;dim, n_components, Number&gt;&gt; domain1, domain2;</div>
-<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span> </div>
-<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span><span class="keyword">protected</span>:</div>
-<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>  MPI_Comm <span class="keyword">const</span> &amp; mpi_comm;</div>
-<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span> </div>
-<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>  <span class="comment">// use &quot;-1&quot; since max() is defined invalid by deal.II</span></div>
-<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>  dealii::types::boundary_id boundary_id_overlap =</div>
-<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>    std::numeric_limits&lt;dealii::types::boundary_id&gt;::max() - 1;</div>
-<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span> </div>
-<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>  set_boundary_ids()</div>
-<div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>  {</div>
-<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span>    <span class="comment">// set boundary IDs for domain 1</span></div>
-<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>    set_boundary_ids_overlap_region(*domain1-&gt;get_grid()-&gt;triangulation,</div>
-<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>                                    boundary_id_overlap,</div>
-<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>                                    *domain2-&gt;get_mapping(),</div>
-<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>                                    *domain2-&gt;get_grid()-&gt;triangulation);</div>
-<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span> </div>
-<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>    <span class="comment">// set boundary IDs for domain 2</span></div>
-<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>    set_boundary_ids_overlap_region(*domain2-&gt;get_grid()-&gt;triangulation,</div>
-<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span>                                    boundary_id_overlap,</div>
-<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>                                    *domain1-&gt;get_mapping(),</div>
-<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>                                    *domain1-&gt;get_grid()-&gt;triangulation);</div>
-<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>  }</div>
-<div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span> </div>
-<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>  std::string parameter_file;</div>
-<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>};</div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span><span class="keyword">protected</span>:</div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>  MPI_Comm <span class="keyword">const</span> &amp; mpi_comm;</div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span> </div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>  std::string parameter_file;</div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>};</div>
 </div>
-<div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span> </div>
-<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>} <span class="comment">// namespace OversetGrids</span></div>
-<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span>} <span class="comment">// namespace Poisson</span></div>
-<div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span> </div>
-<div class="line"><a id="l00335" name="l00335"></a><span class="lineno">  335</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_POISSON_OVERSET_GRIDS_USER_INTERFACE_APPLICATION_BASE_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">ExaDG::Poisson::OversetGrids::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:266</div></div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span> </div>
+<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>} <span class="comment">// namespace OversetGrids</span></div>
+<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>} <span class="comment">// namespace Poisson</span></div>
+<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span> </div>
+<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_POISSON_OVERSET_GRIDS_USER_INTERFACE_APPLICATION_BASE_H_ */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1Grid_html"><div class="ttname"><a href="classExaDG_1_1Grid.html">ExaDG::Grid</a></div><div class="ttdef"><b>Definition</b> grid.h:40</div></div>
+<div class="ttc" id="aclassExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">ExaDG::Poisson::OversetGrids::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:252</div></div>
 <div class="ttc" id="aclassExaDG_1_1Poisson_1_1OversetGrids_1_1Domain_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1OversetGrids_1_1Domain.html">ExaDG::Poisson::OversetGrids::Domain</a></div><div class="ttdef"><b>Definition</b> application_base.h:117</div></div>
 <div class="ttc" id="aclassExaDG_1_1Poisson_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1Parameters.html">ExaDG::Poisson::Parameters</a></div><div class="ttdef"><b>Definition</b> parameters.h:36</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:34</div></div>

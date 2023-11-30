@@ -90,12 +90,18 @@ typedef <a class="el" href="classExaDG_1_1IncNS_1_1PostProcessorBase.html">PostP
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a0e38ee719794532191dfd38469b931f3" id="r_a0e38ee719794532191dfd38469b931f3"><td class="memItemLeft" align="right" valign="top"><a id="a0e38ee719794532191dfd38469b931f3" name="a0e38ee719794532191dfd38469b931f3"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1Domain.html">Domain</a>&lt; dim, Number &gt; &gt; &amp;domain, std::string const &amp;field, MPI_Comm const &amp;mpi_comm, bool const is_test)</td></tr>
-<tr class="separator:a0e38ee719794532191dfd38469b931f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c5436a1c5f438897a167050d50d9a7c" id="r_a2c5436a1c5f438897a167050d50d9a7c"><td class="memItemLeft" align="right" valign="top"><a id="a2c5436a1c5f438897a167050d50d9a7c" name="a2c5436a1c5f438897a167050d50d9a7c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1Domain.html">Domain</a>&lt; dim, Number &gt; &gt; &amp;domain, std::vector&lt; std::string &gt; const &amp;subsection_names_parameters, std::string const &amp;field, MPI_Comm const &amp;mpi_comm, bool const is_test)</td></tr>
+<tr class="separator:a2c5436a1c5f438897a167050d50d9a7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
+<tr class="memitem:a91efa6640e6203967a91fd57ee7a31c3" id="r_a91efa6640e6203967a91fd57ee7a31c3"><td class="memItemLeft" align="right" valign="top"><a id="a91efa6640e6203967a91fd57ee7a31c3" name="a91efa6640e6203967a91fd57ee7a31c3"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>grid</b></td></tr>
+<tr class="separator:a91efa6640e6203967a91fd57ee7a31c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5fd2e936c1f8b9fdb425d53edd6a690" id="r_ae5fd2e936c1f8b9fdb425d53edd6a690"><td class="memItemLeft" align="right" valign="top"><a id="ae5fd2e936c1f8b9fdb425d53edd6a690" name="ae5fd2e936c1f8b9fdb425d53edd6a690"></a>
+std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>mapping</b></td></tr>
+<tr class="separator:ae5fd2e936c1f8b9fdb425d53edd6a690"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6bcedddab612e3fb33a4b0594777e014" id="r_a6bcedddab612e3fb33a4b0594777e014"><td class="memItemLeft" align="right" valign="top"><a id="a6bcedddab612e3fb33a4b0594777e014" name="a6bcedddab612e3fb33a4b0594777e014"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">SpatialOperatorBase</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>pde_operator</b></td></tr>
 <tr class="separator:a6bcedddab612e3fb33a4b0594777e014"><td class="memSeparator" colspan="2">&#160;</td></tr>
