@@ -68,6 +68,10 @@ public:
   std::shared_ptr<TimerTree>
   get_timings_ale() const;
 
+  // grid and mapping
+  std::shared_ptr<Grid<dim>>            grid;
+  std::shared_ptr<dealii::Mapping<dim>> mapping;
+
   // spatial discretization
   std::shared_ptr<IncNS::SpatialOperatorBase<dim, Number>> pde_operator;
 
@@ -95,12 +99,15 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
                                 MPI_Comm const                                          mpi_comm,
                                 bool const                                              is_test)
 {
+  // setup application
+  application->setup(grid, mapping);
+
   // ALE: create grid motion object
   if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)
   {
     ale_mapping = std::make_shared<Poisson::DeformedMapping<dim, Number>>(
-      application->get_grid(),
-      application->get_mapping(),
+      grid,
+      mapping,
       application->get_boundary_descriptor_ale_poisson(),
       application->get_field_functions_ale_poisson(),
       application->get_parameters_ale_poisson(),
@@ -110,8 +117,8 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   else if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Elasticity)
   {
     ale_mapping = std::make_shared<Structure::DeformedMapping<dim, Number>>(
-      application->get_grid(),
-      application->get_mapping(),
+      grid,
+      mapping,
       application->get_boundary_descriptor_ale_elasticity(),
       application->get_field_functions_ale_elasticity(),
       application->get_material_descriptor_ale_elasticity(),
@@ -125,7 +132,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   }
 
   // initialize pde_operator
-  pde_operator = IncNS::create_operator<dim, Number>(application->get_grid(),
+  pde_operator = IncNS::create_operator<dim, Number>(grid,
                                                      ale_mapping,
                                                      application->get_boundary_descriptor(),
                                                      application->get_field_functions(),

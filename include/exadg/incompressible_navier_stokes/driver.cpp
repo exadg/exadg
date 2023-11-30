@@ -59,7 +59,7 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up incompressible Navier-Stokes solver:" << std::endl;
 
-  application->setup();
+  application->setup(grid, mapping);
 
   // moving mesh (ALE formulation)
   if(application->get_parameters().ale_formulation)
@@ -70,19 +70,19 @@ Driver<dim, Number>::setup()
         application->create_mesh_movement_function();
 
       grid_motion = std::make_shared<DeformedMappingFunction<dim, Number>>(
-        application->get_mapping(),
+        mapping,
         application->get_parameters().mapping_degree,
-        *application->get_grid()->triangulation,
+        *grid->triangulation,
         mesh_motion,
         application->get_parameters().start_time);
     }
     else if(application->get_parameters().mesh_movement_type == MeshMovementType::Poisson)
     {
-      application->setup_poisson();
+      application->setup_poisson(grid);
 
       grid_motion = std::make_shared<Poisson::DeformedMapping<dim, Number>>(
-        application->get_grid(),
-        application->get_mapping(),
+        grid,
+        mapping,
         application->get_boundary_descriptor_poisson(),
         application->get_field_functions_poisson(),
         application->get_parameters_poisson(),
@@ -108,11 +108,11 @@ Driver<dim, Number>::setup()
   }
 
   std::shared_ptr<dealii::Mapping<dim> const> mapping_fluid =
-    get_dynamic_mapping<dim, Number>(application->get_mapping(), grid_motion);
+    get_dynamic_mapping<dim, Number>(mapping, grid_motion);
 
   if(application->get_parameters().solver_type == SolverType::Unsteady)
   {
-    pde_operator = create_operator<dim, Number>(application->get_grid(),
+    pde_operator = create_operator<dim, Number>(grid,
                                                 mapping_fluid,
                                                 application->get_boundary_descriptor(),
                                                 application->get_field_functions(),
@@ -123,7 +123,7 @@ Driver<dim, Number>::setup()
   else if(application->get_parameters().solver_type == SolverType::Steady)
   {
     pde_operator =
-      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(application->get_grid(),
+      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(grid,
                                                             mapping_fluid,
                                                             application->get_boundary_descriptor(),
                                                             application->get_field_functions(),

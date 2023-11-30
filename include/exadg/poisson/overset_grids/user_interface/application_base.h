@@ -146,7 +146,6 @@ public:
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       parameter_file(parameter_file)
   {
-    grid = std::make_shared<Grid<dim>>();
   }
 
   virtual ~Domain()
@@ -154,7 +153,9 @@ public:
   }
 
   void
-  setup_pre(std::vector<std::string> const & subsection_names)
+  setup_pre(std::shared_ptr<Grid<dim>> &            grid,
+            std::shared_ptr<dealii::Mapping<dim>> & mapping,
+            std::vector<std::string> const &        subsection_names)
   {
     // parameters
     parse_parameters(subsection_names);
@@ -169,12 +170,13 @@ public:
 
     // grid
     GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
-    create_grid();
+    grid = std::make_shared<Grid<dim>>();
+    create_grid(*grid, mapping);
     print_grid_info(pcout, *grid);
   }
 
   void
-  setup_post()
+  setup_post(std::shared_ptr<Grid<dim> const> const & grid)
   {
     // boundary conditions
     boundary_descriptor = std::make_shared<BoundaryDescriptor<rank, dim>>();
@@ -187,24 +189,12 @@ public:
   }
 
   virtual std::shared_ptr<Poisson::PostProcessorBase<dim, n_components, Number>>
-  create_postprocessor() = 0;
+  create_postprocessor() const = 0;
 
   Parameters const &
   get_parameters() const
   {
     return param;
-  }
-
-  std::shared_ptr<Grid<dim> const>
-  get_grid() const
-  {
-    return grid;
-  }
-
-  std::shared_ptr<dealii::Mapping<dim> const>
-  get_mapping() const
-  {
-    return mapping;
   }
 
   std::shared_ptr<BoundaryDescriptor<rank, dim> const>
@@ -234,10 +224,6 @@ protected:
 
   Parameters param;
 
-  std::shared_ptr<Grid<dim>> grid;
-
-  std::shared_ptr<dealii::Mapping<dim>> mapping;
-
   std::shared_ptr<BoundaryDescriptor<rank, dim>> boundary_descriptor;
   std::shared_ptr<FieldFunctions<dim>>           field_functions;
 
@@ -252,7 +238,7 @@ private:
   set_parameters() = 0;
 
   virtual void
-  create_grid() = 0;
+  create_grid(Grid<dim> & grid, std::shared_ptr<dealii::Mapping<dim>> & mapping) = 0;
 
   virtual void
   set_boundary_descriptor() = 0;
@@ -277,54 +263,23 @@ public:
     AssertThrow(domain2.get(), dealii::ExcMessage("Domain 2 is uninitialized."));
 
     domain1->add_parameters(prm, {"Domain1"});
-    domain2->add_parameters(prm, {"Domain1"});
+    domain2->add_parameters(prm, {"Domain2"});
   }
 
   virtual ~ApplicationBase()
   {
   }
 
-  void
-  setup()
-  {
-    AssertThrow(domain1.get(), dealii::ExcMessage("Domain 1 is uninitialized."));
-    AssertThrow(domain2.get(), dealii::ExcMessage("Domain 2 is uninitialized."));
-
-    domain1->setup_pre({"Domain1"});
-    domain2->setup_pre({"Domain2"});
-
-    set_boundary_ids();
-
-    domain1->setup_post();
-    domain2->setup_post();
-  }
-
   std::shared_ptr<Domain<dim, n_components, Number>> domain1, domain2;
-
-protected:
-  MPI_Comm const & mpi_comm;
 
   // use "-1" since max() is defined invalid by deal.II
   dealii::types::boundary_id boundary_id_overlap =
     std::numeric_limits<dealii::types::boundary_id>::max() - 1;
 
+protected:
+  MPI_Comm const & mpi_comm;
+
 private:
-  void
-  set_boundary_ids()
-  {
-    // set boundary IDs for domain 1
-    set_boundary_ids_overlap_region(*domain1->get_grid()->triangulation,
-                                    boundary_id_overlap,
-                                    *domain2->get_mapping(),
-                                    *domain2->get_grid()->triangulation);
-
-    // set boundary IDs for domain 2
-    set_boundary_ids_overlap_region(*domain2->get_grid()->triangulation,
-                                    boundary_id_overlap,
-                                    *domain1->get_mapping(),
-                                    *domain1->get_grid()->triangulation);
-  }
-
   std::string parameter_file;
 };
 

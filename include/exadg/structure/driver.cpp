@@ -57,11 +57,11 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up elasticity solver:" << std::endl;
 
-  application->setup();
+  application->setup(grid, mapping);
 
   // setup spatial operator
-  pde_operator = std::make_shared<Operator<dim, Number>>(application->get_grid(),
-                                                         application->get_mapping(),
+  pde_operator = std::make_shared<Operator<dim, Number>>(grid,
+                                                         mapping,
                                                          application->get_boundary_descriptor(),
                                                          application->get_field_functions(),
                                                          application->get_material_descriptor(),

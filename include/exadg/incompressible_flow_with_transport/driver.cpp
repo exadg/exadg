@@ -53,7 +53,7 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up incompressible flow with scalar transport solver:" << std::endl;
 
-  application->setup();
+  application->setup(grid, mapping);
 
   // additional parameter check: This driver does not implement steady
   // flow-transport problems. Note, however, that ProblemType and
@@ -76,9 +76,9 @@ Driver<dim, Number>::setup()
     std::shared_ptr<dealii::Function<dim>> mesh_motion;
     mesh_motion = application->fluid->create_mesh_movement_function();
     ale_mapping = std::make_shared<DeformedMappingFunction<dim, Number>>(
-      application->fluid->get_mapping(),
+      mapping,
       application->fluid->get_parameters().degree_u,
-      *application->fluid->get_grid()->triangulation,
+      *grid->triangulation,
       mesh_motion,
       application->fluid->get_parameters().start_time);
 
@@ -102,13 +102,13 @@ Driver<dim, Number>::setup()
   }
 
   std::shared_ptr<dealii::Mapping<dim> const> dynamic_mapping =
-    get_dynamic_mapping<dim, Number>(application->fluid->get_mapping(), ale_mapping);
+    get_dynamic_mapping<dim, Number>(mapping, ale_mapping);
 
   // initialize fluid_operator
   if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
     fluid_operator =
-      IncNS::create_operator<dim, Number>(application->fluid->get_grid(),
+      IncNS::create_operator<dim, Number>(grid,
                                           dynamic_mapping,
                                           application->fluid->get_boundary_descriptor(),
                                           application->fluid->get_field_functions(),
@@ -119,7 +119,7 @@ Driver<dim, Number>::setup()
   else if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Steady)
   {
     fluid_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
-      application->fluid->get_grid(),
+      grid,
       dynamic_mapping,
       application->fluid->get_boundary_descriptor(),
       application->fluid->get_field_functions(),
@@ -142,7 +142,7 @@ Driver<dim, Number>::setup()
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     scalar_operator[i] = std::make_shared<ConvDiff::Operator<dim, Number>>(
-      application->fluid->get_grid(),
+      grid,
       dynamic_mapping,
       application->scalars[i]->get_boundary_descriptor(),
       application->scalars[i]->get_field_functions(),
@@ -159,8 +159,7 @@ Driver<dim, Number>::setup()
 
   matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
   if(application->fluid->get_parameters().use_cell_based_face_loops)
-    Categorization::do_cell_based_loops(*application->fluid->get_grid()->triangulation,
-                                        matrix_free_data->data);
+    Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
 
   matrix_free->reinit(*dynamic_mapping,
                       matrix_free_data->get_dof_handler_vector(),

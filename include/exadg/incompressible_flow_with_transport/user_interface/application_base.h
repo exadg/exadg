@@ -76,7 +76,6 @@ public:
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       parameter_file(parameter_file)
   {
-    grid = std::make_shared<Grid<dim>>();
   }
 
   virtual ~FluidBase()
@@ -84,7 +83,9 @@ public:
   }
 
   virtual void
-  setup(std::vector<std::string> const & subsection_names)
+  setup(std::shared_ptr<Grid<dim>> &            grid,
+        std::shared_ptr<dealii::Mapping<dim>> & mapping,
+        std::vector<std::string> const &        subsection_names)
   {
     parse_parameters(subsection_names);
 
@@ -98,7 +99,8 @@ public:
 
     // grid
     GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
-    create_grid();
+    grid = std::make_shared<Grid<dim>>();
+    create_grid(*grid, mapping);
     print_grid_info(pcout, *grid);
 
     // boundary conditions
@@ -118,18 +120,6 @@ public:
   get_parameters() const
   {
     return param;
-  }
-
-  std::shared_ptr<Grid<dim> const>
-  get_grid() const
-  {
-    return grid;
-  }
-
-  std::shared_ptr<dealii::Mapping<dim> const>
-  get_mapping() const
-  {
-    return mapping;
   }
 
   std::shared_ptr<IncNS::BoundaryDescriptor<dim> const>
@@ -169,10 +159,6 @@ protected:
 
   IncNS::Parameters param;
 
-  std::shared_ptr<Grid<dim>> grid;
-
-  std::shared_ptr<dealii::Mapping<dim>> mapping;
-
   std::shared_ptr<IncNS::FieldFunctions<dim>>     field_functions;
   std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor;
 
@@ -185,7 +171,7 @@ private:
   set_parameters() = 0;
 
   virtual void
-  create_grid() = 0;
+  create_grid(Grid<dim> & grid, std::shared_ptr<dealii::Mapping<dim>> & mapping) = 0;
 
   virtual void
   set_boundary_descriptor() = 0;
@@ -350,11 +336,13 @@ public:
   }
 
   void
-  setup()
+  setup(std::shared_ptr<Grid<dim>> & grid, std::shared_ptr<dealii::Mapping<dim>> & mapping)
   {
     AssertThrow(fluid.get(), dealii::ExcMessage("fluid has not been initialized."));
 
-    fluid->setup({"Fluid"});
+    // The fluid field is defined as the field that creates the grid and the mapping, while all
+    // scalar fields use the same grid/mapping
+    fluid->setup(grid, mapping, {"Fluid"});
 
     for(unsigned int i = 0; i < scalars.size(); ++i)
     {
@@ -362,7 +350,7 @@ public:
                   dealii::ExcMessage("scalar[" + std::to_string(i) +
                                      "] has not been initialized."));
 
-      scalars[i]->setup({"Scalar" + std::to_string(i)}, *fluid->get_grid());
+      scalars[i]->setup({"Scalar" + std::to_string(i)}, *grid);
 
       // do additional parameter checks
       AssertThrow(scalars[i]->get_parameters().ale_formulation ==

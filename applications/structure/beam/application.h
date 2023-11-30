@@ -177,8 +177,10 @@ private:
   }
 
   void
-  create_grid() final
+  create_grid(Grid<dim> & grid, std::shared_ptr<dealii::Mapping<dim>> & mapping) final
   {
+    (void)mapping;
+
     auto const lambda_create_triangulation =
       [&](dealii::Triangulation<dim, dim> &                        tria,
           std::vector<dealii::GridTools::PeriodicFacePair<
@@ -205,10 +207,7 @@ private:
         if(dim == 3)
           repetitions[2] = this->repetitions2;
 
-        dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                                          repetitions,
-                                                          p1,
-                                                          p2);
+        dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, p1, p2);
 
         element_length = this->length / (this->repetitions0 * pow(2, global_refinements));
 
@@ -247,7 +246,7 @@ private:
         tria.refine_global(global_refinements);
       };
 
-    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+    GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
                                                             this->param.grid,
                                                             this->param.involves_h_multigrid(),
