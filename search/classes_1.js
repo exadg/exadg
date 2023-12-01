@@ -17,5 +17,6 @@ var searchData=
   ['boundaryfaceintegratorbase_3c_20boundarydescriptorp_3c_20dim_20_3e_2c_20number_20_3e_14',['BoundaryFaceIntegratorBase&lt; BoundaryDescriptorP&lt; dim &gt;, Number &gt;',['../classExaDG_1_1BoundaryFaceIntegratorBase.html',1,'ExaDG']]],
   ['boundaryfaceintegratorbase_3c_20boundarydescriptoru_3c_20dim_20_3e_2c_20number_20_3e_15',['BoundaryFaceIntegratorBase&lt; BoundaryDescriptorU&lt; dim &gt;, Number &gt;',['../classExaDG_1_1BoundaryFaceIntegratorBase.html',1,'ExaDG']]],
   ['boundaryfaceintegratorp_16',['BoundaryFaceIntegratorP',['../classExaDG_1_1Acoustics_1_1BoundaryFaceIntegratorP.html',1,'ExaDG::Acoustics']]],
-  ['boundaryfaceintegratoru_17',['BoundaryFaceIntegratorU',['../classExaDG_1_1Acoustics_1_1BoundaryFaceIntegratorU.html',1,'ExaDG::Acoustics']]]
+  ['boundaryfaceintegratoru_17',['BoundaryFaceIntegratorU',['../classExaDG_1_1Acoustics_1_1BoundaryFaceIntegratorU.html',1,'ExaDG::Acoustics']]],
+  ['boundarylayermanifold_18',['BoundaryLayerManifold',['../classExaDG_1_1BoundaryLayerManifold.html',1,'ExaDG']]]
 ];
