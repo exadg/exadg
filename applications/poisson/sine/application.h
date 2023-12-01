@@ -260,21 +260,20 @@ private:
         }
         else if(mesh_type == MeshType::Curvilinear)
         {
-          // TODO
-          //          double const       deformation = 0.15;
-          //          unsigned int const frequency   = 2;
-          //          apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
+          double const       deformation = 0.15;
+          unsigned int const frequency   = 2;
+          apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
 
           // TODO boundary layer manifold
           //		  apply_boundary_layer_manifold(tria, left, right, deformation_factor);
-
-          dealii::Tensor<1, dim> dimensions;
-          for(unsigned int d = 0; d < dim; ++d)
-          {
-            dimensions[d] = right - left;
-          }
-
-          apply_boundary_layer_manifold(tria, dimensions);
+          //
+          //          dealii::Tensor<1, dim> dimensions;
+          //          for(unsigned int d = 0; d < dim; ++d)
+          //          {
+          //            dimensions[d] = right - left;
+          //          }
+          //
+          //          apply_boundary_layer_manifold(tria, dimensions);
         }
         else
         {
