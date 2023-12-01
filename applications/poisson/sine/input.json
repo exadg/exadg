@@ -1,7 +1,7 @@
 {
     "General": {
         "Precision": "double",
-        "Dim": "2",
+        "Dim": "3",
         "IsTest": "false"
     },
     "SpatialResolution": {
@@ -11,7 +11,7 @@
         "RefineSpaceMax": "2"
     },
     "Application": {
-        "MeshType": "Curvilinear"
+        "MeshType": "Cartesian"
     },
     "Grid": {
         "FileName": "applications/poisson/sine/external_grids/hypercube.e"

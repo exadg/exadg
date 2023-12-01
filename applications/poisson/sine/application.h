@@ -144,8 +144,8 @@ private:
     }
     else if(this->param.grid.element_type == ElementType::Hypercube)
     {
-      this->param.grid.triangulation_type = TriangulationType::Distributed; // TODO //Distributed;
-      this->param.mapping_degree          = 2;
+      this->param.grid.triangulation_type           = TriangulationType::Distributed;
+      this->param.mapping_degree                    = 3;
       this->param.grid.create_coarse_triangulations = false; // can also be set to true if desired
     }
     this->param.grid.file_name = this->grid_parameters.file_name;
@@ -160,7 +160,7 @@ private:
     this->param.solver_data.max_iter        = 1e4;
     this->param.compute_performance_metrics = true;
     this->param.preconditioner              = Preconditioner::Multigrid;
-    this->param.multigrid_data.type         = MultigridType::hMG; // cphMG;
+    this->param.multigrid_data.type         = MultigridType::cphMG;
     this->param.multigrid_data.p_sequence   = PSequenceType::Bisect;
     // MG smoother
     this->param.multigrid_data.smoother_data.smoother        = MultigridSmoother::Chebyshev;
