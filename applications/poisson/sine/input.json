@@ -5,8 +5,8 @@
         "IsTest": "false"
     },
     "SpatialResolution": {
-        "DegreeMin": "3",
-        "DegreeMax": "3",
+        "DegreeMin": "1",
+        "DegreeMax": "15",
         "RefineSpaceMin": "2",
         "RefineSpaceMax": "2"
     },
@@ -19,6 +19,6 @@
     "Output": {
         "OutputDirectory": "output/poisson/sine/",
         "OutputName": "test",
-        "WriteOutput": "true"
+        "WriteOutput": "false"
     }
 }

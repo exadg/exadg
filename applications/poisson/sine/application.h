@@ -22,10 +22,8 @@
 #ifndef APPLICATIONS_POISSON_TEST_CASES_SINE_H_
 #define APPLICATIONS_POISSON_TEST_CASES_SINE_H_
 
+#include <exadg/grid/boundary_layer_manifold.h>
 #include <exadg/grid/deformed_cube_manifold.h>
-
-#include <exadg/grid/mapping_deformation_function.h>
-#include <exadg/grid/mesh_movement_functions.h>
 
 namespace ExaDG
 {
@@ -104,7 +102,8 @@ public:
 enum class MeshType
 {
   Cartesian,
-  Curvilinear
+  Curvilinear,
+  BoundaryLayer
 };
 
 template<int dim, int n_components, typename Number>
@@ -263,17 +262,20 @@ private:
           double const       deformation = 0.15;
           unsigned int const frequency   = 2;
           apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
+        }
+        else if(mesh_type == MeshType::BoundaryLayer)
+        {
+          dealii::Tensor<1, dim> dimensions;
+          for(unsigned int d = 0; d < dim; ++d)
+          {
+            dimensions[d] = right - left;
+          }
 
-          // TODO boundary layer manifold
-          //		  apply_boundary_layer_manifold(tria, left, right, deformation_factor);
-          //
-          //          dealii::Tensor<1, dim> dimensions;
-          //          for(unsigned int d = 0; d < dim; ++d)
-          //          {
-          //            dimensions[d] = right - left;
-          //          }
-          //
-          //          apply_boundary_layer_manifold(tria, dimensions);
+          double const grid_stretch_factor = 2.8;
+
+          static BoundaryLayerManifold<dim> manifold(dimensions, grid_stretch_factor);
+          tria.set_all_manifold_ids(1);
+          tria.set_manifold(1, manifold);
         }
         else
         {
@@ -293,21 +295,6 @@ private:
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
-
-    // TODO
-    //    apply_boundary_layer_manifold(*grid.triangulation, left, right, deformation_factor);
-
-    // TODO
-    //    // use MappingDoFVector
-    //    std::shared_ptr<dealii::Function<dim>> mesh_deformation;
-    //    mesh_deformation.reset(
-    //      new BoundaryLayerMeshMovementFunction<dim>(left, right, deformation_factor));
-    //    mapping_dof_vector = std::make_shared<DeformedMappingFunction<dim, Number>>(
-    //      mapping, this->param.mapping_degree, *grid.triangulation, mesh_deformation, 0.0 /* time
-    //      */);
-    //
-    //    // reset the mapping object to mapping_dof_vector
-    //    mapping = mapping_dof_vector;
   }
 
   void
@@ -364,11 +351,6 @@ private:
   bool const read_external_grid = false;
 
   MeshType mesh_type = MeshType::Cartesian;
-
-  // for boundary layer manifold / mesh deformation
-  double const deformation_factor = 2.0;
-
-  std::shared_ptr<DeformedMappingFunction<dim, Number>> mapping_dof_vector;
 };
 
 } // namespace Poisson

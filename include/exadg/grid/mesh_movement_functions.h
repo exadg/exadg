@@ -297,32 +297,6 @@ protected:
   double const                time_period;
 };
 
-template<int dim>
-class BoundaryLayerMeshMovementFunction : public dealii::Function<dim>
-{
-public:
-  BoundaryLayerMeshMovementFunction(double const left,
-                                    double const right,
-                                    double const deformation_factor)
-    : dealii::Function<dim>(dim), left(left), right(right), deformation_factor(deformation_factor)
-  {
-  }
-
-  double
-  value(dealii::Point<dim> const & x, unsigned int const coordinate_direction = 0) const override
-  {
-    double deformation = 0.0;
-    if(coordinate_direction == 0)
-      deformation =
-        std::exp(deformation_factor * (x(coordinate_direction) - left) / (right - left)) - 1.0;
-
-    return (x(coordinate_direction) + deformation);
-  }
-
-private:
-  double const left, right, deformation_factor;
-};
-
 } // namespace ExaDG
 
 #endif /*INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_*/
