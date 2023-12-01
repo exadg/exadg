@@ -23,6 +23,7 @@
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TURBULENT_CHANNEL_H_
 
 // ExaDG
+#include <exadg/grid/boundary_layer_manifold.h>
 #include <exadg/postprocessor/statistics_manager.h>
 #include <exadg/utilities/numbers.h>
 
@@ -76,81 +77,6 @@ grid_transform_y(double const & eta)
 
   return y;
 }
-
-/*
- * inverse mapping:
- *
- *  maps y in [-1,1]*length_y/2.0 --> eta in [0,1]
- */
-double
-inverse_grid_transform_y(double const & y)
-{
-  double eta = 0.0;
-
-  if(GRID_STRETCH_FAC >= 0)
-    eta =
-      (std::atanh(y * std::tanh(GRID_STRETCH_FAC) * 2.0 / DIMENSIONS_X2) / GRID_STRETCH_FAC + 1.0) /
-      2.0;
-  else // use a negative GRID_STRETCH_FACTOR deactivate grid stretching
-    eta = (2. * y / DIMENSIONS_X2 + 1.) / 2.0;
-
-  return eta;
-}
-
-template<int dim>
-class ManifoldTurbulentChannel : public dealii::ChartManifold<dim, dim, dim>
-{
-public:
-  ManifoldTurbulentChannel(dealii::Tensor<1, dim> const & dimensions_in)
-  {
-    dimensions = dimensions_in;
-  }
-
-  /*
-   *  push_forward operation that maps point xi in reference coordinates [0,1]^d to
-   *  point x in physical coordinates
-   */
-  dealii::Point<dim>
-  push_forward(dealii::Point<dim> const & xi) const final
-  {
-    dealii::Point<dim> x;
-
-    x[0] = xi[0] * dimensions[0] - dimensions[0] / 2.0;
-    x[1] = grid_transform_y(xi[1]);
-
-    if(dim == 3)
-      x[2] = xi[2] * dimensions[2] - dimensions[2] / 2.0;
-
-    return x;
-  }
-
-  /*
-   *  pull_back operation that maps point x in physical coordinates
-   *  to point xi in reference coordinates [0,1]^d
-   */
-  dealii::Point<dim>
-  pull_back(dealii::Point<dim> const & x) const final
-  {
-    dealii::Point<dim> xi;
-
-    xi[0] = x[0] / dimensions[0] + 0.5;
-    xi[1] = inverse_grid_transform_y(x[1]);
-
-    if(dim == 3)
-      xi[2] = x[2] / dimensions[2] + 0.5;
-
-    return xi;
-  }
-
-  std::unique_ptr<dealii::Manifold<dim>>
-  clone() const final
-  {
-    return std::make_unique<ManifoldTurbulentChannel<dim>>(dimensions);
-  }
-
-private:
-  dealii::Tensor<1, dim> dimensions;
-};
 
 template<int dim>
 class InitialSolutionVelocity : public dealii::Function<dim>
@@ -421,7 +347,7 @@ private:
         }
 
         // apply mesh stretching towards no-slip boundaries in y-direction
-        static const ManifoldTurbulentChannel<dim> manifold(dimensions);
+        static const BoundaryLayerManifold<dim> manifold(dimensions, GRID_STRETCH_FAC);
         tria.set_manifold(manifold_id, manifold);
 
         // periodicity in x--direction
