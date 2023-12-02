@@ -24,6 +24,7 @@
 #include <deal.II/lac/sparse_matrix_tools.h>
 #include <deal.II/lac/sparsity_tools.h>
 #include <deal.II/matrix_free/tools.h>
+#include <deal.II/multigrid/mg_tools.h>
 
 // ExaDG
 #include <exadg/operators/operator_base.h>
