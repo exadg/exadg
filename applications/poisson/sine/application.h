@@ -22,6 +22,7 @@
 #ifndef APPLICATIONS_POISSON_TEST_CASES_SINE_H_
 #define APPLICATIONS_POISSON_TEST_CASES_SINE_H_
 
+#include <exadg/grid/boundary_layer_manifold.h>
 #include <exadg/grid/deformed_cube_manifold.h>
 
 namespace ExaDG
@@ -101,7 +102,8 @@ public:
 enum class MeshType
 {
   Cartesian,
-  Curvilinear
+  Curvilinear,
+  BoundaryLayer
 };
 
 template<int dim, int n_components, typename Number>
@@ -182,8 +184,6 @@ private:
             typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
           unsigned int const                                       global_refinements,
           std::vector<unsigned int> const &                        vector_local_refinements) {
-        double const length = 1.0;
-        double const left = -length, right = length;
         // choose a coarse grid with at least 2^dim elements to obtain a non-trivial coarse grid
         // problem
         unsigned int const n_cells_1d =
@@ -253,12 +253,6 @@ private:
           tria.add_periodicity(periodic_face_pairs);
         }
 
-        if(vector_local_refinements.size() > 0)
-          refine_local(tria, vector_local_refinements);
-
-        if(global_refinements > 0)
-          tria.refine_global(global_refinements);
-
         if(mesh_type == MeshType::Cartesian)
         {
           // do nothing
@@ -269,10 +263,30 @@ private:
           unsigned int const frequency   = 2;
           apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
         }
+        else if(mesh_type == MeshType::BoundaryLayer)
+        {
+          dealii::Tensor<1, dim> dimensions;
+          for(unsigned int d = 0; d < dim; ++d)
+          {
+            dimensions[d] = right - left;
+          }
+
+          double const grid_stretch_factor = 2.8;
+
+          static BoundaryLayerManifold<dim> manifold(dimensions, grid_stretch_factor);
+          tria.set_all_manifold_ids(1);
+          tria.set_manifold(1, manifold);
+        }
         else
         {
           AssertThrow(false, dealii::ExcMessage("not implemented."));
         }
+
+        if(vector_local_refinements.size() > 0)
+          refine_local(tria, vector_local_refinements);
+
+        if(global_refinements > 0)
+          tria.refine_global(global_refinements);
       };
 
     GridUtilities::create_triangulation_with_multigrid<dim>(grid,
@@ -330,6 +344,9 @@ private:
 
     return pp;
   }
+
+  double const length = 1.0;
+  double const left = -length, right = length;
 
   bool const read_external_grid = false;
 
