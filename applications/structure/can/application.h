@@ -180,47 +180,54 @@ private:
 
     AssertThrow(dim == 3, dealii::ExcMessage("This application only makes sense for dim=3."));
 
-    auto const lambda_create_triangulation =
-      [&](dealii::Triangulation<dim, dim> &                        tria,
-          std::vector<dealii::GridTools::PeriodicFacePair<
-            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
-          unsigned int const                                       global_refinements,
-          std::vector<unsigned int> const &                        vector_local_refinements) {
-        (void)periodic_face_pairs;
-        (void)vector_local_refinements;
+    auto const lambda_create_triangulation = [&](dealii::Triangulation<dim, dim> & tria,
+                                                 std::vector<dealii::GridTools::PeriodicFacePair<
+                                                   typename dealii::Triangulation<
+                                                     dim>::cell_iterator>> & periodic_face_pairs,
+                                                 unsigned int const          global_refinements,
+                                                 std::vector<unsigned int> const &
+                                                   vector_local_refinements) {
+      (void)periodic_face_pairs;
+      (void)vector_local_refinements;
 
-        dealii::GridGenerator::cylinder_shell(tria, height, inner_radius, outer_radius);
+      AssertThrow(
+        this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+        dealii::ExcMessage(
+          "Manifolds might not be applied correctly for TriangulationType::FullyDistributed. "
+          "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
 
-        // 0 = bottom ; 1 = top ; 2 = inner and outer radius
-        for(auto cell : tria.cell_iterators())
+      dealii::GridGenerator::cylinder_shell(tria, height, inner_radius, outer_radius);
+
+      // 0 = bottom ; 1 = top ; 2 = inner and outer radius
+      for(auto cell : tria.cell_iterators())
+      {
+        for(auto const & f : cell->face_indices())
         {
-          for(auto const & f : cell->face_indices())
+          if(cell->face(f)->at_boundary())
           {
-            if(cell->face(f)->at_boundary())
-            {
-              dealii::Point<dim> const face_center = cell->face(f)->center();
+            dealii::Point<dim> const face_center = cell->face(f)->center();
 
-              // bottom
-              if(dim == 3 and std::abs(face_center[dim - 1] - 0.0) < 1.e-8)
-              {
-                cell->face(f)->set_boundary_id(0);
-              }
-              // top
-              else if(dim == 3 and std::abs(face_center[dim - 1] - height) < 1.e-8)
-              {
-                cell->face(f)->set_boundary_id(1);
-              }
-              // inner radius and outer radius
-              else
-              {
-                cell->face(f)->set_boundary_id(2);
-              }
+            // bottom
+            if(dim == 3 and std::abs(face_center[dim - 1] - 0.0) < 1.e-8)
+            {
+              cell->face(f)->set_boundary_id(0);
+            }
+            // top
+            else if(dim == 3 and std::abs(face_center[dim - 1] - height) < 1.e-8)
+            {
+              cell->face(f)->set_boundary_id(1);
+            }
+            // inner radius and outer radius
+            else
+            {
+              cell->face(f)->set_boundary_id(2);
             }
           }
         }
+      }
 
-        tria.refine_global(global_refinements);
-      };
+      tria.refine_global(global_refinements);
+    };
 
     GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
