@@ -253,54 +253,67 @@ private:
   {
     (void)mapping;
 
-    auto const lambda_create_triangulation =
-      [&](dealii::Triangulation<dim, dim> &                        tria,
-          std::vector<dealii::GridTools::PeriodicFacePair<
-            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
-          unsigned int const                                       global_refinements,
-          std::vector<unsigned int> const &                        vector_local_refinements) {
-        (void)vector_local_refinements;
+    auto const lambda_create_triangulation = [&](dealii::Triangulation<dim, dim> & tria,
+                                                 std::vector<dealii::GridTools::PeriodicFacePair<
+                                                   typename dealii::Triangulation<
+                                                     dim>::cell_iterator>> & periodic_face_pairs,
+                                                 unsigned int const          global_refinements,
+                                                 std::vector<unsigned int> const &
+                                                   vector_local_refinements) {
+      (void)vector_local_refinements;
 
-        dealii::Tensor<1, dim> dimensions;
-        dimensions[0] = DIMENSIONS_X1;
-        dimensions[1] = DIMENSIONS_X2;
-        if(dim == 3)
-          dimensions[2] = DIMENSIONS_X3;
+      dealii::Tensor<1, dim> dimensions;
+      dimensions[0] = DIMENSIONS_X1;
+      dimensions[1] = DIMENSIONS_X2;
+      if(dim == 3)
+        dimensions[2] = DIMENSIONS_X3;
 
-        dealii::GridGenerator::hyper_rectangle(tria,
-                                               dealii::Point<dim>(-dimensions / 2.0),
-                                               dealii::Point<dim>(dimensions / 2.0));
+      dealii::GridGenerator::hyper_rectangle(tria,
+                                             dealii::Point<dim>(-dimensions / 2.0),
+                                             dealii::Point<dim>(dimensions / 2.0));
 
-        // manifold
-        unsigned int manifold_id = 1;
-        for(auto cell : tria)
-        {
-          cell.set_all_manifold_ids(manifold_id);
-        }
+      AssertThrow(
+        this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+        dealii::ExcMessage(
+          "Manifolds might not be applied correctly for TriangulationType::FullyDistributed. "
+          "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
 
-        // apply mesh stretching towards no-slip boundaries in y-direction
-        static const BoundaryLayerManifold<dim> manifold(dimensions, GRID_STRETCH_FAC);
-        tria.set_manifold(manifold_id, manifold);
+      // manifold
+      unsigned int manifold_id = 1;
+      for(auto cell : tria)
+      {
+        cell.set_all_manifold_ids(manifold_id);
+      }
 
-        // periodicity in x- and z-direction
-        // add 10 to avoid conflicts with dirichlet boundary, which is 0
-        tria.begin()->face(0)->set_all_boundary_ids(0 + 10);
-        tria.begin()->face(1)->set_all_boundary_ids(1 + 10);
-        // periodicity in z-direction
-        if(dim == 3)
-        {
-          tria.begin()->face(4)->set_all_boundary_ids(2 + 10);
-          tria.begin()->face(5)->set_all_boundary_ids(3 + 10);
-        }
+      // apply mesh stretching towards no-slip boundaries in y-direction
+      const BoundaryLayerManifold<dim> manifold(dimensions, GRID_STRETCH_FAC);
+      tria.set_manifold(manifold_id, manifold);
 
-        dealii::GridTools::collect_periodic_faces(tria, 0 + 10, 1 + 10, 0, periodic_face_pairs);
-        if(dim == 3)
-          dealii::GridTools::collect_periodic_faces(tria, 2 + 10, 3 + 10, 2, periodic_face_pairs);
+      AssertThrow(
+        this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+        dealii::ExcMessage(
+          "Periodic faces might not be applied correctly for TriangulationType::FullyDistributed. "
+          "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
 
-        tria.add_periodicity(periodic_face_pairs);
+      // periodicity in x- and z-direction
+      // add 10 to avoid conflicts with dirichlet boundary, which is 0
+      tria.begin()->face(0)->set_all_boundary_ids(0 + 10);
+      tria.begin()->face(1)->set_all_boundary_ids(1 + 10);
+      // periodicity in z-direction
+      if(dim == 3)
+      {
+        tria.begin()->face(4)->set_all_boundary_ids(2 + 10);
+        tria.begin()->face(5)->set_all_boundary_ids(3 + 10);
+      }
 
-        tria.refine_global(global_refinements);
-      };
+      dealii::GridTools::collect_periodic_faces(tria, 0 + 10, 1 + 10, 0, periodic_face_pairs);
+      if(dim == 3)
+        dealii::GridTools::collect_periodic_faces(tria, 2 + 10, 3 + 10, 2, periodic_face_pairs);
+
+      tria.add_periodicity(periodic_face_pairs);
+
+      tria.refine_global(global_refinements);
+    };
 
     GridUtilities::create_triangulation<dim>(grid,
                                              this->mpi_comm,
