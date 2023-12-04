@@ -164,31 +164,38 @@ private:
   {
     (void)mapping;
 
-    auto const lambda_create_triangulation =
-      [&](dealii::Triangulation<dim, dim> &                        tria,
-          std::vector<dealii::GridTools::PeriodicFacePair<
-            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
-          unsigned int const                                       global_refinements,
-          std::vector<unsigned int> const &                        vector_local_refinements) {
-        (void)vector_local_refinements;
+    auto const lambda_create_triangulation = [&](dealii::Triangulation<dim, dim> & tria,
+                                                 std::vector<dealii::GridTools::PeriodicFacePair<
+                                                   typename dealii::Triangulation<
+                                                     dim>::cell_iterator>> & periodic_face_pairs,
+                                                 unsigned int const          global_refinements,
+                                                 std::vector<unsigned int> const &
+                                                   vector_local_refinements) {
+      (void)vector_local_refinements;
 
-        double const left = 0.0, right = 1.0;
-        dealii::GridGenerator::hyper_cube(tria, left, right);
+      double const left = 0.0, right = 1.0;
+      dealii::GridGenerator::hyper_cube(tria, left, right);
 
-        // use periodic boundary conditions
-        // x-direction
-        tria.begin()->face(0)->set_all_boundary_ids(0);
-        tria.begin()->face(1)->set_all_boundary_ids(1);
-        // y-direction
-        tria.begin()->face(2)->set_all_boundary_ids(2);
-        tria.begin()->face(3)->set_all_boundary_ids(3);
+      AssertThrow(
+        this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+        dealii::ExcMessage(
+          "Periodic faces might not be applied correctly for TriangulationType::FullyDistributed. "
+          "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
 
-        dealii::GridTools::collect_periodic_faces(tria, 0, 1, 0, periodic_face_pairs);
-        dealii::GridTools::collect_periodic_faces(tria, 2, 3, 1, periodic_face_pairs);
-        tria.add_periodicity(periodic_face_pairs);
+      // use periodic boundary conditions
+      // x-direction
+      tria.begin()->face(0)->set_all_boundary_ids(0);
+      tria.begin()->face(1)->set_all_boundary_ids(1);
+      // y-direction
+      tria.begin()->face(2)->set_all_boundary_ids(2);
+      tria.begin()->face(3)->set_all_boundary_ids(3);
 
-        tria.refine_global(global_refinements);
-      };
+      dealii::GridTools::collect_periodic_faces(tria, 0, 1, 0, periodic_face_pairs);
+      dealii::GridTools::collect_periodic_faces(tria, 2, 3, 1, periodic_face_pairs);
+      tria.add_periodicity(periodic_face_pairs);
+
+      tria.refine_global(global_refinements);
+    };
 
     GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,

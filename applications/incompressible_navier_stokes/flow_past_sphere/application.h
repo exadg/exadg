@@ -279,7 +279,7 @@ public:
           std::vector<unsigned int> const &                        vector_local_refinements) {
         (void)periodic_face_pairs;
         (void)vector_local_refinements;
-        create_sphere_grid<dim>(tria, global_refinements);
+        create_sphere_grid<dim>(tria, global_refinements, this->param.grid.triangulation_type);
       };
 
     GridUtilities::create_triangulation_with_multigrid<dim>(grid,
