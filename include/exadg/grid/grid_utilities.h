@@ -554,6 +554,14 @@ setup_after_coarsening_and_refinement(Grid<dim> &      grid,
 {
   if(involves_h_multigrid)
   {
+    AssertThrow(data.element_type == ElementType::Hypercube,
+                dealii::ExcMessage("Adaptive mesh refinement is not "
+                                   "supported for simplex elements."));
+
+    AssertThrow(data.create_coarse_triangulations,
+                dealii::ExcMessage("Coarse triangulations need to be created explicitly for "
+                                   "locally refined meshes and h-multigrid."));
+
     // Depending on the type of multigrid implementation, the coarse triangulations need to be
     // updated.
     setup_coarse_triangulations_and_periodic_face_pairs(*grid.triangulation,
