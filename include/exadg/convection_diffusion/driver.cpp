@@ -250,8 +250,8 @@ Driver<dim, Number>::solve()
             std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
 
           AssertThrow(bdf_time_integrator.get(),
-                      dealii::ExcMessage("Combination of adaptive mesh refinement "
-                                         "and explicit time integration not implemented."));
+                      dealii::ExcMessage("Adaptive mesh refinement only implemented"
+                                         " for implicit time integration."));
 
           mark_cells_coarsening_and_refinement(*grid->triangulation,
                                                bdf_time_integrator->get_solution_np());
