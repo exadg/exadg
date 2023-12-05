@@ -201,11 +201,16 @@ Driver<dim, Number>::do_adaptive_refinement()
 
     grid->triangulation->execute_coarsening_and_refinement();
 
-    GridUtilities::setup_after_coarsening_and_refinement(
-      *grid,
-      application->get_parameters().grid,
-      application->get_parameters().involves_h_multigrid(),
-      application->get_parameters().amr_data.preserve_boundary_cells);
+    if(application->get_parameters().involves_h_multigrid())
+    {
+      GridUtilities::create_coarse_triangulations_after_coarsening_and_refinement(
+        *grid->triangulation,
+        grid->periodic_face_pairs,
+        grid->coarse_triangulations,
+        grid->coarse_periodic_face_pairs,
+        application->get_parameters().grid,
+        application->get_parameters().amr_data.preserve_boundary_cells);
+    }
 
     setup_after_coarsening_and_refinement();
 
