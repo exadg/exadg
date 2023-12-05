@@ -70,7 +70,7 @@ public:
    * Call this setup() function if the dealii::MatrixFree object can be set up by the present class.
    */
   void
-  setup();
+  setup(bool const verbosity = true);
 
   /**
    * Call this setup() function if the dealii::MatrixFree object needs to be created outside this
@@ -302,6 +302,12 @@ private:
    */
   void
   initialize_dof_handler_and_constraints();
+
+  /**
+   * Print information regarding the spatial discretization.
+   */
+  void
+  print_discretization_info(bool const verbosity = true) const;
 
   /**
    * Performs setup of operators.

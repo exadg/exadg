@@ -101,7 +101,7 @@ Generating grid for 2-dimensional problem:
 
 Construct convection-diffusion operator ...
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
   degree of 1D polynomials:                  4
   number of dofs per cell:                   25
@@ -136,35 +136,17 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 6.83060e-04
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1375
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1300
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1300
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 5.0546e-02:
   Relative error (L2-norm): 4.31811e-02
@@ -174,25 +156,13 @@ ________________________________________________________________________________
  Time step number = 75      t = 5.05464e-02 -> t + dt = 5.12295e-02
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1375
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1450
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 1.0041e-01:
   Relative error (L2-norm): 4.33470e-02
@@ -202,35 +172,17 @@ ________________________________________________________________________________
  Time step number = 148     t = 1.00410e-01 -> t + dt = 1.01093e-01
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1525
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1525
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1525
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 1.5027e-01:
   Relative error (L2-norm): 4.34065e-02
@@ -240,25 +192,13 @@ ________________________________________________________________________________
  Time step number = 221     t = 1.50273e-01 -> t + dt = 1.50956e-01
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1600
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1675
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 2.0014e-01:
   Relative error (L2-norm): 4.35424e-02
@@ -268,35 +208,17 @@ ________________________________________________________________________________
  Time step number = 294     t = 2.00137e-01 -> t + dt = 2.00820e-01
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1525
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1525
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1750
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 2.5000e-01:
   Relative error (L2-norm): 4.36406e-02
@@ -306,25 +228,13 @@ ________________________________________________________________________________
  Time step number = 367     t = 2.50000e-01 -> t + dt = 2.50683e-01
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1825
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1900
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 3.0055e-01:
   Relative error (L2-norm): 4.37651e-02
@@ -334,35 +244,17 @@ ________________________________________________________________________________
  Time step number = 441     t = 3.00546e-01 -> t + dt = 3.01230e-01
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1600
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1450
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1525
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 3.5041e-01:
   Relative error (L2-norm): 4.40130e-02
@@ -372,25 +264,13 @@ ________________________________________________________________________________
  Time step number = 514     t = 3.50410e-01 -> t + dt = 3.51093e-01
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1525
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1375
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 4.0027e-01:
   Relative error (L2-norm): 4.42462e-02
@@ -400,25 +280,13 @@ ________________________________________________________________________________
  Time step number = 587     t = 4.00273e-01 -> t + dt = 4.00956e-01
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1525
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1450
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 4.5014e-01:
   Relative error (L2-norm): 4.43734e-02
@@ -428,35 +296,17 @@ ________________________________________________________________________________
  Time step number = 660     t = 4.50137e-01 -> t + dt = 4.50820e-01
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1525
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1525
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1600
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 5.0000e-01:
   Relative error (L2-norm): 4.45132e-02
@@ -466,25 +316,13 @@ ________________________________________________________________________________
  Time step number = 734     t = 5.00683e-01 -> t + dt = 5.01366e-01
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1525
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1450
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 5.5055e-01:
   Relative error (L2-norm): 4.46687e-02
@@ -494,35 +332,17 @@ ________________________________________________________________________________
  Time step number = 807     t = 5.50546e-01 -> t + dt = 5.51230e-01
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1525
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1750
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1825
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 6.0041e-01:
   Relative error (L2-norm): 4.48644e-02
@@ -532,25 +352,13 @@ ________________________________________________________________________________
  Time step number = 880     t = 6.00410e-01 -> t + dt = 6.01093e-01
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1825
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1750
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 6.5027e-01:
   Relative error (L2-norm): 4.50020e-02
@@ -560,35 +368,17 @@ ________________________________________________________________________________
  Time step number = 953     t = 6.50273e-01 -> t + dt = 6.50956e-01
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1750
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1975
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1975
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 7.0014e-01:
   Relative error (L2-norm): 4.51795e-02
@@ -598,25 +388,13 @@ ________________________________________________________________________________
  Time step number = 1026    t = 7.00137e-01 -> t + dt = 7.00820e-01
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1825
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1900
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 7.5000e-01:
   Relative error (L2-norm): 4.53225e-02
@@ -626,35 +404,17 @@ ________________________________________________________________________________
  Time step number = 1099    t = 7.50000e-01 -> t + dt = 7.50683e-01
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1975
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1975
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1975
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 8.0055e-01:
   Relative error (L2-norm): 4.55100e-02
@@ -664,25 +424,13 @@ ________________________________________________________________________________
  Time step number = 1173    t = 8.00546e-01 -> t + dt = 8.01230e-01
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    1975
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    2200
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 8.5041e-01:
   Relative error (L2-norm): 4.57041e-02
@@ -692,25 +440,13 @@ ________________________________________________________________________________
  Time step number = 1246    t = 8.50410e-01 -> t + dt = 8.51093e-01
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    2275
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    2275
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 9.0027e-01:
   Relative error (L2-norm): 4.59193e-02
@@ -720,35 +456,17 @@ ________________________________________________________________________________
  Time step number = 1319    t = 9.00273e-01 -> t + dt = 9.00956e-01
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    2350
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    2200
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    2275
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 9.5014e-01:
   Relative error (L2-norm): 4.61196e-02
@@ -758,25 +476,13 @@ ________________________________________________________________________________
  Time step number = 1392    t = 9.50137e-01 -> t + dt = 9.50820e-01
 ________________________________________________________________________________
 
-Discontinuous Galerkin finite element discretization:
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    2425
 
-Setup convection-diffusion operator ...
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-... done!
-
-Discontinuous Galerkin finite element discretization:
-
-  degree of 1D polynomials:                  4
-  number of dofs per cell:                   25
   number of dofs (total):                    2500
-
-Setup convection-diffusion operator ...
-
-... done!
 
 Calculate error for all fields at time t = 1.0000e+00:
   Relative error (L2-norm): 4.63219e-02

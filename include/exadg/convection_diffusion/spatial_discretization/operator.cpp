@@ -73,6 +73,8 @@ Operator<dim, Number>::Operator(
 
   initialize_dof_handler_and_constraints();
 
+  print_discretization_info();
+
   pcout << std::endl << "... done!" << std::endl;
 }
 
@@ -88,14 +90,29 @@ Operator<dim, Number>::initialize_dof_handler_and_constraints()
   }
 
   affine_constraints.close();
+}
 
-  pcout << std::endl
-        << "Discontinuous Galerkin finite element discretization:" << std::endl
-        << std::endl;
+template<int dim, typename Number>
+void
+Operator<dim, Number>::print_discretization_info(bool const verbosity) const
+{
+  pcout << std::endl << "Discontinuous Galerkin finite element discretization";
+  if(param.enable_adaptivity)
+  {
+    pcout << " (adaptivity enabled):";
+  }
+  pcout << std::endl << std::endl;
 
-  print_parameter(pcout, "degree of 1D polynomials", param.degree);
-  print_parameter(pcout, "number of dofs per cell", fe->n_dofs_per_cell());
-  print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
+  if(verbosity)
+  {
+    print_parameter(pcout, "degree of 1D polynomials", param.degree);
+    print_parameter(pcout, "number of dofs per cell", fe->n_dofs_per_cell());
+    print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
+  }
+  else
+  {
+    print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
+  }
 }
 
 template<int dim, typename Number>
@@ -311,8 +328,13 @@ Operator<dim, Number>::setup_operators()
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::setup()
+Operator<dim, Number>::setup(bool const verbosity)
 {
+  if(verbosity)
+  {
+    pcout << std::endl << "Setup convection-diffusion operator ..." << std::endl;
+  }
+
   // initialize MatrixFree and MatrixFreeData
   std::shared_ptr<dealii::MatrixFree<dim, Number>> mf =
     std::make_shared<dealii::MatrixFree<dim, Number>>();
@@ -337,6 +359,11 @@ Operator<dim, Number>::setup()
   // Subsequently, call the other setup function with MatrixFree/MatrixFreeData objects as
   // arguments.
   this->setup(mf, mf_data);
+
+  if(verbosity)
+  {
+    pcout << std::endl << "... done!" << std::endl;
+  }
 }
 
 template<int dim, typename Number>
@@ -345,8 +372,6 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> con
                              std::shared_ptr<MatrixFreeData<dim, Number> const> matrix_free_data_in,
                              std::string const & dof_index_velocity_external_in)
 {
-  pcout << std::endl << "Setup convection-diffusion operator ..." << std::endl;
-
   matrix_free      = matrix_free_in;
   matrix_free_data = matrix_free_data_in;
 
@@ -360,16 +385,15 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> con
 
     setup_solver();
   }
-
-  pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, typename Number>
 void
 Operator<dim, Number>::setup_after_coarsening_and_refinement()
 {
-  this->initialize_dof_handler_and_constraints();
-  this->setup();
+  initialize_dof_handler_and_constraints();
+  print_discretization_info(false /* verbosity */);
+  setup(false /* verbosity */);
 }
 
 template<int dim, typename Number>
