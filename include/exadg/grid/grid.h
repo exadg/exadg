@@ -73,8 +73,7 @@ public:
 };
 
 /**
- * This class stores pointers to fine and coarse mappings of type MappingDoFVector for use in
- * multigrid with h-transfer.
+ * This class handles mappings for use in multigrid.
  *
  * The lambda function initialize_coarse_mappings() can be overwritten in order to realize a
  * user-specific construction of the mapping on coarser grids.
@@ -85,8 +84,72 @@ class MultigridMappings
 {
 public:
   /**
-   * This function stores pointers to fine and coarse mappings of type MappingDoFVector for use in
-   * multigrid with h-transfer.
+   * Use this constructor if the fine-level mapping is a "normal" dealii::Mapping.
+   */
+  MultigridMappings(std::shared_ptr<dealii::Mapping<dim>> mapping) : mapping_fine_level(mapping)
+  {
+  }
+
+  /**
+   * Use this constructor if the fine-level mapping is of type ExaDG::MappingDoFVector.
+   */
+  MultigridMappings(std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector)
+    : mapping_dof_vector_fine_level(mapping_dof_vector)
+  {
+  }
+
+  /**
+   * Initializes the multigrid mappings on coarse h levels.
+   */
+  void
+  initialize_coarse_mappings(Grid<dim> const & grid, unsigned int const n_h_levels)
+  {
+    // we need to initialize mappings for coarse levels only if we have a mapping of type
+    // MappingDoFVector
+    if(mapping_dof_vector_fine_level.get())
+    {
+      if(n_h_levels > 1)
+      {
+        mapping_dof_vector_coarse_levels.resize(n_h_levels - 1);
+
+        lambda_initialize_coarse_mappings(grid.triangulation, grid.coarse_triangulations);
+      }
+    }
+  }
+
+  /**
+   * Returns the dealii::Mapping for a given h_level of n_h_levels.
+   */
+  dealii::Mapping<dim> const &
+  get_mapping(unsigned int const h_level, unsigned int const n_h_levels) const
+  {
+    if(mapping_dof_vector_fine_level.get())
+    {
+      // fine level
+      if(h_level == n_h_levels - 1)
+      {
+        return *(mapping_dof_vector_fine_level->get_mapping());
+      }
+      else // coarse levels
+      {
+        AssertThrow(h_level < mapping_dof_vector_coarse_levels.size(),
+                    dealii::ExcMessage("Vector of coarse mappings seems to have incorrect size."));
+
+        return *(mapping_dof_vector_coarse_levels[h_level]->get_mapping());
+      }
+    }
+    else
+    {
+      AssertThrow(mapping_fine_level.get(),
+                  dealii::ExcMessage("Fine-level mapping is uninitialized."));
+
+      return *mapping_fine_level;
+    }
+  }
+
+  /**
+   * This function creates coarse mappings of type MappingDoFVector for use in
+   * multigrid with h-transfer given a fine level mapping of type MappingDoFVector.
    *
    * The default implementation uses an interpolation of the fine-level mapping to coarser grids.
    * You can overwrite this function in order to realize a user-specific construction of the mapping
@@ -96,15 +159,32 @@ public:
   std::function<void(
     std::shared_ptr<dealii::Triangulation<dim> const> const &              fine_triangulation,
     std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations)>
-    initialize_coarse_mappings =
+    lambda_initialize_coarse_mappings =
       [&](std::shared_ptr<dealii::Triangulation<dim> const> const & fine_triangulation,
           std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const &
             coarse_triangulations) {
+        AssertThrow(
+          mapping_dof_vector_fine_level.get(),
+          dealii::ExcMessage(
+            "Coarse mappings can not be initialized because fine level mapping is invalid."));
+
         MappingTools::initialize_coarse_mappings<dim, Number>(mapping_dof_vector_coarse_levels,
                                                               mapping_dof_vector_fine_level,
                                                               fine_triangulation,
                                                               coarse_triangulations);
       };
+
+private:
+  /**
+   * dealii::Mapping on fine level
+   */
+  std::shared_ptr<dealii::Mapping<dim>> mapping_fine_level;
+
+  /**
+   * dealii::Mapping on coarse levels
+   */
+  // TODO
+  //  std::vector<std::shared_ptr<dealii::Mapping<dim>>> mapping_coarse_levels;
 
   /**
    * MappingDoFVector object on fine triangulation level.
