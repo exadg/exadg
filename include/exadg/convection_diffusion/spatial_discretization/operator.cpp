@@ -73,7 +73,11 @@ Operator<dim, Number>::Operator(
 
   initialize_dof_handler_and_constraints();
 
-  print_discretization_info();
+  pcout << std::endl << "Discontinuous Galerkin finite element discretization:" << std::endl << std::endl;
+
+  print_parameter(pcout, "degree of 1D polynomials", param.degree);
+  print_parameter(pcout, "number of dofs per cell", fe->n_dofs_per_cell());
+  print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
 
   pcout << std::endl << "... done!" << std::endl;
 }
@@ -90,29 +94,6 @@ Operator<dim, Number>::initialize_dof_handler_and_constraints()
   }
 
   affine_constraints.close();
-}
-
-template<int dim, typename Number>
-void
-Operator<dim, Number>::print_discretization_info(bool const verbosity) const
-{
-  pcout << std::endl << "Discontinuous Galerkin finite element discretization";
-  if(param.enable_adaptivity)
-  {
-    pcout << " (adaptivity enabled):";
-  }
-  pcout << std::endl << std::endl;
-
-  if(verbosity)
-  {
-    print_parameter(pcout, "degree of 1D polynomials", param.degree);
-    print_parameter(pcout, "number of dofs per cell", fe->n_dofs_per_cell());
-    print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
-  }
-  else
-  {
-    print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
-  }
 }
 
 template<int dim, typename Number>
@@ -328,13 +309,19 @@ Operator<dim, Number>::setup_operators()
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::setup(bool const verbosity)
+Operator<dim, Number>::setup()
 {
-  if(verbosity)
-  {
-    pcout << std::endl << "Setup convection-diffusion operator ..." << std::endl;
-  }
+  pcout << std::endl << "Setup convection-diffusion operator ..." << std::endl;
 
+  do_setup();
+
+  pcout << std::endl << "... done!" << std::endl;
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::do_setup()
+{
   // initialize MatrixFree and MatrixFreeData
   std::shared_ptr<dealii::MatrixFree<dim, Number>> mf =
     std::make_shared<dealii::MatrixFree<dim, Number>>();
@@ -358,11 +345,6 @@ Operator<dim, Number>::setup(bool const verbosity)
   // Subsequently, call the other setup function with MatrixFree/MatrixFreeData objects as
   // arguments.
   this->setup(mf, mf_data);
-
-  if(verbosity)
-  {
-    pcout << std::endl << "... done!" << std::endl;
-  }
 }
 
 template<int dim, typename Number>
@@ -391,8 +373,10 @@ void
 Operator<dim, Number>::setup_after_coarsening_and_refinement()
 {
   initialize_dof_handler_and_constraints();
-  print_discretization_info(false /* verbosity */);
-  setup(false /* verbosity */);
+
+  print_parameter(pcout, "number of dofs (total) after adaptive mesh refinement", dof_handler.n_dofs());
+
+  do_setup();
 }
 
 template<int dim, typename Number>
