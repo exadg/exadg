@@ -101,7 +101,7 @@ Generating grid for 2-dimensional problem:
 
 Construct convection-diffusion operator ...
 
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
+Discontinuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
   number of dofs per cell:                   25
@@ -135,18 +135,9 @@ ________________________________________________________________________________
 
  Time step number = 1       t = 0.00000e+00 -> t + dt = 6.83060e-04
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1450
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1375
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1300
+  number of dofs (total) after adaptive mesh refinement:1450
+  number of dofs (total) after adaptive mesh refinement:1375
+  number of dofs (total) after adaptive mesh refinement:1300
 
 Calculate error for all fields at time t = 5.0546e-02:
   Relative error (L2-norm): 4.31811e-02
@@ -155,14 +146,8 @@ ________________________________________________________________________________
 
  Time step number = 75      t = 5.05464e-02 -> t + dt = 5.12295e-02
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1375
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1450
+  number of dofs (total) after adaptive mesh refinement:1375
+  number of dofs (total) after adaptive mesh refinement:1450
 
 Calculate error for all fields at time t = 1.0041e-01:
   Relative error (L2-norm): 4.33470e-02
@@ -171,18 +156,9 @@ ________________________________________________________________________________
 
  Time step number = 148     t = 1.00410e-01 -> t + dt = 1.01093e-01
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1525
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1525
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1525
+  number of dofs (total) after adaptive mesh refinement:1525
+  number of dofs (total) after adaptive mesh refinement:1525
+  number of dofs (total) after adaptive mesh refinement:1525
 
 Calculate error for all fields at time t = 1.5027e-01:
   Relative error (L2-norm): 4.34065e-02
@@ -191,14 +167,8 @@ ________________________________________________________________________________
 
  Time step number = 221     t = 1.50273e-01 -> t + dt = 1.50956e-01
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1600
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1675
+  number of dofs (total) after adaptive mesh refinement:1600
+  number of dofs (total) after adaptive mesh refinement:1675
 
 Calculate error for all fields at time t = 2.0014e-01:
   Relative error (L2-norm): 4.35424e-02
@@ -207,18 +177,9 @@ ________________________________________________________________________________
 
  Time step number = 294     t = 2.00137e-01 -> t + dt = 2.00820e-01
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1525
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1525
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1750
+  number of dofs (total) after adaptive mesh refinement:1525
+  number of dofs (total) after adaptive mesh refinement:1525
+  number of dofs (total) after adaptive mesh refinement:1750
 
 Calculate error for all fields at time t = 2.5000e-01:
   Relative error (L2-norm): 4.36406e-02
@@ -227,14 +188,8 @@ ________________________________________________________________________________
 
  Time step number = 367     t = 2.50000e-01 -> t + dt = 2.50683e-01
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1825
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1900
+  number of dofs (total) after adaptive mesh refinement:1825
+  number of dofs (total) after adaptive mesh refinement:1900
 
 Calculate error for all fields at time t = 3.0055e-01:
   Relative error (L2-norm): 4.37651e-02
@@ -243,18 +198,9 @@ ________________________________________________________________________________
 
  Time step number = 441     t = 3.00546e-01 -> t + dt = 3.01230e-01
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1600
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1450
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1525
+  number of dofs (total) after adaptive mesh refinement:1600
+  number of dofs (total) after adaptive mesh refinement:1450
+  number of dofs (total) after adaptive mesh refinement:1525
 
 Calculate error for all fields at time t = 3.5041e-01:
   Relative error (L2-norm): 4.40130e-02
@@ -263,14 +209,8 @@ ________________________________________________________________________________
 
  Time step number = 514     t = 3.50410e-01 -> t + dt = 3.51093e-01
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1525
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1375
+  number of dofs (total) after adaptive mesh refinement:1525
+  number of dofs (total) after adaptive mesh refinement:1375
 
 Calculate error for all fields at time t = 4.0027e-01:
   Relative error (L2-norm): 4.42462e-02
@@ -279,14 +219,8 @@ ________________________________________________________________________________
 
  Time step number = 587     t = 4.00273e-01 -> t + dt = 4.00956e-01
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1525
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1450
+  number of dofs (total) after adaptive mesh refinement:1525
+  number of dofs (total) after adaptive mesh refinement:1450
 
 Calculate error for all fields at time t = 4.5014e-01:
   Relative error (L2-norm): 4.43734e-02
@@ -295,18 +229,9 @@ ________________________________________________________________________________
 
  Time step number = 660     t = 4.50137e-01 -> t + dt = 4.50820e-01
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1525
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1525
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1600
+  number of dofs (total) after adaptive mesh refinement:1525
+  number of dofs (total) after adaptive mesh refinement:1525
+  number of dofs (total) after adaptive mesh refinement:1600
 
 Calculate error for all fields at time t = 5.0000e-01:
   Relative error (L2-norm): 4.45132e-02
@@ -315,14 +240,8 @@ ________________________________________________________________________________
 
  Time step number = 734     t = 5.00683e-01 -> t + dt = 5.01366e-01
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1525
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1450
+  number of dofs (total) after adaptive mesh refinement:1525
+  number of dofs (total) after adaptive mesh refinement:1450
 
 Calculate error for all fields at time t = 5.5055e-01:
   Relative error (L2-norm): 4.46687e-02
@@ -331,18 +250,9 @@ ________________________________________________________________________________
 
  Time step number = 807     t = 5.50546e-01 -> t + dt = 5.51230e-01
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1525
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1750
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1825
+  number of dofs (total) after adaptive mesh refinement:1525
+  number of dofs (total) after adaptive mesh refinement:1750
+  number of dofs (total) after adaptive mesh refinement:1825
 
 Calculate error for all fields at time t = 6.0041e-01:
   Relative error (L2-norm): 4.48644e-02
@@ -351,14 +261,8 @@ ________________________________________________________________________________
 
  Time step number = 880     t = 6.00410e-01 -> t + dt = 6.01093e-01
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1825
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1750
+  number of dofs (total) after adaptive mesh refinement:1825
+  number of dofs (total) after adaptive mesh refinement:1750
 
 Calculate error for all fields at time t = 6.5027e-01:
   Relative error (L2-norm): 4.50020e-02
@@ -367,18 +271,9 @@ ________________________________________________________________________________
 
  Time step number = 953     t = 6.50273e-01 -> t + dt = 6.50956e-01
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1750
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1975
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1975
+  number of dofs (total) after adaptive mesh refinement:1750
+  number of dofs (total) after adaptive mesh refinement:1975
+  number of dofs (total) after adaptive mesh refinement:1975
 
 Calculate error for all fields at time t = 7.0014e-01:
   Relative error (L2-norm): 4.51795e-02
@@ -387,14 +282,8 @@ ________________________________________________________________________________
 
  Time step number = 1026    t = 7.00137e-01 -> t + dt = 7.00820e-01
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1900
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1975
+  number of dofs (total) after adaptive mesh refinement:1900
+  number of dofs (total) after adaptive mesh refinement:1975
 
 Calculate error for all fields at time t = 7.5000e-01:
   Relative error (L2-norm): 4.53229e-02
@@ -403,18 +292,9 @@ ________________________________________________________________________________
 
  Time step number = 1099    t = 7.50000e-01 -> t + dt = 7.50683e-01
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    2050
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    1975
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    2050
+  number of dofs (total) after adaptive mesh refinement:2050
+  number of dofs (total) after adaptive mesh refinement:1975
+  number of dofs (total) after adaptive mesh refinement:2050
 
 Calculate error for all fields at time t = 8.0055e-01:
   Relative error (L2-norm): 4.55123e-02
@@ -423,14 +303,8 @@ ________________________________________________________________________________
 
  Time step number = 1173    t = 8.00546e-01 -> t + dt = 8.01230e-01
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    2050
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    2350
+  number of dofs (total) after adaptive mesh refinement:2050
+  number of dofs (total) after adaptive mesh refinement:2350
 
 Calculate error for all fields at time t = 8.5041e-01:
   Relative error (L2-norm): 4.57090e-02
@@ -439,14 +313,8 @@ ________________________________________________________________________________
 
  Time step number = 1246    t = 8.50410e-01 -> t + dt = 8.51093e-01
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    2425
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    2350
+  number of dofs (total) after adaptive mesh refinement:2425
+  number of dofs (total) after adaptive mesh refinement:2350
 
 Calculate error for all fields at time t = 9.0027e-01:
   Relative error (L2-norm): 4.59263e-02
@@ -455,18 +323,9 @@ ________________________________________________________________________________
 
  Time step number = 1319    t = 9.00273e-01 -> t + dt = 9.00956e-01
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    2425
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    2350
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    2200
+  number of dofs (total) after adaptive mesh refinement:2425
+  number of dofs (total) after adaptive mesh refinement:2350
+  number of dofs (total) after adaptive mesh refinement:2200
 
 Calculate error for all fields at time t = 9.5014e-01:
   Relative error (L2-norm): 4.61279e-02
@@ -475,14 +334,8 @@ ________________________________________________________________________________
 
  Time step number = 1392    t = 9.50137e-01 -> t + dt = 9.50820e-01
 ________________________________________________________________________________
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    2275
-
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    2500
+  number of dofs (total) after adaptive mesh refinement:2275
+  number of dofs (total) after adaptive mesh refinement:2500
 
 Calculate error for all fields at time t = 1.0000e+00:
   Relative error (L2-norm): 4.63391e-02
