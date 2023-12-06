@@ -131,7 +131,7 @@ apply_deformed_cube_manifold(dealii::Triangulation<dim> & triangulation,
                              double const                 deformation,
                              unsigned int const           frequency)
 {
-  static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
+  DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
   triangulation.set_all_manifold_ids(1);
   triangulation.set_manifold(1, manifold);
 

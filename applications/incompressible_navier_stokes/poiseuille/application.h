@@ -317,43 +317,50 @@ private:
   {
     (void)mapping;
 
-    auto const lambda_create_triangulation =
-      [&](dealii::Triangulation<dim, dim> &                        tria,
-          std::vector<dealii::GridTools::PeriodicFacePair<
-            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
-          unsigned int const                                       global_refinements,
-          std::vector<unsigned int> const &                        vector_local_refinements) {
-        (void)vector_local_refinements;
+    auto const lambda_create_triangulation = [&](dealii::Triangulation<dim, dim> & tria,
+                                                 std::vector<dealii::GridTools::PeriodicFacePair<
+                                                   typename dealii::Triangulation<
+                                                     dim>::cell_iterator>> & periodic_face_pairs,
+                                                 unsigned int const          global_refinements,
+                                                 std::vector<unsigned int> const &
+                                                   vector_local_refinements) {
+      (void)vector_local_refinements;
 
-        double const              y_upper = apply_symmetry_bc ? 0.0 : H / 2.;
-        dealii::Point<dim>        point1(0.0, -H / 2.), point2(L, y_upper);
-        std::vector<unsigned int> repetitions({2, 1});
-        dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, point1, point2);
+      double const              y_upper = apply_symmetry_bc ? 0.0 : H / 2.;
+      dealii::Point<dim>        point1(0.0, -H / 2.), point2(L, y_upper);
+      std::vector<unsigned int> repetitions({2, 1});
+      dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, point1, point2);
 
-        // set boundary indicator
-        for(auto cell : tria.cell_iterators())
+      // set boundary indicator
+      for(auto cell : tria.cell_iterators())
+      {
+        for(auto const & face : cell->face_indices())
         {
-          for(auto const & face : cell->face_indices())
-          {
-            if((std::fabs(cell->face(face)->center()(0) - 0.0) < 1e-12))
-              cell->face(face)->set_boundary_id(1);
-            if((std::fabs(cell->face(face)->center()(0) - L) < 1e-12))
-              cell->face(face)->set_boundary_id(2);
+          if((std::fabs(cell->face(face)->center()(0) - 0.0) < 1e-12))
+            cell->face(face)->set_boundary_id(1);
+          if((std::fabs(cell->face(face)->center()(0) - L) < 1e-12))
+            cell->face(face)->set_boundary_id(2);
 
-            if(apply_symmetry_bc) // upper wall
-              if((std::fabs(cell->face(face)->center()(1) - y_upper) < 1e-12))
-                cell->face(face)->set_boundary_id(3);
-          }
+          if(apply_symmetry_bc) // upper wall
+            if((std::fabs(cell->face(face)->center()(1) - y_upper) < 1e-12))
+              cell->face(face)->set_boundary_id(3);
         }
+      }
 
-        if(boundary_condition == BoundaryCondition::Periodic)
-        {
-          dealii::GridTools::collect_periodic_faces(tria, 1, 2, 0, periodic_face_pairs);
-          tria.add_periodicity(periodic_face_pairs);
-        }
+      if(boundary_condition == BoundaryCondition::Periodic)
+      {
+        AssertThrow(
+          this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+          dealii::ExcMessage(
+            "Periodic faces might not be applied correctly for TriangulationType::FullyDistributed. "
+            "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
 
-        tria.refine_global(global_refinements);
-      };
+        dealii::GridTools::collect_periodic_faces(tria, 1, 2, 0, periodic_face_pairs);
+        tria.add_periodicity(periodic_face_pairs);
+      }
+
+      tria.refine_global(global_refinements);
+    };
 
     GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,

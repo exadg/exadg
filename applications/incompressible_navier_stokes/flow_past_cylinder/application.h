@@ -339,6 +339,7 @@ private:
           std::vector<unsigned int> const &                        vector_local_refinements) {
         create_coarse_grid<dim>(tria,
                                 periodic_face_pairs,
+                                this->param.grid.triangulation_type,
                                 cylinder_type,
                                 this->param.grid.element_type);
 

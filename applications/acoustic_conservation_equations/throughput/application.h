@@ -86,24 +86,41 @@ private:
   {
     (void)mapping;
 
-    auto const lambda_create_triangulation =
-      [&](dealii::Triangulation<dim, dim> &                        tria,
-          std::vector<dealii::GridTools::PeriodicFacePair<
-            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
-          unsigned int const                                       global_refinements,
-          std::vector<unsigned int> const & /* vector_local_refinements*/) {
-        double const left = -1.0, right = 1.0;
-        double const deformation = 0.1;
+    auto const lambda_create_triangulation = [&](
+                                               dealii::Triangulation<dim, dim> & tria,
+                                               std::vector<dealii::GridTools::PeriodicFacePair<
+                                                 typename dealii::Triangulation<
+                                                   dim>::cell_iterator>> & periodic_face_pairs,
+                                               unsigned int const          global_refinements,
+                                               std::vector<
+                                                 unsigned int> const & /* vector_local_refinements*/) {
+      double const left = -1.0, right = 1.0;
+      double const deformation = 0.1;
 
-        create_periodic_box(tria,
-                            global_refinements,
-                            periodic_face_pairs,
-                            this->n_subdivisions_1d_hypercube,
-                            left,
-                            right,
-                            mesh_type == MeshType::Curvilinear,
-                            deformation);
-      };
+      AssertThrow(
+        this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+        dealii::ExcMessage(
+          "Periodic faces might not be applied correctly for TriangulationType::FullyDistributed. "
+          "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
+
+      if(mesh_type == MeshType::Curvilinear)
+      {
+        AssertThrow(
+          this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+          dealii::ExcMessage(
+            "Manifolds might not be applied correctly for TriangulationType::FullyDistributed. "
+            "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
+      }
+
+      create_periodic_box(tria,
+                          global_refinements,
+                          periodic_face_pairs,
+                          this->n_subdivisions_1d_hypercube,
+                          left,
+                          right,
+                          mesh_type == MeshType::Curvilinear,
+                          deformation);
+    };
 
     GridUtilities::create_triangulation<dim>(
       grid, this->mpi_comm, this->param.grid, lambda_create_triangulation, {});

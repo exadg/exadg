@@ -303,51 +303,65 @@ private:
   {
     (void)mapping;
 
-    auto const lambda_create_triangulation =
-      [&](dealii::Triangulation<dim, dim> &                        tria,
-          std::vector<dealii::GridTools::PeriodicFacePair<
-            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
-          unsigned int const                                       global_refinements,
-          std::vector<unsigned int> const &                        vector_local_refinements) {
-        (void)vector_local_refinements;
+    auto const lambda_create_triangulation = [&](dealii::Triangulation<dim, dim> & tria,
+                                                 std::vector<dealii::GridTools::PeriodicFacePair<
+                                                   typename dealii::Triangulation<
+                                                     dim>::cell_iterator>> & periodic_face_pairs,
+                                                 unsigned int const          global_refinements,
+                                                 std::vector<unsigned int> const &
+                                                   vector_local_refinements) {
+      (void)vector_local_refinements;
 
-        double const deformation = 0.5;
+      double const deformation = 0.5;
 
-        if(ALE)
+      if(ALE)
+      {
+        AssertThrow(mesh_type == MeshType::Cartesian,
+                    dealii::ExcMessage(
+                      "Taylor-Green vortex: Parameter mesh_type is invalid for ALE."));
+      }
+
+      if(mesh_type == MeshType::Curvilinear)
+      {
+        AssertThrow(
+          this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+          dealii::ExcMessage(
+            "Manifolds might not be applied correctly for TriangulationType::FullyDistributed. "
+            "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
+      }
+
+
+      if(exploit_symmetry == false) // periodic box
+      {
+        AssertThrow(
+          this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+          dealii::ExcMessage(
+            "Periodic faces might not be applied correctly for TriangulationType::FullyDistributed. "
+            "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
+
+        create_periodic_box(tria,
+                            global_refinements,
+                            periodic_face_pairs,
+                            n_subdivisions_1d_hypercube,
+                            left,
+                            right,
+                            mesh_type == MeshType::Curvilinear,
+                            deformation);
+      }
+      else // symmetric box
+      {
+        dealii::GridGenerator::subdivided_hyper_cube(tria, n_subdivisions_1d_hypercube, 0.0, right);
+
+        if(mesh_type == MeshType::Curvilinear)
         {
-          AssertThrow(mesh_type == MeshType::Cartesian,
-                      dealii::ExcMessage(
-                        "Taylor-Green vortex: Parameter mesh_type is invalid for ALE."));
+          unsigned int const frequency = 2;
+
+          apply_deformed_cube_manifold(tria, 0.0, right, deformation, frequency);
         }
 
-        if(exploit_symmetry == false) // periodic box
-        {
-          create_periodic_box(tria,
-                              global_refinements,
-                              periodic_face_pairs,
-                              n_subdivisions_1d_hypercube,
-                              left,
-                              right,
-                              mesh_type == MeshType::Curvilinear,
-                              deformation);
-        }
-        else // symmetric box
-        {
-          dealii::GridGenerator::subdivided_hyper_cube(tria,
-                                                       n_subdivisions_1d_hypercube,
-                                                       0.0,
-                                                       right);
-
-          if(mesh_type == MeshType::Curvilinear)
-          {
-            unsigned int const frequency = 2;
-
-            apply_deformed_cube_manifold(tria, 0.0, right, deformation, frequency);
-          }
-
-          tria.refine_global(global_refinements);
-        }
-      };
+        tria.refine_global(global_refinements);
+      }
+    };
 
     GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
