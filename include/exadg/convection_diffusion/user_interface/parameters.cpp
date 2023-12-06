@@ -264,8 +264,8 @@ Parameters::check() const
                                    "and ALE formulation not implemented."));
 
     AssertThrow(temporal_discretization == TemporalDiscretization::BDF,
-                dealii::ExcMessage("Combination of adaptive mesh refinement "
-                                   "and explicit time integration not implemented."));
+                dealii::ExcMessage("Adaptive mesh refinement only implemented"
+                                   "for implicit time integration."));
 
     AssertThrow(use_cell_based_face_loops == false,
                 dealii::ExcMessage("Cell-based face loops not supported for "
