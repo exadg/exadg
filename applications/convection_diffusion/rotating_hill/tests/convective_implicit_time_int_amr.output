@@ -138,11 +138,11 @@ ________________________________________________________________________________
 
 Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  number of dofs (total):                    1375
+  number of dofs (total):                    1450
 
 Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  number of dofs (total):                    1300
+  number of dofs (total):                    1375
 
 Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
@@ -390,14 +390,14 @@ ________________________________________________________________________________
 
 Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  number of dofs (total):                    1825
+  number of dofs (total):                    1900
 
 Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  number of dofs (total):                    1900
+  number of dofs (total):                    1975
 
 Calculate error for all fields at time t = 7.5000e-01:
-  Relative error (L2-norm): 4.53225e-02
+  Relative error (L2-norm): 4.53229e-02
 
 ________________________________________________________________________________
 
@@ -406,7 +406,7 @@ ________________________________________________________________________________
 
 Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  number of dofs (total):                    1975
+  number of dofs (total):                    2050
 
 Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
@@ -414,10 +414,10 @@ Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
 Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  number of dofs (total):                    1975
+  number of dofs (total):                    2050
 
 Calculate error for all fields at time t = 8.0055e-01:
-  Relative error (L2-norm): 4.55100e-02
+  Relative error (L2-norm): 4.55123e-02
 
 ________________________________________________________________________________
 
@@ -426,14 +426,14 @@ ________________________________________________________________________________
 
 Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  number of dofs (total):                    1975
+  number of dofs (total):                    2050
 
 Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  number of dofs (total):                    2200
+  number of dofs (total):                    2350
 
 Calculate error for all fields at time t = 8.5041e-01:
-  Relative error (L2-norm): 4.57041e-02
+  Relative error (L2-norm): 4.57090e-02
 
 ________________________________________________________________________________
 
@@ -442,19 +442,23 @@ ________________________________________________________________________________
 
 Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  number of dofs (total):                    2275
+  number of dofs (total):                    2425
 
 Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  number of dofs (total):                    2275
+  number of dofs (total):                    2350
 
 Calculate error for all fields at time t = 9.0027e-01:
-  Relative error (L2-norm): 4.59193e-02
+  Relative error (L2-norm): 4.59263e-02
 
 ________________________________________________________________________________
 
  Time step number = 1319    t = 9.00273e-01 -> t + dt = 9.00956e-01
 ________________________________________________________________________________
+
+Discontinuous Galerkin finite element discretization (adaptivity enabled):
+
+  number of dofs (total):                    2425
 
 Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
@@ -464,12 +468,8 @@ Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
   number of dofs (total):                    2200
 
-Discontinuous Galerkin finite element discretization (adaptivity enabled):
-
-  number of dofs (total):                    2275
-
 Calculate error for all fields at time t = 9.5014e-01:
-  Relative error (L2-norm): 4.61196e-02
+  Relative error (L2-norm): 4.61279e-02
 
 ________________________________________________________________________________
 
@@ -478,11 +478,11 @@ ________________________________________________________________________________
 
 Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
-  number of dofs (total):                    2425
+  number of dofs (total):                    2275
 
 Discontinuous Galerkin finite element discretization (adaptivity enabled):
 
   number of dofs (total):                    2500
 
 Calculate error for all fields at time t = 1.0000e+00:
-  Relative error (L2-norm): 4.63219e-02
+  Relative error (L2-norm): 4.63391e-02

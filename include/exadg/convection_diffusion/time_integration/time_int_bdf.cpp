@@ -658,7 +658,7 @@ template<int dim, typename Number>
 dealii::LinearAlgebra::distributed::Vector<Number> const &
 TimeIntBDF<dim, Number>::get_solution_np() const
 {
-  return (this->solution[0]);
+  return (this->solution_np);
 }
 
 template<int dim, typename Number>
