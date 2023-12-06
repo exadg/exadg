@@ -55,7 +55,16 @@ Driver<dim, n_components, Number>::setup()
   AssertThrow(application->domain2.get(), dealii::ExcMessage("Domain 2 is uninitialized."));
 
   application->domain1->setup_pre(grid1, mapping1, {"Domain1"});
+
+  // TODO: needs to be shifted to application in order to allow mappings realized as
+  // MappingDoFVector
+  multigrid_mappings1 = std::make_shared<MultigridMappings<dim, Number>>(mapping1);
+
   application->domain2->setup_pre(grid2, mapping2, {"Domain2"});
+
+  // TODO: needs to be shifted to application in order to allow mappings realized as
+  // MappingDoFVector
+  multigrid_mappings2 = std::make_shared<MultigridMappings<dim, Number>>(mapping2);
 
   // set boundary IDs for domain 1
   set_boundary_ids_overlap_region(*grid1->triangulation,
@@ -73,8 +82,8 @@ Driver<dim, n_components, Number>::setup()
   application->domain2->setup_post(grid2);
 
   // setup Poisson solvers
-  poisson1->setup(application->domain1, grid1, mapping1, mpi_comm);
-  poisson2->setup(application->domain2, grid2, mapping2, mpi_comm);
+  poisson1->setup(application->domain1, grid1, mapping1, multigrid_mappings1, mpi_comm);
+  poisson2->setup(application->domain2, grid2, mapping2, multigrid_mappings2, mpi_comm);
 
   // setup interface coupling
   {

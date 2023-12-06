@@ -61,7 +61,13 @@ Driver<dim, Number>::setup()
 
   application->setup(grid, mapping);
 
-  if(application->get_parameters().ale_formulation) // moving mesh
+  // TODO: needs to be shifted to application in order to allow mappings realized as
+  // MappingDoFVector
+  multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping);
+
+  bool const ale = application->get_parameters().ale_formulation;
+
+  if(ale) // moving mesh
   {
     std::shared_ptr<dealii::Function<dim>> mesh_motion =
       application->create_mesh_movement_function();
@@ -85,17 +91,21 @@ Driver<dim, Number>::setup()
     };
   }
 
+  ale_multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(ale_mapping);
+
   std::shared_ptr<dealii::Mapping<dim> const> dynamic_mapping =
     get_dynamic_mapping<dim, Number>(mapping, ale_mapping);
 
   // initialize convection-diffusion operator
-  pde_operator = std::make_shared<Operator<dim, Number>>(grid,
-                                                         dynamic_mapping,
-                                                         application->get_boundary_descriptor(),
-                                                         application->get_field_functions(),
-                                                         application->get_parameters(),
-                                                         "scalar",
-                                                         mpi_comm);
+  pde_operator =
+    std::make_shared<Operator<dim, Number>>(grid,
+                                            dynamic_mapping,
+                                            ale ? ale_multigrid_mappings : multigrid_mappings,
+                                            application->get_boundary_descriptor(),
+                                            application->get_field_functions(),
+                                            application->get_parameters(),
+                                            "scalar",
+                                            mpi_comm);
 
   // setup convection-diffusion operator
   pde_operator->setup();

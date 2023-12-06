@@ -55,20 +55,20 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::MultigridPrecondition
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
-  MultigridData const &                       data,
-  std::shared_ptr<Grid<dim> const>            grid,
-  std::shared_ptr<dealii::Mapping<dim> const> mapping,
-  dealii::FiniteElement<dim> const &          fe,
-  bool const                                  operator_is_singular,
-  Map_DBC const &                             dirichlet_bc,
-  Map_DBC_ComponentMask const &               dirichlet_bc_component_mask,
-  bool const                                  initialize_preconditioners)
+  MultigridData const &                                 data,
+  std::shared_ptr<Grid<dim> const>                      grid,
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+  dealii::FiniteElement<dim> const &                    fe,
+  bool const                                            operator_is_singular,
+  Map_DBC const &                                       dirichlet_bc,
+  Map_DBC_ComponentMask const &                         dirichlet_bc_component_mask,
+  bool const                                            initialize_preconditioners)
 {
   this->data = data;
 
   this->grid = grid;
 
-  this->mapping = mapping;
+  this->multigrid_mappings = multigrid_mappings;
 
   bool const is_dg = (fe.dofs_per_vertex == 0);
 

@@ -43,39 +43,6 @@ enum class OperatorType
   Apply
 };
 
-template<int dim, int n_components, typename Number>
-class Solver
-{
-public:
-  void
-  setup(std::shared_ptr<ApplicationBase<dim, n_components, Number>> application,
-        std::shared_ptr<Grid<dim> const> const &                    grid,
-        std::shared_ptr<dealii::Mapping<dim> const> const &         mapping,
-        MPI_Comm const                                              mpi_comm,
-        bool const                                                  is_throughput_study)
-  {
-    pde_operator =
-      std::make_shared<Operator<dim, n_components, Number>>(grid,
-                                                            mapping,
-                                                            application->get_boundary_descriptor(),
-                                                            application->get_field_functions(),
-                                                            application->get_parameters(),
-                                                            "Poisson",
-                                                            mpi_comm);
-
-    pde_operator->setup();
-
-    if(not(is_throughput_study))
-    {
-      postprocessor = application->create_postprocessor();
-      postprocessor->setup(*pde_operator);
-    }
-  }
-
-  std::shared_ptr<Operator<dim, n_components, Number>>          pde_operator;
-  std::shared_ptr<PostProcessorBase<dim, n_components, Number>> postprocessor;
-};
-
 template<int dim, typename Number>
 class Driver
 {
@@ -123,7 +90,10 @@ private:
 
   std::shared_ptr<dealii::Mapping<dim>> mapping;
 
-  std::shared_ptr<Solver<dim, 1, Number>> poisson;
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
+
+  std::shared_ptr<Operator<dim, 1, Number>>          pde_operator;
+  std::shared_ptr<PostProcessorBase<dim, 1, Number>> postprocessor;
 
   // number of iterations
   mutable unsigned int iterations;

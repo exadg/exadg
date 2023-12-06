@@ -56,12 +56,17 @@ public:
     // setup application
     domain->setup(grid, mapping, subsection_names_parameters);
 
+    // TODO: needs to be shifted to application in order to allow mappings realized as
+    // MappingDoFVector
+    multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping);
+
     // ALE is not used for this solver
     std::shared_ptr<HelpersALE<Number>> helpers_ale_dummy;
 
     // initialize pde_operator
     pde_operator = create_operator<dim, Number>(grid,
                                                 mapping,
+                                                multigrid_mappings,
                                                 domain->get_boundary_descriptor(),
                                                 domain->get_field_functions(),
                                                 domain->get_parameters(),
@@ -100,6 +105,8 @@ public:
    */
   std::shared_ptr<Grid<dim>>            grid;
   std::shared_ptr<dealii::Mapping<dim>> mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
 
   /*
    * Spatial discretization

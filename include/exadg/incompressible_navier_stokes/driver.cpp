@@ -61,15 +61,21 @@ Driver<dim, Number>::setup()
 
   application->setup(grid, mapping);
 
+  // TODO: needs to be shifted to application in order to allow mappings realized as
+  // MappingDoFVector
+  multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping);
+
   // moving mesh (ALE formulation)
-  if(application->get_parameters().ale_formulation)
+  bool const ale = application->get_parameters().ale_formulation;
+
+  if(ale)
   {
     if(application->get_parameters().mesh_movement_type == MeshMovementType::Function)
     {
       std::shared_ptr<dealii::Function<dim>> mesh_motion =
         application->create_mesh_movement_function();
 
-      grid_motion = std::make_shared<DeformedMappingFunction<dim, Number>>(
+      ale_mapping = std::make_shared<DeformedMappingFunction<dim, Number>>(
         mapping,
         application->get_parameters().mapping_degree,
         *grid->triangulation,
@@ -80,9 +86,10 @@ Driver<dim, Number>::setup()
     {
       application->setup_poisson(grid);
 
-      grid_motion = std::make_shared<Poisson::DeformedMapping<dim, Number>>(
+      ale_mapping = std::make_shared<Poisson::DeformedMapping<dim, Number>>(
         grid,
         mapping,
+        multigrid_mappings,
         application->get_boundary_descriptor_poisson(),
         application->get_field_functions_poisson(),
         application->get_parameters_poisson(),
@@ -94,10 +101,12 @@ Driver<dim, Number>::setup()
       AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
+    ale_multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(ale_mapping);
+
     helpers_ale = std::make_shared<HelpersALE<Number>>();
 
     helpers_ale->move_grid = [&](double const & time) {
-      grid_motion->update(time,
+      ale_mapping->update(time,
                           false /* print_solver_info */,
                           this->time_integrator->get_number_of_time_steps());
     };
@@ -108,12 +117,13 @@ Driver<dim, Number>::setup()
   }
 
   std::shared_ptr<dealii::Mapping<dim> const> mapping_fluid =
-    get_dynamic_mapping<dim, Number>(mapping, grid_motion);
+    get_dynamic_mapping<dim, Number>(mapping, ale_mapping);
 
   if(application->get_parameters().solver_type == SolverType::Unsteady)
   {
     pde_operator = create_operator<dim, Number>(grid,
                                                 mapping_fluid,
+                                                ale ? ale_multigrid_mappings : multigrid_mappings,
                                                 application->get_boundary_descriptor(),
                                                 application->get_field_functions(),
                                                 application->get_parameters(),
@@ -125,6 +135,8 @@ Driver<dim, Number>::setup()
     pde_operator =
       std::make_shared<IncNS::OperatorCoupled<dim, Number>>(grid,
                                                             mapping_fluid,
+                                                            ale ? ale_multigrid_mappings :
+                                                                  multigrid_mappings,
                                                             application->get_boundary_descriptor(),
                                                             application->get_field_functions(),
                                                             application->get_parameters(),

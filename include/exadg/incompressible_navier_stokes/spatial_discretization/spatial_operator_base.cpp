@@ -40,16 +40,18 @@ namespace IncNS
 {
 template<int dim, typename Number>
 SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
-  std::shared_ptr<Grid<dim> const>               grid_in,
-  std::shared_ptr<dealii::Mapping<dim> const>    mapping_in,
-  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
-  Parameters const &                             parameters_in,
-  std::string const &                            field_in,
-  MPI_Comm const &                               mpi_comm_in)
+  std::shared_ptr<Grid<dim> const>                      grid_in,
+  std::shared_ptr<dealii::Mapping<dim> const>           mapping_in,
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings_in,
+  std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim> const>            field_functions_in,
+  Parameters const &                                    parameters_in,
+  std::string const &                                   field_in,
+  MPI_Comm const &                                      mpi_comm_in)
   : dealii::Subscriptor(),
     grid(grid_in),
     mapping(mapping_in),
+    multigrid_mappings(multigrid_mappings_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(parameters_in),
@@ -1302,7 +1304,7 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
 
   mg_preconditioner->initialize(mg_data,
                                 grid,
-                                get_mapping(),
+                                multigrid_mappings,
                                 dof_handler_u_scalar.get_fe(),
                                 laplace_operator.get_data(),
                                 param.ale_formulation,
@@ -1676,7 +1678,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       auto const & dof_handler = this->get_dof_handler_u();
       mg_preconditioner->initialize(this->param.multigrid_data_projection,
                                     grid,
-                                    get_mapping(),
+                                    multigrid_mappings,
                                     dof_handler.get_fe(),
                                     *this->projection_operator,
                                     this->param.ale_formulation,

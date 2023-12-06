@@ -55,6 +55,10 @@ Driver<dim, Number>::setup()
 
   application->setup(grid, mapping);
 
+  // TODO: needs to be shifted to application in order to allow mappings realized as
+  // MappingDoFVector
+  multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping);
+
   // additional parameter check: This driver does not implement steady
   // flow-transport problems. Note, however, that ProblemType and
   // SolverType might be Steady for the fluid problem in order to be able
@@ -67,7 +71,9 @@ Driver<dim, Number>::setup()
                 dealii::ExcMessage("ProblemType must be unsteady!"));
   }
 
-  if(application->fluid->get_parameters().ale_formulation) // moving mesh
+  bool const ale = application->fluid->get_parameters().ale_formulation;
+
+  if(ale) // moving mesh
   {
     AssertThrow(application->fluid->get_parameters().mesh_movement_type ==
                   IncNS::MeshMovementType::Function,
@@ -81,6 +87,8 @@ Driver<dim, Number>::setup()
       *grid->triangulation,
       mesh_motion,
       application->fluid->get_parameters().start_time);
+
+    ale_multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(ale_mapping);
 
     helpers_ale = std::make_shared<HelpersALE<Number>>();
 
@@ -110,6 +118,7 @@ Driver<dim, Number>::setup()
     fluid_operator =
       IncNS::create_operator<dim, Number>(grid,
                                           dynamic_mapping,
+                                          ale ? ale_multigrid_mappings : multigrid_mappings,
                                           application->fluid->get_boundary_descriptor(),
                                           application->fluid->get_field_functions(),
                                           application->fluid->get_parameters(),
@@ -121,6 +130,7 @@ Driver<dim, Number>::setup()
     fluid_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
       grid,
       dynamic_mapping,
+      ale ? ale_multigrid_mappings : multigrid_mappings,
       application->fluid->get_boundary_descriptor(),
       application->fluid->get_field_functions(),
       application->fluid->get_parameters(),
@@ -144,6 +154,7 @@ Driver<dim, Number>::setup()
     scalar_operator[i] = std::make_shared<ConvDiff::Operator<dim, Number>>(
       grid,
       dynamic_mapping,
+      ale ? ale_multigrid_mappings : multigrid_mappings,
       application->scalars[i]->get_boundary_descriptor(),
       application->scalars[i]->get_field_functions(),
       application->scalars[i]->get_parameters(),

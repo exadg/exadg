@@ -100,8 +100,12 @@ private:
 
   std::shared_ptr<dealii::Mapping<dim>> mapping;
 
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
+
   // grid motion (ALE)
   std::shared_ptr<DeformedMappingFunction<dim, Number>> ale_mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> ale_multigrid_mappings;
 
   // ALE helper functions required by time integrator
   std::shared_ptr<HelpersALE<Number>> helpers_ale;

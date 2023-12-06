@@ -166,8 +166,12 @@ private:
 
   std::shared_ptr<dealii::Mapping<dim>> mapping;
 
-  // moving mapping (ALE)
-  std::shared_ptr<DeformedMappingBase<dim, Number>> grid_motion;
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
+
+  // ALE mapping
+  std::shared_ptr<DeformedMappingBase<dim, Number>> ale_mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> ale_multigrid_mappings;
 
   // ALE helper functions required by time integrator
   std::shared_ptr<HelpersALE<Number>> helpers_ale;

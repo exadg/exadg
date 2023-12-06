@@ -59,14 +59,14 @@ public:
   MultigridPreconditioner(MPI_Comm const & mpi_comm);
 
   void
-  initialize(MultigridData const &                       mg_data,
-             std::shared_ptr<Grid<dim> const>            grid,
-             std::shared_ptr<dealii::Mapping<dim> const> mapping,
-             dealii::FiniteElement<dim> const &          fe,
-             LaplaceOperatorData<rank, dim> const &      data,
-             bool const                                  mesh_is_moving,
-             Map_DBC const &                             dirichlet_bc,
-             Map_DBC_ComponentMask const &               dirichlet_bc_component_mask);
+  initialize(MultigridData const &                                 mg_data,
+             std::shared_ptr<Grid<dim> const>                      grid,
+             std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+             dealii::FiniteElement<dim> const &                    fe,
+             LaplaceOperatorData<rank, dim> const &                data,
+             bool const                                            mesh_is_moving,
+             Map_DBC const &                                       dirichlet_bc,
+             Map_DBC_ComponentMask const &                         dirichlet_bc_component_mask);
 
   void
   update() final;

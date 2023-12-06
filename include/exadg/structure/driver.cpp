@@ -59,9 +59,14 @@ Driver<dim, Number>::setup()
 
   application->setup(grid, mapping);
 
+  // TODO: needs to be shifted to application in order to allow mappings realized as
+  // MappingDoFVector
+  multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping);
+
   // setup spatial operator
   pde_operator = std::make_shared<Operator<dim, Number>>(grid,
                                                          mapping,
+                                                         multigrid_mappings,
                                                          application->get_boundary_descriptor(),
                                                          application->get_field_functions(),
                                                          application->get_material_descriptor(),

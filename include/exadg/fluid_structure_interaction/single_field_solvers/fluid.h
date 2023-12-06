@@ -72,6 +72,8 @@ public:
   std::shared_ptr<Grid<dim>>            grid;
   std::shared_ptr<dealii::Mapping<dim>> mapping;
 
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
+
   // spatial discretization
   std::shared_ptr<IncNS::SpatialOperatorBase<dim, Number>> pde_operator;
 
@@ -83,6 +85,8 @@ public:
 
   // ALE mapping
   std::shared_ptr<DeformedMappingBase<dim, Number>> ale_mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> ale_multigrid_mappings;
 
   // ALE helper functions required by fluid time integrator
   std::shared_ptr<HelpersALE<Number>> helpers_ale;
@@ -102,12 +106,17 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   // setup application
   application->setup(grid, mapping);
 
+  // TODO: needs to be shifted to application in order to allow mappings realized as
+  // MappingDoFVector
+  multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping);
+
   // ALE: create grid motion object
   if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)
   {
     ale_mapping = std::make_shared<Poisson::DeformedMapping<dim, Number>>(
       grid,
       mapping,
+      multigrid_mappings,
       application->get_boundary_descriptor_ale_poisson(),
       application->get_field_functions_ale_poisson(),
       application->get_parameters_ale_poisson(),
@@ -119,6 +128,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
     ale_mapping = std::make_shared<Structure::DeformedMapping<dim, Number>>(
       grid,
       mapping,
+      multigrid_mappings,
       application->get_boundary_descriptor_ale_elasticity(),
       application->get_field_functions_ale_elasticity(),
       application->get_material_descriptor_ale_elasticity(),
@@ -131,9 +141,12 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
     AssertThrow(false, dealii::ExcMessage("not implemented."));
   }
 
+  ale_multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(ale_mapping);
+
   // initialize pde_operator
   pde_operator = IncNS::create_operator<dim, Number>(grid,
                                                      ale_mapping->get_mapping(),
+                                                     ale_multigrid_mappings,
                                                      application->get_boundary_descriptor(),
                                                      application->get_field_functions(),
                                                      application->get_parameters(),

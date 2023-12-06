@@ -54,13 +54,14 @@ public:
   /*
    * Constructor.
    */
-  Operator(std::shared_ptr<Grid<dim> const>               grid,
-           std::shared_ptr<dealii::Mapping<dim> const>    mapping,
-           std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
-           std::shared_ptr<FieldFunctions<dim> const>     field_functions,
-           Parameters const &                             param,
-           std::string const &                            field,
-           MPI_Comm const &                               mpi_comm);
+  Operator(std::shared_ptr<Grid<dim> const>                      grid,
+           std::shared_ptr<dealii::Mapping<dim> const>           mapping,
+           std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+           std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor,
+           std::shared_ptr<FieldFunctions<dim> const>            field_functions,
+           Parameters const &                                    param,
+           std::string const &                                   field,
+           MPI_Comm const &                                      mpi_comm);
 
 
   void
@@ -371,6 +372,8 @@ private:
    * Grid motion for ALE formulations
    */
   std::shared_ptr<dealii::Mapping<dim> const> mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings;
 
   /*
    * User interface: Boundary conditions and field functions.
