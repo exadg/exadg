@@ -26,7 +26,6 @@
 
 // ExaDG
 #include <exadg/acoustic_conservation_equations/driver.h>
-#include <exadg/grid/get_dynamic_mapping.h>
 #include <exadg/operators/throughput_parameters.h>
 #include <exadg/utilities/print_solver_results.h>
 

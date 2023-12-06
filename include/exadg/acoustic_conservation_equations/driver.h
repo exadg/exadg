@@ -27,7 +27,6 @@
 #include <exadg/acoustic_conservation_equations/time_integration/time_int_abm.h>
 #include <exadg/acoustic_conservation_equations/user_interface/application_base.h>
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
-#include <exadg/grid/get_dynamic_mapping.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/finite_element.h>
 #include <exadg/utilities/print_general_infos.h>

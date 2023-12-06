@@ -27,7 +27,6 @@
 #include <exadg/convection_diffusion/preconditioners/multigrid_preconditioner.h>
 #include <exadg/convection_diffusion/spatial_discretization/operator.h>
 #include <exadg/convection_diffusion/spatial_discretization/project_velocity.h>
-#include <exadg/grid/get_dynamic_mapping.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/operators/finite_element.h>
 #include <exadg/operators/grid_related_time_step_restrictions.h>

@@ -23,7 +23,6 @@
 #define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_FLUID_H_
 
 // grid
-#include <exadg/grid/get_dynamic_mapping.h>
 #include <exadg/grid/mapping_deformation_poisson.h>
 #include <exadg/grid/mapping_deformation_structure.h>
 

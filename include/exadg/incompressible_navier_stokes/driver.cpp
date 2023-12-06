@@ -25,7 +25,6 @@
 #endif
 
 // ExaDG
-#include <exadg/grid/get_dynamic_mapping.h>
 #include <exadg/incompressible_navier_stokes/driver.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
 #include <exadg/incompressible_navier_stokes/time_integration/create_time_integrator.h>
@@ -116,13 +115,10 @@ Driver<dim, Number>::setup()
     };
   }
 
-  std::shared_ptr<dealii::Mapping<dim> const> mapping_fluid =
-    get_dynamic_mapping<dim, Number>(mapping, ale_mapping);
-
   if(application->get_parameters().solver_type == SolverType::Unsteady)
   {
     pde_operator = create_operator<dim, Number>(grid,
-                                                mapping_fluid,
+                                                ale ? ale_mapping->get_mapping() : mapping,
                                                 ale ? ale_multigrid_mappings : multigrid_mappings,
                                                 application->get_boundary_descriptor(),
                                                 application->get_field_functions(),
@@ -132,16 +128,15 @@ Driver<dim, Number>::setup()
   }
   else if(application->get_parameters().solver_type == SolverType::Steady)
   {
-    pde_operator =
-      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(grid,
-                                                            mapping_fluid,
-                                                            ale ? ale_multigrid_mappings :
-                                                                  multigrid_mappings,
-                                                            application->get_boundary_descriptor(),
-                                                            application->get_field_functions(),
-                                                            application->get_parameters(),
-                                                            "fluid",
-                                                            mpi_comm);
+    pde_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
+      grid,
+      ale ? ale_mapping->get_mapping() : mapping,
+      ale ? ale_multigrid_mappings : multigrid_mappings,
+      application->get_boundary_descriptor(),
+      application->get_field_functions(),
+      application->get_parameters(),
+      "fluid",
+      mpi_comm);
   }
   else
   {

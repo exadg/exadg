@@ -20,7 +20,6 @@
  */
 
 #include <exadg/convection_diffusion/time_integration/create_time_integrator.h>
-#include <exadg/grid/get_dynamic_mapping.h>
 #include <exadg/incompressible_flow_with_transport/driver.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
 #include <exadg/incompressible_navier_stokes/time_integration/create_time_integrator.h>
@@ -110,7 +109,7 @@ Driver<dim, Number>::setup()
   }
 
   std::shared_ptr<dealii::Mapping<dim> const> dynamic_mapping =
-    get_dynamic_mapping<dim, Number>(mapping, ale_mapping);
+    ale ? ale_mapping->get_mapping() : mapping;
 
   // initialize fluid_operator
   if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady)

@@ -27,8 +27,6 @@
 // ExaDG
 #include <exadg/convection_diffusion/driver.h>
 #include <exadg/convection_diffusion/time_integration/create_time_integrator.h>
-#include <exadg/grid/get_dynamic_mapping.h>
-#include <exadg/grid/grid_utilities.h>
 #include <exadg/operators/throughput_parameters.h>
 #include <exadg/utilities/print_solver_results.h>
 
@@ -78,6 +76,8 @@ Driver<dim, Number>::setup()
       mesh_motion,
       application->get_parameters().start_time);
 
+    ale_multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(ale_mapping);
+
     helpers_ale = std::make_shared<HelpersALE<Number>>();
 
     helpers_ale->move_grid = [&](double const & time) {
@@ -91,15 +91,10 @@ Driver<dim, Number>::setup()
     };
   }
 
-  ale_multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(ale_mapping);
-
-  std::shared_ptr<dealii::Mapping<dim> const> dynamic_mapping =
-    get_dynamic_mapping<dim, Number>(mapping, ale_mapping);
-
   // initialize convection-diffusion operator
   pde_operator =
     std::make_shared<Operator<dim, Number>>(grid,
-                                            dynamic_mapping,
+                                            ale ? ale_mapping->get_mapping() : mapping,
                                             ale ? ale_multigrid_mappings : multigrid_mappings,
                                             application->get_boundary_descriptor(),
                                             application->get_field_functions(),
