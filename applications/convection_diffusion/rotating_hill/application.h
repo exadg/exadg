@@ -209,9 +209,13 @@ private:
         // hypercube volume is [left,right]^dim
         dealii::GridGenerator::hyper_cube(tria, left, right);
 
-        unsigned int const frequency   = 1;
-        double const       deformation = (right - left) * 0.1;
-        apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
+        // For AMR, we want to consider a mapping as well.
+        if(this->param.enable_adaptivity)
+        {
+          unsigned int const frequency   = 1;
+          double const       deformation = (right - left) * 0.1;
+          apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
+        }
 
         tria.refine_global(global_refinements);
       };
