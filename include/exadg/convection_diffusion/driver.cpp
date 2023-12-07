@@ -57,11 +57,7 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up scalar convection-diffusion solver:" << std::endl;
 
-  application->setup(grid, mapping);
-
-  // TODO: needs to be shifted to application in order to allow mappings realized as
-  // MappingDoFVector
-  multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping);
+  application->setup(grid, mapping, multigrid_mappings);
 
   bool const ale = application->get_parameters().ale_formulation;
 
