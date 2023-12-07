@@ -60,11 +60,7 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up Poisson solver:" << std::endl;
 
-  application->setup(grid, mapping);
-
-  // TODO: needs to be shifted to application in order to allow mappings realized as
-  // MappingDoFVector
-  multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping);
+  application->setup(grid, mapping, multigrid_mappings);
 
   pde_operator = std::make_shared<Operator<dim, 1, Number>>(grid,
                                                             mapping,
