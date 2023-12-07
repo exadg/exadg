@@ -1,5 +1,6 @@
 var searchData=
 [
-  ['valid_5fdeformation_0',['valid_deformation',['../classExaDG_1_1Structure_1_1NonLinearOperator.html#a5b6c5ca383e783c22da2f2eb03fb8266',1,'ExaDG::Structure::NonLinearOperator']]],
-  ['vmult_1',['vmult',['../classExaDG_1_1Elementwise_1_1JacobiPreconditioner.html#a3388ed26e11f59571d3e8ab6e45d7bce',1,'ExaDG::Elementwise::JacobiPreconditioner::vmult()'],['../classExaDG_1_1Elementwise_1_1InverseMassPreconditioner.html#a1f480ae1482708fd0fe5d377fe24e102',1,'ExaDG::Elementwise::InverseMassPreconditioner::vmult()']]]
+  ['update_0',['update',['../classExaDG_1_1ConvDiff_1_1MultigridPreconditioner.html#acbbe7647874c74b57098abfdadedea75',1,'ExaDG::ConvDiff::MultigridPreconditioner::update()'],['../classExaDG_1_1DeformedMappingBase.html#aeb01c0b585f4e754650f62f124d23864',1,'ExaDG::DeformedMappingBase::update()'],['../classExaDG_1_1DeformedMappingFunction.html#a544907f4f6e7e6a034eefe8bd0c3a7d3',1,'ExaDG::DeformedMappingFunction::update()'],['../classExaDG_1_1Poisson_1_1DeformedMapping.html#a981a179b56236b8d45da5bd3d9eca32c',1,'ExaDG::Poisson::DeformedMapping::update()'],['../classExaDG_1_1Structure_1_1DeformedMapping.html#a7c7d6ac13e31296a7b00d0000a36076f',1,'ExaDG::Structure::DeformedMapping::update()'],['../classExaDG_1_1InverseMassOperator.html#aa35d967ce6cd305af7d5e22f93db2c97',1,'ExaDG::InverseMassOperator::update()']]],
+  ['update_5fcoarse_5fsolver_1',['update_coarse_solver',['../classExaDG_1_1MultigridPreconditionerBase.html#af1f0f0635d2237fae2558ecfc9f4f0d9',1,'ExaDG::MultigridPreconditionerBase']]],
+  ['update_5fsmoothers_2',['update_smoothers',['../classExaDG_1_1MultigridPreconditionerBase.html#ada498d4941ceabd2f97464fc0d0ffb50',1,'ExaDG::MultigridPreconditionerBase']]]
 ];

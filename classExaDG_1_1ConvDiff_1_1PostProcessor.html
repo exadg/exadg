@@ -99,6 +99,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a24f618b41f355f49c6a532c40bb6d3b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af877522742ad5e210be48f5a9487b8ea" id="r_af877522742ad5e210be48f5a9487b8ea"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessor.html#af877522742ad5e210be48f5a9487b8ea">setup</a> (<a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">Operator</a>&lt; dim, Number &gt; const &amp;pde_operator) override</td></tr>
 <tr class="separator:af877522742ad5e210be48f5a9487b8ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aca6616799752a27eca11b9549545b1bb" id="r_aca6616799752a27eca11b9549545b1bb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessor.html#aca6616799752a27eca11b9549545b1bb">setup_after_coarsening_and_refinement</a> () override</td></tr>
+<tr class="separator:aca6616799752a27eca11b9549545b1bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a52bc894f09acd8d4c1fc37a131e72c72" id="r_a52bc894f09acd8d4c1fc37a131e72c72"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessor.html#a52bc894f09acd8d4c1fc37a131e72c72">do_postprocessing</a> (VectorType const &amp;solution, double const time=0.0, types::time_step const time_step_number=numbers::steady_timestep) override</td></tr>
 <tr class="separator:a52bc894f09acd8d4c1fc37a131e72c72"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -191,6 +193,35 @@ template&lt;int dim, typename Number &gt; </div>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">Operator</a>&lt; dim, Number &gt; const &amp;&#160;</td>
           <td class="paramname"><em>pde_operator</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessorBase.html">ExaDG::ConvDiff::PostProcessorBase&lt; dim, Number &gt;</a>.</p>
+
+</div>
+</div>
+<a id="aca6616799752a27eca11b9549545b1bb" name="aca6616799752a27eca11b9549545b1bb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aca6616799752a27eca11b9549545b1bb">&#9670;&#160;</a></span>setup_after_coarsening_and_refinement()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessor.html">ExaDG::ConvDiff::PostProcessor</a>&lt; dim, Number &gt;::setup_after_coarsening_and_refinement </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>

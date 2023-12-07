@@ -27,8 +27,9 @@ var searchData=
   ['to_5fvalue_24',['to_value',['../structdealii_1_1Patterns_1_1Tools_1_1Convert_3_01T_00_01typename_01std_1_1enable__if_3_01ExaDG_17e2282df0b559ad12488d39de0fb1c19.html#ad09d0021fc34ae43517bf8675b6135cd',1,'dealii::Patterns::Tools::Convert&lt; T, typename std::enable_if&lt; ExaDG::Utilities::is_enum&lt; T &gt;()&gt;::type &gt;']]],
   ['transfer_5ffrom_5ffine_5fto_5fcoarse_5flevels_25',['transfer_from_fine_to_coarse_levels',['../classExaDG_1_1MultigridPreconditionerBase.html#a9a515dabb1046e155c07ae0a6becd353',1,'ExaDG::MultigridPreconditionerBase']]],
   ['triangulation_26',['triangulation',['../classExaDG_1_1Grid.html#a5655b41ce6108b3c3e50a5eb7fb2bcf5',1,'ExaDG::Grid']]],
-  ['turbulencemodel_27',['TurbulenceModel',['../classExaDG_1_1IncNS_1_1TurbulenceModel.html',1,'ExaDG::IncNS']]],
-  ['turbulencemodel_3c_20dim_2c_20double_20_3e_28',['TurbulenceModel&lt; dim, double &gt;',['../classExaDG_1_1IncNS_1_1TurbulenceModel.html',1,'ExaDG::IncNS']]],
-  ['turbulencemodeldata_29',['TurbulenceModelData',['../structExaDG_1_1IncNS_1_1TurbulenceModelData.html',1,'ExaDG::IncNS']]],
-  ['turbulentchanneldata_30',['TurbulentChannelData',['../structExaDG_1_1TurbulentChannelData.html',1,'ExaDG']]]
+  ['trigger_5fcoarsening_5fand_5frefinement_5fnow_27',['trigger_coarsening_and_refinement_now',['../namespaceExaDG.html#ad6601cf08fa17111a7d7f5345a562915',1,'ExaDG']]],
+  ['turbulencemodel_28',['TurbulenceModel',['../classExaDG_1_1IncNS_1_1TurbulenceModel.html',1,'ExaDG::IncNS']]],
+  ['turbulencemodel_3c_20dim_2c_20double_20_3e_29',['TurbulenceModel&lt; dim, double &gt;',['../classExaDG_1_1IncNS_1_1TurbulenceModel.html',1,'ExaDG::IncNS']]],
+  ['turbulencemodeldata_30',['TurbulenceModelData',['../structExaDG_1_1IncNS_1_1TurbulenceModelData.html',1,'ExaDG::IncNS']]],
+  ['turbulentchanneldata_31',['TurbulentChannelData',['../structExaDG_1_1TurbulentChannelData.html',1,'ExaDG']]]
 ];

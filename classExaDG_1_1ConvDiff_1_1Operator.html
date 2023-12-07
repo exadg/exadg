@@ -101,6 +101,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data
 <tr class="separator:a15f533352d75d8183fc50222043adf4b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7f6785ef345f7996bbb7a9e4e27dbf06" id="r_a7f6785ef345f7996bbb7a9e4e27dbf06"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a7f6785ef345f7996bbb7a9e4e27dbf06">setup</a> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; const &gt; matrix_free_in, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; const &gt; matrix_free_data_in, std::string const &amp;dof_index_velocity_external_in=&quot;&quot;)</td></tr>
 <tr class="separator:a7f6785ef345f7996bbb7a9e4e27dbf06"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a21fb59e3b9de272bce5ec6fc7a1eba6f" id="r_a21fb59e3b9de272bce5ec6fc7a1eba6f"><td class="memItemLeft" align="right" valign="top"><a id="a21fb59e3b9de272bce5ec6fc7a1eba6f" name="a21fb59e3b9de272bce5ec6fc7a1eba6f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_after_coarsening_and_refinement</b> ()</td></tr>
+<tr class="separator:a21fb59e3b9de272bce5ec6fc7a1eba6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acae85e3b77e7267d90c5afc6c025f855" id="r_acae85e3b77e7267d90c5afc6c025f855"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#acae85e3b77e7267d90c5afc6c025f855">initialize_dof_vector</a> (VectorType &amp;src) const final</td></tr>
 <tr class="separator:acae85e3b77e7267d90c5afc6c025f855"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aec0b56e51c72b78fb48377db18813c03" id="r_aec0b56e51c72b78fb48377db18813c03"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#aec0b56e51c72b78fb48377db18813c03">initialize_dof_vector_velocity</a> (VectorType &amp;src) const final</td></tr>
@@ -145,6 +148,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>update_after_grid_mot
 <tr class="separator:a9fee265e80e91c5d94fe078edf054e7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0a7abd93d0b03b699237e5811a070dd1" id="r_a0a7abd93d0b03b699237e5811a070dd1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a0a7abd93d0b03b699237e5811a070dd1">fill_grid_coordinates_vector</a> (VectorType &amp;vector) const final</td></tr>
 <tr class="separator:a0a7abd93d0b03b699237e5811a070dd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab54f2f55e639c93c0c410748b5189053" id="r_ab54f2f55e639c93c0c410748b5189053"><td class="memItemLeft" align="right" valign="top"><a id="ab54f2f55e639c93c0c410748b5189053" name="ab54f2f55e639c93c0c410748b5189053"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>prepare_coarsening_and_refinement</b> (std::vector&lt; VectorType * &gt; &amp;vectors)</td></tr>
+<tr class="separator:ab54f2f55e639c93c0c410748b5189053"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d4f6c374111d6495c4cab38391d37ee" id="r_a2d4f6c374111d6495c4cab38391d37ee"><td class="memItemLeft" align="right" valign="top"><a id="a2d4f6c374111d6495c4cab38391d37ee" name="a2d4f6c374111d6495c4cab38391d37ee"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>interpolate_after_coarsening_and_refinement</b> (std::vector&lt; VectorType * &gt; &amp;vectors)</td></tr>
+<tr class="separator:a2d4f6c374111d6495c4cab38391d37ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8a3e92a1eb0446b7e9f1af254113bae" id="r_ab8a3e92a1eb0446b7e9f1af254113bae"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#ab8a3e92a1eb0446b7e9f1af254113bae">solve</a> (VectorType &amp;sol, VectorType const &amp;rhs, bool const update_preconditioner, double const scaling_factor=-1.0, double const time=-1.0, VectorType const *velocity=nullptr) final</td></tr>
 <tr class="separator:ab8a3e92a1eb0446b7e9f1af254113bae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a358adb942d4b4ee6e94c0c52614102c3" id="r_a358adb942d4b4ee6e94c0c52614102c3"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a358adb942d4b4ee6e94c0c52614102c3">calculate_time_step_max_efficiency</a> (unsigned int const order_time_integrator) const final</td></tr>
@@ -181,6 +190,9 @@ unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_inde
 <tr class="memitem:ac9cd25d5be01cb08fb32c800213cd3e5" id="r_ac9cd25d5be01cb08fb32c800213cd3e5"><td class="memItemLeft" align="right" valign="top"><a id="ac9cd25d5be01cb08fb32c800213cd3e5" name="ac9cd25d5be01cb08fb32c800213cd3e5"></a>
 std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_mapping</b> () const</td></tr>
 <tr class="separator:ac9cd25d5be01cb08fb32c800213cd3e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a783f1e35f52def1001442103415d3699" id="r_a783f1e35f52def1001442103415d3699"><td class="memItemLeft" align="right" valign="top"><a id="a783f1e35f52def1001442103415d3699" name="a783f1e35f52def1001442103415d3699"></a>
+dealii::AffineConstraints&lt; Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_constraints</b> () const</td></tr>
+<tr class="separator:a783f1e35f52def1001442103415d3699"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>

@@ -1,8 +1,5 @@
 var searchData=
 [
-  ['_7edeformedmappingbase_0',['~DeformedMappingBase',['../classExaDG_1_1DeformedMappingBase.html#a85a4df0545a29a077ebe0b0b370bdf5d',1,'ExaDG::DeformedMappingBase']]],
-  ['_7egeneralizednewtonianmodel_1',['~GeneralizedNewtonianModel',['../classExaDG_1_1IncNS_1_1GeneralizedNewtonianModel.html#a948ce580f8ec32259a29b424c3147a08',1,'ExaDG::IncNS::GeneralizedNewtonianModel']]],
-  ['_7emappingdofvector_2',['~MappingDoFVector',['../classExaDG_1_1MappingDoFVector.html#a70fc04b5bbe83adc68c35f1289a7a196',1,'ExaDG::MappingDoFVector']]],
-  ['_7epermutator_3',['~Permutator',['../classdealspectrum_1_1Permutator.html#a916c5f88e9231db447a5e7022a9cfb2a',1,'dealspectrum::Permutator']]],
-  ['_7espectralanalysis_4',['~SpectralAnalysis',['../classdealspectrum_1_1SpectralAnalysis.html#a061796e80030ee2628a40e0f5504d215',1,'dealspectrum::SpectralAnalysis']]]
+  ['write_5fdata_0',['write_data',['../classExaDG_1_1preCICE_1_1CouplingBase.html#a83aad103204352b21981fe858a85b250',1,'ExaDG::preCICE::CouplingBase::write_data()'],['../classExaDG_1_1preCICE_1_1DoFCoupling.html#aa80ab1d61f925ec4ca2ff26303194486',1,'ExaDG::preCICE::DoFCoupling::write_data()'],['../classExaDG_1_1preCICE_1_1ExaDGCoupling.html#a73e4610c201ff663be650e3568b58dbe',1,'ExaDG::preCICE::ExaDGCoupling::write_data()'],['../classExaDG_1_1preCICE_1_1QuadCoupling.html#af2ee46af2435f1ec83e2349cd8c8673b',1,'ExaDG::preCICE::QuadCoupling::write_data()']]],
+  ['writeheader_1',['writeHeader',['../classdealspectrum_1_1Setup.html#a8b27d3d9eb4ff3fdec1899fb859def14',1,'dealspectrum::Setup']]]
 ];

@@ -88,6 +88,8 @@ Namespaces</h2></td></tr>
 Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ABTimeIntegratorConstants.html">ABTimeIntegratorConstants</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structExaDG_1_1AdaptiveMeshRefinementData.html">AdaptiveMeshRefinementData</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1AdditiveSchwarzPreconditioner.html">AdditiveSchwarzPreconditioner</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structExaDG_1_1AMGData.html">AMGData</a></td></tr>
@@ -311,6 +313,8 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1SolutionField.html">SolutionField</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1SolutionInterpolationBetweenTriangulations.html">SolutionInterpolationBetweenTriangulations</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1SolutionTransfer.html">SolutionTransfer</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structExaDG_1_1SolverData.html">SolverData</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -604,6 +608,18 @@ template&lt;int dim&gt; </td></tr>
 template&lt;int dim, typename Number &gt; </td></tr>
 <tr class="memitem:a16f67bf1176613b0c1dd812affb3a479"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>run</b> (<a class="el" href="structExaDG_1_1ThroughputParameters.html">ThroughputParameters</a>&lt; IncNS::OperatorType &gt; const &amp;throughput, std::string const &amp;input_file, unsigned int const degree, unsigned int const refine_space, unsigned int const n_cells_1d, MPI_Comm const &amp;mpi_comm, bool const is_test)</td></tr>
 <tr class="separator:a16f67bf1176613b0c1dd812affb3a479"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad6601cf08fa17111a7d7f5345a562915" id="r_ad6601cf08fa17111a7d7f5345a562915"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#ad6601cf08fa17111a7d7f5345a562915">trigger_coarsening_and_refinement_now</a> (unsigned int const trigger_every_n_time_steps, unsigned int const time_step_number)</td></tr>
+<tr class="separator:ad6601cf08fa17111a7d7f5345a562915"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a69104f887bd3aac5e028e98c45b1935b" id="r_a69104f887bd3aac5e028e98c45b1935b"><td class="memTemplParams" colspan="2">template&lt;int dim&gt; </td></tr>
+<tr class="memitem:a69104f887bd3aac5e028e98c45b1935b"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#a69104f887bd3aac5e028e98c45b1935b">limit_coarsening_and_refinement</a> (dealii::Triangulation&lt; dim &gt; &amp;tria, <a class="el" href="structExaDG_1_1AdaptiveMeshRefinementData.html">AdaptiveMeshRefinementData</a> const &amp;amr_data)</td></tr>
+<tr class="separator:a69104f887bd3aac5e028e98c45b1935b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7ad0dd14d5eb44311cfea44a89a0fbc3" id="r_a7ad0dd14d5eb44311cfea44a89a0fbc3"><td class="memTemplParams" colspan="2">template&lt;int dim&gt; </td></tr>
+<tr class="memitem:a7ad0dd14d5eb44311cfea44a89a0fbc3"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#a7ad0dd14d5eb44311cfea44a89a0fbc3">any_cells_flagged_for_coarsening_or_refinement</a> (dealii::Triangulation&lt; dim &gt; const &amp;tria)</td></tr>
+<tr class="separator:a7ad0dd14d5eb44311cfea44a89a0fbc3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a93a4d4037bdc708c046e2d86cec97b01" id="r_a93a4d4037bdc708c046e2d86cec97b01"><td class="memTemplParams" colspan="2"><a id="a93a4d4037bdc708c046e2d86cec97b01" name="a93a4d4037bdc708c046e2d86cec97b01"></a>
+template&lt;int dim, typename Number , typename VectorType &gt; </td></tr>
+<tr class="memitem:a93a4d4037bdc708c046e2d86cec97b01"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>mark_cells_kelly_error_estimator</b> (dealii::Triangulation&lt; dim &gt; &amp;tria, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler, dealii::AffineConstraints&lt; Number &gt; const &amp;constraints, dealii::Mapping&lt; dim &gt; const &amp;mapping, VectorType const &amp;solution, unsigned int const n_face_quadrature_points, <a class="el" href="structExaDG_1_1AdaptiveMeshRefinementData.html">AdaptiveMeshRefinementData</a> const &amp;amr_data)</td></tr>
+<tr class="separator:a93a4d4037bdc708c046e2d86cec97b01"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a20cc7b5214f2645a044fb9203aaa3b84" id="r_a20cc7b5214f2645a044fb9203aaa3b84"><td class="memTemplParams" colspan="2">template&lt;int dim, typename Number &gt; </td></tr>
 <tr class="memitem:a20cc7b5214f2645a044fb9203aaa3b84"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#a20cc7b5214f2645a044fb9203aaa3b84">add_hanging_node_and_periodicity_constraints</a> (dealii::AffineConstraints&lt; Number &gt; &amp;affine_constraints, <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &amp;grid, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler)</td></tr>
 <tr class="separator:a20cc7b5214f2645a044fb9203aaa3b84"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -982,6 +998,27 @@ template&lt;int dim, typename Number &gt; </div>
       </table>
 </div><div class="memdoc">
 <p>This function calls dealii::DoFTools::make_zero_boundary_constraints() for all boundary IDs with corresponding dealii::ComponentMask handed over to this function. This is necessary as a utility function in <a class="el" href="namespaceExaDG.html">ExaDG</a>, since deal.II does not allow to provide independent component masks for each boundary ID in a set of boundary IDs. </p>
+
+</div>
+</div>
+<a id="a7ad0dd14d5eb44311cfea44a89a0fbc3" name="a7ad0dd14d5eb44311cfea44a89a0fbc3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7ad0dd14d5eb44311cfea44a89a0fbc3">&#9670;&#160;</a></span>any_cells_flagged_for_coarsening_or_refinement()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">bool ExaDG::any_cells_flagged_for_coarsening_or_refinement </td>
+          <td>(</td>
+          <td class="paramtype">dealii::Triangulation&lt; dim &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>tria</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Loop over cells and check for refinement/coarsening flags set. </p>
 
 </div>
 </div>
@@ -1563,6 +1600,37 @@ template&lt;int dim&gt; </div>
 
 </div>
 </div>
+<a id="a69104f887bd3aac5e028e98c45b1935b" name="a69104f887bd3aac5e028e98c45b1935b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a69104f887bd3aac5e028e98c45b1935b">&#9670;&#160;</a></span>limit_coarsening_and_refinement()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void ExaDG::limit_coarsening_and_refinement </td>
+          <td>(</td>
+          <td class="paramtype">dealii::Triangulation&lt; dim &gt; &amp;&#160;</td>
+          <td class="paramname"><em>tria</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structExaDG_1_1AdaptiveMeshRefinementData.html">AdaptiveMeshRefinementData</a> const &amp;&#160;</td>
+          <td class="paramname"><em>amr_data</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Limit the coarsening and refinement by adapting the flags set in the triangulation. This considers the maximum and minimum refinement levels provided and might remove refinement flags set on the boundary if requested. </p>
+
+</div>
+</div>
 <a id="ac26ac75e95c9fbc45eaa00fa0c05a2b7" name="ac26ac75e95c9fbc45eaa00fa0c05a2b7"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac26ac75e95c9fbc45eaa00fa0c05a2b7">&#9670;&#160;</a></span>refine_local()</h2>
 
@@ -1592,6 +1660,43 @@ template&lt;int dim&gt; </div>
 </div><div class="memdoc">
 <p>This function performs local refinements on a given triangulation, where the number of local refinements is described by a vector containing the number of local refinements for each material id, i.e. vector[material_id] = n_local_refinements.</p>
 <p>TODO: change the design of this function from a vector towards a map from material IDs to the number of local refinements. </p>
+
+</div>
+</div>
+<a id="ad6601cf08fa17111a7d7f5345a562915" name="ad6601cf08fa17111a7d7f5345a562915"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad6601cf08fa17111a7d7f5345a562915">&#9670;&#160;</a></span>trigger_coarsening_and_refinement_now()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool ExaDG::trigger_coarsening_and_refinement_now </td>
+          <td>(</td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>trigger_every_n_time_steps</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>time_step_number</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Check if adaptive mesh refinement should be triggered depending on the time_step_number. </p>
 
 </div>
 </div>
