@@ -52,11 +52,7 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up incompressible flow with scalar transport solver:" << std::endl;
 
-  application->setup(grid, mapping);
-
-  // TODO: needs to be shifted to application in order to allow mappings realized as
-  // MappingDoFVector
-  multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping);
+  application->setup(grid, mapping, multigrid_mappings);
 
   // additional parameter check: This driver does not implement steady
   // flow-transport problems. Note, however, that ProblemType and
