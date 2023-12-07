@@ -417,7 +417,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
       {
         AssertThrow(level.h_level() < grid->coarse_triangulations.size(),
                     dealii::ExcMessage(
-                      "The vector of coarse_triangulations does not have correct size."));
+                      "The vector coarse_triangulations seems to have incorrect size."));
 
         triangulation = grid->coarse_triangulations[level.h_level()];
       }
@@ -444,10 +444,6 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
       // constraints from periodic boundary conditions
       if(not(grid->periodic_face_pairs.empty()))
       {
-        AssertThrow(grid->coarse_periodic_face_pairs.size() == level_info.back().h_level(),
-                    dealii::ExcMessage(
-                      "The vector of coarse_triangulations does not have correct size."));
-
         std::vector<
           dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>>
           periodic_faces;
@@ -457,6 +453,15 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
         }
         else
         {
+          AssertThrow(
+            grid->coarse_periodic_face_pairs.size() == grid->coarse_triangulations.size(),
+            dealii::ExcMessage(
+              "The size of coarse_periodic_face_pairs differs from the size of coarse_triangulations."));
+
+          AssertThrow(level.h_level() < grid->coarse_periodic_face_pairs.size(),
+                      dealii::ExcMessage(
+                        "The vector coarse_periodic_face_pairs seems to have incorrect size."));
+
           periodic_faces = grid->coarse_periodic_face_pairs[level.h_level()];
         }
 
