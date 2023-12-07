@@ -45,6 +45,7 @@
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/grid/mapping_deformation_function.h>
 #include <exadg/matrix_free/matrix_free_data.h>
+#include <exadg/operators/adaptive_mesh_refinement.h>
 #include <exadg/utilities/print_functions.h>
 #include <exadg/utilities/print_general_infos.h>
 
@@ -64,6 +65,8 @@ template<int dim, typename Number = double>
 class Driver
 {
 public:
+  using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
+
   Driver(MPI_Comm const &                              mpi_comm,
          std::shared_ptr<ApplicationBase<dim, Number>> application,
          bool const                                    is_test,
@@ -89,6 +92,16 @@ public:
 private:
   void
   ale_update() const;
+
+  void
+  mark_cells_coarsening_and_refinement(dealii::Triangulation<dim> & tria,
+                                       VectorType const &           solution) const;
+
+  void
+  setup_after_coarsening_and_refinement();
+
+  void
+  do_adaptive_refinement();
 
   // MPI communicator
   MPI_Comm const mpi_comm;

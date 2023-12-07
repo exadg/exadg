@@ -136,6 +136,69 @@ TimeIntBDF<dim, Number>::allocate_vectors()
 }
 
 template<int dim, typename Number>
+std::shared_ptr<std::vector<dealii::LinearAlgebra::distributed::Vector<Number> *>>
+TimeIntBDF<dim, Number>::get_vectors()
+{
+  std::shared_ptr<std::vector<VectorType *>> vectors =
+    std::make_shared<std::vector<VectorType *>>();
+
+  for(unsigned int i = 0; i < this->order; i++)
+  {
+    vectors->emplace_back(&solution[i]);
+  }
+
+  vectors->emplace_back(&solution_np);
+
+  vectors->emplace_back(&rhs_vector);
+
+  if(param.convective_problem() and
+     param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
+    for(unsigned int i = 0; i < this->order; i++)
+    {
+      vectors->emplace_back(&vec_convective_term[i]);
+    }
+
+    if(param.ale_formulation == false)
+    {
+      vectors->emplace_back(&convective_term_np);
+    }
+  }
+
+  if(this->param.ale_formulation)
+  {
+    vectors->emplace_back(&grid_velocity);
+
+    vectors->emplace_back(&grid_coordinates_np);
+
+    for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
+    {
+      vectors->emplace_back(&vec_grid_coordinates[i]);
+    }
+  }
+
+  return vectors;
+}
+
+template<int dim, typename Number>
+void
+TimeIntBDF<dim, Number>::prepare_coarsening_and_refinement()
+{
+  std::shared_ptr<std::vector<VectorType *>> vectors = get_vectors();
+  pde_operator->prepare_coarsening_and_refinement(*vectors);
+}
+
+template<int dim, typename Number>
+void
+TimeIntBDF<dim, Number>::interpolate_after_coarsening_and_refinement()
+{
+  this->allocate_vectors();
+
+  std::shared_ptr<std::vector<VectorType *>> vectors = get_vectors();
+  pde_operator->interpolate_after_coarsening_and_refinement(*vectors);
+}
+
+template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::initialize_current_solution()
 {
@@ -589,6 +652,13 @@ TimeIntBDF<dim, Number>::set_velocities_and_times(
 {
   velocities = velocities_in;
   times      = times_in;
+}
+
+template<int dim, typename Number>
+dealii::LinearAlgebra::distributed::Vector<Number> const &
+TimeIntBDF<dim, Number>::get_solution_np() const
+{
+  return (this->solution_np);
 }
 
 template<int dim, typename Number>

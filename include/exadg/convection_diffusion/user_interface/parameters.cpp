@@ -68,6 +68,7 @@ Parameters::Parameters()
     grid(GridData()),
     mapping_degree(1),
     degree(1),
+    enable_adaptivity(false),
     numerical_flux_convective_operator(NumericalFluxConvectiveOperator::Undefined),
     IP_factor(1.0),
 
@@ -255,6 +256,21 @@ Parameters::check() const
 
   // SPATIAL DISCRETIZATION
   grid.check();
+
+  if(enable_adaptivity)
+  {
+    AssertThrow(not ale_formulation,
+                dealii::ExcMessage("Combination of adaptive mesh refinement "
+                                   "and ALE formulation not implemented."));
+
+    AssertThrow(temporal_discretization == TemporalDiscretization::BDF,
+                dealii::ExcMessage("Adaptive mesh refinement only implemented"
+                                   "for implicit time integration."));
+
+    AssertThrow(grid.element_type == ElementType::Hypercube,
+                dealii::ExcMessage("Adaptive mesh refinement is currently "
+                                   "only supported for hypercube elements."));
+  }
 
   AssertThrow(degree > 0, dealii::ExcMessage("Polynomial degree must be larger than zero."));
 
@@ -507,6 +523,11 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
   print_parameter(pcout, "Mapping degree", mapping_degree);
 
   print_parameter(pcout, "Polynomial degree", degree);
+
+  if(enable_adaptivity)
+  {
+    amr_data.print(pcout);
+  }
 
   if(equation_type == EquationType::Convection or
      equation_type == EquationType::ConvectionDiffusion)

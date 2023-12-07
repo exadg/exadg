@@ -73,6 +73,14 @@ Operator<dim, Number>::Operator(
 
   initialize_dof_handler_and_constraints();
 
+  pcout << std::endl
+        << "Discontinuous Galerkin finite element discretization:" << std::endl
+        << std::endl;
+
+  print_parameter(pcout, "degree of 1D polynomials", param.degree);
+  print_parameter(pcout, "number of dofs per cell", fe->n_dofs_per_cell());
+  print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
+
   pcout << std::endl << "... done!" << std::endl;
 }
 
@@ -88,14 +96,6 @@ Operator<dim, Number>::initialize_dof_handler_and_constraints()
   }
 
   affine_constraints.close();
-
-  pcout << std::endl
-        << "Discontinuous Galerkin finite element discretization:" << std::endl
-        << std::endl;
-
-  print_parameter(pcout, "degree of 1D polynomials", param.degree);
-  print_parameter(pcout, "number of dofs per cell", fe->n_dofs_per_cell());
-  print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
 }
 
 template<int dim, typename Number>
@@ -313,6 +313,17 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::setup()
 {
+  pcout << std::endl << "Setup convection-diffusion operator ..." << std::endl;
+
+  do_setup();
+
+  pcout << std::endl << "... done!" << std::endl;
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::do_setup()
+{
   // initialize MatrixFree and MatrixFreeData
   std::shared_ptr<dealii::MatrixFree<dim, Number>> mf =
     std::make_shared<dealii::MatrixFree<dim, Number>>();
@@ -323,6 +334,7 @@ Operator<dim, Number>::setup()
 
   if(param.use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*grid->triangulation, mf_data->data);
+
   mf->reinit(*get_mapping(),
              mf_data->get_dof_handler_vector(),
              mf_data->get_constraint_vector(),
@@ -343,8 +355,6 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> con
                              std::shared_ptr<MatrixFreeData<dim, Number> const> matrix_free_data_in,
                              std::string const & dof_index_velocity_external_in)
 {
-  pcout << std::endl << "Setup convection-diffusion operator ..." << std::endl;
-
   matrix_free      = matrix_free_in;
   matrix_free_data = matrix_free_data_in;
 
@@ -358,8 +368,19 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> con
 
     setup_solver();
   }
+}
 
-  pcout << std::endl << "... done!" << std::endl;
+template<int dim, typename Number>
+void
+Operator<dim, Number>::setup_after_coarsening_and_refinement()
+{
+  initialize_dof_handler_and_constraints();
+
+  print_parameter(pcout,
+                  "number of dofs (total) after adaptive mesh refinement",
+                  dof_handler.n_dofs());
+
+  do_setup();
 }
 
 template<int dim, typename Number>
@@ -804,6 +825,23 @@ Operator<dim, Number>::fill_grid_coordinates_vector(VectorType & vector) const
 }
 
 template<int dim, typename Number>
+void
+Operator<dim, Number>::prepare_coarsening_and_refinement(std::vector<VectorType *> & vectors)
+{
+  solution_transfer = std::make_shared<ExaDG::SolutionTransfer<dim, VectorType>>(dof_handler);
+
+  solution_transfer->prepare_coarsening_and_refinement(vectors);
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::interpolate_after_coarsening_and_refinement(
+  std::vector<VectorType *> & vectors)
+{
+  solution_transfer->interpolate_after_coarsening_and_refinement(vectors);
+}
+
+template<int dim, typename Number>
 unsigned int
 Operator<dim, Number>::solve(VectorType &       sol,
                              VectorType const & rhs,
@@ -1025,6 +1063,13 @@ std::shared_ptr<dealii::Mapping<dim> const>
 Operator<dim, Number>::get_mapping() const
 {
   return mapping;
+}
+
+template<int dim, typename Number>
+dealii::AffineConstraints<Number> const &
+Operator<dim, Number>::get_constraints() const
+{
+  return affine_constraints;
 }
 
 template class Operator<2, float>;
