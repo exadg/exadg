@@ -267,9 +267,9 @@ Parameters::check() const
                 dealii::ExcMessage("Adaptive mesh refinement only implemented"
                                    "for implicit time integration."));
 
-    AssertThrow(use_cell_based_face_loops == false,
-                dealii::ExcMessage("Cell-based face loops not supported for "
-                                   "adaptively refined meshes."));
+    AssertThrow(grid.element_type == ElementType::Hypercube,
+                dealii::ExcMessage("Adaptive mesh refinement is currently "
+                                   "only supported for hypercube elements."));
   }
 
   AssertThrow(degree > 0, dealii::ExcMessage("Polynomial degree must be larger than zero."));

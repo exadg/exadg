@@ -73,7 +73,9 @@ Operator<dim, Number>::Operator(
 
   initialize_dof_handler_and_constraints();
 
-  pcout << std::endl << "Discontinuous Galerkin finite element discretization:" << std::endl << std::endl;
+  pcout << std::endl
+        << "Discontinuous Galerkin finite element discretization:" << std::endl
+        << std::endl;
 
   print_parameter(pcout, "degree of 1D polynomials", param.degree);
   print_parameter(pcout, "number of dofs per cell", fe->n_dofs_per_cell());
@@ -374,7 +376,9 @@ Operator<dim, Number>::setup_after_coarsening_and_refinement()
 {
   initialize_dof_handler_and_constraints();
 
-  print_parameter(pcout, "number of dofs (total) after adaptive mesh refinement", dof_handler.n_dofs());
+  print_parameter(pcout,
+                  "number of dofs (total) after adaptive mesh refinement",
+                  dof_handler.n_dofs());
 
   do_setup();
 }

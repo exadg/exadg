@@ -72,9 +72,6 @@ public:
   void
   setup();
 
-  void
-  do_setup();
-
   /**
    * Call this setup() function if the dealii::MatrixFree object needs to be created outside this
    * class. The typical use case would be multiphysics-coupling with one MatrixFree object handed
@@ -300,6 +297,9 @@ public:
   get_constraints() const;
 
 private:
+  void
+  do_setup();
+
   /**
    * Initializes dealii::DoFHandlers and dealii::AffineConstraints.
    */

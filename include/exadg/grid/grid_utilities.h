@@ -542,15 +542,6 @@ create_coarse_triangulations_after_coarsening_and_refinement(
   GridData const &                                                 data,
   bool const                                                       amr_preserves_boundary_cells)
 {
-  AssertThrow(data.element_type == ElementType::Hypercube,
-              dealii::ExcMessage("In deal.II, adaptive mesh refinement is "
-                                 "not supported for simplex elements."));
-
-  AssertThrow(data.create_coarse_triangulations,
-              dealii::ExcMessage("Coarse triangulations need to be created explicitly for "
-                                 "locally refined meshes and h-multigrid independent of "
-                                 "the triangulation type."));
-
   if(data.triangulation_type == TriangulationType::Serial or
      data.triangulation_type == TriangulationType::Distributed)
   {

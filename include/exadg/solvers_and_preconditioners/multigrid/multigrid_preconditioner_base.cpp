@@ -415,6 +415,11 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
       }
       else
       {
+        AssertThrow(grid->coarse_triangulations.size() == n_h_levels - 1,
+                    dealii::ExcMessage(
+                      "The size of the vector coarse_triangulations has to match the "
+                      "number of all the h-levels coarser than the fine h-level."));
+
         AssertThrow(level.h_level() < grid->coarse_triangulations.size(),
                     dealii::ExcMessage(
                       "The vector of coarse_triangulations does not have correct size."));
