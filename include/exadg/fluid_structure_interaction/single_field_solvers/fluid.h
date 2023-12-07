@@ -103,11 +103,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
                                 bool const                                              is_test)
 {
   // setup application
-  application->setup(grid, mapping);
-
-  // TODO: needs to be shifted to application in order to allow mappings realized as
-  // MappingDoFVector
-  multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping);
+  application->setup(grid, mapping, multigrid_mappings);
 
   // ALE: create grid motion object
   if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)

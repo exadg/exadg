@@ -62,9 +62,12 @@ private:
   }
 
   void
-  create_grid(Grid<dim> & grid, std::shared_ptr<dealii::Mapping<dim>> & mapping) final
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
     (void)mapping;
+    (void)multigrid_mappings;
 
     auto const lambda_create_triangulation =
       [&](dealii::Triangulation<dim, dim> &                        tria,
@@ -139,9 +142,12 @@ private:
   }
 
   void
-  create_grid(Grid<dim> & grid, std::shared_ptr<dealii::Mapping<dim>> & mapping) final
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
     (void)mapping;
+    (void)multigrid_mappings;
 
     auto const lambda_create_triangulation =
       [&](dealii::Triangulation<dim, dim> &                        tria,
