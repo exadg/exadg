@@ -32,7 +32,7 @@ rm -rf CMakeFiles/ CMakeCache.txt
 
 cmake \
   -D CMAKE_BUILD_TYPE="DebugRelease" \
-  -D CMAKE_CXX_FLAGS="-std=c++17 -march=skylake-avx512 -Wno-array-bounds -Wno-literal-suffix -pthread" \
+  -D CMAKE_CXX_FLAGS="-std=c++17 -march=skylake-avx512 -Wno-array-bounds -Wno-literal-suffix -pthread -DFE_EVAL_FACTORY_DEGREE_MAX=15" \
   -D DEAL_II_CXX_FLAGS_RELEASE="-O3" \
   -D DEAL_II_CXX_FLAGS_DEBUG="-Og" \
   -D CMAKE_C_FLAGS="-march=skylake-avx512 -Wno-array-bounds" \
