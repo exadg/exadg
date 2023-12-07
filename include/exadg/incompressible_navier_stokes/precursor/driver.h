@@ -54,11 +54,7 @@ public:
         bool const                             is_test)
   {
     // setup application
-    domain->setup(grid, mapping, subsection_names_parameters);
-
-    // TODO: needs to be shifted to application in order to allow mappings realized as
-    // MappingDoFVector
-    multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping);
+    domain->setup(grid, mapping, multigrid_mappings, subsection_names_parameters);
 
     // ALE is not used for this solver
     std::shared_ptr<HelpersALE<Number>> helpers_ale_dummy;
