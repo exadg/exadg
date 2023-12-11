@@ -81,12 +81,18 @@ public:
   std::shared_ptr<dealii::Mapping<dim> const>
   get_mapping() const
   {
+    AssertThrow(mapping_q_cache.get(),
+                dealii::ExcMessage("Mapping object mapping_q_cache is not initialized."));
+
     return mapping_q_cache;
   }
 
   std::shared_ptr<dealii::MappingQCache<dim>>
   get_mapping_q_cache() const
   {
+    AssertThrow(mapping_q_cache.get(),
+                dealii::ExcMessage("Mapping object mapping_q_cache is not initialized."));
+
     return mapping_q_cache;
   }
 
@@ -99,6 +105,9 @@ public:
   fill_grid_coordinates_vector(VectorType &                    grid_coordinates,
                                dealii::DoFHandler<dim> const & dof_handler) const
   {
+    AssertThrow(mapping_q_cache.get(),
+                dealii::ExcMessage("Mapping object mapping_q_cache is not initialized."));
+
     // use the deformed state described by the dealii::MappingQCache object
     fill_grid_coordinates_vector(*mapping_q_cache, grid_coordinates, dof_handler);
   }
@@ -205,6 +214,9 @@ public:
                                      dealii::DoFHandler<dim> const & dof_handler)
   {
     AssertThrow(dealii::MultithreadInfo::n_threads() == 1, dealii::ExcNotImplemented());
+
+    AssertThrow(mapping_q_cache.get(),
+                dealii::ExcMessage("Mapping object mapping_q_cache is not initialized."));
 
     VectorType displacement_vector_ghosted;
     if(dof_handler.n_dofs() > 0 and displacement_vector.size() == dof_handler.n_dofs())
