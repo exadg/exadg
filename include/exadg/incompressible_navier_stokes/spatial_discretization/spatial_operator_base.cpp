@@ -1521,20 +1521,6 @@ SpatialOperatorBase<dim, Number>::update_after_grid_motion(bool const update_mat
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::fill_grid_coordinates_vector(VectorType & vector) const
-{
-  std::shared_ptr<MappingDoFVector<dim, Number> const> mapping_dof_vector =
-    std::dynamic_pointer_cast<MappingDoFVector<dim, Number> const>(get_mapping());
-
-  AssertThrow(mapping_dof_vector.get(),
-              dealii::ExcMessage("The function fill_grid_coordinates_vector() is only "
-                                 "implemented for mappings of type MappingDoFVector."));
-
-  mapping_dof_vector->fill_grid_coordinates_vector(vector, get_dof_handler_u());
-}
-
-template<int dim, typename Number>
-void
 SpatialOperatorBase<dim, Number>::set_grid_velocity(VectorType const & u_grid_in)
 {
   convective_kernel->set_grid_velocity_ptr(u_grid_in);

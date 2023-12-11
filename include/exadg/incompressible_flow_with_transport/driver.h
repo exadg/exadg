@@ -69,6 +69,8 @@ public:
   print_performance_results(double const total_time) const;
 
 private:
+  using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
+
   void
   ale_update() const;
 
@@ -103,12 +105,12 @@ private:
   std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
 
   // grid motion (ALE)
-  std::shared_ptr<DeformedMappingFunction<dim, Number>> ale_mapping;
+  std::shared_ptr<DeformedMappingBase<dim, Number>> ale_mapping;
 
   std::shared_ptr<MultigridMappings<dim, Number>> ale_multigrid_mappings;
 
   // ALE helper functions required by time integrator
-  std::shared_ptr<HelpersALE<Number>> helpers_ale;
+  std::shared_ptr<HelpersALE<dim, Number>> helpers_ale;
 
   bool use_adaptive_time_stepping;
 

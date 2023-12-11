@@ -52,7 +52,7 @@ public:
   using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
 
   TimeIntBDF(std::shared_ptr<Operator<dim, Number>>          operator_in,
-             std::shared_ptr<HelpersALE<Number> const>       helpers_ale_in,
+             std::shared_ptr<HelpersALE<dim, Number> const>  helpers_ale_in,
              std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
              Parameters const &                              param_in,
              MPI_Comm const &                                mpi_comm_in,
@@ -150,7 +150,7 @@ private:
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor;
 
   // This object allows to access utility functions needed for ALE
-  std::shared_ptr<HelpersALE<Number> const> helpers_ale;
+  std::shared_ptr<HelpersALE<dim, Number> const> helpers_ale;
 
   // ALE
   VectorType              grid_velocity;

@@ -57,7 +57,7 @@ public:
     domain->setup(grid, mapping, multigrid_mappings, subsection_names_parameters);
 
     // ALE is not used for this solver
-    std::shared_ptr<HelpersALE<Number>> helpers_ale_dummy;
+    std::shared_ptr<HelpersALE<dim, Number>> helpers_ale_dummy;
 
     // initialize pde_operator
     pde_operator = create_operator<dim, Number>(grid,

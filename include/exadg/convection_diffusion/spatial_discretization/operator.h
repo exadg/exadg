@@ -211,12 +211,6 @@ public:
   update_after_grid_motion(bool const update_matrix_free);
 
   /*
-   * Fills a dof-vector with grid coordinates for ALE-type problems.
-   */
-  void
-  fill_grid_coordinates_vector(VectorType & vector) const final;
-
-  /*
    * Prepare and interpolation in adaptive mesh refinement.
    */
   void

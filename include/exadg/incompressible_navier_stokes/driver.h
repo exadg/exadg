@@ -143,6 +143,8 @@ public:
                  unsigned int const   n_repetitions_outer) const;
 
 private:
+  using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
+
   void
   ale_update() const;
 
@@ -174,7 +176,7 @@ private:
   std::shared_ptr<MultigridMappings<dim, Number>> ale_multigrid_mappings;
 
   // ALE helper functions required by time integrator
-  std::shared_ptr<HelpersALE<Number>> helpers_ale;
+  std::shared_ptr<HelpersALE<dim, Number>> helpers_ale;
 
   /*
    * Spatial discretization

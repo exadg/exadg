@@ -99,7 +99,7 @@ public:
   fill_grid_coordinates_vector(VectorType &                    grid_coordinates,
                                dealii::DoFHandler<dim> const & dof_handler) const
   {
-    // use the deformed state described by the dealii::MappingQCache object (*this)
+    // use the deformed state described by the dealii::MappingQCache object
     fill_grid_coordinates_vector(*mapping_q_cache, grid_coordinates, dof_handler);
   }
 

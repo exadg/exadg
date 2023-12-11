@@ -51,6 +51,8 @@ template<int dim, typename Number>
 class SolverFluid
 {
 public:
+  using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
+
   SolverFluid()
   {
     timer_tree = std::make_shared<TimerTree>();
@@ -88,7 +90,7 @@ public:
   std::shared_ptr<MultigridMappings<dim, Number>> ale_multigrid_mappings;
 
   // ALE helper functions required by fluid time integrator
-  std::shared_ptr<HelpersALE<Number>> helpers_ale;
+  std::shared_ptr<HelpersALE<dim, Number>> helpers_ale;
 
   /*
    * Computation time (wall clock time).
@@ -161,7 +163,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
               dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
   // initialize time_integrator
-  helpers_ale = std::make_shared<HelpersALE<Number>>();
+  helpers_ale = std::make_shared<HelpersALE<dim, Number>>();
 
   helpers_ale->move_grid = [&](double const & time) {
     ale_mapping->update(time,
@@ -171,6 +173,11 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
 
   helpers_ale->update_pde_operator_after_grid_motion = [&]() {
     pde_operator->update_after_grid_motion(true /* update_matrix_free */);
+  };
+
+  helpers_ale->fill_grid_coordinates_vector = [&](VectorType &                    grid_coordinates,
+                                                  dealii::DoFHandler<dim> const & dof_handler) {
+    ale_mapping->fill_grid_coordinates_vector(grid_coordinates, dof_handler);
   };
 
   time_integrator = IncNS::create_time_integrator<dim, Number>(

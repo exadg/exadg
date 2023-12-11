@@ -85,7 +85,7 @@ Driver<dim, Number>::setup()
 
     ale_multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(ale_mapping);
 
-    helpers_ale = std::make_shared<HelpersALE<Number>>();
+    helpers_ale = std::make_shared<HelpersALE<dim, Number>>();
 
     helpers_ale->move_grid = [&](double const & time) {
       ale_mapping->update(time,
@@ -101,6 +101,11 @@ Driver<dim, Number>::setup()
       fluid_operator->update_after_grid_motion(false /* update_matrix_free */);
       for(unsigned int i = 0; i < application->scalars.size(); ++i)
         scalar_operator[i]->update_after_grid_motion(false /* update_matrix_free */);
+    };
+
+    helpers_ale->fill_grid_coordinates_vector = [&](VectorType & grid_coordinates,
+                                                    dealii::DoFHandler<dim> const & dof_handler) {
+      ale_mapping->fill_grid_coordinates_vector(grid_coordinates, dof_handler);
     };
   }
 

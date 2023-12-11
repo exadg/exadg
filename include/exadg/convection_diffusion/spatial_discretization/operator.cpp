@@ -813,20 +813,6 @@ Operator<dim, Number>::update_after_grid_motion(bool const update_matrix_free)
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::fill_grid_coordinates_vector(VectorType & vector) const
-{
-  std::shared_ptr<MappingDoFVector<dim, Number> const> mapping_dof_vector =
-    std::dynamic_pointer_cast<MappingDoFVector<dim, Number> const>(get_mapping());
-
-  AssertThrow(mapping_dof_vector.get(),
-              dealii::ExcMessage("The function fill_grid_coordinates_vector() is only "
-                                 "implemented for mappings of type MappingDoFVector."));
-
-  mapping_dof_vector->fill_grid_coordinates_vector(vector, this->get_dof_handler_velocity());
-}
-
-template<int dim, typename Number>
-void
 Operator<dim, Number>::prepare_coarsening_and_refinement(std::vector<VectorType *> & vectors)
 {
   solution_transfer = std::make_shared<ExaDG::SolutionTransfer<dim, VectorType>>(dof_handler);
