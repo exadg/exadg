@@ -167,6 +167,10 @@ public:
   void
   apply_inverse_mass_operator(BlockVectorType & dst, BlockVectorType const & src) const;
 
+  // Calculate time step size according to local CFL criterion
+  double
+  calculate_time_step_cfl() const final;
+
 private:
   void
   initialize_dof_handler_and_constraints();

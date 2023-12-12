@@ -51,6 +51,9 @@ public:
   // time integration: evaluate
   virtual void
   evaluate(BlockVectorType & dst, BlockVectorType const & src, double const time) const = 0;
+
+  virtual double
+  calculate_time_step_cfl() const = 0;
 };
 
 } // namespace Interface

@@ -99,6 +99,13 @@ public:
   // description: see enum declaration
   TimeStepCalculation calculation_of_time_step_size;
 
+  // cfl number: note that this cfl number is the first in a series of cfl numbers
+  // when performing temporal convergence tests, i.e., cfl_real = cfl, cfl/2, cfl/4, ...
+  double cfl;
+
+  // dt = CFL/max(k_p,k_u)^{exp} * h / c
+  double cfl_exponent_fe_degree;
+
   // user specified time step size:  note that this time_step_size is the first
   // in a series of time_step_size's when performing temporal convergence tests,
   // i.e., delta_t = time_step_size, time_step_size/2, ...
