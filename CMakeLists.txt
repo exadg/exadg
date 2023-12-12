@@ -191,6 +191,7 @@ SET(TARGET_SRC
      include/exadg/acoustic_conservation_equations/user_interface/parameters.cpp
      include/exadg/acoustic_conservation_equations/spatial_discretization/spatial_operator.cpp
      include/exadg/acoustic_conservation_equations/postprocessor/postprocessor.cpp
+     include/exadg/acoustic_conservation_equations/postprocessor/output_generator.cpp
      include/exadg/acoustic_conservation_equations/driver.cpp
      )
 
