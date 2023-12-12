@@ -88,6 +88,13 @@ public:
     return solution;
   }
 
+protected:
+  Operator const &
+  get_underlying_operator() const
+  {
+    return *pde_operator;
+  }
+
 private:
   void
   update_time_integrator_constants() final

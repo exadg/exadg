@@ -43,6 +43,8 @@ Parameters::Parameters()
 
     // TEMPORAL DISCRETIZATION
     calculation_of_time_step_size(TimeStepCalculation::Undefined),
+    cfl(-1.),
+    cfl_exponent_fe_degree(1.5),
     time_step_size(-1.),
     max_number_of_time_steps(std::numeric_limits<unsigned int>::max()),
     n_refine_time(0),
@@ -79,6 +81,12 @@ Parameters::check() const
 
   if(calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
     AssertThrow(time_step_size > 0., dealii::ExcMessage("parameter must be defined"));
+
+  if(calculation_of_time_step_size == TimeStepCalculation::CFL)
+  {
+    AssertThrow(cfl > 0., dealii::ExcMessage("parameter must be defined"));
+    AssertThrow(cfl_exponent_fe_degree > 0., dealii::ExcMessage("cfl_exponent_fe_degree > 0."));
+  }
 
   AssertThrow(not(adaptive_time_stepping),
               dealii::ExcMessage("adaptive timestepping not supported"));

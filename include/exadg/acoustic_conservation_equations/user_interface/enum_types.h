@@ -49,7 +49,8 @@ enum class Formulation
 enum class TimeStepCalculation
 {
   Undefined,
-  UserSpecified
+  UserSpecified,
+  CFL
 };
 
 } // namespace Acoustics

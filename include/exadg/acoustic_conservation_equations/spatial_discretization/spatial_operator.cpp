@@ -26,6 +26,7 @@
 #include <exadg/acoustic_conservation_equations/spatial_discretization/spatial_operator.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/operators/finite_element.h>
+#include <exadg/operators/grid_related_time_step_restrictions.h>
 #include <exadg/operators/quadrature.h>
 #include <exadg/utilities/exceptions.h>
 
@@ -324,6 +325,29 @@ SpatialOperator<dim, Number>::apply_inverse_mass_operator(BlockVectorType &     
 {
   inverse_mass_pressure.apply(dst.block(block_index_pressure), src.block(block_index_pressure));
   inverse_mass_velocity.apply(dst.block(block_index_velocity), src.block(block_index_velocity));
+}
+
+template<int dim, typename Number>
+double
+SpatialOperator<dim, Number>::calculate_time_step_cfl() const
+{
+  // In case of mixed-orders use the maximum fe_degree and the corresponding
+  // quadrature rule.
+
+  // The time-step size is not adapted every time-step. Thus, we are using
+  // a constant function to pass in the speed of sound, even though it is
+  // possible to optimize calculate_time_step_cfl_local() for this case.
+
+  return calculate_time_step_cfl_local<dim, Number>(
+    get_matrix_free(),
+    get_dof_index_velocity(),
+    get_quad_index_pressure_velocity(),
+    std::make_shared<dealii::Functions::ConstantFunction<dim>>(param.speed_of_sound, dim),
+    param.start_time /* will not be used (ConstantFunction) */,
+    std::max(param.degree_p, param.degree_u),
+    param.cfl_exponent_fe_degree,
+    CFLConditionType::VelocityNorm,
+    mpi_comm);
 }
 
 template<int dim, typename Number>

@@ -24,6 +24,7 @@
 
 
 #include <exadg/acoustic_conservation_equations/spatial_discretization/interface.h>
+#include <exadg/operators/grid_related_time_step_restrictions.h>
 #include <exadg/time_integration/time_int_abm_base.h>
 #include <exadg/time_integration/time_step_calculation.h>
 
@@ -82,10 +83,17 @@ private:
 
       print_parameter(pcout, "time step size", time_step);
     }
-    else
+    else if(param.calculation_of_time_step_size == TimeStepCalculation::CFL)
     {
-      AssertThrow(
-        false, dealii::ExcMessage("Specified type of time step calculation is not implemented."));
+      double const cfl = param.cfl / std::pow(2.0, param.n_refine_time);
+
+      time_step = cfl * this->get_underlying_operator().calculate_time_step_cfl();
+
+      this->pcout << std::endl
+                  << "Calculation of time step size according to CFL condition:" << std::endl
+                  << std::endl;
+      print_parameter(this->pcout, "CFL", cfl);
+      print_parameter(this->pcout, "time step size", time_step);
     }
 
     return time_step;
