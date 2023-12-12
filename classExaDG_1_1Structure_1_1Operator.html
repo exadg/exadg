@@ -92,75 +92,75 @@ Inheritance diagram for ExaDG::Structure::Operator&lt; dim, Number &gt;:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a092c3bce90deb04c2e65511ce0c72518" id="r_a092c3bce90deb04c2e65511ce0c72518"><td class="memItemLeft" align="right" valign="top"><a id="a092c3bce90deb04c2e65511ce0c72518" name="a092c3bce90deb04c2e65511ce0c72518"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>Operator</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, std::shared_ptr&lt; MaterialDescriptor const &gt; material_descriptor, <a class="el" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> const &amp;param, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>Operator</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt; mapping, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt; field_functions, std::shared_ptr&lt; MaterialDescriptor <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt; material_descriptor, <a class="el" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;param, std::string <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;field, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;mpi_comm)</td></tr>
 <tr class="separator:a092c3bce90deb04c2e65511ce0c72518"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aba807f9ef18118a817463bf44adad8f5" id="r_aba807f9ef18118a817463bf44adad8f5"><td class="memItemLeft" align="right" valign="top"><a id="aba807f9ef18118a817463bf44adad8f5" name="aba807f9ef18118a817463bf44adad8f5"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data</b> (<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &amp;matrix_free_data) const</td></tr>
+<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data</b> (<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &amp;matrix_free_data) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:aba807f9ef18118a817463bf44adad8f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae2dc6afeb088f1cb1e81f552cd291ef7" id="r_ae2dc6afeb088f1cb1e81f552cd291ef7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#ae2dc6afeb088f1cb1e81f552cd291ef7">setup</a> ()</td></tr>
+<tr class="memitem:ae2dc6afeb088f1cb1e81f552cd291ef7" id="r_ae2dc6afeb088f1cb1e81f552cd291ef7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#ae2dc6afeb088f1cb1e81f552cd291ef7">setup</a> ()</td></tr>
 <tr class="separator:ae2dc6afeb088f1cb1e81f552cd291ef7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5c841479dadb4576be32dd8a081eb523" id="r_a5c841479dadb4576be32dd8a081eb523"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a5c841479dadb4576be32dd8a081eb523">setup</a> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; const &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; const &gt; matrix_free_data)</td></tr>
+<tr class="memitem:a5c841479dadb4576be32dd8a081eb523" id="r_a5c841479dadb4576be32dd8a081eb523"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a5c841479dadb4576be32dd8a081eb523">setup</a> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt; matrix_free_data)</td></tr>
 <tr class="separator:a5c841479dadb4576be32dd8a081eb523"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a12ba4207919ad8e7c96c3fa265c40283" id="r_a12ba4207919ad8e7c96c3fa265c40283"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a12ba4207919ad8e7c96c3fa265c40283">initialize_dof_vector</a> (VectorType &amp;src) const final</td></tr>
+<tr class="memitem:a12ba4207919ad8e7c96c3fa265c40283" id="r_a12ba4207919ad8e7c96c3fa265c40283"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a12ba4207919ad8e7c96c3fa265c40283">initialize_dof_vector</a> (VectorType &amp;src) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">final</a></td></tr>
 <tr class="separator:a12ba4207919ad8e7c96c3fa265c40283"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a32d3a20f946cc40fc7cf1d30191044da" id="r_a32d3a20f946cc40fc7cf1d30191044da"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a32d3a20f946cc40fc7cf1d30191044da">prescribe_initial_displacement</a> (VectorType &amp;displacement, double const time) const final</td></tr>
+<tr class="memitem:a32d3a20f946cc40fc7cf1d30191044da" id="r_a32d3a20f946cc40fc7cf1d30191044da"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a32d3a20f946cc40fc7cf1d30191044da">prescribe_initial_displacement</a> (VectorType &amp;displacement, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> time) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">final</a></td></tr>
 <tr class="separator:a32d3a20f946cc40fc7cf1d30191044da"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa51f8ba48a78401b1419f95aa53d903f" id="r_aa51f8ba48a78401b1419f95aa53d903f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#aa51f8ba48a78401b1419f95aa53d903f">prescribe_initial_velocity</a> (VectorType &amp;velocity, double const time) const final</td></tr>
+<tr class="memitem:aa51f8ba48a78401b1419f95aa53d903f" id="r_aa51f8ba48a78401b1419f95aa53d903f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#aa51f8ba48a78401b1419f95aa53d903f">prescribe_initial_velocity</a> (VectorType &amp;velocity, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> time) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">final</a></td></tr>
 <tr class="separator:aa51f8ba48a78401b1419f95aa53d903f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab9bed716437832d553ecacf95a7631f0" id="r_ab9bed716437832d553ecacf95a7631f0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#ab9bed716437832d553ecacf95a7631f0">compute_initial_acceleration</a> (VectorType &amp;initial_acceleration, VectorType const &amp;initial_displacement, double const time) const final</td></tr>
+<tr class="memitem:ab9bed716437832d553ecacf95a7631f0" id="r_ab9bed716437832d553ecacf95a7631f0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#ab9bed716437832d553ecacf95a7631f0">compute_initial_acceleration</a> (VectorType &amp;initial_acceleration, VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;initial_displacement, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> time) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">final</a></td></tr>
 <tr class="separator:ab9bed716437832d553ecacf95a7631f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3d9782ccbbfffb672a1975a7b4c4369c" id="r_a3d9782ccbbfffb672a1975a7b4c4369c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a3d9782ccbbfffb672a1975a7b4c4369c">evaluate_mass_operator</a> (VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="memitem:a3d9782ccbbfffb672a1975a7b4c4369c" id="r_a3d9782ccbbfffb672a1975a7b4c4369c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a3d9782ccbbfffb672a1975a7b4c4369c">evaluate_mass_operator</a> (VectorType &amp;dst, VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;src) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">final</a></td></tr>
 <tr class="separator:a3d9782ccbbfffb672a1975a7b4c4369c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3c0b5adbed517c2104d84ff5f18f94ce" id="r_a3c0b5adbed517c2104d84ff5f18f94ce"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a3c0b5adbed517c2104d84ff5f18f94ce">apply_add_damping_operator</a> (VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="memitem:a3c0b5adbed517c2104d84ff5f18f94ce" id="r_a3c0b5adbed517c2104d84ff5f18f94ce"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a3c0b5adbed517c2104d84ff5f18f94ce">apply_add_damping_operator</a> (VectorType &amp;dst, VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;src) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">final</a></td></tr>
 <tr class="separator:a3c0b5adbed517c2104d84ff5f18f94ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaa6c2c9f9261b5297b99ac90d958a1f1" id="r_aaa6c2c9f9261b5297b99ac90d958a1f1"><td class="memItemLeft" align="right" valign="top"><a id="aaa6c2c9f9261b5297b99ac90d958a1f1" name="aaa6c2c9f9261b5297b99ac90d958a1f1"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_nonlinear_residual</b> (VectorType &amp;dst, VectorType const &amp;src, VectorType const &amp;const_vector, double const factor, double const time) const</td></tr>
+<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_nonlinear_residual</b> (VectorType &amp;dst, VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;src, VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;const_vector, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">factor</a>, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> time) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:aaa6c2c9f9261b5297b99ac90d958a1f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a775483dd6ae16a9ad858b0d85ce6a769" id="r_a775483dd6ae16a9ad858b0d85ce6a769"><td class="memItemLeft" align="right" valign="top"><a id="a775483dd6ae16a9ad858b0d85ce6a769" name="a775483dd6ae16a9ad858b0d85ce6a769"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_solution_linearization</b> (VectorType const &amp;vector) const</td></tr>
+<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>set_solution_linearization</b> (VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;vector) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:a775483dd6ae16a9ad858b0d85ce6a769"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a4e2243d0da8bfb1204c64bad0cc8d2" id="r_a3a4e2243d0da8bfb1204c64bad0cc8d2"><td class="memItemLeft" align="right" valign="top"><a id="a3a4e2243d0da8bfb1204c64bad0cc8d2" name="a3a4e2243d0da8bfb1204c64bad0cc8d2"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_linearized_operator</b> (VectorType &amp;dst, VectorType const &amp;src, double const factor, double const time) const</td></tr>
+<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>apply_linearized_operator</b> (VectorType &amp;dst, VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;src, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">factor</a>, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> time) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:a3a4e2243d0da8bfb1204c64bad0cc8d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:add0f241c960365f15fc02080c90ebe65" id="r_add0f241c960365f15fc02080c90ebe65"><td class="memItemLeft" align="right" valign="top"><a id="add0f241c960365f15fc02080c90ebe65" name="add0f241c960365f15fc02080c90ebe65"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_elasticity_operator</b> (VectorType &amp;dst, VectorType const &amp;src, double const factor, double const time) const</td></tr>
+<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_elasticity_operator</b> (VectorType &amp;dst, VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;src, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">factor</a>, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> time) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:add0f241c960365f15fc02080c90ebe65"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a53fca797a89b55a63e379a73a9130da0" id="r_a53fca797a89b55a63e379a73a9130da0"><td class="memItemLeft" align="right" valign="top"><a id="a53fca797a89b55a63e379a73a9130da0" name="a53fca797a89b55a63e379a73a9130da0"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_elasticity_operator</b> (VectorType &amp;dst, VectorType const &amp;src, VectorType const &amp;linearization, double const factor, double const time) const</td></tr>
+<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>apply_elasticity_operator</b> (VectorType &amp;dst, VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;src, VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">linearization</a>, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">factor</a>, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> time) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:a53fca797a89b55a63e379a73a9130da0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9e442d4a29dedb144ae30793c610df83" id="r_a9e442d4a29dedb144ae30793c610df83"><td class="memItemLeft" align="right" valign="top">std::tuple&lt; unsigned int, unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a9e442d4a29dedb144ae30793c610df83">solve_nonlinear</a> (VectorType &amp;sol, VectorType const &amp;const_vector, double const scaling_factor_acceleration, double const scaling_factor_velocity, double const time, bool const update_preconditioner) const final</td></tr>
+<tr class="memitem:a9e442d4a29dedb144ae30793c610df83" id="r_a9e442d4a29dedb144ae30793c610df83"><td class="memItemLeft" align="right" valign="top">std::tuple&lt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a>, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a9e442d4a29dedb144ae30793c610df83">solve_nonlinear</a> (VectorType &amp;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">sol</a>, VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;const_vector, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">scaling_factor_acceleration</a>, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">scaling_factor_velocity</a>, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> time, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">bool</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> update_preconditioner) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">final</a></td></tr>
 <tr class="separator:a9e442d4a29dedb144ae30793c610df83"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac87f1075eba3d74ef7a0e5bc5bc60e62" id="r_ac87f1075eba3d74ef7a0e5bc5bc60e62"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#ac87f1075eba3d74ef7a0e5bc5bc60e62">rhs</a> (VectorType &amp;dst, double const time) const final</td></tr>
+<tr class="memitem:ac87f1075eba3d74ef7a0e5bc5bc60e62" id="r_ac87f1075eba3d74ef7a0e5bc5bc60e62"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#ac87f1075eba3d74ef7a0e5bc5bc60e62">rhs</a> (VectorType &amp;dst, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> time) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">final</a></td></tr>
 <tr class="separator:ac87f1075eba3d74ef7a0e5bc5bc60e62"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab5cdc48421d57e9a093a5d6f7fa2461e" id="r_ab5cdc48421d57e9a093a5d6f7fa2461e"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#ab5cdc48421d57e9a093a5d6f7fa2461e">solve_linear</a> (VectorType &amp;sol, VectorType const &amp;rhs, double const scaling_factor_acceleration, double const scaling_factor_velocity, double const time, bool const update_preconditioner) const final</td></tr>
+<tr class="memitem:ab5cdc48421d57e9a093a5d6f7fa2461e" id="r_ab5cdc48421d57e9a093a5d6f7fa2461e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#ab5cdc48421d57e9a093a5d6f7fa2461e">solve_linear</a> (VectorType &amp;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">sol</a>, VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;rhs, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">scaling_factor_acceleration</a>, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">scaling_factor_velocity</a>, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> time, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">bool</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> update_preconditioner) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">final</a></td></tr>
 <tr class="separator:ab5cdc48421d57e9a093a5d6f7fa2461e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:accb55d9c1c719b1852acba0856fc141f" id="r_accb55d9c1c719b1852acba0856fc141f"><td class="memItemLeft" align="right" valign="top"><a id="accb55d9c1c719b1852acba0856fc141f" name="accb55d9c1c719b1852acba0856fc141f"></a>
-std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_matrix_free</b> () const</td></tr>
+std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_matrix_free</b> () <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:accb55d9c1c719b1852acba0856fc141f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac24075610952e52e4eb86568b4084b6d" id="r_ac24075610952e52e4eb86568b4084b6d"><td class="memItemLeft" align="right" valign="top"><a id="ac24075610952e52e4eb86568b4084b6d" name="ac24075610952e52e4eb86568b4084b6d"></a>
-dealii::Mapping&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_mapping</b> () const</td></tr>
+dealii::Mapping&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_mapping</b> () <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:ac24075610952e52e4eb86568b4084b6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af63e2d50d7ec633232630257c78a58e0" id="r_af63e2d50d7ec633232630257c78a58e0"><td class="memItemLeft" align="right" valign="top"><a id="af63e2d50d7ec633232630257c78a58e0" name="af63e2d50d7ec633232630257c78a58e0"></a>
-dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler</b> () const</td></tr>
+dealii::DoFHandler&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler</b> () <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:af63e2d50d7ec633232630257c78a58e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a22998e1d7d171f5bdcffa798bed2b78d" id="r_a22998e1d7d171f5bdcffa798bed2b78d"><td class="memItemLeft" align="right" valign="top"><a id="a22998e1d7d171f5bdcffa798bed2b78d" name="a22998e1d7d171f5bdcffa798bed2b78d"></a>
-dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>get_number_of_dofs</b> () const</td></tr>
+dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>get_number_of_dofs</b> () <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:a22998e1d7d171f5bdcffa798bed2b78d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a52e9b2845ee28f6dd57d2ce1af92f389" id="r_a52e9b2845ee28f6dd57d2ce1af92f389"><td class="memItemLeft" align="right" valign="top"><a id="a52e9b2845ee28f6dd57d2ce1af92f389" name="a52e9b2845ee28f6dd57d2ce1af92f389"></a>
-std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; 1, dim, double &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_container_interface_data_neumann</b> () const</td></tr>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; 1, dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_container_interface_data_neumann</b> () <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:a52e9b2845ee28f6dd57d2ce1af92f389"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aabaff9ee2176650ba1bb77531ce1d637" id="r_aabaff9ee2176650ba1bb77531ce1d637"><td class="memItemLeft" align="right" valign="top"><a id="aabaff9ee2176650ba1bb77531ce1d637" name="aabaff9ee2176650ba1bb77531ce1d637"></a>
-std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; 1, dim, double &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_container_interface_data_dirichlet</b> () const</td></tr>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; 1, dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_container_interface_data_dirichlet</b> () <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:aabaff9ee2176650ba1bb77531ce1d637"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afcd79b9442c46b6d6df28193e7a22bdc" id="r_afcd79b9442c46b6d6df28193e7a22bdc"><td class="memItemLeft" align="right" valign="top"><a id="afcd79b9442c46b6d6df28193e7a22bdc" name="afcd79b9442c46b6d6df28193e7a22bdc"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index</b> () const</td></tr>
+<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a>&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index</b> () <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:afcd79b9442c46b6d6df28193e7a22bdc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pub_types_classExaDG_1_1Structure_1_1Interface_1_1Operator"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classExaDG_1_1Structure_1_1Interface_1_1Operator')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classExaDG_1_1Structure_1_1Interface_1_1Operator.html">ExaDG::Structure::Interface::Operator&lt; Number &gt;</a></td></tr>
 <tr class="memitem:a3cd86188b7eca0ed67a0874504edc307 inherit pub_types_classExaDG_1_1Structure_1_1Interface_1_1Operator" id="r_a3cd86188b7eca0ed67a0874504edc307"><td class="memItemLeft" align="right" valign="top">
-typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typedef</a> dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
 <tr class="separator:a3cd86188b7eca0ed67a0874504edc307 inherit pub_types_classExaDG_1_1Structure_1_1Interface_1_1Operator"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
@@ -170,13 +170,13 @@ typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typename</a> Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::apply_add_damping_operator </td>
+          <td class="memname"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::apply_add_damping_operator </td>
           <td>(</td>
           <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>dst</em>, </td>
@@ -184,7 +184,7 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">VectorType const &amp;&#160;</td>
+          <td class="paramtype">VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;&#160;</td>
           <td class="paramname"><em>src</em>&#160;</td>
         </tr>
         <tr>
@@ -210,13 +210,13 @@ template&lt;int dim, typename Number &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typename</a> Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::compute_initial_acceleration </td>
+          <td class="memname"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::compute_initial_acceleration </td>
           <td>(</td>
           <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>initial_acceleration</em>, </td>
@@ -224,13 +224,13 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">VectorType const &amp;&#160;</td>
+          <td class="paramtype">VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;&#160;</td>
           <td class="paramname"><em>initial_displacement</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">double const&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>time</em>&#160;</td>
         </tr>
         <tr>
@@ -256,13 +256,13 @@ template&lt;int dim, typename Number &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typename</a> Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::evaluate_mass_operator </td>
+          <td class="memname"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::evaluate_mass_operator </td>
           <td>(</td>
           <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>dst</em>, </td>
@@ -270,7 +270,7 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">VectorType const &amp;&#160;</td>
+          <td class="paramtype">VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;&#160;</td>
           <td class="paramname"><em>src</em>&#160;</td>
         </tr>
         <tr>
@@ -296,13 +296,13 @@ template&lt;int dim, typename Number &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typename</a> Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::initialize_dof_vector </td>
+          <td class="memname"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::initialize_dof_vector </td>
           <td>(</td>
           <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>src</em></td><td>)</td>
@@ -326,13 +326,13 @@ template&lt;int dim, typename Number &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typename</a> Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::prescribe_initial_displacement </td>
+          <td class="memname"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::prescribe_initial_displacement </td>
           <td>(</td>
           <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>displacement</em>, </td>
@@ -340,7 +340,7 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">double const&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>time</em>&#160;</td>
         </tr>
         <tr>
@@ -366,13 +366,13 @@ template&lt;int dim, typename Number &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typename</a> Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::prescribe_initial_velocity </td>
+          <td class="memname"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::prescribe_initial_velocity </td>
           <td>(</td>
           <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>velocity</em>, </td>
@@ -380,7 +380,7 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">double const&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>time</em>&#160;</td>
         </tr>
         <tr>
@@ -406,13 +406,13 @@ template&lt;int dim, typename Number &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typename</a> Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::rhs </td>
+          <td class="memname"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::rhs </td>
           <td>(</td>
           <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>dst</em>, </td>
@@ -420,7 +420,7 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">double const&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>time</em>&#160;</td>
         </tr>
         <tr>
@@ -446,10 +446,10 @@ template&lt;int dim, typename Number &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typename</a> Number &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::setup </td>
+          <td class="memname"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::setup </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -466,18 +466,18 @@ template&lt;int dim, typename Number &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typename</a> Number &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::setup </td>
+          <td class="memname"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::setup </td>
           <td>(</td>
-          <td class="paramtype">std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; const &gt;&#160;</td>
+          <td class="paramtype">std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt;&#160;</td>
           <td class="paramname"><em>matrix_free</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; const &gt;&#160;</td>
+          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt;&#160;</td>
           <td class="paramname"><em>matrix_free_data</em>&#160;</td>
         </tr>
         <tr>
@@ -497,13 +497,13 @@ template&lt;int dim, typename Number &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typename</a> Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">unsigned int <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::solve_linear </td>
+          <td class="memname"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::solve_linear </td>
           <td>(</td>
           <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>sol</em>, </td>
@@ -511,31 +511,31 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">VectorType const &amp;&#160;</td>
+          <td class="paramtype">VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;&#160;</td>
           <td class="paramname"><em>rhs</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">double const&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>scaling_factor_acceleration</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">double const&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>scaling_factor_velocity</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">double const&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>time</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">bool const&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">bool</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>update_preconditioner</em>&#160;</td>
         </tr>
         <tr>
@@ -561,13 +561,13 @@ template&lt;int dim, typename Number &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typename</a> Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::tuple&lt; unsigned int, unsigned int &gt; <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::solve_nonlinear </td>
+          <td class="memname">std::tuple&lt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a>, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> &gt; <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a>&lt; dim, Number &gt;::solve_nonlinear </td>
           <td>(</td>
           <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>sol</em>, </td>
@@ -575,31 +575,31 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">VectorType const &amp;&#160;</td>
+          <td class="paramtype">VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;&#160;</td>
           <td class="paramname"><em>const_vector</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">double const&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>scaling_factor_acceleration</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">double const&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>scaling_factor_velocity</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">double const&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>time</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">bool const&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">bool</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>update_preconditioner</em>&#160;</td>
         </tr>
         <tr>

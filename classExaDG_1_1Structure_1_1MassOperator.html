@@ -94,10 +94,10 @@ Inheritance diagram for ExaDG::Structure::MassOperator&lt; dim, Number &gt;:</di
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:abaf4073a7ada2f6d9d0c7ab60b8193ea" id="r_abaf4073a7ada2f6d9d0c7ab60b8193ea"><td class="memItemLeft" align="right" valign="top"><a id="abaf4073a7ada2f6d9d0c7ab60b8193ea" name="abaf4073a7ada2f6d9d0c7ab60b8193ea"></a>
-typedef <a class="el" href="classExaDG_1_1MassOperator.html">ExaDG::MassOperator</a>&lt; dim, dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Base</b></td></tr>
+<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typedef</a> <a class="el" href="classExaDG_1_1MassOperator.html">ExaDG::MassOperator</a>&lt; dim, dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Base</b></td></tr>
 <tr class="separator:abaf4073a7ada2f6d9d0c7ab60b8193ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aecd6505a51cb3d5ae7bfd97e2c50f028" id="r_aecd6505a51cb3d5ae7bfd97e2c50f028"><td class="memItemLeft" align="right" valign="top"><a id="aecd6505a51cb3d5ae7bfd97e2c50f028" name="aecd6505a51cb3d5ae7bfd97e2c50f028"></a>
-typedef Base::VectorType&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typedef</a> Base::VectorType&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
 <tr class="separator:aecd6505a51cb3d5ae7bfd97e2c50f028"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_types_classExaDG_1_1MassOperator"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classExaDG_1_1MassOperator')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classExaDG_1_1MassOperator.html">ExaDG::MassOperator&lt; dim, dim, Number &gt;</a></td></tr>
 <tr class="memitem:ae20121f412928a560577ab4c47ee46ab inherit pub_types_classExaDG_1_1MassOperator" id="r_ae20121f412928a560577ab4c47ee46ab"><td class="memItemLeft" align="right" valign="top">
@@ -138,10 +138,10 @@ typedef dealii::FullMatrix&lt; dealii::TrilinosScalar &gt;&#160;</td><td class="
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a984e5e31330858a998b660a409478214" id="r_a984e5e31330858a998b660a409478214"><td class="memItemLeft" align="right" valign="top"><a id="a984e5e31330858a998b660a409478214" name="a984e5e31330858a998b660a409478214"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;affine_constraints, <a class="el" href="structExaDG_1_1Structure_1_1MassOperatorData.html">MassOperatorData</a>&lt; dim &gt; const &amp;data)</td></tr>
+<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;affine_constraints, <a class="el" href="structExaDG_1_1Structure_1_1MassOperatorData.html">MassOperatorData</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;data)</td></tr>
 <tr class="separator:a984e5e31330858a998b660a409478214"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6b94254353d7c06da74aa89899c04d83" id="r_a6b94254353d7c06da74aa89899c04d83"><td class="memItemLeft" align="right" valign="top"><a id="a6b94254353d7c06da74aa89899c04d83" name="a6b94254353d7c06da74aa89899c04d83"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_inhomogeneous_boundary_values</b> (VectorType &amp;dst) const final</td></tr>
+<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>set_inhomogeneous_boundary_values</b> (VectorType &amp;dst) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">final</a></td></tr>
 <tr class="separator:a6b94254353d7c06da74aa89899c04d83"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1MassOperator"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1MassOperator')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1MassOperator.html">ExaDG::MassOperator&lt; dim, dim, Number &gt;</a></td></tr>
 <tr class="memitem:aa8d54e16806bb3b8994c88f518e79c78 inherit pub_methods_classExaDG_1_1MassOperator" id="r_aa8d54e16806bb3b8994c88f518e79c78"><td class="memItemLeft" align="right" valign="top">

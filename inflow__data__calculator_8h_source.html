@@ -186,7 +186,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno"><a class="line" href="classExaDG_1_1IncNS_1_1InflowDataCalculator.html">  100</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1IncNS_1_1InflowDataCalculator.html">InflowDataCalculator</a></div>
 <div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>{</div>
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1InflowDataCalculator.html">InflowDataCalculator</a>(<a class="code hl_struct" href="structExaDG_1_1IncNS_1_1InflowData.html">InflowData&lt;dim&gt;</a> <span class="keyword">const</span> &amp; inflow_data, MPI_Comm <span class="keyword">const</span> &amp; comm);</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1InflowDataCalculator.html">InflowDataCalculator</a>(<a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">InflowData&lt;dim&gt;</a> <span class="keyword">const</span> &amp; inflow_data, <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">MPI_Comm</a> <span class="keyword">const</span> &amp; comm);</div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span> </div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  setup(dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp; dof_handler_velocity, dealii::Mapping&lt;dim&gt; <span class="keyword">const</span> &amp; mapping);</div>
@@ -197,10 +197,10 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span><span class="keyword">private</span>:</div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  dealii::SmartPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler_velocity;</div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  dealii::SmartPointer&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;    mapping;</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1InflowData.html">InflowData&lt;dim&gt;</a>                                     inflow_data;</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">InflowData&lt;dim&gt;</a>                                     inflow_data;</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  <span class="keywordtype">bool</span>                                                inflow_data_has_been_initialized;</div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span> </div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">MPI_Comm</a> <span class="keyword">const</span> mpi_comm;</div>
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  std::vector&lt;</div>
 <div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    std::vector&lt;std::pair&lt;std::vector&lt;dealii::types::global_dof_index&gt;, std::vector&lt;Number&gt;&gt;&gt;&gt;</div>
@@ -214,6 +214,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span> </div>
 <div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_INFLOW_DATA_CALCULATOR_H_ */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1IncNS_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1ApplicationBase.html">ExaDG::IncNS::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:51</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1InflowDataCalculator_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1InflowDataCalculator.html">ExaDG::IncNS::InflowDataCalculator</a></div><div class="ttdef"><b>Definition</b> inflow_data_calculator.h:101</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:34</div></div>
 <div class="ttc" id="astructExaDG_1_1IncNS_1_1InflowData_html"><div class="ttname"><a href="structExaDG_1_1IncNS_1_1InflowData.html">ExaDG::IncNS::InflowData</a></div><div class="ttdef"><b>Definition</b> inflow_data_calculator.h:53</div></div>

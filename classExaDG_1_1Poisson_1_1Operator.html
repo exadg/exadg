@@ -89,62 +89,62 @@ Inheritance diagram for ExaDG::Poisson::Operator&lt; dim, n_components, Number &
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:aac665fe08d59f1bce6c9b5531a18e817" id="r_aac665fe08d59f1bce6c9b5531a18e817"><td class="memItemLeft" align="right" valign="top"><a id="aac665fe08d59f1bce6c9b5531a18e817" name="aac665fe08d59f1bce6c9b5531a18e817"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>Operator</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; rank, dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, <a class="el" href="classExaDG_1_1Poisson_1_1Parameters.html">Parameters</a> const &amp;param, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>Operator</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &gt; mapping, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; rank, dim &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &gt; field_functions, <a class="el" href="classExaDG_1_1Poisson_1_1Parameters.html">Parameters</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;param, std::string <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;field, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;mpi_comm)</td></tr>
 <tr class="separator:aac665fe08d59f1bce6c9b5531a18e817"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a85d839d13ca1c8f40e97b81618f8e786" id="r_a85d839d13ca1c8f40e97b81618f8e786"><td class="memItemLeft" align="right" valign="top"><a id="a85d839d13ca1c8f40e97b81618f8e786" name="a85d839d13ca1c8f40e97b81618f8e786"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data</b> (<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &amp;matrix_free_data) const</td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data</b> (<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &amp;matrix_free_data) <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:a85d839d13ca1c8f40e97b81618f8e786"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab7e875720482e7920ffb1e101b49595f" id="r_ab7e875720482e7920ffb1e101b49595f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Poisson_1_1Operator.html#ab7e875720482e7920ffb1e101b49595f">setup</a> ()</td></tr>
+<tr class="memitem:ab7e875720482e7920ffb1e101b49595f" id="r_ab7e875720482e7920ffb1e101b49595f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Poisson_1_1Operator.html#ab7e875720482e7920ffb1e101b49595f">setup</a> ()</td></tr>
 <tr class="separator:ab7e875720482e7920ffb1e101b49595f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4be938fef90f4dc6029a80812310ee87" id="r_a4be938fef90f4dc6029a80812310ee87"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Poisson_1_1Operator.html#a4be938fef90f4dc6029a80812310ee87">setup</a> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; const &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; const &gt; matrix_free_data)</td></tr>
+<tr class="memitem:a4be938fef90f4dc6029a80812310ee87" id="r_a4be938fef90f4dc6029a80812310ee87"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Poisson_1_1Operator.html#a4be938fef90f4dc6029a80812310ee87">setup</a> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &gt; matrix_free_data)</td></tr>
 <tr class="separator:a4be938fef90f4dc6029a80812310ee87"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a303922334e332dc80448d1a59afe6ea6" id="r_a303922334e332dc80448d1a59afe6ea6"><td class="memItemLeft" align="right" valign="top"><a id="a303922334e332dc80448d1a59afe6ea6" name="a303922334e332dc80448d1a59afe6ea6"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_dof_vector</b> (VectorType &amp;src) const</td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_dof_vector</b> (VectorType &amp;src) <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:a303922334e332dc80448d1a59afe6ea6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3551e4add969754cae883cd3591be1f2" id="r_a3551e4add969754cae883cd3591be1f2"><td class="memItemLeft" align="right" valign="top"><a id="a3551e4add969754cae883cd3591be1f2" name="a3551e4add969754cae883cd3591be1f2"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>prescribe_initial_conditions</b> (VectorType &amp;src) const</td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>prescribe_initial_conditions</b> (VectorType &amp;src) <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:a3551e4add969754cae883cd3591be1f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0be93a7399a40d157b61309f27b95ada" id="r_a0be93a7399a40d157b61309f27b95ada"><td class="memItemLeft" align="right" valign="top"><a id="a0be93a7399a40d157b61309f27b95ada" name="a0be93a7399a40d157b61309f27b95ada"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>rhs</b> (VectorType &amp;dst, double const time=0.0) const</td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>rhs</b> (VectorType &amp;dst, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> time=0.0) <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:a0be93a7399a40d157b61309f27b95ada"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac6db10c62fe267da027734c7e29b9f6f" id="r_ac6db10c62fe267da027734c7e29b9f6f"><td class="memItemLeft" align="right" valign="top"><a id="ac6db10c62fe267da027734c7e29b9f6f" name="ac6db10c62fe267da027734c7e29b9f6f"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (VectorType &amp;dst, VectorType <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;src) <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:ac6db10c62fe267da027734c7e29b9f6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a57cac2fa85698bdc86f0ef9c3fad93a2" id="r_a57cac2fa85698bdc86f0ef9c3fad93a2"><td class="memItemLeft" align="right" valign="top"><a id="a57cac2fa85698bdc86f0ef9c3fad93a2" name="a57cac2fa85698bdc86f0ef9c3fad93a2"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType &amp;dst, VectorType const &amp;src, double const time=0.0) const</td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType &amp;dst, VectorType <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;src, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> time=0.0) <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:a57cac2fa85698bdc86f0ef9c3fad93a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0ae458fa2d9a354bbd0ff83bef4dcf94" id="r_a0ae458fa2d9a354bbd0ff83bef4dcf94"><td class="memItemLeft" align="right" valign="top"><a id="a0ae458fa2d9a354bbd0ff83bef4dcf94" name="a0ae458fa2d9a354bbd0ff83bef4dcf94"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve</b> (VectorType &amp;sol, VectorType const &amp;rhs, double const time) const</td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a>&#160;</td><td class="memItemRight" valign="bottom"><b>solve</b> (VectorType &amp;<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">sol</a>, VectorType <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;rhs, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> time) <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:a0ae458fa2d9a354bbd0ff83bef4dcf94"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aee180ce85f2ae2cfecf8b829496a3add" id="r_aee180ce85f2ae2cfecf8b829496a3add"><td class="memItemLeft" align="right" valign="top"><a id="aee180ce85f2ae2cfecf8b829496a3add" name="aee180ce85f2ae2cfecf8b829496a3add"></a>
-std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_matrix_free</b> () const</td></tr>
+std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_matrix_free</b> () <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:aee180ce85f2ae2cfecf8b829496a3add"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5ffc8d0c8141b4769fad1fef9a5b5e94" id="r_a5ffc8d0c8141b4769fad1fef9a5b5e94"><td class="memItemLeft" align="right" valign="top"><a id="a5ffc8d0c8141b4769fad1fef9a5b5e94" name="a5ffc8d0c8141b4769fad1fef9a5b5e94"></a>
-dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler</b> () const</td></tr>
+dealii::DoFHandler&lt; dim &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler</b> () <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:a5ffc8d0c8141b4769fad1fef9a5b5e94"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5a46d1e596ac68c338cea563c56cdced" id="r_a5a46d1e596ac68c338cea563c56cdced"><td class="memItemLeft" align="right" valign="top"><a id="a5a46d1e596ac68c338cea563c56cdced" name="a5a46d1e596ac68c338cea563c56cdced"></a>
-dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>get_number_of_dofs</b> () const</td></tr>
+dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>get_number_of_dofs</b> () <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:a5a46d1e596ac68c338cea563c56cdced"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a66959bfd0307ec2e8e2de4849d28ec84" id="r_a66959bfd0307ec2e8e2de4849d28ec84"><td class="memItemLeft" align="right" valign="top"><a id="a66959bfd0307ec2e8e2de4849d28ec84" name="a66959bfd0307ec2e8e2de4849d28ec84"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>get_n10</b> () const</td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">double</a>&#160;</td><td class="memItemRight" valign="bottom"><b>get_n10</b> () <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:a66959bfd0307ec2e8e2de4849d28ec84"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4ff6db0568d73ed4bff7199773a70d39" id="r_a4ff6db0568d73ed4bff7199773a70d39"><td class="memItemLeft" align="right" valign="top"><a id="a4ff6db0568d73ed4bff7199773a70d39" name="a4ff6db0568d73ed4bff7199773a70d39"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>get_average_convergence_rate</b> () const</td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">double</a>&#160;</td><td class="memItemRight" valign="bottom"><b>get_average_convergence_rate</b> () <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:a4ff6db0568d73ed4bff7199773a70d39"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2810d59a6acf86d2ce8e24d25892be04" id="r_a2810d59a6acf86d2ce8e24d25892be04"><td class="memItemLeft" align="right" valign="top"><a id="a2810d59a6acf86d2ce8e24d25892be04" name="a2810d59a6acf86d2ce8e24d25892be04"></a>
-std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; rank, dim, double &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_container_interface_data</b> () const</td></tr>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData</a>&lt; rank, dim, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">double</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_container_interface_data</b> () <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:a2810d59a6acf86d2ce8e24d25892be04"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae05fa65fba1104c16dc6a659f1d73092" id="r_ae05fa65fba1104c16dc6a659f1d73092"><td class="memItemLeft" align="right" valign="top"><a id="ae05fa65fba1104c16dc6a659f1d73092" name="ae05fa65fba1104c16dc6a659f1d73092"></a>
-std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_timings</b> () const</td></tr>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_timings</b> () <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:ae05fa65fba1104c16dc6a659f1d73092"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acf8cf9e6f69b3b661e05faa22aa01fa3" id="r_acf8cf9e6f69b3b661e05faa22aa01fa3"><td class="memItemLeft" align="right" valign="top"><a id="acf8cf9e6f69b3b661e05faa22aa01fa3" name="acf8cf9e6f69b3b661e05faa22aa01fa3"></a>
-std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_mapping</b> () const</td></tr>
+std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_mapping</b> () <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:acf8cf9e6f69b3b661e05faa22aa01fa3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aadff3f4fa3be0149dbec054d9c12680b" id="r_aadff3f4fa3be0149dbec054d9c12680b"><td class="memItemLeft" align="right" valign="top"><a id="aadff3f4fa3be0149dbec054d9c12680b" name="aadff3f4fa3be0149dbec054d9c12680b"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index</b> () const</td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a>&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index</b> () <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:aadff3f4fa3be0149dbec054d9c12680b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad9292e0bd98ad091418fd38127caa139" id="r_ad9292e0bd98ad091418fd38127caa139"><td class="memItemLeft" align="right" valign="top"><a id="ad9292e0bd98ad091418fd38127caa139" name="ad9292e0bd98ad091418fd38127caa139"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index</b> () const</td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a>&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index</b> () <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:ad9292e0bd98ad091418fd38127caa139"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
@@ -154,10 +154,10 @@ unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_inde
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, int n_components, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a> n_components, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">typename</a> Number &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Poisson_1_1Operator.html">ExaDG::Poisson::Operator</a>&lt; dim, n_components, Number &gt;::setup </td>
+          <td class="memname"><a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1Poisson_1_1Operator.html">ExaDG::Poisson::Operator</a>&lt; dim, n_components, Number &gt;::setup </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -174,18 +174,18 @@ template&lt;int dim, int n_components, typename Number &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, int n_components, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a> n_components, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">typename</a> Number &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Poisson_1_1Operator.html">ExaDG::Poisson::Operator</a>&lt; dim, n_components, Number &gt;::setup </td>
+          <td class="memname"><a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1Poisson_1_1Operator.html">ExaDG::Poisson::Operator</a>&lt; dim, n_components, Number &gt;::setup </td>
           <td>(</td>
-          <td class="paramtype">std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; const &gt;&#160;</td>
+          <td class="paramtype">std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &gt;&#160;</td>
           <td class="paramname"><em>matrix_free</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; const &gt;&#160;</td>
+          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &gt;&#160;</td>
           <td class="paramname"><em>matrix_free_data</em>&#160;</td>
         </tr>
         <tr>

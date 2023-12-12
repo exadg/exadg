@@ -151,21 +151,21 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span><span class="keyword">public</span>:</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keyword">typedef</span> dealii::LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="keyword">typedef</span> CellIntegrator&lt;dim, dim, Number&gt; CellIntegratorU;</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keyword">typedef</span> FaceIntegrator&lt;dim, dim, Number&gt; FaceIntegratorU;</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">CellIntegrator&lt;dim, dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">CellIntegratorU</a>;</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">FaceIntegrator&lt;dim, dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">FaceIntegratorU</a>;</div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  <span class="keyword">typedef</span> dealii::VectorizedArray&lt;Number&gt;                         scalar;</div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  <span class="keyword">typedef</span> dealii::Tensor&lt;1, dim, dealii::VectorizedArray&lt;Number&gt;&gt; vector;</div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1DivergenceAndMassErrorCalculator.html">DivergenceAndMassErrorCalculator&lt;dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1DivergenceAndMassErrorCalculator.html">This</a>;</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">DivergenceAndMassErrorCalculator&lt;dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">This</a>;</div>
 <div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1DivergenceAndMassErrorCalculator.html">DivergenceAndMassErrorCalculator</a>(MPI_Comm <span class="keyword">const</span> &amp; comm);</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1DivergenceAndMassErrorCalculator.html">DivergenceAndMassErrorCalculator</a>(<a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">MPI_Comm</a> <span class="keyword">const</span> &amp; comm);</div>
 <div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span> </div>
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  setup(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free_in,</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                      dof_index_in,</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                      quad_index_in,</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>        <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1MassConservationData.html">MassConservationData</a> <span class="keyword">const</span> &amp;            data_in);</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  setup(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">matrix_free_in</a>,</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                      <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">dof_index_in</a>,</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                      <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">quad_index_in</a>,</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>        <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1MassConservationData.html">MassConservationData</a> <span class="keyword">const</span> &amp;            <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">data_in</a>);</div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span> </div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  evaluate(VectorType <span class="keyword">const</span> &amp; velocity, <span class="keywordtype">double</span> <span class="keyword">const</span> time, <span class="keywordtype">bool</span> <span class="keyword">const</span> unsteady);</div>
@@ -188,22 +188,22 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  do_evaluate(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>              VectorType <span class="keyword">const</span> &amp;                      velocity,</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>              Number &amp;                                div_error,</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>              Number &amp;                                div_error_reference,</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>              Number &amp;                                mass_error,</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>              Number &amp;                                mass_error_reference);</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>              Number &amp;                                <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">div_error</a>,</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>              Number &amp;                                <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">div_error_reference</a>,</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>              Number &amp;                                <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">mass_error</a>,</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>              Number &amp;                                <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">mass_error_reference</a>);</div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span> </div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  local_compute_div(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp;       data,</div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>                    std::vector&lt;Number&gt; &amp;                         dst,</div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>                    VectorType <span class="keyword">const</span> &amp;                            source,</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>                    <span class="keyword">const</span> std::pair&lt;unsigned int, unsigned int&gt; &amp; cell_range);</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>                    <span class="keyword">const</span> std::pair&lt;unsigned int, unsigned int&gt; &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">cell_range</a>);</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  local_compute_div_face(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp;       data,</div>
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>                         std::vector&lt;Number&gt; &amp;                         dst,</div>
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>                         VectorType <span class="keyword">const</span> &amp;                            source,</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>                         <span class="keyword">const</span> std::pair&lt;unsigned int, unsigned int&gt; &amp; face_range);</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>                         <span class="keyword">const</span> std::pair&lt;unsigned int, unsigned int&gt; &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">face_range</a>);</div>
 <div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span> </div>
 <div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  <span class="comment">// not needed</span></div>
 <div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  <span class="keywordtype">void</span></div>
@@ -218,7 +218,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  analyze_div_and_mass_error_steady(VectorType <span class="keyword">const</span> &amp; velocity);</div>
 <div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span> </div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">MPI_Comm</a> <span class="keyword">const</span> mpi_comm;</div>
 <div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span> </div>
 <div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>  <span class="keywordtype">bool</span>   clear_files_mass_error;</div>
 <div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>  <span class="keywordtype">int</span>    number_of_samples;</div>
@@ -236,6 +236,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span> </div>
 <div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_DIVERGENCE_AND_MASS_ERROR_H_ */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1IncNS_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1ApplicationBase.html">ExaDG::IncNS::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:51</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1DivergenceAndMassErrorCalculator_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1DivergenceAndMassErrorCalculator.html">ExaDG::IncNS::DivergenceAndMassErrorCalculator</a></div><div class="ttdef"><b>Definition</b> divergence_and_mass_error.h:64</div></div>
 <div class="ttc" id="aclassExaDG_1_1TimeControl_html"><div class="ttname"><a href="classExaDG_1_1TimeControl.html">ExaDG::TimeControl</a></div><div class="ttdef"><b>Definition</b> time_control.h:64</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:34</div></div>

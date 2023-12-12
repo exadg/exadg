@@ -121,26 +121,26 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>                                            dealii::LinearAlgebra::distributed::BlockVector&lt;Number&gt;&gt;</div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>{</div>
 <div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1TimeIntAdamsBashforthMoulton.html">TimeIntAdamsBashforthMoulton</a>(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Acoustics_1_1Interface_1_1SpatialOperator.html">Interface::SpatialOperator&lt;Number&gt;</a>&gt; pde_operator_in,</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>                               <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;                                  param_in,</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>                               std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Acoustics_1_1PostProcessorInterface.html">PostProcessorInterface&lt;Number&gt;</a>&gt;     postprocessor_in,</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>                               MPI_Comm <span class="keyword">const</span> &amp;                                    mpi_comm_in,</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>                               <span class="keywordtype">bool</span> <span class="keyword">const</span>                                          is_test_in)</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    : <a class="code hl_class" href="classExaDG_1_1TimeIntAdamsBashforthMoultonBase.html">TimeIntAdamsBashforthMoultonBase&lt;Interface::SpatialOperator&lt;Number&gt;</a>,</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1TimeIntAdamsBashforthMoulton.html">TimeIntAdamsBashforthMoulton</a>(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Acoustics_1_1Interface_1_1SpatialOperator.html">Interface::SpatialOperator&lt;Number&gt;</a>&gt; <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">pde_operator_in</a>,</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>                               <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;                                  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">param_in</a>,</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>                               std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">PostProcessorInterface&lt;Number&gt;</a>&gt;     <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">postprocessor_in</a>,</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>                               <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">MPI_Comm</a> <span class="keyword">const</span> &amp;                                    <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">mpi_comm_in</a>,</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>                               <span class="keywordtype">bool</span> <span class="keyword">const</span>                                          <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">is_test_in</a>)</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    : <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">TimeIntAdamsBashforthMoultonBase&lt;Interface::SpatialOperator&lt;Number&gt;</a>,</div>
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>                                       dealii::LinearAlgebra::distributed::BlockVector&lt;Number&gt;&gt;(</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>        pde_operator_in,</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>        param_in.start_time,</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>        param_in.end_time,</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>        param_in.max_number_of_time_steps,</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>        param_in.order_time_integrator,</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>        param_in.start_with_low_order,</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>        param_in.adaptive_time_stepping,</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>        param_in.restart_data,</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>        mpi_comm_in,</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>        is_test_in),</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>      param(param_in),</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>      postprocessor(postprocessor_in),</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>      pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>        <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">pde_operator_in</a>,</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>        <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">param_in</a>.start_time,</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>        <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">param_in</a>.end_time,</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>        <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">param_in</a>.max_number_of_time_steps,</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>        <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">param_in</a>.order_time_integrator,</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>        <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">param_in</a>.start_with_low_order,</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>        <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">param_in</a>.adaptive_time_stepping,</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>        <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">param_in</a>.restart_data,</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>        <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">mpi_comm_in</a>,</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>        <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">is_test_in</a>),</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>      param(<a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">param_in</a>),</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>      postprocessor(<a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">postprocessor_in</a>),</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>      pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(<a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">mpi_comm_in</a>) == 0)</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  {</div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  }</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
@@ -148,8 +148,8 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  print_solver_info() <span class="keyword">const</span> <span class="keyword">final</span></div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  {</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    <span class="keywordflow">return</span> param.solver_info_data.write(this-&gt;global_timer.wall_time(),</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>                                        this-&gt;time - this-&gt;start_time,</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>                                        this-&gt;time_step_number);</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>                                        <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">this</a>-&gt;time - <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">this</a>-&gt;start_time,</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>                                        <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">this</a>-&gt;time_step_number);</div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  }</div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span><span class="keyword">private</span>:</div>
@@ -168,7 +168,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    }</div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    <span class="keywordflow">else</span></div>
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>    {</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>      AssertThrow(</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>      <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">AssertThrow</a>(</div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>        <span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;Specified type of time step calculation is not implemented.&quot;</span>));</div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    }</div>
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
@@ -178,7 +178,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="keywordtype">double</span></div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  recalculate_time_step_size() <span class="keyword">const</span> <span class="keyword">final</span></div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  {</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    AssertThrow(not(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified),</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">AssertThrow</a>(<a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">not</a>(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified),</div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>                dealii::ExcMessage(</div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>                  <span class="stringliteral">&quot;Adaptive time step is not implemented for user specified time step size.&quot;</span>));</div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span> </div>
@@ -188,14 +188,14 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  postprocessing() <span class="keyword">const</span> <span class="keyword">final</span></div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  {</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    dealii::Timer timer;</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    timer.restart();</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    dealii::Timer <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">timer</a>;</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">timer</a>.restart();</div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span> </div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    postprocessor-&gt;do_postprocessing(this-&gt;get_solution(),</div>
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>                                     this-&gt;get_time(),</div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>                                     this-&gt;time_step_number);</div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span> </div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    this-&gt;timer_tree-&gt;insert({<span class="stringliteral">&quot;Timeloop&quot;</span>, <span class="stringliteral">&quot;Postprocessing&quot;</span>}, timer.wall_time());</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    this-&gt;timer_tree-&gt;insert({<span class="stringliteral">&quot;Timeloop&quot;</span>, <span class="stringliteral">&quot;Postprocessing&quot;</span>}, <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">timer</a>.wall_time());</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  }</div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span> </div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> param;</div>
@@ -210,9 +210,9 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span> </div>
 <div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_TIME_INTEGRATION_TIME_INT_ABM_H_*/</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1Acoustics_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">ExaDG::Acoustics::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:48</div></div>
 <div class="ttc" id="aclassExaDG_1_1Acoustics_1_1Interface_1_1SpatialOperator_html"><div class="ttname"><a href="classExaDG_1_1Acoustics_1_1Interface_1_1SpatialOperator.html">ExaDG::Acoustics::Interface::SpatialOperator</a></div><div class="ttdef"><b>Definition</b> interface.h:36</div></div>
 <div class="ttc" id="aclassExaDG_1_1Acoustics_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1Acoustics_1_1Parameters.html">ExaDG::Acoustics::Parameters</a></div><div class="ttdef"><b>Definition</b> parameters.h:41</div></div>
-<div class="ttc" id="aclassExaDG_1_1Acoustics_1_1PostProcessorInterface_html"><div class="ttname"><a href="classExaDG_1_1Acoustics_1_1PostProcessorInterface.html">ExaDG::Acoustics::PostProcessorInterface</a></div><div class="ttdef"><b>Definition</b> postprocessor_interface.h:34</div></div>
 <div class="ttc" id="aclassExaDG_1_1Acoustics_1_1TimeIntAdamsBashforthMoulton_html"><div class="ttname"><a href="classExaDG_1_1Acoustics_1_1TimeIntAdamsBashforthMoulton.html">ExaDG::Acoustics::TimeIntAdamsBashforthMoulton</a></div><div class="ttdef"><b>Definition</b> time_int_abm.h:38</div></div>
 <div class="ttc" id="aclassExaDG_1_1TimeIntAdamsBashforthMoultonBase_html"><div class="ttname"><a href="classExaDG_1_1TimeIntAdamsBashforthMoultonBase.html">ExaDG::TimeIntAdamsBashforthMoultonBase</a></div><div class="ttdef"><b>Definition</b> time_int_abm_base.h:39</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:34</div></div>

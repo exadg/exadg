@@ -116,13 +116,13 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00032" name="l00032"></a><span class="lineno"><a class="line" href="classExaDG_1_1Structure_1_1NonLinearOperator.html">   32</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1Structure_1_1NonLinearOperator.html">NonLinearOperator</a> : <span class="keyword">public</span> <a class="code hl_class" href="classExaDG_1_1Structure_1_1ElasticityOperatorBase.html">ElasticityOperatorBase</a>&lt;dim, Number&gt;</div>
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>{</div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1Structure_1_1ElasticityOperatorBase.html">ElasticityOperatorBase&lt;dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1Structure_1_1ElasticityOperatorBase.html">Base</a>;</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">ElasticityOperatorBase&lt;dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1Structure_1_1ElasticityOperatorBase.html">Base</a>;</div>
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keyword">typedef</span> <span class="keyword">typename</span> Base::VectorType     VectorType;</div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keyword">typedef</span> <span class="keyword">typename</span> Base::IntegratorCell IntegratorCell;</div>
 <div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keyword">typedef</span> <span class="keyword">typename</span> Base::IntegratorFace IntegratorFace;</div>
 <div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1Structure_1_1NonLinearOperator.html">NonLinearOperator&lt;dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1Structure_1_1NonLinearOperator.html">This</a>;</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">NonLinearOperator&lt;dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">This</a>;</div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="keyword">typedef</span> std::pair&lt;unsigned int, unsigned int&gt; Range;</div>
 <div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
@@ -134,7 +134,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <a class="code hl_function" href="classExaDG_1_1Structure_1_1NonLinearOperator.html#a7df1165c408ae5b81612dcd3f3d54284">initialize</a>(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp;   matrix_free,</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>             dealii::AffineConstraints&lt;Number&gt; <span class="keyword">const</span> &amp; affine_constraints,</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>             <a class="code hl_struct" href="structExaDG_1_1Structure_1_1OperatorData.html">OperatorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;                 data) <span class="keyword">override</span>;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>             <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">OperatorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;                 data) <span class="keyword">override</span>;</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <a class="code hl_function" href="classExaDG_1_1Structure_1_1NonLinearOperator.html#ab6c68f1440d8fe0d51db1c10721b0243">evaluate_nonlinear</a>(VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src) <span class="keyword">const</span>;</div>
@@ -159,19 +159,19 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  cell_loop_nonlinear(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>                      VectorType &amp;                            dst,</div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>                      VectorType <span class="keyword">const</span> &amp;                      src,</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>                      Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>                      Range <span class="keyword">const</span> &amp;                           <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">range</a>) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span> </div>
 <div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  face_loop_nonlinear(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>                      VectorType &amp;                            dst,</div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>                      VectorType <span class="keyword">const</span> &amp;                      src,</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>                      Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>                      Range <span class="keyword">const</span> &amp;                           <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">range</a>) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  boundary_face_loop_nonlinear(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>                               VectorType &amp;                            dst,</div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>                               VectorType <span class="keyword">const</span> &amp;                      src,</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>                               Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>                               Range <span class="keyword">const</span> &amp;                           <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">range</a>) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span> </div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span><span class="comment">   * A cell loop that checks whether the Jacobian determinant is positive for all q-points.</span></div>
@@ -182,7 +182,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  cell_loop_valid_deformation(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
 <div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>                              Number &amp;                                dst,</div>
 <div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>                              VectorType <span class="keyword">const</span> &amp;                      src,</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>                              Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>                              Range <span class="keyword">const</span> &amp;                           <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">range</a>) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span> </div>
 <div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span><span class="comment">   * Calculates the integral</span></div>
@@ -272,6 +272,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span> </div>
 <div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span><span class="preprocessor">#endif</span></div>
+<div class="ttc" id="aclassExaDG_1_1Structure_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1ApplicationBase.html">ExaDG::Structure::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:46</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1ElasticityOperatorBase_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1ElasticityOperatorBase.html">ExaDG::Structure::ElasticityOperatorBase</a></div><div class="ttdef"><b>Definition</b> elasticity_operator_base.h:71</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1NonLinearOperator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1NonLinearOperator.html">ExaDG::Structure::NonLinearOperator</a></div><div class="ttdef"><b>Definition</b> nonlinear_operator.h:33</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1NonLinearOperator_html_a08531b9af318aebc419f0f1dfc7a707a"><div class="ttname"><a href="classExaDG_1_1Structure_1_1NonLinearOperator.html#a08531b9af318aebc419f0f1dfc7a707a">ExaDG::Structure::NonLinearOperator::get_solution_linearization</a></div><div class="ttdeci">VectorType const &amp; get_solution_linearization() const</div><div class="ttdef"><b>Definition</b> nonlinear_operator.cpp:97</div></div>
@@ -280,7 +281,6 @@ $(document).ready(function() { init_codefold(0); });
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1NonLinearOperator_html_ab6c68f1440d8fe0d51db1c10721b0243"><div class="ttname"><a href="classExaDG_1_1Structure_1_1NonLinearOperator.html#ab6c68f1440d8fe0d51db1c10721b0243">ExaDG::Structure::NonLinearOperator::evaluate_nonlinear</a></div><div class="ttdeci">void evaluate_nonlinear(VectorType &amp;dst, VectorType const &amp;src) const</div><div class="ttdef"><b>Definition</b> nonlinear_operator.cpp:49</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1NonLinearOperator_html_af8e6f4b4fd6722418388938525b9743c"><div class="ttname"><a href="classExaDG_1_1Structure_1_1NonLinearOperator.html#af8e6f4b4fd6722418388938525b9743c">ExaDG::Structure::NonLinearOperator::set_solution_linearization</a></div><div class="ttdeci">void set_solution_linearization(VectorType const &amp;vector) const</div><div class="ttdef"><b>Definition</b> nonlinear_operator.cpp:84</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:34</div></div>
-<div class="ttc" id="astructExaDG_1_1Structure_1_1OperatorData_html"><div class="ttname"><a href="structExaDG_1_1Structure_1_1OperatorData.html">ExaDG::Structure::OperatorData</a></div><div class="ttdef"><b>Definition</b> elasticity_operator_base.h:36</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
