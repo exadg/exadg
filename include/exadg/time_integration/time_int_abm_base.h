@@ -88,6 +88,7 @@ public:
     return solution;
   }
 
+protected:
   Operator const &
   get_underlying_operator() const
   {

@@ -336,7 +336,7 @@ SpatialOperator<dim, Number>::calculate_time_step_cfl() const
 
   // The time-step size is not adapted every time-step. Thus, we are using
   // a constant function to pass in the speed of sound, even though it is
-  // be possible to optimize calculate_time_step_cfl_local() for this case.
+  // possible to optimize calculate_time_step_cfl_local() for this case.
 
   return calculate_time_step_cfl_local<dim, Number>(
     get_matrix_free(),
