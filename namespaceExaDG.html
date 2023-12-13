@@ -252,6 +252,8 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structExaDG_1_1MultigridData.html">MultigridData</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridMappings.html">MultigridMappings</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html">MultigridOperator</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperatorBase.html">MultigridOperatorBase</a></td></tr>
@@ -588,9 +590,6 @@ template&lt;int dim, typename BoundaryDescriptor &gt; </td></tr>
 template&lt;int dim&gt; </td></tr>
 <tr class="memitem:a57fafc16d839db10dd7b832cbe62be55"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>apply_deformed_cube_manifold</b> (dealii::Triangulation&lt; dim &gt; &amp;triangulation, double const left, double const right, double const deformation, unsigned int const frequency)</td></tr>
 <tr class="separator:a57fafc16d839db10dd7b832cbe62be55"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab4898d48bd5a12243fb8ad2c7ccce491" id="r_ab4898d48bd5a12243fb8ad2c7ccce491"><td class="memTemplParams" colspan="2">template&lt;int dim, typename Number &gt; </td></tr>
-<tr class="memitem:ab4898d48bd5a12243fb8ad2c7ccce491"><td class="memTemplItemLeft" align="right" valign="top">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#ab4898d48bd5a12243fb8ad2c7ccce491">get_dynamic_mapping</a> (std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; static_mapping, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1DeformedMappingBase.html">DeformedMappingBase</a>&lt; dim, Number &gt; const &gt; dynamic_mapping)</td></tr>
-<tr class="separator:ab4898d48bd5a12243fb8ad2c7ccce491"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa9171da72c58101e3d2929f4146ac00b" id="r_aa9171da72c58101e3d2929f4146ac00b"><td class="memTemplParams" colspan="2">template&lt;int dim&gt; </td></tr>
 <tr class="memitem:aa9171da72c58101e3d2929f4146ac00b"><td class="memTemplItemLeft" align="right" valign="top">ElementType&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceExaDG.html#aa9171da72c58101e3d2929f4146ac00b">get_element_type</a> (dealii::Triangulation&lt; dim &gt; const &amp;tria)</td></tr>
 <tr class="separator:aa9171da72c58101e3d2929f4146ac00b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1545,37 +1544,6 @@ template&lt;typename Key , typename Data &gt; </div>
 </table>
 </div><div class="memdoc">
 <p>This function inserts additional boundary IDs together with a default dealii::ComponentMask into map_bid_to_mask in case that the given boundary ID is not already an element of map_bid_to_mask. </p>
-
-</div>
-</div>
-<a id="ab4898d48bd5a12243fb8ad2c7ccce491" name="ab4898d48bd5a12243fb8ad2c7ccce491"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab4898d48bd5a12243fb8ad2c7ccce491">&#9670;&#160;</a></span>get_dynamic_mapping()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const  &gt; ExaDG::get_dynamic_mapping </td>
-          <td>(</td>
-          <td class="paramtype">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt;&#160;</td>
-          <td class="paramname"><em>static_mapping</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1DeformedMappingBase.html">DeformedMappingBase</a>&lt; dim, Number &gt; const &gt;&#160;</td>
-          <td class="paramname"><em>dynamic_mapping</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Return pointer to dynamic mapping (and redirect to static mapping if dynamic mapping is not initialized). </p>
 
 </div>
 </div>

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::HelpersALE&lt; Number &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::HelpersALE&lt; dim, Number &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -76,7 +76,7 @@ $(function() {
   <div class="summary">
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="classExaDG_1_1HelpersALE-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::HelpersALE&lt; Number &gt; Class Template Reference</div></div>
+  <div class="headertitle"><div class="title">ExaDG::HelpersALE&lt; dim, Number &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
 
@@ -84,25 +84,55 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:adb14cfdccb4d9dfc10656c83fd796957" id="r_adb14cfdccb4d9dfc10656c83fd796957"><td class="memItemLeft" align="right" valign="top">std::function&lt; void(double const &amp;time)&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1HelpersALE.html#adb14cfdccb4d9dfc10656c83fd796957">move_grid</a></td></tr>
-<tr class="separator:adb14cfdccb4d9dfc10656c83fd796957"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9978fd3202aa07445be088688b7a704a" id="r_a9978fd3202aa07445be088688b7a704a"><td class="memItemLeft" align="right" valign="top">std::function&lt; void()&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1HelpersALE.html#a9978fd3202aa07445be088688b7a704a">update_pde_operator_after_grid_motion</a></td></tr>
-<tr class="separator:a9978fd3202aa07445be088688b7a704a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c785de6632d60ae99fe384210fb35a2" id="r_a4c785de6632d60ae99fe384210fb35a2"><td class="memItemLeft" align="right" valign="top">std::function&lt; void(double const &amp;time)&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1HelpersALE.html#a4c785de6632d60ae99fe384210fb35a2">move_grid</a></td></tr>
+<tr class="separator:a4c785de6632d60ae99fe384210fb35a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8d1c371ed1097c88d3bab6787b1cf56" id="r_aa8d1c371ed1097c88d3bab6787b1cf56"><td class="memItemLeft" align="right" valign="top">std::function&lt; void()&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1HelpersALE.html#aa8d1c371ed1097c88d3bab6787b1cf56">update_pde_operator_after_grid_motion</a></td></tr>
+<tr class="separator:aa8d1c371ed1097c88d3bab6787b1cf56"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4ec2db8f7d8e85d4fab2d39403e35a48" id="r_a4ec2db8f7d8e85d4fab2d39403e35a48"><td class="memItemLeft" align="right" valign="top">std::function&lt; void(dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; &amp;grid_coordinates, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler)&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1HelpersALE.html#a4ec2db8f7d8e85d4fab2d39403e35a48">fill_grid_coordinates_vector</a></td></tr>
+<tr class="separator:a4ec2db8f7d8e85d4fab2d39403e35a48"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><div class="compoundTemplParams">template&lt;typename Number&gt;<br />
-class ExaDG::HelpersALE&lt; Number &gt;</div><p>This class is a collection of helper / utility functions required by time integration routines in case of Arbitrary Lagrangian-Eulerian (ALE) methods with moving domains / grids. We realize these utility functions as lambda functions so that the time integrator classes do not depend on data structures owned by other classes. </p>
+<div class="textblock"><div class="compoundTemplParams">template&lt;int dim, typename Number&gt;<br />
+class ExaDG::HelpersALE&lt; dim, Number &gt;</div><p>This class is a collection of helper / utility functions required by time integration routines in case of Arbitrary Lagrangian-Eulerian (ALE) methods with moving domains / grids. We realize these utility functions as lambda functions so that the time integrator classes do not depend on data structures owned by other classes. </p>
 </div><h2 class="groupheader">Member Data Documentation</h2>
-<a id="adb14cfdccb4d9dfc10656c83fd796957" name="adb14cfdccb4d9dfc10656c83fd796957"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adb14cfdccb4d9dfc10656c83fd796957">&#9670;&#160;</a></span>move_grid</h2>
+<a id="a4ec2db8f7d8e85d4fab2d39403e35a48" name="a4ec2db8f7d8e85d4fab2d39403e35a48"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4ec2db8f7d8e85d4fab2d39403e35a48">&#9670;&#160;</a></span>fill_grid_coordinates_vector</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename Number &gt; </div>
+template&lt;int dim, typename Number &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">std::function&lt;void(double const &amp; time)&gt; <a class="el" href="classExaDG_1_1HelpersALE.html">ExaDG::HelpersALE</a>&lt; Number &gt;::move_grid</td>
+          <td class="memname">std::function&lt;void(dealii::LinearAlgebra::distributed::Vector&lt;Number&gt; &amp; grid_coordinates, dealii::DoFHandler&lt;dim&gt; const &amp; dof_handler)&gt; <a class="el" href="classExaDG_1_1HelpersALE.html">ExaDG::HelpersALE</a>&lt; dim, Number &gt;::fill_grid_coordinates_vector</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">=</div>
+<div class="line">      [](dealii::LinearAlgebra::distributed::Vector&lt;Number&gt; &amp; grid_coordinates,</div>
+<div class="line">         dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp;                      dof_handler) {</div>
+<div class="line">        (void)grid_coordinates;</div>
+<div class="line">        (void)dof_handler;</div>
+<div class="line"> </div>
+<div class="line">        AssertThrow(<span class="keyword">false</span>,</div>
+<div class="line">                    dealii::ExcMessage(</div>
+<div class="line">                      <span class="stringliteral">&quot;The function fill_grid_coordinates_vector() has not been implemented.&quot;</span>));</div>
+<div class="line">      }</div>
+</div><!-- fragment --><p>This function fills a DoF-vector describing the grid coordinates given an underlying dof-handler.</p>
+<p>The default implementation causes the program to terminate, in order to avoid uninitialized / undefined functions leading to erroneous results. </p>
+
+</div>
+</div>
+<a id="a4c785de6632d60ae99fe384210fb35a2" name="a4c785de6632d60ae99fe384210fb35a2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4c785de6632d60ae99fe384210fb35a2">&#9670;&#160;</a></span>move_grid</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">std::function&lt;void(double const &amp; time)&gt; <a class="el" href="classExaDG_1_1HelpersALE.html">ExaDG::HelpersALE</a>&lt; dim, Number &gt;::move_grid</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -115,16 +145,16 @@ template&lt;typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a9978fd3202aa07445be088688b7a704a" name="a9978fd3202aa07445be088688b7a704a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9978fd3202aa07445be088688b7a704a">&#9670;&#160;</a></span>update_pde_operator_after_grid_motion</h2>
+<a id="aa8d1c371ed1097c88d3bab6787b1cf56" name="aa8d1c371ed1097c88d3bab6787b1cf56"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa8d1c371ed1097c88d3bab6787b1cf56">&#9670;&#160;</a></span>update_pde_operator_after_grid_motion</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename Number &gt; </div>
+template&lt;int dim, typename Number &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">std::function&lt;void()&gt; <a class="el" href="classExaDG_1_1HelpersALE.html">ExaDG::HelpersALE</a>&lt; Number &gt;::update_pde_operator_after_grid_motion</td>
+          <td class="memname">std::function&lt;void()&gt; <a class="el" href="classExaDG_1_1HelpersALE.html">ExaDG::HelpersALE</a>&lt; dim, Number &gt;::update_pde_operator_after_grid_motion</td>
         </tr>
       </table>
 </div><div class="memdoc">

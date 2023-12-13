@@ -88,8 +88,8 @@ Inheritance diagram for ExaDG::Structure::DeformedMapping&lt; dim, Number &gt;:<
  <div class="center">
   <img src="classExaDG_1_1Structure_1_1DeformedMapping.png" usemap="#ExaDG::Structure::DeformedMapping_3C_20dim_2C_20Number_20_3E_map" alt=""/>
   <map id="ExaDG::Structure::DeformedMapping_3C_20dim_2C_20Number_20_3E_map" name="ExaDG::Structure::DeformedMapping_3C_20dim_2C_20Number_20_3E_map">
-<area href="classExaDG_1_1DeformedMappingBase.html" alt="ExaDG::DeformedMappingBase&lt; dim, Number &gt;" shape="rect" coords="0,112,315,136"/>
-<area href="classExaDG_1_1MappingDoFVector.html" alt="ExaDG::MappingDoFVector&lt; dim, Number &gt;" shape="rect" coords="0,56,315,80"/>
+<area href="classExaDG_1_1DeformedMappingBase.html" alt="ExaDG::DeformedMappingBase&lt; dim, Number &gt;" shape="rect" coords="0,56,315,80"/>
+<area href="classExaDG_1_1MappingDoFVector.html" alt="ExaDG::MappingDoFVector&lt; dim, Number &gt;" shape="rect" coords="0,0,315,24"/>
   </map>
 </div></div>
 <table class="memberdecls">
@@ -109,8 +109,8 @@ typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a2bac1acd6bfa0880365d6fa2dfa361b8" id="r_a2bac1acd6bfa0880365d6fa2dfa361b8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1DeformedMapping.html#a2bac1acd6bfa0880365d6fa2dfa361b8">DeformedMapping</a> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; <a class="el" href="classExaDG_1_1DeformedMappingBase.html#a5702ec7d01af869c259f36f7031f1535">mapping_undeformed</a>, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, std::shared_ptr&lt; MaterialDescriptor const &gt; material_descriptor, <a class="el" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> const &amp;param, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
-<tr class="separator:a2bac1acd6bfa0880365d6fa2dfa361b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a27f1de538c19d66c9df629f82d264c6e" id="r_a27f1de538c19d66c9df629f82d264c6e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1DeformedMapping.html#a27f1de538c19d66c9df629f82d264c6e">DeformedMapping</a> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; <a class="el" href="classExaDG_1_1DeformedMappingBase.html#a5702ec7d01af869c259f36f7031f1535">mapping_undeformed</a>, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridMappings.html">MultigridMappings</a>&lt; dim, Number &gt; &gt; const multigrid_mappings_undeformed, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, std::shared_ptr&lt; MaterialDescriptor const &gt; material_descriptor, <a class="el" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> const &amp;param, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
+<tr class="separator:a27f1de538c19d66c9df629f82d264c6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a98c9f1cbc23062ea2e5266e5238a5ead" id="r_a98c9f1cbc23062ea2e5266e5238a5ead"><td class="memItemLeft" align="right" valign="top"><a id="a98c9f1cbc23062ea2e5266e5238a5ead" name="a98c9f1cbc23062ea2e5266e5238a5ead"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">Operator</a>&lt; dim, Number &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_pde_operator</b> () const</td></tr>
 <tr class="separator:a98c9f1cbc23062ea2e5266e5238a5ead"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -122,21 +122,26 @@ dealii::MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItem
 <tr class="memitem:a65b7dee0698688151959d9b41c9af257" id="r_a65b7dee0698688151959d9b41c9af257"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1DeformedMapping.html#a65b7dee0698688151959d9b41c9af257">print_iterations</a> () const override</td></tr>
 <tr class="separator:a65b7dee0698688151959d9b41c9af257"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1DeformedMappingBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1DeformedMappingBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1DeformedMappingBase.html">ExaDG::DeformedMappingBase&lt; dim, Number &gt;</a></td></tr>
-<tr class="memitem:a86405b4e0bdeb479b61a915efc45c55e inherit pub_methods_classExaDG_1_1DeformedMappingBase" id="r_a86405b4e0bdeb479b61a915efc45c55e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1DeformedMappingBase.html#a86405b4e0bdeb479b61a915efc45c55e">DeformedMappingBase</a> (std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; <a class="el" href="classExaDG_1_1DeformedMappingBase.html#a5702ec7d01af869c259f36f7031f1535">mapping_undeformed</a>, unsigned int const mapping_degree_q_cache, dealii::Triangulation&lt; dim &gt; const &amp;triangulation)</td></tr>
-<tr class="separator:a86405b4e0bdeb479b61a915efc45c55e inherit pub_methods_classExaDG_1_1DeformedMappingBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae025a213ed6674ca414964c8ead2e70d inherit pub_methods_classExaDG_1_1DeformedMappingBase" id="r_ae025a213ed6674ca414964c8ead2e70d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1DeformedMappingBase.html#ae025a213ed6674ca414964c8ead2e70d">DeformedMappingBase</a> (std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; <a class="el" href="classExaDG_1_1DeformedMappingBase.html#a5702ec7d01af869c259f36f7031f1535">mapping_undeformed</a>, unsigned int const mapping_degree_deformed, dealii::Triangulation&lt; dim &gt; const &amp;triangulation)</td></tr>
+<tr class="separator:ae025a213ed6674ca414964c8ead2e70d inherit pub_methods_classExaDG_1_1DeformedMappingBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a85a4df0545a29a077ebe0b0b370bdf5d inherit pub_methods_classExaDG_1_1DeformedMappingBase" id="r_a85a4df0545a29a077ebe0b0b370bdf5d"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1DeformedMappingBase.html#a85a4df0545a29a077ebe0b0b370bdf5d">~DeformedMappingBase</a> ()</td></tr>
 <tr class="separator:a85a4df0545a29a077ebe0b0b370bdf5d inherit pub_methods_classExaDG_1_1DeformedMappingBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1MappingDoFVector"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1MappingDoFVector')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1MappingDoFVector.html">ExaDG::MappingDoFVector&lt; dim, Number &gt;</a></td></tr>
-<tr class="memitem:a02610a355efa9e0350be9647356e570b inherit pub_methods_classExaDG_1_1MappingDoFVector" id="r_a02610a355efa9e0350be9647356e570b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#a02610a355efa9e0350be9647356e570b">MappingDoFVector</a> (unsigned int const mapping_degree_q_cache)</td></tr>
-<tr class="separator:a02610a355efa9e0350be9647356e570b inherit pub_methods_classExaDG_1_1MappingDoFVector"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0e945df21afeff8b5fb4aa37c7ed1ca3 inherit pub_methods_classExaDG_1_1MappingDoFVector" id="r_a0e945df21afeff8b5fb4aa37c7ed1ca3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#a0e945df21afeff8b5fb4aa37c7ed1ca3">MappingDoFVector</a> (unsigned int const mapping_degree)</td></tr>
+<tr class="separator:a0e945df21afeff8b5fb4aa37c7ed1ca3 inherit pub_methods_classExaDG_1_1MappingDoFVector"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a70fc04b5bbe83adc68c35f1289a7a196 inherit pub_methods_classExaDG_1_1MappingDoFVector" id="r_a70fc04b5bbe83adc68c35f1289a7a196"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#a70fc04b5bbe83adc68c35f1289a7a196">~MappingDoFVector</a> ()</td></tr>
 <tr class="separator:a70fc04b5bbe83adc68c35f1289a7a196 inherit pub_methods_classExaDG_1_1MappingDoFVector"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af72c8cfcd65fe9aa63281d7c1f683cca inherit pub_methods_classExaDG_1_1MappingDoFVector" id="r_af72c8cfcd65fe9aa63281d7c1f683cca"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#af72c8cfcd65fe9aa63281d7c1f683cca">get_mapping</a> () const</td></tr>
+<tr class="separator:af72c8cfcd65fe9aa63281d7c1f683cca inherit pub_methods_classExaDG_1_1MappingDoFVector"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a82e227d64e18572454d40f2d0d0c2d34 inherit pub_methods_classExaDG_1_1MappingDoFVector" id="r_a82e227d64e18572454d40f2d0d0c2d34"><td class="memItemLeft" align="right" valign="top">
+std::shared_ptr&lt; dealii::MappingQCache&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_mapping_q_cache</b> () const</td></tr>
+<tr class="separator:a82e227d64e18572454d40f2d0d0c2d34 inherit pub_methods_classExaDG_1_1MappingDoFVector"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad9051ff904544c09e570d54f8aba453d inherit pub_methods_classExaDG_1_1MappingDoFVector" id="r_ad9051ff904544c09e570d54f8aba453d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#ad9051ff904544c09e570d54f8aba453d">fill_grid_coordinates_vector</a> (VectorType &amp;grid_coordinates, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler) const</td></tr>
 <tr class="separator:ad9051ff904544c09e570d54f8aba453d inherit pub_methods_classExaDG_1_1MappingDoFVector"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a935ed348d7962489335e5032c948b869 inherit pub_methods_classExaDG_1_1MappingDoFVector" id="r_a935ed348d7962489335e5032c948b869"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#a935ed348d7962489335e5032c948b869">fill_grid_coordinates_vector</a> (dealii::Mapping&lt; dim &gt; const &amp;mapping, VectorType &amp;grid_coordinates, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler) const</td></tr>
 <tr class="separator:a935ed348d7962489335e5032c948b869 inherit pub_methods_classExaDG_1_1MappingDoFVector"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9510d45913412d22edd455db3f91d3e2 inherit pub_methods_classExaDG_1_1MappingDoFVector" id="r_a9510d45913412d22edd455db3f91d3e2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#a9510d45913412d22edd455db3f91d3e2">initialize_mapping_q_cache</a> (std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping, VectorType const &amp;displacement_vector, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler)</td></tr>
-<tr class="separator:a9510d45913412d22edd455db3f91d3e2 inherit pub_methods_classExaDG_1_1MappingDoFVector"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a27442b3fd04244f83fe03a2b0dc4595c inherit pub_methods_classExaDG_1_1MappingDoFVector" id="r_a27442b3fd04244f83fe03a2b0dc4595c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#a27442b3fd04244f83fe03a2b0dc4595c">initialize_mapping_from_dof_vector</a> (std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping, VectorType const &amp;displacement_vector, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler)</td></tr>
+<tr class="separator:a27442b3fd04244f83fe03a2b0dc4595c inherit pub_methods_classExaDG_1_1MappingDoFVector"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
@@ -150,14 +155,18 @@ std::vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bot
 <tr class="inherit_header pro_attribs_classExaDG_1_1DeformedMappingBase"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classExaDG_1_1DeformedMappingBase')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classExaDG_1_1DeformedMappingBase.html">ExaDG::DeformedMappingBase&lt; dim, Number &gt;</a></td></tr>
 <tr class="memitem:a5702ec7d01af869c259f36f7031f1535 inherit pro_attribs_classExaDG_1_1DeformedMappingBase" id="r_a5702ec7d01af869c259f36f7031f1535"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1DeformedMappingBase.html#a5702ec7d01af869c259f36f7031f1535">mapping_undeformed</a></td></tr>
 <tr class="separator:a5702ec7d01af869c259f36f7031f1535 inherit pro_attribs_classExaDG_1_1DeformedMappingBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pro_attribs_classExaDG_1_1MappingDoFVector"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classExaDG_1_1MappingDoFVector')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classExaDG_1_1MappingDoFVector.html">ExaDG::MappingDoFVector&lt; dim, Number &gt;</a></td></tr>
+<tr class="memitem:a3cbb6ab3edcc8abd98b73d5af066de8f inherit pro_attribs_classExaDG_1_1MappingDoFVector" id="r_a3cbb6ab3edcc8abd98b73d5af066de8f"><td class="memItemLeft" align="right" valign="top">
+std::shared_ptr&lt; dealii::MappingQCache&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>mapping_q_cache</b></td></tr>
+<tr class="separator:a3cbb6ab3edcc8abd98b73d5af066de8f inherit pro_attribs_classExaDG_1_1MappingDoFVector"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;int dim, typename Number&gt;<br />
 class ExaDG::Structure::DeformedMapping&lt; dim, Number &gt;</div><p>Class for moving grid problems based on a pseudo-solid grid motion technique.</p>
 <p>TODO: extend this class to simplicial elements. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a2bac1acd6bfa0880365d6fa2dfa361b8" name="a2bac1acd6bfa0880365d6fa2dfa361b8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2bac1acd6bfa0880365d6fa2dfa361b8">&#9670;&#160;</a></span>DeformedMapping()</h2>
+<a id="a27f1de538c19d66c9df629f82d264c6e" name="a27f1de538c19d66c9df629f82d264c6e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a27f1de538c19d66c9df629f82d264c6e">&#9670;&#160;</a></span>DeformedMapping()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -178,6 +187,12 @@ template&lt;int dim, typename Number &gt; </div>
           <td></td>
           <td class="paramtype">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt;&#160;</td>
           <td class="paramname"><em>mapping_undeformed</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridMappings.html">MultigridMappings</a>&lt; dim, Number &gt; &gt; const&#160;</td>
+          <td class="paramname"><em>multigrid_mappings_undeformed</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>

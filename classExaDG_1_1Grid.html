@@ -99,8 +99,6 @@ Public Attributes</h2></td></tr>
 <tr class="separator:adb00c7653c234f42a17eb41b48587acf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa9e786659b6d2b2657a75710efc3295e" id="r_aa9e786659b6d2b2657a75710efc3295e"><td class="memItemLeft" align="right" valign="top">std::vector&lt; PeriodicFacePairs &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#aa9e786659b6d2b2657a75710efc3295e">coarse_periodic_face_pairs</a></td></tr>
 <tr class="separator:aa9e786659b6d2b2657a75710efc3295e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a084af7e067c53140ba5e32fed294e5c9" id="r_a084af7e067c53140ba5e32fed294e5c9"><td class="memItemLeft" align="right" valign="top">std::function&lt; void(std::vector&lt; std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const  &gt; &gt; &amp;coarse_mappings, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const  &gt; const &amp;fine_mapping)&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#a084af7e067c53140ba5e32fed294e5c9">initialize_coarse_mappings</a></td></tr>
-<tr class="separator:a084af7e067c53140ba5e32fed294e5c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;int dim&gt;<br />
@@ -139,35 +137,6 @@ template&lt;int dim&gt; </div>
 </div><div class="memdoc">
 <p>A vector of coarse triangulations required for h-multigrid with geometric coarsening types that require a vector of triangulations.</p>
 <p>This vector only contains levels coarser than the fine triangulation. The first entry corresponds to the coarsest triangulation. </p>
-
-</div>
-</div>
-<a id="a084af7e067c53140ba5e32fed294e5c9" name="a084af7e067c53140ba5e32fed294e5c9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a084af7e067c53140ba5e32fed294e5c9">&#9670;&#160;</a></span>initialize_coarse_mappings</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim&gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname">std::function&lt;void(std::vector&lt;std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; const&gt;&gt; &amp; coarse_mappings, std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; const&gt; const &amp; fine_mapping)&gt; <a class="el" href="classExaDG_1_1Grid.html">ExaDG::Grid</a>&lt; dim &gt;::initialize_coarse_mappings</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<b>Initial value:</b><div class="fragment"><div class="line">=</div>
-<div class="line">      [&amp;](std::vector&lt;std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;&gt; &amp; coarse_mappings,</div>
-<div class="line">          std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; <span class="keyword">const</span> &amp;        fine_mapping) {</div>
-<div class="line">        MappingTools::initialize_coarse_mappings&lt;dim, double&gt;(coarse_mappings,</div>
-<div class="line">                                                              fine_mapping,</div>
-<div class="line">                                                              <a class="code hl_variable" href="classExaDG_1_1Grid.html#a5655b41ce6108b3c3e50a5eb7fb2bcf5">triangulation</a>,</div>
-<div class="line">                                                              <a class="code hl_variable" href="classExaDG_1_1Grid.html#adb00c7653c234f42a17eb41b48587acf">coarse_triangulations</a>);</div>
-<div class="line">      }</div>
-<div class="ttc" id="aclassExaDG_1_1Grid_html_a5655b41ce6108b3c3e50a5eb7fb2bcf5"><div class="ttname"><a href="classExaDG_1_1Grid.html#a5655b41ce6108b3c3e50a5eb7fb2bcf5">ExaDG::Grid::triangulation</a></div><div class="ttdeci">std::shared_ptr&lt; dealii::Triangulation&lt; dim &gt; &gt; triangulation</div><div class="ttdef"><b>Definition</b> grid.h:49</div></div>
-<div class="ttc" id="aclassExaDG_1_1Grid_html_adb00c7653c234f42a17eb41b48587acf"><div class="ttname"><a href="classExaDG_1_1Grid.html#adb00c7653c234f42a17eb41b48587acf">ExaDG::Grid::coarse_triangulations</a></div><div class="ttdeci">std::vector&lt; std::shared_ptr&lt; dealii::Triangulation&lt; dim &gt; const  &gt; &gt; coarse_triangulations</div><div class="ttdef"><b>Definition</b> grid.h:63</div></div>
-</div><!-- fragment --><p>This function creates coarse mappings for use in multigrid with h-transfer.</p>
-<p>The default implementation uses an interpolation of the fine-level mapping to coarser grids. You can overwrite this function in order to realize a user-specific construction of the mapping on coarser grids.</p>
-<p>The vector of coarse_mappings includes mapping objects for all h-multigrid levels coarser than the fine triangulation. The first entry corresponds to the coarsest triangulation. </p>
 
 </div>
 </div>

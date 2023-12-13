@@ -74,6 +74,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="classExaDG_1_1FSI_1_1SolverFluid-members.html">List of all members</a>  </div>
@@ -81,6 +82,12 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a6c2a943d92f981ed945cf3aa2be135d0" id="r_a6c2a943d92f981ed945cf3aa2be135d0"><td class="memItemLeft" align="right" valign="top"><a id="a6c2a943d92f981ed945cf3aa2be135d0" name="a6c2a943d92f981ed945cf3aa2be135d0"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b> = dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;</td></tr>
+<tr class="separator:a6c2a943d92f981ed945cf3aa2be135d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a1d063e7f1a57edb72f63fc5d1adfc28f" id="r_a1d063e7f1a57edb72f63fc5d1adfc28f"><td class="memItemLeft" align="right" valign="top"><a id="a1d063e7f1a57edb72f63fc5d1adfc28f" name="a1d063e7f1a57edb72f63fc5d1adfc28f"></a>
@@ -101,6 +108,9 @@ std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; di
 <tr class="memitem:a0dc6899b849d536137dfdafacf4d06fc" id="r_a0dc6899b849d536137dfdafacf4d06fc"><td class="memItemLeft" align="right" valign="top"><a id="a0dc6899b849d536137dfdafacf4d06fc" name="a0dc6899b849d536137dfdafacf4d06fc"></a>
 std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>mapping</b></td></tr>
 <tr class="separator:a0dc6899b849d536137dfdafacf4d06fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a50e140030f7df707519c43755ce2cf32" id="r_a50e140030f7df707519c43755ce2cf32"><td class="memItemLeft" align="right" valign="top"><a id="a50e140030f7df707519c43755ce2cf32" name="a50e140030f7df707519c43755ce2cf32"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridMappings.html">MultigridMappings</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>multigrid_mappings</b></td></tr>
+<tr class="separator:a50e140030f7df707519c43755ce2cf32"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a08a76df34649b22eadc4e906a577b931" id="r_a08a76df34649b22eadc4e906a577b931"><td class="memItemLeft" align="right" valign="top"><a id="a08a76df34649b22eadc4e906a577b931" name="a08a76df34649b22eadc4e906a577b931"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">IncNS::SpatialOperatorBase</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>pde_operator</b></td></tr>
 <tr class="separator:a08a76df34649b22eadc4e906a577b931"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -113,9 +123,12 @@ std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1PostProcessorBase
 <tr class="memitem:a9b74fb8eb4aa7d3f605a0bdc146cf3f1" id="r_a9b74fb8eb4aa7d3f605a0bdc146cf3f1"><td class="memItemLeft" align="right" valign="top"><a id="a9b74fb8eb4aa7d3f605a0bdc146cf3f1" name="a9b74fb8eb4aa7d3f605a0bdc146cf3f1"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1DeformedMappingBase.html">DeformedMappingBase</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ale_mapping</b></td></tr>
 <tr class="separator:a9b74fb8eb4aa7d3f605a0bdc146cf3f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a659980122cd16f765fd9c1d584971398" id="r_a659980122cd16f765fd9c1d584971398"><td class="memItemLeft" align="right" valign="top"><a id="a659980122cd16f765fd9c1d584971398" name="a659980122cd16f765fd9c1d584971398"></a>
-std::shared_ptr&lt; <a class="el" href="classExaDG_1_1HelpersALE.html">HelpersALE</a>&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>helpers_ale</b></td></tr>
-<tr class="separator:a659980122cd16f765fd9c1d584971398"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abc4284c9282341c812d3655329184c30" id="r_abc4284c9282341c812d3655329184c30"><td class="memItemLeft" align="right" valign="top"><a id="abc4284c9282341c812d3655329184c30" name="abc4284c9282341c812d3655329184c30"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridMappings.html">MultigridMappings</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ale_multigrid_mappings</b></td></tr>
+<tr class="separator:abc4284c9282341c812d3655329184c30"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a571cb16b440a970a65aeca4156f6869a" id="r_a571cb16b440a970a65aeca4156f6869a"><td class="memItemLeft" align="right" valign="top"><a id="a571cb16b440a970a65aeca4156f6869a" name="a571cb16b440a970a65aeca4156f6869a"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1HelpersALE.html">HelpersALE</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>helpers_ale</b></td></tr>
+<tr class="separator:a571cb16b440a970a65aeca4156f6869a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3b52be4e0e5f9e271d26ab579b11c961" id="r_a3b52be4e0e5f9e271d26ab579b11c961"><td class="memItemLeft" align="right" valign="top"><a id="a3b52be4e0e5f9e271d26ab579b11c961" name="a3b52be4e0e5f9e271d26ab579b11c961"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>timer_tree</b></td></tr>
 <tr class="separator:a3b52be4e0e5f9e271d26ab579b11c961"><td class="memSeparator" colspan="2">&#160;</td></tr>

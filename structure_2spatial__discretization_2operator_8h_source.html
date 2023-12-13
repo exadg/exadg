@@ -260,325 +260,329 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span><span class="comment">   * Constructor.</span></div>
 <div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1Operator.html">Operator</a>(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Grid.html">Grid&lt;dim&gt;</a> <span class="keyword">const</span>&gt;               grid,</div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>           std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;    mapping,</div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>           std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1Structure_1_1BoundaryDescriptor.html">BoundaryDescriptor&lt;dim&gt;</a> <span class="keyword">const</span>&gt; boundary_descriptor,</div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>           std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1Structure_1_1FieldFunctions.html">FieldFunctions&lt;dim&gt;</a> <span class="keyword">const</span>&gt;     field_functions,</div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>           std::shared_ptr&lt;MaterialDescriptor const&gt;      material_descriptor,</div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>           <a class="code hl_class" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;                             param,</div>
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>           std::string <span class="keyword">const</span> &amp;                            field,</div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>           MPI_Comm <span class="keyword">const</span> &amp;                               mpi_comm);</div>
-<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span> </div>
-<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>  fill_matrix_free_data(<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a> &amp; matrix_free_data) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span> </div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>  <a class="code hl_function" href="classExaDG_1_1Structure_1_1Operator.html#ae2dc6afeb088f1cb1e81f552cd291ef7">setup</a>();</div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span> </div>
-<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  <a class="code hl_function" href="classExaDG_1_1Structure_1_1Operator.html#ae2dc6afeb088f1cb1e81f552cd291ef7">setup</a>(std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span>&gt; matrix_free,</div>
-<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>        std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a> <span class="keyword">const</span>&gt;     matrix_free_data);</div>
-<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span> </div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span><span class="comment">   * Initialization of dof-vector.</span></div>
-<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>  initialize_dof_vector(VectorType &amp; src) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span> </div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span><span class="comment">   * Prescribe initial conditions using a specified initial solution function.</span></div>
-<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>  prescribe_initial_displacement(VectorType &amp; displacement, <span class="keywordtype">double</span> <span class="keyword">const</span> time) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span> </div>
-<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>  prescribe_initial_velocity(VectorType &amp; velocity, <span class="keywordtype">double</span> <span class="keyword">const</span> time) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span> </div>
-<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span><span class="comment">   * This computes the initial acceleration field by evaluating all PDE terms for the given</span></div>
-<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span><span class="comment">   * initial condition, shifting all terms to the right-hand side of the equations, and solving a</span></div>
-<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span><span class="comment">   * mass matrix system to obtain the initial acceleration.</span></div>
-<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>  compute_initial_acceleration(VectorType &amp;       initial_acceleration,</div>
-<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>                               VectorType <span class="keyword">const</span> &amp; initial_displacement,</div>
-<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>                               <span class="keywordtype">double</span> <span class="keyword">const</span>       time) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span> </div>
-<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>  evaluate_mass_operator(VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span> </div>
-<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>  apply_add_damping_operator(VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span> </div>
-<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span><span class="comment">   * This function evaluates the nonlinear residual which is required by the Newton solver. In order</span></div>
-<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span><span class="comment">   * to evaluate inhomogeneous Dirichlet boundary conditions correctly, inhomogeneous Dirichlet</span></div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span><span class="comment">   * degrees of freedom need to be set correctly in the src-vector prior to calling this function.</span></div>
-<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>  evaluate_nonlinear_residual(VectorType &amp;       dst,</div>
-<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>                              VectorType <span class="keyword">const</span> &amp; src,</div>
-<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>                              VectorType <span class="keyword">const</span> &amp; const_vector,</div>
-<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>                              <span class="keywordtype">double</span> <span class="keyword">const</span>       factor,</div>
-<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>                              <span class="keywordtype">double</span> <span class="keyword">const</span>       time) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span> </div>
-<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>  set_solution_linearization(VectorType <span class="keyword">const</span> &amp; vector) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span> </div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>  apply_linearized_operator(VectorType &amp;       dst,</div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>                            VectorType <span class="keyword">const</span> &amp; src,</div>
-<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>                            <span class="keywordtype">double</span> <span class="keyword">const</span>       factor,</div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>                            <span class="keywordtype">double</span> <span class="keyword">const</span>       time) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span> </div>
-<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>  evaluate_elasticity_operator(VectorType &amp;       dst,</div>
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>                               VectorType <span class="keyword">const</span> &amp; src,</div>
-<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>                               <span class="keywordtype">double</span> <span class="keyword">const</span>       factor,</div>
-<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>                               <span class="keywordtype">double</span> <span class="keyword">const</span>       time) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span> </div>
-<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>  apply_elasticity_operator(VectorType &amp;       dst,</div>
-<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>                            VectorType <span class="keyword">const</span> &amp; src,</div>
-<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>                            VectorType <span class="keyword">const</span> &amp; linearization,</div>
-<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>                            <span class="keywordtype">double</span> <span class="keyword">const</span>       factor,</div>
-<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>                            <span class="keywordtype">double</span> <span class="keyword">const</span>       time) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span> </div>
-<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span><span class="comment">   * This function solves the system of equations for nonlinear problems. This function needs to</span></div>
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span><span class="comment">   * make sure that Dirichlet degrees of freedom are filled correctly with their inhomogeneous</span></div>
-<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span><span class="comment">   * boundary data before calling the nonlinear solver.</span></div>
-<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>  std::tuple&lt;unsigned int, unsigned int&gt;</div>
-<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>  solve_nonlinear(VectorType &amp;       sol,</div>
-<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>                  VectorType <span class="keyword">const</span> &amp; const_vector,</div>
-<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>                  <span class="keywordtype">double</span> <span class="keyword">const</span>       scaling_factor_acceleration,</div>
-<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>                  <span class="keywordtype">double</span> <span class="keyword">const</span>       scaling_factor_velocity,</div>
-<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>                  <span class="keywordtype">double</span> <span class="keyword">const</span>       time,</div>
-<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>                  <span class="keywordtype">bool</span> <span class="keyword">const</span>         update_preconditioner) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span> </div>
-<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span><span class="comment">   * This function calculates the right-hand side of the linear system of equations for linear</span></div>
-<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span><span class="comment">   * elasticity problems.</span></div>
-<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>  rhs(VectorType &amp; dst, <span class="keywordtype">double</span> <span class="keyword">const</span> time) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span> </div>
-<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span><span class="comment">   * This function solves the system of equations for linear problems.</span></div>
-<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span><span class="comment">   *</span></div>
-<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span><span class="comment">   * Before calling this function, make sure that the function rhs() has been called.</span></div>
-<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span></div>
-<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>  solve_linear(VectorType &amp;       sol,</div>
-<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>               VectorType <span class="keyword">const</span> &amp; rhs,</div>
-<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>               <span class="keywordtype">double</span> <span class="keyword">const</span>       scaling_factor_acceleration,</div>
-<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>               <span class="keywordtype">double</span> <span class="keyword">const</span>       scaling_factor_velocity,</div>
-<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>               <span class="keywordtype">double</span> <span class="keyword">const</span>       time,</div>
-<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>               <span class="keywordtype">bool</span> <span class="keyword">const</span>         update_preconditioner) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span> </div>
-<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span><span class="comment">   * Setters and getters.</span></div>
-<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>  std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span>&gt;</div>
-<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>  get_matrix_free() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span> </div>
-<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>  dealii::Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;</div>
-<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>  get_mapping() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span> </div>
-<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>  dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp;</div>
-<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span>  get_dof_handler() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span> </div>
-<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>  dealii::types::global_dof_index</div>
-<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>  get_number_of_dofs() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span> </div>
-<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span>  <span class="comment">// Multiphysics coupling via &quot;Cached&quot; boundary conditions</span></div>
-<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>  std::shared_ptr&lt;ContainerInterfaceData&lt;1, dim, double&gt;&gt;</div>
-<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>  get_container_interface_data_neumann() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span> </div>
-<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>  std::shared_ptr&lt;ContainerInterfaceData&lt;1, dim, double&gt;&gt;</div>
-<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span>  get_container_interface_data_dirichlet() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span> </div>
-<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>  <span class="comment">// TODO: we currently need this function public for precice-based FSI</span></div>
-<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span></div>
-<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>  get_dof_index() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span> </div>
-<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span><span class="comment">   * Initializes dealii::DoFHandler.</span></div>
-<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>  initialize_dof_handler_and_constraints();</div>
-<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span> </div>
-<div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span>  std::string</div>
-<div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span>  get_dof_name() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00335" name="l00335"></a><span class="lineno">  335</span> </div>
-<div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span>  std::string</div>
-<div class="line"><a id="l00337" name="l00337"></a><span class="lineno">  337</span>  get_dof_name_periodicity_and_hanging_node_constraints() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00338" name="l00338"></a><span class="lineno">  338</span> </div>
-<div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span>  std::string</div>
-<div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span>  get_quad_name() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span> </div>
-<div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span>  std::string</div>
-<div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>  get_quad_gauss_lobatto_name() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span> </div>
-<div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span></div>
-<div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span>  get_dof_index_periodicity_and_hanging_node_constraints() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00347" name="l00347"></a><span class="lineno">  347</span> </div>
-<div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span></div>
-<div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span>  get_quad_index() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span> </div>
-<div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span></div>
-<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>  get_quad_index_gauss_lobatto() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span> </div>
-<div class="line"><a id="l00358" name="l00358"></a><span class="lineno">  358</span>  <span class="keywordtype">double</span></div>
-<div class="line"><a id="l00359" name="l00359"></a><span class="lineno">  359</span>  compute_scaling_factor_mass(<span class="keywordtype">double</span> <span class="keyword">const</span> scaling_factor_acceleration,</div>
-<div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span>                              <span class="keywordtype">double</span> <span class="keyword">const</span> scaling_factor_velocity) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00361" name="l00361"></a><span class="lineno">  361</span> </div>
-<div class="line"><a id="l00365" name="l00365"></a><span class="lineno">  365</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00366" name="l00366"></a><span class="lineno">  366</span>  setup_coupling_boundary_conditions();</div>
-<div class="line"><a id="l00367" name="l00367"></a><span class="lineno">  367</span> </div>
-<div class="line"><a id="l00371" name="l00371"></a><span class="lineno">  371</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span>  setup_operators();</div>
-<div class="line"><a id="l00373" name="l00373"></a><span class="lineno">  373</span> </div>
-<div class="line"><a id="l00377" name="l00377"></a><span class="lineno">  377</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00378" name="l00378"></a><span class="lineno">  378</span>  setup_preconditioner();</div>
-<div class="line"><a id="l00379" name="l00379"></a><span class="lineno">  379</span> </div>
-<div class="line"><a id="l00383" name="l00383"></a><span class="lineno">  383</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span>  setup_solver();</div>
-<div class="line"><a id="l00385" name="l00385"></a><span class="lineno">  385</span> </div>
-<div class="line"><a id="l00386" name="l00386"></a><span class="lineno">  386</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00387" name="l00387"></a><span class="lineno">  387</span><span class="comment">   * Grid</span></div>
-<div class="line"><a id="l00388" name="l00388"></a><span class="lineno">  388</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00389" name="l00389"></a><span class="lineno">  389</span>  std::shared_ptr&lt;Grid&lt;dim&gt; <span class="keyword">const</span>&gt; grid;</div>
-<div class="line"><a id="l00390" name="l00390"></a><span class="lineno">  390</span> </div>
-<div class="line"><a id="l00391" name="l00391"></a><span class="lineno">  391</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00392" name="l00392"></a><span class="lineno">  392</span><span class="comment">   * Mapping</span></div>
-<div class="line"><a id="l00393" name="l00393"></a><span class="lineno">  393</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00394" name="l00394"></a><span class="lineno">  394</span>  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; mapping;</div>
-<div class="line"><a id="l00395" name="l00395"></a><span class="lineno">  395</span> </div>
-<div class="line"><a id="l00396" name="l00396"></a><span class="lineno">  396</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00397" name="l00397"></a><span class="lineno">  397</span><span class="comment">   * User interface.</span></div>
-<div class="line"><a id="l00398" name="l00398"></a><span class="lineno">  398</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00399" name="l00399"></a><span class="lineno">  399</span>  std::shared_ptr&lt;BoundaryDescriptor&lt;dim&gt; <span class="keyword">const</span>&gt; boundary_descriptor;</div>
-<div class="line"><a id="l00400" name="l00400"></a><span class="lineno">  400</span>  std::shared_ptr&lt;FieldFunctions&lt;dim&gt; <span class="keyword">const</span>&gt;     field_functions;</div>
-<div class="line"><a id="l00401" name="l00401"></a><span class="lineno">  401</span>  std::shared_ptr&lt;MaterialDescriptor const&gt;      material_descriptor;</div>
-<div class="line"><a id="l00402" name="l00402"></a><span class="lineno">  402</span> </div>
-<div class="line"><a id="l00403" name="l00403"></a><span class="lineno">  403</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00404" name="l00404"></a><span class="lineno">  404</span><span class="comment">   * List of parameters.</span></div>
-<div class="line"><a id="l00405" name="l00405"></a><span class="lineno">  405</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00406" name="l00406"></a><span class="lineno">  406</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp; param;</div>
-<div class="line"><a id="l00407" name="l00407"></a><span class="lineno">  407</span> </div>
-<div class="line"><a id="l00408" name="l00408"></a><span class="lineno">  408</span>  std::string <span class="keyword">const</span> field;</div>
-<div class="line"><a id="l00409" name="l00409"></a><span class="lineno">  409</span> </div>
-<div class="line"><a id="l00410" name="l00410"></a><span class="lineno">  410</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00411" name="l00411"></a><span class="lineno">  411</span><span class="comment">   * Basic finite element ingredients.</span></div>
-<div class="line"><a id="l00412" name="l00412"></a><span class="lineno">  412</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00413" name="l00413"></a><span class="lineno">  413</span>  std::shared_ptr&lt;dealii::FiniteElement&lt;dim&gt;&gt; fe;</div>
-<div class="line"><a id="l00414" name="l00414"></a><span class="lineno">  414</span>  dealii::DoFHandler&lt;dim&gt;                     dof_handler;</div>
-<div class="line"><a id="l00415" name="l00415"></a><span class="lineno">  415</span> </div>
-<div class="line"><a id="l00416" name="l00416"></a><span class="lineno">  416</span>  <span class="comment">// AffineConstraints object as needed by iterative solvers and preconditioners for linear systems</span></div>
-<div class="line"><a id="l00417" name="l00417"></a><span class="lineno">  417</span>  <span class="comment">// of equations. This constraint object contains additional constraints from Dirichlet boundary</span></div>
-<div class="line"><a id="l00418" name="l00418"></a><span class="lineno">  418</span>  <span class="comment">// conditions as compared to the constraint object below. Note that the present constraint object</span></div>
-<div class="line"><a id="l00419" name="l00419"></a><span class="lineno">  419</span>  <span class="comment">// can treat Dirichlet boundaries only in a homogeneous manner.</span></div>
-<div class="line"><a id="l00420" name="l00420"></a><span class="lineno">  420</span>  dealii::AffineConstraints&lt;Number&gt; affine_constraints;</div>
-<div class="line"><a id="l00421" name="l00421"></a><span class="lineno">  421</span> </div>
-<div class="line"><a id="l00422" name="l00422"></a><span class="lineno">  422</span>  <span class="comment">// To treat inhomogeneous Dirichlet BCs correctly in the context of matrix-free operator</span></div>
-<div class="line"><a id="l00423" name="l00423"></a><span class="lineno">  423</span>  <span class="comment">// evaluation using dealii::MatrixFree/FEEvaluation, we need a separate AffineConstraints</span></div>
-<div class="line"><a id="l00424" name="l00424"></a><span class="lineno">  424</span>  <span class="comment">// object containing only periodicity and hanging node constraints.</span></div>
-<div class="line"><a id="l00425" name="l00425"></a><span class="lineno">  425</span>  <span class="comment">// When using the standard AffineConstraints object including Dirichlet boundary conditions,</span></div>
-<div class="line"><a id="l00426" name="l00426"></a><span class="lineno">  426</span>  <span class="comment">// inhomogeneous boundary data would be ignored by dealii::FEEvaluation::read_dof_values().</span></div>
-<div class="line"><a id="l00427" name="l00427"></a><span class="lineno">  427</span>  <span class="comment">// While dealii::FEEvaluation::read_dof_values_plain() would take into account inhomogeneous</span></div>
-<div class="line"><a id="l00428" name="l00428"></a><span class="lineno">  428</span>  <span class="comment">// Dirichlet data using the standard AffineConstraints object, hanging-node constraints would</span></div>
-<div class="line"><a id="l00429" name="l00429"></a><span class="lineno">  429</span>  <span class="comment">// not be resolved correctly.</span></div>
-<div class="line"><a id="l00430" name="l00430"></a><span class="lineno">  430</span>  <span class="comment">// The solution/workaround is to use dealii::FEEvaluation::read_dof_values() for a correct</span></div>
-<div class="line"><a id="l00431" name="l00431"></a><span class="lineno">  431</span>  <span class="comment">// handling of hanging nodes, but to exclude Dirichlet degrees of freedom from the</span></div>
-<div class="line"><a id="l00432" name="l00432"></a><span class="lineno">  432</span>  <span class="comment">// AffineConstraints object so that it is possible to read inhomogeneous boundary data when</span></div>
-<div class="line"><a id="l00433" name="l00433"></a><span class="lineno">  433</span>  <span class="comment">// calling dealii::FEEvaluation::read_dof_values(). This inhomogeneous boundary data needs to be</span></div>
-<div class="line"><a id="l00434" name="l00434"></a><span class="lineno">  434</span>  <span class="comment">// set beforehand in separate routines.</span></div>
-<div class="line"><a id="l00435" name="l00435"></a><span class="lineno">  435</span>  dealii::AffineConstraints&lt;Number&gt; affine_constraints_periodicity_and_hanging_nodes;</div>
-<div class="line"><a id="l00436" name="l00436"></a><span class="lineno">  436</span> </div>
-<div class="line"><a id="l00437" name="l00437"></a><span class="lineno">  437</span>  std::string <span class="keyword">const</span> dof_index = <span class="stringliteral">&quot;dof&quot;</span>;</div>
-<div class="line"><a id="l00438" name="l00438"></a><span class="lineno">  438</span>  std::string <span class="keyword">const</span> dof_index_periodicity_and_handing_node_constraints =</div>
-<div class="line"><a id="l00439" name="l00439"></a><span class="lineno">  439</span>    <span class="stringliteral">&quot;dof_periodicity_hanging_nodes&quot;</span>;</div>
-<div class="line"><a id="l00440" name="l00440"></a><span class="lineno">  440</span> </div>
-<div class="line"><a id="l00441" name="l00441"></a><span class="lineno">  441</span>  std::string <span class="keyword">const</span> quad_index               = <span class="stringliteral">&quot;quad&quot;</span>;</div>
-<div class="line"><a id="l00442" name="l00442"></a><span class="lineno">  442</span>  std::string <span class="keyword">const</span> quad_index_gauss_lobatto = <span class="stringliteral">&quot;quad_gauss_lobatto&quot;</span>;</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1Operator.html">Operator</a>(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Grid.html">Grid&lt;dim&gt;</a> <span class="keyword">const</span>&gt;                      grid,</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>           std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;           mapping,</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>           std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1MultigridMappings.html">MultigridMappings&lt;dim, Number&gt;</a>&gt; <span class="keyword">const</span> multigrid_mappings,</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>           std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1Structure_1_1BoundaryDescriptor.html">BoundaryDescriptor&lt;dim&gt;</a> <span class="keyword">const</span>&gt;        boundary_descriptor,</div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>           std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1Structure_1_1FieldFunctions.html">FieldFunctions&lt;dim&gt;</a> <span class="keyword">const</span>&gt;            field_functions,</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>           std::shared_ptr&lt;MaterialDescriptor const&gt;             material_descriptor,</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>           <a class="code hl_class" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;                                    param,</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>           std::string <span class="keyword">const</span> &amp;                                   field,</div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>           MPI_Comm <span class="keyword">const</span> &amp;                                      mpi_comm);</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span> </div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>  fill_matrix_free_data(<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a> &amp; matrix_free_data) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span> </div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>  <a class="code hl_function" href="classExaDG_1_1Structure_1_1Operator.html#ae2dc6afeb088f1cb1e81f552cd291ef7">setup</a>();</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span> </div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>  <a class="code hl_function" href="classExaDG_1_1Structure_1_1Operator.html#ae2dc6afeb088f1cb1e81f552cd291ef7">setup</a>(std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span>&gt; matrix_free,</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>        std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a> <span class="keyword">const</span>&gt;     matrix_free_data);</div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span> </div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span><span class="comment">   * Initialization of dof-vector.</span></div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>  initialize_dof_vector(VectorType &amp; src) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span> </div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span><span class="comment">   * Prescribe initial conditions using a specified initial solution function.</span></div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>  prescribe_initial_displacement(VectorType &amp; displacement, <span class="keywordtype">double</span> <span class="keyword">const</span> time) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span> </div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>  prescribe_initial_velocity(VectorType &amp; velocity, <span class="keywordtype">double</span> <span class="keyword">const</span> time) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span> </div>
+<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span><span class="comment">   * This computes the initial acceleration field by evaluating all PDE terms for the given</span></div>
+<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span><span class="comment">   * initial condition, shifting all terms to the right-hand side of the equations, and solving a</span></div>
+<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span><span class="comment">   * mass matrix system to obtain the initial acceleration.</span></div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>  compute_initial_acceleration(VectorType &amp;       initial_acceleration,</div>
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>                               VectorType <span class="keyword">const</span> &amp; initial_displacement,</div>
+<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>                               <span class="keywordtype">double</span> <span class="keyword">const</span>       time) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span> </div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>  evaluate_mass_operator(VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span> </div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>  apply_add_damping_operator(VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span> </div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span><span class="comment">   * This function evaluates the nonlinear residual which is required by the Newton solver. In order</span></div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span><span class="comment">   * to evaluate inhomogeneous Dirichlet boundary conditions correctly, inhomogeneous Dirichlet</span></div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span><span class="comment">   * degrees of freedom need to be set correctly in the src-vector prior to calling this function.</span></div>
+<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>  evaluate_nonlinear_residual(VectorType &amp;       dst,</div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>                              VectorType <span class="keyword">const</span> &amp; src,</div>
+<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>                              VectorType <span class="keyword">const</span> &amp; const_vector,</div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>                              <span class="keywordtype">double</span> <span class="keyword">const</span>       factor,</div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>                              <span class="keywordtype">double</span> <span class="keyword">const</span>       time) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span> </div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  set_solution_linearization(VectorType <span class="keyword">const</span> &amp; vector) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span> </div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>  apply_linearized_operator(VectorType &amp;       dst,</div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>                            VectorType <span class="keyword">const</span> &amp; src,</div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>                            <span class="keywordtype">double</span> <span class="keyword">const</span>       factor,</div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>                            <span class="keywordtype">double</span> <span class="keyword">const</span>       time) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span> </div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>  evaluate_elasticity_operator(VectorType &amp;       dst,</div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>                               VectorType <span class="keyword">const</span> &amp; src,</div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>                               <span class="keywordtype">double</span> <span class="keyword">const</span>       factor,</div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>                               <span class="keywordtype">double</span> <span class="keyword">const</span>       time) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span> </div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>  apply_elasticity_operator(VectorType &amp;       dst,</div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>                            VectorType <span class="keyword">const</span> &amp; src,</div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>                            VectorType <span class="keyword">const</span> &amp; linearization,</div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>                            <span class="keywordtype">double</span> <span class="keyword">const</span>       factor,</div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>                            <span class="keywordtype">double</span> <span class="keyword">const</span>       time) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span> </div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span><span class="comment">   * This function solves the system of equations for nonlinear problems. This function needs to</span></div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span><span class="comment">   * make sure that Dirichlet degrees of freedom are filled correctly with their inhomogeneous</span></div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span><span class="comment">   * boundary data before calling the nonlinear solver.</span></div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>  std::tuple&lt;unsigned int, unsigned int&gt;</div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>  solve_nonlinear(VectorType &amp;       sol,</div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>                  VectorType <span class="keyword">const</span> &amp; const_vector,</div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>                  <span class="keywordtype">double</span> <span class="keyword">const</span>       scaling_factor_acceleration,</div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>                  <span class="keywordtype">double</span> <span class="keyword">const</span>       scaling_factor_velocity,</div>
+<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>                  <span class="keywordtype">double</span> <span class="keyword">const</span>       time,</div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>                  <span class="keywordtype">bool</span> <span class="keyword">const</span>         update_preconditioner) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span> </div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span><span class="comment">   * This function calculates the right-hand side of the linear system of equations for linear</span></div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span><span class="comment">   * elasticity problems.</span></div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>  rhs(VectorType &amp; dst, <span class="keywordtype">double</span> <span class="keyword">const</span> time) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span> </div>
+<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span><span class="comment">   * This function solves the system of equations for linear problems.</span></div>
+<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span><span class="comment">   *</span></div>
+<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span><span class="comment">   * Before calling this function, make sure that the function rhs() has been called.</span></div>
+<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span></div>
+<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>  solve_linear(VectorType &amp;       sol,</div>
+<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>               VectorType <span class="keyword">const</span> &amp; rhs,</div>
+<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>               <span class="keywordtype">double</span> <span class="keyword">const</span>       scaling_factor_acceleration,</div>
+<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>               <span class="keywordtype">double</span> <span class="keyword">const</span>       scaling_factor_velocity,</div>
+<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>               <span class="keywordtype">double</span> <span class="keyword">const</span>       time,</div>
+<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>               <span class="keywordtype">bool</span> <span class="keyword">const</span>         update_preconditioner) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span> </div>
+<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span><span class="comment">   * Setters and getters.</span></div>
+<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>  std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span>&gt;</div>
+<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>  get_matrix_free() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span> </div>
+<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>  dealii::Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;</div>
+<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>  get_mapping() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span> </div>
+<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span>  dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp;</div>
+<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span>  get_dof_handler() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span> </div>
+<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>  dealii::types::global_dof_index</div>
+<div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>  get_number_of_dofs() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span> </div>
+<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>  <span class="comment">// Multiphysics coupling via &quot;Cached&quot; boundary conditions</span></div>
+<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>  std::shared_ptr&lt;ContainerInterfaceData&lt;1, dim, double&gt;&gt;</div>
+<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>  get_container_interface_data_neumann() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span> </div>
+<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span>  std::shared_ptr&lt;ContainerInterfaceData&lt;1, dim, double&gt;&gt;</div>
+<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>  get_container_interface_data_dirichlet() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span> </div>
+<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span>  <span class="comment">// TODO: we currently need this function public for precice-based FSI</span></div>
+<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span></div>
+<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>  get_dof_index() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span> </div>
+<div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span><span class="comment">   * Initializes dealii::DoFHandler.</span></div>
+<div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span>  initialize_dof_handler_and_constraints();</div>
+<div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span> </div>
+<div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span>  std::string</div>
+<div class="line"><a id="l00335" name="l00335"></a><span class="lineno">  335</span>  get_dof_name() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span> </div>
+<div class="line"><a id="l00337" name="l00337"></a><span class="lineno">  337</span>  std::string</div>
+<div class="line"><a id="l00338" name="l00338"></a><span class="lineno">  338</span>  get_dof_name_periodicity_and_hanging_node_constraints() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span> </div>
+<div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span>  std::string</div>
+<div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span>  get_quad_name() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span> </div>
+<div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>  std::string</div>
+<div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span>  get_quad_gauss_lobatto_name() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span> </div>
+<div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span></div>
+<div class="line"><a id="l00347" name="l00347"></a><span class="lineno">  347</span>  get_dof_index_periodicity_and_hanging_node_constraints() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span> </div>
+<div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span></div>
+<div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span>  get_quad_index() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span> </div>
+<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span></div>
+<div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span>  get_quad_index_gauss_lobatto() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span> </div>
+<div class="line"><a id="l00359" name="l00359"></a><span class="lineno">  359</span>  <span class="keywordtype">double</span></div>
+<div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span>  compute_scaling_factor_mass(<span class="keywordtype">double</span> <span class="keyword">const</span> scaling_factor_acceleration,</div>
+<div class="line"><a id="l00361" name="l00361"></a><span class="lineno">  361</span>                              <span class="keywordtype">double</span> <span class="keyword">const</span> scaling_factor_velocity) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00362" name="l00362"></a><span class="lineno">  362</span> </div>
+<div class="line"><a id="l00366" name="l00366"></a><span class="lineno">  366</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00367" name="l00367"></a><span class="lineno">  367</span>  setup_coupling_boundary_conditions();</div>
+<div class="line"><a id="l00368" name="l00368"></a><span class="lineno">  368</span> </div>
+<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00373" name="l00373"></a><span class="lineno">  373</span>  setup_operators();</div>
+<div class="line"><a id="l00374" name="l00374"></a><span class="lineno">  374</span> </div>
+<div class="line"><a id="l00378" name="l00378"></a><span class="lineno">  378</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00379" name="l00379"></a><span class="lineno">  379</span>  setup_preconditioner();</div>
+<div class="line"><a id="l00380" name="l00380"></a><span class="lineno">  380</span> </div>
+<div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00385" name="l00385"></a><span class="lineno">  385</span>  setup_solver();</div>
+<div class="line"><a id="l00386" name="l00386"></a><span class="lineno">  386</span> </div>
+<div class="line"><a id="l00387" name="l00387"></a><span class="lineno">  387</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00388" name="l00388"></a><span class="lineno">  388</span><span class="comment">   * Grid</span></div>
+<div class="line"><a id="l00389" name="l00389"></a><span class="lineno">  389</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00390" name="l00390"></a><span class="lineno">  390</span>  std::shared_ptr&lt;Grid&lt;dim&gt; <span class="keyword">const</span>&gt; grid;</div>
+<div class="line"><a id="l00391" name="l00391"></a><span class="lineno">  391</span> </div>
+<div class="line"><a id="l00392" name="l00392"></a><span class="lineno">  392</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00393" name="l00393"></a><span class="lineno">  393</span><span class="comment">   * Mapping</span></div>
+<div class="line"><a id="l00394" name="l00394"></a><span class="lineno">  394</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00395" name="l00395"></a><span class="lineno">  395</span>  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; mapping;</div>
+<div class="line"><a id="l00396" name="l00396"></a><span class="lineno">  396</span> </div>
+<div class="line"><a id="l00397" name="l00397"></a><span class="lineno">  397</span>  std::shared_ptr&lt;MultigridMappings&lt;dim, Number&gt;&gt; <span class="keyword">const</span> multigrid_mappings;</div>
+<div class="line"><a id="l00398" name="l00398"></a><span class="lineno">  398</span> </div>
+<div class="line"><a id="l00399" name="l00399"></a><span class="lineno">  399</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00400" name="l00400"></a><span class="lineno">  400</span><span class="comment">   * User interface.</span></div>
+<div class="line"><a id="l00401" name="l00401"></a><span class="lineno">  401</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00402" name="l00402"></a><span class="lineno">  402</span>  std::shared_ptr&lt;BoundaryDescriptor&lt;dim&gt; <span class="keyword">const</span>&gt; boundary_descriptor;</div>
+<div class="line"><a id="l00403" name="l00403"></a><span class="lineno">  403</span>  std::shared_ptr&lt;FieldFunctions&lt;dim&gt; <span class="keyword">const</span>&gt;     field_functions;</div>
+<div class="line"><a id="l00404" name="l00404"></a><span class="lineno">  404</span>  std::shared_ptr&lt;MaterialDescriptor const&gt;      material_descriptor;</div>
+<div class="line"><a id="l00405" name="l00405"></a><span class="lineno">  405</span> </div>
+<div class="line"><a id="l00406" name="l00406"></a><span class="lineno">  406</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00407" name="l00407"></a><span class="lineno">  407</span><span class="comment">   * List of parameters.</span></div>
+<div class="line"><a id="l00408" name="l00408"></a><span class="lineno">  408</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00409" name="l00409"></a><span class="lineno">  409</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp; param;</div>
+<div class="line"><a id="l00410" name="l00410"></a><span class="lineno">  410</span> </div>
+<div class="line"><a id="l00411" name="l00411"></a><span class="lineno">  411</span>  std::string <span class="keyword">const</span> field;</div>
+<div class="line"><a id="l00412" name="l00412"></a><span class="lineno">  412</span> </div>
+<div class="line"><a id="l00413" name="l00413"></a><span class="lineno">  413</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00414" name="l00414"></a><span class="lineno">  414</span><span class="comment">   * Basic finite element ingredients.</span></div>
+<div class="line"><a id="l00415" name="l00415"></a><span class="lineno">  415</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00416" name="l00416"></a><span class="lineno">  416</span>  std::shared_ptr&lt;dealii::FiniteElement&lt;dim&gt;&gt; fe;</div>
+<div class="line"><a id="l00417" name="l00417"></a><span class="lineno">  417</span>  dealii::DoFHandler&lt;dim&gt;                     dof_handler;</div>
+<div class="line"><a id="l00418" name="l00418"></a><span class="lineno">  418</span> </div>
+<div class="line"><a id="l00419" name="l00419"></a><span class="lineno">  419</span>  <span class="comment">// AffineConstraints object as needed by iterative solvers and preconditioners for linear systems</span></div>
+<div class="line"><a id="l00420" name="l00420"></a><span class="lineno">  420</span>  <span class="comment">// of equations. This constraint object contains additional constraints from Dirichlet boundary</span></div>
+<div class="line"><a id="l00421" name="l00421"></a><span class="lineno">  421</span>  <span class="comment">// conditions as compared to the constraint object below. Note that the present constraint object</span></div>
+<div class="line"><a id="l00422" name="l00422"></a><span class="lineno">  422</span>  <span class="comment">// can treat Dirichlet boundaries only in a homogeneous manner.</span></div>
+<div class="line"><a id="l00423" name="l00423"></a><span class="lineno">  423</span>  dealii::AffineConstraints&lt;Number&gt; affine_constraints;</div>
+<div class="line"><a id="l00424" name="l00424"></a><span class="lineno">  424</span> </div>
+<div class="line"><a id="l00425" name="l00425"></a><span class="lineno">  425</span>  <span class="comment">// To treat inhomogeneous Dirichlet BCs correctly in the context of matrix-free operator</span></div>
+<div class="line"><a id="l00426" name="l00426"></a><span class="lineno">  426</span>  <span class="comment">// evaluation using dealii::MatrixFree/FEEvaluation, we need a separate AffineConstraints</span></div>
+<div class="line"><a id="l00427" name="l00427"></a><span class="lineno">  427</span>  <span class="comment">// object containing only periodicity and hanging node constraints.</span></div>
+<div class="line"><a id="l00428" name="l00428"></a><span class="lineno">  428</span>  <span class="comment">// When using the standard AffineConstraints object including Dirichlet boundary conditions,</span></div>
+<div class="line"><a id="l00429" name="l00429"></a><span class="lineno">  429</span>  <span class="comment">// inhomogeneous boundary data would be ignored by dealii::FEEvaluation::read_dof_values().</span></div>
+<div class="line"><a id="l00430" name="l00430"></a><span class="lineno">  430</span>  <span class="comment">// While dealii::FEEvaluation::read_dof_values_plain() would take into account inhomogeneous</span></div>
+<div class="line"><a id="l00431" name="l00431"></a><span class="lineno">  431</span>  <span class="comment">// Dirichlet data using the standard AffineConstraints object, hanging-node constraints would</span></div>
+<div class="line"><a id="l00432" name="l00432"></a><span class="lineno">  432</span>  <span class="comment">// not be resolved correctly.</span></div>
+<div class="line"><a id="l00433" name="l00433"></a><span class="lineno">  433</span>  <span class="comment">// The solution/workaround is to use dealii::FEEvaluation::read_dof_values() for a correct</span></div>
+<div class="line"><a id="l00434" name="l00434"></a><span class="lineno">  434</span>  <span class="comment">// handling of hanging nodes, but to exclude Dirichlet degrees of freedom from the</span></div>
+<div class="line"><a id="l00435" name="l00435"></a><span class="lineno">  435</span>  <span class="comment">// AffineConstraints object so that it is possible to read inhomogeneous boundary data when</span></div>
+<div class="line"><a id="l00436" name="l00436"></a><span class="lineno">  436</span>  <span class="comment">// calling dealii::FEEvaluation::read_dof_values(). This inhomogeneous boundary data needs to be</span></div>
+<div class="line"><a id="l00437" name="l00437"></a><span class="lineno">  437</span>  <span class="comment">// set beforehand in separate routines.</span></div>
+<div class="line"><a id="l00438" name="l00438"></a><span class="lineno">  438</span>  dealii::AffineConstraints&lt;Number&gt; affine_constraints_periodicity_and_hanging_nodes;</div>
+<div class="line"><a id="l00439" name="l00439"></a><span class="lineno">  439</span> </div>
+<div class="line"><a id="l00440" name="l00440"></a><span class="lineno">  440</span>  std::string <span class="keyword">const</span> dof_index = <span class="stringliteral">&quot;dof&quot;</span>;</div>
+<div class="line"><a id="l00441" name="l00441"></a><span class="lineno">  441</span>  std::string <span class="keyword">const</span> dof_index_periodicity_and_handing_node_constraints =</div>
+<div class="line"><a id="l00442" name="l00442"></a><span class="lineno">  442</span>    <span class="stringliteral">&quot;dof_periodicity_hanging_nodes&quot;</span>;</div>
 <div class="line"><a id="l00443" name="l00443"></a><span class="lineno">  443</span> </div>
-<div class="line"><a id="l00444" name="l00444"></a><span class="lineno">  444</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00445" name="l00445"></a><span class="lineno">  445</span><span class="comment">   * Matrix-free operator evaluation.</span></div>
-<div class="line"><a id="l00446" name="l00446"></a><span class="lineno">  446</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00447" name="l00447"></a><span class="lineno">  447</span>  std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span>&gt; matrix_free;</div>
-<div class="line"><a id="l00448" name="l00448"></a><span class="lineno">  448</span>  std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt; <span class="keyword">const</span>&gt;     matrix_free_data;</div>
-<div class="line"><a id="l00449" name="l00449"></a><span class="lineno">  449</span> </div>
-<div class="line"><a id="l00450" name="l00450"></a><span class="lineno">  450</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00451" name="l00451"></a><span class="lineno">  451</span><span class="comment">   * Interface coupling</span></div>
-<div class="line"><a id="l00452" name="l00452"></a><span class="lineno">  452</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00453" name="l00453"></a><span class="lineno">  453</span>  <span class="comment">// TODO: The PDE operator should only have read access to interface data</span></div>
-<div class="line"><a id="l00454" name="l00454"></a><span class="lineno">  454</span>  <span class="keyword">mutable</span> std::shared_ptr&lt;ContainerInterfaceData&lt;1, dim, double&gt;&gt; interface_data_dirichlet_cached;</div>
-<div class="line"><a id="l00455" name="l00455"></a><span class="lineno">  455</span>  <span class="keyword">mutable</span> std::shared_ptr&lt;ContainerInterfaceData&lt;1, dim, double&gt;&gt; interface_data_neumann_cached;</div>
-<div class="line"><a id="l00456" name="l00456"></a><span class="lineno">  456</span> </div>
-<div class="line"><a id="l00457" name="l00457"></a><span class="lineno">  457</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00458" name="l00458"></a><span class="lineno">  458</span><span class="comment">   * Basic operators.</span></div>
-<div class="line"><a id="l00459" name="l00459"></a><span class="lineno">  459</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00460" name="l00460"></a><span class="lineno">  460</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1BodyForceOperator.html">BodyForceOperator&lt;dim, Number&gt;</a> body_force_operator;</div>
-<div class="line"><a id="l00461" name="l00461"></a><span class="lineno">  461</span> </div>
-<div class="line"><a id="l00462" name="l00462"></a><span class="lineno">  462</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1LinearOperator.html">LinearOperator&lt;dim, Number&gt;</a>    elasticity_operator_linear;</div>
-<div class="line"><a id="l00463" name="l00463"></a><span class="lineno">  463</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1NonLinearOperator.html">NonLinearOperator&lt;dim, Number&gt;</a> elasticity_operator_nonlinear;</div>
-<div class="line"><a id="l00464" name="l00464"></a><span class="lineno">  464</span>  <a class="code hl_struct" href="structExaDG_1_1Structure_1_1OperatorData.html">OperatorData&lt;dim&gt;</a>              operator_data;</div>
-<div class="line"><a id="l00465" name="l00465"></a><span class="lineno">  465</span> </div>
-<div class="line"><a id="l00466" name="l00466"></a><span class="lineno">  466</span>  <span class="comment">// The mass operator is only relevant for unsteady problems:</span></div>
-<div class="line"><a id="l00467" name="l00467"></a><span class="lineno">  467</span>  <span class="comment">// it is used to compute the initial acceleration and to evaluate</span></div>
-<div class="line"><a id="l00468" name="l00468"></a><span class="lineno">  468</span>  <span class="comment">// the mass operator term applied to a constant vector (independent</span></div>
-<div class="line"><a id="l00469" name="l00469"></a><span class="lineno">  469</span>  <span class="comment">// of new displacements) appearing on the right-hand side for linear</span></div>
-<div class="line"><a id="l00470" name="l00470"></a><span class="lineno">  470</span>  <span class="comment">// problems and in the residual for nonlinear problems.</span></div>
-<div class="line"><a id="l00471" name="l00471"></a><span class="lineno">  471</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1MassOperator.html">Structure::MassOperator&lt;dim, Number&gt;</a> mass_operator;</div>
-<div class="line"><a id="l00472" name="l00472"></a><span class="lineno">  472</span> </div>
-<div class="line"><a id="l00473" name="l00473"></a><span class="lineno">  473</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00474" name="l00474"></a><span class="lineno">  474</span><span class="comment">   * Solution of nonlinear systems of equations</span></div>
-<div class="line"><a id="l00475" name="l00475"></a><span class="lineno">  475</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00476" name="l00476"></a><span class="lineno">  476</span> </div>
-<div class="line"><a id="l00477" name="l00477"></a><span class="lineno">  477</span>  <span class="comment">// operators required for Newton solver</span></div>
-<div class="line"><a id="l00478" name="l00478"></a><span class="lineno">  478</span>  <span class="keyword">mutable</span> <a class="code hl_class" href="classExaDG_1_1Structure_1_1ResidualOperator.html">ResidualOperator&lt;dim, Number&gt;</a>   residual_operator;</div>
-<div class="line"><a id="l00479" name="l00479"></a><span class="lineno">  479</span>  <span class="keyword">mutable</span> <a class="code hl_class" href="classExaDG_1_1Structure_1_1LinearizedOperator.html">LinearizedOperator&lt;dim, Number&gt;</a> linearized_operator;</div>
-<div class="line"><a id="l00480" name="l00480"></a><span class="lineno">  480</span> </div>
-<div class="line"><a id="l00481" name="l00481"></a><span class="lineno">  481</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1Newton_1_1Solver.html">Newton::Solver</a>&lt;VectorType,</div>
-<div class="line"><a id="l00482" name="l00482"></a><span class="lineno">  482</span>                         <a class="code hl_class" href="classExaDG_1_1Structure_1_1ResidualOperator.html">ResidualOperator&lt;dim, Number&gt;</a>,</div>
-<div class="line"><a id="l00483" name="l00483"></a><span class="lineno">  483</span>                         <a class="code hl_class" href="classExaDG_1_1Structure_1_1LinearizedOperator.html">LinearizedOperator&lt;dim, Number&gt;</a>,</div>
-<div class="line"><a id="l00484" name="l00484"></a><span class="lineno">  484</span>                         <a class="code hl_class" href="classExaDG_1_1Krylov_1_1SolverBase.html">Krylov::SolverBase&lt;VectorType&gt;</a>&gt;</div>
-<div class="line"><a id="l00485" name="l00485"></a><span class="lineno">  485</span>    <a class="code hl_class" href="classExaDG_1_1Newton_1_1Solver.html">NewtonSolver</a>;</div>
-<div class="line"><a id="l00486" name="l00486"></a><span class="lineno">  486</span> </div>
-<div class="line"><a id="l00487" name="l00487"></a><span class="lineno">  487</span>  std::shared_ptr&lt;NewtonSolver&gt; newton_solver;</div>
-<div class="line"><a id="l00488" name="l00488"></a><span class="lineno">  488</span> </div>
-<div class="line"><a id="l00489" name="l00489"></a><span class="lineno">  489</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00490" name="l00490"></a><span class="lineno">  490</span><span class="comment">   * Solution of linear systems of equations</span></div>
-<div class="line"><a id="l00491" name="l00491"></a><span class="lineno">  491</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00492" name="l00492"></a><span class="lineno">  492</span>  std::shared_ptr&lt;PreconditionerBase&lt;Number&gt;&gt; preconditioner;</div>
-<div class="line"><a id="l00493" name="l00493"></a><span class="lineno">  493</span> </div>
-<div class="line"><a id="l00494" name="l00494"></a><span class="lineno">  494</span>  std::shared_ptr&lt;Krylov::SolverBase&lt;VectorType&gt;&gt; linear_solver;</div>
-<div class="line"><a id="l00495" name="l00495"></a><span class="lineno">  495</span> </div>
-<div class="line"><a id="l00496" name="l00496"></a><span class="lineno">  496</span>  <span class="comment">// mass operator inversion</span></div>
-<div class="line"><a id="l00497" name="l00497"></a><span class="lineno">  497</span>  std::shared_ptr&lt;PreconditionerBase&lt;Number&gt;&gt;     mass_preconditioner;</div>
-<div class="line"><a id="l00498" name="l00498"></a><span class="lineno">  498</span>  std::shared_ptr&lt;Krylov::SolverBase&lt;VectorType&gt;&gt; mass_solver;</div>
-<div class="line"><a id="l00499" name="l00499"></a><span class="lineno">  499</span> </div>
-<div class="line"><a id="l00500" name="l00500"></a><span class="lineno">  500</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00501" name="l00501"></a><span class="lineno">  501</span><span class="comment">   * MPI communicator</span></div>
-<div class="line"><a id="l00502" name="l00502"></a><span class="lineno">  502</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00503" name="l00503"></a><span class="lineno">  503</span>  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
-<div class="line"><a id="l00504" name="l00504"></a><span class="lineno">  504</span> </div>
-<div class="line"><a id="l00505" name="l00505"></a><span class="lineno">  505</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00506" name="l00506"></a><span class="lineno">  506</span><span class="comment">   * Output to screen.</span></div>
-<div class="line"><a id="l00507" name="l00507"></a><span class="lineno">  507</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00508" name="l00508"></a><span class="lineno">  508</span>  dealii::ConditionalOStream pcout;</div>
-<div class="line"><a id="l00509" name="l00509"></a><span class="lineno">  509</span>};</div>
+<div class="line"><a id="l00444" name="l00444"></a><span class="lineno">  444</span>  std::string <span class="keyword">const</span> quad_index               = <span class="stringliteral">&quot;quad&quot;</span>;</div>
+<div class="line"><a id="l00445" name="l00445"></a><span class="lineno">  445</span>  std::string <span class="keyword">const</span> quad_index_gauss_lobatto = <span class="stringliteral">&quot;quad_gauss_lobatto&quot;</span>;</div>
+<div class="line"><a id="l00446" name="l00446"></a><span class="lineno">  446</span> </div>
+<div class="line"><a id="l00447" name="l00447"></a><span class="lineno">  447</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00448" name="l00448"></a><span class="lineno">  448</span><span class="comment">   * Matrix-free operator evaluation.</span></div>
+<div class="line"><a id="l00449" name="l00449"></a><span class="lineno">  449</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00450" name="l00450"></a><span class="lineno">  450</span>  std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span>&gt; matrix_free;</div>
+<div class="line"><a id="l00451" name="l00451"></a><span class="lineno">  451</span>  std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt; <span class="keyword">const</span>&gt;     matrix_free_data;</div>
+<div class="line"><a id="l00452" name="l00452"></a><span class="lineno">  452</span> </div>
+<div class="line"><a id="l00453" name="l00453"></a><span class="lineno">  453</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00454" name="l00454"></a><span class="lineno">  454</span><span class="comment">   * Interface coupling</span></div>
+<div class="line"><a id="l00455" name="l00455"></a><span class="lineno">  455</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00456" name="l00456"></a><span class="lineno">  456</span>  <span class="comment">// TODO: The PDE operator should only have read access to interface data</span></div>
+<div class="line"><a id="l00457" name="l00457"></a><span class="lineno">  457</span>  <span class="keyword">mutable</span> std::shared_ptr&lt;ContainerInterfaceData&lt;1, dim, double&gt;&gt; interface_data_dirichlet_cached;</div>
+<div class="line"><a id="l00458" name="l00458"></a><span class="lineno">  458</span>  <span class="keyword">mutable</span> std::shared_ptr&lt;ContainerInterfaceData&lt;1, dim, double&gt;&gt; interface_data_neumann_cached;</div>
+<div class="line"><a id="l00459" name="l00459"></a><span class="lineno">  459</span> </div>
+<div class="line"><a id="l00460" name="l00460"></a><span class="lineno">  460</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00461" name="l00461"></a><span class="lineno">  461</span><span class="comment">   * Basic operators.</span></div>
+<div class="line"><a id="l00462" name="l00462"></a><span class="lineno">  462</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00463" name="l00463"></a><span class="lineno">  463</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1BodyForceOperator.html">BodyForceOperator&lt;dim, Number&gt;</a> body_force_operator;</div>
+<div class="line"><a id="l00464" name="l00464"></a><span class="lineno">  464</span> </div>
+<div class="line"><a id="l00465" name="l00465"></a><span class="lineno">  465</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1LinearOperator.html">LinearOperator&lt;dim, Number&gt;</a>    elasticity_operator_linear;</div>
+<div class="line"><a id="l00466" name="l00466"></a><span class="lineno">  466</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1NonLinearOperator.html">NonLinearOperator&lt;dim, Number&gt;</a> elasticity_operator_nonlinear;</div>
+<div class="line"><a id="l00467" name="l00467"></a><span class="lineno">  467</span>  <a class="code hl_struct" href="structExaDG_1_1Structure_1_1OperatorData.html">OperatorData&lt;dim&gt;</a>              operator_data;</div>
+<div class="line"><a id="l00468" name="l00468"></a><span class="lineno">  468</span> </div>
+<div class="line"><a id="l00469" name="l00469"></a><span class="lineno">  469</span>  <span class="comment">// The mass operator is only relevant for unsteady problems:</span></div>
+<div class="line"><a id="l00470" name="l00470"></a><span class="lineno">  470</span>  <span class="comment">// it is used to compute the initial acceleration and to evaluate</span></div>
+<div class="line"><a id="l00471" name="l00471"></a><span class="lineno">  471</span>  <span class="comment">// the mass operator term applied to a constant vector (independent</span></div>
+<div class="line"><a id="l00472" name="l00472"></a><span class="lineno">  472</span>  <span class="comment">// of new displacements) appearing on the right-hand side for linear</span></div>
+<div class="line"><a id="l00473" name="l00473"></a><span class="lineno">  473</span>  <span class="comment">// problems and in the residual for nonlinear problems.</span></div>
+<div class="line"><a id="l00474" name="l00474"></a><span class="lineno">  474</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1MassOperator.html">Structure::MassOperator&lt;dim, Number&gt;</a> mass_operator;</div>
+<div class="line"><a id="l00475" name="l00475"></a><span class="lineno">  475</span> </div>
+<div class="line"><a id="l00476" name="l00476"></a><span class="lineno">  476</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00477" name="l00477"></a><span class="lineno">  477</span><span class="comment">   * Solution of nonlinear systems of equations</span></div>
+<div class="line"><a id="l00478" name="l00478"></a><span class="lineno">  478</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00479" name="l00479"></a><span class="lineno">  479</span> </div>
+<div class="line"><a id="l00480" name="l00480"></a><span class="lineno">  480</span>  <span class="comment">// operators required for Newton solver</span></div>
+<div class="line"><a id="l00481" name="l00481"></a><span class="lineno">  481</span>  <span class="keyword">mutable</span> <a class="code hl_class" href="classExaDG_1_1Structure_1_1ResidualOperator.html">ResidualOperator&lt;dim, Number&gt;</a>   residual_operator;</div>
+<div class="line"><a id="l00482" name="l00482"></a><span class="lineno">  482</span>  <span class="keyword">mutable</span> <a class="code hl_class" href="classExaDG_1_1Structure_1_1LinearizedOperator.html">LinearizedOperator&lt;dim, Number&gt;</a> linearized_operator;</div>
+<div class="line"><a id="l00483" name="l00483"></a><span class="lineno">  483</span> </div>
+<div class="line"><a id="l00484" name="l00484"></a><span class="lineno">  484</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1Newton_1_1Solver.html">Newton::Solver</a>&lt;VectorType,</div>
+<div class="line"><a id="l00485" name="l00485"></a><span class="lineno">  485</span>                         <a class="code hl_class" href="classExaDG_1_1Structure_1_1ResidualOperator.html">ResidualOperator&lt;dim, Number&gt;</a>,</div>
+<div class="line"><a id="l00486" name="l00486"></a><span class="lineno">  486</span>                         <a class="code hl_class" href="classExaDG_1_1Structure_1_1LinearizedOperator.html">LinearizedOperator&lt;dim, Number&gt;</a>,</div>
+<div class="line"><a id="l00487" name="l00487"></a><span class="lineno">  487</span>                         <a class="code hl_class" href="classExaDG_1_1Krylov_1_1SolverBase.html">Krylov::SolverBase&lt;VectorType&gt;</a>&gt;</div>
+<div class="line"><a id="l00488" name="l00488"></a><span class="lineno">  488</span>    <a class="code hl_class" href="classExaDG_1_1Newton_1_1Solver.html">NewtonSolver</a>;</div>
+<div class="line"><a id="l00489" name="l00489"></a><span class="lineno">  489</span> </div>
+<div class="line"><a id="l00490" name="l00490"></a><span class="lineno">  490</span>  std::shared_ptr&lt;NewtonSolver&gt; newton_solver;</div>
+<div class="line"><a id="l00491" name="l00491"></a><span class="lineno">  491</span> </div>
+<div class="line"><a id="l00492" name="l00492"></a><span class="lineno">  492</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00493" name="l00493"></a><span class="lineno">  493</span><span class="comment">   * Solution of linear systems of equations</span></div>
+<div class="line"><a id="l00494" name="l00494"></a><span class="lineno">  494</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00495" name="l00495"></a><span class="lineno">  495</span>  std::shared_ptr&lt;PreconditionerBase&lt;Number&gt;&gt; preconditioner;</div>
+<div class="line"><a id="l00496" name="l00496"></a><span class="lineno">  496</span> </div>
+<div class="line"><a id="l00497" name="l00497"></a><span class="lineno">  497</span>  std::shared_ptr&lt;Krylov::SolverBase&lt;VectorType&gt;&gt; linear_solver;</div>
+<div class="line"><a id="l00498" name="l00498"></a><span class="lineno">  498</span> </div>
+<div class="line"><a id="l00499" name="l00499"></a><span class="lineno">  499</span>  <span class="comment">// mass operator inversion</span></div>
+<div class="line"><a id="l00500" name="l00500"></a><span class="lineno">  500</span>  std::shared_ptr&lt;PreconditionerBase&lt;Number&gt;&gt;     mass_preconditioner;</div>
+<div class="line"><a id="l00501" name="l00501"></a><span class="lineno">  501</span>  std::shared_ptr&lt;Krylov::SolverBase&lt;VectorType&gt;&gt; mass_solver;</div>
+<div class="line"><a id="l00502" name="l00502"></a><span class="lineno">  502</span> </div>
+<div class="line"><a id="l00503" name="l00503"></a><span class="lineno">  503</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00504" name="l00504"></a><span class="lineno">  504</span><span class="comment">   * MPI communicator</span></div>
+<div class="line"><a id="l00505" name="l00505"></a><span class="lineno">  505</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00506" name="l00506"></a><span class="lineno">  506</span>  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
+<div class="line"><a id="l00507" name="l00507"></a><span class="lineno">  507</span> </div>
+<div class="line"><a id="l00508" name="l00508"></a><span class="lineno">  508</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00509" name="l00509"></a><span class="lineno">  509</span><span class="comment">   * Output to screen.</span></div>
+<div class="line"><a id="l00510" name="l00510"></a><span class="lineno">  510</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00511" name="l00511"></a><span class="lineno">  511</span>  dealii::ConditionalOStream pcout;</div>
+<div class="line"><a id="l00512" name="l00512"></a><span class="lineno">  512</span>};</div>
 </div>
-<div class="line"><a id="l00510" name="l00510"></a><span class="lineno">  510</span> </div>
-<div class="line"><a id="l00511" name="l00511"></a><span class="lineno">  511</span>} <span class="comment">// namespace Structure</span></div>
-<div class="line"><a id="l00512" name="l00512"></a><span class="lineno">  512</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00513" name="l00513"></a><span class="lineno">  513</span> </div>
-<div class="line"><a id="l00514" name="l00514"></a><span class="lineno">  514</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00514" name="l00514"></a><span class="lineno">  514</span>} <span class="comment">// namespace Structure</span></div>
+<div class="line"><a id="l00515" name="l00515"></a><span class="lineno">  515</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00516" name="l00516"></a><span class="lineno">  516</span> </div>
+<div class="line"><a id="l00517" name="l00517"></a><span class="lineno">  517</span><span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclassExaDG_1_1Grid_html"><div class="ttname"><a href="classExaDG_1_1Grid.html">ExaDG::Grid</a></div><div class="ttdef"><b>Definition</b> grid.h:40</div></div>
 <div class="ttc" id="aclassExaDG_1_1Krylov_1_1SolverBase_html"><div class="ttname"><a href="classExaDG_1_1Krylov_1_1SolverBase.html">ExaDG::Krylov::SolverBase</a></div><div class="ttdef"><b>Definition</b> iterative_solvers_dealii_wrapper.h:40</div></div>
+<div class="ttc" id="aclassExaDG_1_1MultigridMappings_html"><div class="ttname"><a href="classExaDG_1_1MultigridMappings.html">ExaDG::MultigridMappings</a></div><div class="ttdef"><b>Definition</b> grid.h:84</div></div>
 <div class="ttc" id="aclassExaDG_1_1Newton_1_1Solver_html"><div class="ttname"><a href="classExaDG_1_1Newton_1_1Solver.html">ExaDG::Newton::Solver</a></div><div class="ttdef"><b>Definition</b> newton_solver.h:40</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1BodyForceOperator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1BodyForceOperator.html">ExaDG::Structure::BodyForceOperator</a></div><div class="ttdef"><b>Definition</b> body_force_operator.h:50</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1Interface_1_1Operator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1Interface_1_1Operator.html">ExaDG::Structure::Interface::Operator</a></div><div class="ttdef"><b>Definition</b> interface.h:36</div></div>
@@ -587,10 +591,10 @@ $(document).ready(function() { init_codefold(0); });
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1MassOperator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1MassOperator.html">ExaDG::Structure::MassOperator</a></div><div class="ttdef"><b>Definition</b> mass_operator.h:43</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1NonLinearOperator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1NonLinearOperator.html">ExaDG::Structure::NonLinearOperator</a></div><div class="ttdef"><b>Definition</b> nonlinear_operator.h:33</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1Operator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a></div><div class="ttdef"><b>Definition</b> operator.h:165</div></div>
-<div class="ttc" id="aclassExaDG_1_1Structure_1_1Operator_html_ae2dc6afeb088f1cb1e81f552cd291ef7"><div class="ttname"><a href="classExaDG_1_1Structure_1_1Operator.html#ae2dc6afeb088f1cb1e81f552cd291ef7">ExaDG::Structure::Operator::setup</a></div><div class="ttdeci">void setup()</div><div class="ttdef"><b>Definition</b> operator.cpp:274</div></div>
+<div class="ttc" id="aclassExaDG_1_1Structure_1_1Operator_html_ae2dc6afeb088f1cb1e81f552cd291ef7"><div class="ttname"><a href="classExaDG_1_1Structure_1_1Operator.html#ae2dc6afeb088f1cb1e81f552cd291ef7">ExaDG::Structure::Operator::setup</a></div><div class="ttdeci">void setup()</div><div class="ttdef"><b>Definition</b> operator.cpp:276</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1Parameters.html">ExaDG::Structure::Parameters</a></div><div class="ttdef"><b>Definition</b> parameters.h:40</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1ResidualOperator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1ResidualOperator.html">ExaDG::Structure::ResidualOperator</a></div><div class="ttdef"><b>Definition</b> operator.h:59</div></div>
-<div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:34</div></div>
+<div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 <div class="ttc" id="astructExaDG_1_1MatrixFreeData_html"><div class="ttname"><a href="structExaDG_1_1MatrixFreeData.html">ExaDG::MatrixFreeData</a></div><div class="ttdef"><b>Definition</b> matrix_free_data.h:40</div></div>
 <div class="ttc" id="astructExaDG_1_1Structure_1_1BoundaryDescriptor_html"><div class="ttname"><a href="structExaDG_1_1Structure_1_1BoundaryDescriptor.html">ExaDG::Structure::BoundaryDescriptor</a></div><div class="ttdef"><b>Definition</b> boundary_descriptor.h:48</div></div>
 <div class="ttc" id="astructExaDG_1_1Structure_1_1FieldFunctions_html"><div class="ttname"><a href="structExaDG_1_1Structure_1_1FieldFunctions.html">ExaDG::Structure::FieldFunctions</a></div><div class="ttdef"><b>Definition</b> field_functions.h:32</div></div>

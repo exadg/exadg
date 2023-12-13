@@ -117,7 +117,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>std::shared_ptr&lt;TimeIntBDF&lt;dim, Number&gt;&gt;</div>
 <div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>create_time_integrator(std::shared_ptr&lt;SpatialOperatorBase&lt;dim, Number&gt;&gt; pde_operator,</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>                       std::shared_ptr&lt;HelpersALE&lt;Number&gt; <span class="keyword">const</span>&gt;         helpers_ale,</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>                       std::shared_ptr&lt;HelpersALE&lt;dim, Number&gt; <span class="keyword">const</span>&gt;    helpers_ale,</div>
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>                       std::shared_ptr&lt;PostProcessorInterface&lt;Number&gt;&gt;   postprocessor,</div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>                       Parameters <span class="keyword">const</span> &amp;                                parameters,</div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>                       MPI_Comm <span class="keyword">const</span> &amp;                                  mpi_comm,</div>
@@ -161,7 +161,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span> </div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_CREATE_TIME_INTEGRATOR_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:34</div></div>
+<div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

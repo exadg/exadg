@@ -91,9 +91,9 @@ Inheritance diagram for ExaDG::ConvDiff::Operator&lt; dim, Number &gt;:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:af6ad93924160c35325f165113b73f933" id="r_af6ad93924160c35325f165113b73f933"><td class="memItemLeft" align="right" valign="top"><a id="af6ad93924160c35325f165113b73f933" name="af6ad93924160c35325f165113b73f933"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>Operator</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1ConvDiff_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1ConvDiff_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, <a class="el" href="classExaDG_1_1ConvDiff_1_1Parameters.html">Parameters</a> const &amp;param, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
-<tr class="separator:af6ad93924160c35325f165113b73f933"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3baf7222632b285ae9c01524799a9b4f" id="r_a3baf7222632b285ae9c01524799a9b4f"><td class="memItemLeft" align="right" valign="top"><a id="a3baf7222632b285ae9c01524799a9b4f" name="a3baf7222632b285ae9c01524799a9b4f"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>Operator</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridMappings.html">MultigridMappings</a>&lt; dim, Number &gt; &gt; const multigrid_mappings, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1ConvDiff_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1ConvDiff_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, <a class="el" href="classExaDG_1_1ConvDiff_1_1Parameters.html">Parameters</a> const &amp;param, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
+<tr class="separator:a3baf7222632b285ae9c01524799a9b4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a65c5bc919e153a4313bd4e5ff2b7c628" id="r_a65c5bc919e153a4313bd4e5ff2b7c628"><td class="memItemLeft" align="right" valign="top"><a id="a65c5bc919e153a4313bd4e5ff2b7c628" name="a65c5bc919e153a4313bd4e5ff2b7c628"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data</b> (<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &amp;matrix_free_data) const</td></tr>
 <tr class="separator:a65c5bc919e153a4313bd4e5ff2b7c628"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -146,8 +146,6 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>update_conv_diff_oper
 <tr class="memitem:a9fee265e80e91c5d94fe078edf054e7c" id="r_a9fee265e80e91c5d94fe078edf054e7c"><td class="memItemLeft" align="right" valign="top"><a id="a9fee265e80e91c5d94fe078edf054e7c" name="a9fee265e80e91c5d94fe078edf054e7c"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update_after_grid_motion</b> (bool const update_matrix_free)</td></tr>
 <tr class="separator:a9fee265e80e91c5d94fe078edf054e7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0a7abd93d0b03b699237e5811a070dd1" id="r_a0a7abd93d0b03b699237e5811a070dd1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a0a7abd93d0b03b699237e5811a070dd1">fill_grid_coordinates_vector</a> (VectorType &amp;vector) const final</td></tr>
-<tr class="separator:a0a7abd93d0b03b699237e5811a070dd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab54f2f55e639c93c0c410748b5189053" id="r_ab54f2f55e639c93c0c410748b5189053"><td class="memItemLeft" align="right" valign="top"><a id="ab54f2f55e639c93c0c410748b5189053" name="ab54f2f55e639c93c0c410748b5189053"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>prepare_coarsening_and_refinement</b> (std::vector&lt; VectorType * &gt; &amp;vectors)</td></tr>
 <tr class="separator:ab54f2f55e639c93c0c410748b5189053"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -390,36 +388,6 @@ template&lt;int dim, typename Number &gt; </div>
           <td></td>
           <td>)</td>
           <td></td><td> const</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classExaDG_1_1ConvDiff_1_1Interface_1_1Operator.html">ExaDG::ConvDiff::Interface::Operator&lt; Number &gt;</a>.</p>
-
-</div>
-</div>
-<a id="a0a7abd93d0b03b699237e5811a070dd1" name="a0a7abd93d0b03b699237e5811a070dd1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0a7abd93d0b03b699237e5811a070dd1">&#9670;&#160;</a></span>fill_grid_coordinates_vector()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::fill_grid_coordinates_vector </td>
-          <td>(</td>
-          <td class="paramtype">VectorType &amp;&#160;</td>
-          <td class="paramname"><em>vector</em></td><td>)</td>
-          <td> const</td>
         </tr>
       </table>
   </td>

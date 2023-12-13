@@ -110,17 +110,17 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ac5368f76b0fd828496050ecafe02893b" id="r_ac5368f76b0fd828496050ecafe02893b"><td class="memItemLeft" align="right" valign="top"><a id="ac5368f76b0fd828496050ecafe02893b" name="ac5368f76b0fd828496050ecafe02893b"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>MultigridPreconditioner</b> (MPI_Comm const &amp;mpi_comm)</td></tr>
 <tr class="separator:ac5368f76b0fd828496050ecafe02893b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7bc10aaf0a003fc6830fad0489ee4223" id="r_a7bc10aaf0a003fc6830fad0489ee4223"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1MultigridPreconditioner.html#a7bc10aaf0a003fc6830fad0489ee4223">initialize</a> (<a class="el" href="structExaDG_1_1MultigridData.html">MultigridData</a> const &amp;mg_data, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping, dealii::FiniteElement&lt; dim &gt; const &amp;fe, <a class="el" href="classExaDG_1_1ConvDiff_1_1CombinedOperator.html">PDEOperator</a> const &amp;pde_operator, MultigridOperatorType const &amp;mg_operator_type, bool const mesh_is_moving, Map_DBC const &amp;dirichlet_bc, Map_DBC_ComponentMask const &amp;dirichlet_bc_component_mask)</td></tr>
-<tr class="separator:a7bc10aaf0a003fc6830fad0489ee4223"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac0130d76a5d29068b3def3b5a4c5c4c1" id="r_ac0130d76a5d29068b3def3b5a4c5c4c1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1MultigridPreconditioner.html#ac0130d76a5d29068b3def3b5a4c5c4c1">initialize</a> (<a class="el" href="structExaDG_1_1MultigridData.html">MultigridData</a> const &amp;mg_data, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridMappings.html">MultigridMappings</a>&lt; dim, Number &gt; &gt; const multigrid_mappings, dealii::FiniteElement&lt; dim &gt; const &amp;fe, <a class="el" href="classExaDG_1_1ConvDiff_1_1CombinedOperator.html">PDEOperator</a> const &amp;pde_operator, MultigridOperatorType const &amp;mg_operator_type, bool const mesh_is_moving, Map_DBC const &amp;dirichlet_bc, Map_DBC_ComponentMask const &amp;dirichlet_bc_component_mask)</td></tr>
+<tr class="separator:ac0130d76a5d29068b3def3b5a4c5c4c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acbbe7647874c74b57098abfdadedea75" id="r_acbbe7647874c74b57098abfdadedea75"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1MultigridPreconditioner.html#acbbe7647874c74b57098abfdadedea75">update</a> () final</td></tr>
 <tr class="separator:acbbe7647874c74b57098abfdadedea75"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1MultigridPreconditionerBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1MultigridPreconditionerBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase&lt; dim, Number, MultigridNumber_ &gt;</a></td></tr>
 <tr class="memitem:a4c41692965f1fc95a72f28bdfac62206 inherit pub_methods_classExaDG_1_1MultigridPreconditionerBase" id="r_a4c41692965f1fc95a72f28bdfac62206"><td class="memItemLeft" align="right" valign="top">
 &#160;</td><td class="memItemRight" valign="bottom"><b>MultigridPreconditionerBase</b> (MPI_Comm const &amp;comm)</td></tr>
 <tr class="separator:a4c41692965f1fc95a72f28bdfac62206 inherit pub_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:affca967aaa0a07d03041a556a88a9fa3 inherit pub_methods_classExaDG_1_1MultigridPreconditionerBase" id="r_affca967aaa0a07d03041a556a88a9fa3"><td class="memItemLeft" align="right" valign="top">
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (<a class="el" href="structExaDG_1_1MultigridData.html">MultigridData</a> const &amp;data, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping, dealii::FiniteElement&lt; dim &gt; const &amp;fe, bool const operator_is_singular, Map_DBC const &amp;dirichlet_bc, Map_DBC_ComponentMask const &amp;dirichlet_bc_component_mask, bool const initialize_preconditioners)</td></tr>
-<tr class="separator:affca967aaa0a07d03041a556a88a9fa3 inherit pub_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8ceadcbb97dd8e0d5c4df0380b1e41e0 inherit pub_methods_classExaDG_1_1MultigridPreconditionerBase" id="r_a8ceadcbb97dd8e0d5c4df0380b1e41e0"><td class="memItemLeft" align="right" valign="top">
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (<a class="el" href="structExaDG_1_1MultigridData.html">MultigridData</a> const &amp;data, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridMappings.html">MultigridMappings</a>&lt; dim, Number &gt; &gt; const multigrid_mappings, dealii::FiniteElement&lt; dim &gt; const &amp;fe, bool const operator_is_singular, Map_DBC const &amp;dirichlet_bc, Map_DBC_ComponentMask const &amp;dirichlet_bc_component_mask, bool const initialize_preconditioners)</td></tr>
+<tr class="separator:a8ceadcbb97dd8e0d5c4df0380b1e41e0 inherit pub_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0250081095f4dc526b83bbdf4457efb8 inherit pub_methods_classExaDG_1_1MultigridPreconditionerBase" id="r_a0250081095f4dc526b83bbdf4457efb8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a0250081095f4dc526b83bbdf4457efb8">update</a> () override</td></tr>
 <tr class="separator:a0250081095f4dc526b83bbdf4457efb8 inherit pub_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6ee5e6e4fd330daf511d9190d71841bc inherit pub_methods_classExaDG_1_1MultigridPreconditionerBase" id="r_a6ee5e6e4fd330daf511d9190d71841bc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html#a6ee5e6e4fd330daf511d9190d71841bc">vmult</a> (VectorType &amp;dst, VectorType const &amp;src) const override</td></tr>
@@ -188,6 +188,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>do_initialize_transfe
 <tr class="memitem:ae8ef73e7a42e6ca44b00159b6d585437 inherit pro_attribs_classExaDG_1_1MultigridPreconditionerBase" id="r_ae8ef73e7a42e6ca44b00159b6d585437"><td class="memItemLeft" align="right" valign="top">
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>grid</b></td></tr>
 <tr class="separator:ae8ef73e7a42e6ca44b00159b6d585437 inherit pro_attribs_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a407e4db64fa5b7c5734c194b530d2d8b inherit pro_attribs_classExaDG_1_1MultigridPreconditionerBase" id="r_a407e4db64fa5b7c5734c194b530d2d8b"><td class="memItemLeft" align="right" valign="top">
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridMappings.html">MultigridMappings</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>multigrid_mappings</b></td></tr>
+<tr class="separator:a407e4db64fa5b7c5734c194b530d2d8b inherit pro_attribs_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af9a8c6f7450fa77881d9f9b75d0eec36 inherit pro_attribs_classExaDG_1_1MultigridPreconditionerBase" id="r_af9a8c6f7450fa77881d9f9b75d0eec36"><td class="memItemLeft" align="right" valign="top">
 dealii::MGLevelObject&lt; std::shared_ptr&lt; dealii::DoFHandler&lt; dim &gt; const  &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>dof_handlers</b></td></tr>
 <tr class="separator:af9a8c6f7450fa77881d9f9b75d0eec36 inherit pro_attribs_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -215,8 +218,8 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>update_needed</b></td
 <tr class="separator:a62351ea8d0c3aa1c6c3870c9e37158ac inherit pro_attribs_classExaDG_1_1PreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a7bc10aaf0a003fc6830fad0489ee4223" name="a7bc10aaf0a003fc6830fad0489ee4223"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7bc10aaf0a003fc6830fad0489ee4223">&#9670;&#160;</a></span>initialize()</h2>
+<a id="ac0130d76a5d29068b3def3b5a4c5c4c1" name="ac0130d76a5d29068b3def3b5a4c5c4c1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac0130d76a5d29068b3def3b5a4c5c4c1">&#9670;&#160;</a></span>initialize()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -238,8 +241,8 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt;&#160;</td>
-          <td class="paramname"><em>mapping</em>, </td>
+          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridMappings.html">MultigridMappings</a>&lt; dim, Number &gt; &gt; const&#160;</td>
+          <td class="paramname"><em>multigrid_mappings</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
