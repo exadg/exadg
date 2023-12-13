@@ -101,7 +101,8 @@ public:
 
     // grid
     GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
-    multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping);
+    std::shared_ptr<std::vector<std::shared_ptr<dealii::Mapping<dim>>>> coarse_mappings;
+    multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping, coarse_mappings);
 
     grid = std::make_shared<Grid<dim>>();
     create_grid(*grid, mapping, multigrid_mappings);
