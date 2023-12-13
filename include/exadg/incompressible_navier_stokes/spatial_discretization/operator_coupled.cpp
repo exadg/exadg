@@ -36,15 +36,17 @@ namespace IncNS
 {
 template<int dim, typename Number>
 OperatorCoupled<dim, Number>::OperatorCoupled(
-  std::shared_ptr<Grid<dim> const>               grid_in,
-  std::shared_ptr<dealii::Mapping<dim> const>    mapping_in,
-  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
-  Parameters const &                             parameters_in,
-  std::string const &                            field_in,
-  MPI_Comm const &                               mpi_comm_in)
+  std::shared_ptr<Grid<dim> const>                      grid_in,
+  std::shared_ptr<dealii::Mapping<dim> const>           mapping_in,
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings_in,
+  std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim> const>            field_functions_in,
+  Parameters const &                                    parameters_in,
+  std::string const &                                   field_in,
+  MPI_Comm const &                                      mpi_comm_in)
   : Base(grid_in,
          mapping_in,
+         multigrid_mappings_in,
          boundary_descriptor_in,
          field_functions_in,
          parameters_in,
@@ -488,7 +490,7 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
 
   mg_preconditioner->initialize(this->param.multigrid_data_velocity_block,
                                 this->grid,
-                                this->get_mapping(),
+                                this->multigrid_mappings,
                                 this->get_dof_handler_u().get_fe(),
                                 this->momentum_operator,
                                 this->param.multigrid_operator_type_velocity_block,
@@ -622,7 +624,7 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complement()
   auto & dof_handler = this->get_dof_handler_p();
   mg_preconditioner->initialize(mg_data,
                                 this->grid,
-                                this->get_mapping(),
+                                this->multigrid_mappings,
                                 dof_handler.get_fe(),
                                 laplace_operator_data,
                                 this->param.ale_formulation,

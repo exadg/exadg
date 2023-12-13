@@ -27,8 +27,6 @@
 // ExaDG
 #include <exadg/convection_diffusion/driver.h>
 #include <exadg/convection_diffusion/time_integration/create_time_integrator.h>
-#include <exadg/grid/get_dynamic_mapping.h>
-#include <exadg/grid/grid_utilities.h>
 #include <exadg/operators/throughput_parameters.h>
 #include <exadg/utilities/print_solver_results.h>
 
@@ -59,9 +57,11 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up scalar convection-diffusion solver:" << std::endl;
 
-  application->setup(grid, mapping);
+  application->setup(grid, mapping, multigrid_mappings);
 
-  if(application->get_parameters().ale_formulation) // moving mesh
+  bool const ale = application->get_parameters().ale_formulation;
+
+  if(ale) // moving mesh
   {
     std::shared_ptr<dealii::Function<dim>> mesh_motion =
       application->create_mesh_movement_function();
@@ -72,7 +72,9 @@ Driver<dim, Number>::setup()
       mesh_motion,
       application->get_parameters().start_time);
 
-    helpers_ale = std::make_shared<HelpersALE<Number>>();
+    ale_multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(ale_mapping);
+
+    helpers_ale = std::make_shared<HelpersALE<dim, Number>>();
 
     helpers_ale->move_grid = [&](double const & time) {
       ale_mapping->update(time,
@@ -83,19 +85,23 @@ Driver<dim, Number>::setup()
     helpers_ale->update_pde_operator_after_grid_motion = [&]() {
       pde_operator->update_after_grid_motion(true);
     };
+
+    helpers_ale->fill_grid_coordinates_vector = [&](VectorType & grid_coordinates,
+                                                    dealii::DoFHandler<dim> const & dof_handler) {
+      ale_mapping->fill_grid_coordinates_vector(grid_coordinates, dof_handler);
+    };
   }
 
-  std::shared_ptr<dealii::Mapping<dim> const> dynamic_mapping =
-    get_dynamic_mapping<dim, Number>(mapping, ale_mapping);
-
   // initialize convection-diffusion operator
-  pde_operator = std::make_shared<Operator<dim, Number>>(grid,
-                                                         dynamic_mapping,
-                                                         application->get_boundary_descriptor(),
-                                                         application->get_field_functions(),
-                                                         application->get_parameters(),
-                                                         "scalar",
-                                                         mpi_comm);
+  pde_operator =
+    std::make_shared<Operator<dim, Number>>(grid,
+                                            ale ? ale_mapping->get_mapping() : mapping,
+                                            ale ? ale_multigrid_mappings : multigrid_mappings,
+                                            application->get_boundary_descriptor(),
+                                            application->get_field_functions(),
+                                            application->get_parameters(),
+                                            "scalar",
+                                            mpi_comm);
 
   // setup convection-diffusion operator
   pde_operator->setup();

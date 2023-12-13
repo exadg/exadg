@@ -36,14 +36,14 @@ MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & m
 template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize(
-  MultigridData const &                       mg_data,
-  std::shared_ptr<Grid<dim> const>            grid,
-  std::shared_ptr<dealii::Mapping<dim> const> mapping,
-  dealii::FiniteElement<dim> const &          fe,
-  ElasticityOperatorBase<dim, Number> const & pde_operator_in,
-  bool const                                  nonlinear_in,
-  Map_DBC const &                             dirichlet_bc,
-  Map_DBC_ComponentMask const &               dirichlet_bc_component_mask)
+  MultigridData const &                                 mg_data,
+  std::shared_ptr<Grid<dim> const>                      grid,
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+  dealii::FiniteElement<dim> const &                    fe,
+  ElasticityOperatorBase<dim, Number> const &           pde_operator_in,
+  bool const                                            nonlinear_in,
+  Map_DBC const &                                       dirichlet_bc,
+  Map_DBC_ComponentMask const &                         dirichlet_bc_component_mask)
 {
   pde_operator = &pde_operator_in;
 
@@ -53,7 +53,7 @@ MultigridPreconditioner<dim, Number>::initialize(
 
   Base::initialize(mg_data,
                    grid,
-                   mapping,
+                   multigrid_mappings,
                    fe,
                    false /*operator_is_singular*/,
                    dirichlet_bc,

@@ -55,20 +55,20 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::MultigridPrecondition
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
-  MultigridData const &                       data,
-  std::shared_ptr<Grid<dim> const>            grid,
-  std::shared_ptr<dealii::Mapping<dim> const> mapping,
-  dealii::FiniteElement<dim> const &          fe,
-  bool const                                  operator_is_singular,
-  Map_DBC const &                             dirichlet_bc,
-  Map_DBC_ComponentMask const &               dirichlet_bc_component_mask,
-  bool const                                  initialize_preconditioners)
+  MultigridData const &                                 data,
+  std::shared_ptr<Grid<dim> const>                      grid,
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+  dealii::FiniteElement<dim> const &                    fe,
+  bool const                                            operator_is_singular,
+  Map_DBC const &                                       dirichlet_bc,
+  Map_DBC_ComponentMask const &                         dirichlet_bc_component_mask,
+  bool const                                            initialize_preconditioners)
 {
   this->data = data;
 
   this->grid = grid;
 
-  this->mapping = mapping;
+  this->multigrid_mappings = multigrid_mappings;
 
   bool const is_dg = (fe.dofs_per_vertex == 0);
 
@@ -328,12 +328,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mapping()
 {
   unsigned int const n_h_levels = level_info.back().h_level() - level_info.front().h_level() + 1;
 
-  if(n_h_levels > 1)
-  {
-    coarse_mappings.resize(n_h_levels - 1);
-
-    grid->initialize_coarse_mappings(coarse_mappings, mapping);
-  }
+  multigrid_mappings->initialize_coarse_mappings(*grid, n_h_levels);
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -341,14 +336,9 @@ dealii::Mapping<dim> const &
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::get_mapping(
   unsigned int const h_level) const
 {
-  if(h_level < coarse_mappings.size())
-  {
-    return *(coarse_mappings[h_level]);
-  }
-  else
-  {
-    return *mapping;
-  }
+  unsigned int const n_h_levels = level_info.back().h_level() - level_info.front().h_level() + 1;
+
+  return multigrid_mappings->get_mapping(h_level, n_h_levels);
 }
 
 template<int dim, typename Number, typename MultigridNumber>

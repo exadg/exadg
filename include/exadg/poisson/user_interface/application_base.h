@@ -92,7 +92,9 @@ public:
   }
 
   void
-  setup(std::shared_ptr<Grid<dim>> & grid, std::shared_ptr<dealii::Mapping<dim>> & mapping)
+  setup(std::shared_ptr<Grid<dim>> &                      grid,
+        std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+        std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings)
   {
     // parameters
     parse_parameters();
@@ -102,8 +104,10 @@ public:
 
     // grid
     GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
+    multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping);
+
     grid = std::make_shared<Grid<dim>>();
-    create_grid(*grid, mapping);
+    create_grid(*grid, mapping, multigrid_mappings);
     print_grid_info(pcout, *grid);
 
     if(compute_aspect_ratio)
@@ -183,7 +187,9 @@ private:
   set_parameters() = 0;
 
   virtual void
-  create_grid(Grid<dim> & grid, std::shared_ptr<dealii::Mapping<dim>> & mapping) = 0;
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) = 0;
 
   virtual void
   set_boundary_descriptor() = 0;

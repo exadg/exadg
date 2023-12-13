@@ -50,7 +50,7 @@ private:
 
 public:
   TimeIntBDFCoupled(std::shared_ptr<Operator>                       operator_in,
-                    std::shared_ptr<HelpersALE<Number> const>       helpers_ale_in,
+                    std::shared_ptr<HelpersALE<dim, Number> const>  helpers_ale_in,
                     std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
                     Parameters const &                              param_in,
                     MPI_Comm const &                                mpi_comm_in,

@@ -38,14 +38,14 @@ MultigridPreconditionerProjection<dim, Number>::MultigridPreconditionerProjectio
 template<int dim, typename Number>
 void
 MultigridPreconditionerProjection<dim, Number>::initialize(
-  MultigridData const &                       mg_data,
-  std::shared_ptr<Grid<dim> const>            grid,
-  std::shared_ptr<dealii::Mapping<dim> const> mapping,
-  dealii::FiniteElement<dim> const &          fe,
-  PDEOperator const &                         pde_operator,
-  bool const                                  mesh_is_moving,
-  Map_DBC const &                             dirichlet_bc,
-  Map_DBC_ComponentMask const &               dirichlet_bc_component_mask)
+  MultigridData const &                                 mg_data,
+  std::shared_ptr<Grid<dim> const>                      grid,
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+  dealii::FiniteElement<dim> const &                    fe,
+  PDEOperator const &                                   pde_operator,
+  bool const                                            mesh_is_moving,
+  Map_DBC const &                                       dirichlet_bc,
+  Map_DBC_ComponentMask const &                         dirichlet_bc_component_mask)
 {
   this->pde_operator = &pde_operator;
 
@@ -55,7 +55,7 @@ MultigridPreconditionerProjection<dim, Number>::initialize(
 
   Base::initialize(mg_data,
                    grid,
-                   mapping,
+                   multigrid_mappings,
                    fe,
                    false /*operator_is_singular*/,
                    dirichlet_bc,

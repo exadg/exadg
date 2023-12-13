@@ -33,7 +33,7 @@ namespace IncNS
 template<int dim, typename Number>
 TimeIntBDF<dim, Number>::TimeIntBDF(
   std::shared_ptr<SpatialOperatorBase<dim, Number>> operator_in,
-  std::shared_ptr<HelpersALE<Number> const>         helpers_ale_in,
+  std::shared_ptr<HelpersALE<dim, Number> const>    helpers_ale_in,
   std::shared_ptr<PostProcessorInterface<Number>>   postprocessor_in,
   Parameters const &                                param_in,
   MPI_Comm const &                                  mpi_comm_in,
@@ -99,7 +99,8 @@ TimeIntBDF<dim, Number>::setup_derived()
     // start_with_low_order == false)
 
     helpers_ale->move_grid(this->get_time());
-    operator_base->fill_grid_coordinates_vector(vec_grid_coordinates[0]);
+    helpers_ale->fill_grid_coordinates_vector(vec_grid_coordinates[0],
+                                              this->operator_base->get_dof_handler_u());
 
     if(this->start_with_low_order == false)
     {
@@ -107,7 +108,8 @@ TimeIntBDF<dim, Number>::setup_derived()
       for(unsigned int i = 1; i < this->order; ++i)
       {
         helpers_ale->move_grid(this->get_previous_time(i));
-        operator_base->fill_grid_coordinates_vector(vec_grid_coordinates[i]);
+        helpers_ale->fill_grid_coordinates_vector(vec_grid_coordinates[i],
+                                                  this->operator_base->get_dof_handler_u());
       }
     }
   }
@@ -152,7 +154,8 @@ void
 TimeIntBDF<dim, Number>::ale_update()
 {
   // and compute grid coordinates at the end of the current time step t_{n+1}
-  operator_base->fill_grid_coordinates_vector(grid_coordinates_np);
+  helpers_ale->fill_grid_coordinates_vector(grid_coordinates_np,
+                                            this->operator_base->get_dof_handler_u());
 
   // and update grid velocity using BDF time derivative
   compute_bdf_time_derivative(grid_velocity,

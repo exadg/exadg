@@ -37,14 +37,14 @@ MultigridPreconditioner<dim, Number, n_components>::MultigridPreconditioner(
 template<int dim, typename Number, int n_components>
 void
 MultigridPreconditioner<dim, Number, n_components>::initialize(
-  MultigridData const &                       mg_data,
-  std::shared_ptr<Grid<dim> const>            grid,
-  std::shared_ptr<dealii::Mapping<dim> const> mapping,
-  dealii::FiniteElement<dim> const &          fe,
-  LaplaceOperatorData<rank, dim> const &      data_in,
-  bool const                                  mesh_is_moving,
-  Map_DBC const &                             dirichlet_bc,
-  Map_DBC_ComponentMask const &               dirichlet_bc_component_mask)
+  MultigridData const &                                 mg_data,
+  std::shared_ptr<Grid<dim> const>                      grid,
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+  dealii::FiniteElement<dim> const &                    fe,
+  LaplaceOperatorData<rank, dim> const &                data_in,
+  bool const                                            mesh_is_moving,
+  Map_DBC const &                                       dirichlet_bc,
+  Map_DBC_ComponentMask const &                         dirichlet_bc_component_mask)
 {
   data = data_in;
 
@@ -54,7 +54,7 @@ MultigridPreconditioner<dim, Number, n_components>::initialize(
 
   Base::initialize(mg_data,
                    grid,
-                   mapping,
+                   multigrid_mappings,
                    fe,
                    data.operator_is_singular,
                    dirichlet_bc,

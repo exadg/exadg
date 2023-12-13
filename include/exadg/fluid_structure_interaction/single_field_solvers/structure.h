@@ -46,6 +46,8 @@ public:
   std::shared_ptr<Grid<dim>>            grid;
   std::shared_ptr<dealii::Mapping<dim>> mapping;
 
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
+
   // matrix-free
   std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
   std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
@@ -68,12 +70,13 @@ SolverStructure<dim, Number>::setup(
   bool const                                                  is_test)
 {
   // setup application
-  application->setup(grid, mapping);
+  application->setup(grid, mapping, multigrid_mappings);
 
   // setup spatial operator
   pde_operator =
     std::make_shared<Structure::Operator<dim, Number>>(grid,
                                                        mapping,
+                                                       multigrid_mappings,
                                                        application->get_boundary_descriptor(),
                                                        application->get_field_functions(),
                                                        application->get_material_descriptor(),

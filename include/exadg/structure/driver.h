@@ -95,6 +95,8 @@ private:
 
   std::shared_ptr<dealii::Mapping<dim>> mapping;
 
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
+
   // user parameters
   Parameters param;
 

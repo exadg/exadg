@@ -174,9 +174,12 @@ private:
   }
 
   void
-  create_grid(Grid<dim> & grid, std::shared_ptr<dealii::Mapping<dim>> & mapping) final
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
     (void)mapping;
+    (void)multigrid_mappings;
 
     AssertThrow(dim == 3, dealii::ExcMessage("This application only makes sense for dim=3."));
 

@@ -30,15 +30,17 @@ namespace IncNS
 {
 template<int dim, typename Number>
 OperatorProjectionMethods<dim, Number>::OperatorProjectionMethods(
-  std::shared_ptr<Grid<dim> const>               grid_in,
-  std::shared_ptr<dealii::Mapping<dim> const>    mapping_in,
-  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
-  Parameters const &                             parameters_in,
-  std::string const &                            field_in,
-  MPI_Comm const &                               mpi_comm_in)
+  std::shared_ptr<Grid<dim> const>                      grid_in,
+  std::shared_ptr<dealii::Mapping<dim> const>           mapping_in,
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings_in,
+  std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim> const>            field_functions_in,
+  Parameters const &                                    parameters_in,
+  std::string const &                                   field_in,
+  MPI_Comm const &                                      mpi_comm_in)
   : Base(grid_in,
          mapping_in,
+         multigrid_mappings_in,
          boundary_descriptor_in,
          field_functions_in,
          parameters_in,
@@ -183,7 +185,7 @@ OperatorProjectionMethods<dim, Number>::setup_preconditioner_pressure_poisson()
     auto & dof_handler = this->get_dof_handler_p();
     mg_preconditioner->initialize(mg_data,
                                   this->grid,
-                                  this->get_mapping(),
+                                  this->multigrid_mappings,
                                   dof_handler.get_fe(),
                                   laplace_operator.get_data(),
                                   this->param.ale_formulation,

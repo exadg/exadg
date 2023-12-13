@@ -54,14 +54,15 @@ public:
         bool const                             is_test)
   {
     // setup application
-    domain->setup(grid, mapping, subsection_names_parameters);
+    domain->setup(grid, mapping, multigrid_mappings, subsection_names_parameters);
 
     // ALE is not used for this solver
-    std::shared_ptr<HelpersALE<Number>> helpers_ale_dummy;
+    std::shared_ptr<HelpersALE<dim, Number>> helpers_ale_dummy;
 
     // initialize pde_operator
     pde_operator = create_operator<dim, Number>(grid,
                                                 mapping,
+                                                multigrid_mappings,
                                                 domain->get_boundary_descriptor(),
                                                 domain->get_field_functions(),
                                                 domain->get_parameters(),
@@ -100,6 +101,8 @@ public:
    */
   std::shared_ptr<Grid<dim>>            grid;
   std::shared_ptr<dealii::Mapping<dim>> mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
 
   /*
    * Spatial discretization

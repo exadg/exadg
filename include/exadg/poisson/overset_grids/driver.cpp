@@ -54,8 +54,8 @@ Driver<dim, n_components, Number>::setup()
   AssertThrow(application->domain1.get(), dealii::ExcMessage("Domain 1 is uninitialized."));
   AssertThrow(application->domain2.get(), dealii::ExcMessage("Domain 2 is uninitialized."));
 
-  application->domain1->setup_pre(grid1, mapping1, {"Domain1"});
-  application->domain2->setup_pre(grid2, mapping2, {"Domain2"});
+  application->domain1->setup_pre(grid1, mapping1, multigrid_mappings1, {"Domain1"});
+  application->domain2->setup_pre(grid2, mapping2, multigrid_mappings2, {"Domain2"});
 
   // set boundary IDs for domain 1
   set_boundary_ids_overlap_region(*grid1->triangulation,
@@ -73,8 +73,8 @@ Driver<dim, n_components, Number>::setup()
   application->domain2->setup_post(grid2);
 
   // setup Poisson solvers
-  poisson1->setup(application->domain1, grid1, mapping1, mpi_comm);
-  poisson2->setup(application->domain2, grid2, mapping2, mpi_comm);
+  poisson1->setup(application->domain1, grid1, mapping1, multigrid_mappings1, mpi_comm);
+  poisson2->setup(application->domain2, grid2, mapping2, multigrid_mappings2, mpi_comm);
 
   // setup interface coupling
   {

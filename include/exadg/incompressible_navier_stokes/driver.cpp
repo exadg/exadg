@@ -25,7 +25,6 @@
 #endif
 
 // ExaDG
-#include <exadg/grid/get_dynamic_mapping.h>
 #include <exadg/incompressible_navier_stokes/driver.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
 #include <exadg/incompressible_navier_stokes/time_integration/create_time_integrator.h>
@@ -59,17 +58,19 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up incompressible Navier-Stokes solver:" << std::endl;
 
-  application->setup(grid, mapping);
+  application->setup(grid, mapping, multigrid_mappings);
 
   // moving mesh (ALE formulation)
-  if(application->get_parameters().ale_formulation)
+  bool const ale = application->get_parameters().ale_formulation;
+
+  if(ale)
   {
     if(application->get_parameters().mesh_movement_type == MeshMovementType::Function)
     {
       std::shared_ptr<dealii::Function<dim>> mesh_motion =
         application->create_mesh_movement_function();
 
-      grid_motion = std::make_shared<DeformedMappingFunction<dim, Number>>(
+      ale_mapping = std::make_shared<DeformedMappingFunction<dim, Number>>(
         mapping,
         application->get_parameters().mapping_degree,
         *grid->triangulation,
@@ -80,9 +81,10 @@ Driver<dim, Number>::setup()
     {
       application->setup_poisson(grid);
 
-      grid_motion = std::make_shared<Poisson::DeformedMapping<dim, Number>>(
+      ale_mapping = std::make_shared<Poisson::DeformedMapping<dim, Number>>(
         grid,
         mapping,
+        multigrid_mappings,
         application->get_boundary_descriptor_poisson(),
         application->get_field_functions_poisson(),
         application->get_parameters_poisson(),
@@ -94,10 +96,12 @@ Driver<dim, Number>::setup()
       AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
-    helpers_ale = std::make_shared<HelpersALE<Number>>();
+    ale_multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(ale_mapping);
+
+    helpers_ale = std::make_shared<HelpersALE<dim, Number>>();
 
     helpers_ale->move_grid = [&](double const & time) {
-      grid_motion->update(time,
+      ale_mapping->update(time,
                           false /* print_solver_info */,
                           this->time_integrator->get_number_of_time_steps());
     };
@@ -105,15 +109,18 @@ Driver<dim, Number>::setup()
     helpers_ale->update_pde_operator_after_grid_motion = [&]() {
       pde_operator->update_after_grid_motion(true);
     };
-  }
 
-  std::shared_ptr<dealii::Mapping<dim> const> mapping_fluid =
-    get_dynamic_mapping<dim, Number>(mapping, grid_motion);
+    helpers_ale->fill_grid_coordinates_vector = [&](VectorType & grid_coordinates,
+                                                    dealii::DoFHandler<dim> const & dof_handler) {
+      ale_mapping->fill_grid_coordinates_vector(grid_coordinates, dof_handler);
+    };
+  }
 
   if(application->get_parameters().solver_type == SolverType::Unsteady)
   {
     pde_operator = create_operator<dim, Number>(grid,
-                                                mapping_fluid,
+                                                ale ? ale_mapping->get_mapping() : mapping,
+                                                ale ? ale_multigrid_mappings : multigrid_mappings,
                                                 application->get_boundary_descriptor(),
                                                 application->get_field_functions(),
                                                 application->get_parameters(),
@@ -122,14 +129,15 @@ Driver<dim, Number>::setup()
   }
   else if(application->get_parameters().solver_type == SolverType::Steady)
   {
-    pde_operator =
-      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(grid,
-                                                            mapping_fluid,
-                                                            application->get_boundary_descriptor(),
-                                                            application->get_field_functions(),
-                                                            application->get_parameters(),
-                                                            "fluid",
-                                                            mpi_comm);
+    pde_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
+      grid,
+      ale ? ale_mapping->get_mapping() : mapping,
+      ale ? ale_multigrid_mappings : multigrid_mappings,
+      application->get_boundary_descriptor(),
+      application->get_field_functions(),
+      application->get_parameters(),
+      "fluid",
+      mpi_comm);
   }
   else
   {

@@ -98,14 +98,14 @@ public:
    * Initialization function.
    */
   void
-  initialize(MultigridData const &                       data,
-             std::shared_ptr<Grid<dim> const>            grid,
-             std::shared_ptr<dealii::Mapping<dim> const> mapping,
-             dealii::FiniteElement<dim> const &          fe,
-             bool const                                  operator_is_singular,
-             Map_DBC const &                             dirichlet_bc,
-             Map_DBC_ComponentMask const &               dirichlet_bc_component_mask,
-             bool const                                  initialize_preconditioners);
+  initialize(MultigridData const &                                 data,
+             std::shared_ptr<Grid<dim> const>                      grid,
+             std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+             dealii::FiniteElement<dim> const &                    fe,
+             bool const                                            operator_is_singular,
+             Map_DBC const &                                       dirichlet_bc,
+             Map_DBC_ComponentMask const &                         dirichlet_bc_component_mask,
+             bool const                                            initialize_preconditioners);
 
   /*
    * Update of multigrid preconditioner including operators, smoothers, etc. (e.g. for problems
@@ -251,6 +251,8 @@ protected:
   // Pointer to grid class.
   std::shared_ptr<Grid<dim> const> grid;
 
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
+
   dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>>              dof_handlers;
   dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> constraints;
 
@@ -327,13 +329,6 @@ private:
   // TODO try to avoid this private member variable by extracting this information from level_info
   // when needed.
   std::vector<MGDoFHandlerIdentifier> p_levels;
-
-  // The mapping associated to the fine triangulation.
-  std::shared_ptr<dealii::Mapping<dim> const> mapping;
-
-  // In case of h-multigrid with more than one h-level, this vector contains the mappings for all
-  // levels coarser than the fine level.
-  std::vector<std::shared_ptr<dealii::Mapping<dim> const>> coarse_mappings;
 
   dealii::MGLevelObject<std::shared_ptr<Smoother>> smoothers;
 

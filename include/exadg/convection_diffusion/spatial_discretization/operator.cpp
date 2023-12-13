@@ -27,7 +27,6 @@
 #include <exadg/convection_diffusion/preconditioners/multigrid_preconditioner.h>
 #include <exadg/convection_diffusion/spatial_discretization/operator.h>
 #include <exadg/convection_diffusion/spatial_discretization/project_velocity.h>
-#include <exadg/grid/get_dynamic_mapping.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/operators/finite_element.h>
 #include <exadg/operators/grid_related_time_step_restrictions.h>
@@ -43,16 +42,18 @@ namespace ConvDiff
 {
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
-  std::shared_ptr<Grid<dim> const>               grid_in,
-  std::shared_ptr<dealii::Mapping<dim> const>    mapping_in,
-  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
-  Parameters const &                             param_in,
-  std::string const &                            field_in,
-  MPI_Comm const &                               mpi_comm_in)
+  std::shared_ptr<Grid<dim> const>                      grid_in,
+  std::shared_ptr<dealii::Mapping<dim> const>           mapping_in,
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings_in,
+  std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim> const>            field_functions_in,
+  Parameters const &                                    param_in,
+  std::string const &                                   field_in,
+  MPI_Comm const &                                      mpi_comm_in)
   : dealii::Subscriptor(),
     grid(grid_in),
     mapping(mapping_in),
+    multigrid_mappings(multigrid_mappings_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(param_in),
@@ -453,7 +454,7 @@ Operator<dim, Number>::setup_preconditioner()
 
     mg_preconditioner->initialize(mg_data,
                                   grid,
-                                  get_mapping(),
+                                  multigrid_mappings,
                                   dof_handler.get_fe(),
                                   combined_operator,
                                   param.mg_operator_type,
@@ -808,20 +809,6 @@ Operator<dim, Number>::update_after_grid_motion(bool const update_matrix_free)
   // The inverse mass operator might contain matrix-based components, in which cases it needs to be
   // updated after the grid has been deformed.
   inverse_mass_operator.update();
-}
-
-template<int dim, typename Number>
-void
-Operator<dim, Number>::fill_grid_coordinates_vector(VectorType & vector) const
-{
-  std::shared_ptr<MappingDoFVector<dim, Number> const> mapping_dof_vector =
-    std::dynamic_pointer_cast<MappingDoFVector<dim, Number> const>(get_mapping());
-
-  AssertThrow(mapping_dof_vector.get(),
-              dealii::ExcMessage("The function fill_grid_coordinates_vector() is only "
-                                 "implemented for mappings of type MappingDoFVector."));
-
-  mapping_dof_vector->fill_grid_coordinates_vector(vector, this->get_dof_handler_velocity());
 }
 
 template<int dim, typename Number>

@@ -20,7 +20,6 @@
  */
 
 #include <exadg/convection_diffusion/time_integration/create_time_integrator.h>
-#include <exadg/grid/get_dynamic_mapping.h>
 #include <exadg/incompressible_flow_with_transport/driver.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
 #include <exadg/incompressible_navier_stokes/time_integration/create_time_integrator.h>
@@ -53,7 +52,7 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up incompressible flow with scalar transport solver:" << std::endl;
 
-  application->setup(grid, mapping);
+  application->setup(grid, mapping, multigrid_mappings);
 
   // additional parameter check: This driver does not implement steady
   // flow-transport problems. Note, however, that ProblemType and
@@ -67,7 +66,9 @@ Driver<dim, Number>::setup()
                 dealii::ExcMessage("ProblemType must be unsteady!"));
   }
 
-  if(application->fluid->get_parameters().ale_formulation) // moving mesh
+  bool const ale = application->fluid->get_parameters().ale_formulation;
+
+  if(ale) // moving mesh
   {
     AssertThrow(application->fluid->get_parameters().mesh_movement_type ==
                   IncNS::MeshMovementType::Function,
@@ -82,7 +83,9 @@ Driver<dim, Number>::setup()
       mesh_motion,
       application->fluid->get_parameters().start_time);
 
-    helpers_ale = std::make_shared<HelpersALE<Number>>();
+    ale_multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(ale_mapping);
+
+    helpers_ale = std::make_shared<HelpersALE<dim, Number>>();
 
     helpers_ale->move_grid = [&](double const & time) {
       ale_mapping->update(time,
@@ -93,16 +96,21 @@ Driver<dim, Number>::setup()
     helpers_ale->update_pde_operator_after_grid_motion = [&]() {
       // Since we use the same MatrixFree object for the fluid field and the scalar transport field,
       // we need to update MatrixFree here in the Driver.
-      matrix_free->update_mapping(*ale_mapping);
+      matrix_free->update_mapping(*ale_mapping->get_mapping());
 
       fluid_operator->update_after_grid_motion(false /* update_matrix_free */);
       for(unsigned int i = 0; i < application->scalars.size(); ++i)
         scalar_operator[i]->update_after_grid_motion(false /* update_matrix_free */);
     };
+
+    helpers_ale->fill_grid_coordinates_vector = [&](VectorType & grid_coordinates,
+                                                    dealii::DoFHandler<dim> const & dof_handler) {
+      ale_mapping->fill_grid_coordinates_vector(grid_coordinates, dof_handler);
+    };
   }
 
   std::shared_ptr<dealii::Mapping<dim> const> dynamic_mapping =
-    get_dynamic_mapping<dim, Number>(mapping, ale_mapping);
+    ale ? ale_mapping->get_mapping() : mapping;
 
   // initialize fluid_operator
   if(application->fluid->get_parameters().solver_type == IncNS::SolverType::Unsteady)
@@ -110,6 +118,7 @@ Driver<dim, Number>::setup()
     fluid_operator =
       IncNS::create_operator<dim, Number>(grid,
                                           dynamic_mapping,
+                                          ale ? ale_multigrid_mappings : multigrid_mappings,
                                           application->fluid->get_boundary_descriptor(),
                                           application->fluid->get_field_functions(),
                                           application->fluid->get_parameters(),
@@ -121,6 +130,7 @@ Driver<dim, Number>::setup()
     fluid_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
       grid,
       dynamic_mapping,
+      ale ? ale_multigrid_mappings : multigrid_mappings,
       application->fluid->get_boundary_descriptor(),
       application->fluid->get_field_functions(),
       application->fluid->get_parameters(),
@@ -144,6 +154,7 @@ Driver<dim, Number>::setup()
     scalar_operator[i] = std::make_shared<ConvDiff::Operator<dim, Number>>(
       grid,
       dynamic_mapping,
+      ale ? ale_multigrid_mappings : multigrid_mappings,
       application->scalars[i]->get_boundary_descriptor(),
       application->scalars[i]->get_field_functions(),
       application->scalars[i]->get_parameters(),
