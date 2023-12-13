@@ -139,32 +139,32 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    this-&gt;dof_index           = dof_index;</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    this-&gt;material_descriptor = material_descriptor;</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    <span class="keywordflow">for</span>(<span class="keyword">auto</span> <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">iter</a> = material_descriptor-&gt;begin(); <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">iter</a> != material_descriptor-&gt;end(); ++<a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">iter</a>)</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    <span class="keywordflow">for</span>(<span class="keyword">auto</span> iter = material_descriptor-&gt;begin(); iter != material_descriptor-&gt;end(); ++iter)</div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    {</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>      dealii::types::material_id    <span class="keywordtype">id</span>   = <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">iter</a>-&gt;first;</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>      std::shared_ptr&lt;MaterialData&gt; data = <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">iter</a>-&gt;second;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>      dealii::types::material_id    <span class="keywordtype">id</span>   = iter-&gt;first;</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>      std::shared_ptr&lt;MaterialData&gt; data = iter-&gt;second;</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>      MaterialType                  type = data-&gt;type;</div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>      <span class="keywordflow">switch</span>(type)</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>      {</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>        <span class="keywordflow">case</span> MaterialType::Undefined:</div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>        {</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>          <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">AssertThrow</a>(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;Material type is undefined.&quot;</span>));</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>          AssertThrow(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;Material type is undefined.&quot;</span>));</div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>          <span class="keywordflow">break</span>;</div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>        }</div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>        <span class="keywordflow">case</span> MaterialType::StVenantKirchhoff:</div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>        {</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>          std::shared_ptr&lt;StVenantKirchhoffData&lt;dim&gt;&gt; <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">data_svk</a> =</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>          std::shared_ptr&lt;StVenantKirchhoffData&lt;dim&gt;&gt; data_svk =</div>
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>            std::static_pointer_cast&lt;StVenantKirchhoffData&lt;dim&gt;&gt;(data);</div>
 <div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>          material_map.insert(</div>
 <div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>            Pair(<span class="keywordtype">id</span>,</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>                 <span class="keyword">new</span> <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">StVenantKirchhoff&lt;dim, Number&gt;</a>(</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>                   matrix_free, dof_index, quad_index, *<a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">data_svk</a>, large_deformation)));</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>                 <span class="keyword">new</span> <a class="code hl_class" href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html">StVenantKirchhoff&lt;dim, Number&gt;</a>(</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>                   matrix_free, dof_index, quad_index, *data_svk, large_deformation)));</div>
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>          <span class="keywordflow">break</span>;</div>
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>        }</div>
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>        <span class="keywordflow">default</span>:</div>
 <div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>        {</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>          <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">AssertThrow</a>(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;Specified material type is not implemented.&quot;</span>));</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>          AssertThrow(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;Specified material type is not implemented.&quot;</span>));</div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>          <span class="keywordflow">break</span>;</div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>        }</div>
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>      }</div>
@@ -174,15 +174,15 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  reinit(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> cell)</div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  {</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    <span class="keyword">auto</span> <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">mid</a> = matrix_free.get_cell_iterator(cell, 0, dof_index)-&gt;material_id();</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    <span class="keyword">auto</span> mid = matrix_free.get_cell_iterator(cell, 0, dof_index)-&gt;material_id();</div>
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span> </div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span><span class="preprocessor">#ifdef DEBUG</span></div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> v = 1; v &lt; matrix_free.n_active_entries_per_cell_batch(cell); v++)</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>      <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">AssertThrow</a>(<a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">mid</a> == matrix_free.get_cell_iterator(cell, v)-&gt;material_id(),</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>      AssertThrow(mid == matrix_free.get_cell_iterator(cell, v)-&gt;material_id(),</div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>                  dealii::ExcMessage(<span class="stringliteral">&quot;You have to categorize cells according to their materials!&quot;</span>));</div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span> </div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    material = material_map[<a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">mid</a>];</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    material = material_map[mid];</div>
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  }</div>
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span> </div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  std::shared_ptr&lt;Material&lt;dim, Number&gt;&gt;</div>
@@ -206,8 +206,8 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span> </div>
 <div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_STRUCTURE_MATERIAL_MATERIAL_HANDLER_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1Structure_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1ApplicationBase.html">ExaDG::Structure::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:46</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1MaterialHandler_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1MaterialHandler.html">ExaDG::Structure::MaterialHandler</a></div><div class="ttdef"><b>Definition</b> material_handler.h:39</div></div>
+<div class="ttc" id="aclassExaDG_1_1Structure_1_1StVenantKirchhoff_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html">ExaDG::Structure::StVenantKirchhoff</a></div><div class="ttdef"><b>Definition</b> st_venant_kirchhoff.h:60</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:34</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->

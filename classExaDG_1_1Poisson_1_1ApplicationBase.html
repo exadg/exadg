@@ -87,54 +87,54 @@ $(function() {
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:a61b3ce9eec59e3a973624c3dd4ee70c2" id="r_a61b3ce9eec59e3a973624c3dd4ee70c2"><td class="memItemLeft" align="right" valign="top"><a id="a61b3ce9eec59e3a973624c3dd4ee70c2" name="a61b3ce9eec59e3a973624c3dd4ee70c2"></a>
-<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">typedef</a> std::vector&lt; dealii::GridTools::PeriodicFacePair&lt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">typename</a> dealii::Triangulation&lt; dim &gt;::cell_iterator &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>PeriodicFaces</b></td></tr>
+typedef std::vector&lt; dealii::GridTools::PeriodicFacePair&lt; typename dealii::Triangulation&lt; dim &gt;::cell_iterator &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>PeriodicFaces</b></td></tr>
 <tr class="separator:a61b3ce9eec59e3a973624c3dd4ee70c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:afe0463fb57d5db8f281298406742f428" id="r_afe0463fb57d5db8f281298406742f428"><td class="memItemLeft" align="right" valign="top"><a id="afe0463fb57d5db8f281298406742f428" name="afe0463fb57d5db8f281298406742f428"></a>
-<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">virtual</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameters</b> (dealii::ParameterHandler &amp;<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">prm</a>)</td></tr>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameters</b> (dealii::ParameterHandler &amp;prm)</td></tr>
 <tr class="separator:afe0463fb57d5db8f281298406742f428"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab7cc740f03375f6c704b763a34b1dc85" id="r_ab7cc740f03375f6c704b763a34b1dc85"><td class="memItemLeft" align="right" valign="top"><a id="ab7cc740f03375f6c704b763a34b1dc85" name="ab7cc740f03375f6c704b763a34b1dc85"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>ApplicationBase</b> (std::string parameter_file, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;comm)</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>ApplicationBase</b> (std::string parameter_file, MPI_Comm const &amp;comm)</td></tr>
 <tr class="separator:ab7cc740f03375f6c704b763a34b1dc85"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adcfb4ea4b3a80ef6619c0d4a76a5d416" id="r_adcfb4ea4b3a80ef6619c0d4a76a5d416"><td class="memItemLeft" align="right" valign="top"><a id="adcfb4ea4b3a80ef6619c0d4a76a5d416" name="adcfb4ea4b3a80ef6619c0d4a76a5d416"></a>
-<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>set_parameters_throughput_study</b> (<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> degree, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> refine_space, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> n_subdivisions_1d_hypercube)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_parameters_throughput_study</b> (unsigned int const degree, unsigned int const refine_space, unsigned int const n_subdivisions_1d_hypercube)</td></tr>
 <tr class="separator:adcfb4ea4b3a80ef6619c0d4a76a5d416"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa7c906ab9563f9afc91e5d108b74ae7c" id="r_aa7c906ab9563f9afc91e5d108b74ae7c"><td class="memItemLeft" align="right" valign="top"><a id="aa7c906ab9563f9afc91e5d108b74ae7c" name="aa7c906ab9563f9afc91e5d108b74ae7c"></a>
-<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>set_parameters_convergence_study</b> (<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> degree, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> refine_space)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_parameters_convergence_study</b> (unsigned int const degree, unsigned int const refine_space)</td></tr>
 <tr class="separator:aa7c906ab9563f9afc91e5d108b74ae7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a41673a00628ddf9de69f7bb7b0dd6ee7" id="r_a41673a00628ddf9de69f7bb7b0dd6ee7"><td class="memItemLeft" align="right" valign="top"><a id="a41673a00628ddf9de69f7bb7b0dd6ee7" name="a41673a00628ddf9de69f7bb7b0dd6ee7"></a>
-<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; &gt; &amp;grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; &gt; &amp;mapping)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; &gt; &amp;grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; &gt; &amp;mapping)</td></tr>
 <tr class="separator:a41673a00628ddf9de69f7bb7b0dd6ee7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4dbb2cb100cd7bc7e25ab1a7df1a5442" id="r_a4dbb2cb100cd7bc7e25ab1a7df1a5442"><td class="memItemLeft" align="right" valign="top"><a id="a4dbb2cb100cd7bc7e25ab1a7df1a5442" name="a4dbb2cb100cd7bc7e25ab1a7df1a5442"></a>
-<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">virtual</a> std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessorBase.html">Poisson::PostProcessorBase</a>&lt; dim, n_components, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_postprocessor</b> ()=0</td></tr>
+virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessorBase.html">Poisson::PostProcessorBase</a>&lt; dim, n_components, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_postprocessor</b> ()=0</td></tr>
 <tr class="separator:a4dbb2cb100cd7bc7e25ab1a7df1a5442"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a091d58a67c5b20f50e7017e9ca8518e2" id="r_a091d58a67c5b20f50e7017e9ca8518e2"><td class="memItemLeft" align="right" valign="top"><a id="a091d58a67c5b20f50e7017e9ca8518e2" name="a091d58a67c5b20f50e7017e9ca8518e2"></a>
-<a class="el" href="classExaDG_1_1Poisson_1_1Parameters.html">Parameters</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_parameters</b> () <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1Parameters.html">Parameters</a> const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_parameters</b> () const</td></tr>
 <tr class="separator:a091d58a67c5b20f50e7017e9ca8518e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad5b90801cf078d170e1e03f05b704b7d" id="r_ad5b90801cf078d170e1e03f05b704b7d"><td class="memItemLeft" align="right" valign="top"><a id="ad5b90801cf078d170e1e03f05b704b7d" name="ad5b90801cf078d170e1e03f05b704b7d"></a>
-std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; rank, dim &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_boundary_descriptor</b> () <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
+std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; rank, dim &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_boundary_descriptor</b> () const</td></tr>
 <tr class="separator:ad5b90801cf078d170e1e03f05b704b7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeda34f7f43aecb4b6f298075e580a568" id="r_aeda34f7f43aecb4b6f298075e580a568"><td class="memItemLeft" align="right" valign="top"><a id="aeda34f7f43aecb4b6f298075e580a568" name="aeda34f7f43aecb4b6f298075e580a568"></a>
-std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_field_functions</b> () <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a></td></tr>
+std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_field_functions</b> () const</td></tr>
 <tr class="separator:aeda34f7f43aecb4b6f298075e580a568"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
-<tr class="memitem:ace872f4b27842877d1e81c01ffb08e82" id="r_ace872f4b27842877d1e81c01ffb08e82"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">static</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html#ace872f4b27842877d1e81c01ffb08e82">rank</a></td></tr>
+<tr class="memitem:ace872f4b27842877d1e81c01ffb08e82" id="r_ace872f4b27842877d1e81c01ffb08e82"><td class="memItemLeft" align="right" valign="top">static unsigned int const&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html#ace872f4b27842877d1e81c01ffb08e82">rank</a></td></tr>
 <tr class="separator:ace872f4b27842877d1e81c01ffb08e82"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
 <tr class="memitem:a911c01834036e02d92c8998296e6adb7" id="r_a911c01834036e02d92c8998296e6adb7"><td class="memItemLeft" align="right" valign="top"><a id="a911c01834036e02d92c8998296e6adb7" name="a911c01834036e02d92c8998296e6adb7"></a>
-<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">virtual</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>parse_parameters</b> ()</td></tr>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>parse_parameters</b> ()</td></tr>
 <tr class="separator:a911c01834036e02d92c8998296e6adb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
 <tr class="memitem:af29f592b39ab00195609156589337792" id="r_af29f592b39ab00195609156589337792"><td class="memItemLeft" align="right" valign="top"><a id="af29f592b39ab00195609156589337792" name="af29f592b39ab00195609156589337792"></a>
-<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a>  &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>mpi_comm</b></td></tr>
+MPI_Comm const  &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>mpi_comm</b></td></tr>
 <tr class="separator:af29f592b39ab00195609156589337792"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9a88dd51ae077eb9b524b32953121257" id="r_a9a88dd51ae077eb9b524b32953121257"><td class="memItemLeft" align="right" valign="top"><a id="a9a88dd51ae077eb9b524b32953121257" name="a9a88dd51ae077eb9b524b32953121257"></a>
 dealii::ConditionalOStream&#160;</td><td class="memItemRight" valign="bottom"><b>pcout</b></td></tr>
@@ -155,13 +155,13 @@ std::string&#160;</td><td class="memItemRight" valign="bottom"><b>parameter_file
 <a class="el" href="structExaDG_1_1GridParameters.html">GridParameters</a>&#160;</td><td class="memItemRight" valign="bottom"><b>grid_parameters</b></td></tr>
 <tr class="separator:aa93a525a723f5713b04f367b470e12ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acc3086f36e4c63f2653e1c2e3764b717" id="r_acc3086f36e4c63f2653e1c2e3764b717"><td class="memItemLeft" align="right" valign="top"><a id="acc3086f36e4c63f2653e1c2e3764b717" name="acc3086f36e4c63f2653e1c2e3764b717"></a>
-<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a>&#160;</td><td class="memItemRight" valign="bottom"><b>n_subdivisions_1d_hypercube</b></td></tr>
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>n_subdivisions_1d_hypercube</b></td></tr>
 <tr class="separator:acc3086f36e4c63f2653e1c2e3764b717"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad31f327de0f8f1f7f3fcb0784abf6ecd" id="r_ad31f327de0f8f1f7f3fcb0784abf6ecd"><td class="memItemLeft" align="right" valign="top"><a id="ad31f327de0f8f1f7f3fcb0784abf6ecd" name="ad31f327de0f8f1f7f3fcb0784abf6ecd"></a>
 <a class="el" href="structExaDG_1_1OutputParameters.html">OutputParameters</a>&#160;</td><td class="memItemRight" valign="bottom"><b>output_parameters</b></td></tr>
 <tr class="separator:ad31f327de0f8f1f7f3fcb0784abf6ecd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac06f18f080333d88b9e51aedb1c2357a" id="r_ac06f18f080333d88b9e51aedb1c2357a"><td class="memItemLeft" align="right" valign="top"><a id="ac06f18f080333d88b9e51aedb1c2357a" name="ac06f18f080333d88b9e51aedb1c2357a"></a>
-<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">bool</a>&#160;</td><td class="memItemRight" valign="bottom"><b>compute_aspect_ratio</b> = <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">false</a></td></tr>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>compute_aspect_ratio</b> = false</td></tr>
 <tr class="separator:ac06f18f080333d88b9e51aedb1c2357a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Data Documentation</h2>
@@ -171,13 +171,13 @@ std::string&#160;</td><td class="memItemRight" valign="bottom"><b>parameter_file
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a> n_components, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">typename</a> Number &gt; </div>
+template&lt;int dim, int n_components, typename Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">ExaDG::Poisson::ApplicationBase</a>&lt; dim, n_components, Number &gt;::rank</td>
+          <td class="memname">unsigned int const <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">ExaDG::Poisson::ApplicationBase</a>&lt; dim, n_components, Number &gt;::rank</td>
         </tr>
       </table>
   </td>

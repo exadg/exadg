@@ -92,27 +92,27 @@ Inheritance diagram for ExaDG::IncNS::TurbulenceModel&lt; dim, Number &gt;:</div
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a9ed5ba2b5b6ad799cd72a06a6b0dd7eb" id="r_a9ed5ba2b5b6ad799cd72a06a6b0dd7eb"><td class="memItemLeft" align="right" valign="top"><a id="a9ed5ba2b5b6ad799cd72a06a6b0dd7eb" name="a9ed5ba2b5b6ad799cd72a06a6b0dd7eb"></a>
-<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">matrix_free_in</a>, dealii::Mapping&lt; dim &gt; <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">mapping_in</a>, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html">Operators::ViscousKernel</a>&lt; dim, Number &gt; &gt; <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">viscous_kernel_in</a>, <a class="el" href="structExaDG_1_1IncNS_1_1TurbulenceModelData.html">TurbulenceModelData</a> <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">turbulence_model_data_in</a>, <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">dof_index_velocity_in</a>)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, dealii::Mapping&lt; dim &gt; const &amp;mapping_in, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html">Operators::ViscousKernel</a>&lt; dim, Number &gt; &gt; viscous_kernel_in, <a class="el" href="structExaDG_1_1IncNS_1_1TurbulenceModelData.html">TurbulenceModelData</a> const &amp;turbulence_model_data_in, unsigned int const dof_index_velocity_in)</td></tr>
 <tr class="separator:a9ed5ba2b5b6ad799cd72a06a6b0dd7eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab375dbb3b31526efa1250df78c3ab7d2" id="r_ab375dbb3b31526efa1250df78c3ab7d2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1TurbulenceModel.html#ab375dbb3b31526efa1250df78c3ab7d2">set_viscosity</a> (VectorType <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> &amp;velocity) <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">final</a></td></tr>
+<tr class="memitem:ab375dbb3b31526efa1250df78c3ab7d2" id="r_ab375dbb3b31526efa1250df78c3ab7d2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1TurbulenceModel.html#ab375dbb3b31526efa1250df78c3ab7d2">set_viscosity</a> (VectorType const &amp;velocity) const final</td></tr>
 <tr class="separator:ab375dbb3b31526efa1250df78c3ab7d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abd2c0623b4ea084cf28516077d1765da" id="r_abd2c0623b4ea084cf28516077d1765da"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1TurbulenceModel.html#abd2c0623b4ea084cf28516077d1765da">add_viscosity</a> (VectorType <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> &amp;velocity) <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">final</a></td></tr>
+<tr class="memitem:abd2c0623b4ea084cf28516077d1765da" id="r_abd2c0623b4ea084cf28516077d1765da"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1TurbulenceModel.html#abd2c0623b4ea084cf28516077d1765da">add_viscosity</a> (VectorType const &amp;velocity) const final</td></tr>
 <tr class="separator:abd2c0623b4ea084cf28516077d1765da"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae739ac5631983a50b2a5bf6e664c50b5" id="r_ae739ac5631983a50b2a5bf6e664c50b5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1TurbulenceModel.html#ae739ac5631983a50b2a5bf6e664c50b5">calculate_filter_width</a> (dealii::Mapping&lt; dim &gt; <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> &amp;mapping)</td></tr>
+<tr class="memitem:ae739ac5631983a50b2a5bf6e664c50b5" id="r_ae739ac5631983a50b2a5bf6e664c50b5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1TurbulenceModel.html#ae739ac5631983a50b2a5bf6e664c50b5">calculate_filter_width</a> (dealii::Mapping&lt; dim &gt; const &amp;mapping)</td></tr>
 <tr class="separator:ae739ac5631983a50b2a5bf6e664c50b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1IncNS_1_1ViscosityModelBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1IncNS_1_1ViscosityModelBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1IncNS_1_1ViscosityModelBase.html">ExaDG::IncNS::ViscosityModelBase&lt; dim, Number &gt;</a></td></tr>
 <tr class="memitem:afb85ec702f59872bd91f6f4fab2bd0f9 inherit pub_methods_classExaDG_1_1IncNS_1_1ViscosityModelBase" id="r_afb85ec702f59872bd91f6f4fab2bd0f9"><td class="memItemLeft" align="right" valign="top">
-<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">matrix_free_in</a>, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html">Operators::ViscousKernel</a>&lt; dim, Number &gt; &gt; <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">viscous_kernel_in</a>, <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">dof_index_velocity_in</a>)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html">Operators::ViscousKernel</a>&lt; dim, Number &gt; &gt; viscous_kernel_in, unsigned int const dof_index_velocity_in)</td></tr>
 <tr class="separator:afb85ec702f59872bd91f6f4fab2bd0f9 inherit pub_methods_classExaDG_1_1IncNS_1_1ViscosityModelBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pro_attribs_classExaDG_1_1IncNS_1_1ViscosityModelBase"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classExaDG_1_1IncNS_1_1ViscosityModelBase')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classExaDG_1_1IncNS_1_1ViscosityModelBase.html">ExaDG::IncNS::ViscosityModelBase&lt; dim, Number &gt;</a></td></tr>
 <tr class="memitem:ab30d9be620dad8af2fc9d0990ede40e5 inherit pro_attribs_classExaDG_1_1IncNS_1_1ViscosityModelBase" id="r_ab30d9be620dad8af2fc9d0990ede40e5"><td class="memItemLeft" align="right" valign="top">
-<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">int</a>&#160;</td><td class="memItemRight" valign="bottom"><b>dof_index_velocity</b></td></tr>
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>dof_index_velocity</b></td></tr>
 <tr class="separator:ab30d9be620dad8af2fc9d0990ede40e5 inherit pro_attribs_classExaDG_1_1IncNS_1_1ViscosityModelBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a29a21219f82cc4e3d542a678b414c7f9 inherit pro_attribs_classExaDG_1_1IncNS_1_1ViscosityModelBase" id="r_a29a21219f82cc4e3d542a678b414c7f9"><td class="memItemLeft" align="right" valign="top">
-dealii::MatrixFree&lt; dim, Number &gt; <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a>  *&#160;</td><td class="memItemRight" valign="bottom"><b>matrix_free</b></td></tr>
+dealii::MatrixFree&lt; dim, Number &gt; const  *&#160;</td><td class="memItemRight" valign="bottom"><b>matrix_free</b></td></tr>
 <tr class="separator:a29a21219f82cc4e3d542a678b414c7f9 inherit pro_attribs_classExaDG_1_1IncNS_1_1ViscosityModelBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4b180ed0845d084e356c862fb1dc14ab inherit pro_attribs_classExaDG_1_1IncNS_1_1ViscosityModelBase" id="r_a4b180ed0845d084e356c862fb1dc14ab"><td class="memItemLeft" align="right" valign="top">
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html">Operators::ViscousKernel</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>viscous_kernel</b></td></tr>
@@ -125,15 +125,15 @@ std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1Operators_1_1Visc
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">typename</a> Number &gt; </div>
+template&lt;int dim, typename Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1IncNS_1_1TurbulenceModel.html">ExaDG::IncNS::TurbulenceModel</a>&lt; dim, Number &gt;::add_viscosity </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1IncNS_1_1TurbulenceModel.html">ExaDG::IncNS::TurbulenceModel</a>&lt; dim, Number &gt;::add_viscosity </td>
           <td>(</td>
-          <td class="paramtype">VectorType <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> &amp;&#160;</td>
+          <td class="paramtype">VectorType const &amp;&#160;</td>
           <td class="paramname"><em>velocity</em></td><td>)</td>
           <td> const</td>
         </tr>
@@ -156,12 +156,12 @@ template&lt;<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">int
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">typename</a> Number &gt; </div>
+template&lt;int dim, typename Number &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1IncNS_1_1TurbulenceModel.html">ExaDG::IncNS::TurbulenceModel</a>&lt; dim, Number &gt;::calculate_filter_width </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1IncNS_1_1TurbulenceModel.html">ExaDG::IncNS::TurbulenceModel</a>&lt; dim, Number &gt;::calculate_filter_width </td>
           <td>(</td>
-          <td class="paramtype">dealii::Mapping&lt; dim &gt; <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> &amp;&#160;</td>
+          <td class="paramtype">dealii::Mapping&lt; dim &gt; const &amp;&#160;</td>
           <td class="paramname"><em>mapping</em></td><td>)</td>
           <td></td>
         </tr>
@@ -177,15 +177,15 @@ template&lt;<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">int
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">typename</a> Number &gt; </div>
+template&lt;int dim, typename Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1IncNS_1_1TurbulenceModel.html">ExaDG::IncNS::TurbulenceModel</a>&lt; dim, Number &gt;::set_viscosity </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1IncNS_1_1TurbulenceModel.html">ExaDG::IncNS::TurbulenceModel</a>&lt; dim, Number &gt;::set_viscosity </td>
           <td>(</td>
-          <td class="paramtype">VectorType <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> &amp;&#160;</td>
+          <td class="paramtype">VectorType const &amp;&#160;</td>
           <td class="paramname"><em>velocity</em></td><td>)</td>
           <td> const</td>
         </tr>

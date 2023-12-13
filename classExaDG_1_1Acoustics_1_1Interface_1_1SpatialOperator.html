@@ -93,22 +93,22 @@ Inheritance diagram for ExaDG::Acoustics::Interface::SpatialOperator&lt; Number 
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:adddfdef83ae180eba856d08fd32e0879" id="r_adddfdef83ae180eba856d08fd32e0879"><td class="memItemLeft" align="right" valign="top"><a id="adddfdef83ae180eba856d08fd32e0879" name="adddfdef83ae180eba856d08fd32e0879"></a>
-<a class="el" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">using</a>&#160;</td><td class="memItemRight" valign="bottom"><b>BlockVectorType</b> = dealii::LinearAlgebra::distributed::BlockVector&lt; Number &gt;</td></tr>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>BlockVectorType</b> = dealii::LinearAlgebra::distributed::BlockVector&lt; Number &gt;</td></tr>
 <tr class="separator:adddfdef83ae180eba856d08fd32e0879"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a98aa260f51b22f34c8370d38b962d92f" id="r_a98aa260f51b22f34c8370d38b962d92f"><td class="memItemLeft" align="right" valign="top"><a id="a98aa260f51b22f34c8370d38b962d92f" name="a98aa260f51b22f34c8370d38b962d92f"></a>
-<a class="el" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">virtual</a> <a class="el" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_dof_vector</b> (BlockVectorType &amp;dst) <a class="el" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">const</a> =0</td></tr>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_dof_vector</b> (BlockVectorType &amp;dst) const =0</td></tr>
 <tr class="separator:a98aa260f51b22f34c8370d38b962d92f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2f77ee53800ff4e96aa232b00c80ec94" id="r_a2f77ee53800ff4e96aa232b00c80ec94"><td class="memItemLeft" align="right" valign="top"><a id="a2f77ee53800ff4e96aa232b00c80ec94" name="a2f77ee53800ff4e96aa232b00c80ec94"></a>
-<a class="el" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">virtual</a> <a class="el" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>prescribe_initial_conditions</b> (BlockVectorType &amp;src, <a class="el" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">const</a> evaluation_time) <a class="el" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">const</a> =0</td></tr>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>prescribe_initial_conditions</b> (BlockVectorType &amp;src, double const evaluation_time) const =0</td></tr>
 <tr class="separator:a2f77ee53800ff4e96aa232b00c80ec94"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2bfd1f6563c4a2de5e67fecc456ef4f4" id="r_a2bfd1f6563c4a2de5e67fecc456ef4f4"><td class="memItemLeft" align="right" valign="top"><a id="a2bfd1f6563c4a2de5e67fecc456ef4f4" name="a2bfd1f6563c4a2de5e67fecc456ef4f4"></a>
-<a class="el" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">virtual</a> <a class="el" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (BlockVectorType &amp;dst, BlockVectorType <a class="el" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">const</a> &amp;src, <a class="el" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">const</a> time) <a class="el" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">const</a> =0</td></tr>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (BlockVectorType &amp;dst, BlockVectorType const &amp;src, double const time) const =0</td></tr>
 <tr class="separator:a2bfd1f6563c4a2de5e67fecc456ef4f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad340b2a1cf8f5daefc999405a67a986a" id="r_ad340b2a1cf8f5daefc999405a67a986a"><td class="memItemLeft" align="right" valign="top"><a id="ad340b2a1cf8f5daefc999405a67a986a" name="ad340b2a1cf8f5daefc999405a67a986a"></a>
-<a class="el" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">virtual</a> <a class="el" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">double</a>&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_time_step_cfl</b> () <a class="el" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">const</a> =0</td></tr>
+virtual double&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_time_step_cfl</b> () const =0</td></tr>
 <tr class="separator:ad340b2a1cf8f5daefc999405a67a986a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>

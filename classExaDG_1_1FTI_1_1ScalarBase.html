@@ -85,37 +85,37 @@ $(function() {
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a5fd7557b78d13942054b58af635c2fc0" id="r_a5fd7557b78d13942054b58af635c2fc0"><td class="memItemLeft" align="right" valign="top"><a id="a5fd7557b78d13942054b58af635c2fc0" name="a5fd7557b78d13942054b58af635c2fc0"></a>
-<a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">virtual</a> <a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameters</b> (dealii::ParameterHandler &amp;<a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">prm</a>, std::vector&lt; std::string &gt; <a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">subsection_names</a>)</td></tr>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameters</b> (dealii::ParameterHandler &amp;prm, std::vector&lt; std::string &gt; const &amp;subsection_names)</td></tr>
 <tr class="separator:a5fd7557b78d13942054b58af635c2fc0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0fb4b96892c12154c5dac53b185bdd55" id="r_a0fb4b96892c12154c5dac53b185bdd55"><td class="memItemLeft" align="right" valign="top"><a id="a0fb4b96892c12154c5dac53b185bdd55" name="a0fb4b96892c12154c5dac53b185bdd55"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>ScalarBase</b> (std::string parameter_file, <a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">const</a> &amp;comm)</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>ScalarBase</b> (std::string parameter_file, MPI_Comm const &amp;comm)</td></tr>
 <tr class="separator:a0fb4b96892c12154c5dac53b185bdd55"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a416475b959ad5807b5c7f197fb00239c" id="r_a416475b959ad5807b5c7f197fb00239c"><td class="memItemLeft" align="right" valign="top"><a id="a416475b959ad5807b5c7f197fb00239c" name="a416475b959ad5807b5c7f197fb00239c"></a>
-<a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::vector&lt; std::string &gt; <a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">subsection_names</a>, <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">const</a> &amp;grid)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::vector&lt; std::string &gt; const &amp;subsection_names, <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &amp;grid)</td></tr>
 <tr class="separator:a416475b959ad5807b5c7f197fb00239c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a30799b6b600a9252de1e615dc4f8cfe2" id="r_a30799b6b600a9252de1e615dc4f8cfe2"><td class="memItemLeft" align="right" valign="top"><a id="a30799b6b600a9252de1e615dc4f8cfe2" name="a30799b6b600a9252de1e615dc4f8cfe2"></a>
-<a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">virtual</a> std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessorBase.html">ConvDiff::PostProcessorBase</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_postprocessor</b> ()=0</td></tr>
+virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessorBase.html">ConvDiff::PostProcessorBase</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_postprocessor</b> ()=0</td></tr>
 <tr class="separator:a30799b6b600a9252de1e615dc4f8cfe2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a03c4d32b02c6828b6ce38b70c8efe125" id="r_a03c4d32b02c6828b6ce38b70c8efe125"><td class="memItemLeft" align="right" valign="top"><a id="a03c4d32b02c6828b6ce38b70c8efe125" name="a03c4d32b02c6828b6ce38b70c8efe125"></a>
-<a class="el" href="classExaDG_1_1ConvDiff_1_1Parameters.html">ConvDiff::Parameters</a> <a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">const</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_parameters</b> () <a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">const</a></td></tr>
+<a class="el" href="classExaDG_1_1ConvDiff_1_1Parameters.html">ConvDiff::Parameters</a> const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_parameters</b> () const</td></tr>
 <tr class="separator:a03c4d32b02c6828b6ce38b70c8efe125"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1d7b53b0c02b07f434e47dbd8b502866" id="r_a1d7b53b0c02b07f434e47dbd8b502866"><td class="memItemLeft" align="right" valign="top"><a id="a1d7b53b0c02b07f434e47dbd8b502866" name="a1d7b53b0c02b07f434e47dbd8b502866"></a>
-std::shared_ptr&lt; <a class="el" href="structExaDG_1_1ConvDiff_1_1BoundaryDescriptor.html">ConvDiff::BoundaryDescriptor</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">const</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_boundary_descriptor</b> () <a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">const</a></td></tr>
+std::shared_ptr&lt; <a class="el" href="structExaDG_1_1ConvDiff_1_1BoundaryDescriptor.html">ConvDiff::BoundaryDescriptor</a>&lt; dim &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_boundary_descriptor</b> () const</td></tr>
 <tr class="separator:a1d7b53b0c02b07f434e47dbd8b502866"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2c34d46362be49de632e9610898b7589" id="r_a2c34d46362be49de632e9610898b7589"><td class="memItemLeft" align="right" valign="top"><a id="a2c34d46362be49de632e9610898b7589" name="a2c34d46362be49de632e9610898b7589"></a>
-std::shared_ptr&lt; <a class="el" href="structExaDG_1_1ConvDiff_1_1FieldFunctions.html">ConvDiff::FieldFunctions</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">const</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_field_functions</b> () <a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">const</a></td></tr>
+std::shared_ptr&lt; <a class="el" href="structExaDG_1_1ConvDiff_1_1FieldFunctions.html">ConvDiff::FieldFunctions</a>&lt; dim &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_field_functions</b> () const</td></tr>
 <tr class="separator:a2c34d46362be49de632e9610898b7589"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
 <tr class="memitem:abec42f3f5d44904734879ff9ec5ebe35" id="r_abec42f3f5d44904734879ff9ec5ebe35"><td class="memItemLeft" align="right" valign="top"><a id="abec42f3f5d44904734879ff9ec5ebe35" name="abec42f3f5d44904734879ff9ec5ebe35"></a>
-<a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">virtual</a> <a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>parse_parameters</b> (std::vector&lt; std::string &gt; <a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">subsection_names</a>)</td></tr>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>parse_parameters</b> (std::vector&lt; std::string &gt; const &amp;subsection_names)</td></tr>
 <tr class="separator:abec42f3f5d44904734879ff9ec5ebe35"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
 <tr class="memitem:a85f0c7604d9743f767005a9c377cb48a" id="r_a85f0c7604d9743f767005a9c377cb48a"><td class="memItemLeft" align="right" valign="top"><a id="a85f0c7604d9743f767005a9c377cb48a" name="a85f0c7604d9743f767005a9c377cb48a"></a>
-<a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1FTI_1_1ApplicationBase.html">const</a>  &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>mpi_comm</b></td></tr>
+MPI_Comm const  &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>mpi_comm</b></td></tr>
 <tr class="separator:a85f0c7604d9743f767005a9c377cb48a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a49b9d2ac1c07e115f5a3e999e489680f" id="r_a49b9d2ac1c07e115f5a3e999e489680f"><td class="memItemLeft" align="right" valign="top"><a id="a49b9d2ac1c07e115f5a3e999e489680f" name="a49b9d2ac1c07e115f5a3e999e489680f"></a>
 dealii::ConditionalOStream&#160;</td><td class="memItemRight" valign="bottom"><b>pcout</b></td></tr>

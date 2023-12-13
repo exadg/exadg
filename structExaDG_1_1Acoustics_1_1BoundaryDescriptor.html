@@ -74,20 +74,44 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
+<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="structExaDG_1_1Acoustics_1_1BoundaryDescriptor-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">ExaDG::Acoustics::BoundaryDescriptor&lt; dim &gt; Struct Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a8de0d36eed3202d5177abbd2190c915d" id="r_a8de0d36eed3202d5177abbd2190c915d"><td class="memItemLeft" align="right" valign="top"><a id="a8de0d36eed3202d5177abbd2190c915d" name="a8de0d36eed3202d5177abbd2190c915d"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>boundary_type</b> = BoundaryType</td></tr>
+<tr class="separator:a8de0d36eed3202d5177abbd2190c915d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a5fdc67faaa4e76288a0bb15df0e3010c" id="r_a5fdc67faaa4e76288a0bb15df0e3010c"><td class="memItemLeft" align="right" valign="top"><a id="a5fdc67faaa4e76288a0bb15df0e3010c" name="a5fdc67faaa4e76288a0bb15df0e3010c"></a>
+DEAL_II_ALWAYS_INLINE BoundaryType&#160;</td><td class="memItemRight" valign="bottom"><b>get_boundary_type</b> (dealii::types::boundary_id const &amp;boundary_id) const</td></tr>
+<tr class="separator:a5fdc67faaa4e76288a0bb15df0e3010c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a09fc09c54877589a41283b0caa287e20" id="r_a09fc09c54877589a41283b0caa287e20"><td class="memItemLeft" align="right" valign="top"><a id="a09fc09c54877589a41283b0caa287e20" name="a09fc09c54877589a41283b0caa287e20"></a>
+DEAL_II_ALWAYS_INLINE void&#160;</td><td class="memItemRight" valign="bottom"><b>verify_boundary_conditions</b> (dealii::types::boundary_id const boundary_id, std::set&lt; dealii::types::boundary_id &gt; const &amp;periodic_boundary_ids) const</td></tr>
+<tr class="separator:a09fc09c54877589a41283b0caa287e20"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:ae870b93ed6ad31615b007b084973951f" id="r_ae870b93ed6ad31615b007b084973951f"><td class="memItemLeft" align="right" valign="top"><a id="ae870b93ed6ad31615b007b084973951f" name="ae870b93ed6ad31615b007b084973951f"></a>
-std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Acoustics_1_1BoundaryDescriptorP.html">BoundaryDescriptorP</a>&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>pressure</b></td></tr>
-<tr class="separator:ae870b93ed6ad31615b007b084973951f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5c13b29ece3e7a6965fdadf5dc1c2116" id="r_a5c13b29ece3e7a6965fdadf5dc1c2116"><td class="memItemLeft" align="right" valign="top"><a id="a5c13b29ece3e7a6965fdadf5dc1c2116" name="a5c13b29ece3e7a6965fdadf5dc1c2116"></a>
-std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Acoustics_1_1BoundaryDescriptorU.html">BoundaryDescriptorU</a>&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>velocity</b></td></tr>
-<tr class="separator:a5c13b29ece3e7a6965fdadf5dc1c2116"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a75ec3ca3fd1c5f247aa6d2aadbe71ca1" id="r_a75ec3ca3fd1c5f247aa6d2aadbe71ca1"><td class="memItemLeft" align="right" valign="top"><a id="a75ec3ca3fd1c5f247aa6d2aadbe71ca1" name="a75ec3ca3fd1c5f247aa6d2aadbe71ca1"></a>
+std::map&lt; dealii::types::boundary_id, std::shared_ptr&lt; dealii::Function&lt; dim &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>pressure_dbc</b></td></tr>
+<tr class="separator:a75ec3ca3fd1c5f247aa6d2aadbe71ca1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af99be04476c561accd3f1986e41958b8" id="r_af99be04476c561accd3f1986e41958b8"><td class="memItemLeft" align="right" valign="top"><a id="af99be04476c561accd3f1986e41958b8" name="af99be04476c561accd3f1986e41958b8"></a>
+std::map&lt; dealii::types::boundary_id, std::shared_ptr&lt; dealii::Function&lt; dim &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>velocity_dbc</b></td></tr>
+<tr class="separator:af99be04476c561accd3f1986e41958b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a9d1aa7587785ed7f49ad52cbff6f6a02" id="r_a9d1aa7587785ed7f49ad52cbff6f6a02"><td class="memItemLeft" align="right" valign="top"><a id="a9d1aa7587785ed7f49ad52cbff6f6a02" name="a9d1aa7587785ed7f49ad52cbff6f6a02"></a>
+static constexpr int&#160;</td><td class="memItemRight" valign="bottom"><b>dimension</b> = dim</td></tr>
+<tr class="separator:a9d1aa7587785ed7f49ad52cbff6f6a02"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li>include/exadg/acoustic_conservation_equations/user_interface/<a class="el" href="acoustic__conservation__equations_2user__interface_2boundary__descriptor_8h_source.html">boundary_descriptor.h</a></li>

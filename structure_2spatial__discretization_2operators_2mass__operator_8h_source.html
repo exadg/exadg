@@ -135,7 +135,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  initialize(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp;   matrix_free,</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>             dealii::AffineConstraints&lt;Number&gt; <span class="keyword">const</span> &amp; affine_constraints,</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>             <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">MassOperatorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;             data)</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>             <a class="code hl_struct" href="structExaDG_1_1Structure_1_1MassOperatorData.html">MassOperatorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;             data)</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  {</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    operator_data = data;</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
@@ -145,24 +145,24 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  set_inhomogeneous_boundary_values(VectorType &amp; dst) <span class="keyword">const</span> <span class="keyword">final</span></div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  {</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    std::map&lt;dealii::types::global_dof_index, double&gt; <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">boundary_values</a>;</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    <span class="keywordflow">for</span>(<span class="keyword">auto</span> <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">dbc</a> : operator_data.bc-&gt;dirichlet_bc_initial_acceleration)</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    std::map&lt;dealii::types::global_dof_index, double&gt; boundary_values;</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    <span class="keywordflow">for</span>(<span class="keyword">auto</span> dbc : operator_data.bc-&gt;dirichlet_bc_initial_acceleration)</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    {</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>      <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">dbc</a>.second-&gt;set_time(this-&gt;get_time());</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>      dealii::ComponentMask <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">mask</a> =</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>        operator_data.bc-&gt;dirichlet_bc_component_mask.find(<a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">dbc</a>.first)-&gt;second;</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>      dbc.second-&gt;set_time(this-&gt;get_time());</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>      dealii::ComponentMask mask =</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>        operator_data.bc-&gt;dirichlet_bc_component_mask.find(dbc.first)-&gt;second;</div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>      dealii::VectorTools::interpolate_boundary_values(</div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>        *this-&gt;matrix_free-&gt;get_mapping_info().mapping,</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>        <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">this</a>-&gt;matrix_free-&gt;get_dof_handler(operator_data.dof_index),</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>        <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">dbc</a>.first,</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>        *<a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">dbc</a>.second,</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>        <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">boundary_values</a>,</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>        <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">mask</a>);</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>        this-&gt;matrix_free-&gt;get_dof_handler(operator_data.dof_index),</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>        dbc.first,</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>        *dbc.second,</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>        boundary_values,</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>        mask);</div>
 <div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>    }</div>
 <div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span> </div>
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>    <span class="comment">// set Dirichlet values in solution vector</span></div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>    <span class="keywordflow">for</span>(<span class="keyword">auto</span> m : <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">boundary_values</a>)</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>    <span class="keywordflow">for</span>(<span class="keyword">auto</span> m : boundary_values)</div>
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>      <span class="keywordflow">if</span>(dst.get_partitioner()-&gt;in_local_range(m.first))</div>
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>        dst[m.first] = m.second;</div>
 <div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span> </div>
@@ -170,7 +170,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  }</div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">MassOperatorData&lt;dim&gt;</a> operator_data;</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  <a class="code hl_struct" href="structExaDG_1_1Structure_1_1MassOperatorData.html">MassOperatorData&lt;dim&gt;</a> operator_data;</div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>};</div>
 </div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span> </div>
@@ -181,7 +181,6 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span> </div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_MASS_OPERATOR_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1MassOperator_html"><div class="ttname"><a href="classExaDG_1_1MassOperator.html">ExaDG::MassOperator</a></div><div class="ttdef"><b>Definition</b> mass_operator.h:41</div></div>
-<div class="ttc" id="aclassExaDG_1_1Structure_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1ApplicationBase.html">ExaDG::Structure::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:46</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1MassOperator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1MassOperator.html">ExaDG::Structure::MassOperator</a></div><div class="ttdef"><b>Definition</b> mass_operator.h:43</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:34</div></div>
 <div class="ttc" id="astructExaDG_1_1MassOperatorData_html"><div class="ttname"><a href="structExaDG_1_1MassOperatorData.html">ExaDG::MassOperatorData</a></div><div class="ttdef"><b>Definition</b> mass_operator.h:33</div></div>

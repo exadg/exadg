@@ -84,25 +84,25 @@ $(function() {
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:a09f9a06a6af6d26e3f636b8c63af8ccd" id="r_a09f9a06a6af6d26e3f636b8c63af8ccd"><td class="memItemLeft" align="right" valign="top"><a id="a09f9a06a6af6d26e3f636b8c63af8ccd" name="a09f9a06a6af6d26e3f636b8c63af8ccd"></a>
-<a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">typedef</a> dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
 <tr class="separator:a09f9a06a6af6d26e3f636b8c63af8ccd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ae72b84e9f19138e510841a0668044bae" id="r_ae72b84e9f19138e510841a0668044bae"><td class="memItemLeft" align="right" valign="top"><a id="ae72b84e9f19138e510841a0668044bae" name="ae72b84e9f19138e510841a0668044bae"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>OperatorExplRK</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ConvDiff_1_1Interface_1_1Operator.html">ConvDiff::Interface::Operator</a>&lt; Number &gt; &gt; <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">operator_in</a>, <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">bool</a> <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">numerical_velocity_field_in</a>)</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>OperatorExplRK</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ConvDiff_1_1Interface_1_1Operator.html">ConvDiff::Interface::Operator</a>&lt; Number &gt; &gt; operator_in, bool const numerical_velocity_field_in)</td></tr>
 <tr class="separator:ae72b84e9f19138e510841a0668044bae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac53b36e8f9b64c5bc8280fceae22a211" id="r_ac53b36e8f9b64c5bc8280fceae22a211"><td class="memItemLeft" align="right" valign="top"><a id="ac53b36e8f9b64c5bc8280fceae22a211" name="ac53b36e8f9b64c5bc8280fceae22a211"></a>
-<a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>set_velocities_and_times</b> (std::vector&lt; VectorType <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">const</a> * &gt; <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">velocities_in</a>, std::vector&lt; <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">double</a> &gt; <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">times_in</a>)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_velocities_and_times</b> (std::vector&lt; VectorType const * &gt; const &amp;velocities_in, std::vector&lt; double &gt; const &amp;times_in)</td></tr>
 <tr class="separator:ac53b36e8f9b64c5bc8280fceae22a211"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5bbca12a11b085a4c4f189efd1d71b0d" id="r_a5bbca12a11b085a4c4f189efd1d71b0d"><td class="memItemLeft" align="right" valign="top"><a id="a5bbca12a11b085a4c4f189efd1d71b0d" name="a5bbca12a11b085a4c4f189efd1d71b0d"></a>
-<a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType &amp;dst, VectorType <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">const</a> &amp;src, <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">const</a> evaluation_time) <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">const</a></td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType &amp;dst, VectorType const &amp;src, double const evaluation_time) const</td></tr>
 <tr class="separator:a5bbca12a11b085a4c4f189efd1d71b0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeef2ea9d72c2cf686ce65e28cbeba729" id="r_aeef2ea9d72c2cf686ce65e28cbeba729"><td class="memItemLeft" align="right" valign="top"><a id="aeef2ea9d72c2cf686ce65e28cbeba729" name="aeef2ea9d72c2cf686ce65e28cbeba729"></a>
-<a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_dof_vector</b> (VectorType &amp;src) <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">const</a></td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_dof_vector</b> (VectorType &amp;src) const</td></tr>
 <tr class="separator:aeef2ea9d72c2cf686ce65e28cbeba729"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af95926beca9116ccef470c968f24d4df" id="r_af95926beca9116ccef470c968f24d4df"><td class="memItemLeft" align="right" valign="top"><a id="af95926beca9116ccef470c968f24d4df" name="af95926beca9116ccef470c968f24d4df"></a>
-<a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_dof_vector_velocity</b> (VectorType &amp;src) <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">const</a></td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_dof_vector_velocity</b> (VectorType &amp;src) const</td></tr>
 <tr class="separator:af95926beca9116ccef470c968f24d4df"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>

@@ -144,7 +144,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keyword">typedef</span> Number value_type;</div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">OperatorBase&lt;dim, Number, 1&gt;</a> <a class="code hl_class" href="classExaDG_1_1OperatorBase.html">Base</a>;</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1OperatorBase.html">OperatorBase&lt;dim, Number, 1&gt;</a> <a class="code hl_class" href="classExaDG_1_1OperatorBase.html">Base</a>;</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keyword">typedef</span> <span class="keyword">typename</span> Base::IntegratorCell IntegratorCell;</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keyword">typedef</span> <span class="keyword">typename</span> Base::IntegratorFace IntegratorFace;</div>
@@ -160,16 +160,16 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  initialize(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp;   matrix_free,</div>
 <div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>             dealii::AffineConstraints&lt;Number&gt; <span class="keyword">const</span> &amp; affine_constraints,</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>             <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">CombinedOperatorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;         data);</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>             <a class="code hl_struct" href="structExaDG_1_1ConvDiff_1_1CombinedOperatorData.html">CombinedOperatorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;         data);</div>
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span> </div>
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  initialize(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp;                   matrix_free,</div>
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>             dealii::AffineConstraints&lt;Number&gt; <span class="keyword">const</span> &amp;                 affine_constraints,</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>             <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">CombinedOperatorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;                         data,</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>             <a class="code hl_struct" href="structExaDG_1_1ConvDiff_1_1CombinedOperatorData.html">CombinedOperatorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;                         data,</div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>             std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1Operators_1_1ConvectiveKernel.html">Operators::ConvectiveKernel&lt;dim, Number&gt;</a>&gt; convective_kernel,</div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>             std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1Operators_1_1DiffusiveKernel.html">Operators::DiffusiveKernel&lt;dim, Number&gt;</a>&gt;  diffusive_kernel);</div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">CombinedOperatorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  <a class="code hl_struct" href="structExaDG_1_1ConvDiff_1_1CombinedOperatorData.html">CombinedOperatorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;</div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  get_data() <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span> </div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  <span class="keywordtype">void</span></div>
@@ -196,7 +196,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  reinit_face_derived(IntegratorFace &amp;   integrator_m,</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>                      IntegratorFace &amp;   <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">integrator_p</a>,</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>                      IntegratorFace &amp;   integrator_p,</div>
 <div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>                      <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <span class="keywordtype">void</span></div>
@@ -204,7 +204,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  reinit_face_cell_based_derived(IntegratorFace &amp;                 integrator_m,</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>                                 IntegratorFace &amp;                 <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">integrator_p</a>,</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>                                 IntegratorFace &amp;                 integrator_p,</div>
 <div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>                                 <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>               cell,</div>
 <div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>                                 <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>               face,</div>
 <div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>                                 dealii::types::boundary_id <span class="keyword">const</span> boundary_id) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
@@ -213,13 +213,13 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  do_cell_integral(IntegratorCell &amp; integrator) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span> </div>
 <div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  do_face_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">integrator_p</a>) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  do_face_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span> </div>
 <div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  do_face_int_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">integrator_p</a>) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  do_face_int_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span> </div>
 <div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  do_face_ext_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">integrator_p</a>) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  do_face_ext_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span> </div>
 <div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>  do_boundary_integral(IntegratorFace &amp;                   integrator_m,</div>
@@ -230,9 +230,9 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>  <span class="comment">// cell-based face loops</span></div>
 <div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>  do_face_int_integral_cell_based(IntegratorFace &amp; integrator_m,</div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>                                  IntegratorFace &amp; <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">integrator_p</a>) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>                                  IntegratorFace &amp; integrator_p) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span> </div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">CombinedOperatorData&lt;dim&gt;</a> operator_data;</div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  <a class="code hl_struct" href="structExaDG_1_1ConvDiff_1_1CombinedOperatorData.html">CombinedOperatorData&lt;dim&gt;</a> operator_data;</div>
 <div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span> </div>
 <div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>  std::shared_ptr&lt;MassKernel&lt;dim, Number&gt;&gt;                  mass_kernel;</div>
 <div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  std::shared_ptr&lt;Operators::ConvectiveKernel&lt;dim, Number&gt;&gt; convective_kernel;</div>
@@ -247,7 +247,6 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span> </div>
 <div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_COMBINED_OPERATOR_H_ \</span></div>
 <div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span><span class="comment">        */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">ExaDG::ConvDiff::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:44</div></div>
 <div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1CombinedOperator_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1CombinedOperator.html">ExaDG::ConvDiff::CombinedOperator</a></div><div class="ttdef"><b>Definition</b> combined_operator.h:56</div></div>
 <div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1Operators_1_1ConvectiveKernel_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1Operators_1_1ConvectiveKernel.html">ExaDG::ConvDiff::Operators::ConvectiveKernel</a></div><div class="ttdef"><b>Definition</b> convective_operator.h:68</div></div>
 <div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1Operators_1_1DiffusiveKernel_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1Operators_1_1DiffusiveKernel.html">ExaDG::ConvDiff::Operators::DiffusiveKernel</a></div><div class="ttdef"><b>Definition</b> diffusive_operator.h:49</div></div>

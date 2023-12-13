@@ -123,7 +123,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00039" name="l00039"></a><span class="lineno"><a class="line" href="structExaDG_1_1Structure_1_1PostProcessorData.html">   39</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structExaDG_1_1Structure_1_1PostProcessorData.html">PostProcessorData</a></div>
 <div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>{</div>
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <a class="code hl_struct" href="structExaDG_1_1OutputDataBase.html">OutputDataBase</a>            output_data;</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">ErrorCalculationData&lt;dim&gt;</a> error_data;</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <a class="code hl_struct" href="structExaDG_1_1ErrorCalculationData.html">ErrorCalculationData&lt;dim&gt;</a> error_data;</div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>};</div>
 </div>
 <div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
@@ -135,7 +135,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keyword">typedef</span> <span class="keyword">typename</span> PostProcessorBase&lt;Number&gt;::VectorType VectorType;</div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1PostProcessor.html">PostProcessor</a>(<a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">PostProcessorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp; pp_data, <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">MPI_Comm</a> <span class="keyword">const</span> &amp; mpi_comm);</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1PostProcessor.html">PostProcessor</a>(<a class="code hl_struct" href="structExaDG_1_1Structure_1_1PostProcessorData.html">PostProcessorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp; pp_data, MPI_Comm <span class="keyword">const</span> &amp; mpi_comm);</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  setup(dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp; dof_handler, dealii::Mapping&lt;dim&gt; <span class="keyword">const</span> &amp; mapping);</div>
@@ -146,12 +146,12 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>                    types::time_step <span class="keyword">const</span> time_step_number = numbers::steady_timestep) <span class="keyword">override</span>;</div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">PostProcessorData&lt;dim&gt;</a> pp_data;</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <a class="code hl_struct" href="structExaDG_1_1Structure_1_1PostProcessorData.html">PostProcessorData&lt;dim&gt;</a> pp_data;</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">MPI_Comm</a> <span class="keyword">const</span> mpi_comm;</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">OutputGenerator&lt;dim, Number&gt;</a> output_generator;</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">ErrorCalculator&lt;dim, Number&gt;</a> error_calculator;</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1OutputGenerator.html">OutputGenerator&lt;dim, Number&gt;</a> output_generator;</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <a class="code hl_class" href="classExaDG_1_1ErrorCalculator.html">ErrorCalculator&lt;dim, Number&gt;</a> error_calculator;</div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>};</div>
 </div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
@@ -159,10 +159,12 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span><span class="preprocessor">#endif</span></div>
-<div class="ttc" id="aclassExaDG_1_1Structure_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1ApplicationBase.html">ExaDG::Structure::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:46</div></div>
+<div class="ttc" id="aclassExaDG_1_1ErrorCalculator_html"><div class="ttname"><a href="classExaDG_1_1ErrorCalculator.html">ExaDG::ErrorCalculator</a></div><div class="ttdef"><b>Definition</b> error_calculation.h:95</div></div>
+<div class="ttc" id="aclassExaDG_1_1Structure_1_1OutputGenerator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1OutputGenerator.html">ExaDG::Structure::OutputGenerator</a></div><div class="ttdef"><b>Definition</b> output_generator.h:38</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1PostProcessorBase_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1PostProcessorBase.html">ExaDG::Structure::PostProcessorBase</a></div><div class="ttdef"><b>Definition</b> postprocessor_base.h:36</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1PostProcessor_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1PostProcessor.html">ExaDG::Structure::PostProcessor</a></div><div class="ttdef"><b>Definition</b> postprocessor.h:47</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:34</div></div>
+<div class="ttc" id="astructExaDG_1_1ErrorCalculationData_html"><div class="ttname"><a href="structExaDG_1_1ErrorCalculationData.html">ExaDG::ErrorCalculationData</a></div><div class="ttdef"><b>Definition</b> error_calculation.h:39</div></div>
 <div class="ttc" id="astructExaDG_1_1OutputDataBase_html"><div class="ttname"><a href="structExaDG_1_1OutputDataBase.html">ExaDG::OutputDataBase</a></div><div class="ttdef"><b>Definition</b> output_data_base.h:31</div></div>
 <div class="ttc" id="astructExaDG_1_1Structure_1_1PostProcessorData_html"><div class="ttname"><a href="structExaDG_1_1Structure_1_1PostProcessorData.html">ExaDG::Structure::PostProcessorData</a></div><div class="ttdef"><b>Definition</b> postprocessor.h:40</div></div>
 </div><!-- fragment --></div><!-- contents -->
