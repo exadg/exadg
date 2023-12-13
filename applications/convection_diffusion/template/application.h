@@ -69,9 +69,6 @@ private:
               std::shared_ptr<dealii::Mapping<dim>> &           mapping,
               std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
-    (void)mapping;
-    (void)multigrid_mappings;
-
     auto const lambda_create_triangulation =
       [&](dealii::Triangulation<dim, dim> &                        tria,
           std::vector<dealii::GridTools::PeriodicFacePair<
@@ -91,6 +88,21 @@ private:
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
+
+    GridUtilities::create_mapping(mapping,
+                                  this->param.grid.element_type,
+                                  this->param.mapping_degree);
+    std::shared_ptr<std::vector<std::shared_ptr<dealii::Mapping<dim>>>> coarse_mappings;
+
+    if(this->param.involves_h_multigrid())
+    {
+      GridUtilities::create_coarse_mappings(coarse_mappings,
+                                            this->param.grid.element_type,
+                                            this->param.mapping_degree,
+                                            grid.coarse_triangulations.size());
+    }
+
+    multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping, coarse_mappings);
   }
 
   void

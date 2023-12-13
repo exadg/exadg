@@ -68,6 +68,33 @@ create_mapping(std::shared_ptr<dealii::Mapping<dim>> & mapping,
 }
 
 /**
+ * In case the number of h-levels is larger than zero, this function creates the object
+ * coarse_mappings and initializes the vector of coarse mappings with a dealii::Mapping according to
+ * the ElementType and the mapping degree, using equal mappings for all entries n_h_levels of the
+ * vector.
+ */
+template<int dim>
+void
+create_coarse_mappings(
+  std::shared_ptr<std::vector<std::shared_ptr<dealii::Mapping<dim>>>> & coarse_mappings,
+  ElementType const &                                                   element_type,
+  unsigned int const &                                                  mapping_degree,
+  unsigned int const &                                                  n_h_levels)
+{
+  if(n_h_levels > 0)
+  {
+    coarse_mappings = std::make_shared<std::vector<std::shared_ptr<dealii::Mapping<dim>>>>();
+
+    coarse_mappings->resize(n_h_levels);
+
+    for(unsigned int i = 0; i < n_h_levels; ++i)
+    {
+      create_mapping((*coarse_mappings)[i], element_type, mapping_degree);
+    }
+  }
+}
+
+/**
  * This function can be seen as some form of "copy constructor" for periodic face pairs,
  * transforming the template argument of dealii::GridTools::PeriodicFacePair from
  * Triangulation::cell_iterator to DoFHandler::cell_iterator.
