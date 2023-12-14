@@ -52,6 +52,7 @@ Spatial Discretization:
   Number of global refinements:              3
   Create coarse triangulations:              true
   Mapping degree:                            4
+  Mapping degree coarse grids:               4
   Polynomial degree:                         4
   Enable adaptivity:                         true
   Triggered every n time steps:              30
