@@ -95,32 +95,32 @@ Inheritance diagram for ExaDG::ConvDiff::TimeIntBDF&lt; dim, Number &gt;:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:a19f3e064e20e13a1a2b1a319355865cc" id="r_a19f3e064e20e13a1a2b1a319355865cc"><td class="memItemLeft" align="right" valign="top"><a id="a19f3e064e20e13a1a2b1a319355865cc" name="a19f3e064e20e13a1a2b1a319355865cc"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b> = dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;</td></tr>
+<a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">using</a>&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b> = dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;</td></tr>
 <tr class="separator:a19f3e064e20e13a1a2b1a319355865cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a9674653c8bed13fdb4c577aacea97148" id="r_a9674653c8bed13fdb4c577aacea97148"><td class="memItemLeft" align="right" valign="top"><a id="a9674653c8bed13fdb4c577aacea97148" name="a9674653c8bed13fdb4c577aacea97148"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>TimeIntBDF</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">Operator</a>&lt; dim, Number &gt; &gt; operator_in, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1HelpersALE.html">HelpersALE</a>&lt; dim, Number &gt; const &gt; helpers_ale_in, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessorInterface.html">PostProcessorInterface</a>&lt; Number &gt; &gt; postprocessor_in, <a class="el" href="classExaDG_1_1ConvDiff_1_1Parameters.html">Parameters</a> const &amp;param_in, MPI_Comm const &amp;mpi_comm_in, bool const is_test_in)</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>TimeIntBDF</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">Operator</a>&lt; dim, Number &gt; &gt; <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">operator_in</a>, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1HelpersALE.html">HelpersALE</a>&lt; dim, Number &gt; <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">const</a> &gt; <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">helpers_ale_in</a>, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessorInterface.html">PostProcessorInterface</a>&lt; Number &gt; &gt; <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">postprocessor_in</a>, <a class="el" href="classExaDG_1_1ConvDiff_1_1Parameters.html">Parameters</a> <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">param_in</a>, <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">mpi_comm_in</a>, <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">bool</a> <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">is_test_in</a>)</td></tr>
 <tr class="separator:a9674653c8bed13fdb4c577aacea97148"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab1794a375e4a693caff9f3d56dce37c8" id="r_ab1794a375e4a693caff9f3d56dce37c8"><td class="memItemLeft" align="right" valign="top"><a id="ab1794a375e4a693caff9f3d56dce37c8" name="ab1794a375e4a693caff9f3d56dce37c8"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_velocities_and_times</b> (std::vector&lt; VectorType const * &gt; const &amp;velocities_in, std::vector&lt; double &gt; const &amp;times_in)</td></tr>
+<a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>set_velocities_and_times</b> (std::vector&lt; VectorType <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">const</a> * &gt; <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">velocities_in</a>, std::vector&lt; <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">double</a> &gt; <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">times_in</a>)</td></tr>
 <tr class="separator:ab1794a375e4a693caff9f3d56dce37c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6853044d76a0ffb588ad4b5dea6550a9" id="r_a6853044d76a0ffb588ad4b5dea6550a9"><td class="memItemLeft" align="right" valign="top"><a id="a6853044d76a0ffb588ad4b5dea6550a9" name="a6853044d76a0ffb588ad4b5dea6550a9"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>extrapolate_solution</b> (VectorType &amp;vector)</td></tr>
+<a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>extrapolate_solution</b> (VectorType &amp;vector)</td></tr>
 <tr class="separator:a6853044d76a0ffb588ad4b5dea6550a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a25a84aa036398ad41dae27cb19be9b4a" id="r_a25a84aa036398ad41dae27cb19be9b4a"><td class="memItemLeft" align="right" valign="top"><a id="a25a84aa036398ad41dae27cb19be9b4a" name="a25a84aa036398ad41dae27cb19be9b4a"></a>
-VectorType const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_solution_np</b> () const</td></tr>
+VectorType <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">const</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_solution_np</b> () <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:a25a84aa036398ad41dae27cb19be9b4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a187961692b6961d387cee2489006f24b" id="r_a187961692b6961d387cee2489006f24b"><td class="memItemLeft" align="right" valign="top"><a id="a187961692b6961d387cee2489006f24b" name="a187961692b6961d387cee2489006f24b"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ale_update</b> ()</td></tr>
+<a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>ale_update</b> ()</td></tr>
 <tr class="separator:a187961692b6961d387cee2489006f24b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3344f5e8c2e6ab65d13683d7dc68da78" id="r_a3344f5e8c2e6ab65d13683d7dc68da78"><td class="memItemLeft" align="right" valign="top"><a id="a3344f5e8c2e6ab65d13683d7dc68da78" name="a3344f5e8c2e6ab65d13683d7dc68da78"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>print_iterations</b> () const</td></tr>
+<a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>print_iterations</b> () <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">const</a></td></tr>
 <tr class="separator:a3344f5e8c2e6ab65d13683d7dc68da78"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a80cff21f3536c525af6f63b9955c7e2c" id="r_a80cff21f3536c525af6f63b9955c7e2c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1TimeIntBDF.html#a80cff21f3536c525af6f63b9955c7e2c">prepare_coarsening_and_refinement</a> () final</td></tr>
+<tr class="memitem:a80cff21f3536c525af6f63b9955c7e2c" id="r_a80cff21f3536c525af6f63b9955c7e2c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1TimeIntBDF.html#a80cff21f3536c525af6f63b9955c7e2c">prepare_coarsening_and_refinement</a> () <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">final</a></td></tr>
 <tr class="separator:a80cff21f3536c525af6f63b9955c7e2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acbbe31f8ce001de6c43ac4dc3deebda7" id="r_acbbe31f8ce001de6c43ac4dc3deebda7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1TimeIntBDF.html#acbbe31f8ce001de6c43ac4dc3deebda7">interpolate_after_coarsening_and_refinement</a> () final</td></tr>
+<tr class="memitem:acbbe31f8ce001de6c43ac4dc3deebda7" id="r_acbbe31f8ce001de6c43ac4dc3deebda7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1TimeIntBDF.html#acbbe31f8ce001de6c43ac4dc3deebda7">interpolate_after_coarsening_and_refinement</a> () <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">final</a></td></tr>
 <tr class="separator:acbbe31f8ce001de6c43ac4dc3deebda7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1TimeIntBDFBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1TimeIntBDFBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1TimeIntBDFBase.html">ExaDG::TimeIntBDFBase</a></td></tr>
 <tr class="memitem:af270f1208eb1887cc1b29cde98ef7fa2 inherit pub_methods_classExaDG_1_1TimeIntBDFBase" id="r_af270f1208eb1887cc1b29cde98ef7fa2"><td class="memItemLeft" align="right" valign="top">
@@ -292,13 +292,13 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>is_test</b></td></tr>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">typename</a> Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1TimeIntBDF.html">ExaDG::ConvDiff::TimeIntBDF</a>&lt; dim, Number &gt;::interpolate_after_coarsening_and_refinement </td>
+          <td class="memname"><a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1ConvDiff_1_1TimeIntBDF.html">ExaDG::ConvDiff::TimeIntBDF</a>&lt; dim, Number &gt;::interpolate_after_coarsening_and_refinement </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -321,13 +321,13 @@ template&lt;int dim, typename Number &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">typename</a> Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1TimeIntBDF.html">ExaDG::ConvDiff::TimeIntBDF</a>&lt; dim, Number &gt;::prepare_coarsening_and_refinement </td>
+          <td class="memname"><a class="el" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1ConvDiff_1_1TimeIntBDF.html">ExaDG::ConvDiff::TimeIntBDF</a>&lt; dim, Number &gt;::prepare_coarsening_and_refinement </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>

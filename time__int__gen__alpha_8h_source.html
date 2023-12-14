@@ -138,11 +138,11 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keyword">typedef</span> dealii::LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1TimeIntGenAlpha.html">TimeIntGenAlpha</a>(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Structure_1_1Interface_1_1Operator.html">Interface::Operator&lt;Number&gt;</a>&gt; operator_,</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>                  std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Structure_1_1PostProcessorBase.html">PostProcessorBase&lt;Number&gt;</a>&gt;   postprocessor_,</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>                  <a class="code hl_class" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;                           param_,</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>                  MPI_Comm <span class="keyword">const</span> &amp;                             mpi_comm_,</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>                  <span class="keywordtype">bool</span> <span class="keyword">const</span>                                   is_test_);</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1TimeIntGenAlpha.html">TimeIntGenAlpha</a>(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Structure_1_1Interface_1_1Operator.html">Interface::Operator&lt;Number&gt;</a>&gt; <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">operator_</a>,</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>                  std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">PostProcessorBase&lt;Number&gt;</a>&gt;   <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">postprocessor_</a>,</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>                  <a class="code hl_class" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;                           <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">param_</a>,</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>                  <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">MPI_Comm</a> <span class="keyword">const</span> &amp;                             <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">mpi_comm_</a>,</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>                  <span class="keywordtype">bool</span> <span class="keyword">const</span>                                   <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">is_test_</a>);</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  setup(<span class="keywordtype">bool</span> <span class="keyword">const</span> do_restart) <span class="keyword">final</span>;</div>
@@ -189,7 +189,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  do_write_restart(std::string <span class="keyword">const</span> &amp; filename) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span> </div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  do_read_restart(std::ifstream &amp; in) <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  do_read_restart(std::ifstream &amp; <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">in</a>) <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span> </div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  postprocessing() <span class="keyword">const</span> <span class="keyword">final</span>;</div>
@@ -207,7 +207,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span> </div>
 <div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp; param;</div>
 <div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span> </div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1ApplicationBase.html">MPI_Comm</a> <span class="keyword">const</span> mpi_comm;</div>
 <div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span> </div>
 <div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  dealii::ConditionalOStream pcout;</div>
 <div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span> </div>
@@ -233,9 +233,9 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span> </div>
 <div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span> </div>
 <div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_STRUCTURE_TIME_INTEGRATION_TIME_INT_GEN_ALPHA_H_ */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1Structure_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1ApplicationBase.html">ExaDG::Structure::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:46</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1Interface_1_1Operator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1Interface_1_1Operator.html">ExaDG::Structure::Interface::Operator</a></div><div class="ttdef"><b>Definition</b> interface.h:36</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1Parameters.html">ExaDG::Structure::Parameters</a></div><div class="ttdef"><b>Definition</b> parameters.h:40</div></div>
-<div class="ttc" id="aclassExaDG_1_1Structure_1_1PostProcessorBase_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1PostProcessorBase.html">ExaDG::Structure::PostProcessorBase</a></div><div class="ttdef"><b>Definition</b> postprocessor_base.h:36</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1TimeIntGenAlpha_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1TimeIntGenAlpha.html">ExaDG::Structure::TimeIntGenAlpha</a></div><div class="ttdef"><b>Definition</b> time_int_gen_alpha.h:52</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1TimeIntGenAlpha_html_a540b73171298f537781cd59d1679170a"><div class="ttname"><a href="classExaDG_1_1Structure_1_1TimeIntGenAlpha.html#a540b73171298f537781cd59d1679170a">ExaDG::Structure::TimeIntGenAlpha::advance_one_timestep_partitioned_solve</a></div><div class="ttdeci">void advance_one_timestep_partitioned_solve(bool const use_extrapolation)</div><div class="ttdef"><b>Definition</b> time_int_gen_alpha.cpp:106</div></div>
 <div class="ttc" id="aclassExaDG_1_1TimeIntGenAlphaBase_html"><div class="ttname"><a href="classExaDG_1_1TimeIntGenAlphaBase.html">ExaDG::TimeIntGenAlphaBase</a></div><div class="ttdef"><b>Definition</b> time_int_gen_alpha_base.h:36</div></div>

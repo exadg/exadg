@@ -93,23 +93,23 @@ Inheritance diagram for ExaDG::Structure::StVenantKirchhoff&lt; dim, Number &gt;
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:a1d2376135c8984d4a136bf5e2d55b222" id="r_a1d2376135c8984d4a136bf5e2d55b222"><td class="memItemLeft" align="right" valign="top"><a id="a1d2376135c8984d4a136bf5e2d55b222" name="a1d2376135c8984d4a136bf5e2d55b222"></a>
-typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typedef</a> dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
 <tr class="separator:a1d2376135c8984d4a136bf5e2d55b222"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa8aa54a764028c0b179d946f673b915b" id="r_aa8aa54a764028c0b179d946f673b915b"><td class="memItemLeft" align="right" valign="top"><a id="aa8aa54a764028c0b179d946f673b915b" name="aa8aa54a764028c0b179d946f673b915b"></a>
-typedef std::pair&lt; unsigned int, unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Range</b></td></tr>
+<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typedef</a> std::pair&lt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a>, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Range</b></td></tr>
 <tr class="separator:aa8aa54a764028c0b179d946f673b915b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa2bad5ea16763e040604747d909237bc" id="r_aa2bad5ea16763e040604747d909237bc"><td class="memItemLeft" align="right" valign="top"><a id="aa2bad5ea16763e040604747d909237bc" name="aa2bad5ea16763e040604747d909237bc"></a>
-typedef CellIntegrator&lt; dim, dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>IntegratorCell</b></td></tr>
+<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typedef</a> CellIntegrator&lt; dim, dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>IntegratorCell</b></td></tr>
 <tr class="separator:aa2bad5ea16763e040604747d909237bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:accdfdfd1f9ff683215d21248e7d22147" id="r_accdfdfd1f9ff683215d21248e7d22147"><td class="memItemLeft" align="right" valign="top"><a id="accdfdfd1f9ff683215d21248e7d22147" name="accdfdfd1f9ff683215d21248e7d22147"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>StVenantKirchhoff</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, unsigned int const dof_index, unsigned int const quad_index, <a class="el" href="structExaDG_1_1Structure_1_1StVenantKirchhoffData.html">StVenantKirchhoffData</a>&lt; dim &gt; const &amp;data, bool const large_deformation)</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>StVenantKirchhoff</b> (dealii::MatrixFree&lt; dim, Number &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;matrix_free, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> dof_index, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> quad_index, <a class="el" href="structExaDG_1_1Structure_1_1StVenantKirchhoffData.html">StVenantKirchhoffData</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;data, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">bool</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> large_deformation)</td></tr>
 <tr class="separator:accdfdfd1f9ff683215d21248e7d22147"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa304f44db7a004597a41faa9aa7bb3b1" id="r_aa304f44db7a004597a41faa9aa7bb3b1"><td class="memItemLeft" align="right" valign="top">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html#aa304f44db7a004597a41faa9aa7bb3b1">second_piola_kirchhoff_stress</a> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;gradient_displacement, unsigned int const cell, unsigned int const q) const final</td></tr>
+<tr class="memitem:aa304f44db7a004597a41faa9aa7bb3b1" id="r_aa304f44db7a004597a41faa9aa7bb3b1"><td class="memItemLeft" align="right" valign="top">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html#aa304f44db7a004597a41faa9aa7bb3b1">second_piola_kirchhoff_stress</a> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">gradient_displacement</a>, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> cell, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">q</a>) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">final</a></td></tr>
 <tr class="separator:aa304f44db7a004597a41faa9aa7bb3b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa331e39346a1de92eee160defc81a558" id="r_aa331e39346a1de92eee160defc81a558"><td class="memItemLeft" align="right" valign="top">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html#aa331e39346a1de92eee160defc81a558">second_piola_kirchhoff_stress_displacement_derivative</a> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;gradient_increment, dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;deformation_gradient, unsigned int const cell, unsigned int const q) const final</td></tr>
+<tr class="memitem:aa331e39346a1de92eee160defc81a558" id="r_aa331e39346a1de92eee160defc81a558"><td class="memItemLeft" align="right" valign="top">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html#aa331e39346a1de92eee160defc81a558">second_piola_kirchhoff_stress_displacement_derivative</a> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">gradient_increment</a>, dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">deformation_gradient</a>, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> cell, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">q</a>) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">final</a></td></tr>
 <tr class="separator:aa331e39346a1de92eee160defc81a558"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
@@ -119,7 +119,7 @@ Public Member Functions</h2></td></tr>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typename</a> Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -127,19 +127,19 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="memname">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; <a class="el" href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html">ExaDG::Structure::StVenantKirchhoff</a>&lt; dim, Number &gt;::second_piola_kirchhoff_stress </td>
           <td>(</td>
-          <td class="paramtype">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;&#160;</td>
+          <td class="paramtype">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;&#160;</td>
           <td class="paramname"><em>gradient_displacement</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>cell</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>q</em>&#160;</td>
         </tr>
         <tr>
@@ -165,7 +165,7 @@ template&lt;int dim, typename Number &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typename</a> Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -173,25 +173,25 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="memname">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; <a class="el" href="classExaDG_1_1Structure_1_1StVenantKirchhoff.html">ExaDG::Structure::StVenantKirchhoff</a>&lt; dim, Number &gt;::second_piola_kirchhoff_stress_displacement_derivative </td>
           <td>(</td>
-          <td class="paramtype">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;&#160;</td>
+          <td class="paramtype">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;&#160;</td>
           <td class="paramname"><em>gradient_increment</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;&#160;</td>
+          <td class="paramtype">dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;&#160;</td>
           <td class="paramname"><em>deformation_gradient</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>cell</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>q</em>&#160;</td>
         </tr>
         <tr>

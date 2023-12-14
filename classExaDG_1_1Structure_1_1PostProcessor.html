@@ -92,19 +92,19 @@ Inheritance diagram for ExaDG::Structure::PostProcessor&lt; dim, Number &gt;:</d
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:aeb79a49959ca76cd43dee67817464f04" id="r_aeb79a49959ca76cd43dee67817464f04"><td class="memItemLeft" align="right" valign="top"><a id="aeb79a49959ca76cd43dee67817464f04" name="aeb79a49959ca76cd43dee67817464f04"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>PostProcessor</b> (<a class="el" href="structExaDG_1_1Structure_1_1PostProcessorData.html">PostProcessorData</a>&lt; dim &gt; const &amp;pp_data, MPI_Comm const &amp;mpi_comm)</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>PostProcessor</b> (<a class="el" href="structExaDG_1_1Structure_1_1PostProcessorData.html">PostProcessorData</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;pp_data, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;mpi_comm)</td></tr>
 <tr class="separator:aeb79a49959ca76cd43dee67817464f04"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2fb730d2648e679464dc401e4624a901" id="r_a2fb730d2648e679464dc401e4624a901"><td class="memItemLeft" align="right" valign="top"><a id="a2fb730d2648e679464dc401e4624a901" name="a2fb730d2648e679464dc401e4624a901"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler, dealii::Mapping&lt; dim &gt; const &amp;mapping)</td></tr>
+<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (dealii::DoFHandler&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;dof_handler, dealii::Mapping&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;mapping)</td></tr>
 <tr class="separator:a2fb730d2648e679464dc401e4624a901"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afed6932a962cc5b3dc82bc9352dd72d0" id="r_afed6932a962cc5b3dc82bc9352dd72d0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1PostProcessor.html#afed6932a962cc5b3dc82bc9352dd72d0">do_postprocessing</a> (VectorType const &amp;solution, double const time=0.0, types::time_step const time_step_number=numbers::steady_timestep) override</td></tr>
+<tr class="memitem:afed6932a962cc5b3dc82bc9352dd72d0" id="r_afed6932a962cc5b3dc82bc9352dd72d0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1PostProcessor.html#afed6932a962cc5b3dc82bc9352dd72d0">do_postprocessing</a> (VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;solution, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> time=0.0, types::time_step <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> time_step_number=numbers::steady_timestep) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">override</a></td></tr>
 <tr class="separator:afed6932a962cc5b3dc82bc9352dd72d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pro_types_classExaDG_1_1Structure_1_1PostProcessorBase"><td colspan="2" onclick="javascript:toggleInherit('pro_types_classExaDG_1_1Structure_1_1PostProcessorBase')"><img src="closed.png" alt="-"/>&#160;Protected Types inherited from <a class="el" href="classExaDG_1_1Structure_1_1PostProcessorBase.html">ExaDG::Structure::PostProcessorBase&lt; Number &gt;</a></td></tr>
 <tr class="memitem:a73a2208193c8761add381f1aec82892d inherit pro_types_classExaDG_1_1Structure_1_1PostProcessorBase" id="r_a73a2208193c8761add381f1aec82892d"><td class="memItemLeft" align="right" valign="top">
-typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typedef</a> dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
 <tr class="separator:a73a2208193c8761add381f1aec82892d inherit pro_types_classExaDG_1_1Structure_1_1PostProcessorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
@@ -114,27 +114,27 @@ typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typename</a> Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Structure_1_1PostProcessor.html">ExaDG::Structure::PostProcessor</a>&lt; dim, Number &gt;::do_postprocessing </td>
+          <td class="memname"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1Structure_1_1PostProcessor.html">ExaDG::Structure::PostProcessor</a>&lt; dim, Number &gt;::do_postprocessing </td>
           <td>(</td>
-          <td class="paramtype">VectorType const &amp;&#160;</td>
+          <td class="paramtype">VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;&#160;</td>
           <td class="paramname"><em>solution</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">double const&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>time</em> = <code>0.0</code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">types::time_step const&#160;</td>
+          <td class="paramtype">types::time_step <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>time_step_number</em> = <code>numbers::steady_timestep</code>&#160;</td>
         </tr>
         <tr>

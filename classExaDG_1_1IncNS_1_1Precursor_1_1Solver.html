@@ -85,13 +85,13 @@ $(function() {
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:af4104e77fc1202fe985280a13a198db1" id="r_af4104e77fc1202fe985280a13a198db1"><td class="memItemLeft" align="right" valign="top"><a id="af4104e77fc1202fe985280a13a198db1" name="af4104e77fc1202fe985280a13a198db1"></a>
-typedef <a class="el" href="classExaDG_1_1IncNS_1_1PostProcessorBase.html">PostProcessorBase</a>&lt; dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Postprocessor</b></td></tr>
+<a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">typedef</a> <a class="el" href="classExaDG_1_1IncNS_1_1PostProcessorBase.html">PostProcessorBase</a>&lt; dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Postprocessor</b></td></tr>
 <tr class="separator:af4104e77fc1202fe985280a13a198db1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a2c5436a1c5f438897a167050d50d9a7c" id="r_a2c5436a1c5f438897a167050d50d9a7c"><td class="memItemLeft" align="right" valign="top"><a id="a2c5436a1c5f438897a167050d50d9a7c" name="a2c5436a1c5f438897a167050d50d9a7c"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1Domain.html">Domain</a>&lt; dim, Number &gt; &gt; &amp;domain, std::vector&lt; std::string &gt; const &amp;subsection_names_parameters, std::string const &amp;field, MPI_Comm const &amp;mpi_comm, bool const is_test)</td></tr>
+<a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1Domain.html">Domain</a>&lt; dim, Number &gt; &gt; &amp;<a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">domain</a>, std::vector&lt; std::string &gt; <a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">subsection_names_parameters</a>, std::string <a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">const</a> &amp;field, <a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">const</a> &amp;mpi_comm, <a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">bool</a> <a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">const</a> is_test)</td></tr>
 <tr class="separator:a2c5436a1c5f438897a167050d50d9a7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
@@ -109,7 +109,7 @@ std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridMappings.html">Mu
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">SpatialOperatorBase</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>pde_operator</b></td></tr>
 <tr class="separator:a6bcedddab612e3fb33a4b0594777e014"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a039f6c2a0b18a1518ca968796fb7d9cb" id="r_a039f6c2a0b18a1518ca968796fb7d9cb"><td class="memItemLeft" align="right" valign="top"><a id="a039f6c2a0b18a1518ca968796fb7d9cb" name="a039f6c2a0b18a1518ca968796fb7d9cb"></a>
-std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1PostProcessorBase.html">Postprocessor</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>postprocessor</b></td></tr>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">Postprocessor</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>postprocessor</b></td></tr>
 <tr class="separator:a039f6c2a0b18a1518ca968796fb7d9cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a45da9c0d958117595abc0b03767097ce" id="r_a45da9c0d958117595abc0b03767097ce"><td class="memItemLeft" align="right" valign="top"><a id="a45da9c0d958117595abc0b03767097ce" name="a45da9c0d958117595abc0b03767097ce"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1TimeIntBDF.html">TimeIntBDF</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>time_integrator</b></td></tr>

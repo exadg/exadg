@@ -95,37 +95,37 @@ Inheritance diagram for ExaDG::Poisson::PostProcessor&lt; dim, n_components, Num
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a66c4e77f3a6324d09622bbd3aa07fcf7" id="r_a66c4e77f3a6324d09622bbd3aa07fcf7"><td class="memItemLeft" align="right" valign="top"><a id="a66c4e77f3a6324d09622bbd3aa07fcf7" name="a66c4e77f3a6324d09622bbd3aa07fcf7"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>PostProcessor</b> (<a class="el" href="structExaDG_1_1Poisson_1_1PostProcessorData.html">PostProcessorData</a>&lt; dim &gt; const &amp;pp_data, MPI_Comm const &amp;mpi_comm)</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>PostProcessor</b> (<a class="el" href="structExaDG_1_1Poisson_1_1PostProcessorData.html">PostProcessorData</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;pp_data, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;mpi_comm)</td></tr>
 <tr class="separator:a66c4e77f3a6324d09622bbd3aa07fcf7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aee05de900373abbbdfde22de5020c80f" id="r_aee05de900373abbbdfde22de5020c80f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Poisson_1_1PostProcessor.html#aee05de900373abbbdfde22de5020c80f">setup</a> (<a class="el" href="classExaDG_1_1Poisson_1_1Operator.html">Operator</a>&lt; dim, n_components, Number &gt; const &amp;pde_operator) override</td></tr>
+<tr class="memitem:aee05de900373abbbdfde22de5020c80f" id="r_aee05de900373abbbdfde22de5020c80f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Poisson_1_1PostProcessor.html#aee05de900373abbbdfde22de5020c80f">setup</a> (<a class="el" href="classExaDG_1_1Poisson_1_1Operator.html">Operator</a>&lt; dim, n_components, Number &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;pde_operator) <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">override</a></td></tr>
 <tr class="separator:aee05de900373abbbdfde22de5020c80f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2c2e40f6c316578f488e50807528f704" id="r_a2c2e40f6c316578f488e50807528f704"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Poisson_1_1PostProcessor.html#a2c2e40f6c316578f488e50807528f704">do_postprocessing</a> (VectorType const &amp;solution, double const time=0.0, types::time_step const time_step_number=numbers::steady_timestep) override</td></tr>
+<tr class="memitem:a2c2e40f6c316578f488e50807528f704" id="r_a2c2e40f6c316578f488e50807528f704"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Poisson_1_1PostProcessor.html#a2c2e40f6c316578f488e50807528f704">do_postprocessing</a> (VectorType <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;solution, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> time=0.0, types::time_step <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> time_step_number=numbers::steady_timestep) <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">override</a></td></tr>
 <tr class="separator:a2c2e40f6c316578f488e50807528f704"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-types" name="pro-types"></a>
 Protected Types</h2></td></tr>
 <tr class="memitem:af6dba86e4c8cfac68bdcfbdf5e1d128a" id="r_af6dba86e4c8cfac68bdcfbdf5e1d128a"><td class="memItemLeft" align="right" valign="top"><a id="af6dba86e4c8cfac68bdcfbdf5e1d128a" name="af6dba86e4c8cfac68bdcfbdf5e1d128a"></a>
-typedef <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessorBase.html">PostProcessorBase</a>&lt; dim, n_components, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Base</b></td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">typedef</a> <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessorBase.html">PostProcessorBase</a>&lt; dim, n_components, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Base</b></td></tr>
 <tr class="separator:af6dba86e4c8cfac68bdcfbdf5e1d128a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac7cb07e23a08b981a491d9ed7a95d4aa" id="r_ac7cb07e23a08b981a491d9ed7a95d4aa"><td class="memItemLeft" align="right" valign="top"><a id="ac7cb07e23a08b981a491d9ed7a95d4aa" name="ac7cb07e23a08b981a491d9ed7a95d4aa"></a>
-typedef Base::VectorType&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">typedef</a> Base::VectorType&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
 <tr class="separator:ac7cb07e23a08b981a491d9ed7a95d4aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_types_classExaDG_1_1Poisson_1_1PostProcessorBase"><td colspan="2" onclick="javascript:toggleInherit('pro_types_classExaDG_1_1Poisson_1_1PostProcessorBase')"><img src="closed.png" alt="-"/>&#160;Protected Types inherited from <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessorBase.html">ExaDG::Poisson::PostProcessorBase&lt; dim, n_components, Number &gt;</a></td></tr>
 <tr class="memitem:a19e77a6d2d15b56decd1ccaaf65c3975 inherit pro_types_classExaDG_1_1Poisson_1_1PostProcessorBase" id="r_a19e77a6d2d15b56decd1ccaaf65c3975"><td class="memItemLeft" align="right" valign="top">
-typedef <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessorInterface.html">PostProcessorInterface</a>&lt; Number &gt;::VectorType&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">typedef</a> <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessorInterface.html">PostProcessorInterface</a>&lt; Number &gt;::VectorType&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
 <tr class="separator:a19e77a6d2d15b56decd1ccaaf65c3975 inherit pro_types_classExaDG_1_1Poisson_1_1PostProcessorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
 <tr class="memitem:ad7ccb76315eb240d699891af5629b443" id="r_ad7ccb76315eb240d699891af5629b443"><td class="memItemLeft" align="right" valign="top"><a id="ad7ccb76315eb240d699891af5629b443" name="ad7ccb76315eb240d699891af5629b443"></a>
-MPI_Comm const&#160;</td><td class="memItemRight" valign="bottom"><b>mpi_comm</b></td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a>&#160;</td><td class="memItemRight" valign="bottom"><b>mpi_comm</b></td></tr>
 <tr class="separator:ad7ccb76315eb240d699891af5629b443"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pub_types_classExaDG_1_1Poisson_1_1PostProcessorInterface"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classExaDG_1_1Poisson_1_1PostProcessorInterface')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessorInterface.html">ExaDG::Poisson::PostProcessorInterface&lt; Number &gt;</a></td></tr>
 <tr class="memitem:afe9800452083f64fb95a7b1419fd9d2a inherit pub_types_classExaDG_1_1Poisson_1_1PostProcessorInterface" id="r_afe9800452083f64fb95a7b1419fd9d2a"><td class="memItemLeft" align="right" valign="top">
-typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">typedef</a> dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
 <tr class="separator:afe9800452083f64fb95a7b1419fd9d2a inherit pub_types_classExaDG_1_1Poisson_1_1PostProcessorInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
@@ -135,27 +135,27 @@ typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, int n_components, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a> n_components, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">typename</a> Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessor.html">ExaDG::Poisson::PostProcessor</a>&lt; dim, n_components, Number &gt;::do_postprocessing </td>
+          <td class="memname"><a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessor.html">ExaDG::Poisson::PostProcessor</a>&lt; dim, n_components, Number &gt;::do_postprocessing </td>
           <td>(</td>
-          <td class="paramtype">VectorType const &amp;&#160;</td>
+          <td class="paramtype">VectorType <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;&#160;</td>
           <td class="paramname"><em>solution</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">double const&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>time</em> = <code>0.0</code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">types::time_step const&#160;</td>
+          <td class="paramtype">types::time_step <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a>&#160;</td>
           <td class="paramname"><em>time_step_number</em> = <code>numbers::steady_timestep</code>&#160;</td>
         </tr>
         <tr>
@@ -181,15 +181,15 @@ template&lt;int dim, int n_components, typename Number &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, int n_components, typename Number &gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a> n_components, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">typename</a> Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessor.html">ExaDG::Poisson::PostProcessor</a>&lt; dim, n_components, Number &gt;::setup </td>
+          <td class="memname"><a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessor.html">ExaDG::Poisson::PostProcessor</a>&lt; dim, n_components, Number &gt;::setup </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classExaDG_1_1Poisson_1_1Operator.html">Operator</a>&lt; dim, n_components, Number &gt; const &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Poisson_1_1Operator.html">Operator</a>&lt; dim, n_components, Number &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;&#160;</td>
           <td class="paramname"><em>pde_operator</em></td><td>)</td>
           <td></td>
         </tr>

@@ -140,13 +140,13 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    PeriodicFaces;</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  add_parameters(dealii::ParameterHandler &amp; prm)</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  add_parameters(dealii::ParameterHandler &amp; <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">prm</a>)</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  {</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    grid_parameters.add_parameters(prm);</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    output_parameters.add_parameters(prm);</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    grid_parameters.add_parameters(<a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">prm</a>);</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    output_parameters.add_parameters(<a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">prm</a>);</div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  }</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">ApplicationBase</a>(std::string parameter_file, MPI_Comm <span class="keyword">const</span> &amp; comm)</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">ApplicationBase</a>(std::string parameter_file, <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">MPI_Comm</a> <span class="keyword">const</span> &amp; comm)</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    : mpi_comm(comm),</div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>      pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),</div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>      parameter_file(parameter_file),</div>
@@ -176,9 +176,9 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  }</div>
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  setup(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Grid.html">Grid&lt;dim&gt;</a>&gt; &amp;                      grid,</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  setup(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">Grid&lt;dim&gt;</a>&gt; &amp;                      grid,</div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>        std::shared_ptr&lt;dealii::Mapping&lt;dim&gt;&gt; &amp;           mapping,</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>        std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1MultigridMappings.html">MultigridMappings&lt;dim, Number&gt;</a>&gt; &amp; multigrid_mappings)</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>        std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">MultigridMappings&lt;dim, Number&gt;</a>&gt; &amp; multigrid_mappings)</div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  {</div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    <span class="comment">// parameters</span></div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    parse_parameters();</div>
@@ -196,15 +196,15 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span> </div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    <span class="keywordflow">if</span>(compute_aspect_ratio)</div>
 <div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    {</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>      <span class="keyword">auto</span> <span class="keyword">const</span> reference_cells = grid-&gt;triangulation-&gt;get_reference_cells();</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>      AssertThrow(reference_cells.size() == 1, dealii::ExcMessage(<span class="stringliteral">&quot;No mixed meshes allowed&quot;</span>));</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>      <span class="keyword">auto</span> <span class="keyword">const</span> <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">reference_cells</a> = grid-&gt;triangulation-&gt;get_reference_cells();</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>      <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">AssertThrow</a>(<a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">reference_cells</a>.size() == 1, dealii::ExcMessage(<span class="stringliteral">&quot;No mixed meshes allowed&quot;</span>));</div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>      <span class="keyword">auto</span> <span class="keyword">const</span> quad =</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>        reference_cells[0].template get_gauss_type_quadrature&lt;dim&gt;(param.degree + 1);</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>      <span class="keyword">auto</span> <span class="keyword">const</span> <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">quad</a> =</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>        <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">reference_cells</a>[0].template <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">get_gauss_type_quadrature&lt;dim&gt;</a>(param.degree + 1);</div>
 <div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>      <span class="keywordtype">double</span> <span class="keyword">const</span> aspect_ratio =</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>        dealii::GridTools::compute_maximum_aspect_ratio(*mapping, *grid-&gt;triangulation, quad);</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>      pcout &lt;&lt; std::endl &lt;&lt; <span class="stringliteral">&quot;Maximum aspect ratio = &quot;</span> &lt;&lt; aspect_ratio &lt;&lt; std::endl;</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>      <span class="keywordtype">double</span> <span class="keyword">const</span> <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">aspect_ratio</a> =</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>        dealii::GridTools::compute_maximum_aspect_ratio(*mapping, *grid-&gt;triangulation, <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">quad</a>);</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>      pcout &lt;&lt; std::endl &lt;&lt; <span class="stringliteral">&quot;Maximum aspect ratio = &quot;</span> &lt;&lt; <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">aspect_ratio</a> &lt;&lt; std::endl;</div>
 <div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>    }</div>
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
 <div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>    <span class="comment">// boundary conditions</span></div>
@@ -242,12 +242,12 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>  parse_parameters()</div>
 <div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>  {</div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>    dealii::ParameterHandler prm;</div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>    this-&gt;add_parameters(prm);</div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>    prm.parse_input(parameter_file, <span class="stringliteral">&quot;&quot;</span>, <span class="keyword">true</span>, <span class="keyword">true</span>);</div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>    dealii::ParameterHandler <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">prm</a>;</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>    this-&gt;add_parameters(<a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">prm</a>);</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>    <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">prm</a>.parse_input(parameter_file, <span class="stringliteral">&quot;&quot;</span>, <span class="keyword">true</span>, <span class="keyword">true</span>);</div>
 <div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>  }</div>
 <div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span> </div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>  MPI_Comm <span class="keyword">const</span> &amp; mpi_comm;</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>  <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">MPI_Comm</a> <span class="keyword">const</span> &amp; mpi_comm;</div>
 <div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span> </div>
 <div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  dealii::ConditionalOStream pcout;</div>
 <div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span> </div>
@@ -271,9 +271,9 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>  set_parameters() = 0;</div>
 <div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span> </div>
 <div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  create_grid(<a class="code hl_class" href="classExaDG_1_1Grid.html">Grid&lt;dim&gt;</a> &amp;                                       grid,</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  create_grid(<a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">Grid&lt;dim&gt;</a> &amp;                                       grid,</div>
 <div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>              std::shared_ptr&lt;dealii::Mapping&lt;dim&gt;&gt; &amp;           mapping,</div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>              std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1MultigridMappings.html">MultigridMappings&lt;dim, Number&gt;</a>&gt; &amp; multigrid_mappings) = 0;</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>              std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">MultigridMappings&lt;dim, Number&gt;</a>&gt; &amp; multigrid_mappings) = 0;</div>
 <div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span> </div>
 <div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>  set_boundary_descriptor() = 0;</div>
@@ -288,8 +288,6 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span> </div>
 <div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span> </div>
 <div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_POISSON_USER_INTERFACE_APPLICATION_BASE_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1Grid_html"><div class="ttname"><a href="classExaDG_1_1Grid.html">ExaDG::Grid</a></div><div class="ttdef"><b>Definition</b> grid.h:40</div></div>
-<div class="ttc" id="aclassExaDG_1_1MultigridMappings_html"><div class="ttname"><a href="classExaDG_1_1MultigridMappings.html">ExaDG::MultigridMappings</a></div><div class="ttdef"><b>Definition</b> grid.h:84</div></div>
 <div class="ttc" id="aclassExaDG_1_1Poisson_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1ApplicationBase.html">ExaDG::Poisson::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:49</div></div>
 <div class="ttc" id="aclassExaDG_1_1Poisson_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1Parameters.html">ExaDG::Poisson::Parameters</a></div><div class="ttdef"><b>Definition</b> parameters.h:36</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>

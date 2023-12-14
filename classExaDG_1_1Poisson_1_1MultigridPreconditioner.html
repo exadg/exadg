@@ -94,7 +94,7 @@ Inheritance diagram for ExaDG::Poisson::MultigridPreconditioner&lt; dim, Number,
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:a302b20f1481f0f1a51e54ffd85f3539f" id="r_a302b20f1481f0f1a51e54ffd85f3539f"><td class="memItemLeft" align="right" valign="top"><a id="a302b20f1481f0f1a51e54ffd85f3539f" name="a302b20f1481f0f1a51e54ffd85f3539f"></a>
-typedef Base::MultigridNumber&#160;</td><td class="memItemRight" valign="bottom"><b>MultigridNumber</b></td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">typedef</a> Base::MultigridNumber&#160;</td><td class="memItemRight" valign="bottom"><b>MultigridNumber</b></td></tr>
 <tr class="separator:a302b20f1481f0f1a51e54ffd85f3539f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_types_classExaDG_1_1MultigridPreconditionerBase"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classExaDG_1_1MultigridPreconditionerBase')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase&lt; dim, Number, MultigridNumber_ &gt;</a></td></tr>
 <tr class="memitem:a617c407c2bc9c43b73aa9c055b553d8e inherit pub_types_classExaDG_1_1MultigridPreconditionerBase" id="r_a617c407c2bc9c43b73aa9c055b553d8e"><td class="memItemLeft" align="right" valign="top">
@@ -108,12 +108,12 @@ typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ae538cf72e17e04357e14712cf6873079" id="r_ae538cf72e17e04357e14712cf6873079"><td class="memItemLeft" align="right" valign="top"><a id="ae538cf72e17e04357e14712cf6873079" name="ae538cf72e17e04357e14712cf6873079"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MultigridPreconditioner</b> (MPI_Comm const &amp;mpi_comm)</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MultigridPreconditioner</b> (<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;mpi_comm)</td></tr>
 <tr class="separator:ae538cf72e17e04357e14712cf6873079"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2f2d3ec3fe7a2fa82005abd61ced41a4" id="r_a2f2d3ec3fe7a2fa82005abd61ced41a4"><td class="memItemLeft" align="right" valign="top"><a id="a2f2d3ec3fe7a2fa82005abd61ced41a4" name="a2f2d3ec3fe7a2fa82005abd61ced41a4"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (<a class="el" href="structExaDG_1_1MultigridData.html">MultigridData</a> const &amp;mg_data, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridMappings.html">MultigridMappings</a>&lt; dim, Number &gt; &gt; const multigrid_mappings, dealii::FiniteElement&lt; dim &gt; const &amp;fe, <a class="el" href="structExaDG_1_1Poisson_1_1LaplaceOperatorData.html">LaplaceOperatorData</a>&lt; rank, dim &gt; const &amp;data, bool const mesh_is_moving, Map_DBC const &amp;dirichlet_bc, Map_DBC_ComponentMask const &amp;dirichlet_bc_component_mask)</td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (<a class="el" href="structExaDG_1_1MultigridData.html">MultigridData</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">mg_data</a>, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &gt; grid, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridMappings.html">MultigridMappings</a>&lt; dim, Number &gt; &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> multigrid_mappings, dealii::FiniteElement&lt; dim &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;fe, <a class="el" href="structExaDG_1_1Poisson_1_1LaplaceOperatorData.html">LaplaceOperatorData</a>&lt; rank, dim &gt; <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;data, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">bool</a> <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> mesh_is_moving, Map_DBC <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;dirichlet_bc, Map_DBC_ComponentMask <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">const</a> &amp;dirichlet_bc_component_mask)</td></tr>
 <tr class="separator:a2f2d3ec3fe7a2fa82005abd61ced41a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac0dfd36cf6d3c5341c343c824be09362" id="r_ac0dfd36cf6d3c5341c343c824be09362"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Poisson_1_1MultigridPreconditioner.html#ac0dfd36cf6d3c5341c343c824be09362">update</a> () final</td></tr>
+<tr class="memitem:ac0dfd36cf6d3c5341c343c824be09362" id="r_ac0dfd36cf6d3c5341c343c824be09362"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Poisson_1_1MultigridPreconditioner.html#ac0dfd36cf6d3c5341c343c824be09362">update</a> () <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">final</a></td></tr>
 <tr class="separator:ac0dfd36cf6d3c5341c343c824be09362"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1MultigridPreconditionerBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1MultigridPreconditionerBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase&lt; dim, Number, MultigridNumber_ &gt;</a></td></tr>
 <tr class="memitem:a4c41692965f1fc95a72f28bdfac62206 inherit pub_methods_classExaDG_1_1MultigridPreconditionerBase" id="r_a4c41692965f1fc95a72f28bdfac62206"><td class="memItemLeft" align="right" valign="top">
@@ -231,13 +231,13 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>update_needed</b></td
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim, typename Number , int n_components&gt; </div>
+template&lt;<a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">typename</a> Number , <a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">int</a> n_components&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Poisson_1_1MultigridPreconditioner.html">ExaDG::Poisson::MultigridPreconditioner</a>&lt; dim, Number, n_components &gt;::update </td>
+          <td class="memname"><a class="el" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1Poisson_1_1MultigridPreconditioner.html">ExaDG::Poisson::MultigridPreconditioner</a>&lt; dim, Number, n_components &gt;::update </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>

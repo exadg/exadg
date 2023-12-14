@@ -108,7 +108,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno"><a class="line" href="classExaDG_1_1IncNS_1_1Operators_1_1DivergenceKernel.html">   24</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1IncNS_1_1Operators_1_1DivergenceKernel.html">DivergenceKernel</a></div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>{</div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>  <span class="keyword">typedef</span> CellIntegrator&lt;dim, dim, Number&gt; CellIntegratorU;</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">CellIntegrator&lt;dim, dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">CellIntegratorU</a>;</div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
 <div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  <span class="keyword">typedef</span> dealii::VectorizedArray&lt;Number&gt;                         scalar;</div>
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  <span class="keyword">typedef</span> dealii::Tensor&lt;1, dim, dealii::VectorizedArray&lt;Number&gt;&gt; vector;</div>
@@ -117,47 +117,47 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <span class="keyword">static</span> <a class="code hl_struct" href="structExaDG_1_1MappingFlags.html">MappingFlags</a></div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  get_mapping_flags()</div>
 <div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  {</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>    <a class="code hl_struct" href="structExaDG_1_1MappingFlags.html">MappingFlags</a> flags;</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>    <a class="code hl_struct" href="structExaDG_1_1MappingFlags.html">MappingFlags</a> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">flags</a>;</div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>    flags.cells       = dealii::update_JxW_values | dealii::update_gradients;</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>    flags.inner_faces = dealii::update_JxW_values | dealii::update_normal_vectors;</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    flags.boundary_faces =</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>    <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">flags</a>.cells       = dealii::update_JxW_values | dealii::update_gradients;</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>    <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">flags</a>.inner_faces = dealii::update_JxW_values | dealii::update_normal_vectors;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">flags</a>.boundary_faces =</div>
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>      dealii::update_JxW_values | dealii::update_quadrature_points | dealii::update_normal_vectors;</div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    <span class="keywordflow">return</span> flags;</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    <span class="keywordflow">return</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">flags</a>;</div>
 <div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  }</div>
 <div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="comment">   *  This function implements the central flux as numerical flux function.</span></div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keyword">inline</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">DEAL_II_ALWAYS_INLINE</a> <span class="comment">//</span></div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    vector</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    calculate_flux(vector <span class="keyword">const</span> &amp; value_m, vector <span class="keyword">const</span> &amp; value_p)<span class="keyword"> const</span></div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    calculate_flux(vector <span class="keyword">const</span> &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">value_m</a>, vector <span class="keyword">const</span> &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">value_p</a>)<span class="keyword"> const</span></div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    <span class="keywordflow">return</span> 0.5 * (value_m + value_p);</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    <span class="keywordflow">return</span> 0.5 * (<a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">value_m</a> + <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">value_p</a>);</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  }</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="comment">   * Volume flux, i.e., the term occurring in the volume integral for</span></div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span><span class="comment">   * weak formulation (performing integration-by-parts)</span></div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="keyword">inline</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">DEAL_II_ALWAYS_INLINE</a> <span class="comment">//</span></div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    vector</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    get_volume_flux_weak(CellIntegratorU &amp; velocity, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> q)<span class="keyword"> const</span></div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    get_volume_flux_weak(<a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">CellIntegratorU</a> &amp; velocity, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">q</a>)<span class="keyword"> const</span></div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span><span class="keyword">  </span>{</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    <span class="comment">// minus sign due to integration by parts</span></div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    <span class="keywordflow">return</span> -velocity.get_value(q);</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    <span class="keywordflow">return</span> -velocity.get_value(<a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">q</a>);</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  }</div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span><span class="comment">   * Volume flux, i.e., the term occurring in the volume integral for</span></div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span><span class="comment">   * strong formulation (no integration-by-parts, or integration-by-parts performed twice)</span></div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  <span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  <span class="keyword">inline</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">DEAL_II_ALWAYS_INLINE</a> <span class="comment">//</span></div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    scalar</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    get_volume_flux_strong(CellIntegratorU &amp; velocity, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> q)<span class="keyword"> const</span></div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    get_volume_flux_strong(<a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">CellIntegratorU</a> &amp; velocity, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">q</a>)<span class="keyword"> const</span></div>
 <div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>    <span class="keywordflow">return</span> velocity.get_divergence(q);</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>    <span class="keywordflow">return</span> velocity.get_divergence(<a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">q</a>);</div>
 <div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  }</div>
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>};</div>
 </div>
@@ -196,7 +196,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno"><a class="line" href="classExaDG_1_1IncNS_1_1DivergenceOperator.html">  108</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1IncNS_1_1DivergenceOperator.html">DivergenceOperator</a></div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>{</div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1DivergenceOperator.html">DivergenceOperator&lt;dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1DivergenceOperator.html">This</a>;</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">DivergenceOperator&lt;dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">This</a>;</div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span> </div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  <span class="keyword">typedef</span> dealii::LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
 <div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span> </div>
@@ -205,19 +205,19 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  <span class="keyword">typedef</span> std::pair&lt;unsigned int, unsigned int&gt; Range;</div>
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span> </div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  <span class="keyword">typedef</span> CellIntegrator&lt;dim, dim, Number&gt; CellIntegratorU;</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  <span class="keyword">typedef</span> CellIntegrator&lt;dim, 1, Number&gt;   CellIntegratorP;</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">CellIntegrator&lt;dim, dim, Number&gt;</a> CellIntegratorU;</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">CellIntegrator&lt;dim, 1, Number&gt;</a>   CellIntegratorP;</div>
 <div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span> </div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  <span class="keyword">typedef</span> FaceIntegrator&lt;dim, dim, Number&gt; FaceIntegratorU;</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  <span class="keyword">typedef</span> FaceIntegrator&lt;dim, 1, Number&gt;   FaceIntegratorP;</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">FaceIntegrator&lt;dim, dim, Number&gt;</a> FaceIntegratorU;</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">FaceIntegrator&lt;dim, 1, Number&gt;</a>   FaceIntegratorP;</div>
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
 <div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1DivergenceOperator.html">DivergenceOperator</a>();</div>
 <div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span> </div>
 <div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  initialize(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>             <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1DivergenceOperatorData.html">DivergenceOperatorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;     data);</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>             <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">DivergenceOperatorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;     data);</div>
 <div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span> </div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1DivergenceOperatorData.html">DivergenceOperatorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">DivergenceOperatorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;</div>
 <div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  get_operator_data() <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span> </div>
 <div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  <span class="comment">// homogeneous operator</span></div>
@@ -252,10 +252,10 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>  do_cell_integral_strong(CellIntegratorP &amp; pressure, CellIntegratorU &amp; velocity) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span> </div>
 <div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>  do_face_integral(FaceIntegratorU &amp; velocity_m,</div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>                   FaceIntegratorU &amp; velocity_p,</div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>                   FaceIntegratorP &amp; pressure_m,</div>
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>                   FaceIntegratorP &amp; pressure_p) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>  do_face_integral(FaceIntegratorU &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">velocity_m</a>,</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>                   FaceIntegratorU &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">velocity_p</a>,</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>                   FaceIntegratorP &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">pressure_m</a>,</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>                   FaceIntegratorP &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">pressure_p</a>) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span> </div>
 <div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  do_boundary_integral(FaceIntegratorU &amp;                  velocity,</div>
@@ -265,7 +265,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span> </div>
 <div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>  do_boundary_integral_from_dof_vector(FaceIntegratorU &amp;                  velocity,</div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>                                       FaceIntegratorU &amp;                  velocity_exterior,</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>                                       FaceIntegratorU &amp;                  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">velocity_exterior</a>,</div>
 <div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>                                       FaceIntegratorP &amp;                  pressure,</div>
 <div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>                                       OperatorType <span class="keyword">const</span> &amp;               operator_type,</div>
 <div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>                                       dealii::types::boundary_id <span class="keyword">const</span> &amp; boundary_id) <span class="keyword">const</span>;</div>
@@ -274,54 +274,54 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>  cell_loop(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
 <div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>            VectorType &amp;                            dst,</div>
 <div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>            VectorType <span class="keyword">const</span> &amp;                      src,</div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>            Range <span class="keyword">const</span> &amp;                           cell_range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>            Range <span class="keyword">const</span> &amp;                           <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">cell_range</a>) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span> </div>
 <div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>  face_loop(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
 <div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>            VectorType &amp;                            dst,</div>
 <div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>            VectorType <span class="keyword">const</span> &amp;                      src,</div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>            Range <span class="keyword">const</span> &amp;                           face_range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>            Range <span class="keyword">const</span> &amp;                           <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">face_range</a>) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span> </div>
 <div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>  boundary_face_loop_hom_operator(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
 <div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>                                  VectorType &amp;                            dst,</div>
 <div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>                                  VectorType <span class="keyword">const</span> &amp;                      src,</div>
-<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>                                  Range <span class="keyword">const</span> &amp;                           face_range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>                                  Range <span class="keyword">const</span> &amp;                           <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">face_range</a>) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span> </div>
 <div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>  boundary_face_loop_full_operator(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
 <div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>                                   VectorType &amp;                            dst,</div>
 <div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>                                   VectorType <span class="keyword">const</span> &amp;                      src,</div>
-<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>                                   Range <span class="keyword">const</span> &amp;                           face_range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>                                   Range <span class="keyword">const</span> &amp;                           <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">face_range</a>) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span> </div>
 <div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>  cell_loop_inhom_operator(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
 <div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>                           VectorType &amp;                            dst,</div>
 <div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>                           VectorType <span class="keyword">const</span> &amp;                      src,</div>
-<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>                           Range <span class="keyword">const</span> &amp;                           cell_range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>                           Range <span class="keyword">const</span> &amp;                           <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">cell_range</a>) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span> </div>
 <div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>  face_loop_inhom_operator(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
 <div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>                           VectorType &amp;                            dst,</div>
 <div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>                           VectorType <span class="keyword">const</span> &amp;                      src,</div>
-<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>                           Range <span class="keyword">const</span> &amp;                           face_range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>                           Range <span class="keyword">const</span> &amp;                           <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">face_range</a>) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span> </div>
 <div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>  boundary_face_loop_inhom_operator(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp;       matrix_free,</div>
 <div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>                                    VectorType &amp;                                  dst,</div>
 <div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>                                    VectorType <span class="keyword">const</span> &amp;                            src,</div>
-<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>                                    std::pair&lt;unsigned int, unsigned int&gt; <span class="keyword">const</span> &amp; face_range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>                                    std::pair&lt;unsigned int, unsigned int&gt; <span class="keyword">const</span> &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">face_range</a>) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span> </div>
 <div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>  boundary_face_loop_inhom_operator_bc_from_dof_vector(</div>
 <div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>    dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
 <div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>    VectorType &amp;                            dst,</div>
 <div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>    VectorType <span class="keyword">const</span> &amp;                      src,</div>
-<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>    Range <span class="keyword">const</span> &amp;                           face_range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>    Range <span class="keyword">const</span> &amp;                           <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">face_range</a>) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span> </div>
 <div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>  dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> * matrix_free;</div>
 <div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span> </div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>  <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1DivergenceOperatorData.html">DivergenceOperatorData&lt;dim&gt;</a> data;</div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">DivergenceOperatorData&lt;dim&gt;</a> data;</div>
 <div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span> </div>
 <div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>  <span class="keyword">mutable</span> <span class="keywordtype">double</span> time;</div>
 <div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span> </div>
@@ -338,6 +338,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span> </div>
 <div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_DIVERGENCE_OPERATOR_H_ \</span></div>
 <div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span><span class="comment">        */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1IncNS_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1ApplicationBase.html">ExaDG::IncNS::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:51</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1DivergenceOperator_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1DivergenceOperator.html">ExaDG::IncNS::DivergenceOperator</a></div><div class="ttdef"><b>Definition</b> divergence_operator.h:109</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1Operators_1_1DivergenceKernel_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1Operators_1_1DivergenceKernel.html">ExaDG::IncNS::Operators::DivergenceKernel</a></div><div class="ttdef"><b>Definition</b> divergence_operator.h:25</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>

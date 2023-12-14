@@ -138,26 +138,26 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span><span class="comment">   * Constructor.</span></div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1Operator.html">Operator</a>(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Grid.html">Grid&lt;dim&gt;</a> <span class="keyword">const</span>&gt;                      grid,</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1Operator.html">Operator</a>(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">Grid&lt;dim&gt;</a> <span class="keyword">const</span>&gt;                      grid,</div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>           std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;           mapping,</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>           std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1MultigridMappings.html">MultigridMappings&lt;dim, Number&gt;</a>&gt; <span class="keyword">const</span> multigrid_mappings,</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>           std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1ConvDiff_1_1BoundaryDescriptor.html">BoundaryDescriptor&lt;dim&gt;</a> <span class="keyword">const</span>&gt;        boundary_descriptor,</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>           std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1ConvDiff_1_1FieldFunctions.html">FieldFunctions&lt;dim&gt;</a> <span class="keyword">const</span>&gt;            field_functions,</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>           std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">MultigridMappings&lt;dim, Number&gt;</a>&gt; <span class="keyword">const</span> multigrid_mappings,</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>           std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">BoundaryDescriptor&lt;dim&gt;</a> <span class="keyword">const</span>&gt;        boundary_descriptor,</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>           std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">FieldFunctions&lt;dim&gt;</a> <span class="keyword">const</span>&gt;            field_functions,</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>           <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;                                    param,</div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>           std::string <span class="keyword">const</span> &amp;                                   field,</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>           MPI_Comm <span class="keyword">const</span> &amp;                                      mpi_comm);</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>           <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">MPI_Comm</a> <span class="keyword">const</span> &amp;                                      mpi_comm);</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  fill_matrix_free_data(<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a> &amp; matrix_free_data) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  fill_matrix_free_data(<a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">MatrixFreeData&lt;dim, Number&gt;</a> &amp; matrix_free_data) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  <a class="code hl_function" href="classExaDG_1_1ConvDiff_1_1Operator.html#a15f533352d75d8183fc50222043adf4b">setup</a>();</div>
 <div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  <a class="code hl_function" href="classExaDG_1_1ConvDiff_1_1Operator.html#a15f533352d75d8183fc50222043adf4b">setup</a>(std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span>&gt; matrix_free_in,</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>        std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a> <span class="keyword">const</span>&gt;     matrix_free_data_in,</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>        std::string <span class="keyword">const</span> &amp;                                    dof_index_velocity_external_in = <span class="stringliteral">&quot;&quot;</span>);</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  <a class="code hl_function" href="classExaDG_1_1ConvDiff_1_1Operator.html#a15f533352d75d8183fc50222043adf4b">setup</a>(std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span>&gt; <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">matrix_free_in</a>,</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>        std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">MatrixFreeData&lt;dim, Number&gt;</a> <span class="keyword">const</span>&gt;     <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">matrix_free_data_in</a>,</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>        std::string <span class="keyword">const</span> &amp;                                    <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">dof_index_velocity_external_in</a> = <span class="stringliteral">&quot;&quot;</span>);</div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span> </div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span><span class="comment">   * Call this setup() function for setup after adaptive mesh refinement.</span></div>
@@ -281,16 +281,16 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span><span class="comment">   * Updates spatial operators after grid has been moved.</span></div>
 <div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>  update_after_grid_motion(<span class="keywordtype">bool</span> <span class="keyword">const</span> update_matrix_free);</div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>  update_after_grid_motion(<span class="keywordtype">bool</span> <span class="keyword">const</span> <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">update_matrix_free</a>);</div>
 <div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span> </div>
 <div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span><span class="comment">   * Prepare and interpolation in adaptive mesh refinement.</span></div>
 <div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>  prepare_coarsening_and_refinement(std::vector&lt;VectorType *&gt; &amp; vectors);</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>  prepare_coarsening_and_refinement(std::vector&lt;VectorType *&gt; &amp; <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">vectors</a>);</div>
 <div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span> </div>
 <div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>  interpolate_after_coarsening_and_refinement(std::vector&lt;VectorType *&gt; &amp; vectors);</div>
+<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>  interpolate_after_coarsening_and_refinement(std::vector&lt;VectorType *&gt; &amp; <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">vectors</a>);</div>
 <div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span> </div>
 <div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span><span class="comment">   * This function solves the linear system of equations in case of implicit time integration or</span></div>
@@ -298,7 +298,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span><span class="comment">   * operators).</span></div>
 <div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span></div>
-<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>  solve(VectorType &amp;       sol,</div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>  solve(VectorType &amp;       <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">sol</a>,</div>
 <div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>        VectorType <span class="keyword">const</span> &amp; rhs,</div>
 <div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>        <span class="keywordtype">bool</span> <span class="keyword">const</span>         update_preconditioner,</div>
 <div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>        <span class="keywordtype">double</span> <span class="keyword">const</span>       scaling_factor = -1.0,</div>
@@ -485,16 +485,16 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00424" name="l00424"></a><span class="lineno">  424</span>  std::shared_ptr&lt;Operators::ConvectiveKernel&lt;dim, Number&gt;&gt; convective_kernel;</div>
 <div class="line"><a id="l00425" name="l00425"></a><span class="lineno">  425</span>  std::shared_ptr&lt;Operators::DiffusiveKernel&lt;dim, Number&gt;&gt;  diffusive_kernel;</div>
 <div class="line"><a id="l00426" name="l00426"></a><span class="lineno">  426</span> </div>
-<div class="line"><a id="l00427" name="l00427"></a><span class="lineno">  427</span>  <a class="code hl_class" href="classExaDG_1_1MassOperator.html">MassOperator&lt;dim, 1, Number&gt;</a>        mass_operator;</div>
-<div class="line"><a id="l00428" name="l00428"></a><span class="lineno">  428</span>  <a class="code hl_class" href="classExaDG_1_1InverseMassOperator.html">InverseMassOperator&lt;dim, 1, Number&gt;</a> inverse_mass_operator;</div>
-<div class="line"><a id="l00429" name="l00429"></a><span class="lineno">  429</span>  <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ConvectiveOperator.html">ConvectiveOperator&lt;dim, Number&gt;</a>     convective_operator;</div>
-<div class="line"><a id="l00430" name="l00430"></a><span class="lineno">  430</span>  <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1DiffusiveOperator.html">DiffusiveOperator&lt;dim, Number&gt;</a>      diffusive_operator;</div>
-<div class="line"><a id="l00431" name="l00431"></a><span class="lineno">  431</span>  <a class="code hl_class" href="classExaDG_1_1RHSOperator.html">RHSOperator&lt;dim, Number&gt;</a>            rhs_operator;</div>
+<div class="line"><a id="l00427" name="l00427"></a><span class="lineno">  427</span>  <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">MassOperator&lt;dim, 1, Number&gt;</a>        mass_operator;</div>
+<div class="line"><a id="l00428" name="l00428"></a><span class="lineno">  428</span>  <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">InverseMassOperator&lt;dim, 1, Number&gt;</a> inverse_mass_operator;</div>
+<div class="line"><a id="l00429" name="l00429"></a><span class="lineno">  429</span>  <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">ConvectiveOperator&lt;dim, Number&gt;</a>     convective_operator;</div>
+<div class="line"><a id="l00430" name="l00430"></a><span class="lineno">  430</span>  <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">DiffusiveOperator&lt;dim, Number&gt;</a>      diffusive_operator;</div>
+<div class="line"><a id="l00431" name="l00431"></a><span class="lineno">  431</span>  <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">RHSOperator&lt;dim, Number&gt;</a>            rhs_operator;</div>
 <div class="line"><a id="l00432" name="l00432"></a><span class="lineno">  432</span> </div>
 <div class="line"><a id="l00433" name="l00433"></a><span class="lineno">  433</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00434" name="l00434"></a><span class="lineno">  434</span><span class="comment">   * Combined operator.</span></div>
 <div class="line"><a id="l00435" name="l00435"></a><span class="lineno">  435</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00436" name="l00436"></a><span class="lineno">  436</span>  <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1CombinedOperator.html">CombinedOperator&lt;dim, Number&gt;</a> combined_operator;</div>
+<div class="line"><a id="l00436" name="l00436"></a><span class="lineno">  436</span>  <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">CombinedOperator&lt;dim, Number&gt;</a> combined_operator;</div>
 <div class="line"><a id="l00437" name="l00437"></a><span class="lineno">  437</span> </div>
 <div class="line"><a id="l00438" name="l00438"></a><span class="lineno">  438</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00439" name="l00439"></a><span class="lineno">  439</span><span class="comment">   * Solvers and preconditioners</span></div>
@@ -505,7 +505,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00444" name="l00444"></a><span class="lineno">  444</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00445" name="l00445"></a><span class="lineno">  445</span><span class="comment">   * MPI</span></div>
 <div class="line"><a id="l00446" name="l00446"></a><span class="lineno">  446</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00447" name="l00447"></a><span class="lineno">  447</span>  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
+<div class="line"><a id="l00447" name="l00447"></a><span class="lineno">  447</span>  <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">MPI_Comm</a> <span class="keyword">const</span> mpi_comm;</div>
 <div class="line"><a id="l00448" name="l00448"></a><span class="lineno">  448</span> </div>
 <div class="line"><a id="l00449" name="l00449"></a><span class="lineno">  449</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00450" name="l00450"></a><span class="lineno">  450</span><span class="comment">   * Output to screen.</span></div>
@@ -518,22 +518,12 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00456" name="l00456"></a><span class="lineno">  456</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00457" name="l00457"></a><span class="lineno">  457</span> </div>
 <div class="line"><a id="l00458" name="l00458"></a><span class="lineno">  458</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_CONVECTION_DIFFUSION_DG_CONVECTION_DIFFUSION_OPERATION_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1CombinedOperator_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1CombinedOperator.html">ExaDG::ConvDiff::CombinedOperator</a></div><div class="ttdef"><b>Definition</b> combined_operator.h:56</div></div>
-<div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1ConvectiveOperator_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1ConvectiveOperator.html">ExaDG::ConvDiff::ConvectiveOperator</a></div><div class="ttdef"><b>Definition</b> convective_operator.h:553</div></div>
-<div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1DiffusiveOperator_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1DiffusiveOperator.html">ExaDG::ConvDiff::DiffusiveOperator</a></div><div class="ttdef"><b>Definition</b> diffusive_operator.h:232</div></div>
+<div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">ExaDG::ConvDiff::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:44</div></div>
 <div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1Interface_1_1Operator_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1Interface_1_1Operator.html">ExaDG::ConvDiff::Interface::Operator</a></div><div class="ttdef"><b>Definition</b> interface.h:39</div></div>
 <div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1Operator_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a></div><div class="ttdef"><b>Definition</b> operator.h:49</div></div>
 <div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1Operator_html_a15f533352d75d8183fc50222043adf4b"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1Operator.html#a15f533352d75d8183fc50222043adf4b">ExaDG::ConvDiff::Operator::setup</a></div><div class="ttdeci">void setup()</div><div class="ttdef"><b>Definition</b> operator.cpp:315</div></div>
 <div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1Parameters.html">ExaDG::ConvDiff::Parameters</a></div><div class="ttdef"><b>Definition</b> parameters.h:46</div></div>
-<div class="ttc" id="aclassExaDG_1_1Grid_html"><div class="ttname"><a href="classExaDG_1_1Grid.html">ExaDG::Grid</a></div><div class="ttdef"><b>Definition</b> grid.h:40</div></div>
-<div class="ttc" id="aclassExaDG_1_1InverseMassOperator_html"><div class="ttname"><a href="classExaDG_1_1InverseMassOperator.html">ExaDG::InverseMassOperator</a></div><div class="ttdef"><b>Definition</b> inverse_mass_operator.h:53</div></div>
-<div class="ttc" id="aclassExaDG_1_1MassOperator_html"><div class="ttname"><a href="classExaDG_1_1MassOperator.html">ExaDG::MassOperator</a></div><div class="ttdef"><b>Definition</b> mass_operator.h:41</div></div>
-<div class="ttc" id="aclassExaDG_1_1MultigridMappings_html"><div class="ttname"><a href="classExaDG_1_1MultigridMappings.html">ExaDG::MultigridMappings</a></div><div class="ttdef"><b>Definition</b> grid.h:84</div></div>
-<div class="ttc" id="aclassExaDG_1_1RHSOperator_html"><div class="ttname"><a href="classExaDG_1_1RHSOperator.html">ExaDG::RHSOperator</a></div><div class="ttdef"><b>Definition</b> rhs_operator.h:107</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
-<div class="ttc" id="astructExaDG_1_1ConvDiff_1_1BoundaryDescriptor_html"><div class="ttname"><a href="structExaDG_1_1ConvDiff_1_1BoundaryDescriptor.html">ExaDG::ConvDiff::BoundaryDescriptor</a></div><div class="ttdef"><b>Definition</b> boundary_descriptor.h:46</div></div>
-<div class="ttc" id="astructExaDG_1_1ConvDiff_1_1FieldFunctions_html"><div class="ttname"><a href="structExaDG_1_1ConvDiff_1_1FieldFunctions.html">ExaDG::ConvDiff::FieldFunctions</a></div><div class="ttdef"><b>Definition</b> field_functions.h:31</div></div>
-<div class="ttc" id="astructExaDG_1_1MatrixFreeData_html"><div class="ttname"><a href="structExaDG_1_1MatrixFreeData.html">ExaDG::MatrixFreeData</a></div><div class="ttdef"><b>Definition</b> matrix_free_data.h:40</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

@@ -134,11 +134,11 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="keyword">typedef</span> dealii::LinearAlgebra::distributed::Vector&lt;Number&gt;      VectorType;</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keyword">typedef</span> dealii::LinearAlgebra::distributed::BlockVector&lt;Number&gt; BlockVectorType;</div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1DriverSteadyProblems.html">DriverSteadyProblems</a>(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1IncNS_1_1OperatorCoupled.html">OperatorCoupled&lt;dim, Number&gt;</a>&gt;   operator_,</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>                       std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1IncNS_1_1PostProcessorInterface.html">PostProcessorInterface&lt;Number&gt;</a>&gt; postprocessor_,</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>                       <a class="code hl_class" href="classExaDG_1_1IncNS_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;                              param_,</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>                       MPI_Comm <span class="keyword">const</span> &amp;                                mpi_comm_,</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>                       <span class="keywordtype">bool</span> <span class="keyword">const</span>                                      is_test_);</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1DriverSteadyProblems.html">DriverSteadyProblems</a>(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">OperatorCoupled&lt;dim, Number&gt;</a>&gt;   <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">operator_</a>,</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>                       std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">PostProcessorInterface&lt;Number&gt;</a>&gt; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">postprocessor_</a>,</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>                       <a class="code hl_class" href="classExaDG_1_1IncNS_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;                              <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">param_</a>,</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>                       <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">MPI_Comm</a> <span class="keyword">const</span> &amp;                                <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">mpi_comm_</a>,</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>                       <span class="keywordtype">bool</span> <span class="keyword">const</span>                                      <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">is_test_</a>);</div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  setup();</div>
@@ -175,7 +175,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp; param;</div>
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">MPI_Comm</a> <span class="keyword">const</span> mpi_comm;</div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span> </div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  <span class="keywordtype">bool</span> is_test;</div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
@@ -201,10 +201,9 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_DRIVER_STEADY_PROBLEMS_H_ */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1IncNS_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1ApplicationBase.html">ExaDG::IncNS::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:51</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1DriverSteadyProblems_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1DriverSteadyProblems.html">ExaDG::IncNS::DriverSteadyProblems</a></div><div class="ttdef"><b>Definition</b> driver_steady_problems.h:48</div></div>
-<div class="ttc" id="aclassExaDG_1_1IncNS_1_1OperatorCoupled_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1OperatorCoupled.html">ExaDG::IncNS::OperatorCoupled</a></div><div class="ttdef"><b>Definition</b> operator_coupled.h:189</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1Parameters.html">ExaDG::IncNS::Parameters</a></div><div class="ttdef"><b>Definition</b> parameters.h:46</div></div>
-<div class="ttc" id="aclassExaDG_1_1IncNS_1_1PostProcessorInterface_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1PostProcessorInterface.html">ExaDG::IncNS::PostProcessorInterface</a></div><div class="ttdef"><b>Definition</b> postprocessor_interface.h:34</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
