@@ -94,7 +94,7 @@ private:
                                                  multigrid_mappings,
                                                  this->param.grid.element_type,
                                                  this->param.mapping_degree,
-                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree_coarse_grids,
                                                  this->param.involves_h_multigrid());
   }
 
