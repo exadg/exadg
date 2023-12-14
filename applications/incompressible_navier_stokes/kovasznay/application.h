@@ -167,9 +167,10 @@ private:
       (this->param.end_time - this->param.start_time) / 10;
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.mapping_degree          = this->param.degree_u;
-    this->param.degree_p                = DegreePressure::MixedOrder;
+    this->param.grid.triangulation_type     = TriangulationType::Distributed;
+    this->param.mapping_degree              = this->param.degree_u;
+    this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
+    this->param.degree_p                    = DegreePressure::MixedOrder;
 
     // convective term
 
@@ -253,9 +254,6 @@ private:
               std::shared_ptr<dealii::Mapping<dim>> &           mapping,
               std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
-    (void)mapping;
-    (void)multigrid_mappings;
-
     auto const lambda_create_triangulation =
       [&](dealii::Triangulation<dim, dim> &                        tria,
           std::vector<dealii::GridTools::PeriodicFacePair<
@@ -287,6 +285,14 @@ private:
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
+
+    // mappings
+    GridUtilities::create_mapping_with_multigrid(mapping,
+                                                 multigrid_mappings,
+                                                 this->param.grid.element_type,
+                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree_coarse_grids,
+                                                 this->param.involves_h_multigrid());
   }
 
   void

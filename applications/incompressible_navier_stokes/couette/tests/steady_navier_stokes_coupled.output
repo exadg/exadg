@@ -42,6 +42,7 @@ Spatial discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            2
+  Mapping degree coarse grids:               2
   FE space:                                  L2
   Polynomial degree velocity:                2
   Polynomial degree pressure:                MixedOrder
@@ -208,6 +209,7 @@ Spatial discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            3
+  Mapping degree coarse grids:               3
   FE space:                                  L2
   Polynomial degree velocity:                3
   Polynomial degree pressure:                MixedOrder
@@ -374,6 +376,7 @@ Spatial discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            4
+  Mapping degree coarse grids:               4
   FE space:                                  L2
   Polynomial degree velocity:                4
   Polynomial degree pressure:                MixedOrder
@@ -540,6 +543,7 @@ Spatial discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            5
+  Mapping degree coarse grids:               5
   FE space:                                  L2
   Polynomial degree velocity:                5
   Polynomial degree pressure:                MixedOrder
