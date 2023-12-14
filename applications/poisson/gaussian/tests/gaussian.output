@@ -30,6 +30,7 @@ Spatial Discretization:
   Number of global refinements:              3
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   FE space:                                  DG
   Polynomial degree:                         1
   IP factor:                                 1.0000e+00
@@ -119,6 +120,7 @@ Spatial Discretization:
   Number of global refinements:              3
   Create coarse triangulations:              false
   Mapping degree:                            2
+  Mapping degree coarse grids:               2
   FE space:                                  DG
   Polynomial degree:                         2
   IP factor:                                 1.0000e+00
@@ -208,6 +210,7 @@ Spatial Discretization:
   Number of global refinements:              3
   Create coarse triangulations:              false
   Mapping degree:                            3
+  Mapping degree coarse grids:               3
   FE space:                                  DG
   Polynomial degree:                         3
   IP factor:                                 1.0000e+00
@@ -297,6 +300,7 @@ Spatial Discretization:
   Number of global refinements:              3
   Create coarse triangulations:              false
   Mapping degree:                            4
+  Mapping degree coarse grids:               4
   FE space:                                  DG
   Polynomial degree:                         4
   IP factor:                                 1.0000e+00
@@ -386,6 +390,7 @@ Spatial Discretization:
   Number of global refinements:              3
   Create coarse triangulations:              false
   Mapping degree:                            5
+  Mapping degree coarse grids:               5
   FE space:                                  DG
   Polynomial degree:                         5
   IP factor:                                 1.0000e+00
@@ -475,6 +480,7 @@ Spatial Discretization:
   Number of global refinements:              3
   Create coarse triangulations:              false
   Mapping degree:                            6
+  Mapping degree coarse grids:               6
   FE space:                                  DG
   Polynomial degree:                         6
   IP factor:                                 1.0000e+00
@@ -564,6 +570,7 @@ Spatial Discretization:
   Number of global refinements:              3
   Create coarse triangulations:              false
   Mapping degree:                            7
+  Mapping degree coarse grids:               7
   FE space:                                  DG
   Polynomial degree:                         7
   IP factor:                                 1.0000e+00
@@ -653,6 +660,7 @@ Spatial Discretization:
   Number of global refinements:              3
   Create coarse triangulations:              false
   Mapping degree:                            8
+  Mapping degree coarse grids:               8
   FE space:                                  DG
   Polynomial degree:                         8
   IP factor:                                 1.0000e+00
@@ -742,6 +750,7 @@ Spatial Discretization:
   Number of global refinements:              3
   Create coarse triangulations:              false
   Mapping degree:                            9
+  Mapping degree coarse grids:               9
   FE space:                                  DG
   Polynomial degree:                         9
   IP factor:                                 1.0000e+00
@@ -831,6 +840,7 @@ Spatial Discretization:
   Number of global refinements:              3
   Create coarse triangulations:              false
   Mapping degree:                            10
+  Mapping degree coarse grids:               10
   FE space:                                  DG
   Polynomial degree:                         10
   IP factor:                                 1.0000e+00
@@ -920,6 +930,7 @@ Spatial Discretization:
   Number of global refinements:              3
   Create coarse triangulations:              false
   Mapping degree:                            11
+  Mapping degree coarse grids:               11
   FE space:                                  DG
   Polynomial degree:                         11
   IP factor:                                 1.0000e+00
@@ -1009,6 +1020,7 @@ Spatial Discretization:
   Number of global refinements:              3
   Create coarse triangulations:              false
   Mapping degree:                            12
+  Mapping degree coarse grids:               12
   FE space:                                  DG
   Polynomial degree:                         12
   IP factor:                                 1.0000e+00
@@ -1098,6 +1110,7 @@ Spatial Discretization:
   Number of global refinements:              3
   Create coarse triangulations:              false
   Mapping degree:                            13
+  Mapping degree coarse grids:               13
   FE space:                                  DG
   Polynomial degree:                         13
   IP factor:                                 1.0000e+00
@@ -1187,6 +1200,7 @@ Spatial Discretization:
   Number of global refinements:              3
   Create coarse triangulations:              false
   Mapping degree:                            14
+  Mapping degree coarse grids:               14
   FE space:                                  DG
   Polynomial degree:                         14
   IP factor:                                 1.0000e+00
@@ -1276,6 +1290,7 @@ Spatial Discretization:
   Number of global refinements:              3
   Create coarse triangulations:              false
   Mapping degree:                            15
+  Mapping degree coarse grids:               15
   FE space:                                  DG
   Polynomial degree:                         15
   IP factor:                                 1.0000e+00
