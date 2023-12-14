@@ -164,9 +164,6 @@ private:
   void
   set_parameters() final
   {
-    // MATHEMATICAL MODEL
-    this->param.formulation = Formulation::SkewSymmetric;
-
     // PHYSICAL QUANTITIES
     this->param.start_time = start_time;
     this->param.end_time   = number_of_periods * compute_period_duration();
