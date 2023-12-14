@@ -86,9 +86,8 @@ public:
   /**
    * Use this constructor if the fine-level mapping is a "normal" dealii::Mapping.
    */
-  MultigridMappings(
-    std::shared_ptr<dealii::Mapping<dim>>                               mapping,
-    std::shared_ptr<std::vector<std::shared_ptr<dealii::Mapping<dim>>>> mapping_coarse_levels)
+  MultigridMappings(std::shared_ptr<dealii::Mapping<dim>> mapping,
+                    std::shared_ptr<dealii::Mapping<dim>> mapping_coarse_levels)
     : mapping_fine_level(mapping), mapping_coarse_levels(mapping_coarse_levels)
   {
   }
@@ -163,12 +162,9 @@ public:
       else // coarse levels
       {
         AssertThrow(mapping_coarse_levels.get(),
-                    dealii::ExcMessage("Vector of coarse mappings is uninitialized."));
+                    dealii::ExcMessage("mapping_coarse_levels is uninitialized."));
 
-        AssertThrow(h_level < (*mapping_coarse_levels).size(),
-                    dealii::ExcMessage("Vector of coarse mappings seems to have incorrect size."));
-
-        return *((*mapping_coarse_levels)[h_level]);
+        return *mapping_coarse_levels;
       }
     }
   }
@@ -211,7 +207,7 @@ private:
    * calling the constructor of this class. In this case, mapping_fine_level is taken as the mapping
    * for all multigrid h-levels.
    */
-  std::shared_ptr<std::vector<std::shared_ptr<dealii::Mapping<dim>>>> mapping_coarse_levels;
+  std::shared_ptr<dealii::Mapping<dim>> mapping_coarse_levels;
 
   /**
    * MappingDoFVector object on fine triangulation level.

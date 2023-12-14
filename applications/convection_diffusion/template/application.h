@@ -89,20 +89,13 @@ private:
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
 
-    GridUtilities::create_mapping(mapping,
-                                  this->param.grid.element_type,
-                                  this->param.mapping_degree);
-    std::shared_ptr<std::vector<std::shared_ptr<dealii::Mapping<dim>>>> coarse_mappings;
-
-    if(this->param.involves_h_multigrid())
-    {
-      GridUtilities::create_coarse_mappings(coarse_mappings,
-                                            this->param.grid.element_type,
-                                            this->param.mapping_degree,
-                                            grid.coarse_triangulations.size());
-    }
-
-    multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping, coarse_mappings);
+    // mappings
+    GridUtilities::create_mapping_with_multigrid(mapping,
+                                                 multigrid_mappings,
+                                                 this->param.grid.element_type,
+                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree,
+                                                 this->param.involves_h_multigrid());
   }
 
   void

@@ -68,30 +68,30 @@ create_mapping(std::shared_ptr<dealii::Mapping<dim>> & mapping,
 }
 
 /**
- * In case the number of h-levels is larger than zero, this function creates the object
- * coarse_mappings and initializes the vector of coarse mappings with a dealii::Mapping according to
- * the ElementType and the mapping degree, using equal mappings for all entries n_h_levels of the
- * vector.
+ * This function creates mapping and multigrid_mappings (while the mapping for coarse multigrid
+ * h-levels is created only if involves_h_multigrid is true and if mapping_degree_fine is
+ * unequal mapping_degree_coarse). Internally, the above function is called, creating a
+ * dealii::Mapping depending on the element type and the mapping_degree.
  */
-template<int dim>
+template<int dim, typename Number>
 void
-create_coarse_mappings(
-  std::shared_ptr<std::vector<std::shared_ptr<dealii::Mapping<dim>>>> & coarse_mappings,
-  ElementType const &                                                   element_type,
-  unsigned int const &                                                  mapping_degree,
-  unsigned int const &                                                  n_h_levels)
+create_mapping_with_multigrid(std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+                              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings,
+                              ElementType const &                               element_type,
+                              unsigned int const &                              mapping_degree_fine,
+                              unsigned int const & mapping_degree_coarse,
+                              bool const           involves_h_multigrid)
 {
-  if(n_h_levels > 0)
+  // create fine mapping
+  create_mapping(mapping, element_type, mapping_degree_fine);
+
+  // create coarse mappings if needed
+  std::shared_ptr<dealii::Mapping<dim>> coarse_mapping;
+  if(involves_h_multigrid and (mapping_degree_coarse != mapping_degree_fine))
   {
-    coarse_mappings = std::make_shared<std::vector<std::shared_ptr<dealii::Mapping<dim>>>>();
-
-    coarse_mappings->resize(n_h_levels);
-
-    for(unsigned int i = 0; i < n_h_levels; ++i)
-    {
-      create_mapping((*coarse_mappings)[i], element_type, mapping_degree);
-    }
+    create_mapping(coarse_mapping, element_type, mapping_degree_coarse);
   }
+  multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping, coarse_mapping);
 }
 
 /**
