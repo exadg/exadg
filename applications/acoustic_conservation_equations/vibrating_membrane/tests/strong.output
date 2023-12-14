@@ -22,7 +22,7 @@ Setting up acoustic conservation equations solver:
 List of parameters:
 
 Mathematical model:
-  Formulation:                               SkewSymmetric
+  Formulation:                               Strong
 
 Physical quantities:
   Start time:                                0.0000e+00
@@ -123,7 +123,7 @@ Setting up acoustic conservation equations solver:
 List of parameters:
 
 Mathematical model:
-  Formulation:                               SkewSymmetric
+  Formulation:                               Strong
 
 Physical quantities:
   Start time:                                0.0000e+00
@@ -224,7 +224,7 @@ Setting up acoustic conservation equations solver:
 List of parameters:
 
 Mathematical model:
-  Formulation:                               SkewSymmetric
+  Formulation:                               Strong
 
 Physical quantities:
   Start time:                                0.0000e+00
@@ -325,7 +325,7 @@ Setting up acoustic conservation equations solver:
 List of parameters:
 
 Mathematical model:
-  Formulation:                               SkewSymmetric
+  Formulation:                               Strong
 
 Physical quantities:
   Start time:                                0.0000e+00
@@ -426,7 +426,7 @@ Setting up acoustic conservation equations solver:
 List of parameters:
 
 Mathematical model:
-  Formulation:                               SkewSymmetric
+  Formulation:                               Strong
 
 Physical quantities:
   Start time:                                0.0000e+00
@@ -527,7 +527,7 @@ Setting up acoustic conservation equations solver:
 List of parameters:
 
 Mathematical model:
-  Formulation:                               SkewSymmetric
+  Formulation:                               Strong
 
 Physical quantities:
   Start time:                                0.0000e+00
@@ -628,7 +628,7 @@ Setting up acoustic conservation equations solver:
 List of parameters:
 
 Mathematical model:
-  Formulation:                               SkewSymmetric
+  Formulation:                               Strong
 
 Physical quantities:
   Start time:                                0.0000e+00
