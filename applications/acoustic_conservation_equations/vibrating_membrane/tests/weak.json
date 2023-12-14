@@ -16,6 +16,7 @@
     },
     "Application": {
         "Formulation": "Weak",
+        "FluxFormulation": "LaxFriedrichs",
         "SpeedOfSound": "7.0",
         "Density": "3.0",
         "TimeIntegrationScheme": "UserSpecified",

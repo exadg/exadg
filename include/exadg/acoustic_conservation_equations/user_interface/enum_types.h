@@ -43,6 +43,17 @@ enum class Formulation
   SkewSymmetric
 };
 
+enum class FluxFormulation
+{
+  Undefined,
+  /** Standard local Lax-Friedrichs flux. */
+  LaxFriedrichs,
+  /** Similar to local Lax-Friedrichs flux, but adds dissipation only on the component normal
+   *  component.
+   */
+  RoeType
+};
+
 /*
  * calculation of time step size
  */

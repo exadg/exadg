@@ -424,6 +424,7 @@ SpatialOperator<dim, Number>::initialize_operators()
     data.speed_of_sound       = param.speed_of_sound;
     data.density              = param.density;
     data.formulation          = param.formulation;
+    data.flux_formulation     = param.flux_formulation;
     data.bc                   = boundary_descriptor;
     acoustic_operator.initialize(*matrix_free, data);
   }

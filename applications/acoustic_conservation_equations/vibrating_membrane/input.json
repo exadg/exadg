@@ -16,6 +16,7 @@
     },
     "Application": {
         "Formulation": "SkewSymmetric",
+        "FluxFormulation": "LaxFriedrichs",
         "SpeedOfSound": "1.0",
         "Density": "1.0",
         "TimeIntegrationScheme": "CFL",

@@ -22,8 +22,8 @@ Setting up acoustic conservation equations solver:
 List of parameters:
 
 Mathematical model:
-  Formulation:                               Strong
-  Flux Formulation:                          LaxFriedrichs
+  Formulation:                               SkewSymmetric
+  Flux Formulation:                          RoeType
 
 Physical quantities:
   Start time:                                0.0000e+00
@@ -124,8 +124,8 @@ Setting up acoustic conservation equations solver:
 List of parameters:
 
 Mathematical model:
-  Formulation:                               Strong
-  Flux Formulation:                          LaxFriedrichs
+  Formulation:                               SkewSymmetric
+  Flux Formulation:                          RoeType
 
 Physical quantities:
   Start time:                                0.0000e+00
@@ -226,8 +226,8 @@ Setting up acoustic conservation equations solver:
 List of parameters:
 
 Mathematical model:
-  Formulation:                               Strong
-  Flux Formulation:                          LaxFriedrichs
+  Formulation:                               SkewSymmetric
+  Flux Formulation:                          RoeType
 
 Physical quantities:
   Start time:                                0.0000e+00
@@ -328,8 +328,8 @@ Setting up acoustic conservation equations solver:
 List of parameters:
 
 Mathematical model:
-  Formulation:                               Strong
-  Flux Formulation:                          LaxFriedrichs
+  Formulation:                               SkewSymmetric
+  Flux Formulation:                          RoeType
 
 Physical quantities:
   Start time:                                0.0000e+00
@@ -430,8 +430,8 @@ Setting up acoustic conservation equations solver:
 List of parameters:
 
 Mathematical model:
-  Formulation:                               Strong
-  Flux Formulation:                          LaxFriedrichs
+  Formulation:                               SkewSymmetric
+  Flux Formulation:                          RoeType
 
 Physical quantities:
   Start time:                                0.0000e+00
@@ -532,8 +532,8 @@ Setting up acoustic conservation equations solver:
 List of parameters:
 
 Mathematical model:
-  Formulation:                               Strong
-  Flux Formulation:                          LaxFriedrichs
+  Formulation:                               SkewSymmetric
+  Flux Formulation:                          RoeType
 
 Physical quantities:
   Start time:                                0.0000e+00
@@ -634,8 +634,8 @@ Setting up acoustic conservation equations solver:
 List of parameters:
 
 Mathematical model:
-  Formulation:                               Strong
-  Flux Formulation:                          LaxFriedrichs
+  Formulation:                               SkewSymmetric
+  Flux Formulation:                          RoeType
 
 Physical quantities:
   Start time:                                0.0000e+00

@@ -136,6 +136,22 @@ public:
   {
     return Number{0.5} * (pm + pp) + tau * (um - up) * n;
   }
+
+  /*
+   * Roe-type flux for the mass equation. Note, that the Roe-type
+   * flux for the momentum equation is identical to the Lax-Friedrichs flux.
+   */
+  inline DEAL_II_ALWAYS_INLINE //
+    scalar
+    calculate_roe_type_flux_mass(scalar const & pm,
+                                 scalar const & pp,
+                                 Number const & tau,
+                                 vector const & um,
+                                 vector const & up,
+                                 vector const & n) const
+  {
+    return Number{0.5} * (pm + pp) + tau * (um * n - up * n);
+  }
 };
 
 } // namespace Operators
@@ -150,6 +166,7 @@ struct OperatorData
       block_index_pressure(0),
       block_index_velocity(1),
       formulation(Formulation::SkewSymmetric),
+      flux_formulation(FluxFormulation::LaxFriedrichs),
       bc(nullptr),
       density(-1.0),
       speed_of_sound(-1.0)
@@ -164,7 +181,8 @@ struct OperatorData
   unsigned int block_index_pressure;
   unsigned int block_index_velocity;
 
-  Formulation formulation;
+  Formulation     formulation;
+  FluxFormulation flux_formulation;
 
   std::shared_ptr<BoundaryDescriptor<dim> const> bc;
 
@@ -352,7 +370,13 @@ private:
       vector const flux_momentum =
         kernel.calculate_lax_friedrichs_flux_momentum(um, up, gamma, pm, pp, n);
 
-      scalar const flux_mass = kernel.calculate_lax_friedrichs_flux_mass(pm, pp, tau, um, up, n);
+      scalar flux_mass;
+      if(data.flux_formulation == FluxFormulation::LaxFriedrichs)
+        flux_mass = kernel.calculate_lax_friedrichs_flux_mass(pm, pp, tau, um, up, n);
+      else if(data.flux_formulation == FluxFormulation::RoeType)
+        flux_mass = kernel.calculate_roe_type_flux_mass(pm, pp, tau, um, up, n);
+      else
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
 
       if(data.formulation == Formulation::Weak)
       {

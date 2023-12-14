@@ -123,6 +123,8 @@ public:
       // MATHEMATICAL MODEL
       prm.add_parameter("Formulation", this->param.formulation, "Formulation.");
 
+      prm.add_parameter("FluxFormulation", this->param.flux_formulation, "Flux Formulation.");
+
       // PHYSICAL QUANTITIES
       prm.add_parameter("SpeedOfSound",
                         this->param.speed_of_sound,
