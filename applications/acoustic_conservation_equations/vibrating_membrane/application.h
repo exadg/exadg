@@ -241,6 +241,21 @@ private:
     pp_data.output_data.write_higher_order = true;
     pp_data.output_data.degree             = this->param.degree_u;
 
+    // pointwise output
+    pp_data.pointwise_output_data.time_control_data.is_active  = false;
+    pp_data.pointwise_output_data.time_control_data.start_time = start_time;
+    pp_data.pointwise_output_data.time_control_data.end_time   = this->param.end_time;
+    pp_data.pointwise_output_data.time_control_data.trigger_interval =
+      (this->param.end_time - start_time) / 1000.0;
+    pp_data.pointwise_output_data.directory =
+      this->output_parameters.directory + "pointwise_output/";
+    pp_data.pointwise_output_data.filename       = this->output_parameters.filename;
+    pp_data.pointwise_output_data.write_pressure = true;
+    pp_data.pointwise_output_data.write_velocity = true;
+    pp_data.pointwise_output_data.update_points_before_evaluation = false;
+    pp_data.pointwise_output_data.evaluation_points.push_back(
+      dealii::Point<dim>(0.5 * (right - left), 0.5 * (right - left)));
+
     // calculation of pressure error
     pp_data.error_data_p.time_control_data.is_active        = true;
     pp_data.error_data_p.time_control_data.start_time       = start_time;
