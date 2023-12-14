@@ -24,6 +24,7 @@
 
 #include <exadg/acoustic_conservation_equations/postprocessor/output_generator.h>
 #include <exadg/acoustic_conservation_equations/postprocessor/postprocessor_base.h>
+#include <exadg/acoustic_conservation_equations/postprocessor/sound_energy_calculator.h>
 #include <exadg/postprocessor/error_calculation.h>
 
 
@@ -39,6 +40,7 @@ struct PostProcessorData
   OutputData                output_data;
   ErrorCalculationData<dim> error_data_p;
   ErrorCalculationData<dim> error_data_u;
+  SoundEnergyCalculatorData sound_energy_data;
 };
 
 template<int dim, typename Number>
@@ -76,6 +78,9 @@ private:
   // calculate errors for verification purposes for problems with known analytical solution
   ErrorCalculator<dim, Number> error_calculator_p;
   ErrorCalculator<dim, Number> error_calculator_u;
+
+  // calculates the sound energy in the computational domain
+  SoundEnergyCalculator<dim, Number> sound_energy_calculator;
 };
 
 
