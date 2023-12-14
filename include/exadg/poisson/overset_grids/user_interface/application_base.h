@@ -221,7 +221,7 @@ protected:
     prm.parse_input(parameter_file, "", true, true);
   }
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   dealii::ConditionalOStream pcout;
 
@@ -282,7 +282,7 @@ public:
     std::numeric_limits<dealii::types::boundary_id>::max() - 1;
 
 protected:
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
 private:
   std::string parameter_file;

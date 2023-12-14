@@ -283,7 +283,7 @@ private:
     return 0;
   }
 
-  MPI_Comm const & comm;
+  MPI_Comm const comm;
 
   // flush flow field to hard drive?
   bool const write;
