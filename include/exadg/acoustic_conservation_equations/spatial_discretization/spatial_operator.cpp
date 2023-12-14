@@ -72,6 +72,14 @@ SpatialOperator<dim, Number>::fill_matrix_free_data(
   // append mapping flags
   matrix_free_data.append_mapping_flags(Operators::Kernel<dim, Number>::get_mapping_flags());
 
+  // mapping flags required for CFL condition
+  if(param.calculation_of_time_step_size == TimeStepCalculation::CFL)
+  {
+    MappingFlags flags_cfl;
+    flags_cfl.cells = dealii::update_quadrature_points;
+    matrix_free_data.append_mapping_flags(flags_cfl);
+  }
+
   // dof handler
   matrix_free_data.insert_dof_handler(&dof_handler_p, field + dof_index_p);
   matrix_free_data.insert_dof_handler(&dof_handler_u, field + dof_index_u);

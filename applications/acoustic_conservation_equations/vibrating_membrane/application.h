@@ -142,6 +142,8 @@ public:
                         "UserSpecified Timestep size.",
                         dealii::Patterns::Double());
 
+      prm.add_parameter("CFL", this->param.cfl, "CFL number.", dealii::Patterns::Double());
+
       prm.add_parameter("OrderTimeIntegrator",
                         this->param.order_time_integrator,
                         "Order of time integration.",
