@@ -87,52 +87,52 @@ $(function() {
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:a15e6ac022853d6f46139e31f86e5516c" id="r_a15e6ac022853d6f46139e31f86e5516c"><td class="memItemLeft" align="right" valign="top"><a id="a15e6ac022853d6f46139e31f86e5516c" name="a15e6ac022853d6f46139e31f86e5516c"></a>
-<a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">typedef</a> std::vector&lt; dealii::GridTools::PeriodicFacePair&lt; <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">typename</a> dealii::Triangulation&lt; dim &gt;::cell_iterator &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>PeriodicFaces</b></td></tr>
+typedef std::vector&lt; dealii::GridTools::PeriodicFacePair&lt; typename dealii::Triangulation&lt; dim &gt;::cell_iterator &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>PeriodicFaces</b></td></tr>
 <tr class="separator:a15e6ac022853d6f46139e31f86e5516c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a904cdb898fa5cf16afcae6019d901e66" id="r_a904cdb898fa5cf16afcae6019d901e66"><td class="memItemLeft" align="right" valign="top"><a id="a904cdb898fa5cf16afcae6019d901e66" name="a904cdb898fa5cf16afcae6019d901e66"></a>
-<a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">virtual</a> <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameters</b> (dealii::ParameterHandler &amp;<a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">prm</a>, std::vector&lt; std::string &gt; <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">subsection_names</a>)</td></tr>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameters</b> (dealii::ParameterHandler &amp;prm, std::vector&lt; std::string &gt; const &amp;subsection_names)</td></tr>
 <tr class="separator:a904cdb898fa5cf16afcae6019d901e66"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8b3cbdf831afd191bb512b4c77183fa7" id="r_a8b3cbdf831afd191bb512b4c77183fa7"><td class="memItemLeft" align="right" valign="top"><a id="a8b3cbdf831afd191bb512b4c77183fa7" name="a8b3cbdf831afd191bb512b4c77183fa7"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>Domain</b> (std::string parameter_file, <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">const</a> &amp;comm)</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>Domain</b> (std::string parameter_file, MPI_Comm const &amp;comm)</td></tr>
 <tr class="separator:a8b3cbdf831afd191bb512b4c77183fa7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a85b63157a33ada1980a07dc464f68ead" id="r_a85b63157a33ada1980a07dc464f68ead"><td class="memItemLeft" align="right" valign="top"><a id="a85b63157a33ada1980a07dc464f68ead" name="a85b63157a33ada1980a07dc464f68ead"></a>
-<a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>setup_pre</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; &gt; &amp;grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; &gt; &amp;mapping, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridMappings.html">MultigridMappings</a>&lt; dim, Number &gt; &gt; &amp;multigrid_mappings, std::vector&lt; std::string &gt; <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">subsection_names</a>)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_pre</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; &gt; &amp;grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; &gt; &amp;mapping, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridMappings.html">MultigridMappings</a>&lt; dim, Number &gt; &gt; &amp;multigrid_mappings, std::vector&lt; std::string &gt; const &amp;subsection_names)</td></tr>
 <tr class="separator:a85b63157a33ada1980a07dc464f68ead"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac5b897f4f8e8a9edcade9572b2f8bc02" id="r_ac5b897f4f8e8a9edcade9572b2f8bc02"><td class="memItemLeft" align="right" valign="top"><a id="ac5b897f4f8e8a9edcade9572b2f8bc02" name="ac5b897f4f8e8a9edcade9572b2f8bc02"></a>
-<a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>setup_post</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">const</a> &gt; <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">const</a> &amp;grid)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_post</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; const &amp;grid)</td></tr>
 <tr class="separator:ac5b897f4f8e8a9edcade9572b2f8bc02"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9b89545e9bbf277ba23273939d2561fa" id="r_a9b89545e9bbf277ba23273939d2561fa"><td class="memItemLeft" align="right" valign="top"><a id="a9b89545e9bbf277ba23273939d2561fa" name="a9b89545e9bbf277ba23273939d2561fa"></a>
-<a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">virtual</a> std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessorBase.html">Poisson::PostProcessorBase</a>&lt; dim, n_components, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_postprocessor</b> () <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">const</a> =0</td></tr>
+virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessorBase.html">Poisson::PostProcessorBase</a>&lt; dim, n_components, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_postprocessor</b> () const =0</td></tr>
 <tr class="separator:a9b89545e9bbf277ba23273939d2561fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae006cc800a87ae18eba4606e259fbf3f" id="r_ae006cc800a87ae18eba4606e259fbf3f"><td class="memItemLeft" align="right" valign="top"><a id="ae006cc800a87ae18eba4606e259fbf3f" name="ae006cc800a87ae18eba4606e259fbf3f"></a>
-<a class="el" href="classExaDG_1_1Poisson_1_1Parameters.html">Parameters</a> <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">const</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_parameters</b> () <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">const</a></td></tr>
+<a class="el" href="classExaDG_1_1Poisson_1_1Parameters.html">Parameters</a> const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_parameters</b> () const</td></tr>
 <tr class="separator:ae006cc800a87ae18eba4606e259fbf3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a85f0ef62550a0324d2e295ddcacd4e11" id="r_a85f0ef62550a0324d2e295ddcacd4e11"><td class="memItemLeft" align="right" valign="top"><a id="a85f0ef62550a0324d2e295ddcacd4e11" name="a85f0ef62550a0324d2e295ddcacd4e11"></a>
-std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; rank, dim &gt; <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">const</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_boundary_descriptor</b> () <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">const</a></td></tr>
+std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; rank, dim &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_boundary_descriptor</b> () const</td></tr>
 <tr class="separator:a85f0ef62550a0324d2e295ddcacd4e11"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac1e4b17af8836e05a695c3460cdc9c62" id="r_ac1e4b17af8836e05a695c3460cdc9c62"><td class="memItemLeft" align="right" valign="top"><a id="ac1e4b17af8836e05a695c3460cdc9c62" name="ac1e4b17af8836e05a695c3460cdc9c62"></a>
-std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">const</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_field_functions</b> () <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">const</a></td></tr>
+std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_field_functions</b> () const</td></tr>
 <tr class="separator:ac1e4b17af8836e05a695c3460cdc9c62"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
-<tr class="memitem:a97197c7187813a92a7b56c809b1ba4db" id="r_a97197c7187813a92a7b56c809b1ba4db"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">static</a> <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">const</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1Domain.html#a97197c7187813a92a7b56c809b1ba4db">rank</a></td></tr>
+<tr class="memitem:a97197c7187813a92a7b56c809b1ba4db" id="r_a97197c7187813a92a7b56c809b1ba4db"><td class="memItemLeft" align="right" valign="top">static unsigned int const&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1Domain.html#a97197c7187813a92a7b56c809b1ba4db">rank</a></td></tr>
 <tr class="separator:a97197c7187813a92a7b56c809b1ba4db"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
 <tr class="memitem:a2f99c40c820d6d84e6ecd6bffaab41ee" id="r_a2f99c40c820d6d84e6ecd6bffaab41ee"><td class="memItemLeft" align="right" valign="top"><a id="a2f99c40c820d6d84e6ecd6bffaab41ee" name="a2f99c40c820d6d84e6ecd6bffaab41ee"></a>
-<a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">virtual</a> <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>parse_parameters</b> (std::vector&lt; std::string &gt; <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">subsection_names</a>)</td></tr>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>parse_parameters</b> (std::vector&lt; std::string &gt; const &amp;subsection_names)</td></tr>
 <tr class="separator:a2f99c40c820d6d84e6ecd6bffaab41ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
-<tr class="memitem:ad214f09429f01111fe27626be340c051" id="r_ad214f09429f01111fe27626be340c051"><td class="memItemLeft" align="right" valign="top"><a id="ad214f09429f01111fe27626be340c051" name="ad214f09429f01111fe27626be340c051"></a>
-<a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">const</a>  &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>mpi_comm</b></td></tr>
-<tr class="separator:ad214f09429f01111fe27626be340c051"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2cc7d8da1d2bfde78e279000320f7aa7" id="r_a2cc7d8da1d2bfde78e279000320f7aa7"><td class="memItemLeft" align="right" valign="top"><a id="a2cc7d8da1d2bfde78e279000320f7aa7" name="a2cc7d8da1d2bfde78e279000320f7aa7"></a>
+MPI_Comm const&#160;</td><td class="memItemRight" valign="bottom"><b>mpi_comm</b></td></tr>
+<tr class="separator:a2cc7d8da1d2bfde78e279000320f7aa7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a773ee4edd74b3217c7f8b173477ef342" id="r_a773ee4edd74b3217c7f8b173477ef342"><td class="memItemLeft" align="right" valign="top"><a id="a773ee4edd74b3217c7f8b173477ef342" name="a773ee4edd74b3217c7f8b173477ef342"></a>
 dealii::ConditionalOStream&#160;</td><td class="memItemRight" valign="bottom"><b>pcout</b></td></tr>
 <tr class="separator:a773ee4edd74b3217c7f8b173477ef342"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -162,13 +162,13 @@ std::string&#160;</td><td class="memItemRight" valign="bottom"><b>parameter_file
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;<a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">int</a> n_components, <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">typename</a> Number &gt; </div>
+template&lt;int dim, int n_components, typename Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">unsigned</a> <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">int</a> <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1Domain.html">ExaDG::Poisson::OversetGrids::Domain</a>&lt; dim, n_components, Number &gt;::rank</td>
+          <td class="memname">unsigned int const <a class="el" href="classExaDG_1_1Poisson_1_1OversetGrids_1_1Domain.html">ExaDG::Poisson::OversetGrids::Domain</a>&lt; dim, n_components, Number &gt;::rank</td>
         </tr>
       </table>
   </td>

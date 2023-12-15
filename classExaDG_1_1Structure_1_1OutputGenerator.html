@@ -85,19 +85,19 @@ $(function() {
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:a65c34f1b48180523276411b179f1b9f2" id="r_a65c34f1b48180523276411b179f1b9f2"><td class="memItemLeft" align="right" valign="top"><a id="a65c34f1b48180523276411b179f1b9f2" name="a65c34f1b48180523276411b179f1b9f2"></a>
-<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typedef</a> dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
 <tr class="separator:a65c34f1b48180523276411b179f1b9f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ab1fd072fdb5a6d1dceaed61d9e640856" id="r_ab1fd072fdb5a6d1dceaed61d9e640856"><td class="memItemLeft" align="right" valign="top"><a id="ab1fd072fdb5a6d1dceaed61d9e640856" name="ab1fd072fdb5a6d1dceaed61d9e640856"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>OutputGenerator</b> (<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;comm)</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>OutputGenerator</b> (MPI_Comm const &amp;comm)</td></tr>
 <tr class="separator:ab1fd072fdb5a6d1dceaed61d9e640856"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0759f8a9ea1f93fbb8e39893b981fdf1" id="r_a0759f8a9ea1f93fbb8e39893b981fdf1"><td class="memItemLeft" align="right" valign="top"><a id="a0759f8a9ea1f93fbb8e39893b981fdf1" name="a0759f8a9ea1f93fbb8e39893b981fdf1"></a>
-<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (dealii::DoFHandler&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;dof_handler, dealii::Mapping&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;mapping, <a class="el" href="structExaDG_1_1OutputDataBase.html">OutputDataBase</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;output_data)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler, dealii::Mapping&lt; dim &gt; const &amp;mapping, <a class="el" href="structExaDG_1_1OutputDataBase.html">OutputDataBase</a> const &amp;output_data)</td></tr>
 <tr class="separator:a0759f8a9ea1f93fbb8e39893b981fdf1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0c85e6feb0a8800b15caf2f3abd7c2a1" id="r_a0c85e6feb0a8800b15caf2f3abd7c2a1"><td class="memItemLeft" align="right" valign="top"><a id="a0c85e6feb0a8800b15caf2f3abd7c2a1" name="a0c85e6feb0a8800b15caf2f3abd7c2a1"></a>
-<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;solution, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> time, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">bool</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> unsteady)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;solution, double const time, bool const unsteady)</td></tr>
 <tr class="separator:a0c85e6feb0a8800b15caf2f3abd7c2a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>

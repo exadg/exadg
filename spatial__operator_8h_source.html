@@ -137,23 +137,23 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><span class="comment">   * Constructor.</span></div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1SpatialOperator.html">SpatialOperator</a>(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">Grid&lt;dim&gt;</a> <span class="keyword">const</span>&gt;               grid,</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1SpatialOperator.html">SpatialOperator</a>(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Grid.html">Grid&lt;dim&gt;</a> <span class="keyword">const</span>&gt;               grid,</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>                  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;    mapping,</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>                  std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">BoundaryDescriptor&lt;dim&gt;</a> <span class="keyword">const</span>&gt; boundary_descriptor,</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>                  std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">FieldFunctions&lt;dim&gt;</a> <span class="keyword">const</span>&gt;     field_functions,</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>                  std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1Acoustics_1_1BoundaryDescriptor.html">BoundaryDescriptor&lt;dim&gt;</a> <span class="keyword">const</span>&gt; boundary_descriptor,</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>                  std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1Acoustics_1_1FieldFunctions.html">FieldFunctions&lt;dim&gt;</a> <span class="keyword">const</span>&gt;     field_functions,</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>                  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;                             parameters,</div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>                  std::string <span class="keyword">const</span> &amp;                            field,</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>                  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">MPI_Comm</a> <span class="keyword">const</span> &amp;                               mpi_comm);</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>                  MPI_Comm <span class="keyword">const</span> &amp;                               mpi_comm);</div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  fill_matrix_free_data(<a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">MatrixFreeData&lt;dim, Number&gt;</a> &amp; matrix_free_data) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  fill_matrix_free_data(<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a> &amp; matrix_free_data) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  <a class="code hl_function" href="classExaDG_1_1Acoustics_1_1SpatialOperator.html#abf1547b6d3d7eab1fc3f4808daf83b73">setup</a>();</div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <a class="code hl_function" href="classExaDG_1_1Acoustics_1_1SpatialOperator.html#abf1547b6d3d7eab1fc3f4808daf83b73">setup</a>(std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span>&gt; <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">matrix_free_in</a>,</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>        std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">MatrixFreeData&lt;dim, Number&gt;</a> <span class="keyword">const</span>&gt;     <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">matrix_free_data_in</a>);</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <a class="code hl_function" href="classExaDG_1_1Acoustics_1_1SpatialOperator.html#abf1547b6d3d7eab1fc3f4808daf83b73">setup</a>(std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span>&gt; matrix_free_in,</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>        std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a> <span class="keyword">const</span>&gt;     matrix_free_data_in);</div>
 <div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span> </div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span><span class="comment">   * Getters and setters.</span></div>
@@ -308,15 +308,15 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span><span class="comment">   * Basic operators.</span></div>
 <div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">Operator&lt;dim, Number&gt;</a> acoustic_operator;</div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1Operator.html">Operator&lt;dim, Number&gt;</a> acoustic_operator;</div>
 <div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span> </div>
 <div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span><span class="comment">   * Inverse mass operator</span></div>
 <div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">InverseMassOperator&lt;dim, 1, Number&gt;</a>   inverse_mass_pressure;</div>
-<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">InverseMassOperator&lt;dim, dim, Number&gt;</a> inverse_mass_velocity;</div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>  <a class="code hl_class" href="classExaDG_1_1InverseMassOperator.html">InverseMassOperator&lt;dim, 1, Number&gt;</a>   inverse_mass_pressure;</div>
+<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>  <a class="code hl_class" href="classExaDG_1_1InverseMassOperator.html">InverseMassOperator&lt;dim, dim, Number&gt;</a> inverse_mass_velocity;</div>
 <div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span> </div>
-<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">MPI_Comm</a> <span class="keyword">const</span> mpi_comm;</div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
 <div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span> </div>
 <div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>  dealii::ConditionalOStream pcout;</div>
 <div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>};</div>
@@ -326,12 +326,17 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span> </div>
 <div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1Acoustics_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1Acoustics_1_1ApplicationBase.html">ExaDG::Acoustics::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:48</div></div>
 <div class="ttc" id="aclassExaDG_1_1Acoustics_1_1Interface_1_1SpatialOperator_html"><div class="ttname"><a href="classExaDG_1_1Acoustics_1_1Interface_1_1SpatialOperator.html">ExaDG::Acoustics::Interface::SpatialOperator</a></div><div class="ttdef"><b>Definition</b> interface.h:36</div></div>
+<div class="ttc" id="aclassExaDG_1_1Acoustics_1_1Operator_html"><div class="ttname"><a href="classExaDG_1_1Acoustics_1_1Operator.html">ExaDG::Acoustics::Operator</a></div><div class="ttdef"><b>Definition</b> operator.h:177</div></div>
 <div class="ttc" id="aclassExaDG_1_1Acoustics_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1Acoustics_1_1Parameters.html">ExaDG::Acoustics::Parameters</a></div><div class="ttdef"><b>Definition</b> parameters.h:41</div></div>
 <div class="ttc" id="aclassExaDG_1_1Acoustics_1_1SpatialOperator_html"><div class="ttname"><a href="classExaDG_1_1Acoustics_1_1SpatialOperator.html">ExaDG::Acoustics::SpatialOperator</a></div><div class="ttdef"><b>Definition</b> spatial_operator.h:46</div></div>
 <div class="ttc" id="aclassExaDG_1_1Acoustics_1_1SpatialOperator_html_abf1547b6d3d7eab1fc3f4808daf83b73"><div class="ttname"><a href="classExaDG_1_1Acoustics_1_1SpatialOperator.html#abf1547b6d3d7eab1fc3f4808daf83b73">ExaDG::Acoustics::SpatialOperator::setup</a></div><div class="ttdeci">void setup()</div><div class="ttdef"><b>Definition</b> spatial_operator.cpp:109</div></div>
+<div class="ttc" id="aclassExaDG_1_1Grid_html"><div class="ttname"><a href="classExaDG_1_1Grid.html">ExaDG::Grid</a></div><div class="ttdef"><b>Definition</b> grid.h:40</div></div>
+<div class="ttc" id="aclassExaDG_1_1InverseMassOperator_html"><div class="ttname"><a href="classExaDG_1_1InverseMassOperator.html">ExaDG::InverseMassOperator</a></div><div class="ttdef"><b>Definition</b> inverse_mass_operator.h:53</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
+<div class="ttc" id="astructExaDG_1_1Acoustics_1_1BoundaryDescriptor_html"><div class="ttname"><a href="structExaDG_1_1Acoustics_1_1BoundaryDescriptor.html">ExaDG::Acoustics::BoundaryDescriptor</a></div><div class="ttdef"><b>Definition</b> boundary_descriptor.h:58</div></div>
+<div class="ttc" id="astructExaDG_1_1Acoustics_1_1FieldFunctions_html"><div class="ttname"><a href="structExaDG_1_1Acoustics_1_1FieldFunctions.html">ExaDG::Acoustics::FieldFunctions</a></div><div class="ttdef"><b>Definition</b> field_functions.h:31</div></div>
+<div class="ttc" id="astructExaDG_1_1MatrixFreeData_html"><div class="ttname"><a href="structExaDG_1_1MatrixFreeData.html">ExaDG::MatrixFreeData</a></div><div class="ttdef"><b>Definition</b> matrix_free_data.h:40</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

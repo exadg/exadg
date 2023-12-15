@@ -85,19 +85,19 @@ $(function() {
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:acc454ad3c9e2a63aac4a41348470aa4d" id="r_acc454ad3c9e2a63aac4a41348470aa4d"><td class="memItemLeft" align="right" valign="top"><a id="acc454ad3c9e2a63aac4a41348470aa4d" name="acc454ad3c9e2a63aac4a41348470aa4d"></a>
-<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">typedef</a> dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
 <tr class="separator:acc454ad3c9e2a63aac4a41348470aa4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:adba77b414d93e94b63dcaff2566cd908" id="r_adba77b414d93e94b63dcaff2566cd908"><td class="memItemLeft" align="right" valign="top"><a id="adba77b414d93e94b63dcaff2566cd908" name="adba77b414d93e94b63dcaff2566cd908"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>LinePlotCalculator</b> (<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> &amp;comm)</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>LinePlotCalculator</b> (MPI_Comm const &amp;comm)</td></tr>
 <tr class="separator:adba77b414d93e94b63dcaff2566cd908"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af304b958475882ef02a1693d7753a644" id="r_af304b958475882ef02a1693d7753a644"><td class="memItemLeft" align="right" valign="top"><a id="af304b958475882ef02a1693d7753a644" name="af304b958475882ef02a1693d7753a644"></a>
-<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (dealii::DoFHandler&lt; dim &gt; <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">dof_handler_velocity_in</a>, dealii::DoFHandler&lt; dim &gt; <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">dof_handler_pressure_in</a>, dealii::Mapping&lt; dim &gt; <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">mapping_in</a>, <a class="el" href="structExaDG_1_1IncNS_1_1LinePlotData.html">LinePlotData</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> &amp;<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">line_plot_data_in</a>)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler_velocity_in, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler_pressure_in, dealii::Mapping&lt; dim &gt; const &amp;mapping_in, <a class="el" href="structExaDG_1_1IncNS_1_1LinePlotData.html">LinePlotData</a>&lt; dim &gt; const &amp;line_plot_data_in)</td></tr>
 <tr class="separator:af304b958475882ef02a1693d7753a644"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4e83512e62b3a4c67704bf7ff775041b" id="r_a4e83512e62b3a4c67704bf7ff775041b"><td class="memItemLeft" align="right" valign="top"><a id="a4e83512e62b3a4c67704bf7ff775041b" name="a4e83512e62b3a4c67704bf7ff775041b"></a>
-<a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> &amp;velocity, VectorType <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a> &amp;pressure) <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">const</a></td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;velocity, VectorType const &amp;pressure) const</td></tr>
 <tr class="separator:a4e83512e62b3a4c67704bf7ff775041b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>

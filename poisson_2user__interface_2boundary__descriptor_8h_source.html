@@ -147,27 +147,27 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  std::map&lt;dealii::types::boundary_id, std::shared_ptr&lt;dealii::Function&lt;dim&gt;&gt;&gt; neumann_bc;</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="comment">// returns the boundary type</span></div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keyword">inline</span> <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">DEAL_II_ALWAYS_INLINE</a> <span class="comment">//</span></div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    BoundaryType</div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>    get_boundary_type(dealii::types::boundary_id <span class="keyword">const</span> &amp; boundary_id)<span class="keyword"> const</span></div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    <span class="keywordflow">if</span>(this-&gt;dirichlet_bc.find(boundary_id) != <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">this</a>-&gt;dirichlet_bc.end())</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    <span class="keywordflow">if</span>(this-&gt;dirichlet_bc.find(boundary_id) != this-&gt;dirichlet_bc.end())</div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>      <span class="keywordflow">return</span> BoundaryType::Dirichlet;</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(this-&gt;dirichlet_cached_bc.find(boundary_id) != <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">this</a>-&gt;dirichlet_cached_bc.end())</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(this-&gt;dirichlet_cached_bc.find(boundary_id) != this-&gt;dirichlet_cached_bc.end())</div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>      <span class="keywordflow">return</span> BoundaryType::DirichletCached;</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(this-&gt;neumann_bc.find(boundary_id) != <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">this</a>-&gt;neumann_bc.end())</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(this-&gt;neumann_bc.find(boundary_id) != this-&gt;neumann_bc.end())</div>
 <div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>      <span class="keywordflow">return</span> BoundaryType::Neumann;</div>
 <div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span> </div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>    <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">AssertThrow</a>(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;Boundary type of face is invalid or not implemented.&quot;</span>));</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>    AssertThrow(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;Boundary type of face is invalid or not implemented.&quot;</span>));</div>
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span> </div>
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>    <span class="keywordflow">return</span> BoundaryType::Undefined;</div>
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  }</div>
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span> </div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  <span class="keyword">inline</span> <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">DEAL_II_ALWAYS_INLINE</a> <span class="comment">//</span></div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  <span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    verify_boundary_conditions(</div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>      dealii::types::boundary_id <span class="keyword">const</span>             boundary_id,</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>      std::set&lt;dealii::types::boundary_id&gt; <span class="keyword">const</span> &amp; <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">periodic_boundary_ids</a>)<span class="keyword"> const</span></div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>      std::set&lt;dealii::types::boundary_id&gt; <span class="keyword">const</span> &amp; periodic_boundary_ids)<span class="keyword"> const</span></div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span><span class="keyword">  </span>{</div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> counter = 0;</div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    <span class="keywordflow">if</span>(dirichlet_bc.find(boundary_id) != dirichlet_bc.end())</div>
@@ -179,16 +179,16 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>    <span class="keywordflow">if</span>(neumann_bc.find(boundary_id) != neumann_bc.end())</div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>      counter++;</div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    <span class="keywordflow">if</span>(<a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">periodic_boundary_ids</a>.find(boundary_id) != <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">periodic_boundary_ids</a>.end())</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    <span class="keywordflow">if</span>(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())</div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>      counter++;</div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span> </div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">AssertThrow</a>(counter == 1,</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    AssertThrow(counter == 1,</div>
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>                dealii::ExcMessage(<span class="stringliteral">&quot;Boundary face with non-unique boundary type found.&quot;</span>));</div>
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  }</div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span> </div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  set_dirichlet_cached_data(</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">ContainerInterfaceData&lt;rank, dim, double&gt;</a> <span class="keyword">const</span>&gt; interface_data)<span class="keyword"> const</span></div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1ContainerInterfaceData.html">ContainerInterfaceData&lt;rank, dim, double&gt;</a> <span class="keyword">const</span>&gt; interface_data)<span class="keyword"> const</span></div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span><span class="keyword">  </span>{</div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    dirichlet_cached_data = interface_data;</div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  }</div>
@@ -196,7 +196,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  std::shared_ptr&lt;ContainerInterfaceData&lt;rank, dim, double&gt; <span class="keyword">const</span>&gt;</div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  get_dirichlet_cached_data()<span class="keyword"> const</span></div>
 <div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>    <a class="code hl_class" href="classExaDG_1_1Poisson_1_1ApplicationBase.html">AssertThrow</a>(dirichlet_cached_data.get(),</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>    AssertThrow(dirichlet_cached_data.get(),</div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>                dealii::ExcMessage(<span class="stringliteral">&quot;Pointer to ContainerInterfaceData has not been initialized.&quot;</span>));</div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>    <span class="keywordflow">return</span> dirichlet_cached_data;</div>
@@ -212,7 +212,7 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span> </div>
 <div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span> </div>
 <div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_POISSON_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1Poisson_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1ApplicationBase.html">ExaDG::Poisson::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:49</div></div>
+<div class="ttc" id="aclassExaDG_1_1ContainerInterfaceData_html"><div class="ttname"><a href="classExaDG_1_1ContainerInterfaceData.html">ExaDG::ContainerInterfaceData</a></div><div class="ttdef"><b>Definition</b> container_interface_data.h:45</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 <div class="ttc" id="astructExaDG_1_1Poisson_1_1BoundaryDescriptor_html"><div class="ttname"><a href="structExaDG_1_1Poisson_1_1BoundaryDescriptor.html">ExaDG::Poisson::BoundaryDescriptor</a></div><div class="ttdef"><b>Definition</b> boundary_descriptor.h:46</div></div>
 </div><!-- fragment --></div><!-- contents -->

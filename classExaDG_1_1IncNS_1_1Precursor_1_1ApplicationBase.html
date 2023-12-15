@@ -85,13 +85,13 @@ $(function() {
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a80ed2fc1b226ec8d843ea8ac929f8d9b" id="r_a80ed2fc1b226ec8d843ea8ac929f8d9b"><td class="memItemLeft" align="right" valign="top"><a id="a80ed2fc1b226ec8d843ea8ac929f8d9b" name="a80ed2fc1b226ec8d843ea8ac929f8d9b"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>ApplicationBase</b> (std::string parameter_file, <a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">const</a> &amp;comm)</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>ApplicationBase</b> (std::string parameter_file, MPI_Comm const &amp;comm)</td></tr>
 <tr class="separator:a80ed2fc1b226ec8d843ea8ac929f8d9b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1a38fd7fc2964d3f3fd4f0f902914506" id="r_a1a38fd7fc2964d3f3fd4f0f902914506"><td class="memItemLeft" align="right" valign="top"><a id="a1a38fd7fc2964d3f3fd4f0f902914506" name="a1a38fd7fc2964d3f3fd4f0f902914506"></a>
-<a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameters</b> (dealii::ParameterHandler &amp;<a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">prm</a>)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameters</b> (dealii::ParameterHandler &amp;prm)</td></tr>
 <tr class="separator:a1a38fd7fc2964d3f3fd4f0f902914506"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acc775c709661a425ef9c80eb04165e6b" id="r_acc775c709661a425ef9c80eb04165e6b"><td class="memItemLeft" align="right" valign="top"><a id="acc775c709661a425ef9c80eb04165e6b" name="acc775c709661a425ef9c80eb04165e6b"></a>
-<a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">bool</a>&#160;</td><td class="memItemRight" valign="bottom"><b>precursor_is_active</b> () <a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">const</a></td></tr>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>precursor_is_active</b> () const</td></tr>
 <tr class="separator:acc775c709661a425ef9c80eb04165e6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
@@ -104,9 +104,9 @@ std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1Doma
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
-<tr class="memitem:a3436755fd52436583c638091f071ff0d" id="r_a3436755fd52436583c638091f071ff0d"><td class="memItemLeft" align="right" valign="top"><a id="a3436755fd52436583c638091f071ff0d" name="a3436755fd52436583c638091f071ff0d"></a>
-<a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">const</a>  &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>mpi_comm</b></td></tr>
-<tr class="separator:a3436755fd52436583c638091f071ff0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa01c630dda423baf24ee2c5b5a46dac6" id="r_aa01c630dda423baf24ee2c5b5a46dac6"><td class="memItemLeft" align="right" valign="top"><a id="aa01c630dda423baf24ee2c5b5a46dac6" name="aa01c630dda423baf24ee2c5b5a46dac6"></a>
+MPI_Comm const&#160;</td><td class="memItemRight" valign="bottom"><b>mpi_comm</b></td></tr>
+<tr class="separator:aa01c630dda423baf24ee2c5b5a46dac6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0d0e82973cd60f33f5420fb4b53d1763" id="r_a0d0e82973cd60f33f5420fb4b53d1763"><td class="memItemLeft" align="right" valign="top"><a id="a0d0e82973cd60f33f5420fb4b53d1763" name="a0d0e82973cd60f33f5420fb4b53d1763"></a>
 dealii::ConditionalOStream&#160;</td><td class="memItemRight" valign="bottom"><b>pcout</b></td></tr>
 <tr class="separator:a0d0e82973cd60f33f5420fb4b53d1763"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -114,7 +114,7 @@ dealii::ConditionalOStream&#160;</td><td class="memItemRight" valign="bottom"><b
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>parameter_file</b></td></tr>
 <tr class="separator:a4de75728a848e2a9c5ecc808cdde055f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2e89d170207fdca1875cd3a986896115" id="r_a2e89d170207fdca1875cd3a986896115"><td class="memItemLeft" align="right" valign="top"><a id="a2e89d170207fdca1875cd3a986896115" name="a2e89d170207fdca1875cd3a986896115"></a>
-<a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">bool</a>&#160;</td><td class="memItemRight" valign="bottom"><b>switch_off_precursor</b></td></tr>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>switch_off_precursor</b></td></tr>
 <tr class="separator:a2e89d170207fdca1875cd3a986896115"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Data Documentation</h2>
@@ -124,7 +124,7 @@ std::string&#160;</td><td class="memItemRight" valign="bottom"><b>parameter_file
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;<a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">typename</a> Number &gt; </div>
+template&lt;int dim, typename Number &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">std::shared_ptr&lt;<a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1Domain.html">Domain</a>&lt;dim, Number&gt; &gt; <a class="el" href="classExaDG_1_1IncNS_1_1Precursor_1_1ApplicationBase.html">ExaDG::IncNS::Precursor::ApplicationBase</a>&lt; dim, Number &gt;::precursor</td>

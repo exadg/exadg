@@ -96,7 +96,7 @@ Inheritance diagram for ExaDG::Structure::DeformedMapping&lt; dim, Number &gt;:<
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:a48ec50b1299c5c35618213ffdf483e02" id="r_a48ec50b1299c5c35618213ffdf483e02"><td class="memItemLeft" align="right" valign="top"><a id="a48ec50b1299c5c35618213ffdf483e02" name="a48ec50b1299c5c35618213ffdf483e02"></a>
-<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typedef</a> dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
 <tr class="separator:a48ec50b1299c5c35618213ffdf483e02"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_types_classExaDG_1_1DeformedMappingBase"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classExaDG_1_1DeformedMappingBase')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classExaDG_1_1DeformedMappingBase.html">ExaDG::DeformedMappingBase&lt; dim, Number &gt;</a></td></tr>
 <tr class="memitem:af4dc0ff0f07e8b251f3a332944f50b30 inherit pub_types_classExaDG_1_1DeformedMappingBase" id="r_af4dc0ff0f07e8b251f3a332944f50b30"><td class="memItemLeft" align="right" valign="top">
@@ -109,17 +109,17 @@ typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a27f1de538c19d66c9df629f82d264c6e" id="r_a27f1de538c19d66c9df629f82d264c6e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1DeformedMapping.html#a27f1de538c19d66c9df629f82d264c6e">DeformedMapping</a> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt; <a class="el" href="classExaDG_1_1DeformedMappingBase.html#a5702ec7d01af869c259f36f7031f1535">mapping_undeformed</a>, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridMappings.html">MultigridMappings</a>&lt; dim, Number &gt; &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">multigrid_mappings_undeformed</a>, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt; field_functions, std::shared_ptr&lt; MaterialDescriptor <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt; material_descriptor, <a class="el" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;param, std::string <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;field, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;mpi_comm)</td></tr>
+<tr class="memitem:a27f1de538c19d66c9df629f82d264c6e" id="r_a27f1de538c19d66c9df629f82d264c6e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1DeformedMapping.html#a27f1de538c19d66c9df629f82d264c6e">DeformedMapping</a> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt; grid, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; <a class="el" href="classExaDG_1_1DeformedMappingBase.html#a5702ec7d01af869c259f36f7031f1535">mapping_undeformed</a>, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridMappings.html">MultigridMappings</a>&lt; dim, Number &gt; &gt; const multigrid_mappings_undeformed, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, std::shared_ptr&lt; MaterialDescriptor const &gt; material_descriptor, <a class="el" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> const &amp;param, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
 <tr class="separator:a27f1de538c19d66c9df629f82d264c6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a98c9f1cbc23062ea2e5266e5238a5ead" id="r_a98c9f1cbc23062ea2e5266e5238a5ead"><td class="memItemLeft" align="right" valign="top"><a id="a98c9f1cbc23062ea2e5266e5238a5ead" name="a98c9f1cbc23062ea2e5266e5238a5ead"></a>
-std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">Operator</a>&lt; dim, Number &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_pde_operator</b> () <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a></td></tr>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Structure_1_1Operator.html">Operator</a>&lt; dim, Number &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_pde_operator</b> () const</td></tr>
 <tr class="separator:a98c9f1cbc23062ea2e5266e5238a5ead"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a408ae2400cd6c7ba1a2ab69075d3b6ef" id="r_a408ae2400cd6c7ba1a2ab69075d3b6ef"><td class="memItemLeft" align="right" valign="top"><a id="a408ae2400cd6c7ba1a2ab69075d3b6ef" name="a408ae2400cd6c7ba1a2ab69075d3b6ef"></a>
-dealii::MatrixFree&lt; dim, Number &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_matrix_free</b> () <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a></td></tr>
+dealii::MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_matrix_free</b> () const</td></tr>
 <tr class="separator:a408ae2400cd6c7ba1a2ab69075d3b6ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7c7d6ac13e31296a7b00d0000a36076f" id="r_a7c7d6ac13e31296a7b00d0000a36076f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1DeformedMapping.html#a7c7d6ac13e31296a7b00d0000a36076f">update</a> (<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> time, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">bool</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> print_solver_info, types::time_step time_step_number) <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">override</a></td></tr>
+<tr class="memitem:a7c7d6ac13e31296a7b00d0000a36076f" id="r_a7c7d6ac13e31296a7b00d0000a36076f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1DeformedMapping.html#a7c7d6ac13e31296a7b00d0000a36076f">update</a> (double const time, bool const print_solver_info, types::time_step time_step_number) override</td></tr>
 <tr class="separator:a7c7d6ac13e31296a7b00d0000a36076f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a65b7dee0698688151959d9b41c9af257" id="r_a65b7dee0698688151959d9b41c9af257"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1DeformedMapping.html#a65b7dee0698688151959d9b41c9af257">print_iterations</a> () <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">override</a></td></tr>
+<tr class="memitem:a65b7dee0698688151959d9b41c9af257" id="r_a65b7dee0698688151959d9b41c9af257"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1DeformedMapping.html#a65b7dee0698688151959d9b41c9af257">print_iterations</a> () const override</td></tr>
 <tr class="separator:a65b7dee0698688151959d9b41c9af257"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1DeformedMappingBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1DeformedMappingBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1DeformedMappingBase.html">ExaDG::DeformedMappingBase&lt; dim, Number &gt;</a></td></tr>
 <tr class="memitem:ae025a213ed6674ca414964c8ead2e70d inherit pub_methods_classExaDG_1_1DeformedMappingBase" id="r_ae025a213ed6674ca414964c8ead2e70d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1DeformedMappingBase.html#ae025a213ed6674ca414964c8ead2e70d">DeformedMappingBase</a> (std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; <a class="el" href="classExaDG_1_1DeformedMappingBase.html#a5702ec7d01af869c259f36f7031f1535">mapping_undeformed</a>, unsigned int const mapping_degree_deformed, dealii::Triangulation&lt; dim &gt; const &amp;triangulation)</td></tr>
@@ -161,7 +161,7 @@ std::shared_ptr&lt; dealii::MappingQCache&lt; dim &gt; &gt;&#160;</td><td class=
 <tr class="separator:a3cbb6ab3edcc8abd98b73d5af066de8f inherit pro_attribs_classExaDG_1_1MappingDoFVector"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><div class="compoundTemplParams">template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typename</a> Number&gt;<br />
+<div class="textblock"><div class="compoundTemplParams">template&lt;int dim, typename Number&gt;<br />
 class ExaDG::Structure::DeformedMapping&lt; dim, Number &gt;</div><p>Class for moving grid problems based on a pseudo-solid grid motion technique.</p>
 <p>TODO: extend this class to simplicial elements. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
@@ -171,7 +171,7 @@ class ExaDG::Structure::DeformedMapping&lt; dim, Number &gt;</div><p>Class for m
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typename</a> Number &gt; </div>
+template&lt;int dim, typename Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -179,55 +179,55 @@ template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html"
         <tr>
           <td class="memname"><a class="el" href="classExaDG_1_1Structure_1_1DeformedMapping.html">ExaDG::Structure::DeformedMapping</a>&lt; dim, Number &gt;::DeformedMapping </td>
           <td>(</td>
-          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt;&#160;</td>
+          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt;&#160;</td>
           <td class="paramname"><em>grid</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt;&#160;</td>
+          <td class="paramtype">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt;&#160;</td>
           <td class="paramname"><em>mapping_undeformed</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridMappings.html">MultigridMappings</a>&lt; dim, Number &gt; &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
+          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridMappings.html">MultigridMappings</a>&lt; dim, Number &gt; &gt; const&#160;</td>
           <td class="paramname"><em>multigrid_mappings_undeformed</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt;&#160;</td>
+          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt;&#160;</td>
           <td class="paramname"><em>boundary_descriptor</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt;&#160;</td>
+          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt;&#160;</td>
           <td class="paramname"><em>field_functions</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::shared_ptr&lt; MaterialDescriptor <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &gt;&#160;</td>
+          <td class="paramtype">std::shared_ptr&lt; MaterialDescriptor const &gt;&#160;</td>
           <td class="paramname"><em>material_descriptor</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> const &amp;&#160;</td>
           <td class="paramname"><em>param</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::string <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;&#160;</td>
+          <td class="paramtype">std::string const &amp;&#160;</td>
           <td class="paramname"><em>field</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">MPI_Comm</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a> &amp;&#160;</td>
+          <td class="paramtype">MPI_Comm const &amp;&#160;</td>
           <td class="paramname"><em>mpi_comm</em>&#160;</td>
         </tr>
         <tr>
@@ -253,13 +253,13 @@ template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html"
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typename</a> Number &gt; </div>
+template&lt;int dim, typename Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1Structure_1_1DeformedMapping.html">ExaDG::Structure::DeformedMapping</a>&lt; dim, Number &gt;::print_iterations </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1Structure_1_1DeformedMapping.html">ExaDG::Structure::DeformedMapping</a>&lt; dim, Number &gt;::print_iterations </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -283,21 +283,21 @@ template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html"
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;<a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">int</a> dim, <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">typename</a> Number &gt; </div>
+template&lt;int dim, typename Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">void</a> <a class="el" href="classExaDG_1_1Structure_1_1DeformedMapping.html">ExaDG::Structure::DeformedMapping</a>&lt; dim, Number &gt;::update </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1Structure_1_1DeformedMapping.html">ExaDG::Structure::DeformedMapping</a>&lt; dim, Number &gt;::update </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">double</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
+          <td class="paramtype">double const&#160;</td>
           <td class="paramname"><em>time</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">bool</a> <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">const</a>&#160;</td>
+          <td class="paramtype">bool const&#160;</td>
           <td class="paramname"><em>print_solver_info</em>, </td>
         </tr>
         <tr>

@@ -120,8 +120,8 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno"><a class="line" href="classExaDG_1_1IncNS_1_1TurbulenceModel.html">   36</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1IncNS_1_1TurbulenceModel.html">TurbulenceModel</a> : <span class="keyword">public</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ViscosityModelBase.html">ViscosityModelBase</a>&lt;dim, Number&gt;</div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>{</div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">TurbulenceModel&lt;dim, Number&gt;</a>    <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">This</a>;</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">ViscosityModelBase&lt;dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">Base</a>;</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1TurbulenceModel.html">TurbulenceModel&lt;dim, Number&gt;</a>    <a class="code hl_class" href="classExaDG_1_1IncNS_1_1TurbulenceModel.html">This</a>;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ViscosityModelBase.html">ViscosityModelBase&lt;dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ViscosityModelBase.html">Base</a>;</div>
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keyword">typedef</span> dealii::LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
@@ -130,8 +130,8 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="keyword">typedef</span> std::pair&lt;unsigned int, unsigned int&gt; Range;</div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">CellIntegrator&lt;dim, dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">CellIntegratorU</a>;</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">FaceIntegrator&lt;dim, dim, Number&gt;</a> <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">FaceIntegratorU</a>;</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keyword">typedef</span> CellIntegrator&lt;dim, dim, Number&gt; CellIntegratorU;</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="keyword">typedef</span> FaceIntegrator&lt;dim, dim, Number&gt; FaceIntegratorU;</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span><span class="keyword">public</span>:</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="comment">/*</span></div>
@@ -148,11 +148,11 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span><span class="comment">   * Initialization function.</span></div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  initialize(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp;                <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">matrix_free_in</a>,</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>             dealii::Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;                           <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">mapping_in</a>,</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>             std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html">Operators::ViscousKernel&lt;dim, Number&gt;</a>&gt; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">viscous_kernel_in</a>,</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>             <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1TurbulenceModelData.html">TurbulenceModelData</a> <span class="keyword">const</span> &amp;                            <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">turbulence_model_data_in</a>,</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>             <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                     <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">dof_index_velocity_in</a>);</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  initialize(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp;                matrix_free_in,</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>             dealii::Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;                           mapping_in,</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>             std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html">Operators::ViscousKernel&lt;dim, Number&gt;</a>&gt; viscous_kernel_in,</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>             <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1TurbulenceModelData.html">TurbulenceModelData</a> <span class="keyword">const</span> &amp;                            turbulence_model_data_in,</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>             <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                     dof_index_velocity_in);</div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
 <div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  <a class="code hl_function" href="classExaDG_1_1IncNS_1_1TurbulenceModel.html#ab375dbb3b31526efa1250df78c3ab7d2">set_viscosity</a>(VectorType <span class="keyword">const</span> &amp; velocity) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
@@ -168,47 +168,47 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  cell_loop_set_coefficients(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; data,</div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>                             VectorType &amp;,</div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>                             VectorType <span class="keyword">const</span> &amp; src,</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>                             Range <span class="keyword">const</span> &amp;      <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">cell_range</a>) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>                             Range <span class="keyword">const</span> &amp;      cell_range) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span> </div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  face_loop_set_coefficients(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; data,</div>
 <div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>                             VectorType &amp;,</div>
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>                             VectorType <span class="keyword">const</span> &amp; src,</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>                             Range <span class="keyword">const</span> &amp;      <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">face_range</a>) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>                             Range <span class="keyword">const</span> &amp;      face_range) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span> </div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  boundary_face_loop_set_coefficients(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; data,</div>
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>                                      VectorType &amp;,</div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>                                      VectorType <span class="keyword">const</span> &amp; src,</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>                                      Range <span class="keyword">const</span> &amp;      <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">face_range</a>) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>                                      Range <span class="keyword">const</span> &amp;      face_range) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  add_turbulent_viscosity(scalar &amp;       viscosity,</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>                          scalar <span class="keyword">const</span> &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">filter_width</a>,</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>                          tensor <span class="keyword">const</span> &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">velocity_gradient</a>,</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>                          <span class="keywordtype">double</span> <span class="keyword">const</span> &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">model_constant</a>) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>                          scalar <span class="keyword">const</span> &amp; filter_width,</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>                          tensor <span class="keyword">const</span> &amp; velocity_gradient,</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>                          <span class="keywordtype">double</span> <span class="keyword">const</span> &amp; model_constant) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
 <div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  smagorinsky_model(scalar <span class="keyword">const</span> &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">filter_width</a>,</div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>                    tensor <span class="keyword">const</span> &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">velocity_gradient</a>,</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  smagorinsky_model(scalar <span class="keyword">const</span> &amp; filter_width,</div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>                    tensor <span class="keyword">const</span> &amp; velocity_gradient,</div>
 <div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>                    <span class="keywordtype">double</span> <span class="keyword">const</span> &amp; C,</div>
 <div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>                    scalar &amp;       viscosity) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span> </div>
 <div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>  vreman_model(scalar <span class="keyword">const</span> &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">filter_width</a>,</div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>               tensor <span class="keyword">const</span> &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">velocity_gradient</a>,</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>  vreman_model(scalar <span class="keyword">const</span> &amp; filter_width,</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>               tensor <span class="keyword">const</span> &amp; velocity_gradient,</div>
 <div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>               <span class="keywordtype">double</span> <span class="keyword">const</span> &amp; C,</div>
 <div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>               scalar &amp;       viscosity) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span> </div>
 <div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>  wale_model(scalar <span class="keyword">const</span> &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">filter_width</a>,</div>
-<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>             tensor <span class="keyword">const</span> &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">velocity_gradient</a>,</div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>  wale_model(scalar <span class="keyword">const</span> &amp; filter_width,</div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>             tensor <span class="keyword">const</span> &amp; velocity_gradient,</div>
 <div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>             <span class="keywordtype">double</span> <span class="keyword">const</span> &amp; C,</div>
 <div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>             scalar &amp;       viscosity) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span> </div>
 <div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>  sigma_model(scalar <span class="keyword">const</span> &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">filter_width</a>,</div>
-<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>              tensor <span class="keyword">const</span> &amp; <a class="code hl_class" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">velocity_gradient</a>,</div>
+<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>  sigma_model(scalar <span class="keyword">const</span> &amp; filter_width,</div>
+<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>              tensor <span class="keyword">const</span> &amp; velocity_gradient,</div>
 <div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>              <span class="keywordtype">double</span> <span class="keyword">const</span> &amp; C,</div>
 <div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>              scalar &amp;       viscosity) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span> </div>
@@ -221,7 +221,6 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span> </div>
 <div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_TURBULENCE_MODEL_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1IncNS_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1ApplicationBase.html">ExaDG::IncNS::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:51</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html">ExaDG::IncNS::Operators::ViscousKernel</a></div><div class="ttdef"><b>Definition</b> viscous_operator.h:49</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1TurbulenceModel_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1TurbulenceModel.html">ExaDG::IncNS::TurbulenceModel</a></div><div class="ttdef"><b>Definition</b> turbulence_model.h:37</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1TurbulenceModel_html_ab375dbb3b31526efa1250df78c3ab7d2"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1TurbulenceModel.html#ab375dbb3b31526efa1250df78c3ab7d2">ExaDG::IncNS::TurbulenceModel::set_viscosity</a></div><div class="ttdeci">void set_viscosity(VectorType const &amp;velocity) const final</div><div class="ttdef"><b>Definition</b> turbulence_model.cpp:59</div></div>
