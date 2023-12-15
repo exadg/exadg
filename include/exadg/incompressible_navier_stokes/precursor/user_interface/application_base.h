@@ -143,7 +143,7 @@ protected:
     prm.parse_input(parameter_file, "", true, true);
   }
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   dealii::ConditionalOStream pcout;
 
@@ -215,7 +215,7 @@ public:
   std::shared_ptr<Domain<dim, Number>> precursor, main;
 
 protected:
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   dealii::ConditionalOStream pcout;
 
