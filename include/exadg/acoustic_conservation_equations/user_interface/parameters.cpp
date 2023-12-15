@@ -34,6 +34,7 @@ namespace Acoustics
 Parameters::Parameters()
   : // MATHEMATICAL MODEL
     formulation(Formulation::Undefined),
+    flux_formulation(FluxFormulation::Undefined),
 
     // PHYSICAL QUANTITIES
     start_time(0.),
@@ -68,6 +69,8 @@ Parameters::check() const
 {
   // MATHEMATICAL MODEL
   AssertThrow(formulation != Formulation::Undefined,
+              dealii::ExcMessage("parameter must be defined"));
+  AssertThrow(flux_formulation != FluxFormulation::Undefined,
               dealii::ExcMessage("parameter must be defined"));
 
   // PHYSICAL QUANTITIES
@@ -119,6 +122,7 @@ Parameters::print_parameters_mathematical_model(dealii::ConditionalOStream const
   pcout << std::endl << "Mathematical model:" << std::endl;
 
   print_parameter(pcout, "Formulation", formulation);
+  print_parameter(pcout, "Flux Formulation", flux_formulation);
 }
 
 

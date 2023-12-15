@@ -72,6 +72,9 @@ public:
   // description: see enum declaration
   Formulation formulation;
 
+  // description: see enum declaration
+  FluxFormulation flux_formulation;
+
   /**************************************************************************************/
   /*                                                                                    */
   /*                                 PHYSICAL QUANTITIES                                */

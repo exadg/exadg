@@ -23,6 +23,7 @@ List of parameters:
 
 Mathematical model:
   Formulation:                               SkewSymmetric
+  Flux Formulation:                          LaxFriedrichs
 
 Physical quantities:
   Start time:                                0.0000e+00
@@ -124,6 +125,7 @@ List of parameters:
 
 Mathematical model:
   Formulation:                               SkewSymmetric
+  Flux Formulation:                          LaxFriedrichs
 
 Physical quantities:
   Start time:                                0.0000e+00
@@ -225,6 +227,7 @@ List of parameters:
 
 Mathematical model:
   Formulation:                               SkewSymmetric
+  Flux Formulation:                          LaxFriedrichs
 
 Physical quantities:
   Start time:                                0.0000e+00
@@ -326,6 +329,7 @@ List of parameters:
 
 Mathematical model:
   Formulation:                               SkewSymmetric
+  Flux Formulation:                          LaxFriedrichs
 
 Physical quantities:
   Start time:                                0.0000e+00
@@ -427,6 +431,7 @@ List of parameters:
 
 Mathematical model:
   Formulation:                               SkewSymmetric
+  Flux Formulation:                          LaxFriedrichs
 
 Physical quantities:
   Start time:                                0.0000e+00
@@ -528,6 +533,7 @@ List of parameters:
 
 Mathematical model:
   Formulation:                               SkewSymmetric
+  Flux Formulation:                          LaxFriedrichs
 
 Physical quantities:
   Start time:                                0.0000e+00
@@ -629,6 +635,7 @@ List of parameters:
 
 Mathematical model:
   Formulation:                               SkewSymmetric
+  Flux Formulation:                          LaxFriedrichs
 
 Physical quantities:
   Start time:                                0.0000e+00
