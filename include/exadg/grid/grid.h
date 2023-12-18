@@ -190,7 +190,11 @@ public:
           dealii::ExcMessage(
             "Coarse mappings can not be initialized because fine level mapping is invalid."));
 
+        // TODO
+        unsigned int const degree_coarse_mappings = 1;
+
         MappingTools::initialize_coarse_mappings<dim, Number>(mapping_dof_vector_coarse_levels,
+                                                              degree_coarse_mappings,
                                                               mapping_dof_vector_fine_level,
                                                               fine_triangulation,
                                                               coarse_triangulations);

@@ -139,18 +139,6 @@ public:
 
     dealii::FiniteElement<dim> const & fe = dof_handler.get_fe();
 
-    // Set up dealii::FEValues with base element and the Gauss-Lobatto quadrature to
-    // reduce setup cost, as we only use the geometry information (this means
-    // we need to call fe_values.reinit(cell) with Triangulation::cell_iterator
-    // rather than dealii::DoFHandler::cell_iterator).
-    dealii::FE_Nothing<dim> dummy_fe;
-    dealii::FEValues<dim>   fe_values(mapping,
-                                    dummy_fe,
-                                    dealii::QGaussLobatto<dim>(fe.degree + 1),
-                                    dealii::update_quadrature_points);
-
-    std::vector<dealii::types::global_dof_index> dof_indices(fe.dofs_per_cell);
-
     std::vector<std::array<unsigned int, dim>> component_to_system_index(
       fe.base_element(0).dofs_per_cell);
 
@@ -171,6 +159,18 @@ public:
                                  [fe.system_to_component_index(i).first] = i;
       }
     }
+
+    // Set up dealii::FEValues with FE_Nothing and the Gauss-Lobatto quadrature to
+    // reduce setup cost, as we only use the geometry information (this means
+    // we need to call fe_values.reinit(cell) with Triangulation::cell_iterator
+    // rather than dealii::DoFHandler::cell_iterator).
+    dealii::FE_Nothing<dim> fe_nothing;
+    dealii::FEValues<dim>   fe_values(mapping,
+                                    fe_nothing,
+                                    dealii::QGaussLobatto<dim>(fe.degree + 1),
+                                    dealii::update_quadrature_points);
+
+    std::vector<dealii::types::global_dof_index> dof_indices(fe.dofs_per_cell);
 
     for(auto const & cell : dof_handler.active_cell_iterators())
     {
@@ -235,9 +235,13 @@ public:
 
     std::shared_ptr<dealii::FEValues<dim>> fe_values;
 
-    dealii::FE_Nothing<dim> fe_nothing;
     if(mapping.get() != 0)
     {
+      // Set up dealii::FEValues with FE_Nothing and the Gauss-Lobatto quadrature to
+      // reduce setup cost, as we only use the geometry information (this means
+      // we need to call fe_values.reinit(cell) with Triangulation::cell_iterator
+      // rather than dealii::DoFHandler::cell_iterator).
+      dealii::FE_Nothing<dim> fe_nothing;
       fe_values = std::make_shared<dealii::FEValues<dim>>(*mapping,
                                                           fe_nothing,
                                                           dealii::QGaussLobatto<dim>(
@@ -272,14 +276,14 @@ public:
         if(dof_handler.n_dofs() > 0 and displacement_vector.size() > 0 and
            cell_tria->is_active() and not(cell_tria->is_artificial()))
         {
-          dealii::FiniteElement<dim> const & fe = dof_handler.get_fe();
-          AssertThrow(fe.element_multiplicity(0) == dim,
-                      dealii::ExcMessage("Expected finite element with dim components."));
-
           typename dealii::DoFHandler<dim>::cell_iterator cell(&cell_tria->get_triangulation(),
                                                                cell_tria->level(),
                                                                cell_tria->index(),
                                                                &dof_handler);
+
+          dealii::FiniteElement<dim> const & fe = dof_handler.get_fe();
+          AssertThrow(fe.element_multiplicity(0) == dim,
+                      dealii::ExcMessage("Expected finite element with dim components."));
 
           std::vector<dealii::types::global_dof_index> dof_indices(fe.dofs_per_cell);
           cell->get_dof_indices(dof_indices);
@@ -331,6 +335,7 @@ template<int dim, typename Number>
 void
 initialize_coarse_mappings_from_mapping_dof_vector(
   std::vector<std::shared_ptr<MappingDoFVector<dim, Number>>> & coarse_mappings,
+  unsigned int const                                            degree_coarse_mappings,
   std::shared_ptr<MappingDoFVector<dim, Number> const> const &  fine_mapping,
   dealii::Triangulation<dim> const &                            triangulation)
 {
@@ -340,23 +345,25 @@ initialize_coarse_mappings_from_mapping_dof_vector(
   AssertThrow(mapping_q_cache.get(),
               dealii::ExcMessage("Shared pointer mapping_q_cache is invalid."));
 
-  unsigned int const mapping_degree = mapping_q_cache->get_degree();
-
-  std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector_all_levels =
-    std::make_shared<MappingDoFVector<dim, Number>>(mapping_degree);
-
-  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
-
-  dealii::FESystem<dim>   fe(dealii::FE_Q<dim>(mapping_degree), dim);
+  dealii::FESystem<dim>   fe(dealii::FE_Q<dim>(degree_coarse_mappings), dim);
   dealii::DoFHandler<dim> dof_handler(triangulation);
   dof_handler.distribute_dofs(fe);
   dof_handler.distribute_mg_dofs();
-  VectorType grid_coordinates_fine_level;
-  mapping_dof_vector_all_levels->fill_grid_coordinates_vector(*mapping_q_cache,
-                                                              grid_coordinates_fine_level,
-                                                              dof_handler);
 
-  // we have to project the solution onto all coarse levels of the triangulation
+  std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector_all_levels =
+    std::make_shared<MappingDoFVector<dim, Number>>(degree_coarse_mappings);
+
+  // fill a dof vector with grid coordinates of the fine level using degree_coarse_mappings
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+  VectorType                                                 grid_coordinates_fine_level;
+
+  {
+    mapping_dof_vector_all_levels->fill_grid_coordinates_vector(*fine_mapping->get_mapping(),
+                                                                grid_coordinates_fine_level,
+                                                                dof_handler);
+  }
+
+  // project the solution onto all coarse levels of the triangulation using degree_coarse_mappings
   dealii::MGLevelObject<VectorType> grid_coordinates_all_levels,
     grid_coordinates_all_levels_ghosted;
   unsigned int const n_levels = triangulation.n_global_levels();
@@ -384,9 +391,6 @@ initialize_coarse_mappings_from_mapping_dof_vector(
     grid_coordinates_all_levels_ghosted[level].update_ghost_values();
   }
 
-  AssertThrow(fe.element_multiplicity(0) == dim,
-              dealii::ExcMessage("Expected finite element with dim components."));
-
   // Call the initialize() function of dealii::MappingQCache, which initializes the mapping for all
   // levels according to grid_coordinates_all_levels_ghosted.
   mapping_dof_vector_all_levels->get_mapping_q_cache()->initialize(
@@ -399,6 +403,9 @@ initialize_coarse_mappings_from_mapping_dof_vector(
                                                            level,
                                                            cell_tria->index(),
                                                            &dof_handler);
+
+      AssertThrow(fe.element_multiplicity(0) == dim,
+                  dealii::ExcMessage("Expected finite element with dim components."));
 
       unsigned int const scalar_dofs_per_cell = dealii::Utilities::pow(fe.degree + 1, dim);
 
@@ -431,18 +438,17 @@ initialize_coarse_mappings_from_mapping_dof_vector(
     });
 
 
-  // let all coarse grid mappings (excluding the fine triangulation) point to the MappingDoFVector
-  // object
   AssertThrow(
     coarse_mappings.size() == n_levels - 1,
     dealii::ExcMessage(
-      "coarse_mappings does not have correct size relative to number of levels of triangulation."));
+      "coarse_mappings does not have correct size relative to the number of levels of the triangulation."));
 
+  // Finally, let all coarse grid mappings point to the same MappingDoFVector object. Using the
+  // same Mapping object for all multigrid h-levels is some form of legacy code. The class
+  // dealii::MatrixFree can internally extract the coarse-level mapping information (provided
+  // through the fine-level Mapping object).
   for(unsigned int h_level = 0; h_level < coarse_mappings.size(); ++h_level)
   {
-    // using the same Mapping object for all multigrid h-levels is some form of legacy code. The
-    // class dealii::MatrixFree can internally extract the coarse-level mapping information
-    // (provided through the fine-level Mapping object).
     coarse_mappings[h_level] = mapping_dof_vector_all_levels;
   }
 }
@@ -466,18 +472,17 @@ template<int dim, typename Number>
 void
 initialize_coarse_mappings_from_mapping_dof_vector(
   std::vector<std::shared_ptr<MappingDoFVector<dim, Number>>> &          coarse_mappings,
+  unsigned int const                                                     degree_coarse_mappings,
   std::shared_ptr<MappingDoFVector<dim, Number> const> const &           fine_mapping,
   std::shared_ptr<dealii::Triangulation<dim> const> const &              fine_triangulation,
   std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations)
 {
-  // create DoFHandler and Constraint objects required for multigrid transfer
   std::shared_ptr<dealii::MappingQCache<dim>> mapping_q_cache = fine_mapping->get_mapping_q_cache();
   AssertThrow(mapping_q_cache.get(),
               dealii::ExcMessage("Shared pointer mapping_q_cache is invalid."));
 
-  unsigned int const mapping_degree = mapping_q_cache->get_degree();
-
-  dealii::FESystem<dim>                          fe(dealii::FE_Q<dim>(mapping_degree), dim);
+  // setup dof-handlers and constraints for all levels using degree_coarse_mappings
+  dealii::FESystem<dim>                          fe(dealii::FE_Q<dim>(degree_coarse_mappings), dim);
   unsigned int const                             n_h_levels = coarse_triangulations.size() + 1;
   std::vector<dealii::DoFHandler<dim>>           dof_handlers_all_levels(n_h_levels);
   std::vector<dealii::AffineConstraints<Number>> constraints_all_levels(n_h_levels);
@@ -492,8 +497,21 @@ initialize_coarse_mappings_from_mapping_dof_vector(
     constraints_all_levels[h_level].close();
   }
 
+  // fill a dof vector with grid coordinates of the fine level using degree_coarse_mappings
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+  VectorType                                                 grid_coordinates_fine_level;
+
+  {
+    std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector_fine_level =
+      std::make_shared<MappingDoFVector<dim, Number>>(degree_coarse_mappings);
+
+    auto const & dof_handler_fine_level = dof_handlers_all_levels[n_h_levels - 1];
+    mapping_dof_vector_fine_level->fill_grid_coordinates_vector(*fine_mapping->get_mapping(),
+                                                                grid_coordinates_fine_level,
+                                                                dof_handler_fine_level);
+  }
+
   // create transfer objects
-  typedef dealii::LinearAlgebra::distributed::Vector<Number>         VectorType;
   dealii::MGLevelObject<dealii::MGTwoLevelTransfer<dim, VectorType>> transfers(0, n_h_levels - 1);
   for(unsigned int h_level = 1; h_level < n_h_levels; ++h_level)
   {
@@ -517,16 +535,6 @@ initialize_coarse_mappings_from_mapping_dof_vector(
   dealii::MGTransferGlobalCoarsening<dim, VectorType> mg_transfer_global_coarsening(
     transfers, initialize_dof_vector);
 
-  // get dof-vector with grid coordinates from the finest h-level
-  std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector =
-    std::make_shared<MappingDoFVector<dim, Number>>(mapping_degree);
-
-  VectorType   grid_coordinates_fine_level;
-  auto const & dof_handler_fine_level = dof_handlers_all_levels[n_h_levels - 1];
-  mapping_dof_vector->fill_grid_coordinates_vector(*mapping_q_cache,
-                                                   grid_coordinates_fine_level,
-                                                   dof_handler_fine_level);
-
   // Transfer grid coordinates to coarser h-levels.
   // The dealii::DoFHandler object will not be used for global coarsening.
   dealii::DoFHandler<dim>           dof_handler_dummy;
@@ -542,17 +550,15 @@ initialize_coarse_mappings_from_mapping_dof_vector(
 
   for(unsigned int h_level = 0; h_level < coarse_mappings.size(); ++h_level)
   {
-    std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector_level =
-      std::make_shared<MappingDoFVector<dim, Number>>(mapping_degree);
+    coarse_mappings[h_level] =
+      std::make_shared<MappingDoFVector<dim, Number>>(degree_coarse_mappings);
 
     // grid_coordinates_all_levels describes absolute coordinates -> use an uninitialized mapping
-    // in order to interpret grid_coordinates_all_levels as absolute coordinates and not as
+    // in order to interpret the grid coordinates vector as absolute coordinates and not as
     // displacements.
     std::shared_ptr<dealii::Mapping<dim> const> mapping_dummy;
-    mapping_dof_vector_level->initialize_mapping_from_dof_vector(
+    coarse_mappings[h_level]->initialize_mapping_from_dof_vector(
       mapping_dummy, grid_coordinates_all_levels[h_level], dof_handlers_all_levels[h_level]);
-
-    coarse_mappings[h_level] = mapping_dof_vector_level;
   }
 }
 
@@ -575,6 +581,7 @@ template<int dim, typename Number>
 void
 initialize_coarse_mappings(
   std::vector<std::shared_ptr<MappingDoFVector<dim, Number>>> &          coarse_mappings,
+  unsigned int const                                                     degree_coarse_mappings,
   std::shared_ptr<MappingDoFVector<dim, Number> const> const &           fine_mapping,
   std::shared_ptr<dealii::Triangulation<dim> const> const &              fine_triangulation,
   std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations)
@@ -584,12 +591,16 @@ initialize_coarse_mappings(
     if(coarse_triangulations.size() > 0)
     {
       MappingTools::initialize_coarse_mappings_from_mapping_dof_vector<dim, Number>(
-        coarse_mappings, fine_mapping, fine_triangulation, coarse_triangulations);
+        coarse_mappings,
+        degree_coarse_mappings,
+        fine_mapping,
+        fine_triangulation,
+        coarse_triangulations);
     }
     else
     {
       MappingTools::initialize_coarse_mappings_from_mapping_dof_vector<dim, Number>(
-        coarse_mappings, fine_mapping, *fine_triangulation);
+        coarse_mappings, degree_coarse_mappings, fine_mapping, *fine_triangulation);
     }
   }
 }
