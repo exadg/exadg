@@ -77,7 +77,7 @@ class SoundEnergyCalculator
 {
   using This = SoundEnergyCalculator<dim, Number>;
 
-  using BlockVectorType = dealii::LinearAlgebra::distributed::BlockVector<Number>;
+  using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
 
   using scalar = dealii::VectorizedArray<Number>;
   using vector = dealii::Tensor<1, dim, scalar>;
@@ -92,12 +92,7 @@ public:
       matrix_free(nullptr),
       dof_index_pressure(0),
       dof_index_velocity(1),
-      quad_index(0),
-      block_index_pressure(0),
-      block_index_velocity(1),
-      rho(-1.0),
-      c(-1.0),
-      rhocc_inv(-1.0)
+      quad_index(0)
   {
   }
 
@@ -106,25 +101,16 @@ public:
         SoundEnergyCalculatorData const &       data_in,
         unsigned int const                      dof_index_pressure_in,
         unsigned int const                      dof_index_velocity_in,
-        unsigned int const                      quad_index_in,
-        unsigned int const                      block_index_pressure_in,
-        unsigned int const                      block_index_velocity_in)
+        unsigned int const                      quad_index_in)
   {
     time_control.setup(data_in.time_control_data);
 
     matrix_free = &matrix_free_in;
     data        = data_in;
 
-    dof_index_pressure   = dof_index_pressure_in;
-    dof_index_velocity   = dof_index_velocity_in;
-    quad_index           = quad_index_in;
-    block_index_pressure = block_index_pressure_in;
-    block_index_velocity = block_index_velocity_in;
-
-    rho       = static_cast<Number>(data_in.density);
-    c         = static_cast<Number>(data_in.speed_of_sound);
-    rhocc_inv = static_cast<Number>(
-      1.0 / (data_in.density * data_in.speed_of_sound * data_in.speed_of_sound));
+    dof_index_pressure = dof_index_pressure_in;
+    dof_index_velocity = dof_index_velocity_in;
+    quad_index         = quad_index_in;
 
     clear_files = data_in.clear_file;
 
@@ -138,22 +124,25 @@ public:
   }
 
   void
-  evaluate(BlockVectorType const & solution, double const & time, bool const unsteady)
+  evaluate(VectorType const & pressure,
+           VectorType const & velocity,
+           double const &     time,
+           bool const         unsteady)
   {
     AssertThrow(unsteady,
                 dealii::ExcMessage(
                   "This postprocessing tool can only be used for unsteady problems."));
 
-    do_evaluate(solution, time);
+    do_evaluate(pressure, velocity, time);
   }
 
   TimeControl time_control;
 
 private:
   void
-  do_evaluate(BlockVectorType const & solution, double const time)
+  do_evaluate(VectorType const & pressure, VectorType const & velocity, double const time)
   {
-    double sound_energy = calculate_sound_energy(solution);
+    double sound_energy = calculate_sound_energy(pressure, velocity);
 
     // write output file
     if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
@@ -187,10 +176,14 @@ private:
    *
    */
   double
-  calculate_sound_energy(BlockVectorType const & solution) const
+  calculate_sound_energy(VectorType const & pressure, VectorType const & velocity) const
   {
     Number energy = 0.;
-    matrix_free->cell_loop(&This::cell_loop, this, energy, solution);
+
+    std::pair<VectorType const *, VectorType const *> const pressure_velocity{
+      std::make_pair(&pressure, &velocity)};
+
+    matrix_free->cell_loop(&This::cell_loop, this, energy, pressure_velocity);
 
     // sum over all MPI processes
     double const sound_energy = dealii::Utilities::MPI::sum(energy, mpi_comm);
@@ -199,13 +192,17 @@ private:
   }
 
   void
-  cell_loop(dealii::MatrixFree<dim, Number> const &       matrix_free_in,
-            Number &                                      dst,
-            BlockVectorType const &                       src,
-            std::pair<unsigned int, unsigned int> const & cell_range) const
+  cell_loop(dealii::MatrixFree<dim, Number> const &                   matrix_free_in,
+            Number &                                                  dst,
+            std::pair<VectorType const *, VectorType const *> const & src_pressure_velocity,
+            std::pair<unsigned int, unsigned int> const &             cell_range) const
   {
     CellIntegratorP pressure(matrix_free_in, dof_index_pressure, quad_index);
     CellIntegratorU velocity(matrix_free_in, dof_index_velocity, quad_index);
+
+    Number const rho       = static_cast<Number>(data.density);
+    Number const c         = static_cast<Number>(data.speed_of_sound);
+    Number const rhocc_inv = Number{1.0} / (rho * c * c);
 
     Number energy = 0.0;
 
@@ -214,8 +211,8 @@ private:
     {
       pressure.reinit(cell);
       velocity.reinit(cell);
-      pressure.read_dof_values(src.block(block_index_pressure));
-      velocity.read_dof_values(src.block(block_index_velocity));
+      pressure.read_dof_values(*src_pressure_velocity.first);
+      velocity.read_dof_values(*src_pressure_velocity.second);
       pressure.evaluate(dealii::EvaluationFlags::values);
       velocity.evaluate(dealii::EvaluationFlags::values);
 
@@ -231,9 +228,7 @@ private:
 
       // sum over active entries of dealii::VectorizedArray
       for(unsigned int v = 0; v < matrix_free_in.n_active_entries_per_cell_batch(cell); ++v)
-      {
         energy += energy_batch[v];
-      }
     }
 
     dst += energy;
@@ -249,12 +244,6 @@ private:
   unsigned int dof_index_pressure;
   unsigned int dof_index_velocity;
   unsigned int quad_index;
-  unsigned int block_index_pressure;
-  unsigned int block_index_velocity;
-
-  Number rho;
-  Number c;
-  Number rhocc_inv;
 };
 
 } // namespace Acoustics

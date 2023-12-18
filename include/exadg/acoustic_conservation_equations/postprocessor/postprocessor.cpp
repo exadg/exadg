@@ -59,9 +59,7 @@ PostProcessor<dim, Number>::setup(AcousticsOperator const & pde_operator)
                                 pp_data.sound_energy_data,
                                 pde_operator.get_dof_index_pressure(),
                                 pde_operator.get_dof_index_velocity(),
-                                pde_operator.get_quad_index_pressure(),
-                                block_index_pressure,
-                                block_index_velocity);
+                                pde_operator.get_quad_index_pressure());
 }
 
 template<int dim, typename Number>
@@ -97,7 +95,8 @@ PostProcessor<dim, Number>::do_postprocessing(BlockVectorType const & solution,
    *  calculate sound energy
    */
   if(sound_energy_calculator.time_control.needs_evaluation(time, time_step_number))
-    sound_energy_calculator.evaluate(solution,
+    sound_energy_calculator.evaluate(solution.block(block_index_pressure),
+                                     solution.block(block_index_velocity),
                                      time,
                                      Utilities::is_unsteady_timestep(time_step_number));
 }
