@@ -145,8 +145,10 @@ PointwiseOutputGeneratorBase<dim, Number>::setup_base(
 #else
   (void)triangulation_in;
   (void)mapping_in;
-  (void)pointwise_output_data_in;
-  AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with HDF5!"));
+  if(pointwise_output_data_in.time_control_data.is_active)
+  {
+    AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with HDF5!"));
+  }
 #endif
 }
 

@@ -596,17 +596,17 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
   data        = data_in;
   dof_handler = &dof_handler_in;
 
-  AssertThrow(
-    dof_handler->get_triangulation().all_reference_cells_are_hyper_cube(),
-    dealii::ExcMessage(
-      "This postprocessing utility is only available for meshes consisting of hypercube elements."));
-
   clear_files = data.clear_file;
 
   time_control.setup(data_in.time_control_data);
 
   if(data_in.time_control_data.is_active)
   {
+    AssertThrow(
+      dof_handler->get_triangulation().all_reference_cells_are_hyper_cube(),
+      dealii::ExcMessage(
+        "This postprocessing utility is only available for meshes consisting of hypercube elements."));
+
     if(data.write_raw_data_to_files)
     {
       AssertThrow(data.n_cells_1d_coarse_grid == 1,
