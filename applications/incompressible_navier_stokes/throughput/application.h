@@ -205,8 +205,12 @@ private:
   }
 
   void
-  set_boundary_descriptor() final
+  set_boundary_descriptor(Grid<dim> const &                             grid,
+                          std::shared_ptr<dealii::Mapping<dim>> const & mapping) final
   {
+    (void)grid;
+    (void)mapping;
+
     // test case with purely periodic boundary conditions
     // boundary descriptors remain empty for velocity and pressure
   }

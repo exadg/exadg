@@ -388,8 +388,12 @@ private:
   }
 
   void
-  set_boundary_descriptor() final
+  set_boundary_descriptor(Grid<dim> const &                             grid,
+                          std::shared_ptr<dealii::Mapping<dim>> const & mapping) final
   {
+    (void)grid;
+    (void)mapping;
+
     std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor = this->boundary_descriptor;
 
     typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>

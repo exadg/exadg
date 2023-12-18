@@ -266,8 +266,12 @@ private:
   }
 
   void
-  set_boundary_descriptor() final
+  set_boundary_descriptor(Grid<dim> const &                             grid,
+                          std::shared_ptr<dealii::Mapping<dim>> const & mapping) final
   {
+    (void)grid;
+    (void)mapping;
+
     // test case with pure Dirichlet boundary conditions for velocity
     // all boundaries have ID = 0 by default
 

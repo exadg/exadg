@@ -109,7 +109,7 @@ public:
 
     // boundary conditions
     boundary_descriptor = std::make_shared<BoundaryDescriptor<dim>>();
-    set_boundary_descriptor();
+    set_boundary_descriptor(*grid, mapping);
     verify_boundary_conditions<dim>(*boundary_descriptor, *grid);
 
     // field functions
@@ -227,7 +227,8 @@ private:
               std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) = 0;
 
   virtual void
-  set_boundary_descriptor() = 0;
+  set_boundary_descriptor(Grid<dim> const &                             grid,
+                          std::shared_ptr<dealii::Mapping<dim>> const & mapping) = 0;
 
   virtual void
   set_field_functions() = 0;

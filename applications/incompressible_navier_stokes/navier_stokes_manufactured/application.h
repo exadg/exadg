@@ -636,8 +636,12 @@ private:
   }
 
   void
-  set_boundary_descriptor() final
+  set_boundary_descriptor(Grid<dim> const &                             grid,
+                          std::shared_ptr<dealii::Mapping<dim>> const & mapping) final
   {
+    (void)grid;
+    (void)mapping;
+
     AssertThrow(dim == 2,
                 dealii::ExcMessage("Manufactured solution for dim == 2 implemented only."));
 
