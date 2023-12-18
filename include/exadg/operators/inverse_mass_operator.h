@@ -171,6 +171,7 @@ public:
     }
   }
 
+  // dst = M^-1 * src
   void
   apply(VectorType & dst, VectorType const & src) const
   {
@@ -185,6 +186,38 @@ public:
       block_jacobi_preconditioner->vmult(dst, src);
     }
   }
+
+  // dst = scaling_factor * (M^-1 * src)
+  void
+  apply_scale(VectorType & dst, double const scaling_factor, VectorType const & src) const
+  {
+    if(data.implementation_type == InverseMassType::MatrixfreeOperator)
+    {
+      // In the InverseMassType::MatrixfreeOperator case we can avoid
+      // streaming the vector from memory twice.
+
+      // ghost have to be zeroed out before MatrixFree::cell_loop().
+      dst.zero_out_ghost_values();
+
+      matrix_free->cell_loop(
+        &This::cell_loop_matrix_free_operator,
+        this,
+        dst,
+        src,
+        /*operation before cell operation*/ {}, /*operation after cell operation*/
+        [&](const unsigned int start_range, const unsigned int end_range) {
+          for(unsigned int i = start_range; i < end_range; ++i)
+            dst.local_element(i) *= scaling_factor;
+        },
+        dof_index);
+    }
+    else
+    {
+      apply(dst, src);
+      dst *= scaling_factor;
+    }
+  }
+
 
 private:
   void
